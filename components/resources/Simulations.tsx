@@ -16,9 +16,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface SimulationResourceItem {
@@ -26,6 +25,8 @@ export interface SimulationResourceItem {
   name?: string | null;
   description?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface SimulationItem {
@@ -61,9 +62,9 @@ export interface SimulationsProps {
 
 export function Simulations({
   simulation_ids,
-  simulation_resources,
+  simulation_resources: _simulation_resources,
   show_simulations = false,
-  simulation_suggestions,
+  simulation_suggestions: _simulation_suggestions,
   simulations,
   disabled = false,
   onChange,
@@ -71,9 +72,9 @@ export function Simulations({
   id = "simulations",
   required = false,
   description,
-  group_id,
-  onGenerate,
-  showAiGenerate = false,
+  group_id: _group_id,
+  onGenerate: _onGenerate,
+  showAiGenerate: _showAiGenerate = false,
   searchTerm = "",
   showSelectedFilter = false,
   // Legacy props for backward compatibility
@@ -102,31 +103,20 @@ export function Simulations({
   );
   const show = show_simulations ?? false;
   const allSimulations = useMemo(() => simulations ?? [], [simulations]);
-  const suggestionsList = useMemo(
-    () => simulation_suggestions ?? [],
-    [simulation_suggestions]
-  );
-
-  // Socket-based AI suggestion handling via shared hook
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestions,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "simulations",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-  const aiSuggestedIds = useMemo(
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allSimulations.filter((s) => s.pending && s.simulation_id);
+  }, [allSimulations]);
+  const pendingIds = useMemo(
     () =>
       new Set(
-        aiSuggestions.map((s) => s.id).filter(Boolean) as string[]
+        pendingItems
+          .map((s) => s.simulation_id)
+          .filter(Boolean) as string[]
       ),
-    [aiSuggestions]
+    [pendingItems]
   );
+  const showDiff = pendingItems.length > 0;
 
   // Convert simulations array to SimulationItem format for SelectableGrid
   const simulationItems = useMemo(() => {
@@ -166,10 +156,13 @@ export function Simulations({
     return filtered;
   }, [simulationItems, searchTerm, showSelectedFilter, ids]);
 
-  // Check if a simulation is suggested
+  // Check if a simulation is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
-    (simulationId: string) => suggestionsList.includes(simulationId),
-    [suggestionsList]
+    (simulationId: string) => {
+      const sim = allSimulations.find((s) => s.simulation_id === simulationId);
+      return sim?.suggested === true;
+    },
+    [allSimulations]
   );
 
   const handleSelect = useCallback(
@@ -184,27 +177,18 @@ export function Simulations({
     [ids, onChange]
   );
 
-  // Check if any simulation resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return simulation_resources?.some((s) => s.generated) ?? false;
-  }, [simulation_resources]);
-
-  // Accept AI suggestion - add AI-suggested simulations to selection
+  // Accept pending — keep pending simulations in selection
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((s) => s.id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending simulations from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    const newIds = ids.filter((id) => !pendingIds.has(id));
+    onChange(newIds);
+  }, [ids, pendingIds, onChange]);
 
   // Don't render if show_simulations is false (AFTER all hooks)
   if (!show) {
@@ -224,31 +208,6 @@ export function Simulations({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -295,7 +254,7 @@ export function Simulations({
         onSelect={handleSelect}
         getId={(item) => item.id}
         renderItem={(item, isSelected) => {
-          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const isPending = showDiff && pendingIds.has(item.id);
 
           return (
             <div
@@ -303,28 +262,26 @@ export function Simulations({
                 "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested &&
-                  !isSelected &&
-                  "ring-2 ring-success bg-success/10"
+                isSelected && !isPending && "ring-2 ring-primary bg-accent",
+                isPending && "ring-2 ring-success bg-success/10",
               )}
             >
               {/* Check icon - top right */}
-              {isSelected && (
+              {isSelected && !isPending && (
                 <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
                   <Check className="h-3.5 w-3.5 text-primary-foreground" />
                 </div>
               )}
 
-              {/* AI Suggested badge - top right */}
-              {isAiSuggested && !isSelected && (
+              {/* Pending badge - top right */}
+              {isPending && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  AI Suggested
+                  Pending
                 </div>
               )}
 
               {/* Suggested dot indicator - top right */}
-              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+              {isSuggested(item.id) && !isSelected && !isPending && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

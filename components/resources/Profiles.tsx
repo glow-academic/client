@@ -16,9 +16,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface ProfileResourceItem {
@@ -26,6 +25,8 @@ export interface ProfileResourceItem {
   name?: string | null;
   description?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface ProfilesItem {
@@ -36,20 +37,10 @@ export interface ProfilesItem {
 
 export interface ProfilesProps {
   profile_ids?: string[]; // Current profiles artifact IDs (standardized prop name)
-  profile_resources?: Array<{
-    profile_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // Selected profiles resources (each includes generated field)
+  profile_resources?: ProfileResourceItem[]; // Selected profiles resources (each includes generated field)
   show_profiles?: boolean; // Whether to show this resource picker
   profile_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  profiles?: Array<{
-    profile_id: string | null;
-    name: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>; // All available profiles from API (each includes generated field)
+  profiles?: ProfileResourceItem[]; // All available profiles from API (each includes generated and suggested fields)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update profile_ids in form state
   label?: string;
@@ -57,22 +48,17 @@ export interface ProfilesProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   searchTerm?: string; // Search term for filtering profiles
   showSelectedFilter?: boolean; // Whether to show only selected profiles
-  aiProfileResources?: Array<{
-    profile_id?: string | null;
-    name?: string | null;
-  }> | null;
 }
 
 export function Profiles({
   profile_ids,
   profile_resources,
   show_profiles = false,
-  profile_suggestions,
+  profile_suggestions: _profile_suggestions,
   profiles,
   disabled = false,
   onChange,
@@ -80,7 +66,6 @@ export function Profiles({
   id = "profiles",
   required = false,
   description,
-  group_id,
   onGenerate,
   showAiGenerate = false,
   searchTerm = "",
@@ -89,31 +74,18 @@ export function Profiles({
   const ids = useMemo(() => profile_ids ?? [], [profile_ids]);
   const show = show_profiles ?? false;
   const allProfiles = useMemo(() => profiles ?? [], [profiles]);
-  const suggestionsList = useMemo(
-    () => profile_suggestions ?? [],
-    [profile_suggestions]
-  );
-
-  // Socket-based AI suggestion handling via shared hook
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestions,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "profiles",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-  const aiSuggestedIds = useMemo(
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allProfiles.filter((p) => p.pending && p.profile_id);
+  }, [allProfiles]);
+  const pendingIds = useMemo(
     () =>
       new Set(
-        aiSuggestions.map((p) => p.id).filter(Boolean) as string[]
+        pendingItems.map((p) => p.profile_id).filter(Boolean) as string[]
       ),
-    [aiSuggestions]
+    [pendingItems]
   );
+  const showDiff = pendingItems.length > 0;
 
   // Convert profiles array to ProfilesItem format for SelectableGrid
   const profileItems = useMemo(() => {
@@ -150,10 +122,13 @@ export function Profiles({
     return filtered;
   }, [profileItems, searchTerm, showSelectedFilter, ids]);
 
-  // Check if a profile is suggested
+  // Check if a profile is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
-    (profileId: string) => suggestionsList.includes(profileId),
-    [suggestionsList]
+    (profileId: string) => {
+      const profile = allProfiles.find((p) => p.profile_id === profileId);
+      return profile?.suggested === true;
+    },
+    [allProfiles]
   );
 
   const handleSelect = useCallback(
@@ -173,22 +148,18 @@ export function Profiles({
     return profile_resources?.some((p) => p.generated) ?? false;
   }, [profile_resources]);
 
-  // Accept AI suggestion - add AI-suggested profiles to selection
+  // Accept pending — keep pending profiles in selection
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((p) => p.id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending profiles from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    const newIds = ids.filter((id) => !pendingIds.has(id));
+    onChange(newIds);
+  }, [ids, pendingIds, onChange]);
 
   // Don't render if show_profiles is false (AFTER all hooks)
   if (!show) {
@@ -218,13 +189,9 @@ export function Profiles({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
+                    disabled={disabled || showDiff}
                   >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
+                    <Sparkles className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -279,7 +246,7 @@ export function Profiles({
         onSelect={handleSelect}
         getId={(item) => item.id}
         renderItem={(item, isSelected) => {
-          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const isPending = showDiff && pendingIds.has(item.id);
 
           return (
             <div
@@ -287,28 +254,26 @@ export function Profiles({
                 "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested &&
-                  !isSelected &&
-                  "ring-2 ring-success bg-success/10"
+                isSelected && !isPending && "ring-2 ring-primary bg-accent",
+                isPending && "ring-2 ring-success bg-success/10",
               )}
             >
               {/* Check icon - top right */}
-              {isSelected && (
+              {isSelected && !isPending && (
                 <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
                   <Check className="h-3.5 w-3.5 text-primary-foreground" />
                 </div>
               )}
 
-              {/* AI Suggested badge - top right */}
-              {isAiSuggested && !isSelected && (
+              {/* Pending badge - top right */}
+              {isPending && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  AI Suggested
+                  Pending
                 </div>
               )}
 
               {/* Suggested dot indicator - top right */}
-              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+              {isSuggested(item.id) && !isSelected && !isPending && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

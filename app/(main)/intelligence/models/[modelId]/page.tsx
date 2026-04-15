@@ -238,14 +238,10 @@ export default async function ModelEditPage({
             artifactType: "model",
             groupId: (groupResult as GroupModelOut & { group_id?: string })?.group_id ?? null,
             generateAction: generateModel,
-            permissions: [
-              { artifact: "model", operation: "draft" },
-              { artifact: "model", operation: "get" },
-              { artifact: "model", operation: "docs" },
-              { artifact: "model", operation: "group" },
-            ],
+            operations: ["draft", "get", "group"],
             getGroupHistory: getModelGroupHistory,
             searchGroups: searchModelGroups,
+            prompts: context.prompts?.prompts,
           }}
         >
           <div

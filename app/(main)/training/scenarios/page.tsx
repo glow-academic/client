@@ -219,14 +219,10 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
         artifactType: "scenario",
         groupId: (groupResult as GroupScenarioOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateScenario,
-        permissions: [
-          { artifact: "scenario", operation: "draft" },
-          { artifact: "scenario", operation: "get" },
-          { artifact: "scenario", operation: "docs" },
-          { artifact: "scenario", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getScenarioGroupHistory,
         searchGroups: searchScenarioGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4" data-page="scenarios-index">

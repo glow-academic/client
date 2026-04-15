@@ -147,14 +147,10 @@ export default async function TestPage({
           artifactType: "test",
           groupId: (groupResult as GroupTestOut & { group_id?: string })?.group_id ?? null,
           generateAction: generateTest,
-          permissions: [
-            { artifact: "test", operation: "draft" },
-            { artifact: "test", operation: "get" },
-            { artifact: "test", operation: "docs" },
-            { artifact: "test", operation: "group" },
-          ],
+          operations: ["draft", "get", "group"],
           getGroupHistory: getTestGroupHistory,
           searchGroups: searchTestGroups,
+          prompts: context.prompts?.prompts,
         }}
       >
         <div className="px-4">

@@ -1,21 +1,15 @@
 import { useCallback, useEffect, useRef } from "react";
-import type { AppSocket } from "@/contexts/socket-context";
-import type { ServerToClientEvents } from "@/lib/ws/types";
+import type { Transport } from "@/lib/transport/types";
 
-// Re-export event types for consumer convenience
-export type AttemptUserStartEvent =
-  Parameters<ServerToClientEvents["attempt_user_start"]>[0];
-export type AttemptUserDeltaEvent =
-  Parameters<ServerToClientEvents["attempt_user_delta"]>[0];
-export type AttemptAssistantAudioEvent =
-  Parameters<ServerToClientEvents["attempt_assistant_audio"]>[0];
-export type AttemptAudioReadyEvent =
-  Parameters<ServerToClientEvents["attempt_audio_ready"]>[0];
-export type AttemptAudioEndedEvent =
-  Parameters<ServerToClientEvents["attempt_audio_ended"]>[0];
+// Event payload types — loosely typed to match Transport's Record<string, unknown>
+export type AttemptUserStartEvent = Record<string, unknown>;
+export type AttemptUserDeltaEvent = Record<string, unknown>;
+export type AttemptAssistantAudioEvent = Record<string, unknown>;
+export type AttemptAudioReadyEvent = Record<string, unknown>;
+export type AttemptAudioEndedEvent = Record<string, unknown>;
 
 interface UseAttemptVoiceConfig {
-  socket: AppSocket | null;
+  transport: Transport;
   chatIdRef: React.RefObject<string | null>;
   onUserStart?: (data: AttemptUserStartEvent) => void;
   onUserDelta?: (data: AttemptUserDeltaEvent) => void;
@@ -32,13 +26,13 @@ interface UseAttemptVoiceReturn {
 }
 
 export function useAttemptVoice({
-  socket,
+  transport,
   chatIdRef,
   onUserStart,
   onUserDelta,
   onAudioChunk,
 }: UseAttemptVoiceConfig): UseAttemptVoiceReturn {
-  // Store callbacks in refs to avoid re-registering socket listeners on every render
+  // Store callbacks in refs to avoid re-registering listeners on every render
   const callbacksRef = useRef({
     onUserStart,
     onUserDelta,
@@ -53,8 +47,6 @@ export function useAttemptVoice({
 
   // Persistent streaming event listeners
   useEffect(() => {
-    if (!socket) return;
-
     const handleUserStart = (data: AttemptUserStartEvent) => {
       if (data.chat_id !== chatIdRef.current) return;
       callbacksRef.current.onUserStart?.(data);
@@ -70,28 +62,23 @@ export function useAttemptVoice({
       callbacksRef.current.onAudioChunk?.(data);
     };
 
-    socket.on("attempt.chat.user_start", handleUserStart);
-    socket.on("attempt.chat.user_progress", handleUserDelta);
-    socket.on("attempt.chat.assistant_audio", handleAudioChunk);
+    const unsubs = [
+      transport.on("attempt.chat.user_start", handleUserStart),
+      transport.on("attempt.chat.user_progress", handleUserDelta),
+      transport.on("attempt.chat.assistant_audio", handleAudioChunk),
+    ];
 
-    return () => {
-      socket.off("attempt.chat.user_start", handleUserStart);
-      socket.off("attempt.chat.user_progress", handleUserDelta);
-      socket.off("attempt.chat.assistant_audio", handleAudioChunk);
-    };
-  }, [socket, chatIdRef]);
+    return () => unsubs.forEach((fn) => fn());
+  }, [transport, chatIdRef]);
 
   // One-shot promise-based listeners for audio session lifecycle
   const waitForAudioReady = useCallback(
     (chatId: string, timeout = 10000): Promise<void> => {
       return new Promise<void>((resolve, reject) => {
-        if (!socket) {
-          reject(new Error("Socket not available"));
-          return;
-        }
+        let unsub: (() => void) | null = null;
 
         const cleanup = () => {
-          socket.off("attempt.chat.voice_ready", handler);
+          unsub?.();
         };
 
         const timer = setTimeout(() => {
@@ -99,33 +86,28 @@ export function useAttemptVoice({
           reject(new Error("Timeout waiting for voice session start"));
         }, timeout);
 
-        const handler = (data: AttemptAudioReadyEvent) => {
+        unsub = transport.on("attempt.chat.voice_ready", (data: AttemptAudioReadyEvent) => {
           if (data.chat_id !== chatId) return;
           clearTimeout(timer);
           cleanup();
           if (data.success) {
             resolve();
           } else {
-            reject(new Error(data.message || "Failed to start voice session"));
+            reject(new Error((data.message as string) || "Failed to start voice session"));
           }
-        };
-
-        socket.on("attempt.chat.voice_ready", handler);
+        });
       });
     },
-    [socket],
+    [transport],
   );
 
   const waitForAudioEnded = useCallback(
     (chatId: string, timeout = 10000): Promise<void> => {
       return new Promise<void>((resolve, reject) => {
-        if (!socket) {
-          reject(new Error("Socket not available"));
-          return;
-        }
+        let unsub: (() => void) | null = null;
 
         const cleanup = () => {
-          socket.off("attempt.chat.voice_ended", handler);
+          unsub?.();
         };
 
         const timer = setTimeout(() => {
@@ -133,59 +115,55 @@ export function useAttemptVoice({
           reject(new Error("Timeout waiting for voice session stop"));
         }, timeout);
 
-        const handler = (data: AttemptAudioEndedEvent) => {
+        unsub = transport.on("attempt.chat.voice_ended", (data: AttemptAudioEndedEvent) => {
           if (data.chat_id !== chatId) return;
           clearTimeout(timer);
           cleanup();
           if (data.success) {
             resolve();
           } else {
-            reject(new Error(data.message || "Failed to stop voice session"));
+            reject(new Error((data.message as string) || "Failed to stop voice session"));
           }
-        };
-
-        socket.on("attempt.chat.voice_ended", handler);
+        });
       });
     },
-    [socket],
+    [transport],
   );
 
-  // Combined emit + wait methods
+  // Combined send + wait methods
   const startAudio = useCallback(
     async (chatId: string): Promise<void> => {
-      if (!socket) throw new Error("Socket not available");
-      socket.emit("attempt.chat.voice", { chat_id: chatId });
+      transport.send("/attempt/chat/voice", { chat_id: chatId });
       await waitForAudioReady(chatId);
     },
-    [socket, waitForAudioReady],
+    [transport, waitForAudioReady],
   );
 
   const stopAudio = useCallback(
     async (chatId: string): Promise<void> => {
-      if (!socket) throw new Error("Socket not available");
-      socket.emit("attempt.chat.silence", { chat_id: chatId });
+      transport.send("/attempt/chat/silence", { chat_id: chatId });
       await waitForAudioEnded(chatId);
     },
-    [socket, waitForAudioEnded],
+    [transport, waitForAudioEnded],
   );
 
   const sendFrame = useCallback(
     (audio: ArrayBuffer) => {
-      if (!socket || !chatIdRef.current) return;
-      socket.emit("attempt.chat.send", { chat_id: chatIdRef.current, audio });
+      if (!chatIdRef.current) return;
+      transport.send("/attempt/chat/send", { chat_id: chatIdRef.current, audio });
     },
-    [socket, chatIdRef],
+    [transport, chatIdRef],
   );
 
   const setMicMute = useCallback(
     (muted: boolean) => {
-      if (!socket || !chatIdRef.current) return;
-      socket.emit("attempt.chat.mute", {
+      if (!chatIdRef.current) return;
+      transport.send("/attempt/chat/mute", {
         chat_id: chatIdRef.current,
         muted,
       });
     },
-    [socket, chatIdRef],
+    [transport, chatIdRef],
   );
 
   return {

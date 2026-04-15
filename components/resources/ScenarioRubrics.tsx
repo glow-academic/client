@@ -16,8 +16,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftScenarioRubricsIn = {
@@ -37,13 +36,13 @@ export interface ScenarioRubricResourceItem {
   scenario_id?: string | null;
   rubric_id?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface ScenarioRubricsProps {
   scenario_rubric_ids?: string[];
   scenario_rubric_resources?: ScenarioRubricResourceItem[];
   show_scenario_rubrics?: boolean;
-  scenario_rubric_suggestions?: string[];
   scenario_rubrics?: ScenarioRubricResourceItem[];
   rubrics?: Array<{
     id: string | null;
@@ -79,17 +78,12 @@ export interface ScenarioRubricsProps {
         input: CreateDraftScenarioRubricsIn,
       ) => Promise<CreateDraftScenarioRubricsOut>)
     | undefined;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (
     flush: () => Promise<{ scenario_rubric_ids: string[] } | void>,
   ) => void;
-  aiScenarioRubricResources?:
-    | Pick<ScenarioRubricResourceItem, "id" | "scenario_id" | "rubric_id">[]
-    | null;
   /** Value callback for unified draft — reports all scenario+rubric pairs */
   onScenarioRubricValues?: (rubrics: Array<{ scenario_id: string; rubric_id: string }>) => void;
 }
@@ -107,7 +101,6 @@ export function ScenarioRubrics({
   scenario_rubric_ids: _scenario_rubric_ids,
   scenario_rubric_resources,
   show_scenario_rubrics = false,
-  scenario_rubric_suggestions: _scenario_rubric_suggestions,
   scenario_rubrics: _scenario_rubrics,
   rubrics,
   scenario_ids = [],
@@ -122,11 +115,8 @@ export function ScenarioRubrics({
   group_id,
   create_tool_id,
   createScenarioRubricsAction,
-  onGenerate,
-  showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
-  aiScenarioRubricResources,
   onScenarioRubricValues,
 }: ScenarioRubricsProps) {
   const show = show_scenario_rubrics ?? false;
@@ -136,21 +126,15 @@ export function ScenarioRubrics({
   );
   const allRubrics = useMemo(() => rubrics ?? [], [rubrics]);
 
-  // Socket-based AI suggestion handling via shared hook
-  type _AiSuggestionItem = Pick<ScenarioRubricResourceItem, "id" | "scenario_id" | "rubric_id">;
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestions,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "scenario_rubrics",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // Effective AI resources: hook (socket) takes priority, then prop fallback
-  const effectiveAiScenarioRubricResources =
-    aiSuggestions.length > 0 ? aiSuggestions : aiScenarioRubricResources ?? null;
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return currentResources.filter((r) => r.pending && r.scenario_id);
+  }, [currentResources]);
+  const showDiff = pendingItems.length > 0;
+  const pendingScenarioIds = useMemo(
+    () => new Set(pendingItems.map((r) => r.scenario_id).filter(Boolean) as string[]),
+    [pendingItems],
+  );
 
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -398,39 +382,21 @@ export function ScenarioRubrics({
     ];
   }, [required, rubricOptions]);
 
-  const hasGenerated = useMemo(() => {
-    return currentResources.some((resource) => resource.generated);
-  }, [currentResources]);
-
-  // AI suggestion state
-  const showDiff = !!effectiveAiScenarioRubricResources?.length;
-
-  // Set of AI-suggested scenario IDs for styling
-  const aiSuggestedScenarioIds = useMemo(
-    () =>
-      new Set(
-        effectiveAiScenarioRubricResources
-          ?.map((r) => r.scenario_id)
-          .filter(Boolean) as string[],
-      ),
-    [effectiveAiScenarioRubricResources],
-  );
-
-  // Accept AI suggestion - apply AI-suggested rubric assignments
+  // Accept pending — keep pending rubric assignments in selection (no-op, already selected)
   const handleAccept = useCallback(() => {
-    if (!effectiveAiScenarioRubricResources?.length) return;
-    effectiveAiScenarioRubricResources.forEach((r) => {
-      if (r.scenario_id && r.rubric_id) {
-        handleSelect(r.scenario_id, r.rubric_id);
+    // Pending items are already in the resource array (selected=true), just confirm
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
+  }, []);
+
+  // Reject pending — remove pending scenario rubric assignments from selection
+  const handleReject = useCallback(() => {
+    pendingItems.forEach((r) => {
+      if (r.scenario_id) {
+        handleSelect(r.scenario_id, NONE_OPTION);
       }
     });
-    clearAi();
-  }, [effectiveAiScenarioRubricResources, handleSelect, clearAi]);
-
-  // Reject AI suggestion - just clear the pending state
-  const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+  }, [pendingItems, handleSelect]);
 
   if (!show || scenario_ids.length === 0) {
     return null;
@@ -449,31 +415,6 @@ export function ScenarioRubrics({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -512,60 +453,39 @@ export function ScenarioRubrics({
           )}
         </div>
       )}
-      {/* AI-suggested scenario rubrics preview */}
-      {showDiff &&
-        effectiveAiScenarioRubricResources &&
-        effectiveAiScenarioRubricResources.length > 0 && (
-          <div className="mb-4 space-y-2">
-            <p className="text-sm font-medium text-success">
-              AI Suggested Scenario Rubrics
-            </p>
-            <div className="space-y-2">
-              {effectiveAiScenarioRubricResources.map((item, idx) => {
-                const scenarioLabel =
-                  scenarioLabelMap.get(item.scenario_id || "") ??
-                  "Unknown scenario";
-                const rubricLabel =
-                  rubricOptions.find((r) => r.id === item.rubric_id)?.name ??
-                  "Unknown rubric";
-                return (
-                  <div
-                    key={
-                      item.id || `${item.scenario_id}-${item.rubric_id}` || idx
-                    }
-                    className={cn(
-                      "flex items-center gap-2 p-3 rounded-lg border-2 border-success bg-success/10",
-                      "text-sm",
-                    )}
-                  >
-                    <span className="font-medium">{scenarioLabel}:</span>
-                    <span>{rubricLabel}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       <div className="space-y-4 pl-4">
         {scenario_ids.map((scenarioId) => {
-          const isAiSuggested = aiSuggestedScenarioIds.has(scenarioId);
+          const isPendingScenario = pendingScenarioIds.has(scenarioId);
           const labelText =
             scenarioLabelMap.get(scenarioId) ?? scenarioId.slice(0, 8);
           const selectedRubricId = rubricIdByScenario.get(scenarioId) ?? null;
           const selectedValue =
             selectedRubricId ?? (required ? "" : NONE_OPTION);
+
+          // Find the pending rubric_id for this scenario (if any)
+          const pendingRubricId = isPendingScenario
+            ? pendingItems.find((r) => r.scenario_id === scenarioId)?.rubric_id ?? null
+            : null;
+
           return (
             <div
               key={scenarioId}
               className={cn(
                 "space-y-2",
-                isAiSuggested &&
+                isPendingScenario &&
                   "ring-2 ring-success bg-success/5 rounded-lg p-2",
               )}
             >
-              <Label className="text-sm font-medium" title={labelText}>
-                {labelText}
-              </Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium" title={labelText}>
+                  {labelText}
+                </Label>
+                {isPendingScenario && (
+                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                    Pending
+                  </span>
+                )}
+              </div>
               <SelectableGrid<ScenarioRubricOption>
                 horizontal
                 items={gridOptions}
@@ -582,29 +502,43 @@ export function ScenarioRubrics({
                   handleSelect(scenarioId, optionId);
                 }}
                 getId={(option) => option.id}
-                renderItem={(option, isSelected) => (
-                  <div
-                    className={cn(
-                      "relative flex flex-col gap-1 rounded-lg border p-3 text-left transition-all",
-                      "hover:shadow-sm hover:bg-accent/50",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                      option.isNone && "border-dashed text-muted-foreground",
-                      isSelected && "ring-2 ring-primary bg-accent",
-                    )}
-                  >
-                    {isSelected && (
-                      <div className="absolute top-2 right-2 z-10 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
-                        <Check className="h-3 w-3 text-primary-foreground" />
-                      </div>
-                    )}
-                    <div className="text-sm font-medium">{option.name}</div>
-                    {option.description && (
-                      <div className="text-xs text-muted-foreground line-clamp-2">
-                        {option.description}
-                      </div>
-                    )}
-                  </div>
-                )}
+                renderItem={(option, isSelected) => {
+                  const isPendingOption = isPendingScenario && option.id === pendingRubricId;
+
+                  return (
+                    <div
+                      className={cn(
+                        "relative flex flex-col gap-1 rounded-lg border p-3 text-left transition-all",
+                        "hover:shadow-sm hover:bg-accent/50",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        option.isNone && "border-dashed text-muted-foreground",
+                        isSelected && !isPendingOption && "ring-2 ring-primary bg-accent",
+                        isPendingOption && "ring-2 ring-success bg-success/10",
+                      )}
+                    >
+                      {/* Check icon - top right (non-pending selected) */}
+                      {isSelected && !isPendingOption && (
+                        <div className="absolute top-2 right-2 z-10 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                          <Check className="h-3 w-3 text-primary-foreground" />
+                        </div>
+                      )}
+
+                      {/* Pending badge - top right */}
+                      {isPendingOption && (
+                        <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                          Pending
+                        </div>
+                      )}
+
+                      <div className="text-sm font-medium">{option.name}</div>
+                      {option.description && (
+                        <div className="text-xs text-muted-foreground line-clamp-2">
+                          {option.description}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }}
                 emptyMessage="No rubrics available."
                 maxHeight="max-h-[220px]"
                 disabled={disabled}

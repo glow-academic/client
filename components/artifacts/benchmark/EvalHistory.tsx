@@ -286,7 +286,7 @@ export default function EvalHistory({
         />
         {showCustomize && (
           <Button
-            onClick={() => router.push("/benchmark/custom")}
+            onClick={() => router.push("/test/benchmark/custom")}
             size="sm"
             data-testid="benchmark-customize-button"
           >

@@ -208,14 +208,10 @@ export default async function ProfilesPage() {
         artifactType: "profile",
         groupId: (groupResult as GroupProfileOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateProfile,
-        permissions: [
-          { artifact: "profile", operation: "draft" },
-          { artifact: "profile", operation: "get" },
-          { artifact: "profile", operation: "docs" },
-          { artifact: "profile", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getProfileGroupHistory,
         searchGroups: searchProfileGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4">

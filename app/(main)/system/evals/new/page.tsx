@@ -181,14 +181,10 @@ export default async function NewEvalPage({
           artifactType: "eval",
           groupId: (groupResult as GroupEvalOut & { group_id?: string })?.group_id ?? null,
           generateAction: generateEval,
-          permissions: [
-            { artifact: "eval", operation: "draft" },
-            { artifact: "eval", operation: "get" },
-            { artifact: "eval", operation: "docs" },
-            { artifact: "eval", operation: "group" },
-          ],
+          operations: ["draft", "get", "group"],
           getGroupHistory: getEvalGroupHistory,
           searchGroups: searchEvalGroups,
+          prompts: context.prompts?.prompts,
         }}
       >
         <div

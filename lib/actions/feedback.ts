@@ -9,5 +9,5 @@ export type CreateFeedbackOut = OutputOf<"/api/v5/activity/problem", "post">;
 export async function createFeedback(
   input: CreateFeedbackIn
 ): Promise<CreateFeedbackOut> {
-  return api.post("/activity/problem", input);
+  return api.post("/system/activity/problem", input);
 }

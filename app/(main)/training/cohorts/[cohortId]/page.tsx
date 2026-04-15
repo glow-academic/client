@@ -225,14 +225,10 @@ export default async function CohortEditPage({
                 (groupResult as GroupCohortOut & { group_id?: string })?.group_id ??
                 null,
               generateAction: generateCohort,
-              permissions: [
-                { artifact: "cohort", operation: "draft" },
-                { artifact: "cohort", operation: "get" },
-                { artifact: "cohort", operation: "docs" },
-                { artifact: "cohort", operation: "group" },
-              ],
+              operations: ["draft", "get", "group"],
               getGroupHistory: getCohortGroupHistory,
               searchGroups: searchCohortGroups,
+              prompts: context.prompts?.prompts,
             },
           } as any)}
         >

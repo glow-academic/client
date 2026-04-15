@@ -5,16 +5,22 @@
 import type { AppSocket } from "@/contexts/socket-context";
 import type { Transport } from "./types";
 
+/** Convert HTTP-style path to dot-separated WS event name: "/attempt/start" → "attempt.start" */
+function toWsEvent(endpoint: string): string {
+  return endpoint.replace(/^\//, "").replace(/\//g, ".");
+}
+
 export function createWsTransport(socket: AppSocket): Transport {
   return {
     mode: "ws",
 
     async send(endpoint, body) {
+      const event = toWsEvent(endpoint);
       return new Promise((resolve, reject) => {
         // socket.io acknowledgement pattern — server returns response via callback
         (socket as unknown as {
           emit: (event: string, data: unknown, cb: (res: Record<string, unknown>) => void) => void;
-        }).emit(endpoint, body, (res) => {
+        }).emit(event, body, (res) => {
           if (res && typeof res === "object" && "error" in res) {
             reject(new Error(String(res.error)));
           } else {

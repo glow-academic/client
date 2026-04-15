@@ -7,7 +7,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useSocket } from "@/contexts/socket-context";
+import { useTransport } from "@/lib/transport/context";
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,8 +16,7 @@ import {
 } from "lucide-react";
 import type { components } from "@/lib/api/schema";
 import type { OutputOf } from "@/lib/api/types";
-import { useAttemptLifecycle } from "@/hooks/use-attempt-lifecycle";
-import type { AttemptChatEndedEvent, AttemptEndedEvent, AttemptResponseResultEvent } from "@/hooks/use-attempt-lifecycle";
+
 import { useAttemptMessages } from "@/hooks/use-attempt-messages";
 import { useAttemptVoice } from "@/hooks/use-attempt-voice";
 import type { AttemptUserStartEvent, AttemptUserDeltaEvent, AttemptAssistantAudioEvent } from "@/hooks/use-attempt-voice";
@@ -78,7 +77,7 @@ type MessageData = components["schemas"]["MessageData"];
 
 // Server-to-Client event payloads (message streaming types are in useAttemptMessages hook)
 // Lifecycle + voice event types imported from hooks
-// Client-to-Server emissions are handled by hooks (useAttemptMessages, useAttemptVoice, useAttemptLifecycle)
+// Client-to-Server emissions are handled by hooks (useAttemptMessages, useAttemptVoice)
 
 /** Props for the AttemptChat component */
 export interface AttemptChatProps {
@@ -101,7 +100,7 @@ export function AttemptChat({
   user_instructions: userInstructionsProp = null,
 }: AttemptChatProps) {
   const router = useRouter();
-  const { socket, isConnected } = useSocket();
+  const transport = useTransport();
 
   // ---------------------------------------------------------------------------
   // STATE MANAGEMENT
@@ -244,7 +243,7 @@ export function AttemptChat({
     stopMessage,
     submitResponse,
   } = useAttemptMessages({
-    socket,
+    transport,
     chatIdRef: currentChatIdRef,
     personas: attemptData?.resources?.personas,
     onRefresh: useCallback(() => router.refresh(), [router]),
@@ -502,25 +501,25 @@ export function AttemptChat({
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    if (!isConnected || !currentChat?.id || !socket) return;
+    if (!currentChat?.id) return;
     if (currentRoomRef.current === currentChat.id) return;
 
     if (currentRoomRef.current) {
-      socket.emit("attempt.leave", { chat_id: currentRoomRef.current });
+      transport.send("/attempt/leave", { chat_id: currentRoomRef.current });
     }
 
-    socket.emit("attempt.join", { chat_id: currentChat.id });
+    transport.send("/attempt/join", { chat_id: currentChat.id });
     currentRoomRef.current = currentChat.id;
     currentChatIdRef.current = currentChat.id;
 
     return () => {
-      if (currentRoomRef.current && socket) {
-        socket.emit("attempt.leave", { chat_id: currentRoomRef.current });
+      if (currentRoomRef.current) {
+        transport.send("/attempt/leave", { chat_id: currentRoomRef.current });
         currentRoomRef.current = null;
         currentChatIdRef.current = null;
       }
     };
-  }, [currentChat?.id, isConnected, socket]);
+  }, [currentChat?.id, transport]);
 
   useEffect(() => {
     const chatId = currentChat?.id ?? null;
@@ -725,7 +724,7 @@ export function AttemptChat({
 
   // Voice streaming events + promise-based audio session lifecycle
   const { startAudio, stopAudio, sendFrame, setMicMute } = useAttemptVoice({
-    socket,
+    transport,
     chatIdRef: currentChatIdRef,
     onUserStart: useCallback((data: AttemptUserStartEvent) => {
       const optimisticMessageId = `optimistic-user-voice-${Date.now()}-${Math.random()}`;
@@ -786,61 +785,60 @@ export function AttemptChat({
     }, []),
   });
 
-  // Lifecycle events (chat ended, attempt ended, quiz result)
-  useAttemptLifecycle({
-    socket,
-    attemptId: attempt_id,
-    chatIdRef: currentChatIdRef,
-    onChatEnded: useCallback((data: AttemptChatEndedEvent) => {
-      freshlyCompletedChatsRef.current.add(data.chat_id);
-      router.refresh();
-    }, [router]),
-    onEnded: useCallback((data: AttemptEndedEvent) => {
-      if (data.attempt_id === attempt_id) {
+  // Lifecycle events (chat ended, attempt ended, quiz result) — direct transport listeners
+  useEffect(() => {
+    const unsubs = [
+      transport.on("attempt.chat.ended", (data: Record<string, unknown>) => {
+        const filterChatId = currentChatIdRef.current;
+        if (filterChatId && data["chat_id"] !== filterChatId) return;
+        freshlyCompletedChatsRef.current.add(data["chat_id"] as string);
         router.refresh();
-      }
-      if (data.success) {
-        toast.success(data.message);
-      } else {
-        toast.error(data.message);
-      }
-    }, [attempt_id, router]),
-    onResponseResult: useCallback((data: AttemptResponseResultEvent) => {
-      if (data.success) {
+      }),
+      transport.on("attempt.ended", (data: Record<string, unknown>) => {
+        if (data["attempt_id"] !== attempt_id) return;
         router.refresh();
-      } else {
-        toast.error(data.message || "Failed to process quiz");
-      }
-    }, [router]),
-  });
+        if (data["success"]) {
+          toast.success(data["message"] as string);
+        } else {
+          toast.error(data["message"] as string);
+        }
+      }),
+      transport.on("attempt.chat.response_result", (data: Record<string, unknown>) => {
+        if (data["success"]) {
+          router.refresh();
+        } else {
+          toast.error((data["message"] as string) || "Failed to process quiz");
+        }
+      }),
+    ];
+    return () => unsubs.forEach((fn) => fn());
+  }, [transport, attempt_id, router]);
 
   const handleVoiceStart = useCallback(async () => {
-    if (!currentChat?.id || !isConnected) {
-      toast.error("Cannot enable voice mode: chat or connection not available");
+    if (!currentChat?.id) {
+      toast.error("Cannot enable voice mode: chat not available");
       return;
     }
     await startAudio(currentChat.id);
-  }, [currentChat?.id, isConnected, startAudio]);
+  }, [currentChat?.id, startAudio]);
 
   const handleVoiceStop = useCallback(async () => {
-    if (!currentChat?.id || !isConnected) return;
+    if (!currentChat?.id) return;
     await stopAudio(currentChat.id);
-  }, [currentChat?.id, isConnected, stopAudio]);
+  }, [currentChat?.id, stopAudio]);
 
   const handlePcm16Data = useCallback(
     (data: ArrayBuffer) => {
-      if (!isConnected) return;
       sendFrame(data);
     },
-    [isConnected, sendFrame]
+    [sendFrame]
   );
 
   const handleMicMute = useCallback(
     (muted: boolean) => {
-      if (!isConnected) return;
       setMicMute(muted);
     },
-    [isConnected, setMicMute]
+    [setMicMute]
   );
 
   // ---------------------------------------------------------------------------
@@ -1036,7 +1034,7 @@ export function AttemptChat({
         text_enabled: textEnabled,
         audio_enabled: audioEnabled,
         enabled: !currentChat?.completed ?? true,
-        is_connected: isConnected,
+        is_connected: true,
         disabled: false,
         is_attempt_owner: true,
         current_chat: currentChat
@@ -1073,7 +1071,6 @@ export function AttemptChat({
     questionIndex,
     isSendingMessage,
     isStoppingMessage,
-    isConnected,
     handleSendMessage,
     handleStopMessage,
     handleQuizResponse,

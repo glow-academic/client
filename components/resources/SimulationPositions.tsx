@@ -15,14 +15,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import {
   ArrowDown,
   ArrowUp,
   Check,
   GripVertical,
-  Loader2,
-  Sparkles,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -31,6 +28,7 @@ export interface SimulationPositionResourceItem {
   id?: string | null;
   simulation_id?: string | null;
   value?: number | null;
+  pending?: boolean | null;
 }
 
 export interface SimulationPositionItem {
@@ -75,9 +73,6 @@ export interface SimulationPositionsProps {
         };
       }) => Promise<unknown>)
     | undefined;
-  aiSimulationPositionResources?:
-    | Pick<SimulationPositionResourceItem, "id" | "simulation_id" | "value">[]
-    | null;
   /** Callback to emit position values for unified draft */
   onSimulationPositionValues?: (positions: Array<{ simulation_id: string; value: number }>) => void;
   /** When false, skip automatic resource creation (manual save mode) */
@@ -102,10 +97,9 @@ export function SimulationPositions({
   description,
   group_id,
   create_tool_id,
-  onGenerate,
-  showAiGenerate = false,
+  onGenerate: _onGenerate,
+  showAiGenerate: _showAiGenerate = false,
   createSimulationPositionsAction,
-  aiSimulationPositionResources,
   onSimulationPositionValues,
   isAutosaveEnabled = true,
   registerFlush,
@@ -120,23 +114,14 @@ export function SimulationPositions({
     [simulation_positions],
   );
 
-  // Socket-based AI suggestion handling via shared hook
-  type _AiPositionSuggestion = Pick<
-    SimulationPositionResourceItem,
-    "id" | "simulation_id" | "value"
-  >;
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestion,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "simulation_positions",
-    groupId: group_id,
-  });
-
-  // Effective AI resources: hook suggestion takes priority, then prop fallback
-  const effectiveAiSimulationPositionResources =
-    aiSuggestion ?? aiSimulationPositionResources ?? null;
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return currentPositions.filter((p) => p.pending && p.simulation_id);
+  }, [currentPositions]);
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((p) => p.simulation_id).filter(Boolean) as string[]),
+    [pendingItems],
+  );
 
   const simulationLabels = useMemo(() => {
     const normalizeDescription = (description?: string | null) => {
@@ -393,45 +378,24 @@ export function SimulationPositions({
       .map(([simulationId]) => simulationId);
   }, [localPositions]);
 
-  // AI suggestion state
-  const showDiff = !!effectiveAiSimulationPositionResources?.length;
+  const showDiff = pendingItems.length > 0;
 
-  // Set of AI-suggested simulation IDs for styling
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        effectiveAiSimulationPositionResources
-          ?.map((r) => r.simulation_id)
-          .filter(Boolean) as string[],
-      ),
-    [effectiveAiSimulationPositionResources],
-  );
-
-  // Accept AI suggestion - apply AI-suggested positions
+  // Accept pending — pending items are already in the positions, just confirm
   const handleAccept = useCallback(() => {
-    if (!effectiveAiSimulationPositionResources?.length) return;
-    const newPositions = new Map<string, number>();
-    effectiveAiSimulationPositionResources.forEach((r) => {
-      if (r.simulation_id && r.value != null) {
-        newPositions.set(r.simulation_id, r.value);
-      }
-    });
-    // Merge with existing positions
-    setLocalPositions((prev) => {
-      const merged = new Map(prev);
-      newPositions.forEach((value, simId) => {
-        merged.set(simId, value);
-      });
-      emitPositions(merged);
-      return merged;
-    });
-    clearAi();
-  }, [effectiveAiSimulationPositionResources, emitPositions, clearAi]);
+    // Pending items are already included in localPositions — nothing to change
+    // The next draft save will persist them as active
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending simulation IDs from positions
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    updatePositions((prev) => {
+      const updated = new Map(prev);
+      pendingIds.forEach((simId) => {
+        updated.delete(simId);
+      });
+      return updated;
+    });
+  }, [updatePositions, pendingIds]);
 
   if (!show) {
     return null;
@@ -450,29 +414,6 @@ export function SimulationPositions({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Generate Positions</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -511,51 +452,27 @@ export function SimulationPositions({
           )}
         </div>
       )}
-      {/* AI-suggested positions preview */}
-      {showDiff &&
-        effectiveAiSimulationPositionResources &&
-        effectiveAiSimulationPositionResources.length > 0 && (
-          <div className="mb-4 space-y-2">
-            <p className="text-sm font-medium text-success">
-              AI Suggested Positions
-            </p>
-            <div className="space-y-2">
-              {effectiveAiSimulationPositionResources.map((item, idx) => (
-                <div
-                  key={item.id || item.simulation_id || idx}
-                  className={cn(
-                    "flex items-center gap-2 p-2 rounded-lg border-2 border-success bg-success/10",
-                  )}
-                >
-                  <GripVertical className="h-4 w-4 text-muted-foreground" />
-                  <Label className="text-sm w-56 truncate">
-                    {simulationLabels.get(item.simulation_id || "") ??
-                      "Untitled simulation"}
-                  </Label>
-                  <Label className="text-sm w-20">Position:</Label>
-                  <span className="text-sm font-medium">
-                    {item.value ?? "-"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       <div className="space-y-2">
         {sortedSimulations.map((simulationId) => {
           const position = localPositions.get(simulationId) || 1;
           const maxPos = Math.max(...Array.from(localPositions.values()));
           const labelText =
             simulationLabels.get(simulationId) ?? "Untitled simulation";
-          const isAiSuggested = aiSuggestedIds.has(simulationId);
+          const isPending = pendingIds.has(simulationId);
           return (
             <div
               key={simulationId}
               className={cn(
                 "flex items-center gap-2 p-2 border rounded-md",
-                isAiSuggested && "ring-2 ring-success bg-success/5",
+                isPending && "ring-2 ring-success bg-success/10",
               )}
             >
+              {/* Pending badge */}
+              {isPending && (
+                <div className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </div>
+              )}
               <GripVertical className="h-4 w-4 text-muted-foreground" />
               <Label className="text-sm w-56 truncate" title={labelText}>
                 {labelText}

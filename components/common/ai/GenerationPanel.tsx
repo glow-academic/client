@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, ChevronsUpDown, FileText, Image, Loader2, Mic, Plus, Search, Send, ShieldAlert, ShieldCheck, Video, Wrench, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -57,7 +57,8 @@ interface GenerationPanelProps {
   /** Artifact type — used for both event namespacing and route prefix (e.g. "persona" → /persona/*) */
   artifactType: string;
   groupId: string | null;
-  permissions: Array<{ artifact: string; operation: string }>;
+  operations: string[];
+  prompts?: Record<string, Array<{ title: string; content: string }>>;
 }
 
 // ---------------------------------------------------------------------------
@@ -113,12 +114,36 @@ function flattenMessages(res: GroupMessagesOut | Record<string, unknown>): Histo
 
 export function GenerationPanel({
   panelOpen, onToggle,
-  artifactType, groupId: groupIdProp, permissions,
+  artifactType, groupId: groupIdProp, operations, prompts,
 }: GenerationPanelProps) {
   const [instructions, setInstructions] = useState("");
   const [dangerousMode, setDangerousMode] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const transport = useTransport();
+
+  // Flatten operation-keyed prompts into a single list for the caller's operations
+  const allPrompts = useMemo(() => {
+    if (!prompts) return [];
+    const ops = new Set(operations);
+    const flat: Array<{ title: string; content: string }> = [];
+    for (const [op, items] of Object.entries(prompts)) {
+      if (ops.has(op)) flat.push(...items);
+    }
+    // Also include prompts for operations not in the ops set (fill to 3)
+    for (const [op, items] of Object.entries(prompts)) {
+      if (!ops.has(op) && flat.length < 3) flat.push(...items);
+    }
+    return flat;
+  }, [prompts, operations]);
+  const [promptOffset, setPromptOffset] = useState(0);
+  const visiblePrompts = useMemo(() => {
+    if (allPrompts.length <= 3) return allPrompts;
+    const result: typeof allPrompts = [];
+    for (let i = 0; i < 3; i++) {
+      result.push(allPrompts[(promptOffset + i) % allPrompts.length]);
+    }
+    return result;
+  }, [allPrompts, promptOffset]);
 
   // Selected group — defaults to prop, can be changed via picker
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -303,13 +328,14 @@ export function GenerationPanel({
 
     listener.setGenerating(true);
     await transport.send(`/${artifactType}/generate`, {
-      group_id: activeGroupId,
-      permissions,
-      resource_types: [],
-      user_instructions: text ? [text] : [],
-      dangerous: dangerousMode,
+      instructions: text ? [text] : [],
+      config: {
+        operations,
+        dangerous: dangerousMode,
+        group_id: activeGroupId,
+      },
     });
-  }, [instructions, dangerousMode, transport, artifactType, activeGroupId, permissions, listener]);
+  }, [instructions, dangerousMode, transport, artifactType, activeGroupId, operations, listener]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -561,17 +587,16 @@ export function GenerationPanel({
             </div>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 px-3">
-              {[
-                { label: "Generate a persona", instruction: "Create a new persona with a unique personality, communication style, and background." },
-                { label: "Build a scenario", instruction: "Design a scenario with objectives, problem statement, and evaluation criteria." },
-                { label: "Draft a rubric", instruction: "Create a rubric with clear criteria, point values, and performance levels." },
-              ].map((suggestion) => (
+              {visiblePrompts.map((prompt) => (
                 <button
-                  key={suggestion.label}
-                  onClick={() => setInstructions(suggestion.instruction)}
+                  key={prompt.title}
+                  onClick={() => {
+                    setInstructions(prompt.content);
+                    if (allPrompts.length > 3) setPromptOffset((o) => o + 1);
+                  }}
                   className="w-full rounded-lg border px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                 >
-                  {suggestion.label}
+                  {prompt.title}
                 </button>
               ))}
             </div>

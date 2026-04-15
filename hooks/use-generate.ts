@@ -13,11 +13,6 @@ import { useSocket } from "@/contexts/socket-context";
 // Types
 // ---------------------------------------------------------------------------
 
-export interface Permission {
-  artifact: string;
-  operation: string;
-}
-
 export interface GenerateMessage {
   role: "user" | "assistant";
   text: string;
@@ -27,17 +22,15 @@ export interface GenerateMessage {
 }
 
 interface UseGenerateConfig {
-  /** Which tools the AI can use */
-  permissions: Permission[];
-  /** Field-level filter within artifact tools (empty = all) */
-  resources?: string[];
+  /** Artifact type for this generation context */
+  artifactType: string;
+  /** Operations the AI can perform (e.g. ["draft", "get", "docs"]) */
+  operations: string[];
   /** Group correlation ID */
   groupId: string | null;
 }
 
 interface GenerateOptions {
-  /** Override resources filter for this call */
-  resources?: string[];
   /** Target artifact ID (for existing artifacts) */
   artifactId?: string;
   /** Contextual parameters the model can pass to tools (draft_id, etc.) */
@@ -60,8 +53,8 @@ interface UseGenerateReturn {
 // ---------------------------------------------------------------------------
 
 export function useGenerate({
-  permissions,
-  resources,
+  artifactType,
+  operations,
   groupId,
 }: UseGenerateConfig): UseGenerateReturn {
   const { socket, isConnected } = useSocket();
@@ -72,17 +65,13 @@ export function useGenerate({
   const groupIdRef = useRef(groupId);
   groupIdRef.current = groupId;
 
-  const permissionsRef = useRef(permissions);
-  permissionsRef.current = permissions;
-
-  const resourcesRef = useRef(resources);
-  resourcesRef.current = resources;
+  const operationsRef = useRef(operations);
+  operationsRef.current = operations;
 
   // --- Emit ---
 
   const generate = useCallback(
     (instructions: string, options?: {
-      resources?: string[];
       artifactId?: string;
       params?: Record<string, string>;
     }) => {
@@ -91,19 +80,16 @@ export function useGenerate({
       // User message will arrive via generate_text_complete event from server
       setIsGenerating(true);
 
-      const resolvedResources = options?.resources ?? resourcesRef.current ?? [];
-
       socket.emit("generate", {
-        permissions: permissionsRef.current,
-        resources: resolvedResources,
+        artifact_type: artifactType,
+        instructions: [instructions],
+        operations: operationsRef.current,
         group_id: groupIdRef.current,
-        user_instructions: [instructions],
         modality: "call",
-        ...(options?.artifactId && { artifact_id: options.artifactId }),
         ...(options?.params && { params: options.params }),
       });
     },
-    [socket, isConnected],
+    [socket, isConnected, artifactType],
   );
 
   // --- Listen ---

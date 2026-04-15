@@ -7,6 +7,7 @@
 
 import { getSession } from "@/auth";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import SimulationHistory from "@/components/common/SimulationHistory";
 import Practice from "@/components/artifacts/practice/Practice";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
@@ -20,25 +21,25 @@ import { cookies } from "next/headers";
 import { loadPracticeSearchParams } from "@/lib/search-params/practice";
 
 /** ---- Strong types from OpenAPI ---- */
-type PracticeIn = InputOf<"/practice/get", "post">;
-type PracticeOut = OutputOf<"/practice/get", "post">;
+type PracticeIn = InputOf<"/attempt/practice/get", "post">;
+type PracticeOut = OutputOf<"/attempt/practice/get", "post">;
 type PracticeHistoryOut = NonNullable<PracticeOut["history"]>;
-type GeneratePracticeIn = InputOf<"/practice/generate", "post">;
-type GeneratePracticeOut = OutputOf<"/practice/generate", "post">;
-type GenerationsIn = InputOf<"/practice/generations", "post">;
-type GenerationsOut = OutputOf<"/practice/generations", "post">;
-type GroupPracticeIn = InputOf<"/practice/group", "post">;
-type GroupPracticeOut = OutputOf<"/practice/group", "post">;
-type ProblemPracticeIn = InputOf<"/practice/problem", "post">;
-type ProblemPracticeOut = OutputOf<"/practice/problem", "post">;
-type ContextIn = InputOf<"/practice/context", "post">;
-type ContextOut = OutputOf<"/practice/context", "post">;
+type GeneratePracticeIn = InputOf<"/attempt/practice/generate", "post">;
+type GeneratePracticeOut = OutputOf<"/attempt/practice/generate", "post">;
+type GenerationsIn = InputOf<"/attempt/practice/generations", "post">;
+type GenerationsOut = OutputOf<"/attempt/practice/generations", "post">;
+type GroupPracticeIn = InputOf<"/attempt/practice/group", "post">;
+type GroupPracticeOut = OutputOf<"/attempt/practice/group", "post">;
+type ProblemPracticeIn = InputOf<"/attempt/practice/problem", "post">;
+type ProblemPracticeOut = OutputOf<"/attempt/practice/problem", "post">;
+type ContextIn = InputOf<"/attempt/practice/context", "post">;
+type ContextOut = OutputOf<"/attempt/practice/context", "post">;
 
 /** ---- Direct fetch for practice data (cards + embedded history) ---- */
 const getPracticeData = async (input: PracticeIn): Promise<PracticeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/practice/get", input, {
+  return api.post("/attempt/practice/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -58,31 +59,35 @@ async function generatePractice(
   input: GeneratePracticeIn
 ): Promise<GeneratePracticeOut> {
   "use server";
-  return api.post("/practice/generate", input);
+  return api.post("/attempt/practice/generate", input);
 }
 
 async function getPracticeGroupHistory(groupId: string): Promise<GroupPracticeOut> {
   "use server";
-  return api.post("/practice/group", { body: { group_id: groupId } } as GroupPracticeIn);
+  return api.post("/attempt/practice/group", { body: { group_id: groupId } } as GroupPracticeIn);
 }
 
 async function searchPracticeGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/practice/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/attempt/practice/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createPracticeProblem(input: ProblemPracticeIn): Promise<ProblemPracticeOut> {
   "use server";
-  return api.post("/practice/problem", input);
+  return api.post("/attempt/practice/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/practice/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/attempt/practice/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Practice" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -105,8 +110,9 @@ export default async function PracticePage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
+  try {
   // Profile data for providers
-  const context = await api.post("/practice/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/attempt/practice/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params via nuqs loader
@@ -140,7 +146,7 @@ export default async function PracticePage({
         }),
       },
     }),
-    api.post("/practice/group", { body: {} } as GroupPracticeIn),
+    api.post("/attempt/practice/group", { body: {} } as GroupPracticeIn),
   ]);
 
   // Check if user is a guest (no items means no access / guest)
@@ -239,14 +245,10 @@ export default async function PracticePage({
         artifactType: "practice",
         groupId: (groupResult as GroupPracticeOut & { group_id?: string })?.group_id ?? null,
         generateAction: generatePractice,
-        permissions: [
-          { artifact: "practice", operation: "draft" },
-          { artifact: "practice", operation: "get" },
-          { artifact: "practice", operation: "docs" },
-          { artifact: "practice", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getPracticeGroupHistory,
         searchGroups: searchPracticeGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4">
@@ -277,6 +279,23 @@ export default async function PracticePage({
       </div>
     </FullPageLayout>
   );
+
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/practice"
+        />
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

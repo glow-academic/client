@@ -20,18 +20,18 @@ import { cookies } from "next/headers";
 import { loadLeaderboardSearchParams } from "@/lib/search-params/leaderboard";
 
 /** ---- Strong types from OpenAPI ---- */
-type LeaderboardIn = InputOf<"/leaderboard/get", "post">;
-type LeaderboardOut = OutputOf<"/leaderboard/get", "post">;
-type GenerateLeaderboardIn = InputOf<"/leaderboard/generate", "post">;
-type GenerateLeaderboardOut = OutputOf<"/leaderboard/generate", "post">;
-type GenerationsIn = InputOf<"/leaderboard/generations", "post">;
-type GenerationsOut = OutputOf<"/leaderboard/generations", "post">;
-type GroupLeaderboardIn = InputOf<"/leaderboard/group", "post">;
-type GroupLeaderboardOut = OutputOf<"/leaderboard/group", "post">;
-type ProblemLeaderboardIn = InputOf<"/leaderboard/problem", "post">;
-type ProblemLeaderboardOut = OutputOf<"/leaderboard/problem", "post">;
-type ContextIn = InputOf<"/leaderboard/context", "post">;
-type ContextOut = OutputOf<"/leaderboard/context", "post">;
+type LeaderboardIn = InputOf<"/attempt/leaderboard/get", "post">;
+type LeaderboardOut = OutputOf<"/attempt/leaderboard/get", "post">;
+type GenerateLeaderboardIn = InputOf<"/attempt/leaderboard/generate", "post">;
+type GenerateLeaderboardOut = OutputOf<"/attempt/leaderboard/generate", "post">;
+type GenerationsIn = InputOf<"/attempt/leaderboard/generations", "post">;
+type GenerationsOut = OutputOf<"/attempt/leaderboard/generations", "post">;
+type GroupLeaderboardIn = InputOf<"/attempt/leaderboard/group", "post">;
+type GroupLeaderboardOut = OutputOf<"/attempt/leaderboard/group", "post">;
+type ProblemLeaderboardIn = InputOf<"/attempt/leaderboard/problem", "post">;
+type ProblemLeaderboardOut = OutputOf<"/attempt/leaderboard/problem", "post">;
+type ContextIn = InputOf<"/attempt/leaderboard/context", "post">;
+type ContextOut = OutputOf<"/attempt/leaderboard/context", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Leaderboard responses can get large and exceed Next.js 2MB cache limit.
@@ -43,7 +43,7 @@ const getLeaderboard = async (
 ): Promise<LeaderboardOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/leaderboard/get", input, {
+  return api.post("/attempt/leaderboard/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -56,34 +56,34 @@ const getLeaderboard = async (
 /** ---- Strongly-typed server actions ---- */
 async function refreshLeaderboard(): Promise<void> {
   "use server";
-  await api.post("/leaderboard/refresh" as Parameters<typeof api.post>[0], { body: {} });
+  await api.post("/attempt/leaderboard/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
 async function generateLeaderboard(
   input: GenerateLeaderboardIn
 ): Promise<GenerateLeaderboardOut> {
   "use server";
-  return api.post("/leaderboard/generate", input);
+  return api.post("/attempt/leaderboard/generate", input);
 }
 
 async function getLeaderboardGroupHistory(groupId: string): Promise<GroupLeaderboardOut> {
   "use server";
-  return api.post("/leaderboard/group", { body: { group_id: groupId } } as GroupLeaderboardIn);
+  return api.post("/attempt/leaderboard/group", { body: { group_id: groupId } } as GroupLeaderboardIn);
 }
 
 async function searchLeaderboardGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/leaderboard/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/attempt/leaderboard/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createLeaderboardProblem(input: ProblemLeaderboardIn): Promise<ProblemLeaderboardOut> {
   "use server";
-  return api.post("/leaderboard/problem", input);
+  return api.post("/attempt/leaderboard/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/leaderboard/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/attempt/leaderboard/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -111,7 +111,7 @@ export default async function LeaderboardPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/leaderboard/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/attempt/leaderboard/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params via nuqs loader
@@ -135,7 +135,7 @@ export default async function LeaderboardPage({
         page_offset: 0,
       },
     }),
-    api.post("/leaderboard/group", { body: {} } as GroupLeaderboardIn),
+    api.post("/attempt/leaderboard/group", { body: {} } as GroupLeaderboardIn),
   ]);
 
   // Compute initial filters from inline facets
@@ -164,14 +164,10 @@ export default async function LeaderboardPage({
         artifactType: "leaderboard",
         groupId: (groupResult as GroupLeaderboardOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateLeaderboard,
-        permissions: [
-          { artifact: "leaderboard", operation: "draft" },
-          { artifact: "leaderboard", operation: "get" },
-          { artifact: "leaderboard", operation: "docs" },
-          { artifact: "leaderboard", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getLeaderboardGroupHistory,
         searchGroups: searchLeaderboardGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4" data-page="leaderboard-index">

@@ -179,13 +179,8 @@ function PersonaComponent({
   // --- AI Generation State ---
   const { isGenerating: isGeneratingBool, generate } =
     useGenerate({
-      permissions: [
-        { artifact: "persona", operation: "draft" },
-        { artifact: "persona", operation: "get" },
-        { artifact: "persona", operation: "docs" },
-        { artifact: "persona", operation: "group" },
-      ],
-      resources: [],
+      artifactType: "persona",
+      operations: ["draft", "get", "docs", "group"],
       groupId: groupId,
     });
 

@@ -218,14 +218,10 @@ export default async function DepartmentEditPage({
             artifactType: "department",
             groupId: (groupResult as GroupDepartmentOut & { group_id?: string })?.group_id ?? null,
             generateAction: generateDepartment,
-            permissions: [
-              { artifact: "department", operation: "draft" },
-              { artifact: "department", operation: "get" },
-              { artifact: "department", operation: "docs" },
-              { artifact: "department", operation: "group" },
-            ],
+            operations: ["draft", "get", "group"],
             getGroupHistory: getDepartmentGroupHistory,
             searchGroups: searchDepartmentGroups,
+            prompts: context.prompts?.prompts,
           }}
         >
           <div

@@ -20,20 +20,20 @@ import { loadReportsSearchParams } from "@/lib/search-params/reports";
 
 
 /** ---- Strong types from OpenAPI ---- */
-type ReportsIn = InputOf<"/report/search", "post">;
-type ReportsOut = OutputOf<"/report/search", "post">;
+type ReportsIn = InputOf<"/attempt/report/search", "post">;
+type ReportsOut = OutputOf<"/attempt/report/search", "post">;
 
 /** ---- Generation types ---- */
-type ContextIn = InputOf<"/report/context", "post">;
-type ContextOut = OutputOf<"/report/context", "post">;
-type GenerateReportsIn = InputOf<"/report/generate", "post">;
-type GenerateReportsOut = OutputOf<"/report/generate", "post">;
-type GenerationsIn = InputOf<"/report/generations", "post">;
-type GenerationsOut = OutputOf<"/report/generations", "post">;
-type GroupReportsIn = InputOf<"/report/group", "post">;
-type GroupReportsOut = OutputOf<"/report/group", "post">;
-type ProblemReportsIn = InputOf<"/report/problem", "post">;
-type ProblemReportsOut = OutputOf<"/report/problem", "post">;
+type ContextIn = InputOf<"/attempt/report/context", "post">;
+type ContextOut = OutputOf<"/attempt/report/context", "post">;
+type GenerateReportsIn = InputOf<"/attempt/report/generate", "post">;
+type GenerateReportsOut = OutputOf<"/attempt/report/generate", "post">;
+type GenerationsIn = InputOf<"/attempt/report/generations", "post">;
+type GenerationsOut = OutputOf<"/attempt/report/generations", "post">;
+type GroupReportsIn = InputOf<"/attempt/report/group", "post">;
+type GroupReportsOut = OutputOf<"/attempt/report/group", "post">;
+type ProblemReportsIn = InputOf<"/attempt/report/problem", "post">;
+type ProblemReportsOut = OutputOf<"/attempt/report/problem", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports responses exceed Next.js 2MB cache limit (~3.2MB).
@@ -43,7 +43,7 @@ type ProblemReportsOut = OutputOf<"/report/problem", "post">;
 const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/report/search", input, {
+  return api.post("/attempt/report/search", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -55,7 +55,7 @@ const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/report/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/attempt/report/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -83,7 +83,7 @@ export default async function ReportsFullPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/report/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/attempt/report/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params via nuqs loader
@@ -154,7 +154,7 @@ export default async function ReportsFullPage({
       },
     }),
     readViewCookie("reports"),
-    api.post("/report/group", { body: {} } as GroupReportsIn),
+    api.post("/attempt/report/group", { body: {} } as GroupReportsIn),
   ]);
 
   // Extract inline analytics facets from response (replaces computeAnalyticsDefaults)
@@ -228,14 +228,10 @@ export default async function ReportsFullPage({
         artifactType: "reports",
         groupId: (groupResult as GroupReportsOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateReports,
-        permissions: [
-          { artifact: "reports", operation: "draft" },
-          { artifact: "reports", operation: "get" },
-          { artifact: "reports", operation: "docs" },
-          { artifact: "reports", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getReportsGroupHistory,
         searchGroups: searchReportsGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4" data-page="reports-index">
@@ -256,29 +252,29 @@ export default async function ReportsFullPage({
 /** ---- Strongly-typed server actions ---- */
 async function refreshReports(): Promise<void> {
   "use server";
-  await api.post("/report/refresh" as Parameters<typeof api.post>[0], { body: {} });
+  await api.post("/attempt/report/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
 async function generateReports(
   input: GenerateReportsIn
 ): Promise<GenerateReportsOut> {
   "use server";
-  return api.post("/report/generate", input);
+  return api.post("/attempt/report/generate", input);
 }
 
 async function getReportsGroupHistory(groupId: string): Promise<GroupReportsOut> {
   "use server";
-  return api.post("/report/group", { body: { group_id: groupId } } as GroupReportsIn);
+  return api.post("/attempt/report/group", { body: { group_id: groupId } } as GroupReportsIn);
 }
 
 async function searchReportsGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/report/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/attempt/report/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createReportsProblem(input: ProblemReportsIn): Promise<ProblemReportsOut> {
   "use server";
-  return api.post("/report/problem", input);
+  return api.post("/attempt/report/problem", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

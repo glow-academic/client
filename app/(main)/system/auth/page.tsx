@@ -139,14 +139,10 @@ export default async function AuthPage() {
         artifactType: "auth",
         groupId: (groupResult as GroupAuthOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateAuth,
-        permissions: [
-          { artifact: "auth", operation: "draft" },
-          { artifact: "auth", operation: "get" },
-          { artifact: "auth", operation: "docs" },
-          { artifact: "auth", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getAuthGroupHistory,
         searchGroups: searchAuthGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4" data-page="auth-index">

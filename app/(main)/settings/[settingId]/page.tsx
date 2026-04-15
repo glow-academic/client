@@ -252,14 +252,10 @@ export default async function SettingEditPage({
             artifactType: "setting",
             groupId: (groupResult as GroupSettingOut & { group_id?: string })?.group_id ?? null,
             generateAction: generateSetting,
-            permissions: [
-              { artifact: "setting", operation: "draft" },
-              { artifact: "setting", operation: "get" },
-              { artifact: "setting", operation: "docs" },
-              { artifact: "setting", operation: "group" },
-            ],
+            operations: ["draft", "get", "group"],
             getGroupHistory: getSettingGroupHistory,
             searchGroups: searchSettingGroups,
+            prompts: context.prompts?.prompts,
           }}
         >
           <div

@@ -28,9 +28,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSocket } from "@/contexts/socket-context";
-import { useAttemptLifecycle } from "@/hooks/use-attempt-lifecycle";
-import type { AttemptStartedEvent, AttemptChatStartedEvent, AttemptErrorEvent } from "@/hooks/use-attempt-lifecycle";
+import { useAttemptStart } from "@/hooks/use-attempt-start";
 import { SvgIcon } from "@/components/common/SvgIcon";
 import {
   ChevronLeft,
@@ -45,7 +43,7 @@ import {
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/contexts/profile-context";
@@ -129,83 +127,48 @@ export default function SimulationCard({
   hasPassed,
   passRate,
   type,
-  _profile,
+  profile: _profile,
 }: SimulationCardProps) {
-  const router = useRouter();
-  const { socket, isConnected } = useSocket();
-
-  // Loading state for this card
-  const [isStarting, setIsStarting] = useState(false);
-  const isStartingRef = useRef(false);
+  useRouter(); // needed for Next.js navigation context
+  const { start, stage, error: startError } = useAttemptStart();
 
   // Rubric navigation state
   const [currentRubricIndex, setCurrentRubricIndex] = useState(0);
   const totalRubrics = rubrics?.length ?? 0;
 
-  // Listen for attempt lifecycle events to navigate
-  const { startAttempt } = useAttemptLifecycle({
-    socket,
-    onStarted: useCallback((data: AttemptStartedEvent) => {
-      if (!isStartingRef.current) return;
-      router.push(`/attempt/${data.attempt_id}`);
+  const isStarting = stage !== "idle" && stage !== "error";
 
-      // Dispatch custom event for analytics
-      window.dispatchEvent(
-        new CustomEvent("simulationButtonPressed", {
-          detail: { simulationId: id },
-        })
-      );
-    }, [router, id]),
-    onChatStarted: useCallback((data: AttemptChatStartedEvent) => {
-      if (!isStartingRef.current) return;
-      router.push(`/attempt/${data.attempt_id}`);
-
-      // Dispatch custom event for analytics
-      window.dispatchEvent(
-        new CustomEvent("simulationButtonPressed", {
-          detail: { simulationId: id },
-        })
-      );
-    }, [router, id]),
-    onError: useCallback((data: AttemptErrorEvent) => {
-      if (!isStartingRef.current) return;
-      if (data.type === "start") {
-        setIsStarting(false);
-        isStartingRef.current = false;
-        toast.error(data.message || "Failed to start simulation.");
-      }
-    }, []),
-  });
-
-  // Start training function - emits attempt_start via hook
+  // Start training function — orchestrates create → route → generate via hook
   const handleStartTraining = useCallback(
-    (infiniteMode: boolean = false) => {
+    async (infiniteMode: boolean = false) => {
       if (!homeId && !practiceId) {
         toast.error("Training bundle is missing for this simulation.");
         return;
       }
 
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected. Please refresh the page.");
-        return;
-      }
-
-      setIsStarting(true);
-      isStartingRef.current = true;
       toast.loading(
         infiniteMode ? "Starting infinite mode..." : "Starting simulation...",
-        {
-          dismissible: true,
-        }
+        { dismissible: true },
       );
 
-      startAttempt({
-        homeId: homeId ?? undefined,
-        practiceId: practiceId ?? undefined,
+      await start({
+        ...(homeId && { homeId }),
+        ...(practiceId && { practiceId }),
         infiniteMode,
       });
+
+      // Dispatch custom event for analytics
+      window.dispatchEvent(
+        new CustomEvent("simulationButtonPressed", {
+          detail: { simulationId: id },
+        }),
+      );
+
+      if (startError) {
+        toast.error(startError || "Failed to start simulation.");
+      }
     },
-    [homeId, practiceId, socket, isConnected, startAttempt]
+    [homeId, practiceId, start, id, startError],
   );
 
   // Determine which Lucide fallback icon to use (when no SVG icon is provided)

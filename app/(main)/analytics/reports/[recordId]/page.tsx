@@ -22,24 +22,24 @@ import { loadProfileReportSearchParams } from "@/lib/search-params/profile-repor
 
 
 /** ---- Strong types from OpenAPI ---- */
-type DashboardIn = InputOf<"/dashboard/get", "post">;
-type DashboardOut = OutputOf<"/dashboard/get", "post">;
+type DashboardIn = InputOf<"/attempt/dashboard/get", "post">;
+type DashboardOut = OutputOf<"/attempt/dashboard/get", "post">;
 type ReportHistoryOut = NonNullable<DashboardOut["history"]>;
-type ContextIn = InputOf<"/record/context", "post">;
-type ContextOut = OutputOf<"/record/context", "post">;
-type GenerateRecordIn = InputOf<"/record/generate", "post">;
-type GenerateRecordOut = OutputOf<"/record/generate", "post">;
-type GenerationsIn = InputOf<"/record/generations", "post">;
-type GenerationsOut = OutputOf<"/record/generations", "post">;
-type GroupRecordIn = InputOf<"/record/group", "post">;
-type GroupRecordOut = OutputOf<"/record/group", "post">;
-type ProblemRecordIn = InputOf<"/record/problem", "post">;
-type ProblemRecordOut = OutputOf<"/record/problem", "post">;
+type ContextIn = InputOf<"/attempt/record/context", "post">;
+type ContextOut = OutputOf<"/attempt/record/context", "post">;
+type GenerateRecordIn = InputOf<"/attempt/record/generate", "post">;
+type GenerateRecordOut = OutputOf<"/attempt/record/generate", "post">;
+type GenerationsIn = InputOf<"/attempt/record/generations", "post">;
+type GenerationsOut = OutputOf<"/attempt/record/generations", "post">;
+type GroupRecordIn = InputOf<"/attempt/record/group", "post">;
+type GroupRecordOut = OutputOf<"/attempt/record/group", "post">;
+type ProblemRecordIn = InputOf<"/attempt/record/problem", "post">;
+type ProblemRecordOut = OutputOf<"/attempt/record/problem", "post">;
 
 /** ---- Fetch function ---- */
 const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
   const bypassCache = await isHardRefresh();
-  return api.post("/dashboard/get", input, {
+  return api.post("/attempt/dashboard/get", input, {
     cache: "no-store",
     ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
   });
@@ -48,29 +48,29 @@ const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function refreshReports(): Promise<void> {
   "use server";
-  await api.post("/report/refresh" as Parameters<typeof api.post>[0], { body: {} });
+  await api.post("/attempt/report/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
 async function generateRecord(
   input: GenerateRecordIn
 ): Promise<GenerateRecordOut> {
   "use server";
-  return api.post("/record/generate", input);
+  return api.post("/attempt/record/generate", input);
 }
 
 async function getRecordGroupHistory(groupId: string): Promise<GroupRecordOut> {
   "use server";
-  return api.post("/record/group", { body: { group_id: groupId } } as GroupRecordIn);
+  return api.post("/attempt/record/group", { body: { group_id: groupId } } as GroupRecordIn);
 }
 
 async function searchRecordGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/record/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/attempt/record/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createRecordProblem(input: ProblemRecordIn): Promise<ProblemRecordOut> {
   "use server";
-  return api.post("/record/problem", input);
+  return api.post("/attempt/record/problem", input);
 }
 
 /** ---- Page metadata ---- */
@@ -80,7 +80,7 @@ export async function generateMetadata({
   params: Promise<{ recordId: string }>;
 }): Promise<Metadata> {
   const { recordId } = await params;
-  const context = await api.post("/record/context", { body: { entity_id: recordId } } as ContextIn) as ContextOut;
+  const context = await api.post("/attempt/record/context", { body: { entity_id: recordId } } as ContextIn) as ContextOut;
   return { title: context.page_metadata?.detail.title, description: context.page_metadata?.detail.description };
 }
 
@@ -108,7 +108,7 @@ export default async function RecordPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const pageContext = await api.post("/record/context", { body: {} } as ContextIn) as ContextOut;
+  const pageContext = await api.post("/attempt/record/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, pageContext.profile);
 
   // Parse search params via nuqs loader
@@ -188,8 +188,8 @@ export default async function RecordPage({
         ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
       },
     }),
-    api.post("/record/context", { body: { entity_id: recordId } } as ContextIn) as Promise<ContextOut>,
-    api.post("/record/group", { body: {} } as GroupRecordIn),
+    api.post("/attempt/record/context", { body: { entity_id: recordId } } as ContextIn) as Promise<ContextOut>,
+    api.post("/attempt/record/group", { body: {} } as GroupRecordIn),
   ]);
 
   const _entityName = context.page_metadata?.detail.title;
@@ -237,14 +237,10 @@ export default async function RecordPage({
         artifactType: "record",
         groupId: (groupResult as GroupRecordOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateRecord,
-        permissions: [
-          { artifact: "record", operation: "draft" },
-          { artifact: "record", operation: "get" },
-          { artifact: "record", operation: "docs" },
-          { artifact: "record", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getRecordGroupHistory,
         searchGroups: searchRecordGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="px-4">

@@ -192,14 +192,10 @@ export default async function NewParameterPage({
           artifactType: "parameter",
           groupId: (groupResult as GroupParameterOut & { group_id?: string })?.group_id ?? null,
           generateAction: generateParameter,
-          permissions: [
-            { artifact: "parameter", operation: "draft" },
-            { artifact: "parameter", operation: "get" },
-            { artifact: "parameter", operation: "docs" },
-            { artifact: "parameter", operation: "group" },
-          ],
+          operations: ["draft", "get", "group"],
           getGroupHistory: getParameterGroupHistory,
           searchGroups: searchParameterGroups,
+          prompts: context.prompts?.prompts,
         }}
       >
         <div className="space-y-6 px-4" data-page="parameter-new">

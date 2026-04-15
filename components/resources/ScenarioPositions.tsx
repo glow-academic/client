@@ -16,14 +16,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import {
   ArrowDown,
   ArrowUp,
   Check,
   GripVertical,
-  Loader2,
-  Sparkles,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -45,6 +42,7 @@ export interface ScenarioPositionResourceItem {
   id?: string | null;
   scenario_id?: string | null;
   value?: number | null;
+  pending?: boolean | null;
 }
 
 export interface ScenarioPositionItem {
@@ -91,17 +89,12 @@ export interface ScenarioPositionsProps {
       ) => Promise<CreateDraftScenarioPositionsOut>)
     | undefined;
   onPositionIdsChange?: (ids: string[]) => void;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (
     flush: () => Promise<{ scenario_position_ids: string[] } | void>,
   ) => void;
-  aiScenarioPositionResources?:
-    | Pick<ScenarioPositionResourceItem, "id" | "scenario_id" | "value">[]
-    | null;
   /** Value callback for unified draft — reports all scenario+position pairs */
   onScenarioPositionValues?: (positions: Array<{ scenario_id: string; value: number }>) => void;
 }
@@ -123,11 +116,8 @@ export function ScenarioPositions({
   create_tool_id,
   createScenarioPositionsAction,
   onPositionIdsChange,
-  onGenerate,
-  showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
-  aiScenarioPositionResources,
   onScenarioPositionValues,
 }: ScenarioPositionsProps) {
   const show = show_scenario_positions ?? false;
@@ -161,20 +151,15 @@ export function ScenarioPositions({
     return map;
   }, [scenarios, scenario_resources]);
 
-  // Socket-based AI suggestion handling via shared hook
-  type _AiPositionSuggestion = Pick<ScenarioPositionResourceItem, "id" | "scenario_id" | "value">;
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestion,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "scenario_positions",
-    groupId: group_id,
-  });
-
-  // Effective AI resources: hook suggestion takes priority, then prop fallback
-  const effectiveAiScenarioPositionResources =
-    aiSuggestion ?? aiScenarioPositionResources ?? null;
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return currentPositions.filter((p) => p.pending && p.scenario_id);
+  }, [currentPositions]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((p) => p.scenario_id).filter(Boolean) as string[]),
+    [pendingItems]
+  );
 
   // Map resource ID → artifact ID for API calls (API expects scenario_artifact.id)
   // From get_simulation SQL: s.id = scenarios_resource.id, s.scenario_id = scenario_artifact.id (via junction)
@@ -267,7 +252,7 @@ export function ScenarioPositions({
   const positionMap = useMemo(() => {
     const map = new Map<string, number>();
     currentPositions.forEach((pos) => {
-      if (pos.scenario_id && pos.value !== null) {
+      if (pos.scenario_id && pos.value != null) {
         map.set(pos.scenario_id, pos.value);
       }
     });
@@ -430,30 +415,19 @@ export function ScenarioPositions({
       .map(([scenarioId]) => scenarioId);
   }, [localPositions]);
 
-  // AI suggestion state
-  const showDiff = !!effectiveAiScenarioPositionResources?.length;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        effectiveAiScenarioPositionResources
-          ?.map((r) => r.scenario_id)
-          .filter(Boolean) as string[],
-      ),
-    [effectiveAiScenarioPositionResources],
-  );
-
-  // Accept AI suggestion - apply AI-suggested positions
+  // Accept pending — keep pending positions in selection (no-op, already included)
   const handleAccept = useCallback(() => {
-    if (!effectiveAiScenarioPositionResources?.length) return;
-    // Apply AI positions to local state
+    // Pending items are already in positions (selected=true), just confirm
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
+  }, []);
+
+  // Reject pending — remove pending positions from selection
+  const handleReject = useCallback(() => {
+    // Remove pending scenario IDs from localPositions and emit
     const newPositions = new Map(localPositions);
-    effectiveAiScenarioPositionResources.forEach((pos) => {
-      if (pos.scenario_id && pos.value !== null && pos.value !== undefined) {
-        newPositions.set(pos.scenario_id, pos.value);
-      }
-    });
+    pendingIds.forEach((sid) => newPositions.delete(sid));
     setLocalPositions(newPositions);
-    // Emit changes
     const positionsArray: ScenarioPositionItem[] = Array.from(
       newPositions.entries(),
     ).map(([sid, value]) => ({
@@ -463,19 +437,7 @@ export function ScenarioPositions({
       generated: false,
     }));
     onChange(positionsArray);
-    clearAi();
-  }, [
-    effectiveAiScenarioPositionResources,
-    localPositions,
-    simulation_id,
-    onChange,
-    clearAi,
-  ]);
-
-  // Reject AI suggestion - just clear the pending state
-  const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+  }, [localPositions, pendingIds, simulation_id, onChange]);
 
   // Don't render if show_scenario_positions is false or no scenarios (AFTER all hooks)
   if (!show || scenario_ids.length === 0) {
@@ -495,29 +457,6 @@ export function ScenarioPositions({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Generate Positions</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -556,54 +495,27 @@ export function ScenarioPositions({
           )}
         </div>
       )}
-      {/* AI-suggested positions preview */}
-      {showDiff &&
-        effectiveAiScenarioPositionResources &&
-        effectiveAiScenarioPositionResources.length > 0 && (
-          <div className="mb-4 space-y-2">
-            <p className="text-sm font-medium text-success">
-              AI Suggested Positions
-            </p>
-            <div className="space-y-2">
-              {effectiveAiScenarioPositionResources.map((item, idx) => {
-                const labelText = item.scenario_id
-                  ? (scenarioLabelMap.get(item.scenario_id) ??
-                    "Untitled scenario")
-                  : "Untitled scenario";
-                return (
-                  <div
-                    key={item.id || item.scenario_id || idx}
-                    className="flex items-center gap-2 p-2 rounded-lg border-2 border-success bg-success/10"
-                  >
-                    <GripVertical className="h-4 w-4 text-muted-foreground" />
-                    <Label className="text-sm w-56 truncate">
-                      {labelText}
-                    </Label>
-                    <Label className="text-sm w-20">Position:</Label>
-                    <span className="text-sm font-medium">
-                      {item.value ?? "-"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       <div className="space-y-2">
         {sortedScenarios.map((scenarioId) => {
           const position = localPositions.get(scenarioId) || 1;
           const maxPos = Math.max(...Array.from(localPositions.values()));
           const labelText =
             scenarioLabelMap.get(scenarioId) ?? "Untitled scenario";
-          const isAiSuggested = showDiff && aiSuggestedIds.has(scenarioId);
+          const isPending = pendingIds.has(scenarioId);
           return (
             <div
               key={scenarioId}
               className={cn(
-                "flex items-center gap-2 p-2 border rounded-md",
-                isAiSuggested && "ring-2 ring-success bg-success/5",
+                "relative flex items-center gap-2 p-2 border rounded-md",
+                isPending && "ring-2 ring-success bg-success/10",
               )}
             >
+              {/* Pending badge */}
+              {isPending && (
+                <div className="absolute top-1 right-1 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </div>
+              )}
               <GripVertical className="h-4 w-4 text-muted-foreground" />
               <Label className="text-sm w-56 truncate" title={labelText}>
                 {labelText}

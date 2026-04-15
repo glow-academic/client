@@ -211,14 +211,10 @@ export default async function NewToolPage({
           artifactType: "tool",
           groupId: (groupResult as GroupToolOut & { group_id?: string })?.group_id ?? null,
           generateAction: generateTool,
-          permissions: [
-            { artifact: "tool", operation: "draft" },
-            { artifact: "tool", operation: "get" },
-            { artifact: "tool", operation: "docs" },
-            { artifact: "tool", operation: "group" },
-          ],
+          operations: ["draft", "get", "group"],
           getGroupHistory: getToolGroupHistory,
           searchGroups: searchToolGroups,
+          prompts: context.prompts?.prompts,
         }}
       >
         <div

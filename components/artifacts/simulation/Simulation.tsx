@@ -62,15 +62,6 @@ type SimulationResourceType =
   | ResourceType
   | "scenario_time_limits";
 type GeneratedResource = { generated?: boolean | null };
-type CreateDraftScenarioPositionsAction = NonNullable<
-  React.ComponentProps<typeof ScenarioPositions>["createScenarioPositionsAction"]
->;
-type CreateDraftScenarioRubricsAction = NonNullable<
-  React.ComponentProps<typeof ScenarioRubrics>["createScenarioRubricsAction"]
->;
-type CreateDraftScenarioTimeLimitsAction = NonNullable<
-  React.ComponentProps<typeof ScenarioTimeLimits>["createScenarioTimeLimitsAction"]
->;
 
 const EMPTY_FORM_STATE: SimulationFormState = {
   name_id: null,
@@ -179,12 +170,6 @@ export interface SimulationProps {
   patchSimulationDraftAction?: (
     input: PatchSimulationDraftIn,
   ) => Promise<PatchSimulationDraftOut>;
-  createScenarioFlagsAction?: React.ComponentProps<
-    typeof ScenarioFlags
-  >["createScenarioFlagsAction"];
-  createScenarioPositionsAction?: CreateDraftScenarioPositionsAction;
-  createScenarioRubricsAction?: CreateDraftScenarioRubricsAction;
-  createScenarioTimeLimitsAction?: CreateDraftScenarioTimeLimitsAction;
 }
 
 const FLUSH_KEYS = [
@@ -256,10 +241,6 @@ function SimulationComponent({
   createSimulationAction,
   updateSimulationAction,
   patchSimulationDraftAction,
-  createScenarioFlagsAction,
-  createScenarioPositionsAction,
-  createScenarioRubricsAction,
-  createScenarioTimeLimitsAction,
 }: SimulationProps) {
   const router = useRouter();
   const isEditMode = !!simulationId;
@@ -1394,15 +1375,12 @@ function SimulationComponent({
                   scenario_ids={formState.scenario_ids ?? []}
                   scenario_resources={selectedScenarios}
                   show_scenarios={(s.scenarios?.length ?? 0) > 0 || SIMULATION_REQUIRED.scenarios}
-                  scenario_suggestions={scenarioSuggestions}
                   scenarios={s.scenarios ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, scenario_ids: ids }))
                   }
-                  onGenerate={handleGenerateScenarios}
                   required={SIMULATION_REQUIRED.scenarios}
-                  showAiGenerate={s.show_ai_generate ?? false}
                   searchTerm={scenarioSearch ?? ""}
                   showSelectedOnly={scenarioShowSelected}
                 />
@@ -1421,10 +1399,7 @@ function SimulationComponent({
                       scenario_flag_ids: ids,
                   }))
                   }
-                  createScenarioFlagsAction={createScenarioFlagsAction}
-                  onGenerate={handleGenerateScenarioFlags}
                   required={SIMULATION_REQUIRED.scenario_flags}
-                  showAiGenerate={s.show_ai_generate ?? false}
                   onScenarioFlagValues={(flags) =>
                     setFormState((prev) => ({
                       ...prev,
@@ -1438,7 +1413,6 @@ function SimulationComponent({
                   scenario_position_ids={formState.scenario_position_ids ?? []}
                   scenario_position_resources={selectedScenarioPositions}
                   show_scenario_positions={showScenarioPositions}
-                  scenario_position_suggestions={scenarioPositionSuggestions}
                   scenario_positions={s.scenario_positions ?? []}
                   scenarios={s.scenarios ?? []}
                   scenario_resources={selectedScenarios}
@@ -1452,10 +1426,7 @@ function SimulationComponent({
                   }
                   simulation_id={simulationId || null}
                   scenario_ids={formState.scenario_ids}
-                  createScenarioPositionsAction={createScenarioPositionsAction}
-                  onGenerate={handleGenerateScenarioPositions}
                   required={SIMULATION_REQUIRED.scenario_positions}
-                  showAiGenerate={s.show_ai_generate ?? false}
                   onScenarioPositionValues={(positions) =>
                     setFormState((prev) => ({
                       ...prev,
@@ -1469,7 +1440,6 @@ function SimulationComponent({
                   scenario_rubric_ids={formState.scenario_rubric_ids ?? []}
                   scenario_rubric_resources={selectedScenarioRubrics}
                   show_scenario_rubrics={showScenarioRubrics}
-                  scenario_rubric_suggestions={scenarioRubricSuggestions}
                   scenario_rubrics={s.scenario_rubrics ?? []}
                   rubrics={(s.rubrics ?? [])
                     .filter((rubric) => rubric.id && rubric.name)
@@ -1488,10 +1458,7 @@ function SimulationComponent({
                       scenario_rubric_ids: ids,
                   }))
                   }
-                  createScenarioRubricsAction={createScenarioRubricsAction}
-                  onGenerate={handleGenerateScenarioRubrics}
                   required={SIMULATION_REQUIRED.scenario_rubrics}
-                  showAiGenerate={s.show_ai_generate ?? false}
                   onScenarioRubricValues={(rubrics) =>
                     setFormState((prev) => ({
                       ...prev,
@@ -1517,12 +1484,7 @@ function SimulationComponent({
                       scenario_time_limit_ids: ids,
                     }))
                   }
-                  createScenarioTimeLimitsAction={
-                    createScenarioTimeLimitsAction
-                  }
-                  onGenerate={handleGenerateScenarioTimeLimits}
                   required={SIMULATION_REQUIRED.scenario_time_limits}
-                  showAiGenerate={s.show_ai_generate ?? false}
                   onScenarioTimeLimitValues={(timeLimits) =>
                     setFormState((prev) => ({
                       ...prev,
@@ -1556,10 +1518,6 @@ function SimulationComponent({
       stepResources,
       canRegenerate,
       handleDirectStepGenerate,
-      createScenarioFlagsAction,
-      createScenarioPositionsAction,
-      createScenarioRubricsAction,
-      createScenarioTimeLimitsAction,
       scenarioResourcesWithShowHints,
       isAutosaveEnabled,
       registerFlushCallbacks,

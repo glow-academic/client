@@ -188,14 +188,10 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
         artifactType: "agent",
         groupId: (groupResult as GroupAgentOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateAgent,
-        permissions: [
-          { artifact: "agent", operation: "draft" },
-          { artifact: "agent", operation: "get" },
-          { artifact: "agent", operation: "docs" },
-          { artifact: "agent", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getAgentGroupHistory,
         searchGroups: searchAgentGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4" data-page="agents-index">

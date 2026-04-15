@@ -42,7 +42,8 @@ interface PanelProps {
   /** Artifact type — used for both event namespacing and route prefix (e.g. "persona" → /persona/*) */
   artifactType: string;
   groupId: string | null;
-  permissions: Array<{ artifact: string; operation: string }>;
+  operations: string[];
+  prompts?: Record<string, Array<{ title: string; content: string }>>;
 }
 
 export interface FullPageLayoutProps {
@@ -154,7 +155,8 @@ export function FullPageLayout({
                     onToggle={togglePanel}
                     artifactType={panelProps.artifactType}
                     groupId={panelProps.groupId}
-                    permissions={panelProps.permissions}
+                    operations={panelProps.operations}
+                    prompts={panelProps.prompts}
                   />
                 )}
               </div>

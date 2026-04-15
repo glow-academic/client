@@ -139,14 +139,10 @@ export default async function FieldsPage() {
         artifactType: "field",
         groupId: (groupResult as GroupFieldOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateField,
-        permissions: [
-          { artifact: "field", operation: "draft" },
-          { artifact: "field", operation: "get" },
-          { artifact: "field", operation: "docs" },
-          { artifact: "field", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getFieldGroupHistory,
         searchGroups: searchFieldGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4" data-page="fields-index">

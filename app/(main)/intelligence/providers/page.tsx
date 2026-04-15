@@ -188,14 +188,10 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
         artifactType: "provider",
         groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateProvider,
-        permissions: [
-          { artifact: "provider", operation: "draft" },
-          { artifact: "provider", operation: "get" },
-          { artifact: "provider", operation: "docs" },
-          { artifact: "provider", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getProviderGroupHistory,
         searchGroups: searchProviderGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4" data-page="providers-index">

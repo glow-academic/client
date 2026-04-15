@@ -33,9 +33,9 @@ type GeneratePayload = Parameters<ClientToServerEvents["generate"]>[0];
 
 /**
  * Fields the caller passes to `generate()`.
- * `artifact_types` and `resource_types` are injected by the hook.
+ * `artifact_type` and `operations` are injected by the hook.
  */
-type GenerateOptions = Omit<GeneratePayload, "artifact_types" | "resource_types">;
+type GenerateOptions = Omit<GeneratePayload, "artifact_type" | "operations">;
 
 interface UseArtifactAiConfig {
   /** Registry key, e.g. "cohort", "persona", "tool" */
@@ -183,8 +183,8 @@ export function useArtifactAi({
 
       // Emit the unified `generate` event
       socket.emit("generate", {
-        artifact_types: [{ name: artifactType, operation: "get" as const }],
-        resource_types: resourceTypes,
+        artifact_type: artifactType,
+        operations: ["get"],
         ...options,
       });
 

@@ -177,14 +177,10 @@ export default async function AttemptPage({
           artifactType: "attempt",
           groupId: (groupResult as GroupAttemptOut & { group_id?: string })?.group_id ?? null,
           generateAction: generateAttempt,
-          permissions: [
-            { artifact: "attempt", operation: "draft" },
-            { artifact: "attempt", operation: "get" },
-            { artifact: "attempt", operation: "docs" },
-            { artifact: "attempt", operation: "group" },
-          ],
+          operations: ["draft", "get", "group"],
           getGroupHistory: getAttemptGroupHistory,
           searchGroups: searchAttemptGroups,
+          prompts: context.prompts?.prompts,
         }}
       >
         <div className="space-y-6 px-4">

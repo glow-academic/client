@@ -8,15 +8,13 @@
  *   /management/documents/new     → document new, create+draft+get+docs
  */
 
-import type { Permission } from "@/hooks/use-generate";
-
 export interface GenerationConfig {
   /** Artifact type derived from route (e.g. "persona", "scenario") */
   artifactType: string;
   /** Page mode: "list", "new", or "edit" */
   mode: "list" | "new" | "edit";
-  /** Permissions for the AI model */
-  permissions: Permission[];
+  /** Operations the AI model can perform */
+  operations: string[];
   /** Contextual params the model can pass to tools */
   params: Record<string, string>;
 }
@@ -66,12 +64,8 @@ export function deriveGenerationConfig(
     mode = "edit";
   }
 
-  // Permissions based on mode
-  const operations = MODE_OPERATIONS[mode];
-  const permissions = [
-    ...operations.map((op) => ({ artifact: artifactType, operation: op })),
-    { artifact: artifactType, operation: "group" },
-  ];
+  // Operations based on mode
+  const operations = [...MODE_OPERATIONS[mode], "group"];
 
   // Params from URL
   const params: Record<string, string> = {};
@@ -79,5 +73,5 @@ export function deriveGenerationConfig(
   if (draftId) params.draft_id = draftId;
   if (mode === "edit" && tail) params.artifact_id = tail;
 
-  return { artifactType, mode, permissions, params };
+  return { artifactType, mode, operations, params };
 }

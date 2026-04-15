@@ -18,18 +18,18 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type PricingGroupDetailIn = InputOf<"/group/get", "post">;
-type PricingGroupDetailOut = OutputOf<"/group/get", "post">;
-type ContextIn = InputOf<"/group/context", "post">;
-type ContextOut = OutputOf<"/group/context", "post">;
-type GenerateGroupIn = InputOf<"/group/generate", "post">;
-type GenerateGroupOut = OutputOf<"/group/generate", "post">;
-type GenerationsIn = InputOf<"/group/generations", "post">;
-type GenerationsOut = OutputOf<"/group/generations", "post">;
-type GroupGroupIn = InputOf<"/group/group", "post">;
-type GroupGroupOut = OutputOf<"/group/group", "post">;
-type ProblemGroupIn = InputOf<"/group/problem", "post">;
-type ProblemGroupOut = OutputOf<"/group/problem", "post">;
+type PricingGroupDetailIn = InputOf<"/system/group/get", "post">;
+type PricingGroupDetailOut = OutputOf<"/system/group/get", "post">;
+type ContextIn = InputOf<"/system/group/context", "post">;
+type ContextOut = OutputOf<"/system/group/context", "post">;
+type GenerateGroupIn = InputOf<"/system/group/generate", "post">;
+type GenerateGroupOut = OutputOf<"/system/group/generate", "post">;
+type GenerationsIn = InputOf<"/system/group/generations", "post">;
+type GenerationsOut = OutputOf<"/system/group/generations", "post">;
+type GroupGroupIn = InputOf<"/system/group/group", "post">;
+type GroupGroupOut = OutputOf<"/system/group/group", "post">;
+type ProblemGroupIn = InputOf<"/system/group/problem", "post">;
+type ProblemGroupOut = OutputOf<"/system/group/problem", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getPricingGroupDetail = async (
@@ -37,7 +37,7 @@ const getPricingGroupDetail = async (
 ): Promise<PricingGroupDetailOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/group/get", input, {
+  return api.post("/system/group/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -52,22 +52,22 @@ async function generateGroup(
   input: GenerateGroupIn
 ): Promise<GenerateGroupOut> {
   "use server";
-  return api.post("/group/generate", input);
+  return api.post("/system/group/generate", input);
 }
 
 async function getGroupGroupHistory(groupId: string): Promise<GroupGroupOut> {
   "use server";
-  return api.post("/group/group", { body: { group_id: groupId } } as GroupGroupIn);
+  return api.post("/system/group/group", { body: { group_id: groupId } } as GroupGroupIn);
 }
 
 async function searchGroupGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/group/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/system/group/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createGroupProblem(input: ProblemGroupIn): Promise<ProblemGroupOut> {
   "use server";
-  return api.post("/group/problem", input);
+  return api.post("/system/group/problem", input);
 }
 
 /** ---- Page metadata ---- */
@@ -77,7 +77,7 @@ export async function generateMetadata({
   params: Promise<{ groupId: string }>;
 }): Promise<Metadata> {
   const { groupId } = await params;
-  const context = await api.post("/group/context", { body: { entity_id: groupId } } as ContextIn) as ContextOut;
+  const context = await api.post("/system/group/context", { body: { entity_id: groupId } } as ContextIn) as ContextOut;
   return { title: context.page_metadata?.detail.title, description: context.page_metadata?.detail.description };
 }
 
@@ -105,7 +105,7 @@ export default async function PricingGroupPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const pageContext = await api.post("/group/context", { body: {} } as ContextIn) as ContextOut;
+  const pageContext = await api.post("/system/group/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, pageContext.profile);
 
   const [groupDetail, context, genGroupResult] = await Promise.all([
@@ -114,8 +114,8 @@ export default async function PricingGroupPage({
         group_id: groupId,
       },
     }),
-    api.post("/group/context", { body: { entity_id: groupId } } as ContextIn) as Promise<ContextOut>,
-    api.post("/group/group", { body: {} } as GroupGroupIn),
+    api.post("/system/group/context", { body: { entity_id: groupId } } as ContextIn) as Promise<ContextOut>,
+    api.post("/system/group/group", { body: {} } as GroupGroupIn),
   ]);
 
   const _entityName = context.page_metadata?.detail.title;
@@ -139,14 +139,10 @@ export default async function PricingGroupPage({
         artifactType: "group",
         groupId: (genGroupResult as GroupGroupOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateGroup,
-        permissions: [
-          { artifact: "group", operation: "draft" },
-          { artifact: "group", operation: "get" },
-          { artifact: "group", operation: "docs" },
-          { artifact: "group", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getGroupGroupHistory,
         searchGroups: searchGroupGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">

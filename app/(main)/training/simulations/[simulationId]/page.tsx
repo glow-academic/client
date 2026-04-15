@@ -10,10 +10,6 @@ import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import type { ScenarioFlagsProps } from "@/components/resources/ScenarioFlags";
-import type { ScenarioPositionsProps } from "@/components/resources/ScenarioPositions";
-import type { ScenarioRubricsProps } from "@/components/resources/ScenarioRubrics";
-import type { ScenarioTimeLimitsProps } from "@/components/resources/ScenarioTimeLimits";
 import Simulation from "@/components/artifacts/simulation/Simulation";
 import { DraftProviderClient } from "@/contexts/draft-context";
 
@@ -32,18 +28,6 @@ type UpdateSimulationIn = InputOf<"/simulation/update", "post">;
 type UpdateSimulationOut = OutputOf<"/simulation/update", "post">;
 type PatchSimulationDraftIn = InputOf<"/simulation/draft", "patch">;
 type PatchSimulationDraftOut = OutputOf<"/simulation/draft", "patch">;
-type CreateDraftScenarioFlagsAction = NonNullable<
-  ScenarioFlagsProps["createScenarioFlagsAction"]
->;
-type CreateDraftScenarioPositionsAction = NonNullable<
-  ScenarioPositionsProps["createScenarioPositionsAction"]
->;
-type CreateDraftScenarioRubricsAction = NonNullable<
-  ScenarioRubricsProps["createScenarioRubricsAction"]
->;
-type CreateDraftScenarioTimeLimitsAction = NonNullable<
-  ScenarioTimeLimitsProps["createScenarioTimeLimitsAction"]
->;
 type GroupSimulationIn = InputOf<"/simulation/group", "post">;
 type GroupSimulationOut = OutputOf<"/simulation/group", "post">;
 type GenerateSimulationIn = InputOf<"/simulation/generate", "post">;
@@ -102,58 +86,6 @@ async function patchSimulationDraft(
   "use server";
   return api.patch("/simulation/draft", input);
 }
-
-const createDraftScenarioFlags: CreateDraftScenarioFlagsAction = async (
-  input
-) => {
-  "use server";
-  return (api.post as unknown as (
-    path: string,
-    payload: Parameters<CreateDraftScenarioFlagsAction>[0]
-  ) => ReturnType<CreateDraftScenarioFlagsAction>)(
-    "/resources/scenario_flags",
-    input
-  );
-};
-
-const createDraftScenarioPositions: CreateDraftScenarioPositionsAction = async (
-  input,
-) => {
-  "use server";
-  return (api.post as unknown as (
-    path: string,
-    payload: Parameters<CreateDraftScenarioPositionsAction>[0],
-  ) => ReturnType<CreateDraftScenarioPositionsAction>)(
-    "/resources/scenario_positions",
-    input,
-  );
-};
-
-const createDraftScenarioRubrics: CreateDraftScenarioRubricsAction = async (
-  input,
-) => {
-  "use server";
-  return (api.post as unknown as (
-    path: string,
-    payload: Parameters<CreateDraftScenarioRubricsAction>[0],
-  ) => ReturnType<CreateDraftScenarioRubricsAction>)(
-    "/resources/scenario_rubrics",
-    input,
-  );
-};
-
-const createDraftScenarioTimeLimits: CreateDraftScenarioTimeLimitsAction = async (
-  input,
-) => {
-  "use server";
-  return (api.post as unknown as (
-    path: string,
-    payload: Parameters<CreateDraftScenarioTimeLimitsAction>[0],
-  ) => ReturnType<CreateDraftScenarioTimeLimitsAction>)(
-    "/resources/scenario_time_limits",
-    input,
-  );
-};
 
 async function generateSimulation(
   input: GenerateSimulationIn
@@ -286,14 +218,10 @@ export default async function EditSimulationPage({
             artifactType: "simulation",
             groupId: (groupResult as GroupSimulationOut & { group_id?: string })?.group_id ?? null,
             generateAction: generateSimulation,
-            permissions: [
-              { artifact: "simulation", operation: "draft" },
-              { artifact: "simulation", operation: "get" },
-              { artifact: "simulation", operation: "docs" },
-              { artifact: "simulation", operation: "group" },
-            ],
+            operations: ["draft", "get", "group"],
             getGroupHistory: getSimulationGroupHistory,
             searchGroups: searchSimulationGroups,
+            prompts: context.prompts?.prompts,
           } as never}
         >
           <div
@@ -306,10 +234,6 @@ export default async function EditSimulationPage({
               simulationData={simulationData}
               updateSimulationAction={updateSimulation}
               patchSimulationDraftAction={patchSimulationDraft}
-              createScenarioFlagsAction={createDraftScenarioFlags}
-              createScenarioPositionsAction={createDraftScenarioPositions}
-              createScenarioRubricsAction={createDraftScenarioRubrics}
-              createScenarioTimeLimitsAction={createDraftScenarioTimeLimits}
             />
           </div>
         </FullPageLayout>

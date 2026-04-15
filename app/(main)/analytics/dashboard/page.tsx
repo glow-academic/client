@@ -21,8 +21,8 @@ import { loadDashboardSearchParams } from "@/lib/search-params/dashboard";
 
 
 /** ---- Strong types from OpenAPI ---- */
-type DashboardIn = InputOf<"/dashboard/get", "post">;
-type DashboardOut = OutputOf<"/dashboard/get", "post">;
+type DashboardIn = InputOf<"/attempt/dashboard/get", "post">;
+type DashboardOut = OutputOf<"/attempt/dashboard/get", "post">;
 type DashboardHistoryOut = NonNullable<DashboardOut["history"]>;
 type BulkArchiveAttemptsIn = InputOf<
   "/api/v5/attempts/simulation/archive",
@@ -34,21 +34,21 @@ type BulkArchiveAttemptsOut = OutputOf<
 >;
 
 /** ---- Generation types ---- */
-type ContextIn = InputOf<"/dashboard/context", "post">;
-type ContextOut = OutputOf<"/dashboard/context", "post">;
-type GenerateDashboardIn = InputOf<"/dashboard/generate", "post">;
-type GenerateDashboardOut = OutputOf<"/dashboard/generate", "post">;
-type GenerationsIn = InputOf<"/dashboard/generations", "post">;
-type GenerationsOut = OutputOf<"/dashboard/generations", "post">;
-type GroupDashboardIn = InputOf<"/dashboard/group", "post">;
-type GroupDashboardOut = OutputOf<"/dashboard/group", "post">;
-type ProblemDashboardIn = InputOf<"/dashboard/problem", "post">;
-type ProblemDashboardOut = OutputOf<"/dashboard/problem", "post">;
+type ContextIn = InputOf<"/attempt/dashboard/context", "post">;
+type ContextOut = OutputOf<"/attempt/dashboard/context", "post">;
+type GenerateDashboardIn = InputOf<"/attempt/dashboard/generate", "post">;
+type GenerateDashboardOut = OutputOf<"/attempt/dashboard/generate", "post">;
+type GenerationsIn = InputOf<"/attempt/dashboard/generations", "post">;
+type GenerationsOut = OutputOf<"/attempt/dashboard/generations", "post">;
+type GroupDashboardIn = InputOf<"/attempt/dashboard/group", "post">;
+type GroupDashboardOut = OutputOf<"/attempt/dashboard/group", "post">;
+type ProblemDashboardIn = InputOf<"/attempt/dashboard/problem", "post">;
+type ProblemDashboardOut = OutputOf<"/attempt/dashboard/problem", "post">;
 
 /** ---- Fetch function ---- */
 const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
   const bypassCache = await isHardRefresh();
-  return api.post("/dashboard/get", input, {
+  return api.post("/attempt/dashboard/get", input, {
     cache: "no-store",
     ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
   });
@@ -56,7 +56,7 @@ const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/dashboard/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/attempt/dashboard/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -84,7 +84,7 @@ export default async function DashboardPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/dashboard/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/attempt/dashboard/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params via nuqs loader
@@ -153,7 +153,7 @@ export default async function DashboardPage({
       },
     }),
     readViewCookie("history"),
-    api.post("/dashboard/group", { body: {} } as GroupDashboardIn),
+    api.post("/attempt/dashboard/group", { body: {} } as GroupDashboardIn),
   ]);
 
   // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
@@ -208,14 +208,10 @@ export default async function DashboardPage({
         artifactType: "dashboard",
         groupId: (groupResult as GroupDashboardOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateDashboard,
-        permissions: [
-          { artifact: "dashboard", operation: "draft" },
-          { artifact: "dashboard", operation: "get" },
-          { artifact: "dashboard", operation: "docs" },
-          { artifact: "dashboard", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getDashboardGroupHistory,
         searchGroups: searchDashboardGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="px-4">
@@ -250,7 +246,7 @@ export default async function DashboardPage({
 /** ---- Strongly-typed server actions ---- */
 async function refreshDashboard(): Promise<void> {
   "use server";
-  await api.post("/dashboard/refresh" as Parameters<typeof api.post>[0], { body: {} });
+  await api.post("/attempt/dashboard/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
 async function bulkArchiveAttempts(
@@ -264,22 +260,22 @@ async function generateDashboard(
   input: GenerateDashboardIn
 ): Promise<GenerateDashboardOut> {
   "use server";
-  return api.post("/dashboard/generate", input);
+  return api.post("/attempt/dashboard/generate", input);
 }
 
 async function getDashboardGroupHistory(groupId: string): Promise<GroupDashboardOut> {
   "use server";
-  return api.post("/dashboard/group", { body: { group_id: groupId } } as GroupDashboardIn);
+  return api.post("/attempt/dashboard/group", { body: { group_id: groupId } } as GroupDashboardIn);
 }
 
 async function searchDashboardGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/dashboard/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/attempt/dashboard/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createDashboardProblem(input: ProblemDashboardIn): Promise<ProblemDashboardOut> {
   "use server";
-  return api.post("/dashboard/problem", input);
+  return api.post("/attempt/dashboard/problem", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

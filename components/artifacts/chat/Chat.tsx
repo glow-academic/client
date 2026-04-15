@@ -16,12 +16,7 @@ import { Images } from "@/components/resources/Images";
 import { ProblemStatements } from "@/components/resources/ProblemStatements";
 import { Objectives } from "@/components/resources/Objectives";
 import { useSocket } from "@/contexts/socket-context";
-import { useAttemptLifecycle } from "@/hooks/use-attempt-lifecycle";
-import type {
-  AttemptChatStartedEvent,
-  AttemptEndedEvent,
-  AttemptErrorEvent,
-} from "@/hooks/use-attempt-lifecycle";
+import { useAttemptGenerate } from "@/hooks/use-attempt-generate";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useRouter } from "next/navigation";
 import { parseAsBoolean, parseAsString, useQueryStates } from "nuqs";
@@ -34,11 +29,11 @@ type GetChatOut = OutputOf<
 >;
 export type ChatData = GetChatOut;
 type PatchChatDraftIn = InputOf<
-  "/chat/draft",
+  "/attempt/draft",
   "patch"
 >;
 type PatchChatDraftOut = OutputOf<
-  "/chat/draft",
+  "/attempt/draft",
   "patch"
 >;
 
@@ -64,6 +59,7 @@ interface ChatProps {
     input: PatchChatDraftIn,
   ) => Promise<PatchChatDraftOut>;
   attemptId: string;
+  chatEntryId: string;
 }
 
 function extractIds<T>(
@@ -80,6 +76,7 @@ export default function Chat({
   bundleData,
   patchChatDraftAction,
   attemptId,
+  chatEntryId,
 }: ChatProps) {
   const router = useRouter();
   const { socket, isConnected } = useSocket();
@@ -135,45 +132,8 @@ export default function Chat({
   const savingRef = useRef(false);
   const serverSyncPendingRef = useRef(false);
 
-  // Listen for attempt lifecycle events after submitting
-  const { nextScenario } = useAttemptLifecycle({
-    socket,
-    attemptId,
-    onChatStarted: useCallback(
-      (data: AttemptChatStartedEvent) => {
-        if (!isStartingRef.current) return;
-        isStartingRef.current = false;
-        setIsSaving(false);
-        if (data.attempt_id === attemptId) {
-          router.refresh();
-        }
-      },
-      [attemptId, router],
-    ),
-    onEnded: useCallback(
-      (data: AttemptEndedEvent) => {
-        if (!isStartingRef.current) return;
-        isStartingRef.current = false;
-        setIsSaving(false);
-        if (data.attempt_id === attemptId) {
-          router.push(`/attempt/${attemptId}/results`);
-        }
-      },
-      [attemptId, router],
-    ),
-    onError: useCallback((data: AttemptErrorEvent) => {
-      if (!isStartingRef.current) return;
-      if (
-        data.type === "end" ||
-        data.type === "start" ||
-        data.type === "next"
-      ) {
-        isStartingRef.current = false;
-        setIsSaving(false);
-        toast.error(data.message || "Failed to start training.");
-      }
-    }, []),
-  });
+  // Generate hook — saves draft then generates
+  const { generate, error: generateError } = useAttemptGenerate();
 
   useEffect(() => {
     if (draftId && draftId !== urlParams.draftId) {
@@ -287,13 +247,20 @@ export default function Chat({
     isStartingRef.current = true;
     try {
       await saveDraftNow();
-      nextScenario(attemptId, { draftId: draftId ?? undefined });
+      await generate({
+        attemptId,
+        chatId: chatEntryId,
+        chatConfig: formState as unknown as Record<string, unknown>,
+        draftId: draftId ?? undefined,
+      });
+      setIsSaving(false);
+      isStartingRef.current = false;
     } catch {
       setIsSaving(false);
       isStartingRef.current = false;
-      toast.error("Failed to save draft.");
+      toast.error(generateError || "Failed to start training.");
     }
-  }, [socket, isConnected, saveDraftNow, attemptId, draftId, nextScenario]);
+  }, [socket, isConnected, saveDraftNow, attemptId, chatEntryId, formState, draftId, generate, generateError]);
 
   if (!s.profile_has_access) {
     return (

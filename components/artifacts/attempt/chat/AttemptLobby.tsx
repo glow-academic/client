@@ -4,17 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useSocket } from "@/contexts/socket-context";
-import { useAttemptLifecycle } from "@/hooks/use-attempt-lifecycle";
-import type {
-  AttemptChatStartedEvent,
-  AttemptEndedEvent,
-  AttemptErrorEvent,
-} from "@/hooks/use-attempt-lifecycle";
+import { useTransport } from "@/lib/transport/context";
+import { useAttemptGenerate } from "@/hooks/use-attempt-generate";
+import { useAttemptEnd } from "@/hooks/use-attempt-end";
 import type { components } from "@/lib/api/schema";
 import { Play, SlidersHorizontal, SkipForward } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type AvailableContinuationOptions =
@@ -48,81 +44,42 @@ export function AttemptLobby({
   continuationOptions,
 }: AttemptLobbyProps) {
   const router = useRouter();
-  const { socket, isConnected } = useSocket();
-  const [isStarting, setIsStarting] = useState(false);
-  const isStartingRef = useRef(false);
+  const transport = useTransport();
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<string>("");
+
+  const { generate, stage: generateStage, error: generateError } = useAttemptGenerate();
+  const { usePrevious: applyPrevious, stage: endStage, error: endError } = useAttemptEnd();
 
   const options = useMemo(
     () => continuationOptions?.options ?? [],
     [continuationOptions],
   );
 
-  // Listen for attempt lifecycle events
-  const { nextScenario, usePrevious: applyPrevious } = useAttemptLifecycle({
-    socket,
-    attemptId,
-    onChatStarted: useCallback((data: AttemptChatStartedEvent) => {
-      if (!isStartingRef.current) return;
-      setIsStarting(false);
-      isStartingRef.current = false;
-      if (data.attempt_id === attemptId) {
-        router.refresh();
-      }
-    }, [attemptId, router]),
-    onChatEnded: useCallback(() => {
-      if (!isStartingRef.current) return;
-      setIsStarting(false);
-      isStartingRef.current = false;
-      router.refresh();
-    }, [router]),
-    onEnded: useCallback((data: AttemptEndedEvent) => {
-      if (!isStartingRef.current) return;
-      setIsStarting(false);
-      isStartingRef.current = false;
-      if (data.attempt_id === attemptId) {
-        router.push(`/attempt/${attemptId}/results`);
-      }
-    }, [attemptId, router]),
-    onError: useCallback((data: AttemptErrorEvent) => {
-      if (!isStartingRef.current) return;
-      if (data.type === "end" || data.type === "start" || data.type === "next") {
-        setIsStarting(false);
-        isStartingRef.current = false;
-        toast.error(data.message || "Failed to start training.");
-      }
-    }, []),
-  });
+  const isStarting =
+    (generateStage !== "idle" && generateStage !== "error") ||
+    (endStage !== "idle" && endStage !== "error" && endStage !== "done");
+  const hookError = generateError || endError;
 
-  const handleStart = useCallback(() => {
-    if (!socket || !isConnected) {
-      toast.error("WebSocket not connected. Please refresh the page.");
-      return;
+  // Show errors via toast
+  if (hookError) {
+    toast.error(hookError);
+  }
+
+  const handleStart = useCallback(async () => {
+    if (draftId) {
+      // Draft already exists — skip to generate
+      await generate({ attemptId, chatId: chatEntryId, chatConfig: {}, draftId });
+    } else {
+      // Fetch chat config, then generate
+      const chat = await transport.send("/attempt/chat/get", { id: chatEntryId });
+      await generate({ attemptId, chatId: chatEntryId, chatConfig: chat });
     }
+  }, [attemptId, chatEntryId, draftId, generate, transport]);
 
-    setIsStarting(true);
-    isStartingRef.current = true;
-
-    nextScenario(attemptId, {
-      draftId: draftId ?? undefined,
-    });
-  }, [
-    socket,
-    isConnected,
-    attemptId,
-    draftId,
-    nextScenario,
-  ]);
-
-  const handleUsePrevious = useCallback(() => {
+  const handleUsePrevious = useCallback(async () => {
     const idx = parseInt(selectedOptionIndex, 10);
     const selected = options[idx];
     if (!selected) return;
-
-    if (!socket || !isConnected) {
-      toast.error("WebSocket not connected. Please refresh the page.");
-      return;
-    }
 
     // Build previous_chat_map from selected option's scenarios
     const previousChatMap: Record<string, string> = {};
@@ -132,11 +89,8 @@ export function AttemptLobby({
       }
     }
 
-    setIsStarting(true);
-    isStartingRef.current = true;
-
-    applyPrevious(attemptId, previousChatMap);
-  }, [selectedOptionIndex, options, socket, isConnected, attemptId, applyPrevious]);
+    await applyPrevious({ attemptId, previousChatMap });
+  }, [selectedOptionIndex, options, attemptId, applyPrevious]);
 
   const handleCustomize = useCallback(() => {
     router.push(`/attempt/${attemptId}/${chatEntryId}`);
@@ -235,7 +189,7 @@ export function AttemptLobby({
       <div className="flex gap-3">
         <Button
           onClick={handleStart}
-          disabled={isStarting || !isConnected}
+          disabled={isStarting}
           size="lg"
           className="gap-2"
         >
@@ -245,7 +199,7 @@ export function AttemptLobby({
         {options.length > 0 && selectedOptionIndex !== "" && (
           <Button
             onClick={handleUsePrevious}
-            disabled={isStarting || !isConnected}
+            disabled={isStarting}
             size="lg"
             variant="secondary"
             className="gap-2"

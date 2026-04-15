@@ -1,26 +1,18 @@
 import { useCallback, useEffect, useRef } from "react";
-import type { AppSocket } from "@/contexts/socket-context";
+import type { Transport } from "@/lib/transport/types";
 import { useGroupIdOptional } from "@/contexts/group-context";
-import type { ServerToClientEvents } from "@/lib/ws/types";
 
-// Re-export event types for consumer convenience
-export type AttemptStartedEvent =
-  Parameters<ServerToClientEvents["attempt_started"]>[0];
-export type AttemptChatStartedEvent =
-  Parameters<ServerToClientEvents["attempt_chat_started"]>[0];
-export type AttemptChatEndedEvent =
-  Parameters<ServerToClientEvents["attempt_chat_ended"]>[0];
-export type AttemptEndedEvent =
-  Parameters<ServerToClientEvents["attempt_ended"]>[0];
-export type AttemptGradedEvent =
-  Parameters<ServerToClientEvents["attempt_graded"]>[0];
-export type AttemptErrorEvent =
-  Parameters<ServerToClientEvents["attempt_error"]>[0];
-export type AttemptResponseResultEvent =
-  Parameters<ServerToClientEvents["attempt_response_result"]>[0];
+// Event payload types — loosely typed to match Transport's Record<string, unknown>
+export type AttemptStartedEvent = Record<string, unknown>;
+export type AttemptChatStartedEvent = Record<string, unknown>;
+export type AttemptChatEndedEvent = Record<string, unknown>;
+export type AttemptEndedEvent = Record<string, unknown>;
+export type AttemptGradedEvent = Record<string, unknown>;
+export type AttemptErrorEvent = Record<string, unknown>;
+export type AttemptResponseResultEvent = Record<string, unknown>;
 
 interface UseAttemptLifecycleConfig {
-  socket: AppSocket | null;
+  transport: Transport;
   attemptId?: string | null;
   chatId?: string | null;
   chatIdRef?: React.RefObject<string | null>;
@@ -53,7 +45,7 @@ export interface UseAttemptLifecycleReturn {
 }
 
 export function useAttemptLifecycle({
-  socket,
+  transport,
   attemptId,
   chatId,
   chatIdRef,
@@ -68,7 +60,7 @@ export function useAttemptLifecycle({
   const groupCtx = useGroupIdOptional();
   const groupId = groupCtx?.groupId ?? null;
 
-  // Store callbacks in refs to avoid re-registering socket listeners on every render
+  // Store callbacks in refs to avoid re-registering listeners on every render
   const callbacksRef = useRef({
     onStarted,
     onChatStarted,
@@ -91,8 +83,6 @@ export function useAttemptLifecycle({
   };
 
   useEffect(() => {
-    if (!socket) return;
-
     const handleStarted = (data: AttemptStartedEvent) => {
       callbacksRef.current.onStarted?.(data);
     };
@@ -125,24 +115,18 @@ export function useAttemptLifecycle({
       callbacksRef.current.onResponseResult?.(data);
     };
 
-    socket.on("attempt.started", handleStarted);
-    socket.on("attempt.chat.started", handleChatStarted);
-    socket.on("attempt.chat.ended", handleChatEnded);
-    socket.on("attempt.ended", handleEnded);
-    socket.on("attempt.chat.grade_complete", handleGradeComplete);
-    socket.on("attempt.error", handleError);
-    socket.on("attempt.chat.response_result", handleResponseResult);
+    const unsubs = [
+      transport.on("attempt.started", handleStarted),
+      transport.on("attempt.chat.started", handleChatStarted),
+      transport.on("attempt.chat.ended", handleChatEnded),
+      transport.on("attempt.ended", handleEnded),
+      transport.on("attempt.chat.grade_complete", handleGradeComplete),
+      transport.on("attempt.error", handleError),
+      transport.on("attempt.chat.response_result", handleResponseResult),
+    ];
 
-    return () => {
-      socket.off("attempt.started", handleStarted);
-      socket.off("attempt.chat.started", handleChatStarted);
-      socket.off("attempt.chat.ended", handleChatEnded);
-      socket.off("attempt.ended", handleEnded);
-      socket.off("attempt.chat.grade_complete", handleGradeComplete);
-      socket.off("attempt.error", handleError);
-      socket.off("attempt.chat.response_result", handleResponseResult);
-    };
-  }, [socket, attemptId, chatId, chatIdRef]);
+    return () => unsubs.forEach((fn) => fn());
+  }, [transport, attemptId, chatId, chatIdRef]);
 
   // --- Emission methods ---
 
@@ -152,25 +136,23 @@ export function useAttemptLifecycle({
       practiceId?: string;
       infiniteMode?: boolean;
     }) => {
-      if (!socket) return;
-      socket.emit("attempt.start", {
+      transport.send("/attempt/start", {
         ...(opts.homeId && { home_id: opts.homeId }),
         ...(opts.practiceId && { practice_id: opts.practiceId }),
         infinite_mode: opts.infiniteMode ?? false,
       });
     },
-    [socket],
+    [transport],
   );
 
   const nextScenario = useCallback(
     (attemptIdArg: string, opts?: { draftId?: string }) => {
-      if (!socket) return;
-      socket.emit("attempt.next", {
+      transport.send("/attempt/next", {
         attempt_id: attemptIdArg,
         ...(opts?.draftId && { draft_id: opts.draftId }),
       });
     },
-    [socket],
+    [transport],
   );
 
   const endChat = useCallback(
@@ -179,35 +161,32 @@ export function useAttemptLifecycle({
       chatIdArg: string,
       opts?: { grade?: boolean },
     ) => {
-      if (!socket) return;
-      socket.emit("attempt.chat.end", {
+      transport.send("/attempt/chat/end", {
         attempt_id: attemptIdArg,
         chat_id: chatIdArg,
         grade: opts?.grade ?? true,
       });
     },
-    [socket],
+    [transport],
   );
 
   const endAll = useCallback(
     (attemptIdArg: string) => {
-      if (!socket) return;
-      socket.emit("attempt.end", {
+      transport.send("/attempt/end", {
         attempt_id: attemptIdArg,
       });
     },
-    [socket],
+    [transport],
   );
 
   const usePrevious = useCallback(
     (attemptIdArg: string, previousChatMap: Record<string, string>) => {
-      if (!socket) return;
-      socket.emit("attempt.use_previous", {
+      transport.send("/attempt/previous", {
         attempt_id: attemptIdArg,
         previous_chat_map: previousChatMap,
       });
     },
-    [socket],
+    [transport],
   );
 
   return {

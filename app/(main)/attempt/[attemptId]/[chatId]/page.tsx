@@ -24,11 +24,11 @@ type GetChatBundleOut = OutputOf<
   "post"
 >;
 type PatchChatDraftIn = InputOf<
-  "/chat/draft",
+  "/attempt/draft",
   "patch"
 >;
 type PatchChatDraftOut = OutputOf<
-  "/chat/draft",
+  "/attempt/draft",
   "patch"
 >;
 type ContextIn = InputOf<"/chat/context", "post">;
@@ -68,7 +68,7 @@ async function patchChatDraft(
   input: PatchChatDraftIn,
 ): Promise<PatchChatDraftOut> {
   "use server";
-  return api.patch("/chat/draft", input);
+  return api.patch("/attempt/draft", input);
 }
 
 /** ---- Metadata uses context endpoint ---- */
@@ -147,6 +147,7 @@ export default async function ChatPage({
           bundleData={bundleData as ChatData}
           patchChatDraftAction={patchChatDraft}
           attemptId={attemptId}
+          chatEntryId={chatId}
         />
       </div>
     </FullPageLayout>

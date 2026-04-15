@@ -219,14 +219,10 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
         artifactType: "simulation",
         groupId: (groupResult as GroupSimulationOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateSimulation,
-        permissions: [
-          { artifact: "simulation", operation: "draft" },
-          { artifact: "simulation", operation: "get" },
-          { artifact: "simulation", operation: "docs" },
-          { artifact: "simulation", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getSimulationGroupHistory,
         searchGroups: searchSimulationGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4" data-page="simulations-index">

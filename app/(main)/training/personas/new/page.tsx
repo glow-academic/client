@@ -179,12 +179,8 @@ export default async function NewPersonaPage({
         panelProps={{
           artifactType: "persona",
           groupId: (groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null,
-          permissions: [
-            { artifact: "persona", operation: "draft" },
-            { artifact: "persona", operation: "get" },
-            { artifact: "persona", operation: "docs" },
-            { artifact: "persona", operation: "group" },
-          ],
+          operations: ["draft", "get", "group"],
+          prompts: context.prompts?.prompts,
         }}
       >
         <div

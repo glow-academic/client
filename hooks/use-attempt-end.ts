@@ -1,0 +1,224 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTransport } from "@/lib/transport/context";
+import { useRouter } from "next/navigation";
+import { useAttemptRoute, type RouteStage } from "./use-attempt-route";
+
+export type EndStage =
+  | "idle"
+  | "grading"
+  | "ending"
+  | "copying"
+  | "ending_attempt"
+  | RouteStage
+  | "done"
+  | "error";
+
+export interface UseAttemptEndReturn {
+  /** Trigger AI grading on a chat. Optionally chain into endChat on completion. */
+  grade: (params: {
+    attemptId: string;
+    chatId: string;
+    endAfter?: boolean;
+  }) => Promise<void>;
+
+  /** End a single chat. Finds next chat — routes or ends attempt if none left. */
+  endChat: (params: { attemptId: string; chatId: string }) => Promise<void>;
+
+  /** End the entire attempt immediately (early exit). */
+  endAttempt: (attemptId: string) => Promise<void>;
+
+  /** Copy grades from previous chats, then chain into endChat-like routing. */
+  usePrevious: (params: {
+    attemptId: string;
+    previousChatMap: Record<string, string>;
+  }) => Promise<void>;
+
+  stage: EndStage;
+  error: string | null;
+}
+
+export function useAttemptEnd(): UseAttemptEndReturn {
+  const transport = useTransport();
+  const router = useRouter();
+  const [stage, setStage] = useState<EndStage>("idle");
+  const [error, setError] = useState<string | null>(null);
+  const routeHook = useAttemptRoute();
+
+  // Propagate child stage/error
+  useEffect(() => {
+    if (routeHook.stage !== "idle") setStage(routeHook.stage);
+    if (routeHook.error) setError(routeHook.error);
+  }, [routeHook.stage, routeHook.error]);
+
+  // Ref so grade can call endChat without circular dep
+  const endChatRef = useRef<
+    ((params: { attemptId: string; chatId: string }) => Promise<void>) | undefined
+  >(undefined);
+
+  // ── grade: trigger AI grading, optionally chain to endChat ──
+
+  const grade = useCallback(
+    async (params: {
+      attemptId: string;
+      chatId: string;
+      endAfter?: boolean;
+    }) => {
+      try {
+        setError(null);
+        setStage("grading");
+
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            unsubComplete();
+            unsubFail();
+            reject(new Error("Grading timed out"));
+          }, 120_000);
+
+          const unsubComplete = transport.on(
+            "attempt.chat.grade_complete",
+            (data) => {
+              if (data["chat_id"] !== params.chatId) return;
+              clearTimeout(timeout);
+              unsubComplete();
+              unsubFail();
+              resolve();
+            },
+          );
+          const unsubFail = transport.on(
+            "attempt.chat.grade_failed",
+            (data) => {
+              if (data["chat_id"] !== params.chatId) return;
+              clearTimeout(timeout);
+              unsubComplete();
+              unsubFail();
+              reject(
+                new Error((data["message"] as string) || "Grading failed"),
+              );
+            },
+          );
+
+          transport
+            .send("/attempt/chat/grade", {
+              attempt_id: params.attemptId,
+              chat_id: params.chatId,
+            })
+            .catch((err) => {
+              clearTimeout(timeout);
+              unsubComplete();
+              unsubFail();
+              reject(err);
+            });
+        });
+
+        // Chain to endChat if requested
+        if (params.endAfter) {
+          await endChatRef.current?.({
+            attemptId: params.attemptId,
+            chatId: params.chatId,
+          });
+        } else {
+          setStage("idle"); // Grade done, chat still active
+        }
+      } catch (err) {
+        setStage("error");
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [transport],
+  );
+
+  // ── Helper: find next pending chat and route or end attempt ──
+
+  const findNextAndRoute = useCallback(
+    async (attemptId: string) => {
+      const attempt = await transport.send("/attempt/get", { id: attemptId });
+      const chats = attempt["chats"] as
+        | Array<Record<string, unknown>>
+        | undefined;
+      const nextChat = chats?.find((c) => c["status"] === "pending");
+
+      if (nextChat) {
+        await routeHook.route({
+          attemptId,
+          chatId: nextChat["chat_id"] as string,
+        });
+      } else {
+        // No more chats — end attempt
+        setStage("ending_attempt");
+        await transport.send("/attempt/end", { attempt_id: attemptId });
+        setStage("done");
+        router.push(`/attempt/${attemptId}`);
+        router.refresh();
+      }
+    },
+    [transport, router, routeHook],
+  );
+
+  // ── endChat: end single chat → find next → route or end attempt ──
+
+  const endChat = useCallback(
+    async (params: { attemptId: string; chatId: string }) => {
+      try {
+        setStage("ending");
+        await transport.send("/attempt/chat/end", {
+          attempt_id: params.attemptId,
+          chat_id: params.chatId,
+        });
+        await findNextAndRoute(params.attemptId);
+      } catch (err) {
+        setStage("error");
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [transport, findNextAndRoute],
+  );
+
+  // Wire up ref so grade can call endChat
+  endChatRef.current = endChat;
+
+  // ── endAttempt: end entire attempt immediately ──
+
+  const endAttempt = useCallback(
+    async (attemptId: string) => {
+      try {
+        setError(null);
+        setStage("ending_attempt");
+        await transport.send("/attempt/end", { attempt_id: attemptId });
+        setStage("done");
+        router.push(`/attempt/${attemptId}`);
+        router.refresh();
+      } catch (err) {
+        setStage("error");
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [transport, router],
+  );
+
+  // ── usePrevious: copy grades → find next → route ──
+
+  const usePrevious = useCallback(
+    async (params: {
+      attemptId: string;
+      previousChatMap: Record<string, string>;
+    }) => {
+      try {
+        setError(null);
+        setStage("copying");
+        await transport.send("/attempt/previous", {
+          attempt_id: params.attemptId,
+          previous_chat_map: params.previousChatMap,
+        });
+        await findNextAndRoute(params.attemptId);
+      } catch (err) {
+        setStage("error");
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [transport, findNextAndRoute],
+  );
+
+  return { grade, endChat, endAttempt, usePrevious, stage, error };
+}

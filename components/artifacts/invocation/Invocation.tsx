@@ -22,16 +22,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type GetBenchmarkBundleOut = OutputOf<
-  "/invocation/get",
+  "/test/invocation/get",
   "post"
 >;
 export type InvocationData = GetBenchmarkBundleOut;
 type PatchBenchmarkBundleDraftIn = InputOf<
-  "/invocation/draft",
+  "/test/invocation/draft",
   "patch"
 >;
 type PatchBenchmarkBundleDraftOut = OutputOf<
-  "/invocation/draft",
+  "/test/invocation/draft",
   "patch"
 >;
 

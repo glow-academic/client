@@ -15,10 +15,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { SvgIcon } from "@/components/common/SvgIcon";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
+import { Check, Power, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftSimulationScenarioFlagsIn = {
@@ -40,6 +39,7 @@ export interface ScenarioFlagsResourceItem {
   description?: string | null;
   icon?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface ScenarioFlagsProps {
@@ -87,13 +87,10 @@ export interface ScenarioFlagsProps {
         input: CreateDraftSimulationScenarioFlagsIn
       ) => Promise<CreateDraftSimulationScenarioFlagsOut>)
     | undefined;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ scenario_flag_ids: string[] } | void>) => void;
-  aiFlagResources?: Pick<ScenarioFlagsResourceItem, "id">[] | null;
   /** Value callback for unified draft — reports all selected scenario+flag pairs */
   onScenarioFlagValues?: (flags: Array<{ scenario_id: string; flag_id: string }>) => void;
 }
@@ -122,11 +119,8 @@ export function ScenarioFlags({
   group_id,
   create_tool_id,
   createScenarioFlagsAction,
-  onGenerate,
-  showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
-  aiFlagResources,
   onScenarioFlagValues,
 }: ScenarioFlagsProps) {
   const show = show_scenario_flags ?? false;
@@ -198,19 +192,24 @@ export function ScenarioFlags({
   // Ref for flush function (stable reference for registerFlush)
   const flushRef = useRef<(() => Promise<{ scenario_flag_ids: string[] } | void>) | null>(null);
 
-  // Socket-based AI suggestion handling via shared hook
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestion: aiSuggestionFromSocket,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "scenario_flags",
-    groupId: group_id,
-  });
-
-  // Effective AI resources: hook (socket) takes priority, then prop fallback
-  const effectiveAiFlagResources =
-    aiSuggestionFromSocket ?? aiFlagResources ?? null;
+  // Detect pending items from current resources (items with pending: true)
+  const pendingResources = useMemo(
+    () => currentResources.filter((r) => r.pending),
+    [currentResources]
+  );
+  const showDiff = pendingResources.length > 0;
+  const pendingByScenario = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    pendingResources.forEach((r) => {
+      if (r.scenario_id && r.flag_id) {
+        if (!map.has(r.scenario_id)) {
+          map.set(r.scenario_id, new Set());
+        }
+        map.get(r.scenario_id)!.add(r.flag_id);
+      }
+    });
+    return map;
+  }, [pendingResources]);
 
   useEffect(() => {
     const nextSelected = new Map<string, Set<string>>();
@@ -449,43 +448,20 @@ export function ScenarioFlags({
     return map;
   }, [flagOptionsByScenario, scenario_resources]);
 
-  const hasGenerated = useMemo(() => {
-    return currentResources.some((flag) => flag.generated);
-  }, [currentResources]);
-
-  // AI suggestion state
-  const showDiff = !!effectiveAiFlagResources?.length;
-  const aiSuggestedFlagIds = useMemo(
-    () =>
-      new Set(
-        effectiveAiFlagResources?.map((f) => f.id).filter(Boolean) as string[]
-      ),
-    [effectiveAiFlagResources]
-  );
-
-  // Accept AI suggestion - apply all AI-suggested flags
+  // Accept pending — pending flags are already reflected in form state, no-op
   const handleAccept = useCallback(() => {
-    if (!effectiveAiFlagResources?.length) return;
+    // Pending flags are already reflected in form state — nothing to change
+    // The next draft save will persist them as active
+  }, []);
 
-    for (const aiFlag of effectiveAiFlagResources) {
-      if (!aiFlag.id) continue;
-      // Find which scenario and flag this applies to
-      // For ScenarioFlags, the AI returns flag_ids that correspond to flag options
-      // We need to find the scenario and toggle that flag on
-      for (const [scenarioId, flagOptions] of filteredFlagOptionsByScenario) {
-        const matchingOption = flagOptions.find((opt) => opt.id === aiFlag.id);
-        if (matchingOption) {
-          handleToggle(scenarioId, matchingOption.id, true);
-        }
+  // Reject pending — unset pending flags
+  const handleReject = useCallback(() => {
+    for (const resource of pendingResources) {
+      if (resource.scenario_id && resource.flag_id) {
+        handleToggle(resource.scenario_id, resource.flag_id, false);
       }
     }
-    clearAi();
-  }, [effectiveAiFlagResources, filteredFlagOptionsByScenario, handleToggle, clearAi]);
-
-  // Reject AI suggestion - just clear the pending state
-  const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+  }, [pendingResources, handleToggle]);
 
   if (!show || scenario_ids.length === 0) {
     return null;
@@ -504,31 +480,6 @@ export function ScenarioFlags({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -585,15 +536,14 @@ export function ScenarioFlags({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {scenarioOptions.map((option) => {
                   const isSelected = selectedFlags.has(option.id);
-                  const isAiSuggested =
-                    showDiff && aiSuggestedFlagIds.has(option.id);
-                  const wouldChange = isAiSuggested && !isSelected; // AI wants to turn this ON
+                  const isPending =
+                    pendingByScenario.get(scenarioId)?.has(option.id) ?? false;
                   return (
                     <div
                       key={option.id}
                       className={cn(
                         "space-y-1 p-2 rounded-lg transition-all",
-                        isAiSuggested && "ring-2 ring-success bg-success/10"
+                        isPending && "ring-2 ring-success bg-success/10"
                       )}
                     >
                       <div className="flex items-center gap-2">
@@ -607,9 +557,9 @@ export function ScenarioFlags({
                             <Power className="h-3.5 w-3.5 text-muted-foreground" />
                           )}
                           {option.name}
-                          {isAiSuggested && (
+                          {isPending && (
                             <span className="ml-2 text-xs text-success font-medium">
-                              → {wouldChange ? "ON" : "OFF"} (AI)
+                              Pending
                             </span>
                           )}
                         </Label>

@@ -217,14 +217,10 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
         artifactType: "cohort",
         groupId: (groupResult as GroupCohortOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateCohort,
-        permissions: [
-          { artifact: "cohort", operation: "draft" },
-          { artifact: "cohort", operation: "get" },
-          { artifact: "cohort", operation: "docs" },
-          { artifact: "cohort", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getCohortGroupHistory,
         searchGroups: searchCohortGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4" data-page="cohorts-index">

@@ -22,9 +22,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 
 type CreateDraftProfilePersonasIn = {
   body: {
@@ -43,6 +42,7 @@ export interface ProfilePersonasResourceItem {
   id?: string | null;
   profile_id?: string | null;
   persona_id?: string | null;
+  pending?: boolean | null;
 }
 
 export interface ProfilePersonaItem {
@@ -129,11 +129,11 @@ export function ProfilePersonas({
   group_id,
   create_tool_id,
   createProfilePersonasAction,
-  onGenerate,
-  showAiGenerate = false,
+  onGenerate: _onGenerate,
+  showAiGenerate: _showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
-  aiProfilePersonaResources,
+  aiProfilePersonaResources: _aiProfilePersonaResources,
 }: ProfilePersonasProps) {
   const show = show_profile_personas ?? false;
   const allPersonas = useMemo(
@@ -145,17 +145,15 @@ export function ProfilePersonas({
     [profile_persona_resources],
   );
 
-  // Socket-based AI suggestion handling via shared hook
-  const { aiSuggestion, clear: clearAi, isGenerating } = useResourceAi({
-    resourceType: "profile_personas",
-    groupId: group_id,
-  });
-
-  // AI suggestions: hook suggestion takes priority, then prop fallback
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const aiSuggestions = aiSuggestion
-    ? [aiSuggestion]
-    : aiProfilePersonaResources ?? null;
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allPersonas.filter((p) => p.pending && p.profile_id);
+  }, [allPersonas]);
+  const showDiff = pendingItems.length > 0;
+  const pendingProfileIds = useMemo(
+    () => new Set(pendingItems.map((p) => p.profile_id).filter(Boolean) as string[]),
+    [pendingItems],
+  );
 
   const profileLabelMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -372,35 +370,40 @@ export function ProfilePersonas({
     ],
   );
 
-  // AI suggestion state
-  const showDiff = !!aiSuggestions?.length;
-
-  // Set of AI-suggested profile IDs for styling
-  const aiSuggestedProfileIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestions
-          ?.map((r) => r.id)
-          .filter(Boolean) as string[],
-      ),
-    [aiSuggestions],
-  );
-
-  // Accept AI suggestion - apply AI-suggested persona assignments
+  // Accept pending — keep pending persona assignments in selection (no-op)
   const handleAccept = useCallback(() => {
-    if (!aiSuggestions?.length) return;
-    aiSuggestions.forEach((r) => {
-      if (r.profile_id && r.persona_id) {
-        handlePersonaChange(r.profile_id, r.persona_id);
-      }
-    });
-    clearAi();
-  }, [aiSuggestions, handlePersonaChange, clearAi]);
+    // Pending items are already reflected in the selections
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending persona assignments from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    const updated = new Map(selectedPersonaByProfile);
+    pendingProfileIds.forEach((profileId) => {
+      updated.delete(profileId);
+    });
+    setSelectedPersonaByProfile(updated);
+
+    // Convert to array format for parent
+    const personasArray = Array.from(updated.entries()).map(([pid, perid]) => {
+      const details = availablePersonas.find(
+        (p) => p.persona_id === perid,
+      );
+      return {
+        cohort_id: cohort_id || "",
+        profile_id: pid,
+        persona_id: perid,
+        persona_name: details?.persona_name || undefined,
+        persona_description: undefined,
+        persona_icon: details?.persona_icon || undefined,
+        persona_color: details?.persona_color || undefined,
+        generated: false,
+      } satisfies ProfilePersonaItem;
+    });
+
+    onChange(personasArray);
+  }, [selectedPersonaByProfile, pendingProfileIds, availablePersonas, cohort_id, onChange]);
 
   // Don't render if show_profile_personas is false or no profiles
   if (!show || profile_ids.length === 0) {
@@ -420,29 +423,6 @@ export function ProfilePersonas({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || isGenerating || showDiff}
-                  >
-                    {isGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Generate Persona Assignments</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -481,44 +461,9 @@ export function ProfilePersonas({
           )}
         </div>
       )}
-      {/* AI-suggested persona assignments preview */}
-      {showDiff &&
-        aiSuggestions &&
-        aiSuggestions.length > 0 && (
-          <div className="mb-4 space-y-2">
-            <p className="text-sm font-medium text-success">
-              AI Suggested Persona Assignments
-            </p>
-            <div className="space-y-2">
-              {aiSuggestions.map((item, idx) => {
-                const profileLabel =
-                  profileLabelMap.get(item.profile_id || "") ??
-                  "Unknown profile";
-                const personaLabel =
-                  availablePersonas.find(
-                    (p) => p.persona_id === item.persona_id,
-                  )?.persona_name || "Unknown persona";
-                return (
-                  <div
-                    key={
-                      item.id || `${item.profile_id}-${item.persona_id}` || idx
-                    }
-                    className={cn(
-                      "flex items-center gap-2 p-3 rounded-lg border-2 border-success bg-success/10",
-                      "text-sm",
-                    )}
-                  >
-                    <span className="font-medium">{profileLabel}:</span>
-                    <span>{personaLabel}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       <div className="pl-4 space-y-3">
         {profile_ids.map((profileId) => {
-          const isAiSuggested = aiSuggestedProfileIds.has(profileId);
+          const isPending = pendingProfileIds.has(profileId);
           const profileLabel =
             profileLabelMap.get(profileId) ?? "Untitled profile";
           // Use per-profile personas if available, otherwise use all available personas
@@ -536,8 +481,8 @@ export function ProfilePersonas({
               key={profileId}
               className={cn(
                 "flex items-center gap-3",
-                isAiSuggested &&
-                  "ring-2 ring-success bg-success/5 rounded-lg p-2",
+                isPending &&
+                  "ring-2 ring-success bg-success/10 rounded-lg p-2",
               )}
             >
               <span
@@ -546,6 +491,11 @@ export function ProfilePersonas({
               >
                 {profileLabel}
               </span>
+              {isPending && (
+                <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </span>
+              )}
               <Select
                 value={selectedPersonaId}
                 onValueChange={(value) =>

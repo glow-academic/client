@@ -2,6 +2,7 @@
  * ScenarioTimeLimits.tsx
  * Resource component for managing scenario time limits within simulations
  * Allows setting time limits per selected scenario
+ * Uses pending field pattern for AI-generated suggestions (no socket/useResourceAi)
  */
 
 "use client";
@@ -17,8 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import { Check, Clock, Loader2, Sparkles, X } from "lucide-react";
+import { Check, Clock, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftScenarioTimeLimitsIn = {
@@ -40,6 +40,7 @@ export interface ScenarioTimeLimitResourceItem {
   time_limit_seconds?: number | null;
   negative?: boolean | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface ScenarioTimeLimitsProps {
@@ -75,20 +76,12 @@ export interface ScenarioTimeLimitsProps {
       ) => Promise<CreateDraftScenarioTimeLimitsOut>)
     | undefined;
   onTimeLimitIdsChange?: (ids: string[]) => void;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (
     flush: () => Promise<{ scenario_time_limit_ids: string[] } | void>,
   ) => void;
-  aiScenarioTimeLimitResources?:
-    | Pick<
-        ScenarioTimeLimitResourceItem,
-        "id" | "scenario_id" | "time_limit_seconds"
-      >[]
-    | null;
   /** Value callback for unified draft — reports all scenario+time_limit pairs */
   onScenarioTimeLimitValues?: (timeLimits: Array<{ scenario_id: string; time_limit_seconds: number; negative: boolean }>) => void;
 }
@@ -108,11 +101,8 @@ export function ScenarioTimeLimits({
   create_tool_id,
   createScenarioTimeLimitsAction,
   onTimeLimitIdsChange,
-  onGenerate,
-  showAiGenerate = false,
   isAutosaveEnabled = true,
   registerFlush,
-  aiScenarioTimeLimitResources,
   onScenarioTimeLimitValues,
 }: ScenarioTimeLimitsProps) {
   const show = show_scenario_time_limits ?? false;
@@ -121,23 +111,16 @@ export function ScenarioTimeLimits({
     [scenario_time_limit_resources],
   );
 
-  // Socket-based AI suggestion handling via shared hook
-  type _AiTimeLimitSuggestion = Pick<
-    ScenarioTimeLimitResourceItem,
-    "id" | "scenario_id" | "time_limit_seconds"
-  >;
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestion,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "scenario_time_limits",
-    groupId: group_id,
-  });
-
-  // Effective AI resources: hook suggestion takes priority, then prop fallback
-  const effectiveAiScenarioTimeLimitResources =
-    aiSuggestion ?? aiScenarioTimeLimitResources ?? null;
+  // Detect pending items from resource array (server-driven soft state)
+  const pendingResources = useMemo(
+    () => timeLimitResources.filter((r) => r.pending),
+    [timeLimitResources],
+  );
+  const showDiff = pendingResources.length > 0;
+  const pendingScenarioIds = useMemo(
+    () => new Set(pendingResources.map((r) => r.scenario_id).filter(Boolean) as string[]),
+    [pendingResources],
+  );
 
   const scenarioLabelMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -372,39 +355,20 @@ export function ScenarioTimeLimits({
     [createTimeLimit],
   );
 
-  const hasGenerated = useMemo(() => {
-    return timeLimitResources.some((resource) => resource.generated);
-  }, [timeLimitResources]);
-
-  // AI suggestion state
-  const showDiff = !!effectiveAiScenarioTimeLimitResources?.length;
-
-  // Set of AI-suggested scenario IDs for styling
-  const aiSuggestedScenarioIds = useMemo(
-    () =>
-      new Set(
-        effectiveAiScenarioTimeLimitResources
-          ?.map((r) => r.scenario_id)
-          .filter(Boolean) as string[],
-      ),
-    [effectiveAiScenarioTimeLimitResources],
-  );
-
-  // Accept AI suggestion - apply AI-suggested time limits
+  // Accept pending — pending items are already in form state, nothing to change
   const handleAccept = useCallback(() => {
-    if (!effectiveAiScenarioTimeLimitResources?.length) return;
-    effectiveAiScenarioTimeLimitResources.forEach((r) => {
-      if (r.scenario_id && r.time_limit_seconds != null) {
-        handleChange(r.scenario_id, String(r.time_limit_seconds));
-      }
-    });
-    clearAi();
-  }, [effectiveAiScenarioTimeLimitResources, handleChange, clearAi]);
+    // No-op: pending resources are already reflected in form state.
+    // The next draft save will persist them as active.
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — clear pending time limit selections
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    for (const r of pendingResources) {
+      if (r.scenario_id) {
+        handleChange(r.scenario_id, "");
+      }
+    }
+  }, [pendingResources, handleChange]);
 
   if (!show || scenario_ids.length === 0) {
     return null;
@@ -423,31 +387,6 @@ export function ScenarioTimeLimits({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -486,51 +425,9 @@ export function ScenarioTimeLimits({
           )}
         </div>
       )}
-      {/* AI-suggested time limits preview */}
-      {showDiff &&
-        effectiveAiScenarioTimeLimitResources &&
-        effectiveAiScenarioTimeLimitResources.length > 0 && (
-          <div className="mb-4 space-y-2">
-            <p className="text-sm font-medium text-success">
-              AI Suggested Time Limits
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {effectiveAiScenarioTimeLimitResources.map((item, idx) => {
-                const scenarioLabel =
-                  scenarioLabelMap.get(item.scenario_id || "") ??
-                  "Unknown scenario";
-                const minutes =
-                  item.time_limit_seconds != null
-                    ? Math.floor(item.time_limit_seconds / 60)
-                    : null;
-                const seconds =
-                  item.time_limit_seconds != null
-                    ? item.time_limit_seconds % 60
-                    : null;
-                const timeDisplay =
-                  item.time_limit_seconds != null
-                    ? `${minutes}m ${seconds}s`
-                    : "Unlimited";
-                return (
-                  <div
-                    key={item.id || item.scenario_id || idx}
-                    className={cn(
-                      "flex items-center gap-2 p-3 rounded-lg border-2 border-success bg-success/10",
-                      "text-sm",
-                    )}
-                  >
-                    <Clock className="h-4 w-4 text-success" />
-                    <span className="font-medium">{scenarioLabel}:</span>
-                    <span>{timeDisplay}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-4">
         {scenario_ids.map((scenarioId) => {
-          const isAiSuggested = aiSuggestedScenarioIds.has(scenarioId);
+          const isPending = pendingScenarioIds.has(scenarioId);
           const currentValue = timeLimitByScenario.get(scenarioId);
           const isUnlimited = currentValue === null;
           const minutes =
@@ -592,7 +489,7 @@ export function ScenarioTimeLimits({
               key={scenarioId}
               className={cn(
                 "relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-all hover:shadow-md hover:bg-accent/50",
-                isAiSuggested && "ring-2 ring-success bg-success/5",
+                isPending && "ring-2 ring-success bg-success/10",
               )}
             >
               <Clock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
@@ -602,6 +499,11 @@ export function ScenarioTimeLimits({
                   title={labelText}
                 >
                   {labelText}
+                  {isPending && (
+                    <span className="ml-2 text-xs text-success font-medium">
+                      Pending
+                    </span>
+                  )}
                 </h3>
                 <div className="flex items-center gap-2 mt-2">
                   <div className="flex items-center gap-2">

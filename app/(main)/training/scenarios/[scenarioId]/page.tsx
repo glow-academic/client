@@ -268,14 +268,10 @@ export default async function EditScenarioPage({
             artifactType: "scenario",
             groupId: (groupResult as GroupScenarioOut & { group_id?: string })?.group_id ?? null,
             generateAction: generateScenario,
-            permissions: [
-              { artifact: "scenario", operation: "draft" },
-              { artifact: "scenario", operation: "get" },
-              { artifact: "scenario", operation: "docs" },
-              { artifact: "scenario", operation: "group" },
-            ],
+            operations: ["draft", "get", "group"],
             getGroupHistory: getScenarioGroupHistory,
             searchGroups: searchScenarioGroups,
+            prompts: context.prompts?.prompts,
           }}
         >
           <div

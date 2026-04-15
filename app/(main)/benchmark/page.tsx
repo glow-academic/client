@@ -20,8 +20,8 @@ import { cookies } from "next/headers";
 import { loadBenchmarkSearchParams } from "@/lib/search-params/benchmark";
 
 /** ---- Strong types from OpenAPI ---- */
-type BenchmarkOverviewIn = InputOf<"/benchmark/get", "post">;
-type BenchmarkOverviewOut = OutputOf<"/benchmark/get", "post">;
+type BenchmarkOverviewIn = InputOf<"/test/benchmark/get", "post">;
+type BenchmarkOverviewOut = OutputOf<"/test/benchmark/get", "post">;
 // For backward compatibility, extract evals list structure from overview
 type EvalsListOut = {
   evals: BenchmarkOverviewOut["evals"];
@@ -45,16 +45,16 @@ type EvalsListOut = {
 };
 
 /** ---- Generation types from OpenAPI ---- */
-type ContextIn = InputOf<"/benchmark/context", "post">;
-type ContextOut = OutputOf<"/benchmark/context", "post">;
-type GenerateBenchmarkIn = InputOf<"/benchmark/generate", "post">;
-type GenerateBenchmarkOut = OutputOf<"/benchmark/generate", "post">;
-type GenerationsIn = InputOf<"/benchmark/generations", "post">;
-type GenerationsOut = OutputOf<"/benchmark/generations", "post">;
-type GroupBenchmarkIn = InputOf<"/benchmark/group", "post">;
-type GroupBenchmarkOut = OutputOf<"/benchmark/group", "post">;
-type ProblemBenchmarkIn = InputOf<"/benchmark/problem", "post">;
-type ProblemBenchmarkOut = OutputOf<"/benchmark/problem", "post">;
+type ContextIn = InputOf<"/test/benchmark/context", "post">;
+type ContextOut = OutputOf<"/test/benchmark/context", "post">;
+type GenerateBenchmarkIn = InputOf<"/test/benchmark/generate", "post">;
+type GenerateBenchmarkOut = OutputOf<"/test/benchmark/generate", "post">;
+type GenerationsIn = InputOf<"/test/benchmark/generations", "post">;
+type GenerationsOut = OutputOf<"/test/benchmark/generations", "post">;
+type GroupBenchmarkIn = InputOf<"/test/benchmark/group", "post">;
+type GroupBenchmarkOut = OutputOf<"/test/benchmark/group", "post">;
+type ProblemBenchmarkIn = InputOf<"/test/benchmark/problem", "post">;
+type ProblemBenchmarkOut = OutputOf<"/test/benchmark/problem", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getBenchmarkOverview = async (
@@ -63,7 +63,7 @@ const getBenchmarkOverview = async (
   "use server";
   const bypassCache = await isHardRefresh();
 
-  return api.post("/benchmark/get", input, {
+  return api.post("/test/benchmark/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -76,34 +76,34 @@ const getBenchmarkOverview = async (
 /** ---- Strongly-typed server actions ---- */
 async function refreshBenchmark(): Promise<void> {
   "use server";
-  await api.post("/benchmark/refresh" as Parameters<typeof api.post>[0], { body: {} });
+  await api.post("/test/benchmark/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
 async function generateBenchmark(
   input: GenerateBenchmarkIn
 ): Promise<GenerateBenchmarkOut> {
   "use server";
-  return api.post("/benchmark/generate", input);
+  return api.post("/test/benchmark/generate", input);
 }
 
 async function getBenchmarkGroupHistory(groupId: string): Promise<GroupBenchmarkOut> {
   "use server";
-  return api.post("/benchmark/group", { body: { group_id: groupId } } as GroupBenchmarkIn);
+  return api.post("/test/benchmark/group", { body: { group_id: groupId } } as GroupBenchmarkIn);
 }
 
 async function searchBenchmarkGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/benchmark/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/test/benchmark/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createBenchmarkProblem(input: ProblemBenchmarkIn): Promise<ProblemBenchmarkOut> {
   "use server";
-  return api.post("/benchmark/problem", input);
+  return api.post("/test/benchmark/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/benchmark/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/test/benchmark/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -131,7 +131,7 @@ export default async function BenchmarkPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/benchmark/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/test/benchmark/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params via nuqs loader
@@ -170,7 +170,7 @@ export default async function BenchmarkPage({
   // Fetch benchmark overview and group in parallel
   const [overviewData, groupResult] = await Promise.all([
     getBenchmarkOverview(overviewFilters),
-    api.post("/benchmark/group", { body: {} } as GroupBenchmarkIn),
+    api.post("/test/benchmark/group", { body: {} } as GroupBenchmarkIn),
   ]);
 
   // Extract inline analytics facets
@@ -376,14 +376,10 @@ export default async function BenchmarkPage({
         artifactType: "benchmark",
         groupId: (groupResult as GroupBenchmarkOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateBenchmark,
-        permissions: [
-          { artifact: "benchmark", operation: "draft" },
-          { artifact: "benchmark", operation: "get" },
-          { artifact: "benchmark", operation: "docs" },
-          { artifact: "benchmark", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getBenchmarkGroupHistory,
         searchGroups: searchBenchmarkGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4">

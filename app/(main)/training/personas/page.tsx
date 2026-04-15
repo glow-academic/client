@@ -196,12 +196,8 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
       panelProps={{
         artifactType: "persona",
         groupId: (groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null,
-        permissions: [
-          { artifact: "persona", operation: "draft" },
-          { artifact: "persona", operation: "get" },
-          { artifact: "persona", operation: "docs" },
-          { artifact: "persona", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4" data-page="personas-index">

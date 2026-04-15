@@ -19,8 +19,8 @@ import { loadActivitySearchParams } from "@/lib/search-params/activity";
 
 
 /** ---- Strong types from OpenAPI ---- */
-type ActivityBundleIn = InputOf<"/activity/get", "post">;
-type ActivityBundleOut = OutputOf<"/activity/get", "post">;
+type ActivityBundleIn = InputOf<"/system/activity/get", "post">;
+type ActivityBundleOut = OutputOf<"/system/activity/get", "post">;
 type ActivityListOut = NonNullable<ActivityBundleOut["history"]>;
 
 export type ActivityOut = {
@@ -29,16 +29,16 @@ export type ActivityOut = {
 };
 
 /** ---- Generation types ---- */
-type ContextIn = InputOf<"/activity/context", "post">;
-type ContextOut = OutputOf<"/activity/context", "post">;
-type GenerateActivityIn = InputOf<"/activity/generate", "post">;
-type GenerateActivityOut = OutputOf<"/activity/generate", "post">;
-type GenerationsIn = InputOf<"/activity/generations", "post">;
-type GenerationsOut = OutputOf<"/activity/generations", "post">;
-type GroupActivityIn = InputOf<"/activity/group", "post">;
-type GroupActivityOut = OutputOf<"/activity/group", "post">;
-type ProblemActivityIn = InputOf<"/activity/problem", "post">;
-type ProblemActivityOut = OutputOf<"/activity/problem", "post">;
+type ContextIn = InputOf<"/system/activity/context", "post">;
+type ContextOut = OutputOf<"/system/activity/context", "post">;
+type GenerateActivityIn = InputOf<"/system/activity/generate", "post">;
+type GenerateActivityOut = OutputOf<"/system/activity/generate", "post">;
+type GenerationsIn = InputOf<"/system/activity/generations", "post">;
+type GenerationsOut = OutputOf<"/system/activity/generations", "post">;
+type GroupActivityIn = InputOf<"/system/activity/group", "post">;
+type GroupActivityOut = OutputOf<"/system/activity/group", "post">;
+type ProblemActivityIn = InputOf<"/system/activity/problem", "post">;
+type ProblemActivityOut = OutputOf<"/system/activity/problem", "post">;
 
 /** ---- Direct fetch functions ---- */
 const getActivityBundle = async (
@@ -46,7 +46,7 @@ const getActivityBundle = async (
 ): Promise<ActivityBundleOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/activity/get", input, {
+  return api.post("/system/activity/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -58,7 +58,7 @@ const getActivityBundle = async (
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/activity/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/system/activity/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -86,7 +86,7 @@ export default async function ActivityPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/activity/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/system/activity/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params via nuqs loader
@@ -120,7 +120,7 @@ export default async function ActivityPage({
         history_sort_order: "desc",
       },
     }),
-    api.post("/activity/group", { body: {} } as GroupActivityIn),
+    api.post("/system/activity/group", { body: {} } as GroupActivityIn),
   ]);
 
   // Extract inline analytics facets from response
@@ -159,14 +159,10 @@ export default async function ActivityPage({
         artifactType: "activity",
         groupId: (groupResult as GroupActivityOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateActivity,
-        permissions: [
-          { artifact: "activity", operation: "draft" },
-          { artifact: "activity", operation: "get" },
-          { artifact: "activity", operation: "docs" },
-          { artifact: "activity", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getActivityGroupHistory,
         searchGroups: searchActivityGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4" data-page="activity-index">
@@ -185,29 +181,29 @@ export default async function ActivityPage({
 /** ---- Strongly-typed server actions ---- */
 async function refreshActivity(): Promise<void> {
   "use server";
-  await api.post("/activity/refresh" as Parameters<typeof api.post>[0], { body: {} });
+  await api.post("/system/activity/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
 async function generateActivity(
   input: GenerateActivityIn
 ): Promise<GenerateActivityOut> {
   "use server";
-  return api.post("/activity/generate", input);
+  return api.post("/system/activity/generate", input);
 }
 
 async function getActivityGroupHistory(groupId: string): Promise<GroupActivityOut> {
   "use server";
-  return api.post("/activity/group", { body: { group_id: groupId } } as GroupActivityIn);
+  return api.post("/system/activity/group", { body: { group_id: groupId } } as GroupActivityIn);
 }
 
 async function searchActivityGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/activity/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/system/activity/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createActivityProblem(input: ProblemActivityIn): Promise<ProblemActivityOut> {
   "use server";
-  return api.post("/activity/problem", input);
+  return api.post("/system/activity/problem", input);
 }
 
 /** ---- Export types for client (type-only imports) ---- */

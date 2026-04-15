@@ -252,14 +252,10 @@ export default async function EditRubricPage({
             artifactType: "rubric",
             groupId: (groupResult as GroupRubricOut & { group_id?: string })?.group_id ?? null,
             generateAction: generateRubric,
-            permissions: [
-              { artifact: "rubric", operation: "draft" },
-              { artifact: "rubric", operation: "get" },
-              { artifact: "rubric", operation: "docs" },
-              { artifact: "rubric", operation: "group" },
-            ],
+            operations: ["draft", "get", "group"],
             getGroupHistory: getRubricGroupHistory,
             searchGroups: searchRubricGroups,
+            prompts: context.prompts?.prompts,
           }}
         >
           <div

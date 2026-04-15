@@ -16,8 +16,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import { Calendar, Check, Loader2, Sparkles, X } from "lucide-react";
+import { Calendar, Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftSimulationAvailabilityIn = {
@@ -39,6 +38,7 @@ export interface SimulationAvailabilityResourceItem {
   time?: string | null;
   type?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface SimulationAvailabilityProps {
@@ -75,20 +75,10 @@ export interface SimulationAvailabilityProps {
   /** Callback to emit availability values for unified draft */
   onSimulationAvailabilityValues?: (values: Array<{ simulation_id: string; time: string; type: string }>) => void;
   onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean;
-  isGenerating?: boolean;
   isAutosaveEnabled?: boolean;
   registerFlush?: (
     flush: () => Promise<{ simulation_availability_ids: string[] } | void>,
   ) => void;
-  aiSimulationAvailabilityResources?:
-    | Pick<
-        SimulationAvailabilityResourceItem,
-        "id" | "simulation_id" | "time" | "type"
-      >[]
-    | null;
-  onAccept?: () => void;
-  onReject?: () => void;
 }
 
 export function SimulationAvailability({
@@ -107,13 +97,9 @@ export function SimulationAvailability({
   createSimulationAvailabilityAction,
   onAvailabilityIdsChange,
   onSimulationAvailabilityValues,
-  onGenerate,
-  showAiGenerate = false,
+  onGenerate: _onGenerate,
   isAutosaveEnabled = true,
   registerFlush,
-  aiSimulationAvailabilityResources,
-  onAccept: onAcceptProp,
-  onReject: onRejectProp,
 }: SimulationAvailabilityProps) {
   const show = show_simulation_availability ?? false;
   const availabilityResources = useMemo(
@@ -121,22 +107,21 @@ export function SimulationAvailability({
     [simulation_availability_resources],
   );
 
-  // Socket-based AI suggestion handling
-  type _AiAvailabilitySuggestion = Pick<
-    SimulationAvailabilityResourceItem,
-    "id" | "simulation_id" | "time" | "type"
-  >;
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestion,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "simulation_availability",
-    groupId: group_id,
-  });
-
-  const effectiveAiResources =
-    aiSuggestion ?? aiSimulationAvailabilityResources ?? null;
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return availabilityResources.filter((r) => r.pending && r.id);
+  }, [availabilityResources]);
+  const showDiff = pendingItems.length > 0;
+  // Track which simulation IDs have pending resources
+  const pendingSimulationKeys = useMemo(() => {
+    const keys = new Set<string>();
+    pendingItems.forEach((r) => {
+      if (r.simulation_id && r.type) {
+        keys.add(`${r.simulation_id}:${r.type}`);
+      }
+    });
+    return keys;
+  }, [pendingItems]);
 
   // Map simulation IDs to display names
   const simulationLabelMap = useMemo(() => {
@@ -333,37 +318,52 @@ export function SimulationAvailability({
     [createAvailability],
   );
 
-  const hasGenerated = useMemo(() => {
-    return availabilityResources.some((resource) => resource.generated);
-  }, [availabilityResources]);
-
-  const showDiff = !!effectiveAiResources?.length;
-
+  // Accept pending — pending items are already in the resources, just confirm (no-op)
   const handleAccept = useCallback(() => {
-    if (onAcceptProp) {
-      onAcceptProp();
-    } else if (effectiveAiResources?.length) {
-      effectiveAiResources.forEach((r) => {
-        if (r.simulation_id && r.time && r.type) {
-          const timeValue = new Date(r.time).toISOString().slice(0, 16);
-          handleTimeChange(
-            r.simulation_id,
-            r.type as "start" | "end",
-            timeValue,
-          );
+    // Pending items are already included in availability resources.
+    // The next draft save will persist them as active.
+    // Nothing to change in form state.
+  }, []);
+
+  // Reject pending — remove pending availability resources from state
+  const handleReject = useCallback(() => {
+    // Remove pending items from availabilityIds
+    const newIds = new Map(availabilityIds);
+    pendingItems.forEach((r) => {
+      if (r.simulation_id && r.type) {
+        newIds.delete(`${r.simulation_id}:${r.type}`);
+      }
+    });
+    setAvailabilityIds(newIds);
+
+    // Remove pending time values from availabilityBySimulation
+    setAvailabilityBySimulation((prev) => {
+      const next = new Map(prev);
+      pendingItems.forEach((r) => {
+        if (r.simulation_id && r.type) {
+          const existing = next.get(r.simulation_id);
+          if (existing) {
+            const updated = { ...existing };
+            if (r.type === "start") {
+              updated.start = undefined;
+            } else if (r.type === "end") {
+              updated.end = undefined;
+            }
+            next.set(r.simulation_id, updated);
+          }
         }
       });
-      clearAi();
-    }
-  }, [effectiveAiResources, handleTimeChange, clearAi, onAcceptProp]);
+      return next;
+    });
 
-  const handleReject = useCallback(() => {
-    if (onRejectProp) {
-      onRejectProp();
-    } else {
-      clearAi();
+    // Notify parent of updated IDs
+    if (onAvailabilityIdsChange) {
+      const ids = Array.from(new Map(availabilityIds).entries())
+        .filter(([key]) => !pendingItems.some((r) => r.simulation_id && r.type && `${r.simulation_id}:${r.type}` === key))
+        .map(([, val]) => val);
+      onAvailabilityIdsChange(ids);
     }
-  }, [clearAi, onRejectProp]);
+  }, [availabilityIds, pendingItems, onAvailabilityIdsChange]);
 
   if (!show || simulation_ids.length === 0) {
     return null;
@@ -382,31 +382,6 @@ export function SimulationAvailability({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -445,52 +420,31 @@ export function SimulationAvailability({
           )}
         </div>
       )}
-      {/* AI suggestion preview */}
-      {showDiff && effectiveAiResources && effectiveAiResources.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">
-            AI Suggested Availability
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {effectiveAiResources.map((item, idx) => {
-              const simLabel =
-                simulationLabelMap.get(item.simulation_id || "") ??
-                "Unknown simulation";
-              const timeDisplay = item.time
-                ? new Date(item.time).toLocaleString()
-                : "Not set";
-              return (
-                <div
-                  key={item.id || `${item.simulation_id}:${item.type}` || idx}
-                  className={cn(
-                    "flex items-center gap-2 p-3 rounded-lg border-2 border-success bg-success/10",
-                    "text-sm",
-                  )}
-                >
-                  <Calendar className="h-4 w-4 text-success" />
-                  <span className="font-medium">{simLabel}:</span>
-                  <span className="capitalize">{item.type}</span>
-                  <span className="text-muted-foreground">{timeDisplay}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
       <div className="grid grid-cols-1 gap-3 pl-4">
         {simulation_ids.map((simulationId) => {
           const availability = availabilityBySimulation.get(simulationId) ?? {};
           const labelText =
             simulationLabelMap.get(simulationId) ??
             simulationId.slice(0, 8);
+          const isStartPending = pendingSimulationKeys.has(`${simulationId}:start`);
+          const isEndPending = pendingSimulationKeys.has(`${simulationId}:end`);
+          const isPending = isStartPending || isEndPending;
 
           return (
             <div
               key={simulationId}
               className={cn(
                 "relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-all hover:shadow-md hover:bg-accent/50",
+                isPending && "ring-2 ring-success bg-success/10",
               )}
             >
+              {/* Pending badge - top right */}
+              {isPending && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </div>
+              )}
+
               <Calendar className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <h3

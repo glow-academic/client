@@ -17,9 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { useSocket } from "@/contexts/socket-context";
-import { useAttemptLifecycle } from "@/hooks/use-attempt-lifecycle";
-import type { AttemptErrorEvent } from "@/hooks/use-attempt-lifecycle";
+import { useAttemptEnd } from "@/hooks/use-attempt-end";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
@@ -34,55 +32,36 @@ export function SimulationControls({
   currentChatId,
   hasMessages,
 }: SimulationControlsProps) {
-  const { socket } = useSocket();
+  const { grade, endChat, stage } = useAttemptEnd();
 
   // Confirmation dialog state
   const [confirmEndChatOpen, setConfirmEndChatOpen] = useState(false);
 
-  // Loading state for End Session button
-  const [endingLoading, setEndingLoading] = useState(false);
-
-  // Listen for WebSocket lifecycle events to reset loading state
-  const { endChat } = useAttemptLifecycle({
-    socket,
-    onError: useCallback((data: AttemptErrorEvent) => {
-      if (data.type === "end" || data.type === "grade") {
-        setEndingLoading(false);
-      }
-    }, []),
-    onGradeComplete: useCallback(() => {
-      setEndingLoading(false);
-    }, []),
-    onChatEnded: useCallback(() => {
-      setEndingLoading(false);
-    }, []),
-  });
+  const endingLoading = stage !== "idle" && stage !== "error" && stage !== "done";
 
   // Handle End Session button click
   const handleEndSession = useCallback(() => {
-    // No messages: show confirmation → emit attempt_end without grading
+    // No messages: show confirmation → end without grading
     if (!hasMessages) {
       setConfirmEndChatOpen(true);
       return;
     }
 
-    // Has messages: emit attempt_end with grade=true
+    // Has messages: grade then end
     if (!currentChatId) return;
-    setEndingLoading(true);
-    endChat(attemptId, currentChatId, { grade: true });
-  }, [hasMessages, currentChatId, attemptId, endChat]);
+    grade({ attemptId, chatId: currentChatId, endAfter: true });
+  }, [hasMessages, currentChatId, attemptId, grade]);
 
   // Confirm end session with 0 messages
   const handleConfirmEnd = useCallback(() => {
-    if (!currentChatId || !socket) {
-      toast.error("WebSocket not connected. Please refresh the page.");
+    if (!currentChatId) {
+      toast.error("Unable to end session. Please refresh the page.");
       return;
     }
 
     setConfirmEndChatOpen(false);
-    setEndingLoading(true);
-    endChat(attemptId, currentChatId, { grade: false });
-  }, [attemptId, currentChatId, socket, endChat]);
+    endChat({ attemptId, chatId: currentChatId });
+  }, [attemptId, currentChatId, endChat]);
 
   return (
     <>

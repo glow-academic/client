@@ -18,7 +18,10 @@ export function SvgIcon({ svg, className, style, fallback = null }: SvgIconProps
 
   return (
     <span
-      className={cn("[&>svg]:w-full [&>svg]:h-full inline-flex", className)}
+      className={cn(
+        "inline-flex items-center justify-center [&>svg]:w-full [&>svg]:h-full [&>svg]:block",
+        className,
+      )}
       style={style}
       dangerouslySetInnerHTML={{ __html: svg }}
     />

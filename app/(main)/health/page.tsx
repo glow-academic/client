@@ -18,25 +18,25 @@ import { cookies } from "next/headers";
 import { loadHealthSearchParams } from "@/lib/search-params/health";
 
 /** ---- Strong types from OpenAPI ---- */
-type HealthBundleIn = InputOf<"/health/get", "post">;
-type HealthBundleOut = OutputOf<"/health/get", "post">;
-type ContextIn = InputOf<"/health/context", "post">;
-type ContextOut = OutputOf<"/health/context", "post">;
-type GenerateHealthIn = InputOf<"/health/generate", "post">;
-type GenerateHealthOut = OutputOf<"/health/generate", "post">;
-type GenerationsIn = InputOf<"/health/generations", "post">;
-type GenerationsOut = OutputOf<"/health/generations", "post">;
-type GroupHealthIn = InputOf<"/health/group", "post">;
-type GroupHealthOut = OutputOf<"/health/group", "post">;
-type ProblemHealthIn = InputOf<"/health/problem", "post">;
-type ProblemHealthOut = OutputOf<"/health/problem", "post">;
+type HealthBundleIn = InputOf<"/system/health/get", "post">;
+type HealthBundleOut = OutputOf<"/system/health/get", "post">;
+type ContextIn = InputOf<"/system/health/context", "post">;
+type ContextOut = OutputOf<"/system/health/context", "post">;
+type GenerateHealthIn = InputOf<"/system/health/generate", "post">;
+type GenerateHealthOut = OutputOf<"/system/health/generate", "post">;
+type GenerationsIn = InputOf<"/system/health/generations", "post">;
+type GenerationsOut = OutputOf<"/system/health/generations", "post">;
+type GroupHealthIn = InputOf<"/system/health/group", "post">;
+type GroupHealthOut = OutputOf<"/system/health/group", "post">;
+type ProblemHealthIn = InputOf<"/system/health/problem", "post">;
+type ProblemHealthOut = OutputOf<"/system/health/problem", "post">;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
 const getHealthBundle = cache(
   async (input: HealthBundleIn): Promise<HealthBundleOut> => {
     const bypassCache = await isHardRefresh();
 
-    return api.post("/health/get", input, {
+    return api.post("/system/health/get", input, {
       cache: "no-store",
       ...(bypassCache && {
         headers: {
@@ -50,34 +50,34 @@ const getHealthBundle = cache(
 /** ---- Strongly-typed server actions ---- */
 async function refreshHealth(): Promise<void> {
   "use server";
-  await api.post("/health/refresh" as Parameters<typeof api.post>[0], { body: {} });
+  await api.post("/system/health/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
 async function generateHealth(
   input: GenerateHealthIn
 ): Promise<GenerateHealthOut> {
   "use server";
-  return api.post("/health/generate", input);
+  return api.post("/system/health/generate", input);
 }
 
 async function getHealthGroupHistory(groupId: string): Promise<GroupHealthOut> {
   "use server";
-  return api.post("/health/group", { body: { group_id: groupId } } as GroupHealthIn);
+  return api.post("/system/health/group", { body: { group_id: groupId } } as GroupHealthIn);
 }
 
 async function searchHealthGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/health/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/system/health/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createHealthProblem(input: ProblemHealthIn): Promise<ProblemHealthOut> {
   "use server";
-  return api.post("/health/problem", input);
+  return api.post("/system/health/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/health/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/system/health/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -103,7 +103,7 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/health/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/system/health/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params via nuqs loader
@@ -117,7 +117,7 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
         date_to: q.endDate ?? undefined,
       },
     }),
-    api.post("/health/group", { body: {} } as GroupHealthIn),
+    api.post("/system/health/group", { body: {} } as GroupHealthIn),
   ]);
 
   // Extract inline analytics facets
@@ -146,14 +146,10 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
         artifactType: "health",
         groupId: (groupResult as GroupHealthOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateHealth,
-        permissions: [
-          { artifact: "health", operation: "draft" },
-          { artifact: "health", operation: "get" },
-          { artifact: "health", operation: "docs" },
-          { artifact: "health", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getHealthGroupHistory,
         searchGroups: searchHealthGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4">

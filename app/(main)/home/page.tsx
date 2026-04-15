@@ -21,25 +21,25 @@ import { cookies } from "next/headers";
 import { loadHomeSearchParams } from "@/lib/search-params/home";
 
 /** ---- Strong types from OpenAPI ---- */
-type HomeIn = InputOf<"/home/get", "post">;
-type HomeOut = OutputOf<"/home/get", "post">;
+type HomeIn = InputOf<"/attempt/home/get", "post">;
+type HomeOut = OutputOf<"/attempt/home/get", "post">;
 type HomeHistoryOut = NonNullable<HomeOut["history"]>;
-type ContextIn = InputOf<"/home/context", "post">;
-type ContextOut = OutputOf<"/home/context", "post">;
-type GenerateHomeIn = InputOf<"/home/generate", "post">;
-type GenerateHomeOut = OutputOf<"/home/generate", "post">;
-type GenerationsIn = InputOf<"/home/generations", "post">;
-type GenerationsOut = OutputOf<"/home/generations", "post">;
-type GroupHomeIn = InputOf<"/home/group", "post">;
-type GroupHomeOut = OutputOf<"/home/group", "post">;
-type ProblemHomeIn = InputOf<"/home/problem", "post">;
-type ProblemHomeOut = OutputOf<"/home/problem", "post">;
+type ContextIn = InputOf<"/attempt/home/context", "post">;
+type ContextOut = OutputOf<"/attempt/home/context", "post">;
+type GenerateHomeIn = InputOf<"/attempt/home/generate", "post">;
+type GenerateHomeOut = OutputOf<"/attempt/home/generate", "post">;
+type GenerationsIn = InputOf<"/attempt/home/generations", "post">;
+type GenerationsOut = OutputOf<"/attempt/home/generations", "post">;
+type GroupHomeIn = InputOf<"/attempt/home/group", "post">;
+type GroupHomeOut = OutputOf<"/attempt/home/group", "post">;
+type ProblemHomeIn = InputOf<"/attempt/home/problem", "post">;
+type ProblemHomeOut = OutputOf<"/attempt/home/problem", "post">;
 
 /** ---- Direct fetch for home data (cards + embedded history) ---- */
 const getHomeData = async (input: HomeIn): Promise<HomeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/home/get", input, {
+  return api.post("/attempt/home/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -52,39 +52,43 @@ const getHomeData = async (input: HomeIn): Promise<HomeOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function refreshHome(): Promise<void> {
   "use server";
-  await api.post("/home/refresh" as Parameters<typeof api.post>[0], { body: {} });
+  await api.post("/attempt/home/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
 async function generateHome(
   input: GenerateHomeIn
 ): Promise<GenerateHomeOut> {
   "use server";
-  return api.post("/home/generate", input);
+  return api.post("/attempt/home/generate", input);
 }
 
 async function getHomeGroupHistory(groupId: string): Promise<GroupHomeOut> {
   "use server";
-  return api.post("/home/group", { body: { group_id: groupId } } as GroupHomeIn);
+  return api.post("/attempt/home/group", { body: { group_id: groupId } } as GroupHomeIn);
 }
 
 async function searchHomeGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/home/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/attempt/home/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createHomeProblem(input: ProblemHomeIn): Promise<ProblemHomeOut> {
   "use server";
-  return api.post("/home/problem", input);
+  return api.post("/attempt/home/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/home/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title ?? "Home",
-    description: context.page_metadata?.list.description ??
-      "Comprehensive learning and development dashboard for graduate teaching assistants. Track simulation-based practice sessions, review pedagogical assessments, and monitor teaching performance metrics.",
-  };
+  try {
+    const context = await api.post("/attempt/home/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title ?? "Home",
+      description: context.page_metadata?.list.description ??
+        "Comprehensive learning and development dashboard for graduate teaching assistants. Track simulation-based practice sessions, review pedagogical assessments, and monitor teaching performance metrics.",
+    };
+  } catch {
+    return { title: "Home" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -107,7 +111,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   try {
   // Profile data for providers
-  const context = await api.post("/home/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/attempt/home/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params via nuqs loader
@@ -141,7 +145,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         }),
       },
     }),
-    api.post("/home/group", { body: {} } as GroupHomeIn),
+    api.post("/attempt/home/group", { body: {} } as GroupHomeIn),
   ]);
 
   // Extract history from embedded response
@@ -230,14 +234,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         artifactType: "home",
         groupId: (groupResult as GroupHomeOut & { group_id?: string })?.group_id ?? null,
         generateAction: generateHome,
-        permissions: [
-          { artifact: "home", operation: "draft" },
-          { artifact: "home", operation: "get" },
-          { artifact: "home", operation: "docs" },
-          { artifact: "home", operation: "group" },
-        ],
+        operations: ["draft", "get", "group"],
         getGroupHistory: getHomeGroupHistory,
         searchGroups: searchHomeGroups,
+        prompts: context.prompts?.prompts,
       }}
     >
       <div className="space-y-6 px-4">

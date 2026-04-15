@@ -272,14 +272,10 @@ export default async function DocumentEditPage({
             artifactType: "document",
             groupId: (groupResult as GroupDocumentOut & { group_id?: string })?.group_id ?? null,
             generateAction: generateDocument,
-            permissions: [
-              { artifact: "document", operation: "draft" },
-              { artifact: "document", operation: "get" },
-              { artifact: "document", operation: "docs" },
-              { artifact: "document", operation: "group" },
-            ],
+            operations: ["draft", "get", "group"],
             getGroupHistory: getDocumentGroupHistory,
             searchGroups: searchDocumentGroups,
+            prompts: context.prompts?.prompts,
           }}
         >
           <div

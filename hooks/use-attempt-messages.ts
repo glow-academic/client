@@ -1,28 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { AppSocket } from "@/contexts/socket-context";
+import type { Transport } from "@/lib/transport/types";
 import type { components } from "@/lib/api/schema";
-import type { ServerToClientEvents } from "@/lib/ws/types";
 
 type MessageData = components["schemas"]["MessageData"];
 type PersonaEntry = components["schemas"]["PersonaEntry"];
 
-type AttemptAssistantStartEvent =
-  Parameters<ServerToClientEvents["attempt_assistant_start"]>[0];
-type AttemptAssistantDeltaEvent =
-  Parameters<ServerToClientEvents["attempt_assistant_delta"]>[0];
-type AttemptAssistantCompleteEvent =
-  Parameters<ServerToClientEvents["attempt_assistant_complete"]>[0];
-type AttemptUserCompleteEvent =
-  Parameters<ServerToClientEvents["attempt_user_complete"]>[0];
-type AttemptCompleteEvent =
-  Parameters<ServerToClientEvents["attempt_complete"]>[0];
-type AttemptStoppedEvent =
-  Parameters<ServerToClientEvents["attempt_stopped"]>[0];
-type AttemptErrorEvent = Parameters<ServerToClientEvents["attempt_error"]>[0];
+// Event payload types — loosely typed to match Transport's Record<string, unknown>
+type AttemptAssistantStartEvent = Record<string, unknown>;
+type AttemptAssistantDeltaEvent = Record<string, unknown>;
+type AttemptAssistantCompleteEvent = Record<string, unknown>;
+type AttemptUserCompleteEvent = Record<string, unknown>;
+type AttemptCompleteEvent = Record<string, unknown>;
+type AttemptStoppedEvent = Record<string, unknown>;
+type AttemptErrorEvent = Record<string, unknown>;
 
 interface UseAttemptMessagesConfig {
-  socket: AppSocket | null;
+  transport: Transport;
   chatIdRef: React.RefObject<string | null>;
   personas: Record<string, PersonaEntry> | undefined;
   onRefresh: () => void;
@@ -54,7 +48,7 @@ interface UseAttemptMessagesResult {
 }
 
 export function useAttemptMessages({
-  socket,
+  transport,
   chatIdRef,
   personas,
   onRefresh,
@@ -77,8 +71,6 @@ export function useAttemptMessages({
   }, []);
 
   useEffect(() => {
-    if (!socket) return;
-
     const handleAssistantStart = (data: AttemptAssistantStartEvent) => {
       if (data.chat_id !== chatIdRef.current) return;
 
@@ -86,10 +78,10 @@ export function useAttemptMessages({
 
       setOptimisticMessages((prev) => {
         const newMap = new Map(prev);
-        newMap.set(data.message_id, {
-          id: data.message_id,
+        newMap.set(data.message_id as string, {
+          id: data.message_id as string,
           type: "response",
-          created_at: data.created_at,
+          created_at: data.created_at as string,
           completed: false,
           contents: [{ content: "" }],
         });
@@ -104,7 +96,7 @@ export function useAttemptMessages({
       ) {
         setStreamingContent((prev) => {
           const newMap = new Map(prev);
-          newMap.set(data.message_id, data.content);
+          newMap.set(data.message_id as string, data.content as string);
           return newMap;
         });
       }
@@ -115,34 +107,34 @@ export function useAttemptMessages({
 
       const persona =
         data.persona_id && personas
-          ? personas[data.persona_id]
+          ? personas[data.persona_id as string]
           : null;
 
       if (data.content !== undefined) {
         setStreamingContent((prev) => {
           const newMap = new Map(prev);
-          newMap.set(data.message_id, data.content);
+          newMap.set(data.message_id as string, data.content as string);
           return newMap;
         });
       }
 
       setOptimisticMessages((prev) => {
         const newMap = new Map(prev);
-        const existingMessage = newMap.get(data.message_id);
+        const existingMessage = newMap.get(data.message_id as string);
         const existingContent = existingMessage?.contents?.[0];
 
-        newMap.set(data.message_id, {
-          id: data.message_id,
+        newMap.set(data.message_id as string, {
+          id: data.message_id as string,
           type: "response",
           created_at:
-            data.created_at ||
+            (data.created_at as string) ||
             existingMessage?.created_at ||
             new Date().toISOString(),
           completed: true,
           contents: [
             {
               content:
-                data.content ?? existingContent?.content ?? "",
+                (data.content as string) ?? existingContent?.content ?? "",
               name: persona?.name ?? existingContent?.name ?? null,
               color: persona?.color ?? existingContent?.color ?? null,
               icon: persona?.icon ?? existingContent?.icon ?? null,
@@ -169,12 +161,12 @@ export function useAttemptMessages({
 
       setOptimisticMessages((prev) => {
         const newMap = new Map(prev);
-        newMap.set(data.message_id, {
-          id: data.message_id,
+        newMap.set(data.message_id as string, {
+          id: data.message_id as string,
           type: "query",
-          created_at: data.created_at,
+          created_at: data.created_at as string,
           completed: true,
-          contents: [{ content: data.content, name: "You" }],
+          contents: [{ content: data.content as string, name: "You" }],
         });
         return newMap;
       });
@@ -192,76 +184,69 @@ export function useAttemptMessages({
       }
 
       if (data.success && data.message) {
-        toast.success(data.message);
+        toast.success(data.message as string);
       } else if (!data.success) {
-        toast.error(data.message);
+        toast.error(data.message as string);
       }
     };
 
     const handleError = (data: AttemptErrorEvent) => {
       setIsSending(false);
       setIsStopping(false);
-      toast.error(data.message);
+      toast.error(data.message as string);
     };
 
-    socket.on("attempt.chat.assistant_start", handleAssistantStart);
-    socket.on("attempt.chat.assistant_progress", handleAssistantDelta);
-    socket.on("attempt.chat.assistant_complete", handleAssistantComplete);
-    socket.on("attempt.chat.user_complete", handleUserComplete);
-    socket.on("attempt.complete", handleAttemptComplete);
-    socket.on("attempt.chat.stopped", handleStopped);
-    socket.on("attempt.error", handleError);
+    const unsubs = [
+      transport.on("attempt.chat.assistant_start", handleAssistantStart),
+      transport.on("attempt.chat.assistant_progress", handleAssistantDelta),
+      transport.on("attempt.chat.assistant_complete", handleAssistantComplete),
+      transport.on("attempt.chat.user_complete", handleUserComplete),
+      transport.on("attempt.complete", handleAttemptComplete),
+      transport.on("attempt.chat.stopped", handleStopped),
+      transport.on("attempt.error", handleError),
+    ];
 
     return () => {
-      socket.off("attempt.chat.assistant_start", handleAssistantStart);
-      socket.off("attempt.chat.assistant_progress", handleAssistantDelta);
-      socket.off("attempt.chat.assistant_complete", handleAssistantComplete);
-      socket.off("attempt.chat.user_complete", handleUserComplete);
-      socket.off("attempt.complete", handleAttemptComplete);
-      socket.off("attempt.chat.stopped", handleStopped);
-      socket.off("attempt.error", handleError);
+      unsubs.forEach((fn) => fn());
 
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
       }
     };
-  }, [socket, chatIdRef, personas, onRefresh, onUserComplete]);
+  }, [transport, chatIdRef, personas, onRefresh, onUserComplete]);
 
   // --- Emission methods ---
 
   const sendMessage = useCallback(
     (chatId: string, attemptId: string, message: string, parentMessageId?: string) => {
-      if (!socket) return;
       setIsSending(true);
-      socket.emit("attempt.chat.send", {
+      transport.send("/attempt/chat/send", {
         attempt_id: attemptId,
         chat_id: chatId,
-        message,
+        text: message,
         ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
       });
     },
-    [socket],
+    [transport],
   );
 
   const stopMessage = useCallback(
     (chatId: string) => {
-      if (!socket) return;
       setIsStopping(true);
-      socket.emit("attempt.chat.stop", { chat_id: chatId });
+      transport.send("/attempt/chat/stop", { chat_id: chatId });
     },
-    [socket],
+    [transport],
   );
 
   const submitResponse = useCallback(
     (chatId: string, questionId: string, optionIds: string[]) => {
-      if (!socket) return;
-      socket.emit("attempt.chat.response", {
+      transport.send("/attempt/chat/response", {
         chat_id: chatId,
         question_id: questionId,
         option_ids: optionIds,
       });
     },
-    [socket],
+    [transport],
   );
 
   return {
