@@ -84,7 +84,11 @@ export function useAttemptGenerate(): UseAttemptGenerateReturn {
 
           transport
             .send("/attempt/generate", {
-              config: { params: { draft_id: draftId } },
+              instructions: ["Set up this training scenario based on the draft configuration."],
+              config: {
+                operations: ["create", "get", "draft", "group"],
+                params: { draft_id: draftId },
+              },
             })
             .catch((err) => {
               clearTimeout(timeout);
