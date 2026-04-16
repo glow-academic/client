@@ -28,16 +28,6 @@ type UpdateFieldIn = InputOf<"/field/update", "post">;
 type UpdateFieldOut = OutputOf<"/field/update", "post">;
 type PatchFieldDraftIn = InputOf<"/field/draft", "patch">;
 type PatchFieldDraftOut = OutputOf<"/field/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
 type GroupFieldIn = InputOf<"/field/group", "post">;
 type GroupFieldOut = OutputOf<"/field/group", "post">;
 type GenerateFieldIn = InputOf<"/field/generate", "post">;
@@ -78,24 +68,10 @@ async function updateField(input: UpdateFieldIn): Promise<UpdateFieldOut> {
 }
 
 async function patchFieldDraft(
-  input: PatchFieldDraftIn
+  input: PatchFieldDraftIn,
 ): Promise<PatchFieldDraftOut> {
   "use server";
   return api.patch("/field/draft", input);
-}
-
-async function createNames(
-  input: CreateDraftNamesIn
-): Promise<CreateDraftNamesOut> {
-  "use server";
-  return api.post("/resources/names", input);
-}
-
-async function createDescriptions(
-  input: CreateDraftDescriptionsIn
-): Promise<CreateDraftDescriptionsOut> {
-  "use server";
-  return api.post("/resources/descriptions", input);
 }
 
 async function generateField(
@@ -191,52 +167,77 @@ export default async function FieldEditPage({
   const q = loadFieldSearchParams(searchParamsObj);
 
   try {
-    const input: GetFieldIn = {
-      body: {
-        field_id: fieldId,
-        draft_id: q.draftId ?? null,
-        description_search: q.descriptionSearch ?? null,
-        conditional_parameter_search: q.conditionalParameterSearch ?? null,
-        conditional_parameter_show_selected:
-          q.conditionalParameterShowSelected ?? null,
-      } as GetFieldIn["body"],
+    const body = {
+      id: fieldId,
+      draft_id: q.draftId ?? null,
+      ...(q.descriptionSearch
+        ? {
+            descriptions: {
+              search: q.descriptionSearch,
+            },
+          }
+        : {}),
+      ...(q.conditionalParameterSearch ||
+      q.conditionalParameterShowSelected !== null
+        ? {
+            conditional_parameters: {
+              ...(q.conditionalParameterSearch
+                ? { search: q.conditionalParameterSearch }
+                : {}),
+              ...(q.conditionalParameterShowSelected !== null
+                ? { selected: q.conditionalParameterShowSelected }
+                : {}),
+            },
+          }
+        : {}),
     };
+    const input = {
+      path: undefined,
+      body,
+    } as GetFieldIn;
 
     const [fieldData, context, draftsResult, groupResult] = await Promise.all([
       getField(input),
       api.post("/field/context", { body: { entity_id: fieldId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/field/drafts", {}),
+      api.post(
+        "/field/drafts",
+        { path: undefined } as InputOf<"/field/drafts", "post">,
+      ),
       api.post("/field/group", { body: {} } as GroupFieldIn),
     ]);
 
     const entityName = context.page_metadata?.detail.title;
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
         <FullPageLayout
-          profileData={context.profile}
-          sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
-          initialPanelOpen={initialPanelOpen}
-          sidebarProps={{
-            activeSection: "field",
-            createFeedback: createFieldProblem,
-          }}
-          breadcrumbs={[
-            { title: "Management", section: "management", url: "/management" },
-            { title: "Fields", section: "fields", url: "/management/fields" },
-            { title: entityName },
-          ]}
-          toolbar={<SaveToolbar />}
-          panelProps={{
-            artifactType: "field",
-            groupId: (groupResult as GroupFieldOut & { group_id?: string })?.group_id ?? null,
-            generateAction: generateField,
-            operations: ["draft", "get", "group"],
-            getGroupHistory: getFieldGroupHistory,
-            searchGroups: searchFieldGroups,
-            prompts: context.prompts?.prompts,
-          }}
+          {...({
+            profileData: context.profile,
+            sessionSnapshot: snapshot,
+            initialSidebarOpen,
+            initialPanelOpen,
+            sidebarProps: {
+              activeSection: "field",
+              createFeedback: createFieldProblem as any,
+            },
+            breadcrumbs: [
+              { title: "Management", section: "management", url: "/management" },
+              { title: "Fields", section: "fields", url: "/management/fields" },
+              { title: entityName },
+            ],
+            toolbar: <SaveToolbar />,
+            panelProps: {
+              artifactType: "field",
+              groupId:
+                (groupResult as GroupFieldOut & { group_id?: string })?.group_id ??
+                null,
+              generateAction: generateField,
+              operations: ["draft", "get", "group"],
+              getGroupHistory: getFieldGroupHistory,
+              searchGroups: searchFieldGroups,
+              prompts: context.prompts?.prompts,
+            },
+          } as any)}
         >
           <div
             className="space-y-6 px-4"
@@ -246,11 +247,10 @@ export default async function FieldEditPage({
             <Field
               key={q.draftId || "no-draft"}
               fieldId={fieldId}
+              mode="edit"
               fieldData={fieldData}
               updateFieldAction={updateField}
               patchFieldDraftAction={patchFieldDraft}
-              createNamesAction={createNames}
-              createDescriptionsAction={createDescriptions}
             />
           </div>
         </FullPageLayout>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -23,12 +23,10 @@ import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
-import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   buildDraftPayload,
   checkHasResourceIds,
-  computeEffectiveFormState,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
@@ -38,24 +36,8 @@ type CreateParameterIn = InputOf<"/parameter/create", "post">;
 type CreateParameterOut = OutputOf<"/parameter/create", "post">;
 type UpdateParameterIn = InputOf<"/parameter/update", "post">;
 type UpdateParameterOut = OutputOf<"/parameter/update", "post">;
-type PatchParameterDraftIn = InputOf<
-  "/parameter/draft",
-  "patch"
->;
-type PatchParameterDraftOut = OutputOf<
-  "/parameter/draft",
-  "patch"
->;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
+type PatchParameterDraftIn = InputOf<"/parameter/draft", "patch">;
+type PatchParameterDraftOut = OutputOf<"/parameter/draft", "patch">;
 
 type ParameterData = OutputOf<"/parameter/get", "post">;
 
@@ -73,80 +55,9 @@ type ParameterFormState = {
   persona_parameter: boolean;
   scenario_parameter: boolean;
   video_parameter: boolean;
+  pending_ids: string[];
 };
 
-type FlushResult = {
-  name_id?: string | null;
-  description_id?: string | null;
-};
-
-type ParameterSectionData = {
-  actor_name?: string | null;
-  can_edit?: boolean | null;
-  disabled_reason?: string | null;
-  parameter_exists?: boolean | null;
-  group_id?: string | null;
-  draft_version?: number | null;
-  basic_show_ai_generate?: boolean | null;
-  fields_step_show_ai_generate?: boolean | null;
-  names?: {
-    resource?: { id?: string | null; name?: string | null; generated?: boolean | null } | null;
-    resources?: Array<{ id?: string | null; name?: string | null; generated?: boolean | null }> | null;
-    suggestions?: string[] | null;
-    show?: boolean | null;
-    required?: boolean | null;
-    show_ai_generate?: boolean | null;
-
-  } | null;
-  descriptions?: {
-    resource?: { id?: string | null; description?: string | null; generated?: boolean | null } | null;
-    resources?: Array<{ id?: string | null; description?: string | null; generated?: boolean | null }> | null;
-    suggestions?: string[] | null;
-    show?: boolean | null;
-    required?: boolean | null;
-    show_ai_generate?: boolean | null;
-
-  } | null;
-  flags?: {
-    current?: Array<{
-      key?: string | null;
-      label?: string | null;
-      description?: string | null;
-      flag_option_id?: string | null;
-      generated?: boolean | null;
-    }> | null;
-    resources?: Array<{
-      key?: string | null;
-      label?: string | null;
-      description?: string | null;
-      icon_id?: string | null;
-      flag_option_id?: string | null;
-      generated?: boolean | null;
-    }> | null;
-    show?: boolean | null;
-    required?: boolean | null;
-    show_ai_generate?: boolean | null;
-
-  } | null;
-  departments?: {
-    current?: Array<{ department_id?: string | null; name?: string | null; description?: string | null; generated?: boolean | null }> | null;
-    resources?: Array<{ department_id?: string | null; name?: string | null; description?: string | null; generated?: boolean | null }> | null;
-    suggestions?: string[] | null;
-    show?: boolean | null;
-    required?: boolean | null;
-    show_ai_generate?: boolean | null;
-  } | null;
-  fields?: {
-    current?: Array<{ field_id?: string | null; name?: string | null; description?: string | null; generated?: boolean | null }> | null;
-    resources?: Array<{ field_id?: string | null; name?: string | null; description?: string | null; generated?: boolean | null }> | null;
-    suggestions?: string[] | null;
-    show?: boolean | null;
-    required?: boolean | null;
-    show_ai_generate?: boolean | null;
-  } | null;
-};
-
-const FLUSH_KEYS = ["names", "descriptions"] as const;
 const VALID_RESOURCE_TYPES: ResourceType[] = [
   "names",
   "descriptions",
@@ -166,10 +77,15 @@ const PARAMETER_RESOURCES: ResourceConfig[] = [
   {
     key: "departments",
     formKey: "department_ids",
-    flushKey: null,
+    flushKey: "department_ids",
     type: "multi",
   },
-  { key: "fields", formKey: "field_ids", flushKey: null, type: "multi" },
+  {
+    key: "parameter_fields",
+    formKey: "field_ids",
+    flushKey: "field_ids",
+    type: "multi",
+  },
 ];
 
 export interface ParameterProps {
@@ -181,12 +97,6 @@ export interface ParameterProps {
   patchParameterDraftAction?: (
     input: PatchParameterDraftIn
   ) => Promise<PatchParameterDraftOut>;
-  createNamesAction?: (
-    input: CreateDraftNamesIn
-  ) => Promise<CreateDraftNamesOut>;
-  createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn
-  ) => Promise<CreateDraftDescriptionsOut>;
 }
 
 function ParameterComponent({
@@ -196,16 +106,14 @@ function ParameterComponent({
   createParameterAction,
   updateParameterAction,
   patchParameterDraftAction,
-  createNamesAction,
-  createDescriptionsAction,
 }: ParameterProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!parameterId;
-  const s = (parameterData ?? null) as unknown as ParameterSectionData | null;
   const { profile } = useProfile();
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
-  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
-    useFlushRegistry<FlushResult>(FLUSH_KEYS);
+  const emptyFlushRegistryRef = useRef<
+    Map<string, () => Promise<Record<string, unknown> | void>>
+  >(new Map());
 
   const parameterSearchParamsClient = useMemo(
     () => ({
@@ -216,18 +124,51 @@ function ParameterComponent({
     []
   );
 
+  const parameterDataRef = useRef(parameterData);
+  useEffect(() => {
+    parameterDataRef.current = parameterData;
+  }, [parameterData]);
+
+  const stableParameterDataFields = useMemo(() => {
+    if (!parameterData) return null;
+    return {
+      names: parameterData.names,
+      descriptions: parameterData.descriptions,
+      flags: parameterData.flags,
+      departments: parameterData.departments,
+      parameter_fields: parameterData.parameter_fields,
+      basic_show_ai_generate: parameterData.basic_show_ai_generate,
+      fields_step_show_ai_generate: parameterData.fields_step_show_ai_generate,
+    };
+  }, [
+    parameterData?.names,
+    parameterData?.descriptions,
+    parameterData?.flags,
+    parameterData?.departments,
+    parameterData?.parameter_fields,
+    parameterData?.basic_show_ai_generate,
+    parameterData?.fields_step_show_ai_generate,
+  ]);
+
   const flagIdByKey = useMemo(() => {
     const map: Record<string, string> = {};
-    (s?.flags?.resources ?? []).forEach((f) => {
-      if (f.key && f.flag_option_id) {
-        map[f.key] = f.flag_option_id;
+    (parameterData?.flags ?? []).forEach((flag) => {
+      if (flag.key && flag.flag_option_id) {
+        map[flag.key] = flag.flag_option_id;
       }
     });
     return map;
-  }, [s?.flags?.resources]);
+  }, [parameterData?.flags]);
 
   const getInitialFormState = useCallback((): ParameterFormState => {
-    if (!s) {
+    const data = parameterDataRef.current;
+    const selectedFlags = data?.flags?.filter((flag) => flag.selected) ?? [];
+    const selectedFlagIds = selectedFlags
+      .map((flag) => flag.flag_option_id)
+      .filter((id): id is string => !!id);
+    const hasFlag = (key: string) => selectedFlags.some((flag) => flag.key === key);
+
+    if (!data) {
       return {
         name_id: null,
         name: null,
@@ -242,52 +183,45 @@ function ParameterComponent({
         persona_parameter: false,
         scenario_parameter: false,
         video_parameter: false,
+        pending_ids: [],
       };
     }
 
-    const currentFlags = s.flags?.current ?? [];
-    const hasKey = (k: string) => currentFlags.some((f) => f.key === k);
-    const activeFlagId =
-      currentFlags.find((f) => f.key === "active")?.flag_option_id ?? null;
-    const flagIds = currentFlags
-      .map((f) => f.flag_option_id)
-      .filter((x): x is string => !!x);
-
     return {
-      name_id: s.names?.resource?.id ?? null,
+      name_id: data.names?.find((item) => item.selected)?.id ?? null,
       name: null,
-      description_id: s.descriptions?.resource?.id ?? null,
+      description_id: data.descriptions?.find((item) => item.selected)?.id ?? null,
       description: null,
-      active_flag_id: activeFlagId,
-      flag_ids: flagIds,
+      active_flag_id:
+        selectedFlags.find((flag) => flag.key === "active")?.flag_option_id ?? null,
+      flag_ids: selectedFlagIds,
       department_ids:
-        s.departments?.current
-          ?.map((d) => d.department_id)
-          .filter((x): x is string => !!x) ?? [],
+        (data.departments?.filter((item) => item.selected) ?? [])
+          .map((item) => item.department_id)
+          .filter((id): id is string => !!id),
       field_ids:
-        s.fields?.current
-          ?.map((f) => f.field_id)
-          .filter((x): x is string => !!x) ?? [],
-      simulation_parameter: hasKey("simulation"),
-      document_parameter: hasKey("document"),
-      persona_parameter: hasKey("persona"),
-      scenario_parameter: hasKey("scenario"),
-      video_parameter: hasKey("video"),
+        (data.parameter_fields?.filter((item) => item.selected) ?? [])
+          .map((item) => item.id)
+          .filter((id): id is string => !!id),
+      simulation_parameter: hasFlag("simulation"),
+      document_parameter: hasFlag("document"),
+      persona_parameter: hasFlag("persona"),
+      scenario_parameter: hasFlag("scenario"),
+      video_parameter: hasFlag("video"),
+      pending_ids: data.pending_ids ?? [],
     };
-  }, [s]);
+  }, []);
 
-  const [formState, setFormState] = useState<ParameterFormState>(
-    getInitialFormState
-  );
+  const [formState, setFormState] = useState<ParameterFormState>(getInitialFormState);
 
   useEffect(() => {
-    const newState = getInitialFormState();
+    const nextState = getInitialFormState();
     setFormState((prev) =>
-      JSON.stringify(prev) === JSON.stringify(newState) ? prev : newState
+      JSON.stringify(prev) === JSON.stringify(nextState) ? prev : nextState
     );
   }, [getInitialFormState]);
 
-  const formStateRef = React.useRef(formState as Record<string, unknown>);
+  const formStateRef = useRef<Record<string, unknown>>(formState as Record<string, unknown>);
   useEffect(() => {
     formStateRef.current = formState as Record<string, unknown>;
   }, [formState]);
@@ -295,14 +229,13 @@ function ParameterComponent({
   const deriveFlagIds = useCallback(
     (state: ParameterFormState): string[] => {
       const ids: string[] = [];
+      if (state.active_flag_id) {
+        ids.push(state.active_flag_id);
+      }
       const pushIf = (key: string, enabled: boolean) => {
         const id = flagIdByKey[key];
         if (enabled && id) ids.push(id);
       };
-
-      if (state.active_flag_id) {
-        ids.push(state.active_flag_id);
-      }
       pushIf("simulation", state.simulation_parameter);
       pushIf("document", state.document_parameter);
       pushIf("persona", state.persona_parameter);
@@ -313,107 +246,126 @@ function ParameterComponent({
     [flagIdByKey]
   );
 
-  const serverSyncPendingRef = React.useRef(false);
-
-  const patchActionRef = React.useRef<
-    ((
-      payload: Record<string, unknown>
-    ) => Promise<{ draft_id?: string | null }>) | undefined
+  const serverSyncPendingRef = useRef(false);
+  const patchActionRef = useRef<
+    | ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>)
+    | undefined
   >(undefined);
+  const lastPatchedFormStateRef = useRef<Record<string, unknown> | null>(null);
 
   useEffect(() => {
-    if (patchParameterDraftAction) {
-      patchActionRef.current = async (payload: Record<string, unknown>) => {
-        const result = await patchParameterDraftAction({ body: payload } as PatchParameterDraftIn);
-        const fs = result?.form_state;
-        if (fs) {
-          serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name_id: fs.name_id ?? prev.name_id,
-            name: fs.name_id ? null : prev.name,
-            description_id: fs.description_id ?? prev.description_id,
-            description: fs.description_id ? null : prev.description,
-            active_flag_id: fs.flag_ids?.[0] ?? prev.active_flag_id,
-            flag_ids: fs.flag_ids ?? prev.flag_ids,
-            department_ids: fs.department_ids ?? prev.department_ids,
-            field_ids: fs.field_ids ?? prev.field_ids,
-          }));
-          requestAnimationFrame(() => {
-            serverSyncPendingRef.current = false;
-          });
-        }
-        return result;
-      };
-    } else {
+    if (!patchParameterDraftAction) {
       patchActionRef.current = undefined;
+      return;
     }
-  }, [patchParameterDraftAction]);
 
-  const formStateKey = useMemo(() => {
-    if (serverSyncPendingRef.current) return undefined;
-    return JSON.stringify(formState);
-  }, [formState]);
+    patchActionRef.current = async (payload: Record<string, unknown>) => {
+      const result = await patchParameterDraftAction({
+        body: payload,
+      } as PatchParameterDraftIn);
 
-  const hasResourceIds =
-    checkHasResourceIds(
-      PARAMETER_RESOURCES,
-      formState as unknown as Record<string, unknown>
-    ) || deriveFlagIds(formState).length > 0;
+      const formStateFromServer = result?.form_state;
+      if (formStateFromServer) {
+        const nextFlagIds = formStateFromServer.flag_ids ?? [];
+        const resolveBoolean = (key: string, previous: boolean) => {
+          const id = flagIdByKey[key];
+          return id ? nextFlagIds.includes(id) : previous;
+        };
 
-  const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
-    null
-  );
+        serverSyncPendingRef.current = true;
+        setFormState((prev) => ({
+          ...prev,
+          name_id: formStateFromServer.name_id ?? prev.name_id,
+          name:
+            formStateFromServer.name !== undefined
+              ? formStateFromServer.name
+              : formStateFromServer.name_id
+                ? null
+                : prev.name,
+          description_id:
+            formStateFromServer.description_id ?? prev.description_id,
+          description:
+            formStateFromServer.description !== undefined
+              ? formStateFromServer.description
+              : formStateFromServer.description_id
+                ? null
+                : prev.description,
+          active_flag_id:
+            flagIdByKey["active"] && nextFlagIds.includes(flagIdByKey["active"])
+              ? flagIdByKey["active"]
+              : null,
+          flag_ids: nextFlagIds,
+          department_ids: formStateFromServer.department_ids ?? prev.department_ids,
+          field_ids: formStateFromServer.field_ids ?? prev.field_ids,
+          simulation_parameter: resolveBoolean("simulation", prev.simulation_parameter),
+          document_parameter: resolveBoolean("document", prev.document_parameter),
+          persona_parameter: resolveBoolean("persona", prev.persona_parameter),
+          scenario_parameter: resolveBoolean("scenario", prev.scenario_parameter),
+          video_parameter: resolveBoolean("video", prev.video_parameter),
+          pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
+        }));
+        requestAnimationFrame(() => {
+          serverSyncPendingRef.current = false;
+        });
+      }
+
+      return result;
+    };
+  }, [flagIdByKey, patchParameterDraftAction]);
+
+  const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
 
   const buildPatchPayload = useCallback(
     (
       inputDraftId: string | null,
       flushResults?: Record<string, unknown>
     ): Record<string, unknown> => {
-      const currentFormState = formStateRef.current as unknown as ParameterFormState;
-      const effective = computeEffectiveFormState(
-        PARAMETER_RESOURCES,
-        formStateRef.current,
-        flushResults ?? {}
-      ) as unknown as ParameterFormState;
-      const effectiveFlags = deriveFlagIds(effective);
-      const refState = lastPatchedFormStateRef.current as
+      const currentFormState: ParameterFormState =
+        formStateRef.current as unknown as ParameterFormState;
+      const effectiveFlags = deriveFlagIds(currentFormState);
+      const referenceState = lastPatchedFormStateRef.current as
         | (ParameterFormState & Record<string, unknown>)
         | null;
-      const refFlags = refState ? deriveFlagIds(refState) : [];
+      const referenceFlags = referenceState ? deriveFlagIds(referenceState) : [];
       const flagsChanged =
-        JSON.stringify(effectiveFlags) !== JSON.stringify(refFlags);
+        JSON.stringify(effectiveFlags) !== JSON.stringify(referenceFlags);
 
-      const base: Record<string, unknown> = {
+      const payload: Record<string, unknown> = {
+        draft_id: inputDraftId || null,
         input_draft_id: inputDraftId || null,
         ...buildDraftPayload(PARAMETER_RESOURCES, {
-          formState: effective as unknown as Record<string, unknown>,
-          referenceState: refState,
-          flushResults: (flushResults ?? {}) as Record<string, unknown>,
+          formState: currentFormState as unknown as Record<string, unknown>,
+          referenceState,
+          flushResults: flushResults ?? {},
         }),
         ...(flagsChanged
-          ? {
-              flag_ids:
-                effectiveFlags.length > 0 ? effectiveFlags : null,
-            }
+          ? { flag_ids: effectiveFlags.length > 0 ? effectiveFlags : null }
           : {}),
+        pending_ids:
+          currentFormState.pending_ids.length > 0
+            ? currentFormState.pending_ids
+            : null,
       };
 
-      // Overlay value fields (single-select values clear the corresponding ID)
       if (currentFormState.name != null) {
-        base.name = currentFormState.name;
-        delete base.name_id;
+        payload["name"] = currentFormState.name;
+        delete payload["name_id"];
       }
       if (currentFormState.description != null) {
-        base.description = currentFormState.description;
-        delete base.description_id;
+        payload["description"] = currentFormState.description;
+        delete payload["description_id"];
       }
 
-      return base;
+      return payload;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [deriveFlagIds, s]
+    [deriveFlagIds]
   );
+
+  const hasResourceIds =
+    checkHasResourceIds(
+      PARAMETER_RESOURCES,
+      formState as unknown as Record<string, unknown>
+    ) || deriveFlagIds(formState).length > 0;
 
   const {
     setUrlFormDataRef,
@@ -427,7 +379,7 @@ function ParameterComponent({
     buildPatchPayload,
     setSelectedDraftId,
     hasResourceIds,
-    flushRegistryRef,
+    flushRegistryRef: emptyFlushRegistryRef,
     formStateRef,
     onPatchSuccess: () => {
       lastPatchedFormStateRef.current = {
@@ -458,28 +410,48 @@ function ParameterComponent({
         user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
-    [flushAllAndSave, formDataRef, parameterId, generate]
+    [flushAllAndSave, formDataRef, generate, parameterId]
   );
 
   const canRegenerate = useCallback(
     (resourceType: ResourceType) => {
+      if (!stableParameterDataFields) return false;
       switch (resourceType) {
         case "names":
-          return s?.names?.resource?.generated ?? false;
+          return (
+            stableParameterDataFields.names?.find((item) => item.selected)?.generated ??
+            false
+          );
         case "descriptions":
-          return s?.descriptions?.resource?.generated ?? false;
+          return (
+            stableParameterDataFields.descriptions?.find((item) => item.selected)
+              ?.generated ?? false
+          );
         case "flags":
-          return s?.flags?.current?.some((f) => f.generated) ?? false;
+          return (
+            stableParameterDataFields.flags?.filter((item) => item.selected).some(
+              (item) => item.generated
+            ) ?? false
+          );
         case "departments":
-          return s?.departments?.current?.some((d) => d.generated) ?? false;
+          return (
+            stableParameterDataFields.departments
+              ?.filter((item) => item.selected)
+              .some((item) => item.generated) ?? false
+          );
         case "fields":
-          return s?.fields?.current?.some((f) => f.generated) ?? false;
+          return (
+            stableParameterDataFields.parameter_fields
+              ?.filter((item) => item.selected)
+              .some((item) => item.generated) ?? false
+          );
         default:
           return false;
       }
     },
-    [s]
+    [stableParameterDataFields]
   );
+
   const canRegenerateForStepCard = useCallback(
     (resourceType: string) => canRegenerate(resourceType as ResourceType),
     [canRegenerate]
@@ -491,56 +463,38 @@ function ParameterComponent({
 
   const selectedFieldResources = useMemo(
     () =>
-      (s?.fields?.current ?? []).map((f) => ({
-        field_id: f.field_id ?? null,
-        name: f.name ?? null,
-        description: f.description ?? null,
-        generated: f.generated ?? null,
-      })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [s?.fields?.current]
-  );
-  const allFieldResources = useMemo(
-    () =>
-      (s?.fields?.resources ?? []).map((f) => ({
-        field_id: f.field_id ?? null,
-        name: f.name ?? null,
-        description: f.description ?? null,
-        generated: f.generated ?? null,
-        parameter_id: null,
-      })),
-    [s?.fields?.resources]
+      (parameterData?.parameter_fields?.filter((item) => item.selected) ?? []).map(
+        (item) => ({
+          field_id: item.id ?? null,
+          name: item.name ?? null,
+          description: item.description ?? null,
+          generated: item.generated ?? null,
+        })
+      ),
+    [parameterData?.parameter_fields]
   );
 
-  const disabled = useMemo(() => !s?.can_edit, [s?.can_edit]);
+  const allFieldResources = useMemo(
+    () =>
+      (parameterData?.parameter_fields ?? []).map((item) => ({
+        field_id: item.id ?? null,
+        name: item.name ?? null,
+        description: item.description ?? null,
+        generated: item.generated ?? null,
+      })),
+    [parameterData?.parameter_fields]
+  );
+
+  const disabled = useMemo(() => parameterData?.can_edit === false, [parameterData?.can_edit]);
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      let flushResults: Record<string, unknown> = {};
-      if (!isAutosaveEnabled) {
-        flushResults = await flushAllResources();
-      }
+      const current = formStateRef.current as unknown as ParameterFormState;
+      const effectiveFlags = deriveFlagIds(current);
 
-      const effective = computeEffectiveFormState(
-        PARAMETER_RESOURCES,
-        formStateRef.current,
-        flushResults
-      ) as unknown as ParameterFormState;
-      const effectiveFlags = deriveFlagIds(effective);
-
-      if (s?.names?.required && !effective.name_id) {
+      if (!current.name_id && !current.name?.trim()) {
         toast.error("Parameter name is required");
         throw new Error("Parameter name is required");
-      }
-
-      if (s?.departments?.required && (effective.department_ids?.length ?? 0) === 0) {
-        toast.error("Departments are required");
-        throw new Error("Departments are required");
-      }
-
-      if (s?.fields?.required && (effective.field_ids?.length ?? 0) === 0) {
-        toast.error("Fields are required");
-        throw new Error("Fields are required");
       }
 
       if (!profile?.id) {
@@ -558,19 +512,23 @@ function ParameterComponent({
             parameters: [
               {
                 parameter_id: parameterId,
-                name_id: effective.name_id ?? undefined,
-                name: effective.name ?? undefined,
-                description_id: effective.description_id ?? undefined,
-                description: effective.description ?? undefined,
-                flag_ids: effectiveFlags.length > 0 ? effectiveFlags : undefined,
-                department_ids: effective.department_ids?.length
-                  ? effective.department_ids
-                  : undefined,
-                field_ids: effective.field_ids?.length ? effective.field_ids : undefined,
+                ...(current.name_id ? { name_id: current.name_id } : {}),
+                ...(current.name ? { name: current.name } : {}),
+                ...(current.description_id
+                  ? { description_id: current.description_id }
+                  : {}),
+                ...(current.description ? { description: current.description } : {}),
+                ...(effectiveFlags.length > 0 ? { flag_ids: effectiveFlags } : {}),
+                ...(current.department_ids.length > 0
+                  ? { department_ids: current.department_ids }
+                  : {}),
+                ...(current.field_ids.length > 0
+                  ? { field_ids: current.field_ids }
+                  : {}),
               },
             ],
           },
-        });
+        } as UpdateParameterIn);
       } else {
         if (!createParameterAction) {
           toast.error("Create action not available");
@@ -580,48 +538,45 @@ function ParameterComponent({
           body: {
             parameters: [
               {
-                name_id: effective.name_id ?? undefined,
-                name: effective.name ?? undefined,
-                description_id: effective.description_id ?? undefined,
-                description: effective.description ?? undefined,
-                flag_ids: effectiveFlags.length > 0 ? effectiveFlags : undefined,
-                department_ids: effective.department_ids?.length
-                  ? effective.department_ids
-                  : undefined,
-                field_ids: effective.field_ids?.length ? effective.field_ids : undefined,
+                ...(current.name_id ? { name_id: current.name_id } : {}),
+                ...(current.name ? { name: current.name } : {}),
+                ...(current.description_id
+                  ? { description_id: current.description_id }
+                  : {}),
+                ...(current.description ? { description: current.description } : {}),
+                ...(effectiveFlags.length > 0 ? { flag_ids: effectiveFlags } : {}),
+                ...(current.department_ids.length > 0
+                  ? { department_ids: current.department_ids }
+                  : {}),
+                ...(current.field_ids.length > 0
+                  ? { field_ids: current.field_ids }
+                  : {}),
               },
             ],
           },
-        });
+        } as CreateParameterIn);
       }
 
-      toast.success(
-        `Parameter ${isEditMode ? "updated" : "created"} successfully!`
-      );
+      toast.success(`Parameter ${isEditMode ? "updated" : "created"} successfully`);
       router.push("/management/parameters");
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      isAutosaveEnabled,
-      flushAllResources,
-      deriveFlagIds,
-      s,
-      profile?.id,
       createParameterAction,
-      updateParameterAction,
+      deriveFlagIds,
       isEditMode,
       parameterId,
+      profile?.id,
       router,
-      getInitialFormState,
+      updateParameterAction,
     ]
   );
 
   const getStepStatus = useCallback(
-    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      const hasName = !!formState.name_id;
-      const hasFields = (formState.field_ids?.length ?? 0) > 0;
+    (_stepId: string, _formData: Record<string, unknown>): StepStatus => {
+      const hasName = !!formState.name_id || !!formState.name?.trim();
+      const hasFields = formState.field_ids.length > 0;
 
-      switch (stepId) {
+      switch (_stepId) {
         case "basic":
           return hasName ? "completed" : "active";
         case "parameter-config":
@@ -649,10 +604,10 @@ function ParameterComponent({
     (stepId: string, _mode: "generate" | "regenerate") => {
       const resources = stepResources[stepId];
       if (resources) {
-        handleGenerateResources(resources);
+        void handleGenerateResources(resources);
       }
     },
-    [stepResources, handleGenerateResources],
+    [handleGenerateResources, stepResources]
   );
 
   const steps = useMemo(
@@ -699,6 +654,7 @@ function ParameterComponent({
       "persona_parameter",
       "scenario_parameter",
       "video_parameter",
+      "pending_ids",
     ],
     []
   );
@@ -723,7 +679,9 @@ function ParameterComponent({
           return {
             ...prev,
             name_id: null,
+            name: null,
             description_id: null,
+            description: null,
             active_flag_id: null,
             flag_ids: prev.flag_ids.filter((id) => id !== (prev.active_flag_id ?? "")),
             department_ids: [],
@@ -780,7 +738,7 @@ function ParameterComponent({
       onReset?: () => void;
     }) => {
       switch (stepId) {
-        case "basic": {
+        case "basic":
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -791,11 +749,12 @@ function ParameterComponent({
               isEditMode={isEditMode}
               customHeader={
                 <Names
-                  name_id={formState.name_id ?? null}
-                  name_resource={s?.names?.resource ?? null}
-                  show_name={s?.names?.show ?? true}
-                  name_suggestions={s?.names?.suggestions ?? []}
-                  names={s?.names?.resources ?? []}
+                  name_id={formState.name_id}
+                  name_resource={
+                    parameterData?.names?.find((item) => item.selected) ?? null
+                  }
+                  show_name={true}
+                  names={parameterData?.names ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
@@ -803,21 +762,17 @@ function ParameterComponent({
                   onNameChange={(name) =>
                     setFormState((prev) => ({ ...prev, name, name_id: null }))
                   }
-                  onGenerate={() => handleGenerateResources(["names"])}
                   placeholder="e.g., Student Age"
                   defaultName="New Parameter"
-                  required={s?.names?.required ?? false}
+                  required={true}
                   hideDescription={true}
-
-                  showAiGenerate={s?.names?.show_ai_generate ?? false}
-                  createNamesAction={createNamesAction}
                   isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["names"]}
                 />
               }
               resetFields={["name_id", "description_id", "department_ids", "active_flag_id"]}
               actions={
-                stepResources["basic"]?.length && s?.basic_show_ai_generate ? (
+                stepResources["basic"]?.length &&
+                parameterData?.basic_show_ai_generate ? (
                   <StepCardAiButton
                     stepId="basic"
                     resourceTypes={stepResources["basic"]}
@@ -833,50 +788,56 @@ function ParameterComponent({
             >
               <div className="space-y-4">
                 <Descriptions
-                  description_id={formState.description_id ?? null}
-                  description_resource={s?.descriptions?.resource ?? null}
-                  show_description={s?.descriptions?.show ?? true}
-                  description_suggestions={s?.descriptions?.suggestions ?? []}
-                  descriptions={s?.descriptions?.resources ?? []}
+                  description_id={formState.description_id}
+                  description_resource={
+                    parameterData?.descriptions?.find((item) => item.selected) ?? null
+                  }
+                  show_description={true}
+                  descriptions={parameterData?.descriptions ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({ ...prev, description_id: descriptionId, description: null }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      description_id: descriptionId,
+                      description: null,
+                    }))
                   }
                   onDescriptionChange={(description) =>
-                    setFormState((prev) => ({ ...prev, description, description_id: null }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      description,
+                      description_id: null,
+                    }))
                   }
-                  onGenerate={() => handleGenerateResources(["descriptions"])}
                   label="Description"
                   placeholder="Enter a brief description (optional)"
-                  required={s?.descriptions?.required ?? false}
+                  required={false}
                   rows={3}
-
-                  showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
-                  createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["descriptions"]}
                 />
 
                 <Departments
-                  department_ids={formState.department_ids ?? []}
-                  department_resources={s?.departments?.current ?? []}
-                  show_departments={s?.departments?.show ?? false}
-                  department_suggestions={s?.departments?.suggestions ?? []}
-                  departments={s?.departments?.resources ?? []}
+                  department_ids={formState.department_ids}
+                  department_resources={
+                    parameterData?.departments?.filter((item) => item.selected) ?? []
+                  }
+                  show_departments={true}
+                  departments={parameterData?.departments ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
-                  onGenerate={() => handleGenerateResources(["departments"])}
-                  required={s?.departments?.required ?? false}
-
-                  showAiGenerate={s?.departments?.show_ai_generate ?? false}
+                  required={false}
                 />
 
                 <Flags
-                  flags={(s?.flags?.resources ?? []).filter(f => f.key === "active") as FlagConfig[]}
+                  flags={
+                    ((parameterData?.flags ?? []).filter(
+                      (flag) => flag.key === "active"
+                    ) as unknown as FlagConfig[]) ?? []
+                  }
                   flag_id={formState.active_flag_id}
-                  show_flags={s?.flags?.show ?? false}
+                  show_flags={true}
                   columns={1}
                   label="Active"
                   disabled={disabled}
@@ -893,23 +854,17 @@ function ParameterComponent({
                       };
                     })
                   }
-                  onGenerate={() => handleGenerateResources(["flags"])}
-
-                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
               </div>
             </StepCard>
           );
-        }
 
         case "parameter-config": {
           const toggleTypeFlag = (key: string, checked: boolean) => {
             const optionId = flagIdByKey[key];
             setFormState((prev) => {
               const nextIds = prev.flag_ids.filter((id) => id !== optionId);
-              if (checked && optionId) {
-                nextIds.push(optionId);
-              }
+              if (checked && optionId) nextIds.push(optionId);
               return {
                 ...prev,
                 flag_ids: Array.from(new Set(nextIds)),
@@ -921,8 +876,7 @@ function ParameterComponent({
                   key === "persona" ? checked : prev.persona_parameter,
                 scenario_parameter:
                   key === "scenario" ? checked : prev.scenario_parameter,
-                video_parameter:
-                  key === "video" ? checked : prev.video_parameter,
+                video_parameter: key === "video" ? checked : prev.video_parameter,
               };
             });
           };
@@ -945,7 +899,7 @@ function ParameterComponent({
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="simulation_parameter">Simulation Parameter</Label>
                   <Switch
@@ -1026,7 +980,7 @@ function ParameterComponent({
               resetFields={["field_ids", "fieldSearch", "fieldShowSelected"]}
               actions={
                 stepResources["fields"]?.length &&
-                (s?.fields?.show_ai_generate ?? s?.fields_step_show_ai_generate) ? (
+                parameterData?.fields_step_show_ai_generate ? (
                   <StepCardAiButton
                     stepId="fields"
                     resourceTypes={stepResources["fields"]}
@@ -1041,19 +995,16 @@ function ParameterComponent({
               resetLabel="Reset"
             >
               <Fields
-                field_ids={formState.field_ids ?? []}
+                field_ids={formState.field_ids}
                 field_resources={selectedFieldResources}
-                show_fields={s?.fields?.show ?? false}
-                field_suggestions={s?.fields?.suggestions ?? []}
+                show_fields={true}
                 fields={allFieldResources}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, field_ids: ids }))
                 }
                 label="Fields"
-                required={s?.fields?.required ?? false}
-
-                showAiGenerate={s?.fields?.show_ai_generate ?? false}
+                required={false}
                 onGenerate={() => handleGenerateResources(["fields"])}
                 searchTerm={fieldSearchTerm}
                 showSelectedFilter={fieldShowSelected}
@@ -1066,37 +1017,32 @@ function ParameterComponent({
           return null;
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      disabled,
-      isEditMode,
-      formState,
-      s,
-      isGenerating,
-      isGeneratingForStepCard,
-      selectedFieldResources,
       allFieldResources,
-      stepResources,
       canRegenerateForStepCard,
-      handleDirectStepGenerate,
-      createNamesAction,
-      createDescriptionsAction,
-      isAutosaveEnabled,
-      registerFlushCallbacks,
-      handleGenerateResources,
+      disabled,
       flagIdByKey,
+      formState,
+      handleDirectStepGenerate,
+      handleGenerateResources,
+      isAutosaveEnabled,
+      isEditMode,
+      isGeneratingForStepCard,
+      parameterData,
+      selectedFieldResources,
+      stepResources,
     ]
   );
 
   return (
     <TooltipProvider>
       <div
-        className="w-full p-6 space-y-8"
+        className="w-full space-y-8 p-6"
         data-page={`parameter-${isEditMode ? "edit" : "new"}`}
       >
         <ReadOnlyBanner
           disabled={disabled}
-          disabledReason={s?.disabled_reason ?? null}
+          disabledReason={parameterData?.disabled_reason ?? null}
           entityType="parameter"
         />
 
@@ -1104,7 +1050,7 @@ function ParameterComponent({
           nuqsParsers={parameterSearchParamsClient as Record<string, Parser<unknown>>}
           steps={steps}
           getStepStatus={getStepStatus}
-          serverData={s}
+          serverData={parameterData ?? null}
           formFieldKeys={formFieldKeys}
           onReset={(stepId) => handleReset(stepId)}
           resetSuccessMessage={resetSuccessMessage}
@@ -1118,7 +1064,6 @@ function ParameterComponent({
             setUrlFormDataRef.current = setter;
           }}
         />
-
       </div>
     </TooltipProvider>
   );

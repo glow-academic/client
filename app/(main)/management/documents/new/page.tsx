@@ -17,9 +17,15 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
+import {
+  createLoader,
+  parseAsArrayOf,
+  parseAsBoolean,
+  parseAsString,
+} from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
+import type { DraftItem } from "@/contexts/draft-context";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetDocumentIn = InputOf<"/document/get", "post">;
@@ -28,30 +34,18 @@ type CreateDocumentIn = InputOf<"/document/create", "post">;
 type CreateDocumentOut = OutputOf<"/document/create", "post">;
 type PatchDocumentDraftIn = InputOf<"/document/draft", "patch">;
 type PatchDocumentDraftOut = OutputOf<"/document/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftUploadsIn = InputOf<"/api/v5/resources/uploads", "post">;
-type CreateDraftUploadsOut = OutputOf<"/api/v5/resources/uploads", "post">;
-type CreateDraftImagesIn = InputOf<"/api/v5/resources/images", "post">;
-type CreateDraftImagesOut = OutputOf<"/api/v5/resources/images", "post">;
-type CreateDraftTextsIn = InputOf<"/api/v5/resources/texts", "post">;
-type CreateDraftTextsOut = OutputOf<"/api/v5/resources/texts", "post">;
 type GroupDocumentIn = InputOf<"/document/group", "post">;
 type GroupDocumentOut = OutputOf<"/document/group", "post">;
-type GenerateDocumentIn = InputOf<"/document/generate", "post">;
-type GenerateDocumentOut = OutputOf<"/document/generate", "post">;
 type ProblemDocumentIn = InputOf<"/document/problem", "post">;
 type ProblemDocumentOut = OutputOf<"/document/problem", "post">;
 type ContextIn = InputOf<"/document/context", "post">;
 type ContextOut = OutputOf<"/document/context", "post">;
+type DocumentDraftsIn = InputOf<"/document/drafts", "post">;
+type DocumentDraftsOut = OutputOf<"/document/drafts", "post">;
+type DocumentSectionFilter = Exclude<
+  NonNullable<NonNullable<GetDocumentIn["body"]>["descriptions"]>,
+  null | undefined
+>;
 
 /** Upload action result — matches the interface expected by resource components */
 type UploadResult = { success: boolean; upload_id?: string; message?: string };
@@ -79,41 +73,6 @@ async function patchDocumentDraft(
 ): Promise<PatchDocumentDraftOut> {
   "use server";
   return api.patch("/document/draft", input);
-}
-
-async function createDraftNames(
-  input: CreateDraftNamesIn
-): Promise<CreateDraftNamesOut> {
-  "use server";
-  return api.post("/resources/names", input);
-}
-
-async function createDraftDescriptions(
-  input: CreateDraftDescriptionsIn
-): Promise<CreateDraftDescriptionsOut> {
-  "use server";
-  return api.post("/resources/descriptions", input);
-}
-
-async function createDraftUploads(
-  input: CreateDraftUploadsIn
-): Promise<CreateDraftUploadsOut> {
-  "use server";
-  return api.post("/resources/uploads", input);
-}
-
-async function createDraftImages(
-  input: CreateDraftImagesIn
-): Promise<CreateDraftImagesOut> {
-  "use server";
-  return api.post("/resources/images", input);
-}
-
-async function createDraftTexts(
-  input: CreateDraftTextsIn
-): Promise<CreateDraftTextsOut> {
-  "use server";
-  return api.post("/resources/texts", input);
 }
 
 async function uploadFile(formData: FormData): Promise<UploadResult> {
@@ -149,30 +108,26 @@ async function uploadFile(formData: FormData): Promise<UploadResult> {
   }
 }
 
-async function generateDocument(
-  input: GenerateDocumentIn
-): Promise<GenerateDocumentOut> {
-  "use server";
-  return api.post("/document/generate", input);
-}
-
-async function getDocumentGroupHistory(groupId: string): Promise<GroupDocumentOut> {
-  "use server";
-  return api.post("/document/group", { body: { group_id: groupId } } as GroupDocumentIn);
-}
-
-type GenerationsIn = InputOf<"/document/generations", "post">;
-type GenerationsOut = OutputOf<"/document/generations", "post">;
-
-async function searchDocumentGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/document/generations", { body: { search: query || null } } as GenerationsIn);
-}
-
 async function createDocumentProblem(input: ProblemDocumentIn): Promise<ProblemDocumentOut> {
   "use server";
   return api.post("/document/problem", input);
 }
+
+const buildSectionFilter = (
+  opts: {
+    search?: string | null;
+    selected?: boolean | null;
+    parameter_ids?: string[] | null;
+  },
+) => {
+  const filter: DocumentSectionFilter = {};
+  if (opts.search != null) filter["search"] = opts.search;
+  if (opts.selected != null) filter["selected"] = opts.selected;
+  if (opts.parameter_ids != null && opts.parameter_ids.length > 0) {
+    filter["parameter_ids"] = opts.parameter_ids;
+  }
+  return Object.keys(filter).length > 0 ? filter : undefined;
+};
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
@@ -227,34 +182,53 @@ export default async function NewDocumentPage({
       draftId: parseAsString,
       descriptionSearch: parseAsString,
       fieldSearch: parseAsString,
+      uploadSearch: parseAsString,
       fieldShowSelected: parseAsBoolean,
+      parameterIds: parseAsArrayOf(parseAsString),
     };
     const loadDocumentSearchParams = createLoader(documentSearchParams);
     const q = loadDocumentSearchParams(searchParamsObj);
+    const descriptionsFilter = buildSectionFilter({ search: q.descriptionSearch });
+    const parameterFieldsFilter = buildSectionFilter({
+      search: q.fieldSearch,
+      selected: q.fieldShowSelected,
+      parameter_ids: q.parameterIds,
+    });
+    const filesFilter = buildSectionFilter({ search: q.uploadSearch });
 
-    const input: GetDocumentIn = {
-      body: {
-        document_id: null,
-        draft_id: q.draftId ?? null,
-      } as GetDocumentIn["body"],
-    };
+    const body = {
+      id: null,
+      draft_id: q.draftId ?? null,
+      ...(descriptionsFilter ? { descriptions: descriptionsFilter } : {}),
+      ...(parameterFieldsFilter
+        ? { parameter_fields: parameterFieldsFilter }
+        : {}),
+      ...(filesFilter ? { files: filesFilter } : {}),
+    } satisfies NonNullable<GetDocumentIn["body"]>;
+
+    const input = { body } as GetDocumentIn;
 
     const [documentDetailDefault, draftsResult, groupResult] = await Promise.all([
       getDocumentDefault(input),
-      api.post("/document/drafts", {}),
+      api.post("/document/drafts", {} as DocumentDraftsIn),
       api.post("/document/group", { body: {} } as GroupDocumentIn),
     ]);
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient
+        drafts={((draftsResult as DocumentDraftsOut).entries ?? []) as unknown as DraftItem[]}
+      >
         <FullPageLayout
           profileData={context.profile}
           sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
+          {...(initialSidebarOpen !== undefined ? { initialSidebarOpen } : {})}
           initialPanelOpen={initialPanelOpen}
           sidebarProps={{
             activeSection: "document",
-            createFeedback: createDocumentProblem,
+            createFeedback:
+              createDocumentProblem as unknown as (
+                input: Record<string, unknown>,
+              ) => Promise<Record<string, unknown>>,
           }}
           breadcrumbs={[
             { title: "Management", section: "management", url: "/management" },
@@ -265,11 +239,8 @@ export default async function NewDocumentPage({
           panelProps={{
             artifactType: "document",
             groupId: (groupResult as GroupDocumentOut & { group_id?: string })?.group_id ?? null,
-            generateAction: generateDocument,
             operations: ["draft", "get", "group"],
-            getGroupHistory: getDocumentGroupHistory,
-            searchGroups: searchDocumentGroups,
-            prompts: context.prompts?.prompts,
+            ...(context.prompts?.prompts ? { prompts: context.prompts.prompts } : {}),
           }}
         >
           <div
@@ -283,11 +254,6 @@ export default async function NewDocumentPage({
               documentDetailDefault={documentDetailDefault}
               createDocumentAction={createDocument}
               patchDocumentDraftAction={patchDocumentDraft}
-              createNamesAction={createDraftNames}
-              createDescriptionsAction={createDraftDescriptions}
-              createUploadsAction={createDraftUploads}
-              createImagesAction={createDraftImages}
-              createTextsAction={createDraftTexts}
               uploadBasePath="/document"
               uploadFileAction={uploadFile}
             />

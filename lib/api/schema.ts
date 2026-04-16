@@ -6118,6 +6118,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/attempt/chat/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Attempt Chat Endpoint
+         * @description Create a chat within an attempt.
+         */
+        post: operations["create_attempt_chat_endpoint_attempt_chat_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/attempt/chat/send": {
         parameters: {
             query?: never;
@@ -6390,6 +6410,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/attempt/chat/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Get
+         * @description Get hydrated resources for chat bundle customization.
+         */
+        post: operations["chat_get_attempt_chat_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat/group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Group Chat
+         * @description Resolve or create a chat group with optional naming.
+         */
+        post: operations["group_chat_attempt_chat_group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Refresh
+         * @description Refresh chat materialized views and invalidate caches.
+         */
+        post: operations["chat_refresh_attempt_chat_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Chat
+         * @description Export a single chat as a clean, denormalized CSV.
+         */
+        post: operations["export_chat_attempt_chat_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Chat Context
+         * @description Get page context for the chat analytics.
+         *
+         *     Returns docs + profile identity + evaluated permissions in a single call.
+         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
+         */
+        post: operations["get_chat_context_attempt_chat_context_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/attempt/draft": {
         parameters: {
             query?: never;
@@ -6424,6 +6547,26 @@ export interface paths {
          * @description List chat drafts owned by the current profile.
          */
         post: operations["get_chat_drafts_attempt_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/home/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Home Attempt
+         * @description Create a new attempt from a home entry.
+         */
+        post: operations["start_home_attempt_attempt_home_start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6607,6 +6750,26 @@ export interface paths {
          * @description Report a home problem — composable infra architecture.
          */
         post: operations["problem_home_attempt_home_problem_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/practice/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Practice Attempt
+         * @description Create a new attempt from a practice entry.
+         */
+        post: operations["start_practice_attempt_attempt_practice_start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -17537,6 +17700,19 @@ export interface components {
              */
             infinite_mode: boolean;
         };
+        /** AttemptStartResponse */
+        AttemptStartResponse: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+        };
         /**
          * AttemptStartedEvent
          * @description Server-to-client: new attempt created.
@@ -20777,6 +20953,180 @@ export interface components {
             instruction_ids?: string[] | null;
         };
         /**
+         * CreateAttemptChatApiRequest
+         * @description Create an attempt_chat from a chat template + resource IDs.
+         */
+        CreateAttemptChatApiRequest: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+            /** Time Limit */
+            time_limit?: number | null;
+            /**
+             * Negative Time
+             * @default false
+             */
+            negative_time: boolean;
+            /**
+             * Audio Enabled
+             * @default false
+             */
+            audio_enabled: boolean;
+            /**
+             * Text Enabled
+             * @default true
+             */
+            text_enabled: boolean;
+            /**
+             * Hints Enabled
+             * @default false
+             */
+            hints_enabled: boolean;
+            /**
+             * Copy Paste Allowed
+             * @default true
+             */
+            copy_paste_allowed: boolean;
+            /**
+             * Show Images
+             * @default false
+             */
+            show_images: boolean;
+            /**
+             * Show Objectives
+             * @default false
+             */
+            show_objectives: boolean;
+            /**
+             * Show Problem Statement
+             * @default false
+             */
+            show_problem_statement: boolean;
+            /**
+             * Analyses Enabled
+             * @default false
+             */
+            analyses_enabled: boolean;
+            /**
+             * Improvements Enabled
+             * @default false
+             */
+            improvements_enabled: boolean;
+            /**
+             * Replacements Enabled
+             * @default false
+             */
+            replacements_enabled: boolean;
+            /**
+             * Strengths Enabled
+             * @default false
+             */
+            strengths_enabled: boolean;
+            /**
+             * Use Custom
+             * @default false
+             */
+            use_custom: boolean;
+            /**
+             * Use Previous
+             * @default false
+             */
+            use_previous: boolean;
+            /**
+             * Problem Statement Enabled
+             * @default false
+             */
+            problem_statement_enabled: boolean;
+            /**
+             * Objectives Enabled
+             * @default false
+             */
+            objectives_enabled: boolean;
+            /**
+             * Video Enabled
+             * @default false
+             */
+            video_enabled: boolean;
+            /**
+             * Images Enabled
+             * @default false
+             */
+            images_enabled: boolean;
+            /**
+             * Questions Enabled
+             * @default false
+             */
+            questions_enabled: boolean;
+            /** Assistant Persona Ids */
+            assistant_persona_ids?: string[] | null;
+            /** Rubrics Ids */
+            rubrics_ids?: string[] | null;
+            /** Standards Ids */
+            standards_ids?: string[] | null;
+            /** Standard Groups Ids */
+            standard_groups_ids?: string[] | null;
+            /** Departments Ids */
+            departments_ids?: string[] | null;
+            /** Personas Ids */
+            personas_ids?: string[] | null;
+            /** Problem Statements Ids */
+            problem_statements_ids?: string[] | null;
+            /** Objectives Ids */
+            objectives_ids?: string[] | null;
+            /** Questions Ids */
+            questions_ids?: string[] | null;
+            /** Options Ids */
+            options_ids?: string[] | null;
+            /** Videos Ids */
+            videos_ids?: string[] | null;
+            /** Images Ids */
+            images_ids?: string[] | null;
+            /** Documents Ids */
+            documents_ids?: string[] | null;
+            /** Parameter Fields Ids */
+            parameter_fields_ids?: string[] | null;
+            /** Names Ids */
+            names_ids?: string[] | null;
+            /** Descriptions Ids */
+            descriptions_ids?: string[] | null;
+            /** Parameters Ids */
+            parameters_ids?: string[] | null;
+            /** Idempotency Key */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @default true
+             */
+            accept: boolean;
+        };
+        /** CreateAttemptChatApiResponse */
+        CreateAttemptChatApiResponse: {
+            /**
+             * Attempt Chat Id
+             * Format: uuid
+             */
+            attempt_chat_id: string;
+            /** Idempotency Key */
+            idempotency_key?: string | null;
+        };
+        /**
          * CreateAuthApiRequest
          * @description Request model for bulk create auth endpoint.
          */
@@ -21156,6 +21506,17 @@ export interface components {
              * @description List of documents to create
              */
             documents: components["schemas"]["CreateDocumentItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateDocumentApiResponse
@@ -21167,6 +21528,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["DocumentResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateDocumentApiResponse
@@ -21178,6 +21544,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["DocumentResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateDocumentItem
@@ -21436,6 +21807,17 @@ export interface components {
              * @description List of fields to create
              */
             fields: components["schemas"]["CreateFieldItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateFieldApiResponse
@@ -21447,6 +21829,11 @@ export interface components {
              * @description Per-item creation results
              */
             results: components["schemas"]["FieldResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateFieldApiResponse
@@ -21458,6 +21845,11 @@ export interface components {
              * @description Per-item creation results
              */
             results: components["schemas"]["FieldResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateFieldItem
@@ -21708,6 +22100,17 @@ export interface components {
              * @description List of parameters to create
              */
             parameters: components["schemas"]["CreateParameterItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateParameterApiResponse
@@ -21719,6 +22122,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ParameterResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateParameterApiResponse
@@ -21730,6 +22138,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ParameterResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateParameterItem
@@ -22075,11 +22488,6 @@ export interface components {
              * @description Name value to resolve or create
              */
             name?: string | null;
-            /**
-             * Request Limit Id
-             * @description UUID of the request limit resource
-             */
-            request_limit_id?: string | null;
             /**
              * Active Flag Id
              * @description UUID of the flag option
@@ -24020,6 +24428,17 @@ export interface components {
              * @description Document UUIDs to delete
              */
             document_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteDocumentApiResponse
@@ -24031,6 +24450,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["DeleteDocumentResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteDocumentResult
@@ -24108,6 +24532,17 @@ export interface components {
              * @description UUIDs of fields to delete
              */
             field_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteFieldApiResponse
@@ -24119,6 +24554,11 @@ export interface components {
              * @description Per-item deletion results
              */
             results: components["schemas"]["DeleteFieldResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteFieldResult
@@ -24196,6 +24636,17 @@ export interface components {
              * @description List of parameter IDs to delete
              */
             parameter_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteParameterApiResponse
@@ -24207,6 +24658,11 @@ export interface components {
              * @description List of deletion results
              */
             results: components["schemas"]["DeleteParameterResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteParameterResult
@@ -24857,10 +25313,10 @@ export interface components {
          */
         DocumentDepartmentResource: {
             /**
-             * Id
-             * @description Unique identifier
+             * Department Id
+             * @description Department UUID
              */
-            id?: string | null;
+            department_id?: string | null;
             /**
              * Name
              * @description Department name
@@ -24876,19 +25332,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** DocumentDepartmentSection */
-        DocumentDepartmentSection: {
             /**
-             * Current
-             * @description Currently selected departments
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["DocumentDepartmentResource"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available departments
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["DocumentDepartmentResource"][] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * DocumentDescriptionResource
@@ -24910,67 +25371,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** DocumentDescriptionSection */
-        DocumentDescriptionSection: {
-            /** @description Currently selected description resource */
-            resource?: components["schemas"]["DocumentDescriptionResource"] | null;
             /**
-             * Resources
-             * @description Available description resources
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            resources?: components["schemas"]["DocumentDescriptionResource"][] | null;
-        };
-        /**
-         * DocumentDraftFormState
-         * @description Server-authoritative form state returned after draft save.
-         */
-        DocumentDraftFormState: {
+            suggested: boolean;
             /**
-             * Name Id
-             * @description Selected name resource UUID
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            name_id?: string | null;
+            selected: boolean;
             /**
-             * Description Id
-             * @description Selected description resource UUID
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
              */
-            description_id?: string | null;
-            /**
-             * Flag Ids
-             * @description Selected flag option UUIDs
-             */
-            flag_ids: string[];
-            /**
-             * Department Ids
-             * @description Selected department UUIDs
-             */
-            department_ids: string[];
-            /**
-             * File Ids
-             * @description Selected file resource UUIDs
-             */
-            file_ids: string[];
-            /**
-             * Image Ids
-             * @description Selected image UUIDs
-             */
-            image_ids: string[];
-            /**
-             * Text Ids
-             * @description Selected text resource UUIDs
-             */
-            text_ids: string[];
-            /**
-             * Parameter Field Ids
-             * @description Selected parameter field UUIDs
-             */
-            parameter_field_ids: string[];
-            /**
-             * Parameter Ids
-             * @description Selected parameter UUIDs
-             */
-            parameter_ids: string[];
+            pending: boolean;
         };
         /**
          * DocumentEntry
@@ -25019,19 +25437,6 @@ export interface components {
              */
             message: string;
         };
-        /** DocumentFieldSection */
-        DocumentFieldSection: {
-            /**
-             * Current
-             * @description Currently selected parameter fields
-             */
-            current?: components["schemas"]["DocumentParameterFieldResource"][] | null;
-            /**
-             * Resources
-             * @description Available parameter fields
-             */
-            resources?: components["schemas"]["DocumentParameterFieldResource"][] | null;
-        };
         /**
          * DocumentFileResource
          * @description File (upload) resource for document.
@@ -25043,10 +25448,53 @@ export interface components {
              */
             id?: string | null;
             /**
+             * Files Id
+             * @description File resource UUID
+             */
+            files_id?: string | null;
+            /**
+             * Upload Id
+             * @description Upload UUID
+             */
+            upload_id?: string | null;
+            /**
+             * File Path
+             * @description Stored file path
+             */
+            file_path?: string | null;
+            /**
+             * Mime Type
+             * @description File MIME type
+             */
+            mime_type?: string | null;
+            /**
+             * Size
+             * @description File size in bytes
+             */
+            size?: number | null;
+            /**
              * Generated
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * DocumentFlagConfig
@@ -25090,19 +25538,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** DocumentFlagSection */
-        DocumentFlagSection: {
             /**
-             * Current
-             * @description Currently selected flag configs
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["DocumentFlagConfig"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available flag configs
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["DocumentFlagConfig"][] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * DocumentImageResource
@@ -25115,23 +25568,63 @@ export interface components {
              */
             id?: string | null;
             /**
+             * Image Id
+             * @description Image resource UUID
+             */
+            image_id?: string | null;
+            /**
+             * Name
+             * @description Image name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Image description
+             */
+            description?: string | null;
+            /**
+             * Upload Id
+             * @description Upload UUID
+             */
+            upload_id?: string | null;
+            /**
+             * File Path
+             * @description Stored file path
+             */
+            file_path?: string | null;
+            /**
+             * Mime Type
+             * @description File MIME type
+             */
+            mime_type?: string | null;
+            /**
+             * Size
+             * @description File size in bytes
+             */
+            size?: number | null;
+            /**
              * Generated
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** DocumentImageSection */
-        DocumentImageSection: {
             /**
-             * Current
-             * @description Currently selected images
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["DocumentImageResource"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available images
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["DocumentImageResource"][] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * DocumentNameResource
@@ -25153,16 +25646,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** DocumentNameSection */
-        DocumentNameSection: {
-            /** @description Currently selected name resource */
-            resource?: components["schemas"]["DocumentNameResource"] | null;
             /**
-             * Resources
-             * @description Available name resources
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            resources?: components["schemas"]["DocumentNameResource"][] | null;
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * DocumentParameterFieldResource
@@ -25195,23 +25696,112 @@ export interface components {
              */
             description?: string | null;
             /**
+             * Conditional Parameter Id
+             * @description Conditional parameter UUID for grouping
+             */
+            conditional_parameter_id?: string | null;
+            /**
              * Generated
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** DocumentParameterSection */
-        DocumentParameterSection: {
+        /**
+         * DocumentParameterResource
+         * @description Parameter catalog item exposed to the client.
+         */
+        DocumentParameterResource: {
             /**
-             * Current
-             * @description Currently selected parameters
+             * Parameter Id
+             * @description Parameter UUID
              */
-            current?: components["schemas"]["GetParameterResponse"][] | null;
+            parameter_id?: string | null;
             /**
-             * Resources
-             * @description Available parameters
+             * Name
+             * @description Parameter name
              */
-            resources?: components["schemas"]["GetParameterResponse"][] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Parameter description
+             */
+            description?: string | null;
+            /**
+             * Value
+             * @description Parameter value
+             */
+            value?: string | null;
+            /**
+             * Department Ids
+             * @description Department UUIDs
+             */
+            department_ids?: string[] | null;
+            /**
+             * Persona Parameter
+             * @description Whether this is a persona parameter
+             */
+            persona_parameter?: boolean | null;
+            /**
+             * Document Parameter
+             * @description Whether this is a document parameter
+             */
+            document_parameter?: boolean | null;
+            /**
+             * Scenario Parameter
+             * @description Whether this is a scenario parameter
+             */
+            scenario_parameter?: boolean | null;
+            /**
+             * Video Parameter
+             * @description Whether this is a video parameter
+             */
+            video_parameter?: boolean | null;
+            /**
+             * Field Ids
+             * @description Associated field UUIDs
+             */
+            field_ids?: string[] | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * DocumentResultItem
@@ -25250,36 +25840,53 @@ export interface components {
              */
             id?: string | null;
             /**
+             * Texts Id
+             * @description Text resource UUID
+             */
+            texts_id?: string | null;
+            /**
+             * Upload Id
+             * @description Upload UUID
+             */
+            upload_id?: string | null;
+            /**
+             * File Path
+             * @description Stored file path
+             */
+            file_path?: string | null;
+            /**
+             * Mime Type
+             * @description File MIME type
+             */
+            mime_type?: string | null;
+            /**
+             * Content
+             * @description Optional text content when available
+             */
+            content?: string | null;
+            /**
              * Generated
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** DocumentTextSection */
-        DocumentTextSection: {
             /**
-             * Current
-             * @description Currently selected text resources
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["DocumentTextResource"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available text resources
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["DocumentTextResource"][] | null;
-        };
-        /** DocumentUploadSection */
-        DocumentUploadSection: {
+            selected: boolean;
             /**
-             * Current
-             * @description Currently selected file uploads
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
              */
-            current?: components["schemas"]["DocumentFileResource"][] | null;
-            /**
-             * Resources
-             * @description Available file uploads
-             */
-            resources?: components["schemas"]["DocumentFileResource"][] | null;
+            pending: boolean;
         };
         /**
          * DraftFileValue
@@ -25601,6 +26208,17 @@ export interface components {
              * @description Document UUID to duplicate
              */
             document_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DuplicateDocumentApiResponse
@@ -25623,6 +26241,11 @@ export interface components {
              * @description Human-readable result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DuplicateEvalApiRequest
@@ -25666,6 +26289,17 @@ export interface components {
              * @description UUID of the field to duplicate
              */
             field_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /** DuplicateFieldApiResponse */
         DuplicateFieldApiResponse: {
@@ -25685,6 +26319,11 @@ export interface components {
              * @description Result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DuplicateModelApiRequest
@@ -25728,6 +26367,17 @@ export interface components {
              * @description Parameter identifier to duplicate
              */
             parameter_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /** DuplicateParameterApiResponse */
         DuplicateParameterApiResponse: {
@@ -25747,6 +26397,11 @@ export interface components {
              * @description Result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DuplicatePersonaApiRequest
@@ -26658,6 +27313,47 @@ export interface components {
             /**
              * Mime Type
              * @description MIME type of the export file
+             */
+            mime_type: string;
+            /**
+             * Row Count
+             * @description Number of rows in the export
+             */
+            row_count: number;
+        };
+        /**
+         * ExportChatApiRequest
+         * @description Request model for chat export.
+         */
+        ExportChatApiRequest: {
+            /**
+             * Chat Entry Id
+             * Format: uuid
+             */
+            chat_entry_id: string;
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
+        };
+        /**
+         * ExportChatApiResponse
+         * @description Response model for chat export.
+         */
+        ExportChatApiResponse: {
+            /**
+             * Content
+             * @description Exported file content
+             */
+            content: string;
+            /**
+             * File Name
+             * @description Name of the exported file
+             */
+            file_name: string;
+            /**
+             * Mime Type
+             * @description MIME type of the exported file
              */
             mime_type: string;
             /**
@@ -27661,75 +28357,132 @@ export interface components {
              */
             feedback?: string | null;
         };
-        /** FieldConditionalParameterSection */
-        FieldConditionalParameterSection: {
+        /**
+         * FieldConditionalParameterResource
+         * @description Conditional parameter resource for field.
+         */
+        FieldConditionalParameterResource: {
             /**
-             * Current
-             * @description Currently assigned conditional parameters
+             * Parameter Id
+             * @description Parameter identifier
              */
-            current?: components["schemas"]["GetParameterResponse"][] | null;
+            parameter_id?: string | null;
             /**
-             * Resources
-             * @description Available conditional parameter resources
+             * Name
+             * @description Parameter display name
              */
-            resources?: components["schemas"]["GetParameterResponse"][] | null;
-        };
-        /** FieldDepartmentSection */
-        FieldDepartmentSection: {
+            name?: string | null;
             /**
-             * Current
-             * @description Currently assigned departments
+             * Description
+             * @description Parameter description
              */
-            current?: unknown[] | null;
+            description?: string | null;
             /**
-             * Resources
-             * @description Available department resources
+             * Generated
+             * @description Whether this was AI-generated
              */
-            resources?: unknown[] | null;
-        };
-        /** FieldDescriptionSection */
-        FieldDescriptionSection: {
+            generated?: boolean | null;
             /**
-             * Resource
-             * @description Currently selected description resource
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            resource?: unknown | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available description resources
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: unknown[] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
-         * FieldDraftFormState
-         * @description Server-authoritative form state returned after draft save.
+         * FieldDepartmentResource
+         * @description Department resource for field.
          */
-        FieldDraftFormState: {
+        FieldDepartmentResource: {
             /**
-             * Name Id
-             * @description Resolved name resource UUID
+             * Department Id
+             * @description Department identifier
              */
-            name_id?: string | null;
+            department_id?: string | null;
             /**
-             * Description Id
-             * @description Resolved description resource UUID
+             * Name
+             * @description Department name
              */
-            description_id?: string | null;
+            name?: string | null;
             /**
-             * Flag Id
-             * @description Resolved flag option UUID
+             * Description
+             * @description Department description
              */
-            flag_id?: string | null;
+            description?: string | null;
             /**
-             * Department Ids
-             * @description Assigned department UUIDs
+             * Generated
+             * @description Whether this was AI-generated
              */
-            department_ids: string[];
+            generated?: boolean | null;
             /**
-             * Conditional Parameter Ids
-             * @description Assigned conditional parameter UUIDs
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            conditional_parameter_ids: string[];
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /**
+         * FieldDescriptionResource
+         * @description Description resource for field.
+         */
+        FieldDescriptionResource: {
+            /**
+             * Id
+             * @description Unique identifier
+             */
+            id?: string | null;
+            /**
+             * Description
+             * @description Description text
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * FieldFieldError
@@ -27794,29 +28547,63 @@ export interface components {
              * @description Whether the flag was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** FieldFlagSection */
-        FieldFlagSection: {
-            /** @description Currently selected flag config */
-            resource?: components["schemas"]["FieldFlagConfig"] | null;
+        /**
+         * FieldNameResource
+         * @description Name resource for field.
+         */
+        FieldNameResource: {
             /**
-             * Resources
-             * @description Available flag configs
+             * Id
+             * @description Unique identifier
              */
-            resources?: components["schemas"]["FieldFlagConfig"][] | null;
-        };
-        /** FieldNameSection */
-        FieldNameSection: {
+            id?: string | null;
             /**
-             * Resource
-             * @description Currently selected name resource
+             * Name
+             * @description Display name
              */
-            resource?: unknown | null;
+            name?: string | null;
             /**
-             * Resources
-             * @description Available name resources
+             * Generated
+             * @description Whether this was AI-generated
              */
-            resources?: unknown[] | null;
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * FieldResultItem
@@ -32639,8 +33426,13 @@ export interface components {
          */
         GetDocumentApiRequest: {
             /**
-             * Document Id
+             * Id
              * @description Document UUID to retrieve
+             */
+            id?: string | null;
+            /**
+             * Document Id
+             * @description Legacy alias for the document UUID
              */
             document_id?: string | null;
             /**
@@ -32648,12 +33440,39 @@ export interface components {
              * @description Draft UUID to load from
              */
             draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /** @description Filter options for names section */
+            names?: components["schemas"]["app__infra__document__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions section */
+            descriptions?: components["schemas"]["app__infra__document__types__SectionFilter"] | null;
+            /** @description Filter options for flags section */
+            flags?: components["schemas"]["app__infra__document__types__SectionFilter"] | null;
+            /** @description Filter options for departments section */
+            departments?: components["schemas"]["app__infra__document__types__SectionFilter"] | null;
+            /** @description Filter options for parameter fields section */
+            parameter_fields?: components["schemas"]["app__infra__document__types__SectionFilter"] | null;
+            /** @description Filter options for parameters section */
+            parameters?: components["schemas"]["app__infra__document__types__SectionFilter"] | null;
+            /** @description Filter options for files section */
+            files?: components["schemas"]["app__infra__document__types__SectionFilter"] | null;
+            /** @description Filter options for images section */
+            images?: components["schemas"]["app__infra__document__types__SectionFilter"] | null;
+            /** @description Filter options for texts section */
+            texts?: components["schemas"]["app__infra__document__types__SectionFilter"] | null;
+            /** @description Legacy alias for parameter_fields */
+            fields?: components["schemas"]["app__infra__document__types__SectionFilter"] | null;
+            /** @description Legacy alias for files */
+            uploads?: components["schemas"]["app__infra__document__types__SectionFilter"] | null;
         };
         /**
          * GetDocumentApiResponse
-         * @description Section-first response for document editor.
+         * @description Canonical flat composed response for the document editor.
          */
-        "GetDocumentApiResponse-Input": {
+        GetDocumentApiResponse: {
             /**
              * Actor Name
              * @description Display name of the current user
@@ -32680,64 +33499,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Basic Show Ai Generate
-             * @description Whether to show AI generate for basic step
+             * Show Ai Generate
+             * @description Whether AI generation is available
              */
-            basic_show_ai_generate?: boolean | null;
-            /**
-             * Content Show Ai Generate
-             * @description Whether to show AI generate for content step
-             */
-            content_show_ai_generate?: boolean | null;
-            /** @description Name section with resource and options */
-            names?: components["schemas"]["DocumentNameSection"] | null;
-            /** @description Description section with resource and options */
-            descriptions?: components["schemas"]["DocumentDescriptionSection"] | null;
-            /** @description Flag section with selections and options */
-            flags?: components["schemas"]["DocumentFlagSection"] | null;
-            /** @description Department section with selections and options */
-            departments?: components["schemas"]["DocumentDepartmentSection"] | null;
-            /** @description Parameter field section */
-            fields?: components["schemas"]["DocumentFieldSection"] | null;
-            /** @description Parameter section with selections and options */
-            parameters?: components["schemas"]["DocumentParameterSection"] | null;
-            /** @description Upload section with selections and options */
-            uploads?: components["schemas"]["DocumentUploadSection"] | null;
-            /** @description Image section with selections and options */
-            images?: components["schemas"]["DocumentImageSection"] | null;
-            /** @description Text section with selections and options */
-            texts?: components["schemas"]["DocumentTextSection"] | null;
-        };
-        /**
-         * GetDocumentApiResponse
-         * @description Section-first response for document editor.
-         */
-        "GetDocumentApiResponse-Output": {
-            /**
-             * Actor Name
-             * @description Display name of the current user
-             */
-            actor_name?: string | null;
-            /**
-             * Document Exists
-             * @description Whether the document exists
-             */
-            document_exists?: boolean | null;
-            /**
-             * Can Edit
-             * @description Whether the current user can edit
-             */
-            can_edit?: boolean | null;
-            /**
-             * Disabled Reason
-             * @description Reason editing is disabled
-             */
-            disabled_reason?: string | null;
-            /**
-             * Group Id
-             * @description Associated group UUID
-             */
-            group_id?: string | null;
+            show_ai_generate?: boolean | null;
             /**
              * Basic Show Ai Generate
              * @description Whether to show AI generate for basic step
@@ -32748,24 +33513,56 @@ export interface components {
              * @description Whether to show AI generate for content step
              */
             content_show_ai_generate?: boolean | null;
-            /** @description Name section with resource and options */
-            names?: components["schemas"]["DocumentNameSection"] | null;
-            /** @description Description section with resource and options */
-            descriptions?: components["schemas"]["DocumentDescriptionSection"] | null;
-            /** @description Flag section with selections and options */
-            flags?: components["schemas"]["DocumentFlagSection"] | null;
-            /** @description Department section with selections and options */
-            departments?: components["schemas"]["DocumentDepartmentSection"] | null;
-            /** @description Parameter field section */
-            fields?: components["schemas"]["DocumentFieldSection"] | null;
-            /** @description Parameter section with selections and options */
-            parameters?: components["schemas"]["DocumentParameterSection"] | null;
-            /** @description Upload section with selections and options */
-            uploads?: components["schemas"]["DocumentUploadSection"] | null;
-            /** @description Image section with selections and options */
-            images?: components["schemas"]["DocumentImageSection"] | null;
-            /** @description Text section with selections and options */
-            texts?: components["schemas"]["DocumentTextSection"] | null;
+            /**
+             * Pending Ids
+             * @description Pending resource IDs from the draft, when available
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Names
+             * @description Name resources
+             */
+            names?: components["schemas"]["DocumentNameResource"][] | null;
+            /**
+             * Descriptions
+             * @description Description resources
+             */
+            descriptions?: components["schemas"]["DocumentDescriptionResource"][] | null;
+            /**
+             * Flags
+             * @description Flag configs
+             */
+            flags?: components["schemas"]["DocumentFlagConfig"][] | null;
+            /**
+             * Departments
+             * @description Department resources
+             */
+            departments?: components["schemas"]["DocumentDepartmentResource"][] | null;
+            /**
+             * Parameter Fields
+             * @description Parameter field resources
+             */
+            parameter_fields?: components["schemas"]["DocumentParameterFieldResource"][] | null;
+            /**
+             * Parameters
+             * @description Parameter catalog resources
+             */
+            parameters?: components["schemas"]["DocumentParameterResource"][] | null;
+            /**
+             * Files
+             * @description File resources
+             */
+            files?: components["schemas"]["DocumentFileResource"][] | null;
+            /**
+             * Images
+             * @description Image resources
+             */
+            images?: components["schemas"]["DocumentImageResource"][] | null;
+            /**
+             * Texts
+             * @description Text resources
+             */
+            texts?: components["schemas"]["DocumentTextResource"][] | null;
         };
         /** GetDocumentDraftResponse */
         GetDocumentDraftResponse: {
@@ -33090,6 +33887,11 @@ export interface components {
          */
         GetFieldApiRequest: {
             /**
+             * Id
+             * @description Field UUID to retrieve
+             */
+            id?: string | null;
+            /**
              * Field Id
              * @description UUID of the field to retrieve
              */
@@ -33099,6 +33901,21 @@ export interface components {
              * @description UUID of the draft to load
              */
             draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /** @description Filter options for names section */
+            names?: components["schemas"]["app__infra__field__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions section */
+            descriptions?: components["schemas"]["app__infra__field__types__SectionFilter"] | null;
+            /** @description Filter options for flags section */
+            flags?: components["schemas"]["app__infra__field__types__SectionFilter"] | null;
+            /** @description Filter options for departments section */
+            departments?: components["schemas"]["app__infra__field__types__SectionFilter"] | null;
+            /** @description Filter options for conditional parameters section */
+            conditional_parameters?: components["schemas"]["app__infra__field__types__SectionFilter"] | null;
             /**
              * Descriptions Search
              * @description Search query for description resources
@@ -33117,9 +33934,9 @@ export interface components {
         };
         /**
          * GetFieldApiResponse
-         * @description Section-first client response for get field endpoint.
+         * @description Canonical flat composed response for the field editor.
          */
-        "GetFieldApiResponse-Input": {
+        GetFieldApiResponse: {
             /**
              * Actor Name
              * @description Display name of the acting user
@@ -33146,66 +33963,45 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Basic Show Ai Generate
-             * @description Whether to show AI generate button
+             * Show Ai Generate
+             * @description Whether to show AI generate button anywhere
              */
-            basic_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["FieldNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["FieldDescriptionSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["FieldFlagSection"] | null;
-            /** @description Department section with resources */
-            departments?: components["schemas"]["FieldDepartmentSection"] | null;
-            /** @description Conditional parameter section */
-            conditional_parameters?: components["schemas"]["FieldConditionalParameterSection"] | null;
-        };
-        /**
-         * GetFieldApiResponse
-         * @description Section-first client response for get field endpoint.
-         */
-        "GetFieldApiResponse-Output": {
-            /**
-             * Actor Name
-             * @description Display name of the acting user
-             */
-            actor_name?: string | null;
-            /**
-             * Field Exists
-             * @description Whether the field exists
-             */
-            field_exists?: boolean | null;
-            /**
-             * Can Edit
-             * @description Whether the actor can edit this field
-             */
-            can_edit?: boolean | null;
-            /**
-             * Disabled Reason
-             * @description Reason editing is disabled, if any
-             */
-            disabled_reason?: string | null;
-            /**
-             * Group Id
-             * @description Group UUID for draft collaboration
-             */
-            group_id?: string | null;
+            show_ai_generate?: boolean | null;
             /**
              * Basic Show Ai Generate
              * @description Whether to show AI generate button
              */
             basic_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["FieldNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["FieldDescriptionSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["FieldFlagSection"] | null;
-            /** @description Department section with resources */
-            departments?: components["schemas"]["FieldDepartmentSection"] | null;
-            /** @description Conditional parameter section */
-            conditional_parameters?: components["schemas"]["FieldConditionalParameterSection"] | null;
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers when available
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Names
+             * @description Name resources
+             */
+            names?: components["schemas"]["FieldNameResource"][] | null;
+            /**
+             * Descriptions
+             * @description Description resources
+             */
+            descriptions?: components["schemas"]["FieldDescriptionResource"][] | null;
+            /**
+             * Flags
+             * @description Flag configs
+             */
+            flags?: components["schemas"]["FieldFlagConfig"][] | null;
+            /**
+             * Departments
+             * @description Department resources
+             */
+            departments?: components["schemas"]["FieldDepartmentResource"][] | null;
+            /**
+             * Conditional Parameters
+             * @description Conditional parameter resources
+             */
+            conditional_parameters?: components["schemas"]["FieldConditionalParameterResource"][] | null;
         };
         /** GetFieldDraftResponse */
         GetFieldDraftResponse: {
@@ -34067,8 +34863,13 @@ export interface components {
          */
         GetParameterApiRequest: {
             /**
-             * Parameter Id
+             * Id
              * @description Parameter unique identifier
+             */
+            id?: string | null;
+            /**
+             * Parameter Id
+             * @description Legacy alias for parameter unique identifier
              */
             parameter_id?: string | null;
             /**
@@ -34076,12 +34877,29 @@ export interface components {
              * @description Draft unique identifier
              */
             draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /** @description Filter options for names section */
+            names?: components["schemas"]["app__infra__parameter__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions section */
+            descriptions?: components["schemas"]["app__infra__parameter__types__SectionFilter"] | null;
+            /** @description Filter options for flags section */
+            flags?: components["schemas"]["app__infra__parameter__types__SectionFilter"] | null;
+            /** @description Filter options for departments section */
+            departments?: components["schemas"]["app__infra__parameter__types__SectionFilter"] | null;
+            /** @description Filter options for parameter fields section */
+            parameter_fields?: components["schemas"]["app__infra__parameter__types__SectionFilter"] | null;
+            /** @description Legacy alias for parameter_fields */
+            fields?: components["schemas"]["app__infra__parameter__types__SectionFilter"] | null;
         };
         /**
          * GetParameterApiResponse
-         * @description Section-first client response for get parameter endpoint.
+         * @description Canonical flat composed response for the parameter editor.
          */
-        "GetParameterApiResponse-Input": {
+        GetParameterApiResponse: {
             /**
              * Actor Name
              * @description Display name of the current actor
@@ -34108,56 +34926,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Basic Show Ai Generate
-             * @description Show AI generate for basic step
+             * Show Ai Generate
+             * @description Show AI generate if any resource supports it
              */
-            basic_show_ai_generate?: boolean | null;
-            /**
-             * Fields Step Show Ai Generate
-             * @description Show AI generate for fields step
-             */
-            fields_step_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["ParameterNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["ParameterDescriptionSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["ParameterFlagSection"] | null;
-            /** @description Department section with resources */
-            departments?: components["schemas"]["ParameterDepartmentSection"] | null;
-            /** @description Field section with resources */
-            fields?: components["schemas"]["ParameterFieldSection"] | null;
-        };
-        /**
-         * GetParameterApiResponse
-         * @description Section-first client response for get parameter endpoint.
-         */
-        "GetParameterApiResponse-Output": {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Parameter Exists
-             * @description Whether the parameter exists
-             */
-            parameter_exists?: boolean | null;
-            /**
-             * Can Edit
-             * @description Whether the current user can edit
-             */
-            can_edit?: boolean | null;
-            /**
-             * Disabled Reason
-             * @description Reason editing is disabled
-             */
-            disabled_reason?: string | null;
-            /**
-             * Group Id
-             * @description Group identifier for the parameter
-             */
-            group_id?: string | null;
+            show_ai_generate?: boolean | null;
             /**
              * Basic Show Ai Generate
              * @description Show AI generate for basic step
@@ -34168,16 +34940,36 @@ export interface components {
              * @description Show AI generate for fields step
              */
             fields_step_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["ParameterNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["ParameterDescriptionSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["ParameterFlagSection"] | null;
-            /** @description Department section with resources */
-            departments?: components["schemas"]["ParameterDepartmentSection"] | null;
-            /** @description Field section with resources */
-            fields?: components["schemas"]["ParameterFieldSection"] | null;
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers when available
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Names
+             * @description Name resources
+             */
+            names?: components["schemas"]["ParameterNameResource"][] | null;
+            /**
+             * Descriptions
+             * @description Description resources
+             */
+            descriptions?: components["schemas"]["ParameterDescriptionResource"][] | null;
+            /**
+             * Flags
+             * @description Flag configs
+             */
+            flags?: components["schemas"]["ParameterFlagConfig"][] | null;
+            /**
+             * Departments
+             * @description Department resources
+             */
+            departments?: components["schemas"]["ParameterDepartmentResource"][] | null;
+            /**
+             * Parameter Fields
+             * @description Parameter field resources
+             */
+            parameter_fields?: components["schemas"]["ParameterFieldResource"][] | null;
         };
         /** GetParameterDraftResponse */
         GetParameterDraftResponse: {
@@ -34255,81 +35047,6 @@ export interface components {
              * @description List of parameter draft entries
              */
             entries?: components["schemas"]["GetParameterDraftResponse"][] | null;
-        };
-        /** GetParameterResponse */
-        GetParameterResponse: {
-            /**
-             * Parameter Id
-             * Format: uuid
-             * @description UUID of the parameter
-             */
-            parameter_id: string;
-            /**
-             * Name
-             * @description Parameter name
-             */
-            name: string;
-            /**
-             * Description
-             * @description Parameter description
-             */
-            description: string;
-            /**
-             * Value
-             * @description Parameter value
-             */
-            value: string;
-            /**
-             * Department Ids
-             * @description Associated department UUIDs
-             */
-            department_ids: string[];
-            /**
-             * Persona Parameter
-             * @description Whether this is a persona parameter
-             */
-            persona_parameter: boolean;
-            /**
-             * Document Parameter
-             * @description Whether this is a document parameter
-             */
-            document_parameter: boolean;
-            /**
-             * Scenario Parameter
-             * @description Whether this is a scenario parameter
-             */
-            scenario_parameter: boolean;
-            /**
-             * Video Parameter
-             * @description Whether this is a video parameter
-             */
-            video_parameter: boolean;
-            /**
-             * Field Ids
-             * @description Associated field UUIDs
-             */
-            field_ids: string[];
-            /**
-             * Created At
-             * Format: date-time
-             * @description Creation timestamp
-             */
-            created_at: string;
-            /**
-             * Active
-             * @description Whether the parameter is active
-             */
-            active: boolean;
-            /**
-             * Generated
-             * @description Whether the parameter was AI-generated
-             */
-            generated: boolean;
-            /**
-             * Mcp
-             * @description Whether the parameter is from MCP
-             */
-            mcp: boolean;
         };
         /**
          * GetPersonaApiRequest
@@ -34703,8 +35420,13 @@ export interface components {
         /** GetProfileApiRequest */
         GetProfileApiRequest: {
             /**
-             * Target Profile Id
+             * Id
              * @description UUID of the profile to retrieve
+             */
+            id?: string | null;
+            /**
+             * Target Profile Id
+             * @description Legacy alias for profile UUID
              */
             target_profile_id?: string | null;
             /**
@@ -34712,9 +35434,24 @@ export interface components {
              * @description UUID of the draft to load
              */
             draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /** @description Filter options for names section */
+            names?: components["schemas"]["app__infra__profile__types__SectionFilter"] | null;
+            /** @description Filter options for emails section */
+            emails?: components["schemas"]["app__infra__profile__types__SectionFilter"] | null;
+            /** @description Filter options for flags section */
+            flags?: components["schemas"]["app__infra__profile__types__SectionFilter"] | null;
+            /** @description Filter options for departments section */
+            departments?: components["schemas"]["app__infra__profile__types__SectionFilter"] | null;
+            /** @description Filter options for roles section */
+            roles?: components["schemas"]["app__infra__profile__types__SectionFilter"] | null;
         };
         /** GetProfileApiResponse */
-        "GetProfileApiResponse-Input": {
+        GetProfileApiResponse: {
             /**
              * Actor Name
              * @description Display name of the acting user
@@ -34746,102 +35483,50 @@ export interface components {
              */
             profile_id?: string | null;
             /**
-             * Role
-             * @description Current role of the profile
+             * Show Ai Generate
+             * @description Whether to show AI generate anywhere
              */
-            role?: string | null;
-            /**
-             * Role Options
-             * @description Available role options
-             */
-            role_options?: string[] | null;
+            show_ai_generate?: boolean | null;
             /**
              * Basic Show Ai Generate
-             * @description Whether to show basic AI generate button
+             * @description Whether to show AI generate on the basic step
              */
             basic_show_ai_generate?: boolean | null;
             /**
-             * General Show Ai Generate
-             * @description Whether to show general AI generate button
+             * Contact Show Ai Generate
+             * @description Whether to show AI generate on the contact step
              */
-            general_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["ProfileNameSection"] | null;
-            /** @description Email section with resources */
-            emails?: components["schemas"]["ProfileEmailSection"] | null;
-            /** @description Request limit section with resources */
-            request_limits?: components["schemas"]["ProfileRequestLimitSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["ProfileFlagSection"] | null;
-            /** @description Department section with resources */
-            departments?: components["schemas"]["ProfileDepartmentSection"] | null;
-            /** @description Role section with resources */
-            roles?: components["schemas"]["ProfileRoleSection"] | null;
-        };
-        /** GetProfileApiResponse */
-        "GetProfileApiResponse-Output": {
+            contact_show_ai_generate?: boolean | null;
             /**
-             * Actor Name
-             * @description Display name of the acting user
+             * Pending Ids
+             * @description Pending resource identifiers when available
              */
-            actor_name?: string | null;
+            pending_ids?: string[] | null;
             /**
-             * Profile Exists
-             * @description Whether the profile exists
+             * Names
+             * @description Name resources
              */
-            profile_exists?: boolean | null;
+            names?: components["schemas"]["ProfileNameResource"][] | null;
             /**
-             * Can Edit
-             * @description Whether the actor can edit this profile
+             * Emails
+             * @description Email resources
              */
-            can_edit?: boolean | null;
+            emails?: components["schemas"]["ProfileEmailResource"][] | null;
             /**
-             * Disabled Reason
-             * @description Reason editing is disabled, if any
+             * Flags
+             * @description Flag configs
              */
-            disabled_reason?: string | null;
+            flags?: components["schemas"]["ProfileFlagConfig"][] | null;
             /**
-             * Group Id
-             * @description Group UUID for draft collaboration
+             * Departments
+             * @description Department resources
              */
-            group_id?: string | null;
+            departments?: components["schemas"]["ProfileDepartmentResource"][] | null;
             /**
-             * Profile Id
-             * @description UUID of the profile
+             * Roles
+             * @description Role resources
              */
-            profile_id?: string | null;
-            /**
-             * Role
-             * @description Current role of the profile
-             */
-            role?: string | null;
-            /**
-             * Role Options
-             * @description Available role options
-             */
-            role_options?: string[] | null;
-            /**
-             * Basic Show Ai Generate
-             * @description Whether to show basic AI generate button
-             */
-            basic_show_ai_generate?: boolean | null;
-            /**
-             * General Show Ai Generate
-             * @description Whether to show general AI generate button
-             */
-            general_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["ProfileNameSection"] | null;
-            /** @description Email section with resources */
-            emails?: components["schemas"]["ProfileEmailSection"] | null;
-            /** @description Request limit section with resources */
-            request_limits?: components["schemas"]["ProfileRequestLimitSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["ProfileFlagSection"] | null;
-            /** @description Department section with resources */
-            departments?: components["schemas"]["ProfileDepartmentSection"] | null;
-            /** @description Role section with resources */
-            roles?: components["schemas"]["ProfileRoleSection"] | null;
+            roles?: components["schemas"]["ProfileRoleResource"][] | null;
         };
         /** GetProfileDraftResponse */
         GetProfileDraftResponse: {
@@ -34903,11 +35588,6 @@ export interface components {
              * @description Associated name UUIDs
              */
             name_ids: string[];
-            /**
-             * Request Limit Ids
-             * @description Associated request limit UUIDs
-             */
-            request_limit_ids: string[];
             /**
              * Role Ids
              * @description Associated role UUIDs
@@ -37425,6 +38105,44 @@ export interface components {
             tool_name?: string | null;
         };
         /**
+         * GroupChatApiRequest
+         * @description Request model for chat group endpoint.
+         */
+        GroupChatApiRequest: {
+            /**
+             * Group Id
+             * @description Existing group UUID (omit to create or reuse via time window)
+             */
+            group_id?: string | null;
+            /**
+             * Name
+             * @description Optional name for the group
+             */
+            name?: string | null;
+        };
+        /**
+         * GroupChatApiResponse
+         * @description Response model for chat group endpoint.
+         */
+        GroupChatApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Resolved or newly created group UUID
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * @description UUID of the created group_names entry (if name was provided)
+             */
+            group_name_id?: string | null;
+            /**
+             * Name
+             * @description The name that was set (if provided)
+             */
+            name?: string | null;
+        };
+        /**
          * GroupCohortApiRequest
          * @description Request model for cohort group endpoint.
          */
@@ -37767,6 +38485,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack - promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupDocumentApiResponse
@@ -37789,6 +38518,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * GroupEvalApiRequest
@@ -37843,6 +38577,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupFieldApiResponse
@@ -37865,6 +38610,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * GroupGroupApiRequest
@@ -38234,6 +38984,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupParameterApiResponse
@@ -38256,6 +39017,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * GroupPersonaApiRequest
@@ -39150,6 +39916,14 @@ export interface components {
              * @description Filter options for profiles
              */
             profile_options?: components["schemas"]["FilterOption"][] | null;
+        };
+        /** HomeStartRequest */
+        HomeStartRequest: {
+            /**
+             * Home Id
+             * Format: uuid
+             */
+            home_id: string;
         };
         /**
          * ImageDownloadAttemptApiRequest
@@ -41393,11 +42167,6 @@ export interface components {
              */
             primary_department_id?: string | null;
             /**
-             * Requests Per Day
-             * @description Maximum requests allowed per day
-             */
-            requests_per_day?: number | null;
-            /**
              * Can Edit
              * @description Whether the actor can edit this profile
              */
@@ -43119,10 +43888,10 @@ export interface components {
          */
         ParameterDepartmentResource: {
             /**
-             * Id
-             * @description Unique identifier
+             * Department Id
+             * @description Department identifier
              */
-            id?: string | null;
+            department_id?: string | null;
             /**
              * Name
              * @description Department name
@@ -43138,19 +43907,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ParameterDepartmentSection */
-        ParameterDepartmentSection: {
             /**
-             * Current
-             * @description Currently assigned departments
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["ParameterDepartmentResource"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available departments
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["ParameterDepartmentResource"][] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ParameterDescriptionResource
@@ -43172,47 +43946,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ParameterDescriptionSection */
-        ParameterDescriptionSection: {
-            /** @description Currently selected description resource */
-            resource?: components["schemas"]["ParameterDescriptionResource"] | null;
             /**
-             * Resources
-             * @description Available description resources
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            resources?: components["schemas"]["ParameterDescriptionResource"][] | null;
-        };
-        /**
-         * ParameterDraftFormState
-         * @description Server-authoritative form state returned after draft save.
-         */
-        ParameterDraftFormState: {
+            suggested: boolean;
             /**
-             * Name Id
-             * @description Resolved name resource identifier
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            name_id?: string | null;
+            selected: boolean;
             /**
-             * Description Id
-             * @description Resolved description resource identifier
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
              */
-            description_id?: string | null;
-            /**
-             * Flag Ids
-             * @description Flag option identifiers
-             */
-            flag_ids: string[];
-            /**
-             * Department Ids
-             * @description Department identifiers
-             */
-            department_ids: string[];
-            /**
-             * Field Ids
-             * @description Field identifiers
-             */
-            field_ids: string[];
+            pending: boolean;
         };
         /**
          * ParameterFieldError
@@ -43256,23 +44007,38 @@ export interface components {
              */
             name?: string | null;
             /**
+             * Description
+             * @description Field description
+             */
+            description?: string | null;
+            /**
+             * Conditional Parameter Id
+             * @description Conditional parameter identifier
+             */
+            conditional_parameter_id?: string | null;
+            /**
              * Generated
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ParameterFieldSection */
-        ParameterFieldSection: {
             /**
-             * Current
-             * @description Currently assigned fields
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["ParameterFieldResource"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available fields
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["ParameterFieldResource"][] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ParameterFlagConfig
@@ -43321,19 +44087,24 @@ export interface components {
              * @description Whether this flag was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ParameterFlagSection */
-        ParameterFlagSection: {
             /**
-             * Current
-             * @description Currently active flag configs
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["ParameterFlagConfig"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available flag configs
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["ParameterFlagConfig"][] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ParameterNameResource
@@ -43355,16 +44126,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ParameterNameSection */
-        ParameterNameSection: {
-            /** @description Currently selected name resource */
-            resource?: components["schemas"]["ParameterNameResource"] | null;
             /**
-             * Resources
-             * @description Available name resources
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            resources?: components["schemas"]["ParameterNameResource"][] | null;
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ParameterResultItem
@@ -44291,21 +45070,17 @@ export interface components {
         };
         /**
          * PatchDocumentDraftApiRequest
-         * @description Request model for new-style document draft endpoint.
-         *
-         *     Dual-mode for creatable resources only:
-         *       - name/name_id, description/description_id
-         *       - files (upload_id) / file_ids
-         *       - texts (content) / text_ids
-         *     ID-only for non-creatable resources:
-         *       - flag_ids, department_ids, image_ids, parameter_field_ids, parameter_ids
-         *
-         *     Client always sends full state (append-only — each write is a new snapshot).
+         * @description Request model for the canonical document draft endpoint.
          */
         PatchDocumentDraftApiRequest: {
             /**
-             * Input Draft Id
+             * Draft Id
              * @description Existing draft UUID to patch
+             */
+            draft_id?: string | null;
+            /**
+             * Input Draft Id
+             * @description Legacy alias for existing draft UUID to patch
              */
             input_draft_id?: string | null;
             /**
@@ -44349,6 +45124,11 @@ export interface components {
              */
             text_ids?: string[] | null;
             /**
+             * Images
+             * @description Image values to create resources
+             */
+            images?: components["schemas"]["app__infra__document__types__DraftImageValue"][] | null;
+            /**
              * Flag Ids
              * @description Flag option UUIDs
              */
@@ -44373,6 +45153,22 @@ export interface components {
              * @description Parameter UUIDs
              */
             parameter_ids?: string[] | null;
+            /**
+             * Pending Ids
+             * @description Resource IDs to keep as pending where supported by the tool layer
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack or retry
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * PatchDocumentDraftApiResponse
@@ -44391,12 +45187,18 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * Format: uuid
+             * @description Idempotency key for this draft operation
+             */
+            idempotency_key: string;
+            /**
              * Message
              * @description Human-readable result message
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["DocumentDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__document__types__DraftFormState"] | null;
         };
         /**
          * PatchEvalDraftApiRequest
@@ -44493,6 +45295,11 @@ export interface components {
          */
         PatchFieldDraftApiRequest: {
             /**
+             * Draft Id
+             * @description Existing draft UUID to update
+             */
+            draft_id?: string | null;
+            /**
              * Input Draft Id
              * @description Existing draft UUID to update
              */
@@ -44518,6 +45325,16 @@ export interface components {
              */
             description_id?: string | null;
             /**
+             * Active Flag
+             * @description Whether the field is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description UUID of the active flag resource
+             */
+            active_flag_id?: string | null;
+            /**
              * Flag Id
              * @description UUID of the flag option
              */
@@ -44528,10 +45345,36 @@ export interface components {
              */
             department_ids?: string[] | null;
             /**
+             * Departments
+             * @description Department names to resolve
+             */
+            departments?: string[] | null;
+            /**
              * Conditional Parameter Ids
              * @description Conditional parameter UUIDs
              */
             conditional_parameter_ids?: string[] | null;
+            /**
+             * Conditional Parameters
+             * @description Conditional parameter names to resolve
+             */
+            conditional_parameters?: string[] | null;
+            /**
+             * Pending Ids
+             * @description Resource IDs to keep pending where supported
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack or retry
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject dormant state
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * PatchFieldDraftApiResponse
@@ -44550,12 +45393,18 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * Format: uuid
+             * @description Idempotency key for this draft operation
+             */
+            idempotency_key: string;
+            /**
              * Message
              * @description Result message
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["FieldDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__field__types__DraftFormState"] | null;
         };
         /**
          * PatchInvocationDraftApiRequest
@@ -44785,8 +45634,13 @@ export interface components {
          */
         PatchParameterDraftApiRequest: {
             /**
-             * Input Draft Id
+             * Draft Id
              * @description Existing draft ID to update
+             */
+            draft_id?: string | null;
+            /**
+             * Input Draft Id
+             * @description Legacy alias for existing draft ID to update
              */
             input_draft_id?: string | null;
             /**
@@ -44824,6 +45678,32 @@ export interface components {
              * @description Field identifiers
              */
             field_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names to resolve
+             */
+            departments?: string[] | null;
+            /**
+             * Parameter Fields
+             * @description Parameter field names to resolve
+             */
+            parameter_fields?: string[] | null;
+            /**
+             * Pending Ids
+             * @description Resource IDs to keep pending where supported
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack or retry
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject dormant state
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * PatchParameterDraftApiResponse
@@ -44842,12 +45722,18 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * Format: uuid
+             * @description Idempotency key for this draft operation
+             */
+            idempotency_key: string;
+            /**
              * Message
              * @description Result message
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["ParameterDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__parameter__types__DraftFormState"] | null;
         };
         /**
          * PatchPersonaDraftApiRequest
@@ -45016,11 +45902,16 @@ export interface components {
          *     Dual-mode for creatable resources only:
          *       - name/name_id
          *     ID-only for non-creatable resources:
-         *       - active_flag_id, department_ids, email_ids, role_id, request_limit_ids
+         *       - active_flag_id, department_ids, email_ids, role_id
          *
          *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchProfileDraftApiRequest: {
+            /**
+             * Draft Id
+             * @description Existing draft UUID to update
+             */
+            draft_id?: string | null;
             /**
              * Input Draft Id
              * @description Existing draft UUID to update
@@ -45042,10 +45933,10 @@ export interface components {
              */
             email?: string | null;
             /**
-             * Request Limit
-             * @description Request limit value to resolve or create
+             * Emails
+             * @description Email values to resolve or create
              */
-            request_limit?: number | null;
+            emails?: string[] | null;
             /**
              * Active Flag Id
              * @description UUID of the flag option
@@ -45057,20 +45948,41 @@ export interface components {
              */
             department_ids?: string[] | null;
             /**
+             * Departments
+             * @description Department names to resolve
+             */
+            departments?: string[] | null;
+            /**
              * Email Ids
              * @description Email resource UUIDs
              */
             email_ids?: string[] | null;
+            /**
+             * Role
+             * @description Role name to resolve
+             */
+            role?: string | null;
             /**
              * Role Id
              * @description Role resource UUID
              */
             role_id?: string | null;
             /**
-             * Request Limit Ids
-             * @description Request limit resource UUIDs
+             * Pending Ids
+             * @description Resources to keep dormant
              */
-            request_limit_ids?: string[] | null;
+            pending_ids?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key for draft writes
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Whether to accept the pending draft state
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * PatchProfileDraftApiResponse
@@ -45089,12 +46001,17 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * @description Idempotency key for draft writes
+             */
+            idempotency_key?: string | null;
+            /**
              * Message
              * @description Result message
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["ProfileDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__profile__types__DraftFormState"] | null;
         };
         /**
          * PatchProviderDraftApiRequest
@@ -46317,6 +47234,19 @@ export interface components {
              */
             pending: boolean;
         };
+        /** PracticeStartRequest */
+        PracticeStartRequest: {
+            /**
+             * Practice Id
+             * Format: uuid
+             */
+            practice_id: string;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+        };
         /** PreviousAttemptApiResponse */
         PreviousAttemptApiResponse: {
             /** Success */
@@ -47054,6 +47984,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemDocumentApiResponse
@@ -47078,6 +48019,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProblemEvalApiRequest
@@ -47134,6 +48080,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemFieldApiResponse
@@ -47158,6 +48115,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProblemGroupApiRequest
@@ -47430,6 +48392,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemParameterApiResponse
@@ -47454,6 +48427,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProblemPersonaApiRequest
@@ -48165,10 +49143,10 @@ export interface components {
          */
         ProfileDepartmentResource: {
             /**
-             * Id
+             * Department Id
              * @description Unique resource identifier
              */
-            id?: string | null;
+            department_id?: string | null;
             /**
              * Name
              * @description Department display name
@@ -48184,55 +49162,24 @@ export interface components {
              * @description Whether the resource was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ProfileDepartmentSection */
-        ProfileDepartmentSection: {
             /**
-             * Current
-             * @description Currently assigned departments
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["ProfileDepartmentResource"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available department resources
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["ProfileDepartmentResource"][] | null;
-        };
-        /**
-         * ProfileDraftFormState
-         * @description Server-authoritative form state returned after draft save.
-         */
-        ProfileDraftFormState: {
+            selected: boolean;
             /**
-             * Name Id
-             * @description Resolved name resource UUID
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
              */
-            name_id?: string | null;
-            /**
-             * Active Flag Id
-             * @description Resolved flag option UUID
-             */
-            active_flag_id?: string | null;
-            /**
-             * Department Ids
-             * @description Assigned department UUIDs
-             */
-            department_ids: string[];
-            /**
-             * Email Ids
-             * @description Assigned email resource UUIDs
-             */
-            email_ids: string[];
-            /**
-             * Role Id
-             * @description Assigned role resource UUID
-             */
-            role_id?: string | null;
-            /**
-             * Request Limit Ids
-             * @description Assigned request limit UUIDs
-             */
-            request_limit_ids: string[];
+            pending: boolean;
         };
         /**
          * ProfileEmailResource
@@ -48254,19 +49201,24 @@ export interface components {
              * @description Whether the email was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ProfileEmailSection */
-        ProfileEmailSection: {
             /**
-             * Current
-             * @description Currently assigned emails
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["ProfileEmailResource"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available email resources
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["ProfileEmailResource"][] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ProfileFieldError
@@ -48331,16 +49283,24 @@ export interface components {
              * @description Whether the flag was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ProfileFlagSection */
-        ProfileFlagSection: {
-            /** @description Currently selected flag config */
-            current?: components["schemas"]["ProfileFlagConfig"] | null;
             /**
-             * Resources
-             * @description Available flag configs
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            resources?: components["schemas"]["ProfileFlagConfig"][] | null;
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ProfileNameResource
@@ -48362,47 +49322,24 @@ export interface components {
              * @description Whether the name was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ProfileNameSection */
-        ProfileNameSection: {
-            /** @description Currently selected name resource */
-            resource?: components["schemas"]["ProfileNameResource"] | null;
             /**
-             * Resources
-             * @description Available name resources
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            resources?: components["schemas"]["ProfileNameResource"][] | null;
-        };
-        /**
-         * ProfileRequestLimitResource
-         * @description Request limit resource for profile.
-         */
-        ProfileRequestLimitResource: {
+            suggested: boolean;
             /**
-             * Id
-             * @description Unique resource identifier
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            id?: string | null;
+            selected: boolean;
             /**
-             * Requests Per Day
-             * @description Maximum requests allowed per day
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
              */
-            requests_per_day?: number | null;
-            /**
-             * Generated
-             * @description Whether the limit was AI-generated
-             */
-            generated?: boolean | null;
-        };
-        /** ProfileRequestLimitSection */
-        ProfileRequestLimitSection: {
-            /** @description Currently selected request limit */
-            resource?: components["schemas"]["ProfileRequestLimitResource"] | null;
-            /**
-             * Resources
-             * @description Available request limit resources
-             */
-            resources?: components["schemas"]["ProfileRequestLimitResource"][] | null;
+            pending: boolean;
         };
         /**
          * ProfileResultItem
@@ -48456,28 +49393,43 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Icon Value
+             * Icon Id
              * @description Icon identifier for the role
              */
-            icon_value?: string | null;
+            icon_id?: string | null;
             /**
-             * Color Hex
-             * @description Hex color code for the role
+             * Color Id
+             * @description Color identifier for the role
              */
-            color_hex?: string | null;
-        };
-        /** ProfileRoleSection */
-        ProfileRoleSection: {
+            color_id?: string | null;
             /**
-             * Current
-             * @description Currently assigned roles
+             * Level
+             * @description Role level for assignment filtering
              */
-            current?: components["schemas"]["ProfileRoleResource"][] | null;
+            level?: number | null;
             /**
-             * Resources
-             * @description Available role resources
+             * Generated
+             * @description Whether the role was AI-generated
              */
-            resources?: components["schemas"]["ProfileRoleResource"][] | null;
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ProfileSummary
@@ -49056,6 +50008,72 @@ export interface components {
             /**
              * Targets
              * @description MV targets to refresh (omit for all). Options: cohort_drafts_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * RefreshDocumentApiRequest
+         * @description Request model for document refresh endpoint.
+         */
+        RefreshDocumentApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: document_drafts_mv, runs_mv, messages_mv, calls_mv, groups_mv, group_names_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * RefreshFieldApiRequest
+         * @description Request model for field refresh endpoint.
+         */
+        RefreshFieldApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: field_drafts_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * RefreshParameterApiRequest
+         * @description Request model for parameter refresh endpoint.
+         */
+        RefreshParameterApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: parameter_drafts_mv, runs_mv, messages_mv, calls_mv, groups_mv, group_names_mv
              */
             targets?: string[] | null;
             /**
@@ -55811,6 +56829,17 @@ export interface components {
              * @description List of documents to update
              */
             documents: components["schemas"]["UpdateDocumentItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateDocumentApiResponse
@@ -55822,6 +56851,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["DocumentResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateDocumentApiResponse
@@ -55833,6 +56867,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["DocumentResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateDocumentItem
@@ -56045,6 +57084,17 @@ export interface components {
              * @description List of fields to update
              */
             fields: components["schemas"]["UpdateFieldItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateFieldApiResponse
@@ -56056,6 +57106,11 @@ export interface components {
              * @description Per-item update results
              */
             results: components["schemas"]["FieldResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateFieldApiResponse
@@ -56067,6 +57122,11 @@ export interface components {
              * @description Per-item update results
              */
             results: components["schemas"]["FieldResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateFieldItem
@@ -56284,6 +57344,17 @@ export interface components {
              * @description List of parameters to update
              */
             parameters: components["schemas"]["UpdateParameterItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateParameterApiResponse
@@ -56295,6 +57366,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ParameterResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateParameterApiResponse
@@ -56306,6 +57382,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ParameterResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateParameterItem
@@ -56581,11 +57662,6 @@ export interface components {
              * @description Name value to resolve or create
              */
             name?: string | null;
-            /**
-             * Request Limit Id
-             * @description UUID of the request limit resource
-             */
-            request_limit_id?: string | null;
             /**
              * Active Flag Id
              * @description UUID of the flag option
@@ -57824,6 +58900,298 @@ export interface components {
         };
         /**
          * DraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        app__infra__document__types__DraftFormState: {
+            /**
+             * Name
+             * @description Echoed unresolved name value
+             */
+            name?: string | null;
+            /**
+             * Name Id
+             * @description Selected name resource UUID
+             */
+            name_id?: string | null;
+            /**
+             * Description
+             * @description Echoed unresolved description value
+             */
+            description?: string | null;
+            /**
+             * Description Id
+             * @description Selected description resource UUID
+             */
+            description_id?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs
+             */
+            flag_ids?: string[];
+            /**
+             * Department Ids
+             * @description Selected department UUIDs
+             */
+            department_ids?: string[];
+            /**
+             * File Ids
+             * @description Selected file resource UUIDs
+             */
+            file_ids?: string[];
+            /**
+             * Image Ids
+             * @description Selected image UUIDs
+             */
+            image_ids?: string[];
+            /**
+             * Text Ids
+             * @description Selected text resource UUIDs
+             */
+            text_ids?: string[];
+            /**
+             * Parameter Field Ids
+             * @description Selected parameter field UUIDs
+             */
+            parameter_field_ids?: string[];
+            /**
+             * Parameter Ids
+             * @description Selected parameter UUIDs
+             */
+            parameter_ids?: string[];
+            /**
+             * Pending Ids
+             * @description Pending resource UUIDs where supported
+             */
+            pending_ids?: string[];
+        };
+        /**
+         * DraftImageValue
+         * @description Value for creating an image via the draft endpoint.
+         */
+        app__infra__document__types__DraftImageValue: {
+            /**
+             * Name
+             * @description Image name
+             */
+            name: string;
+            /**
+             * Description
+             * @description Image description text
+             */
+            description: string;
+            /**
+             * Upload Id
+             * @description Associated upload UUID
+             */
+            upload_id?: string | null;
+        };
+        /**
+         * SectionFilter
+         * @description Per-section filter options for GET requests.
+         */
+        app__infra__document__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Parameter group IDs for parameter field hydration
+             */
+            parameter_ids?: string[] | null;
+        };
+        /**
+         * DraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        app__infra__field__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description Resolved name resource UUID
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Echoed name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Resolved description resource UUID
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Echoed description value
+             */
+            description?: string | null;
+            /**
+             * Flag Id
+             * @description Resolved flag option UUID
+             */
+            flag_id?: string | null;
+            /**
+             * Active Flag Id
+             * @description Resolved active flag option UUID
+             */
+            active_flag_id?: string | null;
+            /**
+             * Department Ids
+             * @description Assigned department UUIDs
+             */
+            department_ids: string[];
+            /**
+             * Conditional Parameter Ids
+             * @description Assigned conditional parameter UUIDs
+             */
+            conditional_parameter_ids: string[];
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers
+             */
+            pending_ids?: string[];
+        };
+        /**
+         * SectionFilter
+         * @description Per-section filter options for GET requests.
+         */
+        app__infra__field__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Parameter group IDs to filter by where relevant
+             */
+            parameter_ids?: string[] | null;
+        };
+        /**
+         * DraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        app__infra__parameter__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description Resolved name resource identifier
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Echoed name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Resolved description resource identifier
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Echoed description value
+             */
+            description?: string | null;
+            /**
+             * Flag Ids
+             * @description Flag option identifiers
+             */
+            flag_ids: string[];
+            /**
+             * Department Ids
+             * @description Department identifiers
+             */
+            department_ids: string[];
+            /**
+             * Field Ids
+             * @description Field identifiers
+             */
+            field_ids: string[];
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers
+             */
+            pending_ids?: string[];
+        };
+        /**
+         * SectionFilter
+         * @description Per-section filter options for GET requests.
+         */
+        app__infra__parameter__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Parameter group IDs to filter by (parameter_fields section only)
+             */
+            parameter_ids?: string[] | null;
+        };
+        /**
+         * DraftFormState
          * @description Full form state after draft patch — server is source of truth.
          *
          *     Client replaces its local form state with this after every successful patch.
@@ -57941,6 +59309,98 @@ export interface components {
              * @description Parameter group IDs to filter by (parameter_fields section only)
              */
             parameter_ids?: string[] | null;
+        };
+        /**
+         * DraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        app__infra__profile__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description Resolved name resource UUID
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Resolved name value
+             */
+            name?: string | null;
+            /**
+             * Flag Id
+             * @description Resolved flag option UUID
+             */
+            flag_id?: string | null;
+            /**
+             * Active Flag Id
+             * @description Resolved flag option UUID
+             */
+            active_flag_id?: string | null;
+            /**
+             * Departments
+             * @description Resolved department names
+             */
+            departments?: string[];
+            /**
+             * Department Ids
+             * @description Assigned department UUIDs
+             */
+            department_ids: string[];
+            /**
+             * Emails
+             * @description Resolved email values
+             */
+            emails?: string[];
+            /**
+             * Email Ids
+             * @description Assigned email resource UUIDs
+             */
+            email_ids: string[];
+            /**
+             * Role
+             * @description Assigned role name
+             */
+            role?: string | null;
+            /**
+             * Role Id
+             * @description Assigned role resource UUID
+             */
+            role_id?: string | null;
+            /**
+             * Pending Ids
+             * @description Pending resource UUIDs
+             */
+            pending_ids?: string[];
+        };
+        /**
+         * SectionFilter
+         * @description Per-section filter options for GET requests.
+         */
+        app__infra__profile__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
         };
         /**
          * DraftImageValue
@@ -59979,7 +61439,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetDocumentApiResponse-Output"];
+                    "application/json": components["schemas"]["GetDocumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60350,7 +61810,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshDocumentApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -60359,6 +61823,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -64708,7 +66181,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetParameterApiResponse-Output"];
+                    "application/json": components["schemas"]["GetParameterApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -65178,7 +66651,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshParameterApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -65187,6 +66664,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -65210,7 +66696,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetFieldApiResponse-Output"];
+                    "application/json": components["schemas"]["GetFieldApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -65680,7 +67166,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshFieldApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -65689,6 +67179,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -65712,7 +67211,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetProfileApiResponse-Output"];
+                    "application/json": components["schemas"]["GetProfileApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67734,6 +69233,39 @@ export interface operations {
             };
         };
     };
+    create_attempt_chat_endpoint_attempt_chat_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAttemptChatApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateAttemptChatApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     chat_send_attempt_chat_send_post: {
         parameters: {
             query?: never;
@@ -68163,6 +69695,158 @@ export interface operations {
             };
         };
     };
+    chat_get_attempt_chat_get_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetChatResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    group_chat_attempt_chat_group_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupChatApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupChatApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_refresh_attempt_chat_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+        };
+    };
+    export_chat_attempt_chat_export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportChatApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportChatApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_chat_context_attempt_chat_context_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposedContextResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     patch_chat_draft_attempt_draft_patch: {
         parameters: {
             query?: never;
@@ -68212,6 +69896,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetChatDraftsApiResponse"];
+                };
+            };
+        };
+    };
+    start_home_attempt_attempt_home_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HomeStartRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttemptStartResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -68474,6 +70191,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemHomeApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_practice_attempt_attempt_practice_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticeStartRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttemptStartResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68765,11 +70515,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DashboardRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -68777,16 +70523,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DashboardBundleResponse-Output"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": unknown;
                 };
             };
         };
@@ -80093,7 +81830,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetDocumentApiResponse-Input"];
+                "application/json": components["schemas"]["GetDocumentApiResponse"];
             };
         };
         responses: {
@@ -80303,7 +82040,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetFieldApiResponse-Input"];
+                "application/json": components["schemas"]["GetFieldApiResponse"];
             };
         };
         responses: {
@@ -80653,7 +82390,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetParameterApiResponse-Input"];
+                "application/json": components["schemas"]["GetParameterApiResponse"];
             };
         };
         responses: {
@@ -80933,7 +82670,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetProfileApiResponse-Input"];
+                "application/json": components["schemas"]["GetProfileApiResponse"];
             };
         };
         responses: {

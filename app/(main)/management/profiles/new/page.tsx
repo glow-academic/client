@@ -17,7 +17,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { createLoader, parseAsString } from "nuqs/server";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 import { cache } from "react";
 
 import { buildSnapshot } from "@/lib/auth";
@@ -27,18 +27,6 @@ type GetProfileIn = InputOf<"/profile/get", "post">;
 type GetProfileOut = OutputOf<"/profile/get", "post">;
 type CreateProfileIn = InputOf<"/profile/create", "post">;
 type CreateProfileOut = OutputOf<"/profile/create", "post">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftEmailsIn = InputOf<"/api/v5/resources/emails", "post">;
-type CreateDraftEmailsOut = OutputOf<"/api/v5/resources/emails", "post">;
-type CreateDraftRequestLimitsIn = InputOf<
-  "/api/v5/resources/request_limits",
-  "post"
->;
-type CreateDraftRequestLimitsOut = OutputOf<
-  "/api/v5/resources/request_limits",
-  "post"
->;
 type PatchProfileDraftIn = InputOf<"/profile/draft", "patch">;
 type PatchProfileDraftOut = OutputOf<"/profile/draft", "patch">;
 type GroupProfileIn = InputOf<"/profile/group", "post">;
@@ -66,27 +54,6 @@ const getProfileDefault = cache(
 async function createProfile(input: CreateProfileIn): Promise<CreateProfileOut> {
   "use server";
   return api.post("/profile/create", input);
-}
-
-async function createDraftNames(
-  input: CreateDraftNamesIn
-): Promise<CreateDraftNamesOut> {
-  "use server";
-  return api.post("/resources/names", input);
-}
-
-async function createDraftEmails(
-  input: CreateDraftEmailsIn
-): Promise<CreateDraftEmailsOut> {
-  "use server";
-  return api.post("/resources/emails", input);
-}
-
-async function createDraftRequestLimits(
-  input: CreateDraftRequestLimitsIn
-): Promise<CreateDraftRequestLimitsOut> {
-  "use server";
-  return api.post("/resources/request_limits", input);
 }
 
 async function patchProfileDraft(
@@ -172,50 +139,69 @@ export default async function NewProfilePage({
 
     const profileSearchParams = {
       draftId: parseAsString,
+      roleSearch: parseAsString,
+      roleShowSelected: parseAsBoolean,
     };
     const loadProfileSearchParams = createLoader(profileSearchParams);
     const q = loadProfileSearchParams(searchParamsObj);
 
     // SSR data fetches
-    const input: GetProfileIn = {
-      body: {
-        target_profile_id: null,
-        draft_id: q.draftId ?? null,
-      } as GetProfileIn["body"],
+    const body = {
+      id: null,
+      draft_id: q.draftId ?? null,
+      ...(q.roleSearch || q.roleShowSelected !== null
+        ? {
+            roles: {
+              ...(q.roleSearch ? { search: q.roleSearch } : {}),
+              ...(q.roleShowSelected !== null ? { selected: q.roleShowSelected } : {}),
+            },
+          }
+        : {}),
     };
+    const input = {
+      path: undefined,
+      body,
+    } as GetProfileIn;
 
     const [profileDetailDefault, draftsResult, groupResult] = await Promise.all([
       getProfileDefault(input),
-      api.post("/profile/drafts", {}),
+      api.post(
+        "/profile/drafts",
+        { path: undefined } as InputOf<"/profile/drafts", "post">,
+      ),
       api.post("/profile/group", { body: {} } as GroupProfileIn),
     ]);
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
         <FullPageLayout
-          profileData={context.profile}
-          sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
-          initialPanelOpen={initialPanelOpen}
-          sidebarProps={{
-            activeSection: "profile",
-            createFeedback: createProfileProblem,
-          }}
-          breadcrumbs={[
-            { title: "Management", section: "management", url: "/management" },
-            { title: "Profiles", section: "profiles", url: "/management/profiles" },
-            { title: "New Profile" },
-          ]}
-          toolbar={<SaveToolbar />}
-          panelProps={{
-            artifactType: "profile",
-            groupId: (groupResult as GroupProfileOut & { group_id?: string })?.group_id ?? null,
-            generateAction: generateProfile,
-            operations: ["draft", "get", "group"],
-            getGroupHistory: getProfileGroupHistory,
-            searchGroups: searchProfileGroups,
-            prompts: context.prompts?.prompts,
-          }}
+          {...({
+            profileData: context.profile,
+            sessionSnapshot: snapshot,
+            initialSidebarOpen,
+            initialPanelOpen,
+            sidebarProps: {
+              activeSection: "profile",
+              createFeedback: createProfileProblem as any,
+            },
+            breadcrumbs: [
+              { title: "Management", section: "management", url: "/management" },
+              { title: "Profiles", section: "profiles", url: "/management/profiles" },
+              { title: "New Profile" },
+            ],
+            toolbar: <SaveToolbar />,
+            panelProps: {
+              artifactType: "profile",
+              groupId:
+                (groupResult as GroupProfileOut & { group_id?: string })?.group_id ??
+                null,
+              generateAction: generateProfile,
+              operations: ["draft", "get", "group"],
+              getGroupHistory: getProfileGroupHistory,
+              searchGroups: searchProfileGroups,
+              prompts: context.prompts?.prompts,
+            },
+          } as any)}
         >
           <div
             className="space-y-6 px-4"
@@ -224,12 +210,10 @@ export default async function NewProfilePage({
           >
             <Profile
               key={q.draftId || "no-draft"}
+              mode="create"
               profileData={profileDetailDefault}
               createProfileAction={createProfile}
               patchProfileDraftAction={patchProfileDraft}
-              createNamesAction={createDraftNames}
-              createEmailsAction={createDraftEmails}
-              createRequestLimitsAction={createDraftRequestLimits}
             />
           </div>
         </FullPageLayout>

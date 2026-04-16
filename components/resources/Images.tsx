@@ -17,7 +17,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import {
   Check,
@@ -31,8 +30,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
-type CreateDraftImagesIn = InputOf<"/api/v5/resources/images", "post">;
-type CreateDraftImagesOut = OutputOf<"/api/v5/resources/images", "post">;
+type CreateDraftImagesIn = {
+  body: {
+    name: string;
+    description: string;
+    upload_id?: string;
+    mcp?: boolean;
+    tool_id?: string;
+  };
+};
+type CreateDraftImagesOut = { id?: string | null };
 
 export interface ImageResourceItem {
   image_id?: string | null;
@@ -128,6 +135,7 @@ export function Images({
   const ids = useMemo(() => image_ids ?? [], [image_ids]);
   const show = show_images ?? false;
   const allImages = useMemo(() => images ?? [], [images]);
+  const downloadBaseUrl = "/api/group/image";
 
   // Internal state for selected images (for display)
   const [selectedImages, setSelectedImages] = useState<
@@ -257,7 +265,7 @@ export function Images({
                 name: imageItem?.name ?? "",
                 description: imageItem?.description ?? "",
                 mcp: false,
-                tool_id: create_tool_id ?? undefined,
+                ...(create_tool_id ? { tool_id: create_tool_id } : {}),
               },
             });
             createdImageIdsRef.current.add(imageId);
@@ -272,7 +280,6 @@ export function Images({
         }
       }
 
-      // Update parent state
       onChange(selectedIds);
     },
     [
@@ -303,7 +310,7 @@ export function Images({
               name: imageItem?.name ?? "",
               description: imageItem?.description ?? "",
               mcp: false,
-              tool_id: create_tool_id ?? undefined,
+              ...(create_tool_id ? { tool_id: create_tool_id } : {}),
             },
           });
           createdImageIdsRef.current.add(imageId);
@@ -332,8 +339,8 @@ export function Images({
     async (file: File) => {
       if (
         !uploadFileAction ||
-        !createImagesAction ||
-        !create_tool_id
+        (!isAutosaveEnabled && (!createImagesAction || !create_tool_id)) ||
+        (isAutosaveEnabled && !onImageUploadValue && !createImagesAction)
       ) {
         toast.error("Upload functionality not available");
         return;
@@ -373,16 +380,45 @@ export function Images({
           upload_id: databaseUploadId,
         });
 
-        // Create image resource entry
-        const createResult = await createImagesAction({
+        if (isAutosaveEnabled) {
+          toast.success(`Upload completed: ${file.name}!`, {
+            description: "Image uploaded successfully",
+            id: toastId,
+          });
+
+          setActiveUploads((prev) => {
+            const newMap = new Map(prev);
+            const upload = newMap.get(fileId);
+            if (upload) {
+              newMap.set(fileId, { ...upload, status: "completed" });
+            }
+            return newMap;
+          });
+
+          setTimeout(() => {
+            setActiveUploads((prev) => {
+              const newMap = new Map(prev);
+              newMap.delete(fileId);
+              return newMap;
+            });
+          }, 2000);
+
+          return;
+        }
+
+        if (!createImagesAction) {
+          throw new Error("Create action not available");
+        }
+
+        const createResult = (await createImagesAction({
           body: {
             name: file.name,
             description: "",
             upload_id: databaseUploadId,
             mcp: false,
-            tool_id: create_tool_id ?? undefined,
+            ...(create_tool_id ? { tool_id: create_tool_id } : {}),
           },
-        });
+        })) as CreateDraftImagesOut;
 
         if (!createResult.id) {
           throw new Error("Failed to create image resource");
@@ -390,11 +426,7 @@ export function Images({
 
         const imageResourceId = createResult.id;
         createdImageIdsRef.current.add(imageResourceId);
-
-        // Add to selection
         onChange([...ids, imageResourceId]);
-
-        // Update selectedImages state
         setSelectedImages((prev) => [
           ...prev,
           {
@@ -443,6 +475,7 @@ export function Images({
       uploadFileAction,
       createImagesAction,
       create_tool_id,
+      isAutosaveEnabled,
       ids,
       onChange,
       onImageUploadValue,
@@ -662,6 +695,7 @@ export function Images({
                   imageId={img.upload_id}
                   name={img.name}
                   bare={true}
+                  downloadBaseUrl={downloadBaseUrl}
                 />
                 {/* Image name at bottom */}
                 <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1 z-10">
@@ -754,6 +788,7 @@ export function Images({
                   (img) => img.upload_id === previewImageId
                 )?.name || "Image"
               }
+              downloadBaseUrl={downloadBaseUrl}
             />
           </div>
         </div>

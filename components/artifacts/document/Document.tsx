@@ -1,29 +1,27 @@
 /**
  * Document.tsx
- * Implementation using modular resource components
- * Used to create and manage documents - supports both creation and editing
- * @AshokSaravanan222 & @siladiea
- * 01/21/2025
+ * Canonical document editor using flat GET resources and draft-only updates.
  */
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, type Parser } from "nuqs";
 import { toast } from "sonner";
 
 import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
-import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
-import { StepCard } from "@/components/common/forms/StepCard";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
+import { StepCard } from "@/components/common/forms/StepCard";
+import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
-import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Flags } from "@/components/resources/Flags";
-import { Names } from "@/components/resources/Names";
 import { Images } from "@/components/resources/Images";
+import { Names } from "@/components/resources/Names";
+import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Texts } from "@/components/resources/Texts";
 import { Uploads } from "@/components/resources/Uploads";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -40,7 +38,6 @@ import {
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
-import { parseAsArrayOf, parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 const VALID_RESOURCE_TYPES = [
   "names",
@@ -52,38 +49,30 @@ const VALID_RESOURCE_TYPES = [
   "images",
   "texts",
 ] as const;
-type _DocumentResourceType = (typeof VALID_RESOURCE_TYPES)[number];
 
-const FLUSH_KEYS = [
-  "names",
-  "descriptions",
-  "uploads",
-  "images",
-  "texts",
-] as const;
+const FLUSH_KEYS = ["uploads", "images", "texts"] as const;
 
 const DOCUMENT_RESOURCES: ResourceConfig[] = [
-  { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
+  { key: "names", formKey: "name_id", flushKey: null, type: "single" },
   {
     key: "descriptions",
     formKey: "description_id",
-    flushKey: "description_id",
+    flushKey: null,
     type: "single",
   },
-  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
   {
     key: "departments",
     formKey: "department_ids",
     flushKey: null,
     type: "multi",
   },
-  { key: "fields", formKey: "field_ids", flushKey: null, type: "multi" },
   {
-    key: "uploads",
-    formKey: "upload_ids",
-    flushKey: "files_id",
+    key: "parameter_fields",
+    formKey: "parameter_field_ids",
+    flushKey: null,
     type: "multi",
   },
+  { key: "files", formKey: "file_ids", flushKey: "file_ids", type: "multi" },
   {
     key: "images",
     formKey: "image_ids",
@@ -93,72 +82,76 @@ const DOCUMENT_RESOURCES: ResourceConfig[] = [
   { key: "texts", formKey: "text_ids", flushKey: "text_ids", type: "multi" },
 ];
 
-// Types defined inline using InputOf/OutputOf
 type CreateDocumentIn = InputOf<"/document/create", "post">;
 type CreateDocumentOut = OutputOf<"/document/create", "post">;
 type UpdateDocumentIn = InputOf<"/document/update", "post">;
 type UpdateDocumentOut = OutputOf<"/document/update", "post">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftUploadsIn = InputOf<"/api/v5/resources/uploads", "post">;
-type CreateDraftUploadsOut = OutputOf<"/api/v5/resources/uploads", "post">;
-type CreateDraftImagesIn = InputOf<"/api/v5/resources/images", "post">;
-type CreateDraftImagesOut = OutputOf<"/api/v5/resources/images", "post">;
-type CreateDraftTextsIn = InputOf<"/api/v5/resources/texts", "post">;
-type CreateDraftTextsOut = OutputOf<"/api/v5/resources/texts", "post">;
-type PatchDocumentDraftIn = InputOf<
-  "/document/draft",
-  "patch"
->;
-type PatchDocumentDraftOut = OutputOf<
-  "/document/draft",
-  "patch"
->;
-
+type PatchDocumentDraftIn = InputOf<"/document/draft", "patch">;
+type PatchDocumentDraftOut = OutputOf<"/document/draft", "patch">;
 type DocumentData = OutputOf<"/document/get", "post">;
+
+type PendingImageValue = {
+  name: string;
+  description: string;
+  upload_id: string;
+};
+
+type DocumentFormState = {
+  name: string | null;
+  description: string | null;
+  name_id: string | null;
+  description_id: string | null;
+  active_flag_id: string | null;
+  department_ids: string[];
+  parameter_field_ids: string[];
+  file_ids: string[];
+  image_ids: string[];
+  text_ids: string[];
+  pending_upload_ids: string[];
+  pending_text_contents: string[];
+  pending_images: PendingImageValue[];
+  pending_ids: string[];
+};
+
+type DocumentDraftFormState = NonNullable<PatchDocumentDraftOut["form_state"]>;
 
 export interface DocumentProps {
   documentId?: string;
   mode?: "create" | "edit";
-  // Server-provided data
   documentDetail?: DocumentData;
   documentDetailDefault?: DocumentData;
-  // Server actions
   createDocumentAction?: (input: CreateDocumentIn) => Promise<CreateDocumentOut>;
   updateDocumentAction?: (input: UpdateDocumentIn) => Promise<UpdateDocumentOut>;
   patchDocumentDraftAction?: (
     input: PatchDocumentDraftIn,
   ) => Promise<PatchDocumentDraftOut>;
-  // Resource creation actions
-  createNamesAction?: (
-    input: CreateDraftNamesIn,
-  ) => Promise<CreateDraftNamesOut>;
-  createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn,
-  ) => Promise<CreateDraftDescriptionsOut>;
-  createUploadsAction?: (
-    input: CreateDraftUploadsIn,
-  ) => Promise<CreateDraftUploadsOut>;
-  createImagesAction?: (
-    input: CreateDraftImagesIn,
-  ) => Promise<CreateDraftImagesOut>;
-  createTextsAction?: (
-    input: CreateDraftTextsIn,
-  ) => Promise<CreateDraftTextsOut>;
-  // Artifact-scoped upload props
   uploadBasePath?: string;
   uploadFileAction?: (
     formData: FormData,
   ) => Promise<{ success: boolean; upload_id?: string; message?: string }>;
 }
+
+const collectPendingIds = (data: DocumentData | null | undefined): string[] => {
+  if (!data) return [];
+
+  const ids = new Set<string>((data.pending_ids ?? []).filter(Boolean));
+  const add = (value?: string | null) => {
+    if (value) ids.add(value);
+  };
+
+  (data.names ?? []).forEach((item) => item.pending && add(item.id));
+  (data.descriptions ?? []).forEach((item) => item.pending && add(item.id));
+  (data.flags ?? []).forEach((item) => item.pending && add(item.flag_option_id));
+  (data.departments ?? []).forEach(
+    (item) => item.pending && add(item.department_id),
+  );
+  (data.parameter_fields ?? []).forEach((item) => item.pending && add(item.id));
+  (data.files ?? []).forEach((item) => item.pending && add(item.files_id ?? item.id));
+  (data.images ?? []).forEach((item) => item.pending && add(item.image_id ?? item.id));
+  (data.texts ?? []).forEach((item) => item.pending && add(item.texts_id ?? item.id));
+
+  return Array.from(ids);
+};
 
 function DocumentComponent({
   documentId,
@@ -168,142 +161,207 @@ function DocumentComponent({
   createDocumentAction,
   updateDocumentAction,
   patchDocumentDraftAction,
-  createNamesAction,
-  createDescriptionsAction,
-  createUploadsAction,
-  createImagesAction,
-  createTextsAction,
   uploadBasePath,
   uploadFileAction,
 }: DocumentProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!documentId;
-  const documentDetail = documentDetailProp ?? documentDetailDefault;
+  const documentDetail = documentDetailProp ?? documentDetailDefault ?? null;
   const { profile } = useProfile();
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 
-  // nuqs parsers for URL-backed state (will be passed to GenericForm)
-  // Memoize to prevent new object reference on every render
   const documentSearchParamsClient = useMemo(
     () => ({
-      // Draft ID (URL-backed, updated when draft is created)
       draftId: parseAsString,
-      // Search params (URL-backed, updated via debounced callback in StepCard)
       descriptionSearch: parseAsString,
       fieldSearch: parseAsString,
       uploadSearch: parseAsString,
-      // Filter params (URL-backed)
       fieldShowSelected: parseAsBoolean,
-      // Parameter group expansion state (URL-backed)
       parameterIds: parseAsArrayOf(parseAsString),
     }),
     [],
   );
 
-  // Local form state (not in URL) - stores only resource IDs
-  // Display values are managed inside resource components
-  const getInitialFormState = useCallback(() => {
-    if (!documentDetail) {
-      return {
-        name: null as string | null,
-        description: null as string | null,
-        name_id: null as string | null,
-        description_id: null as string | null,
-        active_flag_id: null as string | null,
-        department_ids: [] as string[],
-        field_ids: [] as string[],
-        upload_ids: [] as string[],
-        image_ids: [] as string[],
-        text_ids: [] as string[],
-        // Pending values for server-side creation
-        pending_upload_ids: [] as string[],
-        pending_text_contents: [] as string[],
-      };
-    }
-    // Extract resource IDs from section-first response
-    return {
-      name: null as string | null,
-      description: null as string | null,
-      name_id: documentDetail.names?.resource?.id ?? null,
-      description_id: documentDetail.descriptions?.resource?.id ?? null,
-      active_flag_id: documentDetail.flags?.current?.[0]?.flag_option_id ?? null,
-      department_ids:
-        documentDetail.departments?.current
-          ?.map((d) => d.department_id)
-          .filter((x): x is string => x != null) ?? ([] as string[]),
-      field_ids:
-        documentDetail.fields?.current
-          ?.map((f) => f.field_id)
-          .filter((x): x is string => x != null) ?? ([] as string[]),
-      upload_ids:
-        documentDetail.uploads?.current
-          ?.map((u) => u.files_id ?? u.upload_id)
-          .filter((x): x is string => x != null) ?? ([] as string[]),
-      image_ids:
-        documentDetail.images?.current
-          ?.map((i) => i.image_id)
-          .filter((x): x is string => x != null) ?? ([] as string[]),
-      text_ids:
-        documentDetail.texts?.current
-          ?.map((t) => t.texts_id)
-          .filter((x): x is string => x != null) ?? ([] as string[]),
-      // Pending values for server-side creation
-      pending_upload_ids: [] as string[],
-      pending_text_contents: [] as string[],
-    };
+  const documentDataRef = useRef(documentDetail);
+  useEffect(() => {
+    documentDataRef.current = documentDetail;
   }, [documentDetail]);
 
-  const [formState, setFormState] = useState(getInitialFormState);
-
-  // Update form state when server data changes
-  useEffect(() => {
-    const newState = getInitialFormState();
-    setFormState((prev) => {
-      // Only update if resource IDs actually changed
-      if (
-        prev.name_id !== newState.name_id ||
-        prev.description_id !== newState.description_id ||
-        prev.active_flag_id !== newState.active_flag_id ||
-        JSON.stringify(prev.department_ids) !==
-          JSON.stringify(newState.department_ids) ||
-        JSON.stringify(prev.field_ids) !== JSON.stringify(newState.field_ids) ||
-        JSON.stringify(prev.upload_ids) !== JSON.stringify(newState.upload_ids) ||
-        JSON.stringify(prev.image_ids) !== JSON.stringify(newState.image_ids) ||
-        JSON.stringify(prev.text_ids) !== JSON.stringify(newState.text_ids)
-      ) {
-        return newState;
-      }
-      return prev;
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stableDocumentDataFields = useMemo(() => {
+    if (!documentDetail) return null;
+    return {
+      names: documentDetail.names,
+      descriptions: documentDetail.descriptions,
+      flags: documentDetail.flags,
+      departments: documentDetail.departments,
+      parameter_fields: documentDetail.parameter_fields,
+      parameters: documentDetail.parameters,
+      files: documentDetail.files,
+      images: documentDetail.images,
+      texts: documentDetail.texts,
+      group_id: documentDetail.group_id,
+      show_ai_generate: documentDetail.show_ai_generate,
+      basic_show_ai_generate: documentDetail.basic_show_ai_generate,
+      content_show_ai_generate: documentDetail.content_show_ai_generate,
+    };
   }, [
-    documentDetail?.names?.resource,
-    documentDetail?.descriptions?.resource,
-    documentDetail?.flags?.current,
-    documentDetail?.departments?.current,
-    documentDetail?.fields?.current,
-    documentDetail?.uploads?.current,
-    documentDetail?.images?.current,
-    documentDetail?.texts?.current,
-    getInitialFormState,
+    documentDetail?.names,
+    documentDetail?.descriptions,
+    documentDetail?.flags,
+    documentDetail?.departments,
+    documentDetail?.parameter_fields,
+    documentDetail?.parameters,
+    documentDetail?.files,
+    documentDetail?.images,
+    documentDetail?.texts,
+    documentDetail?.group_id,
+    documentDetail?.show_ai_generate,
+    documentDetail?.basic_show_ai_generate,
+    documentDetail?.content_show_ai_generate,
   ]);
 
-  const formStateRef = React.useRef(formState as Record<string, unknown>);
-  React.useEffect(() => {
-    formStateRef.current = formState as Record<string, unknown>;
-  }, [formState]);
-
-  const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
-    null,
+  const canRegenerate = useCallback(
+    (resourceType: string): boolean => {
+      if (!stableDocumentDataFields) return false;
+      switch (resourceType) {
+        case "names":
+          return stableDocumentDataFields.names?.find((n) => n.selected)?.generated ?? false;
+        case "descriptions":
+          return (
+            stableDocumentDataFields.descriptions?.find((d) => d.selected)?.generated ?? false
+          );
+        case "flags":
+          return stableDocumentDataFields.flags?.find((f) => f.selected)?.generated ?? false;
+        case "departments":
+          return (
+            stableDocumentDataFields.departments?.filter((d) => d.selected).some((d) => d.generated) ??
+            false
+          );
+        case "fields":
+          return (
+            stableDocumentDataFields.parameter_fields
+              ?.filter((f) => f.selected)
+              .some((f) => f.generated) ?? false
+          );
+        case "uploads":
+          return (
+            stableDocumentDataFields.files?.filter((f) => f.selected).some((f) => f.generated) ??
+            false
+          );
+        case "images":
+          return (
+            stableDocumentDataFields.images?.filter((i) => i.selected).some((i) => i.generated) ??
+            false
+          );
+        case "texts":
+          return (
+            stableDocumentDataFields.texts?.filter((t) => t.selected).some((t) => t.generated) ??
+            false
+          );
+        default:
+          return false;
+      }
+    },
+    [stableDocumentDataFields],
   );
 
-  const patchActionRef = React.useRef<
-    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>) | undefined
-  >(undefined);
+  const canRegenerateForStepCard = useCallback(
+    (resourceType: string) => canRegenerate(resourceType),
+    [canRegenerate],
+  );
 
-  const formStateKey = React.useMemo(
+  const getInitialFormState = useCallback((): DocumentFormState => {
+    const data = documentDataRef.current;
+    if (!data) {
+      return {
+        name: null,
+        description: null,
+        name_id: null,
+        description_id: null,
+        active_flag_id: null,
+        department_ids: [],
+        parameter_field_ids: [],
+        file_ids: [],
+        image_ids: [],
+        text_ids: [],
+        pending_upload_ids: [],
+        pending_text_contents: [],
+        pending_images: [],
+        pending_ids: [],
+      };
+    }
+
+    return {
+      name: null,
+      description: null,
+      name_id: data.names?.find((n) => n.selected)?.id ?? null,
+      description_id: data.descriptions?.find((d) => d.selected)?.id ?? null,
+      active_flag_id: data.flags?.find((f) => f.selected)?.flag_option_id ?? null,
+      department_ids: (data.departments?.filter((d) => d.selected) ?? [])
+        .map((d) => d.department_id)
+        .filter(Boolean) as string[],
+      parameter_field_ids: (data.parameter_fields?.filter((f) => f.selected) ?? [])
+        .map((f) => f.field_id)
+        .filter(Boolean) as string[],
+      file_ids: (data.files?.filter((f) => f.selected) ?? [])
+        .map((f) => f.files_id ?? f.id)
+        .filter(Boolean) as string[],
+      image_ids: (data.images?.filter((i) => i.selected) ?? [])
+        .map((i) => i.image_id ?? i.id)
+        .filter(Boolean) as string[],
+      text_ids: (data.texts?.filter((t) => t.selected) ?? [])
+        .map((t) => t.texts_id ?? t.id)
+        .filter(Boolean) as string[],
+      pending_upload_ids: [],
+      pending_text_contents: [],
+      pending_images: [],
+      pending_ids: collectPendingIds(data),
+    };
+  }, []);
+
+  const [formState, setFormState] = useState<DocumentFormState>(getInitialFormState);
+  const formStateRef = useRef<Record<string, unknown>>(
+    formState as unknown as Record<string, unknown>,
+  );
+  const lastPatchedFormStateRef = useRef<DocumentFormState | null>(
+    getInitialFormState(),
+  );
+
+  useEffect(() => {
+    formStateRef.current = formState as unknown as Record<string, unknown>;
+  }, [formState]);
+
+  const fileIdsStr = useMemo(() => JSON.stringify(formState.file_ids), [formState.file_ids]);
+  const imageIdsStr = useMemo(() => JSON.stringify(formState.image_ids), [formState.image_ids]);
+  const textIdsStr = useMemo(() => JSON.stringify(formState.text_ids), [formState.text_ids]);
+  const departmentIdsStr = useMemo(
+    () => JSON.stringify(formState.department_ids),
+    [formState.department_ids],
+  );
+  const parameterFieldIdsStr = useMemo(
+    () => JSON.stringify(formState.parameter_field_ids),
+    [formState.parameter_field_ids],
+  );
+  const pendingUploadIdsStr = useMemo(
+    () => JSON.stringify(formState.pending_upload_ids),
+    [formState.pending_upload_ids],
+  );
+  const pendingTextsStr = useMemo(
+    () => JSON.stringify(formState.pending_text_contents),
+    [formState.pending_text_contents],
+  );
+  const pendingImagesStr = useMemo(
+    () => JSON.stringify(formState.pending_images),
+    [formState.pending_images],
+  );
+  const pendingIdsStr = useMemo(
+    () => JSON.stringify(formState.pending_ids),
+    [formState.pending_ids],
+  );
+
+  const formStateKey = useMemo(
     () =>
       JSON.stringify({
         name: formState.name,
@@ -312,61 +370,116 @@ function DocumentComponent({
         description_id: formState.description_id,
         active_flag_id: formState.active_flag_id,
         department_ids: formState.department_ids,
-        field_ids: formState.field_ids,
-        upload_ids: formState.upload_ids,
+        parameter_field_ids: formState.parameter_field_ids,
+        file_ids: formState.file_ids,
         image_ids: formState.image_ids,
         text_ids: formState.text_ids,
         pending_upload_ids: formState.pending_upload_ids,
         pending_text_contents: formState.pending_text_contents,
+        pending_images: formState.pending_images,
+        pending_ids: formState.pending_ids,
       }),
-    [formState],
+    [
+      formState.name,
+      formState.description,
+      formState.name_id,
+      formState.description_id,
+      formState.active_flag_id,
+      departmentIdsStr,
+      parameterFieldIdsStr,
+      fileIdsStr,
+      imageIdsStr,
+      textIdsStr,
+      pendingUploadIdsStr,
+      pendingTextsStr,
+      pendingImagesStr,
+      pendingIdsStr,
+    ],
   );
 
-  const hasResourceIds = checkHasResourceIds(
-    DOCUMENT_RESOURCES,
-    formState as unknown as Record<string, unknown>,
-  );
+  const hasResourceIds =
+    checkHasResourceIds(
+      DOCUMENT_RESOURCES,
+      formState as unknown as Record<string, unknown>,
+    ) ||
+    !!formState.name ||
+    !!formState.description ||
+    formState.pending_upload_ids.length > 0 ||
+    formState.pending_text_contents.length > 0 ||
+    formState.pending_images.length > 0;
 
   const buildPatchPayload = useCallback(
     (
-      inputDraftId: string | null,
+      draftId: string | null,
       flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => {
-      const payload: Record<string, unknown> = {
-        input_draft_id: inputDraftId || null,
-        ...buildDraftPayload(DOCUMENT_RESOURCES, {
-          formState: formStateRef.current,
-          referenceState:
-            lastPatchedFormStateRef.current as unknown as Record<
-              string,
-              unknown
-            > | null,
-          flushResults: (flushResults ?? {}) as Record<string, unknown>,
-        }),
+      const current = formStateRef.current as unknown as DocumentFormState;
+      const ref = lastPatchedFormStateRef.current;
+
+      const idPayload = buildDraftPayload(DOCUMENT_RESOURCES, {
+        formState: formStateRef.current,
+        referenceState: lastPatchedFormStateRef.current as unknown as Record<
+          string,
+          unknown
+        > | null,
+        flushResults: (flushResults ?? {}) as Record<string, unknown>,
+      });
+
+      if (current.active_flag_id !== (ref?.active_flag_id ?? null)) {
+        idPayload["flag_ids"] = current.active_flag_id ? [current.active_flag_id] : null;
+      }
+
+      if (current.name != null) {
+        if (!ref || current.name !== ref.name) {
+          idPayload["name"] = current.name;
+          delete idPayload["name_id"];
+        }
+      }
+
+      if (current.description != null) {
+        if (!ref || current.description !== ref.description) {
+          idPayload["description"] = current.description;
+          delete idPayload["description_id"];
+        }
+      }
+
+      if (current.pending_upload_ids.length > 0) {
+        idPayload["files"] = current.pending_upload_ids.map((upload_id) => ({
+          upload_id,
+        }));
+      }
+
+      if (current.pending_text_contents.length > 0) {
+        idPayload["texts"] = current.pending_text_contents.map((content) => ({
+          content,
+        }));
+      }
+
+      if (current.pending_images.length > 0) {
+        idPayload["images"] = current.pending_images;
+      }
+
+      return {
+        draft_id: draftId || null,
+        ...idPayload,
+        ...(current.pending_ids.length ? { pending_ids: current.pending_ids } : {}),
       };
-      // Overlay value fields (name/description) if set
-      const currentFormState = formStateRef.current;
-      if (currentFormState["name"] !== null && currentFormState["name"] !== undefined) {
-        payload["name"] = currentFormState["name"];
-      }
-      if (currentFormState["description"] !== null && currentFormState["description"] !== undefined) {
-        payload["description"] = currentFormState["description"];
-      }
-      // Include pending file uploads for server-side chain creation
-      const pendingUploads = currentFormState["pending_upload_ids"] as string[] | undefined;
-      if (pendingUploads && pendingUploads.length > 0) {
-        payload["files"] = pendingUploads.map((id: string) => ({ upload_id: id }));
-      }
-      // Include pending text content for server-side chain creation
-      const pendingTexts = currentFormState["pending_text_contents"] as string[] | undefined;
-      if (pendingTexts && pendingTexts.length > 0) {
-        payload["texts"] = pendingTexts.map((content: string) => ({ content }));
-      }
-      return payload;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+
+  const onPatchSuccess = useCallback(() => {
+    lastPatchedFormStateRef.current = {
+      ...(formStateRef.current as unknown as DocumentFormState),
+    };
+  }, []);
+
+  const patchActionRef = useRef<
+    | ((
+        payload: Record<string, unknown>,
+      ) => Promise<{ draft_id?: string | null }>)
+    | undefined
+  >(undefined);
 
   const {
     setUrlFormDataRef,
@@ -383,51 +496,79 @@ function DocumentComponent({
     hasResourceIds,
     flushRegistryRef,
     formStateRef,
-    onPatchSuccess: () => {
-      lastPatchedFormStateRef.current = { ...formStateRef.current };
-    },
+    onPatchSuccess,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
+    const newState = getInitialFormState();
+    setFormState((prev) => {
+      if (
+        prev.name_id !== newState.name_id ||
+        prev.description_id !== newState.description_id ||
+        prev.active_flag_id !== newState.active_flag_id ||
+        JSON.stringify(prev.department_ids) !== JSON.stringify(newState.department_ids) ||
+        JSON.stringify(prev.parameter_field_ids) !==
+          JSON.stringify(newState.parameter_field_ids) ||
+        JSON.stringify(prev.file_ids) !== JSON.stringify(newState.file_ids) ||
+        JSON.stringify(prev.image_ids) !== JSON.stringify(newState.image_ids) ||
+        JSON.stringify(prev.text_ids) !== JSON.stringify(newState.text_ids) ||
+        JSON.stringify(prev.pending_ids) !== JSON.stringify(newState.pending_ids)
+      ) {
+        serverSyncPendingRef.current = true;
+        lastPatchedFormStateRef.current = newState;
+        return newState;
+      }
+      return prev;
+    });
+  }, [
+    documentDetail?.names,
+    documentDetail?.descriptions,
+    documentDetail?.flags,
+    documentDetail?.departments,
+    documentDetail?.parameter_fields,
+    documentDetail?.files,
+    documentDetail?.images,
+    documentDetail?.texts,
+    documentDetail?.pending_ids,
+    getInitialFormState,
+    serverSyncPendingRef,
+  ]);
+
+  useEffect(() => {
     if (patchDocumentDraftAction) {
       patchActionRef.current = async (payload: Record<string, unknown>) => {
         const result = await patchDocumentDraftAction({
           body: payload,
         } as PatchDocumentDraftIn);
 
-        // Sync form_state from server response (server is source of truth)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const fs = (result as any).form_state as
-          | {
-              name_id: string | null;
-              description_id: string | null;
-              flag_ids: string[];
-              department_ids: string[];
-              file_ids: string[];
-              image_ids: string[];
-              text_ids: string[];
-              parameter_field_ids: string[];
-              parameter_ids: string[];
-            }
-          | undefined;
+        const fs = result.form_state as DocumentDraftFormState | undefined;
         if (fs) {
           serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name: null,
-            description: null,
-            name_id: fs.name_id ?? prev.name_id,
-            description_id: fs.description_id ?? prev.description_id,
-            active_flag_id: fs.flag_ids?.[0] ?? prev.active_flag_id,
-            department_ids: fs.department_ids ?? prev.department_ids,
-            upload_ids: fs.file_ids ?? prev.upload_ids,
-            image_ids: fs.image_ids ?? prev.image_ids,
-            text_ids: fs.text_ids ?? prev.text_ids,
-            field_ids: fs.parameter_field_ids ?? prev.field_ids,
-            // Clear pending values — server has resolved them into IDs
-            pending_upload_ids: [],
-            pending_text_contents: [],
-          }));
+          setFormState((prev) => {
+            const nextState: DocumentFormState = {
+              ...prev,
+              name: (fs.name ?? null) as string | null,
+              description: (fs.description ?? null) as string | null,
+              name_id: (fs.name_id ?? prev.name_id) as string | null,
+              description_id: (fs.description_id ?? prev.description_id) as string | null,
+              active_flag_id:
+                ((fs.flag_ids?.[0] ?? prev.active_flag_id) as string | null) ?? null,
+              department_ids:
+                (fs.department_ids as string[] | undefined) ?? prev.department_ids,
+              parameter_field_ids:
+                (fs.parameter_field_ids as string[] | undefined) ??
+                prev.parameter_field_ids,
+              file_ids: (fs.file_ids as string[] | undefined) ?? prev.file_ids,
+              image_ids: (fs.image_ids as string[] | undefined) ?? prev.image_ids,
+              text_ids: (fs.text_ids as string[] | undefined) ?? prev.text_ids,
+              pending_upload_ids: [],
+              pending_text_contents: [],
+              pending_images: [],
+              pending_ids: (fs.pending_ids as string[] | undefined) ?? prev.pending_ids,
+            };
+            lastPatchedFormStateRef.current = nextState;
+            return nextState;
+          });
         }
 
         return result;
@@ -435,23 +576,16 @@ function DocumentComponent({
     } else {
       patchActionRef.current = undefined;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patchDocumentDraftAction, serverSyncPendingRef]);
 
-  // AI generation via shared hook
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "document",
     validResourceTypes: [...VALID_RESOURCE_TYPES],
   });
 
   const handleGenerateResources = useCallback(
-    async (
-      resourceTypes: ResourceType[],
-      userInstructions?: string,
-    ) => {
-      // Read search params from formData
-      const formData = formDataRef.current;
-      let currentDraftId = (formData["draftId"] as string | undefined) ?? null;
+    async (resourceTypes: ResourceType[], userInstructions?: string) => {
+      let currentDraftId = (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!currentDraftId) {
         currentDraftId = await flushAllAndSave();
       }
@@ -466,245 +600,9 @@ function DocumentComponent({
         user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      documentId,
-      generate,
-      flushAllAndSave,
-      formDataRef,
-    ],
+    [documentId, flushAllAndSave, formDataRef, generate],
   );
 
-  // Individual generation handlers - generate directly without modals
-  const handleGenerateName = useCallback(
-    async () => handleGenerateResources(["names"]),
-    [handleGenerateResources],
-  );
-
-  const handleGenerateDescription = useCallback(
-    async () => handleGenerateResources(["descriptions"]),
-    [handleGenerateResources],
-  );
-
-  const handleGenerateDepartments = useCallback(
-    async () => handleGenerateResources(["departments"]),
-    [handleGenerateResources],
-  );
-
-  const handleGenerateFlags = useCallback(
-    async () => handleGenerateResources(["flags"]),
-    [handleGenerateResources],
-  );
-
-  const handleGenerateFields = useCallback(
-    async () => handleGenerateResources(["fields"]),
-    [handleGenerateResources],
-  );
-
-  // Helper to check if a resource type can be regenerated
-  const canRegenerate = useCallback(
-    (resourceType: ResourceType): boolean => {
-      if (!documentDetail) return false;
-      switch (resourceType) {
-        case "names":
-          return documentDetail.names?.resource?.generated ?? false;
-        case "descriptions":
-          return documentDetail.descriptions?.resource?.generated ?? false;
-        case "flags":
-          return documentDetail.flags?.current?.[0]?.generated ?? false;
-        case "departments":
-          return documentDetail.departments?.current?.some((d) => d.generated) ?? false;
-        case "fields":
-          return documentDetail.fields?.current?.some((f) => f.generated) ?? false;
-        case "uploads":
-          return documentDetail.uploads?.current?.some((u) => u.generated) ?? false;
-        case "images":
-          return documentDetail.images?.current?.some((i) => i.generated) ?? false;
-        case "texts":
-          return documentDetail.texts?.current?.some((t) => t.generated) ?? false;
-        default:
-          return false;
-      }
-    },
-    [documentDetail],
-  );
-  const canRegenerateForStepCard = useCallback(
-    (resourceType: string) => canRegenerate(resourceType as ResourceType),
-    [canRegenerate],
-  );
-
-  // Disabled logic based on can_edit flag - standardized for all resource components
-  // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
-  const disabled = useMemo(() => {
-    if (!documentDetail) return false;
-    return !documentDetail.can_edit;
-  }, [documentDetail]);
-
-  // Submit handler for GenericForm (uses formState, not formData parameter)
-  const handleSubmit = useCallback(
-    async (_formData: Record<string, unknown>) => {
-      let flushResults: Record<string, unknown> = {};
-      if (!isAutosaveEnabled) {
-        flushResults = await flushAllResources();
-      }
-
-      const effectiveFormState = computeEffectiveFormState(
-        DOCUMENT_RESOURCES,
-        formStateRef.current,
-        flushResults,
-      ) as unknown as typeof formState;
-
-      // Validate required resource IDs using section required flags
-      if (documentDetail?.names?.required && !effectiveFormState.name_id) {
-        toast.error("Document name is required");
-        throw new Error("Document name is required");
-      }
-
-      if (
-        documentDetail?.departments?.required &&
-        (!effectiveFormState.department_ids ||
-          effectiveFormState.department_ids.length === 0)
-      ) {
-        toast.error("Departments are required");
-        throw new Error("Departments are required");
-      }
-
-      if (
-        documentDetail?.fields?.required &&
-        (!effectiveFormState.field_ids ||
-          effectiveFormState.field_ids.length === 0)
-      ) {
-        toast.error("Fields are required");
-        throw new Error("Fields are required");
-      }
-
-      // Ensure profileId exists - required for API calls
-      if (!profile?.id) {
-        toast.error("Profile not loaded. Please refresh the page.");
-        throw new Error("Profile not loaded");
-      }
-
-      // Ensure required fields are present (TypeScript guard)
-      if (!effectiveFormState.name_id) {
-        toast.error("Required fields are missing");
-        throw new Error("Required fields are missing");
-      }
-
-      try {
-        if (isEditMode && documentId && updateDocumentAction) {
-          await updateDocumentAction({
-            body: {
-              documents: [{
-                document_id: documentId,
-                name_id: effectiveFormState.name_id || undefined,
-                description_id: effectiveFormState.description_id || undefined,
-                flag_id: effectiveFormState.active_flag_id || undefined,
-                department_ids: effectiveFormState.department_ids?.length
-                  ? effectiveFormState.department_ids
-                  : undefined,
-                field_ids: effectiveFormState.field_ids?.length
-                  ? effectiveFormState.field_ids
-                  : undefined,
-                upload_ids: effectiveFormState.upload_ids?.length
-                  ? effectiveFormState.upload_ids
-                  : undefined,
-                image_ids: effectiveFormState.image_ids?.length
-                  ? effectiveFormState.image_ids
-                  : undefined,
-                text_ids: effectiveFormState.text_ids?.length
-                  ? effectiveFormState.text_ids
-                  : undefined,
-              }],
-            },
-          } as UpdateDocumentIn);
-        } else if (createDocumentAction) {
-          await createDocumentAction({
-            body: {
-              documents: [{
-                name_id: effectiveFormState.name_id || undefined,
-                description_id: effectiveFormState.description_id || undefined,
-                flag_id: effectiveFormState.active_flag_id || undefined,
-                department_ids: effectiveFormState.department_ids?.length
-                  ? effectiveFormState.department_ids
-                  : undefined,
-                field_ids: effectiveFormState.field_ids?.length
-                  ? effectiveFormState.field_ids
-                  : undefined,
-                upload_ids: effectiveFormState.upload_ids?.length
-                  ? effectiveFormState.upload_ids
-                  : undefined,
-                image_ids: effectiveFormState.image_ids?.length
-                  ? effectiveFormState.image_ids
-                  : undefined,
-                text_ids: effectiveFormState.text_ids?.length
-                  ? effectiveFormState.text_ids
-                  : undefined,
-              }],
-            },
-          } as CreateDocumentIn);
-        } else {
-          toast.error("Save action not available");
-          throw new Error("Save action not available");
-        }
-        toast.success(
-          `Document ${isEditMode ? "updated" : "created"} successfully!`,
-        );
-        router.push("/management/documents");
-      } catch (error) {
-        toast.error(
-          `Failed to ${isEditMode ? "update" : "create"} document: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-        throw error;
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      formStateRef,
-      isEditMode,
-      documentId,
-      profile?.id,
-      createDocumentAction,
-      updateDocumentAction,
-      router,
-      isAutosaveEnabled,
-      flushAllResources,
-    ],
-  );
-
-  // Step status logic (for GenericForm) - check resource IDs instead of display values
-  const getStepStatus = useCallback(
-    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      // Check resource IDs from formState (components manage their own display state)
-      const hasName = !!formState.name_id;
-      const hasDescription = !!formState.description_id;
-      const hasFields = formState.field_ids.length > 0;
-      const hasUploads = formState.upload_ids.length > 0;
-      const hasImages = formState.image_ids.length > 0;
-      const hasTexts = formState.text_ids.length > 0;
-
-      switch (stepId) {
-        case "basic":
-          return hasName && hasDescription ? "completed" : "active";
-        case "fields":
-          if (!hasName || !hasDescription) return "pending";
-          return hasFields ? "completed" : "active";
-        case "uploads":
-          if (!hasName || !hasDescription) return "pending";
-          return hasUploads ? "completed" : "active";
-        case "images":
-          if (!hasName || !hasDescription) return "pending";
-          return hasImages ? "completed" : "active";
-        case "texts":
-          if (!hasName || !hasDescription) return "pending";
-          return hasTexts ? "completed" : "active";
-        default:
-          return "pending";
-      }
-    },
-    [formState],
-  );
-
-  // Step-to-resources mapping for multi-generation
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({
       basic: ["names", "descriptions", "departments", "flags"],
@@ -721,7 +619,7 @@ function DocumentComponent({
         "uploads",
         "images",
         "texts",
-      ], // All resources for full-page generation
+      ],
     }),
     [],
   );
@@ -733,30 +631,157 @@ function DocumentComponent({
         handleGenerateResources(resources);
       }
     },
-    [stepResources, handleGenerateResources],
+    [handleGenerateResources, stepResources],
   );
 
-  // Steps configuration for GenericForm
+  const disabled = useMemo(() => {
+    if (!documentDetail) return false;
+    return !documentDetail.can_edit;
+  }, [documentDetail]);
+
+  const handleSubmit = useCallback(
+    async (_formData: Record<string, unknown>) => {
+      let flushResults: Record<string, unknown> = {};
+      if (!isAutosaveEnabled) {
+        flushResults = await flushAllResources();
+      }
+
+      const effectiveFormState = computeEffectiveFormState(
+        DOCUMENT_RESOURCES,
+        formStateRef.current,
+        flushResults,
+      ) as unknown as DocumentFormState;
+
+      if (!profile?.id) {
+        toast.error("Profile not loaded. Please refresh the page.");
+        throw new Error("Profile not loaded");
+      }
+
+      if (!effectiveFormState.name_id && !effectiveFormState.name) {
+        toast.error("Document name is required");
+        throw new Error("Document name is required");
+      }
+
+      const commonFields = {
+        name_id: effectiveFormState.name_id || undefined,
+        name: !effectiveFormState.name_id
+          ? (effectiveFormState.name ?? undefined)
+          : undefined,
+        description_id: effectiveFormState.description_id || undefined,
+        description: !effectiveFormState.description_id
+          ? (effectiveFormState.description ?? undefined)
+          : undefined,
+        flag_id: effectiveFormState.active_flag_id || undefined,
+        department_ids: effectiveFormState.department_ids.length
+          ? effectiveFormState.department_ids
+          : undefined,
+        field_ids: effectiveFormState.parameter_field_ids.length
+          ? effectiveFormState.parameter_field_ids
+          : undefined,
+        upload_ids: effectiveFormState.file_ids.length
+          ? effectiveFormState.file_ids
+          : undefined,
+        image_ids: effectiveFormState.image_ids.length
+          ? effectiveFormState.image_ids
+          : undefined,
+        text_ids: effectiveFormState.text_ids.length
+          ? effectiveFormState.text_ids
+          : undefined,
+      };
+
+      try {
+        if (isEditMode && documentId && updateDocumentAction) {
+          await updateDocumentAction({
+            body: {
+              documents: [{ document_id: documentId, ...commonFields }],
+            },
+          } as UpdateDocumentIn);
+        } else if (createDocumentAction) {
+          await createDocumentAction({
+            body: {
+              documents: [commonFields],
+            },
+          } as CreateDocumentIn);
+        } else {
+          toast.error("Save action not available");
+          throw new Error("Save action not available");
+        }
+
+        toast.success(
+          `Document ${isEditMode ? "updated" : "created"} successfully!`,
+        );
+        router.push("/management/documents");
+      } catch (error) {
+        toast.error(
+          `Failed to ${isEditMode ? "update" : "create"} document: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+        );
+        throw error;
+      }
+    },
+    [
+      createDocumentAction,
+      documentId,
+      flushAllResources,
+      isAutosaveEnabled,
+      isEditMode,
+      profile?.id,
+      router,
+      updateDocumentAction,
+    ],
+  );
+
+  const getStepStatus = useCallback(
+    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
+      const hasName = !!formState.name_id || !!formState.name;
+      const hasDescription = !!formState.description_id || !!formState.description;
+      const hasFields = formState.parameter_field_ids.length > 0;
+      const hasUploads = formState.file_ids.length > 0 || formState.pending_upload_ids.length > 0;
+      const hasImages = formState.image_ids.length > 0 || formState.pending_images.length > 0;
+      const hasTexts = formState.text_ids.length > 0 || formState.pending_text_contents.length > 0;
+
+      switch (stepId) {
+        case "basic":
+          return hasName && hasDescription ? "completed" : "active";
+        case "fields":
+          if (!hasName) return "pending";
+          return hasFields ? "completed" : "active";
+        case "uploads":
+          if (!hasName) return "pending";
+          return hasUploads ? "completed" : "active";
+        case "images":
+          if (!hasName) return "pending";
+          return hasImages ? "completed" : "active";
+        case "texts":
+          if (!hasName) return "pending";
+          return hasTexts ? "completed" : "active";
+        default:
+          return "pending";
+      }
+    },
+    [formState],
+  );
+
   const steps = useMemo(
     () => [
       {
         id: "basic",
         title: "Basic Information",
-        description:
-          "Set the document name, description, departments, and active status.",
-        resetFields: ["name", "description", "department_ids", "active"],
+        description: "Set the document name, description, departments, and active status.",
+        resetFields: ["name", "description", "department_ids", "active_flag_id"],
       },
       {
         id: "fields",
         title: "Fields",
         description: "Select fields (parameter items) for this document.",
-        resetFields: ["field_ids", "parameterIds"],
+        resetFields: ["parameter_field_ids", "parameterIds"],
       },
       {
         id: "uploads",
         title: "Files",
         description: "Upload files for this document.",
-        resetFields: ["upload_ids"],
+        resetFields: ["file_ids", "uploadSearch"],
       },
       {
         id: "images",
@@ -774,22 +799,20 @@ function DocumentComponent({
     [],
   );
 
-  // Memoize formFieldKeys to prevent re-initialization loops
   const formFieldKeys = useMemo(
     () => [
       "name_id",
       "description_id",
       "active_flag_id",
       "department_ids",
-      "field_ids",
-      "upload_ids",
+      "parameter_field_ids",
+      "file_ids",
       "image_ids",
       "text_ids",
     ],
     [],
   );
 
-  // Memoize resetSuccessMessage to prevent GenericForm re-renders
   const resetSuccessMessage = useCallback((stepId: string) => {
     switch (stepId) {
       case "basic":
@@ -797,7 +820,7 @@ function DocumentComponent({
       case "fields":
         return "Fields reset";
       case "uploads":
-        return "Uploads reset";
+        return "Files reset";
       case "images":
         return "Images reset";
       case "texts":
@@ -813,6 +836,8 @@ function DocumentComponent({
         case "basic":
           return {
             ...prev,
+            name: null,
+            description: null,
             name_id: null,
             description_id: null,
             active_flag_id: null,
@@ -821,18 +846,19 @@ function DocumentComponent({
         case "fields":
           return {
             ...prev,
-            field_ids: [],
+            parameter_field_ids: [],
           };
         case "uploads":
           return {
             ...prev,
-            upload_ids: [],
+            file_ids: [],
             pending_upload_ids: [],
           };
         case "images":
           return {
             ...prev,
             image_ids: [],
+            pending_images: [],
           };
         case "texts":
           return {
@@ -846,7 +872,6 @@ function DocumentComponent({
     });
   }, []);
 
-  // Memoize submitButton to prevent GenericForm re-renders
   const submitButton = useMemo(
     () => ({
       backUrl: "/management/documents",
@@ -857,7 +882,6 @@ function DocumentComponent({
     [],
   );
 
-  // Memoize renderStep to prevent GenericForm re-renders
   const renderStep = useCallback(
     ({
       stepId,
@@ -885,11 +909,13 @@ function DocumentComponent({
       }>;
       onReset?: () => void;
     }) => {
+      const s = stableDocumentDataFields;
+
       switch (stepId) {
-        case "basic":
+        case "basic": {
           const descriptionSearchTerm =
-            (stepFormData["descriptionSearch"] as string | null | undefined) ||
-            "";
+            (stepFormData["descriptionSearch"] as string | null | undefined) || "";
+
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -900,32 +926,30 @@ function DocumentComponent({
               isEditMode={isEditMode}
               customHeader={
                 <Names
-                  name_id={formState.name_id ?? null}
-                  name_resource={
-                    documentDetail?.names?.resource ?? null
-                  }
-                  show_name={documentDetail?.names?.show ?? true}
-                  name_suggestions={documentDetail?.names?.suggestions ?? []}
-                  names={documentDetail?.names?.resources ?? []}
+                  name_id={formState.name_id}
+                  name_resource={s?.names?.find((n) => n.selected) ?? null}
+                  show_name={true}
+                  names={s?.names ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      name_id: nameId,
+                      name: nameId ? null : prev.name,
+                    }))
                   }
                   onNameChange={(name) =>
-                    setFormState((prev) => ({ ...prev, name }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      name: name || null,
+                      name_id: null,
+                    }))
                   }
-                  onGenerate={handleGenerateName}
                   placeholder="e.g., Course Syllabus"
                   defaultName="New Document"
-                  required={documentDetail?.names?.required ?? false}
+                  required={true}
                   hideDescription={true}
-
-                  showAiGenerate={
-                    documentDetail?.names?.show_ai_generate ?? false
-                  }
-                  createNamesAction={createNamesAction}
                   isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["names"]}
                 />
               }
               resetFields={[
@@ -933,15 +957,13 @@ function DocumentComponent({
                 "description",
                 "descriptionSearch",
                 "department_ids",
-                "active",
+                "active_flag_id",
               ]}
               actions={
-                stepResources["basic"] &&
-                stepResources["basic"].length > 0 &&
-                documentDetail?.basic_show_ai_generate ? (
+                s?.basic_show_ai_generate ? (
                   <StepCardAiButton
                     stepId="basic"
-                    resourceTypes={stepResources["basic"]}
+                    resourceTypes={stepResources["basic"] ?? []}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
                     onOpenModal={handleDirectStepGenerate}
@@ -953,78 +975,54 @@ function DocumentComponent({
               resetLabel="Reset"
             >
               <div className="space-y-4">
-                {/* Description field - using Descriptions resource component */}
                 <Descriptions
-                  description_id={formState.description_id ?? null}
+                  description_id={formState.description_id}
                   description_resource={
-                    documentDetail?.descriptions?.resource ?? null
+                    s?.descriptions?.find((d) => d.selected) ?? null
                   }
-                  show_description={documentDetail?.descriptions?.show ?? true}
-                  description_suggestions={
-                    documentDetail?.descriptions?.suggestions ?? []
-                  }
-                  descriptions={
-                    documentDetail?.descriptions?.resources ?? []
-                  }
+                  show_description={true}
+                  descriptions={s?.descriptions ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
                     setFormState((prev) => ({
                       ...prev,
                       description_id: descriptionId,
+                      description: descriptionId ? null : prev.description,
                     }))
                   }
                   onDescriptionChange={(description) =>
-                    setFormState((prev) => ({ ...prev, description }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      description: description || null,
+                      description_id: null,
+                    }))
                   }
                   searchTerm={descriptionSearchTerm}
                   onSearchChange={(term) =>
                     setStepFormData({ descriptionSearch: term || null })
                   }
-                  onGenerate={handleGenerateDescription}
                   label="Description"
                   placeholder="Document description and purpose"
-                  required={documentDetail?.descriptions?.required ?? false}
                   rows={4}
                   data-testid="input-document-description"
-
-                  showAiGenerate={
-                    documentDetail?.descriptions?.show_ai_generate ?? false
-                  }
-                  createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["descriptions"]}
                 />
 
-                {/* Department Selection */}
                 <Departments
-                  department_ids={formState.department_ids ?? []}
-                  department_resources={
-                    documentDetail?.departments?.current ?? []
-                  }
-                  show_departments={documentDetail?.departments?.show ?? false}
-                  department_suggestions={
-                    documentDetail?.departments?.suggestions ?? []
-                  }
-                  departments={
-                    documentDetail?.departments?.resources ?? []
-                  }
+                  department_ids={formState.department_ids}
+                  department_resources={s?.departments?.filter((d) => d.selected) ?? []}
+                  show_departments={true}
+                  departments={s?.departments ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
-                  onGenerate={handleGenerateDepartments}
-                  required={documentDetail?.departments?.required ?? false}
-      
-                  showAiGenerate={
-                    documentDetail?.departments?.show_ai_generate ?? false
-                  }
                 />
 
-                {/* Active Switch - using Flags resource component */}
                 <Flags
-                  flags={documentDetail?.flags?.resources ?? []}
-                  flag_id={formState.active_flag_id ?? null}
-                  show_flags={documentDetail?.flags?.show ?? false}
+                  flags={s?.flags ?? []}
+                  flag_id={formState.active_flag_id}
+                  show_flags={(s?.flags?.length ?? 0) > 0}
                   columns={1}
                   label="Active"
                   disabled={disabled}
@@ -1034,20 +1032,15 @@ function DocumentComponent({
                       active_flag_id: flagId,
                     }))
                   }
-                  onGenerate={handleGenerateFlags}
-      
-                  showAiGenerate={
-                    documentDetail?.flags?.show_ai_generate ?? false
-                  }
                 />
               </div>
             </StepCard>
           );
+        }
 
         case "fields": {
-          const urlParameterIds =
-            ((stepFormData["parameterIds"] as string[] | null | undefined) ??
-              []);
+          const parameterIds =
+            ((stepFormData["parameterIds"] as string[] | null | undefined) ?? []);
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1056,19 +1049,14 @@ function DocumentComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={[
-                "field_ids",
-                "parameterIds",
-              ]}
+              resetFields={["parameter_field_ids", "parameterIds"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
-                stepResources["fields"] &&
-                stepResources["fields"].length > 0 &&
-                documentDetail?.fields?.show_ai_generate ? (
+                s?.show_ai_generate ? (
                   <StepCardAiButton
                     stepId="fields"
-                    resourceTypes={stepResources["fields"]}
+                    resourceTypes={stepResources["fields"] ?? []}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
                     onOpenModal={handleDirectStepGenerate}
@@ -1078,42 +1066,36 @@ function DocumentComponent({
               }
             >
               <ParameterFields
-                parameterIds={urlParameterIds}
-                parameterFieldIds={formState.field_ids ?? []}
-                parameterFieldResources={documentDetail?.fields?.current ?? []}
-                allParameters={[]} // TODO: Server needs to expose parameters section in GetDocumentApiResponse (data is resolved in document_context but not returned)
-                availableFields={documentDetail?.fields?.resources ?? []}
+                parameterIds={parameterIds}
+                parameterFieldIds={formState.parameter_field_ids}
+                parameterFieldResources={
+                  s?.parameter_fields?.filter((f) => f.selected) ?? []
+                }
+                allParameters={s?.parameters ?? []}
+                availableFields={s?.parameter_fields ?? []}
                 onToggleParameter={(parameterId, open) => {
-                  const current = urlParameterIds;
                   if (open) {
-                    setStepFormData({
-                      parameterIds: [...current, parameterId],
-                    });
+                    setStepFormData({ parameterIds: [...parameterIds, parameterId] });
                   } else {
                     setStepFormData({
-                      parameterIds: current.filter(
-                        (id: string) => id !== parameterId
-                      ),
+                      parameterIds: parameterIds.filter((id) => id !== parameterId),
                     });
                   }
                 }}
                 onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, field_ids: ids }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    parameter_field_ids: ids,
+                  }))
                 }
                 disabled={disabled}
-                group_id={documentDetail?.group_id ?? null}
-                showAiGenerate={
-                  documentDetail?.fields?.show_ai_generate ?? false
-                }
-                required={documentDetail?.fields?.required ?? false}
-                onGenerate={handleGenerateFields}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>
           );
         }
 
-        case "uploads":
+        case "uploads": {
           const uploadSearchTerm =
             (stepFormData["uploadSearch"] as string | null | undefined) || "";
           return (
@@ -1124,16 +1106,14 @@ function DocumentComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["upload_ids", "uploadSearch"]}
+              resetFields={["file_ids", "uploadSearch"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
-                stepResources["uploads"] &&
-                stepResources["uploads"].length > 0 &&
-                documentDetail?.uploads?.show_ai_generate ? (
+                s?.content_show_ai_generate ? (
                   <StepCardAiButton
                     stepId="uploads"
-                    resourceTypes={stepResources["uploads"]}
+                    resourceTypes={stepResources["uploads"] ?? []}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
                     onOpenModal={handleDirectStepGenerate}
@@ -1143,26 +1123,19 @@ function DocumentComponent({
               }
             >
               <Uploads
-                upload_ids={formState.upload_ids ?? []}
-                upload_resources={
-                  documentDetail?.uploads?.current ?? []
-                }
-                show_uploads={documentDetail?.uploads?.show ?? false}
-                upload_suggestions={documentDetail?.uploads?.suggestions ?? []}
-                uploads={documentDetail?.uploads?.resources ?? []}
+                upload_ids={formState.file_ids}
+                upload_resources={s?.files?.filter((f) => f.selected) ?? []}
+                show_uploads={true}
+                upload_suggestions={(s?.files ?? [])
+                  .filter((f) => f.suggested)
+                  .map((f) => f.files_id ?? f.id)
+                  .filter(Boolean) as string[]}
+                uploads={s?.files ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, upload_ids: ids }))
+                  setFormState((prev) => ({ ...prev, file_ids: ids }))
                 }
                 label="Files"
-                required={documentDetail?.uploads?.required ?? false}
-
-                showAiGenerate={
-                  documentDetail?.uploads?.show_ai_generate ?? false
-                }
-                createUploadsAction={createUploadsAction}
-                uploadBasePath={uploadBasePath}
-                uploadFileAction={uploadFileAction}
                 searchTerm={uploadSearchTerm}
                 registerFlush={registerFlushCallbacks["uploads"]}
                 isAutosaveEnabled={isAutosaveEnabled}
@@ -1172,9 +1145,12 @@ function DocumentComponent({
                     pending_upload_ids: [...prev.pending_upload_ids, uploadId],
                   }))
                 }
+                {...(uploadBasePath ? { uploadBasePath } : {})}
+                {...(uploadFileAction ? { uploadFileAction } : {})}
               />
             </StepCard>
           );
+        }
 
         case "images":
           return (
@@ -1189,12 +1165,10 @@ function DocumentComponent({
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
-                stepResources["images"] &&
-                stepResources["images"].length > 0 &&
-                documentDetail?.images?.show_ai_generate ? (
+                s?.content_show_ai_generate ? (
                   <StepCardAiButton
                     stepId="images"
-                    resourceTypes={stepResources["images"]}
+                    resourceTypes={stepResources["images"] ?? []}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
                     onOpenModal={handleDirectStepGenerate}
@@ -1204,24 +1178,29 @@ function DocumentComponent({
               }
             >
               <Images
-                image_ids={formState.image_ids ?? []}
-                image_resources={
-                  documentDetail?.images?.current ?? []
-                }
-                show_images={documentDetail?.images?.show ?? false}
-                image_suggestions={documentDetail?.images?.suggestions ?? []}
-                images={documentDetail?.images?.resources ?? []}
+                image_ids={formState.image_ids}
+                image_resources={s?.images?.filter((i) => i.selected) ?? []}
+                show_images={true}
+                image_suggestions={(s?.images ?? [])
+                  .filter((i) => i.suggested)
+                  .map((i) => i.image_id ?? i.id)
+                  .filter(Boolean) as string[]}
+                images={s?.images ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, image_ids: ids }))
                 }
                 label="Images"
-                required={documentDetail?.images?.required ?? false}
-                createImagesAction={createImagesAction}
-                uploadBasePath={uploadBasePath}
-                uploadFileAction={uploadFileAction}
                 registerFlush={registerFlushCallbacks["images"]}
                 isAutosaveEnabled={isAutosaveEnabled}
+                onImageUploadValue={(image) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    pending_images: [...prev.pending_images, image],
+                  }))
+                }
+                {...(uploadBasePath ? { uploadBasePath } : {})}
+                {...(uploadFileAction ? { uploadFileAction } : {})}
               />
             </StepCard>
           );
@@ -1239,12 +1218,10 @@ function DocumentComponent({
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
-                stepResources["texts"] &&
-                stepResources["texts"].length > 0 &&
-                documentDetail?.texts?.show_ai_generate ? (
+                s?.content_show_ai_generate ? (
                   <StepCardAiButton
                     stepId="texts"
-                    resourceTypes={stepResources["texts"]}
+                    resourceTypes={stepResources["texts"] ?? []}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
                     onOpenModal={handleDirectStepGenerate}
@@ -1254,24 +1231,19 @@ function DocumentComponent({
               }
             >
               <Texts
-                text_ids={formState.text_ids ?? []}
-                text_resources={
-                  documentDetail?.texts?.current ?? []
-                }
-                show_texts={documentDetail?.texts?.show ?? false}
-                text_suggestions={documentDetail?.texts?.suggestions ?? []}
-                texts={documentDetail?.texts?.resources ?? []}
+                text_ids={formState.text_ids}
+                text_resources={s?.texts?.filter((t) => t.selected) ?? []}
+                show_texts={true}
+                text_suggestions={(s?.texts ?? [])
+                  .filter((t) => t.suggested)
+                  .map((t) => t.texts_id ?? t.id)
+                  .filter(Boolean) as string[]}
+                texts={s?.texts ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, text_ids: ids }))
                 }
                 label="Texts"
-                required={documentDetail?.texts?.required ?? false}
-
-                showAiGenerate={
-                  documentDetail?.texts?.show_ai_generate ?? false
-                }
-                createTextsAction={createTextsAction}
                 registerFlush={registerFlushCallbacks["texts"]}
                 isAutosaveEnabled={isAutosaveEnabled}
                 onTextContentCreate={(content) =>
@@ -1288,36 +1260,25 @@ function DocumentComponent({
           return null;
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      documentDetail,
+      canRegenerateForStepCard,
       disabled,
-      isEditMode,
-      handleGenerateName,
-      handleGenerateDescription,
-      handleGenerateDepartments,
-      handleGenerateFlags,
-      handleGenerateFields,
-      isGenerating,
-      stepResources,
-      formState.name_id,
-      formState.description_id,
       formState.active_flag_id,
       formState.department_ids,
-      formState.field_ids,
-      formState.upload_ids,
+      formState.description_id,
+      formState.file_ids,
       formState.image_ids,
+      formState.name_id,
+      formState.parameter_field_ids,
       formState.text_ids,
-      createNamesAction,
-      createDescriptionsAction,
-      createUploadsAction,
-      createImagesAction,
-      createTextsAction,
-      canRegenerate,
-      canRegenerateForStepCard,
       handleDirectStepGenerate,
+      handleGenerateResources,
       isAutosaveEnabled,
+      isEditMode,
+      isGenerating,
       registerFlushCallbacks,
+      stableDocumentDataFields,
+      stepResources,
       uploadBasePath,
       uploadFileAction,
     ],
@@ -1326,7 +1287,7 @@ function DocumentComponent({
   return (
     <TooltipProvider>
       <div
-        className="w-full p-6 space-y-8"
+        className="w-full space-y-8 p-6"
         data-page={`document-${isEditMode ? "edit" : "new"}`}
       >
         <ReadOnlyBanner
@@ -1355,67 +1316,74 @@ function DocumentComponent({
             setUrlFormDataRef.current = setter;
           }}
         />
-
       </div>
     </TooltipProvider>
   );
 }
 
-// Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(DocumentComponent, (prevProps, nextProps) => {
-  // Compare documentDetail by resource IDs from sections, not object reference
-  const prevDetail =
-    prevProps.documentDetail ?? prevProps.documentDetailDefault;
-  const nextDetail =
-    nextProps.documentDetail ?? nextProps.documentDetailDefault;
+  const prevDetail = prevProps.documentDetail ?? prevProps.documentDetailDefault;
+  const nextDetail = nextProps.documentDetail ?? nextProps.documentDetailDefault;
+
   const prevIds = {
-    name_id: prevDetail?.names?.resource?.id,
-    description_id: prevDetail?.descriptions?.resource?.id,
-    active_flag_id: prevDetail?.flags?.current?.[0]?.flag_option_id,
-    department_ids: prevDetail?.departments?.current?.map((d) => d.department_id),
-    field_ids: prevDetail?.fields?.current?.map((f) => f.field_id),
-    upload_ids: prevDetail?.uploads?.current?.map(
-      (u) => u.files_id ?? u.upload_id,
+    name_id: prevDetail?.names?.find((n) => n.selected)?.id,
+    description_id: prevDetail?.descriptions?.find((d) => d.selected)?.id,
+    active_flag_id: prevDetail?.flags?.find((f) => f.selected)?.flag_option_id,
+    department_ids: (prevDetail?.departments?.filter((d) => d.selected) ?? []).map(
+      (d) => d.department_id,
     ),
-    image_ids: prevDetail?.images?.current?.map((i) => i.image_id),
-    text_ids: prevDetail?.texts?.current?.map((t) => t.texts_id),
-  };
-  const nextIds = {
-    name_id: nextDetail?.names?.resource?.id,
-    description_id: nextDetail?.descriptions?.resource?.id,
-    active_flag_id: nextDetail?.flags?.current?.[0]?.flag_option_id,
-    department_ids: nextDetail?.departments?.current?.map((d) => d.department_id),
-    field_ids: nextDetail?.fields?.current?.map((f) => f.field_id),
-    upload_ids: nextDetail?.uploads?.current?.map(
-      (u) => u.files_id ?? u.upload_id,
+    parameter_field_ids: (
+      prevDetail?.parameter_fields?.filter((f) => f.selected) ?? []
+    ).map((f) => f.field_id),
+    file_ids: (prevDetail?.files?.filter((f) => f.selected) ?? []).map(
+      (f) => f.files_id ?? f.id,
     ),
-    image_ids: nextDetail?.images?.current?.map((i) => i.image_id),
-    text_ids: nextDetail?.texts?.current?.map((t) => t.texts_id),
+    image_ids: (prevDetail?.images?.filter((i) => i.selected) ?? []).map(
+      (i) => i.image_id ?? i.id,
+    ),
+    text_ids: (prevDetail?.texts?.filter((t) => t.selected) ?? []).map(
+      (t) => t.texts_id ?? t.id,
+    ),
   };
 
-  // Compare primitive props
+  const nextIds = {
+    name_id: nextDetail?.names?.find((n) => n.selected)?.id,
+    description_id: nextDetail?.descriptions?.find((d) => d.selected)?.id,
+    active_flag_id: nextDetail?.flags?.find((f) => f.selected)?.flag_option_id,
+    department_ids: (nextDetail?.departments?.filter((d) => d.selected) ?? []).map(
+      (d) => d.department_id,
+    ),
+    parameter_field_ids: (
+      nextDetail?.parameter_fields?.filter((f) => f.selected) ?? []
+    ).map((f) => f.field_id),
+    file_ids: (nextDetail?.files?.filter((f) => f.selected) ?? []).map(
+      (f) => f.files_id ?? f.id,
+    ),
+    image_ids: (nextDetail?.images?.filter((i) => i.selected) ?? []).map(
+      (i) => i.image_id ?? i.id,
+    ),
+    text_ids: (nextDetail?.texts?.filter((t) => t.selected) ?? []).map(
+      (t) => t.texts_id ?? t.id,
+    ),
+  };
+
   if (
     prevProps.documentId !== nextProps.documentId ||
     prevProps.mode !== nextProps.mode ||
     JSON.stringify(prevIds) !== JSON.stringify(nextIds)
   ) {
-    return false; // Props changed, re-render
+    return false;
   }
 
-  // Compare function props by reference (should be stable from server actions)
   if (
     prevProps.createDocumentAction !== nextProps.createDocumentAction ||
     prevProps.updateDocumentAction !== nextProps.updateDocumentAction ||
     prevProps.patchDocumentDraftAction !== nextProps.patchDocumentDraftAction ||
-    prevProps.createNamesAction !== nextProps.createNamesAction ||
-    prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
-    prevProps.createUploadsAction !== nextProps.createUploadsAction ||
-    prevProps.createImagesAction !== nextProps.createImagesAction ||
-    prevProps.createTextsAction !== nextProps.createTextsAction
+    prevProps.uploadBasePath !== nextProps.uploadBasePath ||
+    prevProps.uploadFileAction !== nextProps.uploadFileAction
   ) {
-    return false; // Function props changed, re-render
+    return false;
   }
 
-  // All props are equivalent, skip re-render
   return true;
 });

@@ -86,8 +86,12 @@ export function useAttemptGenerate(): UseAttemptGenerateReturn {
             .send("/attempt/generate", {
               instructions: ["Set up this training scenario based on the draft configuration."],
               config: {
-                operations: ["create", "get", "draft", "group"],
-                params: { draft_id: draftId },
+                operations: ["chat_get", "chat_create", "draft", "group"],
+                params: {
+                  draft_id: draftId,
+                  chat_id: params.chatId,
+                  attempt_id: params.attemptId,
+                },
               },
             })
             .catch((err) => {

@@ -40,6 +40,9 @@ export interface RolesResourceItem {
   description?: string | null;
   icon_value?: string | null;
   color_hex?: string | null;
+  selected?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
   generated?: boolean | null;
 }
 
@@ -92,15 +95,18 @@ type RoleDraft = {
 };
 
 type IconOption = {
-  id: string;
+  id: RoleIconKey;
   label: string;
 };
+
+type RoleIconKey = keyof typeof ROLE_ICON_MAP;
+type AiRoleSuggestion = { id?: string | null };
 
 const formatIconLabel = (iconName: string) =>
   iconName.replace(/([A-Z])/g, " $1").trim();
 
 const ICON_OPTIONS: IconOption[] = ROLE_ICON_NAMES.map((iconName) => ({
-  id: iconName,
+  id: iconName as RoleIconKey,
   label: formatIconLabel(iconName),
 }));
 
@@ -116,6 +122,16 @@ const getIconKeyFromComponent = (icon: RoleItem["icon"]) => {
   );
   return entry?.[0] ?? "User";
 };
+
+const getRoleIconKey = (value?: string | null): RoleIconKey => {
+  if (value && value in ROLE_ICON_MAP) {
+    return value as RoleIconKey;
+  }
+  return "User";
+};
+
+const getRoleIconComponent = (value?: string | null) =>
+  ROLE_ICON_MAP[getRoleIconKey(value)] ?? ROLE_ICON_MAP.User;
 
 function RoleEditor({
   draft,
@@ -180,7 +196,7 @@ function RoleEditor({
             showLabel={false}
             compact={true}
             buttonClassName="h-8"
-            disabled={disabled}
+            disabled={!!disabled}
           />
           <div className="flex items-center gap-2">
             <div
@@ -252,17 +268,18 @@ export function Roles({
     groupId: group_id,
     accumulate: true,
   });
+  const aiRoleSuggestions = aiSuggestions as AiRoleSuggestion[];
 
   // AI suggestion state
-  const showDiff = multiSelect && aiSuggestions.length > 0;
+  const showDiff = multiSelect && aiRoleSuggestions.length > 0;
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiSuggestions
+        aiRoleSuggestions
           .map((r) => r.id)
           .filter(Boolean) as string[]
       ),
-    [aiSuggestions]
+    [aiRoleSuggestions]
   );
 
   const [roleOverrides, setRoleOverrides] = useState<
@@ -284,11 +301,11 @@ export function Roles({
       roles
         ?.filter((r) => r.role || r.id)
         .map((r) => {
-          const iconKey = r.icon_value ?? "User";
-          const IconComponent = ROLE_ICON_MAP[iconKey] ?? User;
+          const iconKey = getRoleIconKey(r.icon_value);
+          const IconComponent = getRoleIconComponent(iconKey);
 
           return {
-            id: (multiSelect && r.id ? r.id : r.role) as string,
+            id: (r.id ?? r.role ?? r.name) as string,
             name: r.name ?? r.role ?? "Role",
             description: r.description ?? "",
             iconValue: iconKey,
@@ -330,8 +347,8 @@ export function Roles({
     return merged.map((item) => {
       const override = roleOverrides[item.id];
       if (!override) return item;
-      const iconKey = override.iconValue || item.iconValue;
-      const IconComponent = ROLE_ICON_MAP[iconKey] ?? User;
+      const iconKey = getRoleIconKey(override.iconValue || item.iconValue);
+      const IconComponent = getRoleIconComponent(iconKey);
       return {
         ...item,
         name: override.name || item.name,
@@ -404,16 +421,16 @@ export function Roles({
 
   // Accept AI suggestion - add AI-suggested roles to selection (multi-select only)
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0 || !multiSelect || !onRolesChange) return;
+    if (aiRoleSuggestions.length === 0 || !multiSelect || !onRolesChange) return;
     const currentIds = role_ids ?? [];
-    const newIds = aiSuggestions
+    const newIds = aiRoleSuggestions
       .map((r) => r.id)
       .filter((id): id is string => !!id && !currentIds.includes(id));
     if (newIds.length > 0) {
       onRolesChange([...currentIds, ...newIds]);
     }
     clearAi();
-  }, [aiSuggestions, role_ids, onRolesChange, clearAi, multiSelect]);
+  }, [aiRoleSuggestions, role_ids, onRolesChange, clearAi, multiSelect]);
 
   // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
@@ -522,6 +539,9 @@ export function Roles({
           const gradientStyle = generateGradientFromHex(item.color);
           const isEditing = editingRoleId === item.id;
           const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const sourceRole = roles?.find((roleItem) => (roleItem.id ?? roleItem.role ?? roleItem.name) === item.id);
+          const isPending = sourceRole?.pending === true;
+          const isSuggested = sourceRole?.suggested === true;
 
           return (
             <div
@@ -529,8 +549,10 @@ export function Roles({
                 "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isSelected && !isPending && "ring-2 ring-primary bg-accent",
+                (isAiSuggested || isPending) &&
+                  !isSelected &&
+                  "ring-2 ring-success bg-success/10"
               )}
             >
               {!disabled && editable && (
@@ -629,15 +651,30 @@ export function Roles({
                   </PopoverContent>
                 </Popover>
               )}
-              {isSelected && (
+              {isSelected && !isPending && (
                 <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
                   <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                </div>
+              )}
+              {isPending && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
                 </div>
               )}
               {isAiSuggested && !isSelected && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
                   AI Suggested
                 </div>
+              )}
+              {isSuggested && !isSelected && !isPending && !isAiSuggested && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Suggested</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
               <div className="flex items-start gap-3">
                 <div
@@ -702,8 +739,7 @@ export function Roles({
                         name: normalized.name,
                         description: normalized.description,
                         iconValue: normalized.iconValue,
-                        icon:
-                          ROLE_ICON_MAP[normalized.iconValue] ?? User,
+                        icon: getRoleIconComponent(normalized.iconValue),
                         color: normalized.color,
                       },
                     ]);

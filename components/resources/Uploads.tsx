@@ -16,10 +16,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, UploadCloud, X } from "lucide-react";
+import { Check, UploadCloud, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
@@ -27,8 +25,15 @@ import { v4 as uuidv4 } from "uuid";
 
 type FlushResult = { files_id: string | null } | void;
 
-type CreateDraftUploadsIn = InputOf<"/api/v5/resources/uploads", "post">;
-type CreateDraftUploadsOut = OutputOf<"/api/v5/resources/uploads", "post">;
+type CreateDraftUploadsIn = {
+  body: {
+    agent_id?: string;
+    upload_id: string;
+    mcp?: boolean;
+    tool_id?: string;
+  };
+};
+type CreateDraftUploadsOut = { files_id?: string | null };
 
 export interface UploadResourceItem {
   files_id?: string | null;
@@ -36,6 +41,8 @@ export interface UploadResourceItem {
   mime_type?: string | null;
   upload_id?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
+  suggested?: boolean | null;
 }
 
 export interface UploadsProps {
@@ -56,8 +63,6 @@ export interface UploadsProps {
   createUploadsAction?:
     | ((input: CreateDraftUploadsIn) => Promise<CreateDraftUploadsOut>)
     | undefined;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** Artifact-scoped base path for upload/download URLs (e.g., "/document") */
   uploadBasePath?: string;
   /** Server action to upload a file — receives FormData, returns upload_id */
@@ -71,7 +76,6 @@ export interface UploadsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
-  aiUploadResources?: Array<{ id?: string | null; file_path?: string | null }> | null;
   /** Called after TUS finalize when autosave is enabled — reports upload_id for server-side chain creation */
   onFileUploadComplete?: (uploadId: string) => void;
 }
@@ -92,26 +96,33 @@ export function Uploads({
   group_id,
   create_tool_id,
   createUploadsAction,
-  onGenerate,
-  showAiGenerate = false,
   uploadBasePath: _uploadBasePath,
   uploadFileAction,
   searchTerm = "",
   isAutosaveEnabled = true,
   registerFlush,
-  aiUploadResources: _aiUploadResources,
   onFileUploadComplete,
 }: UploadsProps) {
   const ids = useMemo(() => upload_ids ?? [], [upload_ids]);
   const show = show_uploads ?? true;
   const allUploads = useMemo(() => uploads ?? [], [uploads]);
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "uploads",
-    groupId: group_id,
-    accumulate: true,
-  });
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(
+    () => allUploads.filter((u) => u.pending),
+    [allUploads]
+  );
+  const pendingIds = useMemo(
+    () =>
+      new Set(
+        pendingItems
+          .map((u) => u.files_id ?? u.upload_id)
+          .filter(Boolean) as string[]
+      ),
+    [pendingItems]
+  );
+  const showDiff = pendingItems.length > 0;
+
   const suggestionsList = useMemo(
     () => upload_suggestions ?? [],
     [upload_suggestions]
@@ -143,8 +154,7 @@ export function Uploads({
     if (!group_id) {
       return;
     }
-    // Return the most recently added ID, or null if no uploads
-    const lastId = ids.length > 0 ? ids[ids.length - 1] : null;
+    const lastId: string | null = ids.length > 0 ? (ids[ids.length - 1] ?? null) : null;
     return { files_id: lastId };
   };
 
@@ -185,16 +195,23 @@ export function Uploads({
       }));
   }, [allUploads, searchTerm]);
 
-  // Check if an upload is suggested
+  // Check if an upload is suggested (from suggestions list or suggested field on resource)
   const isSuggested = useCallback(
-    (uploadsId: string) => suggestionsList.includes(uploadsId),
-    [suggestionsList]
+    (uploadsId: string) => {
+      if (suggestionsList.includes(uploadsId)) return true;
+      const upload = allUploads.find((u) => u.files_id === uploadsId);
+      return upload?.suggested === true;
+    },
+    [suggestionsList, allUploads]
   );
 
   // Handle file upload via server action
   const uploadFile = useCallback(
     async (file: File) => {
-      if (!uploadFileAction || !createUploadsAction || !group_id) {
+      if (
+        !uploadFileAction ||
+        (!isAutosaveEnabled && (!createUploadsAction || !group_id))
+      ) {
         toast.error("Upload functionality not available");
         return;
       }
@@ -229,14 +246,14 @@ export function Uploads({
         if (isAutosaveEnabled && onFileUploadComplete) {
           onFileUploadComplete(databaseUploadId);
         } else if (createUploadsAction) {
-          const createResult = await createUploadsAction({
+          const createResult = (await createUploadsAction({
             body: {
               agent_id: "",
               upload_id: databaseUploadId,
               mcp: false,
-              tool_id: create_tool_id ?? undefined,
+              ...(create_tool_id ? { tool_id: create_tool_id } : {}),
             },
-          });
+          })) as CreateDraftUploadsOut;
 
           if (!createResult.files_id) {
             throw new Error("Failed to create files resource");
@@ -342,29 +359,17 @@ export function Uploads({
     [ids, createUploadsAction, group_id, onChange]
   );
 
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-
-  // Accept AI suggestion - add AI-suggested uploads to selection
+  // Accept pending — pending items are already in selection, no-op
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((u) => u.id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending IDs from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
-
-  const hasGenerated = useMemo(() => {
-    return upload_resources?.some((u) => u.generated) ?? false;
-  }, [upload_resources]);
+    const newIds = ids.filter((id) => !pendingIds.has(id));
+    onChange(newIds);
+  }, [ids, pendingIds, onChange]);
 
   if (!show) {
     return null;
@@ -399,29 +404,6 @@ export function Uploads({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                    className="h-8 w-8 p-0"
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-4 w-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{hasGenerated ? "Regenerate files with AI" : "Generate files with AI"}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -460,26 +442,6 @@ export function Uploads({
           )}
         </div>
       </div>
-
-      {/* AI-suggested uploads preview */}
-      {showDiff && aiSuggestions.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Files</p>
-          <div className="space-y-2">
-            {aiSuggestions.map((item, idx) => (
-              <div
-                key={item.id || idx}
-                className={cn(
-                  "p-3 rounded-lg border-2 border-success bg-success/10",
-                  "text-sm"
-                )}
-              >
-                {item.file_path?.split("/").pop() || item.file_path || ""}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* File upload dropzone */}
       <div
@@ -554,36 +516,50 @@ export function Uploads({
           getSearchText={(item) =>
             `${item.name} ${item.description ?? ""}`.trim()
           }
-          renderItem={(item, isSelected) => (
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                {isSuggested(item.id) && !isSelected && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top">Suggested</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="truncate">{item.name}</div>
-                  {item.description && (
-                    <div className="text-xs text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground">
-                      {item.description}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <Check
+          renderItem={(item, isSelected) => {
+            const isPending = pendingIds.has(item.id);
+            return (
+              <div
                 className={cn(
-                  "ml-auto flex-shrink-0 h-4 w-4",
-                  isSelected ? "opacity-100" : "opacity-0"
+                  "flex items-center justify-between w-full",
+                  isSelected && !isPending && "ring-2 ring-primary bg-accent",
+                  isPending && "ring-2 ring-success bg-success/10"
                 )}
-              />
-            </div>
-          )}
+              >
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {/* Pending badge */}
+                  {isPending && (
+                    <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium shrink-0">
+                      Pending
+                    </span>
+                  )}
+                  {/* Suggested dot — only when not selected and not pending */}
+                  {isSuggested(item.id) && !isSelected && !isPending && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top">Suggested</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate">{item.name}</div>
+                    {item.description && (
+                      <div className="text-xs text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground">
+                        {item.description}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* Check icon — only when selected and not pending */}
+                {isSelected && !isPending && (
+                  <Check className="ml-auto flex-shrink-0 h-4 w-4 opacity-100" />
+                )}
+              </div>
+            );
+          }}
           placeholder={placeholder}
           disabled={disabled || hasActiveUploads}
           hideSelectedChips={false}

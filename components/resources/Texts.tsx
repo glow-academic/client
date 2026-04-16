@@ -17,9 +17,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
+import { cn } from "@/lib/utils";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Check, FileText, Loader2, Sparkles, X } from "lucide-react";
+import { Check, FileText, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -30,12 +30,16 @@ export interface TextResourceItem {
   texts_id?: string | null;
   content?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface TextItem {
   texts_id?: string | null;
   content?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface TextsProps {
@@ -52,12 +56,9 @@ export interface TextsProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  group_id?: string | null;
   createTextsAction?:
     | ((input: CreateDraftTextsIn) => Promise<CreateDraftTextsOut>)
     | undefined;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean;
   searchTerm?: string;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
@@ -78,21 +79,12 @@ export function Texts({
   onChange,
   label = "Texts",
   required = false,
-  group_id,
   createTextsAction,
-  onGenerate,
-  showAiGenerate = false,
   searchTerm,
   isAutosaveEnabled = true,
   registerFlush,
   onTextContentCreate,
 }: TextsProps) {
-  // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating } = useResourceAi({
-    resourceType: "texts",
-    groupId: group_id,
-  });
-
   const [isCreating, setIsCreating] = useState(false);
   const [newTextContent, setNewTextContent] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -170,6 +162,28 @@ export function Texts({
     }
   }, [newTextContent, createTextsAction, create_tool_id, text_ids, onChange, isAutosaveEnabled, onTextContentCreate]);
 
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return texts.filter((t) => t.pending && t.texts_id);
+  }, [texts]);
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((t) => t.texts_id).filter(Boolean) as string[]),
+    [pendingItems]
+  );
+  const showDiff = pendingItems.length > 0;
+
+  // Accept pending — pending items are already in selection, just confirm (no-op for form state)
+  const handleAccept = useCallback(() => {
+    // Pending items are already in the selection; accepting is a no-op for form state.
+    // The parent will clear the pending flag on the server side.
+  }, []);
+
+  // Reject pending — remove pending item IDs from selection
+  const handleReject = useCallback(() => {
+    const newIds = text_ids.filter((id) => !pendingIds.has(id));
+    onChange(newIds);
+  }, [text_ids, pendingIds, onChange]);
+
   // Flush function for manual save mode - returns all current text IDs
   flushRef.current = async (): Promise<{ text_ids: string[] } | void> => {
     return { text_ids };
@@ -186,13 +200,13 @@ export function Texts({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
         <Label className="text-sm font-medium">
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
         </Label>
-        <div className="flex items-center gap-1">
-          {showAiGenerate && onGenerate && (
+        {showDiff && (
+          <>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -200,49 +214,71 @@ export function Texts({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating}
+                    className="h-6 w-6 text-success hover:text-success"
+                    onClick={handleAccept}
                   >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
+                    <Check className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Generate with AI</TooltipContent>
+                <TooltipContent>Accept</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          )}
-        </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
+        )}
       </div>
 
       {/* Selected texts */}
       {selectedTexts.length > 0 && (
         <div className="space-y-2">
-          {selectedTexts.map((text) => (
-            <div
-              key={text.texts_id}
-              className="flex items-start gap-2 rounded-md border p-3 bg-muted/30"
-            >
-              <FileText className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
-              <p className="flex-1 text-sm whitespace-pre-wrap line-clamp-3">
-                {text.content || "Empty text"}
-              </p>
-              {!disabled && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 shrink-0"
-                  onClick={() => text.texts_id && handleRemove(text.texts_id)}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              )}
-            </div>
-          ))}
+          {selectedTexts.map((text) => {
+            const isPending = text.texts_id ? pendingIds.has(text.texts_id) : false;
+            return (
+              <div
+                key={text.texts_id}
+                className={cn(
+                  "relative flex items-start gap-2 rounded-md border p-3 bg-muted/30",
+                  isPending && "ring-2 ring-success bg-success/10",
+                )}
+              >
+                <FileText className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+                <p className="flex-1 text-sm whitespace-pre-wrap line-clamp-3">
+                  {text.content || "Empty text"}
+                </p>
+                {isPending && (
+                  <span className="absolute top-2 right-8 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                    Pending
+                  </span>
+                )}
+                {!disabled && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    onClick={() => text.texts_id && handleRemove(text.texts_id)}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

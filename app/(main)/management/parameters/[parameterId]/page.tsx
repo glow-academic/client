@@ -28,10 +28,6 @@ type UpdateParameterIn = InputOf<"/parameter/update", "post">;
 type UpdateParameterOut = OutputOf<"/parameter/update", "post">;
 type PatchParameterDraftIn = InputOf<"/parameter/draft", "patch">;
 type PatchParameterDraftOut = OutputOf<"/parameter/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<"/api/v5/resources/descriptions", "post">;
-type CreateDraftDescriptionsOut = OutputOf<"/api/v5/resources/descriptions", "post">;
 type GroupParameterIn = InputOf<"/parameter/group", "post">;
 type GroupParameterOut = OutputOf<"/parameter/group", "post">;
 type GenerateParameterIn = InputOf<"/parameter/generate", "post">;
@@ -66,18 +62,6 @@ async function updateParameter(
 async function patchParameterDraft(input: PatchParameterDraftIn): Promise<PatchParameterDraftOut> {
   "use server";
   return api.patch("/parameter/draft", input);
-}
-
-async function createNames(input: CreateDraftNamesIn): Promise<CreateDraftNamesOut> {
-  "use server";
-  return api.post("/resources/names", input);
-}
-
-async function createDescriptions(
-  input: CreateDraftDescriptionsIn
-): Promise<CreateDraftDescriptionsOut> {
-  "use server";
-  return api.post("/resources/descriptions", input);
 }
 
 async function generateParameter(
@@ -173,47 +157,70 @@ export default async function ParameterEditPage({
 
   // Fetch parameter detail (always fresh - source of truth) with filter params
   try {
-    const input: ParameterGetIn = {
-      body: {
-        parameter_id: parameterId,
-        draft_id: q.draftId ?? null,
-      } as ParameterGetIn["body"],
+    const body = {
+      id: parameterId,
+      draft_id: q.draftId ?? null,
+      ...(q.fieldSearch || q.fieldShowSelected
+        ? {
+            parameter_fields: {
+              ...(q.fieldSearch ? { search: q.fieldSearch } : {}),
+              ...(q.fieldShowSelected !== null
+                ? { selected: q.fieldShowSelected }
+                : {}),
+            },
+          }
+        : {}),
     };
+    const input = {
+      path: undefined,
+      body,
+    } as ParameterGetIn;
     const [parameterDetail, context, draftsResult, groupResult] = await Promise.all([
       getParameter(input),
       api.post("/parameter/context", { body: { entity_id: parameterId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/parameter/drafts", {}),
+      api.post(
+        "/parameter/drafts",
+        { path: undefined } as InputOf<"/parameter/drafts", "post">,
+      ),
       api.post("/parameter/group", { body: {} } as GroupParameterIn),
     ]);
 
     const entityName = context.page_metadata?.detail.title;
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
         <FullPageLayout
-          profileData={context.profile}
-          sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
-          initialPanelOpen={initialPanelOpen}
-          sidebarProps={{
-            activeSection: "parameter",
-            createFeedback: createParameterProblem,
-          }}
-          breadcrumbs={[
-            { title: "Management", section: "management", url: "/management" },
-            { title: "Parameters", section: "parameters", url: "/management/parameters" },
-            { title: entityName },
-          ]}
-          toolbar={<SaveToolbar />}
-          panelProps={{
-            artifactType: "parameter",
-            groupId: (groupResult as GroupParameterOut & { group_id?: string })?.group_id ?? null,
-            generateAction: generateParameter,
-            operations: ["draft", "get", "group"],
-            getGroupHistory: getParameterGroupHistory,
-            searchGroups: searchParameterGroups,
-            prompts: context.prompts?.prompts,
-          }}
+          {...({
+            profileData: context.profile,
+            sessionSnapshot: snapshot,
+            initialSidebarOpen,
+            initialPanelOpen,
+            sidebarProps: {
+              activeSection: "parameter",
+              createFeedback: createParameterProblem as any,
+            },
+            breadcrumbs: [
+              { title: "Management", section: "management", url: "/management" },
+              {
+                title: "Parameters",
+                section: "parameters",
+                url: "/management/parameters",
+              },
+              { title: entityName },
+            ],
+            toolbar: <SaveToolbar />,
+            panelProps: {
+              artifactType: "parameter",
+              groupId:
+                (groupResult as GroupParameterOut & { group_id?: string })?.group_id ??
+                null,
+              generateAction: generateParameter,
+              operations: ["draft", "get", "group"],
+              getGroupHistory: getParameterGroupHistory,
+              searchGroups: searchParameterGroups,
+              prompts: context.prompts?.prompts,
+            },
+          } as any)}
         >
           <div
             className="space-y-6 px-4"
@@ -226,8 +233,6 @@ export default async function ParameterEditPage({
               parameterData={parameterDetail}
               updateParameterAction={updateParameter}
               patchParameterDraftAction={patchParameterDraft}
-              createNamesAction={createNames}
-              createDescriptionsAction={createDescriptions}
             />
           </div>
         </FullPageLayout>

@@ -380,7 +380,7 @@ export default function Profiles({
 
   useArtifactAi({
     artifactType: "profile",
-    validResourceTypes: ["names", "flags", "request_limits", "departments", "emails"],
+    validResourceTypes: ["names", "flags", "departments", "emails"],
     onComplete: () => router.refresh(),
   });
 

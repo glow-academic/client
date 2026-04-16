@@ -1,10 +1,3 @@
-/**
- * ConditionalParameters.tsx
- * Resource component for conditional parameter selection
- * Uses SelectableGrid to display conditional parameters as horizontal scrollable cards
- * Manages conditional_parameter_ids array and reports to parent
- */
-
 "use client";
 
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
@@ -16,34 +9,34 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface ConditionalParametersResourceItem {
-  id?: string | null;
   parameter_id?: string | null;
+  name?: string | null;
+  description?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
-export interface ConditionalParameterItem {
+interface ConditionalParameterItem {
   id: string;
-  parameter_id: string;
+  name: string;
+  description?: string;
 }
 
 export interface ConditionalParametersProps {
   conditional_parameter_ids?: string[];
   conditional_parameter_resources?: ConditionalParametersResourceItem[];
   show_conditional_parameters?: boolean;
-  conditional_parameter_suggestions?: string[];
   conditional_parameters?: ConditionalParametersResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
-  group_id?: string | null;
-  // AI diff props (deprecated - now handled by useResourceAi hook)
-  aiConditionalParameterResources?: Pick<ConditionalParametersResourceItem, "id" | "parameter_id">[] | null;
+  required?: boolean;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
 }
@@ -52,102 +45,81 @@ export function ConditionalParameters({
   conditional_parameter_ids,
   conditional_parameter_resources,
   show_conditional_parameters = false,
-  conditional_parameter_suggestions,
   conditional_parameters,
   disabled = false,
   onChange,
   label = "Conditional Parameters",
-  group_id,
-  // AI diff props (deprecated - now handled by useResourceAi hook)
-  showAiGenerate,
+  required = false,
+  showAiGenerate = false,
   onGenerate,
 }: ConditionalParametersProps) {
   const ids = useMemo(
     () => conditional_parameter_ids ?? [],
-    [conditional_parameter_ids]
+    [conditional_parameter_ids],
   );
   const show = show_conditional_parameters ?? false;
   const allItems = useMemo(
     () => conditional_parameters ?? [],
-    [conditional_parameters]
-  );
-  const suggestionsList = useMemo(
-    () => conditional_parameter_suggestions ?? [],
-    [conditional_parameter_suggestions]
+    [conditional_parameters],
   );
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "conditional_parameters",
-    groupId: group_id,
-    accumulate: true,
-  });
+  const pendingItems = useMemo(
+    () => allItems.filter((item) => item.pending && item.parameter_id),
+    [allItems],
+  );
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((item) => item.parameter_id).filter(Boolean) as string[]),
+    [pendingItems],
+  );
+  const showDiff = pendingItems.length > 0;
 
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-  const aiSuggestedIds = useMemo(
+  const items = useMemo<ConditionalParameterItem[]>(
     () =>
-      new Set(
-        aiSuggestions
-          .map((c) => c.id)
-          .filter(Boolean) as string[]
-      ),
-    [aiSuggestions]
+      allItems
+        .filter((item) => item.parameter_id && item.name)
+        .map((item) => ({
+          id: item.parameter_id!,
+          name: item.name!,
+          ...(item.description ? { description: item.description } : {}),
+        })),
+    [allItems],
   );
 
-  // Convert to items format for SelectableGrid
-  const items = useMemo(() => {
-    return allItems
-      .filter((c) => c.id)
-      .map((c) => ({
-        id: c.id!,
-        parameter_id: c.parameter_id ?? "",
-      }));
-  }, [allItems]);
+  const hasGenerated = useMemo(
+    () =>
+      conditional_parameter_resources?.some((item) => item.generated) ??
+      allItems.some((item) => item.generated),
+    [allItems, conditional_parameter_resources],
+  );
 
   const isSuggested = useCallback(
-    (itemId: string) => suggestionsList.includes(itemId),
-    [suggestionsList]
-  );
-
-  const handleSelect = useCallback(
-    (selectedIds: string[]) => {
-      onChange(selectedIds);
+    (itemId: string) => {
+      const item = allItems.find((entry) => entry.parameter_id === itemId);
+      return item?.suggested === true;
     },
-    [onChange]
+    [allItems],
   );
 
-  // Accept AI suggestion
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((c) => c.id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
+    // Pending items are already selected; the next draft save confirms them.
+  }, []);
 
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    onChange(ids.filter((id) => !pendingIds.has(id)));
+  }, [ids, onChange, pendingIds]);
 
-  // Check if any conditional parameter resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return conditional_parameter_resources?.some((c) => c.generated) ?? false;
-  }, [conditional_parameter_resources]);
-
-  // Don't render if show is false (AFTER all hooks)
   if (!show) {
     return null;
   }
 
   return (
-    <div className="space-y-4 min-w-0 w-full">
+    <div className="min-w-0 w-full space-y-4">
       {label && (
         <div className="flex items-center gap-2">
-          <Label className="flex items-center gap-1">{label}</Label>
+          <Label className="flex items-center gap-1">
+            {label}
+            {required && <span className="text-destructive">*</span>}
+          </Label>
           {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
@@ -158,13 +130,9 @@ export function ConditionalParameters({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
+                    disabled={disabled}
                   >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
+                    <Sparkles className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -217,53 +185,55 @@ export function ConditionalParameters({
         selectedId={null}
         selectedIds={ids}
         onSelect={(itemId) => {
-          const newIds = ids.includes(itemId)
+          const nextIds = ids.includes(itemId)
             ? ids.filter((id) => id !== itemId)
             : [...ids, itemId];
-          handleSelect(newIds);
+          onChange(nextIds);
         }}
         getId={(item) => item.id}
         renderItem={(item, isSelected) => {
-          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const isPending = pendingIds.has(item.id);
 
           return (
             <div
               className={cn(
-                "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
-                "hover:shadow-md hover:bg-accent/50",
+                "relative flex h-[88px] flex-col overflow-hidden rounded-xl border bg-card p-3 text-left text-card-foreground shadow-sm transition-all",
+                "hover:bg-accent/50 hover:shadow-md",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested &&
-                  !isSelected &&
-                  "ring-2 ring-success bg-success/10"
+                isSelected && !isPending && "bg-accent ring-2 ring-primary",
+                isPending && "bg-success/10 ring-2 ring-success",
               )}
             >
-              {isSelected && (
-                <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+              {isSelected && !isPending && (
+                <div className="absolute right-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                   <Check className="h-3 w-3 text-primary-foreground" />
                 </div>
               )}
-              {isAiSuggested && !isSelected && (
-                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  AI Suggested
+
+              {isPending && (
+                <div className="absolute right-2 top-2 z-10 rounded px-1.5 py-0.5 text-[10px] font-medium text-success bg-success/20">
+                  Pending
                 </div>
               )}
-              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+
+              {isSuggested(item.id) && !isSelected && !isPending && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                      <div className="absolute right-2 top-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
                     </TooltipTrigger>
                     <TooltipContent side="top">Suggested</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
-              <div className="flex flex-col justify-center gap-1 flex-1 overflow-hidden">
-                <span className="text-sm font-medium truncate">
-                  {item.parameter_id
-                    ? `Parameter: ${item.parameter_id.slice(0, 8)}...`
-                    : "Unnamed"}
-                </span>
+
+              <div className="flex flex-1 flex-col justify-center gap-1 overflow-hidden">
+                <span className="truncate text-sm font-medium">{item.name}</span>
+                {item.description && (
+                  <span className="line-clamp-2 text-xs text-muted-foreground">
+                    {item.description}
+                  </span>
+                )}
               </div>
             </div>
           );
