@@ -139,12 +139,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ toolId: string }>;
 }): Promise<Metadata> {
-  const { toolId } = await params;
-  const context = await api.post("/tool/context", { body: { entity_id: toolId } } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.detail.title,
-    description: context.page_metadata?.detail.description,
-  };
+  try {
+    const { toolId } = await params;
+    const context = await api.post("/tool/context", { body: { entity_id: toolId } } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Tools" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -168,10 +172,6 @@ export default async function ToolDetailPage({
   const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
-
-  // Profile data for providers
-  const context = await api.post("/tool/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const paramsObj = await searchParams;
@@ -213,6 +213,7 @@ export default async function ToolDetailPage({
       return <UnifiedAccessDenied reason="route-denied" />;
     }
 
+    const snapshot = buildSnapshot(session, context.profile);
     const entityName = context.page_metadata?.detail.title;
 
     return (
@@ -268,7 +269,7 @@ export default async function ToolDetailPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      error.status === 404
+      (error.status === 401 || error.status === 404)
     ) {
       return (
         <UnifiedAccessDenied

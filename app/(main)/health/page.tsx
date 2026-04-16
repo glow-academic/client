@@ -16,6 +16,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { loadHealthSearchParams } from "@/lib/search-params/health";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
 /** ---- Strong types from OpenAPI ---- */
 type HealthBundleIn = InputOf<"/system/health/get", "post">;
@@ -77,11 +78,15 @@ async function createHealthProblem(input: ProblemHealthIn): Promise<ProblemHealt
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/system/health/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/system/health/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Health" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -102,61 +107,78 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/system/health/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/system/health/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params via nuqs loader
-  const q = loadHealthSearchParams(await searchParams);
+    // Parse search params via nuqs loader
+    const q = loadHealthSearchParams(await searchParams);
 
-  // Fetch bundle data and group in parallel
-  const [bundleData, groupResult] = await Promise.all([
-    getHealthBundle({
-      body: {
-        date_from: q.startDate ?? undefined,
-        date_to: q.endDate ?? undefined,
-      },
-    }),
-    api.post("/system/health/group", { body: {} } as GroupHealthIn),
-  ]);
+    // Fetch bundle data and group in parallel
+    const [bundleData, groupResult] = await Promise.all([
+      getHealthBundle({
+        body: {
+          date_from: q.startDate ?? undefined,
+          date_to: q.endDate ?? undefined,
+        },
+      }),
+      api.post("/system/health/group", { body: {} } as GroupHealthIn),
+    ]);
 
-  // Extract inline analytics facets
-  const facets = bundleData.analytics;
+    // Extract inline analytics facets
+    const facets = bundleData.analytics;
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "health",
-        createFeedback: createHealthProblem,
-      }}
-      breadcrumbs={[
-        { title: "Health" },
-      ]}
-      toolbar={
-        <AnalyticsFilters
-          refreshAction={refreshHealth}
-          analyticsFilters={facets}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "health",
+          createFeedback: createHealthProblem,
+        }}
+        breadcrumbs={[
+          { title: "Health" },
+        ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshAction={refreshHealth}
+            analyticsFilters={facets}
+          />
+        }
+        panelProps={{
+          artifactType: "health",
+          groupId: (groupResult as GroupHealthOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateHealth,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getHealthGroupHistory,
+          searchGroups: searchHealthGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4">
+          <Logs bundleData={bundleData} />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/health"
         />
-      }
-      panelProps={{
-        artifactType: "health",
-        groupId: (groupResult as GroupHealthOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateHealth,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getHealthGroupHistory,
-        searchGroups: searchHealthGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4">
-        <Logs bundleData={bundleData} />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

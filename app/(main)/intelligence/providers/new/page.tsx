@@ -12,6 +12,8 @@ import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Provider from "@/components/artifacts/provider/Provider";
 
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -136,11 +138,15 @@ async function createProviderProblem(input: ProblemProviderIn): Promise<ProblemP
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Providers" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -161,89 +167,106 @@ export default async function NewProviderPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  // Inline server-side parsers for provider search params
-  const providerSearchParams = {
-    draftId: parseAsString,
-  };
-  const loadProviderSearchParams = createLoader(providerSearchParams);
-  const q = loadProviderSearchParams(searchParamsObj);
+    // Inline server-side parsers for provider search params
+    const providerSearchParams = {
+      draftId: parseAsString,
+    };
+    const loadProviderSearchParams = createLoader(providerSearchParams);
+    const q = loadProviderSearchParams(searchParamsObj);
 
-  // Fetch default provider detail server-side with draft_id (provider_id = NULL for new mode)
-  const input: GetProviderIn = {
-    body: {
-      provider_id: null,
-      draft_id: q.draftId ?? null,
-    } as GetProviderIn["body"],
-  };
-  const [providerDetailDefault, draftsResult, groupResult] = await Promise.all([
-    getProviderDefault(input),
-    api.post("/provider/drafts", {}),
-    api.post("/provider/group", { body: {} } as GroupProviderIn),
-  ]);
+    // Fetch default provider detail server-side with draft_id (provider_id = NULL for new mode)
+    const input: GetProviderIn = {
+      body: {
+        provider_id: null,
+        draft_id: q.draftId ?? null,
+      } as GetProviderIn["body"],
+    };
+    const [providerDetailDefault, draftsResult, groupResult] = await Promise.all([
+      getProviderDefault(input),
+      api.post("/provider/drafts", {}),
+      api.post("/provider/group", { body: {} } as GroupProviderIn),
+    ]);
 
-  return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "provider",
-          createFeedback: createProviderProblem,
-        }}
-        breadcrumbs={[
-          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
-          { title: "Providers", section: "providers", url: "/intelligence/providers" },
-          { title: "New Provider" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "provider",
-          groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateProvider,
-          operations: ["draft", "get", "group"],
-          getGroupHistory: getProviderGroupHistory,
-          searchGroups: searchProviderGroups,
-          prompts: context.prompts?.prompts,
-        }}
-      >
-        <div
-          className="space-y-6 px-4"
-          data-page="provider-new"
-          aria-label="Create new provider page"
+    return (
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "provider",
+            createFeedback: createProviderProblem,
+          }}
+          breadcrumbs={[
+            { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+            { title: "Providers", section: "providers", url: "/intelligence/providers" },
+            { title: "New Provider" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "provider",
+            groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateProvider,
+            operations: ["draft", "get", "group"],
+            getGroupHistory: getProviderGroupHistory,
+            searchGroups: searchProviderGroups,
+            prompts: context.prompts?.prompts,
+          }}
         >
-          <Provider
-            key={q.draftId || "no-draft"}
-            providerData={providerDetailDefault}
-            createProviderAction={createProvider}
-            patchProviderDraftAction={patchProviderDraft}
-            createNamesAction={createNames}
-            createDescriptionsAction={createDescriptions}
-            createValuesAction={createValues}
-            createEndpointsAction={createEndpoints}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+          <div
+            className="space-y-6 px-4"
+            data-page="provider-new"
+            aria-label="Create new provider page"
+          >
+            <Provider
+              key={q.draftId || "no-draft"}
+              providerData={providerDetailDefault}
+              createProviderAction={createProvider}
+              patchProviderDraftAction={patchProviderDraft}
+              createNamesAction={createNames}
+              createDescriptionsAction={createDescriptions}
+              createValuesAction={createValues}
+              createEndpointsAction={createEndpoints}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/intelligence/providers/new"
+        />
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

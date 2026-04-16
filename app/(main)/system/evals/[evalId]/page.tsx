@@ -97,12 +97,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ evalId: string }>;
 }): Promise<Metadata> {
-  const { evalId } = await params;
-  const context = await api.post("/eval/context", { body: { entity_id: evalId } } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.detail.title,
-    description: context.page_metadata?.detail.description,
-  };
+  try {
+    const { evalId } = await params;
+    const context = await api.post("/eval/context", { body: { entity_id: evalId } } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Evals" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -226,7 +230,7 @@ export default async function EvalDetailPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      error.status === 403
+      (error.status === 401 || error.status === 403)
     ) {
       return (
         <UnifiedAccessDenied

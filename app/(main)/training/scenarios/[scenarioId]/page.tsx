@@ -134,12 +134,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ scenarioId: string }>;
 }): Promise<Metadata> {
-  const { scenarioId } = await params;
-  const context = await api.post("/scenario/context", { body: { entity_id: scenarioId } } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.detail.title,
-    description: context.page_metadata?.detail.description,
-  };
+  try {
+    const { scenarioId } = await params;
+    const context = await api.post("/scenario/context", { body: { entity_id: scenarioId } } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Scenarios" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -163,10 +167,6 @@ export default async function EditScenarioPage({
   const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
-
-  // Profile data for providers
-  const context = await api.post("/scenario/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const paramsObj = await searchParams;
@@ -246,6 +246,7 @@ export default async function EditScenarioPage({
 
     // Entity name from context (already resolved server-side)
     const entityName = context.page_metadata?.detail.title;
+    const snapshot = buildSnapshot(session, context.profile);
 
     return (
       <DraftProviderClient drafts={draftsResult.entries ?? []}>
@@ -297,7 +298,7 @@ export default async function EditScenarioPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      error.status === 403
+      (error.status === 401 || error.status === 403)
     ) {
       return (
         <UnifiedAccessDenied

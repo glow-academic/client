@@ -6,6 +6,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Rubrics from "@/components/artifacts/rubric/Rubrics";
@@ -101,11 +102,15 @@ async function createRubricProblem(input: ProblemRubricIn): Promise<ProblemRubri
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Rubrics" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -126,86 +131,103 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  const q = loadRubricsSearchParams(searchParamsObj);
+    const q = loadRubricsSearchParams(searchParamsObj);
 
-  // Compute pagination
-  const pageIndex = q.page ?? 0;
-  const pageSize = q.pageSize ?? 12;
-  const offset = pageIndex * pageSize;
+    // Compute pagination
+    const pageIndex = q.page ?? 0;
+    const pageSize = q.pageSize ?? 12;
+    const offset = pageIndex * pageSize;
 
-  // Build request body with filter values from URL
-  const body: RubricsListBody = {
-    search: q.search || null,
-    filter_department_ids: q.departmentIds && q.departmentIds.length > 0 ? q.departmentIds : null,
-    filter_simulation_ids: q.simulationIds && q.simulationIds.length > 0 ? q.simulationIds : null,
-    department_search: q.departmentSearch || null,
-    simulation_search: q.simulationSearch || null,
-    page_size: pageSize,
-    page_offset: offset,
-  };
+    // Build request body with filter values from URL
+    const body: RubricsListBody = {
+      search: q.search || null,
+      filter_department_ids: q.departmentIds && q.departmentIds.length > 0 ? q.departmentIds : null,
+      filter_simulation_ids: q.simulationIds && q.simulationIds.length > 0 ? q.simulationIds : null,
+      department_search: q.departmentSearch || null,
+      simulation_search: q.simulationSearch || null,
+      page_size: pageSize,
+      page_offset: offset,
+    };
 
-  // Fetch list data and group in parallel
-  const [listData, groupResult] = await Promise.all([
-    getRubricsList(body),
-    api.post("/rubric/group", { body: {} } as GroupRubricIn),
-  ]);
+    // Fetch list data and group in parallel
+    const [listData, groupResult] = await Promise.all([
+      getRubricsList(body),
+      api.post("/rubric/group", { body: {} } as GroupRubricIn),
+    ]);
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "rubric",
-        createFeedback: createRubricProblem,
-      }}
-      breadcrumbs={[
-        { title: "System", section: "system", url: "/system" },
-        { title: "Rubrics" },
-      ]}
-      toolbar={<NewArtifactButton label="New Rubric" href="/system/rubrics/new" />}
-      panelProps={{
-        artifactType: "rubric",
-        groupId: (groupResult as GroupRubricOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateRubric,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getRubricGroupHistory,
-        searchGroups: searchRubricGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4" data-page="rubrics-index">
-        <Rubrics
-          listData={listData}
-          duplicateRubricAction={duplicateRubric}
-          deleteRubricAction={deleteRubric}
-          pageIndex={pageIndex}
-          pageSize={pageSize}
-          totalCount={listData.total_count ?? 0}
-          departmentSearch={q.departmentSearch ?? ""}
-          simulationSearch={q.simulationSearch ?? ""}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "rubric",
+          createFeedback: createRubricProblem,
+        }}
+        breadcrumbs={[
+          { title: "System", section: "system", url: "/system" },
+          { title: "Rubrics" },
+        ]}
+        toolbar={<NewArtifactButton label="New Rubric" href="/system/rubrics/new" />}
+        panelProps={{
+          artifactType: "rubric",
+          groupId: (groupResult as GroupRubricOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateRubric,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getRubricGroupHistory,
+          searchGroups: searchRubricGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4" data-page="rubrics-index">
+          <Rubrics
+            listData={listData}
+            duplicateRubricAction={duplicateRubric}
+            deleteRubricAction={deleteRubric}
+            pageIndex={pageIndex}
+            pageSize={pageSize}
+            totalCount={listData.total_count ?? 0}
+            departmentSearch={q.departmentSearch ?? ""}
+            simulationSearch={q.simulationSearch ?? ""}
+          />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/system/rubrics"
         />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

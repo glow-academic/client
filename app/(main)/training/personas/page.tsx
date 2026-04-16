@@ -6,6 +6,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Personas from "@/components/artifacts/persona/Personas";
@@ -106,11 +107,15 @@ async function createPersonaProblem(input: ProblemPersonaIn): Promise<ProblemPer
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Personas" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -131,98 +136,115 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  const q = loadPersonasSearchParams(searchParamsObj);
+    const q = loadPersonasSearchParams(searchParamsObj);
 
-  // Compute pagination
-  const pageIndex = q.page ?? 0;
-  const pageSize = q.pageSize ?? 12;
-  const offset = pageIndex * pageSize;
+    // Compute pagination
+    const pageIndex = q.page ?? 0;
+    const pageSize = q.pageSize ?? 12;
+    const offset = pageIndex * pageSize;
 
-  // Build request body with filter values from URL
-  const body: PersonasListBody = {
-    search: q.search || null,
-    scenario_ids: q.scenarioIds && q.scenarioIds.length > 0 ? q.scenarioIds : null,
-    field_ids: q.fieldIds && q.fieldIds.length > 0 ? q.fieldIds : null,
-    filter_department_ids: q.departmentIds && q.departmentIds.length > 0 ? q.departmentIds : null,
-    scenario_search: q.scenarioSearch || null,
-    field_search: q.fieldSearch || null,
-    department_search: q.departmentSearch || null,
-    color_search: q.colorSearch || null,
-    icon_search: q.iconSearch || null,
-    voice_search: q.voiceSearch || null,
-    page_size: pageSize,
-    page_offset: offset,
-  };
+    // Build request body with filter values from URL
+    const body: PersonasListBody = {
+      search: q.search || null,
+      scenario_ids: q.scenarioIds && q.scenarioIds.length > 0 ? q.scenarioIds : null,
+      field_ids: q.fieldIds && q.fieldIds.length > 0 ? q.fieldIds : null,
+      filter_department_ids: q.departmentIds && q.departmentIds.length > 0 ? q.departmentIds : null,
+      scenario_search: q.scenarioSearch || null,
+      field_search: q.fieldSearch || null,
+      department_search: q.departmentSearch || null,
+      color_search: q.colorSearch || null,
+      icon_search: q.iconSearch || null,
+      voice_search: q.voiceSearch || null,
+      page_size: pageSize,
+      page_offset: offset,
+    };
 
-  // Fetch list data, view cookie, and group in parallel
-  const [listData, initialColumnVisibility, groupResult] = await Promise.all([
-    getPersonasList(body),
-    readViewCookie("personas"),
-    api.post("/persona/group", { body: {} } as GroupPersonaIn),
-  ]);
+    // Fetch list data, view cookie, and group in parallel
+    const [listData, initialColumnVisibility, groupResult] = await Promise.all([
+      getPersonasList(body),
+      readViewCookie("personas"),
+      api.post("/persona/group", { body: {} } as GroupPersonaIn),
+    ]);
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "persona",
-        createFeedback: createPersonaProblem,
-      }}
-      breadcrumbs={[
-        { title: "Training", section: "training", url: "/training" },
-        { title: "Personas" },
-      ]}
-      toolbar={<NewArtifactButton label="New Persona" href="/training/personas/new" />}
-      panelProps={{
-        artifactType: "persona",
-        groupId: (groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null,
-        operations: ["draft", "get", "group"],
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4" data-page="personas-index">
-        <Personas
-          listData={listData}
-          initialColumnVisibility={initialColumnVisibility}
-          duplicatePersonaAction={duplicatePersona}
-          deletePersonaAction={deletePersona}
-          createPersonaAction={createPersona}
-          updatePersonaAction={updatePersona}
-          parseCsvAction={parseCsv}
-          importFields={listData.import_fields ?? undefined}
-          pageIndex={pageIndex}
-          pageSize={pageSize}
-          totalCount={listData.total_count ?? 0}
-          scenarioSearch={q.scenarioSearch ?? ""}
-          fieldSearch={q.fieldSearch ?? ""}
-          departmentSearch={q.departmentSearch ?? ""}
-          colorSearch={q.colorSearch ?? ""}
-          iconSearch={q.iconSearch ?? ""}
-          voiceSearch={q.voiceSearch ?? ""}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "persona",
+          createFeedback: createPersonaProblem,
+        }}
+        breadcrumbs={[
+          { title: "Training", section: "training", url: "/training" },
+          { title: "Personas" },
+        ]}
+        toolbar={<NewArtifactButton label="New Persona" href="/training/personas/new" />}
+        panelProps={{
+          artifactType: "persona",
+          groupId: (groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null,
+          operations: ["draft", "get", "group"],
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4" data-page="personas-index">
+          <Personas
+            listData={listData}
+            initialColumnVisibility={initialColumnVisibility}
+            duplicatePersonaAction={duplicatePersona}
+            deletePersonaAction={deletePersona}
+            createPersonaAction={createPersona}
+            updatePersonaAction={updatePersona}
+            parseCsvAction={parseCsv}
+            importFields={listData.import_fields ?? undefined}
+            pageIndex={pageIndex}
+            pageSize={pageSize}
+            totalCount={listData.total_count ?? 0}
+            scenarioSearch={q.scenarioSearch ?? ""}
+            fieldSearch={q.fieldSearch ?? ""}
+            departmentSearch={q.departmentSearch ?? ""}
+            colorSearch={q.colorSearch ?? ""}
+            iconSearch={q.iconSearch ?? ""}
+            voiceSearch={q.voiceSearch ?? ""}
+          />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/training/personas"
         />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

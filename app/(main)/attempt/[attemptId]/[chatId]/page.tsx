@@ -15,6 +15,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
 /** ---- Strong types from OpenAPI ---- */
 type ProblemAttemptIn = InputOf<"/attempt/problem", "post">;
@@ -119,37 +120,54 @@ export default async function ChatPage({
   const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
   const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
 
-  // Profile + entity context in parallel
-  const [bundleData, context] = await Promise.all([
-    getChatBundle(chatId, attemptId, draftId),
-    api.post("/chat/context", { body: { entity_id: chatId } } as ContextIn) as Promise<ContextOut>,
-  ]);
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile + entity context in parallel
+    const [bundleData, context] = await Promise.all([
+      getChatBundle(chatId, attemptId, draftId),
+      api.post("/chat/context", { body: { entity_id: chatId } } as ContextIn) as Promise<ContextOut>,
+    ]);
+    const snapshot = buildSnapshot(session, context.profile);
 
-  const entityName = context.page_metadata?.detail.title;
+    const entityName = context.page_metadata?.detail.title;
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      sidebarProps={{
-        activeSection: "practice",
-        createFeedback: createAttemptProblem,
-      }}
-      breadcrumbs={[
-        { title: "Attempt", url: `/attempt/${attemptId}` },
-        { title: entityName || "Chat" },
-      ]}
-    >
-      <div className="px-4">
-        <Chat
-          bundleData={bundleData as ChatData}
-          patchChatDraftAction={patchChatDraft}
-          attemptId={attemptId}
-          chatEntryId={chatId}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        sidebarProps={{
+          activeSection: "practice",
+          createFeedback: createAttemptProblem,
+        }}
+        breadcrumbs={[
+          { title: "Attempt", url: `/attempt/${attemptId}` },
+          { title: entityName || "Chat" },
+        ]}
+      >
+        <div className="px-4">
+          <Chat
+            bundleData={bundleData as ChatData}
+            patchChatDraftAction={patchChatDraft}
+            attemptId={attemptId}
+            chatEntryId={chatId}
+          />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname={`/attempt/${attemptId}/${chatId}`}
         />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }

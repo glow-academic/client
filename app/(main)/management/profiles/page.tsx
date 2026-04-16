@@ -6,6 +6,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Profiles from "@/components/artifacts/profile/Profiles";
@@ -157,11 +158,15 @@ async function createProfileProblem(input: ProblemProfileIn): Promise<ProblemPro
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/profile/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/profile/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Profiles" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -178,55 +183,72 @@ export default async function ProfilesPage() {
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/profile/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/profile/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Fetch list data, create profile data, and group in parallel
-  const [listData, initialCreateProfileData, groupResult] = await Promise.all([
-    getProfilesList({ body: {} }),
-    getCreateProfileData({ body: { department_ids: [] } }),
-    api.post("/profile/group", { body: {} } as GroupProfileIn),
-  ]);
+    // Fetch list data, create profile data, and group in parallel
+    const [listData, initialCreateProfileData, groupResult] = await Promise.all([
+      getProfilesList({ body: {} }),
+      getCreateProfileData({ body: { department_ids: [] } }),
+      api.post("/profile/group", { body: {} } as GroupProfileIn),
+    ]);
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "profile",
-        createFeedback: createProfileProblem,
-      }}
-      breadcrumbs={[
-        { title: "Management", section: "management", url: "/management" },
-        { title: "Profiles" },
-      ]}
-      toolbar={<NewArtifactButton label="New Profile" href="/management/profiles/new" />}
-      panelProps={{
-        artifactType: "profile",
-        groupId: (groupResult as GroupProfileOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateProfile,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getProfileGroupHistory,
-        searchGroups: searchProfileGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4">
-        <Profiles
-          listData={listData}
-          initialCreateProfileData={initialCreateProfileData}
-          deleteProfileAction={deleteProfile}
-          bulkDeleteProfileAction={bulkDeleteProfile}
-          processCSVAction={processCSV}
-          emulateProfileAction={emulateProfile}
-          unemulateProfileAction={unemulateProfile}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "profile",
+          createFeedback: createProfileProblem,
+        }}
+        breadcrumbs={[
+          { title: "Management", section: "management", url: "/management" },
+          { title: "Profiles" },
+        ]}
+        toolbar={<NewArtifactButton label="New Profile" href="/management/profiles/new" />}
+        panelProps={{
+          artifactType: "profile",
+          groupId: (groupResult as GroupProfileOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateProfile,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getProfileGroupHistory,
+          searchGroups: searchProfileGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4">
+          <Profiles
+            listData={listData}
+            initialCreateProfileData={initialCreateProfileData}
+            deleteProfileAction={deleteProfile}
+            bulkDeleteProfileAction={bulkDeleteProfile}
+            processCSVAction={processCSV}
+            emulateProfileAction={emulateProfile}
+            unemulateProfileAction={unemulateProfile}
+          />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/management/profiles"
         />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

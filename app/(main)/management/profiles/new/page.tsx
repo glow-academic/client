@@ -7,6 +7,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -122,11 +123,15 @@ async function createProfileProblem(input: ProblemProfileIn): Promise<ProblemPro
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/profile/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/profile/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Profiles" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -147,86 +152,103 @@ export default async function NewProfilePage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/profile/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/profile/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  const profileSearchParams = {
-    draftId: parseAsString,
-  };
-  const loadProfileSearchParams = createLoader(profileSearchParams);
-  const q = loadProfileSearchParams(searchParamsObj);
+    const profileSearchParams = {
+      draftId: parseAsString,
+    };
+    const loadProfileSearchParams = createLoader(profileSearchParams);
+    const q = loadProfileSearchParams(searchParamsObj);
 
-  // SSR data fetches
-  const input: GetProfileIn = {
-    body: {
-      target_profile_id: null,
-      draft_id: q.draftId ?? null,
-    } as GetProfileIn["body"],
-  };
+    // SSR data fetches
+    const input: GetProfileIn = {
+      body: {
+        target_profile_id: null,
+        draft_id: q.draftId ?? null,
+      } as GetProfileIn["body"],
+    };
 
-  const [profileDetailDefault, draftsResult, groupResult] = await Promise.all([
-    getProfileDefault(input),
-    api.post("/profile/drafts", {}),
-    api.post("/profile/group", { body: {} } as GroupProfileIn),
-  ]);
+    const [profileDetailDefault, draftsResult, groupResult] = await Promise.all([
+      getProfileDefault(input),
+      api.post("/profile/drafts", {}),
+      api.post("/profile/group", { body: {} } as GroupProfileIn),
+    ]);
 
-  return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "profile",
-          createFeedback: createProfileProblem,
-        }}
-        breadcrumbs={[
-          { title: "Management", section: "management", url: "/management" },
-          { title: "Profiles", section: "profiles", url: "/management/profiles" },
-          { title: "New Profile" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "profile",
-          groupId: (groupResult as GroupProfileOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateProfile,
-          operations: ["draft", "get", "group"],
-          getGroupHistory: getProfileGroupHistory,
-          searchGroups: searchProfileGroups,
-          prompts: context.prompts?.prompts,
-        }}
-      >
-        <div
-          className="space-y-6 px-4"
-          data-page="profile-new"
-          aria-label="Create new profile page"
+    return (
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "profile",
+            createFeedback: createProfileProblem,
+          }}
+          breadcrumbs={[
+            { title: "Management", section: "management", url: "/management" },
+            { title: "Profiles", section: "profiles", url: "/management/profiles" },
+            { title: "New Profile" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "profile",
+            groupId: (groupResult as GroupProfileOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateProfile,
+            operations: ["draft", "get", "group"],
+            getGroupHistory: getProfileGroupHistory,
+            searchGroups: searchProfileGroups,
+            prompts: context.prompts?.prompts,
+          }}
         >
-          <Profile
-            key={q.draftId || "no-draft"}
-            profileData={profileDetailDefault}
-            createProfileAction={createProfile}
-            patchProfileDraftAction={patchProfileDraft}
-            createNamesAction={createDraftNames}
-            createEmailsAction={createDraftEmails}
-            createRequestLimitsAction={createDraftRequestLimits}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+          <div
+            className="space-y-6 px-4"
+            data-page="profile-new"
+            aria-label="Create new profile page"
+          >
+            <Profile
+              key={q.draftId || "no-draft"}
+              profileData={profileDetailDefault}
+              createProfileAction={createProfile}
+              patchProfileDraftAction={patchProfileDraft}
+              createNamesAction={createDraftNames}
+              createEmailsAction={createDraftEmails}
+              createRequestLimitsAction={createDraftRequestLimits}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/management/profiles/new"
+        />
+      );
+    }
+    throw error;
+  }
 }

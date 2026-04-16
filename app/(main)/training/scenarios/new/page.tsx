@@ -7,6 +7,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -120,11 +121,15 @@ async function createScenarioProblem(input: ProblemScenarioIn): Promise<ProblemS
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/scenario/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/scenario/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Scenarios" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -145,125 +150,142 @@ export default async function NewScenarioPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers (until /scenarios/context returns full profile)
-  const context = await api.post("/scenario/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers (until /scenarios/context returns full profile)
+    const context = await api.post("/scenario/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  // Load typed search params using nuqs
-  const q = loadScenarioSearchParams(searchParamsObj);
+    // Load typed search params using nuqs
+    const q = loadScenarioSearchParams(searchParamsObj);
 
-  // Extract dynamic params (not handled by nuqs parsers)
-  const fieldShowSelectedByParam =
-    extractFieldShowSelectedByParam(searchParamsObj);
+    // Extract dynamic params (not handled by nuqs parsers)
+    const fieldShowSelectedByParam =
+      extractFieldShowSelectedByParam(searchParamsObj);
 
-  // Fetch default scenario detail server-side with filter params
-  const parameterIds = csvToArray(q.parameterIds);
+    // Fetch default scenario detail server-side with filter params
+    const parameterIds = csvToArray(q.parameterIds);
 
-  const [scenarioDetailDefault, draftsResult, groupResult] = await Promise.all([
-    getScenario({
-    body: {
-      id: null,
-      draft_id: q.draftId ?? null,
-      mcp: false,
-      descriptions: q.descriptionSearch ? {
-        search: q.descriptionSearch,
-      } : undefined,
-      personas: q.personaSearch || q.personaShowSelected ? {
-        search: q.personaSearch ?? undefined,
-        selected: q.personaShowSelected ?? undefined,
-      } : undefined,
-      documents: q.documentSearch || q.documentShowSelected ? {
-        search: q.documentSearch ?? undefined,
-        selected: q.documentShowSelected ?? undefined,
-      } : undefined,
-      parameters: q.parameterSearch || q.parameterShowSelected ? {
-        search: q.parameterSearch ?? undefined,
-        selected: q.parameterShowSelected ?? undefined,
-      } : undefined,
-      problem_statements: q.problemStatementSearch ? {
-        search: q.problemStatementSearch,
-      } : undefined,
-      images: q.imageSearch ? {
-        search: q.imageSearch,
-      } : undefined,
-      videos: q.videoSearch || q.videoEnabled === false ? {
-        search: q.videoSearch ?? undefined,
-        include: q.videoEnabled ?? undefined,
-      } : undefined,
-      objectives: q.objectivesEnabled === false ? {
-        include: false,
-      } : undefined,
-      questions: q.questionsEnabled === false ? {
-        include: false,
-      } : undefined,
-      parameter_fields: fieldShowSelectedByParam || parameterIds ? {
-        selected: fieldShowSelectedByParam ? Object.entries(fieldShowSelectedByParam).map(
-          ([parameter_id, show_selected]) => ({ parameter_id, show_selected })
-        ) : undefined,
-        parameter_ids: parameterIds ?? undefined,
-      } : undefined,
-    } as GetScenarioIn["body"],
-  }),
-    api.post("/scenario/drafts", {}),
-    api.post("/scenario/group", { body: {} } as GroupScenarioIn),
-  ]);
+    const [scenarioDetailDefault, draftsResult, groupResult] = await Promise.all([
+      getScenario({
+      body: {
+        id: null,
+        draft_id: q.draftId ?? null,
+        mcp: false,
+        descriptions: q.descriptionSearch ? {
+          search: q.descriptionSearch,
+        } : undefined,
+        personas: q.personaSearch || q.personaShowSelected ? {
+          search: q.personaSearch ?? undefined,
+          selected: q.personaShowSelected ?? undefined,
+        } : undefined,
+        documents: q.documentSearch || q.documentShowSelected ? {
+          search: q.documentSearch ?? undefined,
+          selected: q.documentShowSelected ?? undefined,
+        } : undefined,
+        parameters: q.parameterSearch || q.parameterShowSelected ? {
+          search: q.parameterSearch ?? undefined,
+          selected: q.parameterShowSelected ?? undefined,
+        } : undefined,
+        problem_statements: q.problemStatementSearch ? {
+          search: q.problemStatementSearch,
+        } : undefined,
+        images: q.imageSearch ? {
+          search: q.imageSearch,
+        } : undefined,
+        videos: q.videoSearch || q.videoEnabled === false ? {
+          search: q.videoSearch ?? undefined,
+          include: q.videoEnabled ?? undefined,
+        } : undefined,
+        objectives: q.objectivesEnabled === false ? {
+          include: false,
+        } : undefined,
+        questions: q.questionsEnabled === false ? {
+          include: false,
+        } : undefined,
+        parameter_fields: fieldShowSelectedByParam || parameterIds ? {
+          selected: fieldShowSelectedByParam ? Object.entries(fieldShowSelectedByParam).map(
+            ([parameter_id, show_selected]) => ({ parameter_id, show_selected })
+          ) : undefined,
+          parameter_ids: parameterIds ?? undefined,
+        } : undefined,
+      } as GetScenarioIn["body"],
+    }),
+      api.post("/scenario/drafts", {}),
+      api.post("/scenario/group", { body: {} } as GroupScenarioIn),
+    ]);
 
-  return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "scenario",
-          createFeedback: createScenarioProblem,
-        }}
-        breadcrumbs={[
-          { title: "Training", section: "training", url: "/training" },
-          { title: "Scenarios", section: "scenarios", url: "/training/scenarios" },
-          { title: "New Scenario" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "scenario",
-          groupId: (groupResult as GroupScenarioOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateScenario,
-          operations: ["draft", "get", "group"],
-          getGroupHistory: getScenarioGroupHistory,
-          searchGroups: searchScenarioGroups,
-          prompts: context.prompts?.prompts,
-        }}
-      >
-        <div
-          className="space-y-6 px-4"
-          data-page="scenario-new"
-          aria-label="Create new scenario page"
+    return (
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "scenario",
+            createFeedback: createScenarioProblem,
+          }}
+          breadcrumbs={[
+            { title: "Training", section: "training", url: "/training" },
+            { title: "Scenarios", section: "scenarios", url: "/training/scenarios" },
+            { title: "New Scenario" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "scenario",
+            groupId: (groupResult as GroupScenarioOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateScenario,
+            operations: ["draft", "get", "group"],
+            getGroupHistory: getScenarioGroupHistory,
+            searchGroups: searchScenarioGroups,
+            prompts: context.prompts?.prompts,
+          }}
         >
-          <Scenario
-            scenarioDetailDefault={scenarioDetailDefault}
-            createScenarioAction={createScenario}
-            patchScenarioDraftAction={patchScenarioDraft}
-            uploadBasePath="/scenario"
-            uploadFileAction={uploadFile}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+          <div
+            className="space-y-6 px-4"
+            data-page="scenario-new"
+            aria-label="Create new scenario page"
+          >
+            <Scenario
+              scenarioDetailDefault={scenarioDetailDefault}
+              createScenarioAction={createScenario}
+              patchScenarioDraftAction={patchScenarioDraft}
+              uploadBasePath="/scenario"
+              uploadFileAction={uploadFile}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/training/scenarios/new"
+        />
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

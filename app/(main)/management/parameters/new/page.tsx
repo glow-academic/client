@@ -7,6 +7,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -106,11 +107,15 @@ async function createParameterProblem(input: ProblemParameterIn): Promise<Proble
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/parameter/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/parameter/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Parameters" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -131,87 +136,104 @@ export default async function NewParameterPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/parameter/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/parameter/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
+    });
+
+    // Inline server-side parsers for parameter search params (navigation/search params only)
+    const parameterSearchParams = {
+      draftId: parseAsString,
+      // Search/filter params
+      fieldSearch: parseAsString,
+      fieldShowSelected: parseAsBoolean,
+    };
+    const loadParameterSearchParams = createLoader(parameterSearchParams);
+    const q = loadParameterSearchParams(searchParamsObj);
+
+    // Fetch default parameter detail server-side with filter params and draft_id (parameter_id = null for new mode)
+    const input: ParameterGetIn = {
+      body: {
+        parameter_id: null, // NULL for new mode
+        draft_id: q.draftId ?? null,
+      } as ParameterGetIn["body"],
+    };
+    const [parameterDetailDefault, draftsResult, groupResult] = await Promise.all([
+      getParameterDefault(input),
+      api.post("/parameter/drafts", {}),
+      api.post("/parameter/group", { body: {} } as GroupParameterIn),
+    ]);
+
+    return (
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "parameter",
+            createFeedback: createParameterProblem,
+          }}
+          breadcrumbs={[
+            { title: "Management", section: "management", url: "/management" },
+            { title: "Parameters", section: "parameters", url: "/management/parameters" },
+            { title: "New Parameter" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "parameter",
+            groupId: (groupResult as GroupParameterOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateParameter,
+            operations: ["draft", "get", "group"],
+            getGroupHistory: getParameterGroupHistory,
+            searchGroups: searchParameterGroups,
+            prompts: context.prompts?.prompts,
+          }}
+        >
+          <div className="space-y-6 px-4" data-page="parameter-new">
+            <Parameter
+              key={q.draftId || "no-draft"}
+              mode="create"
+              parameterData={parameterDetailDefault}
+              createParameterAction={createParameter}
+              patchParameterDraftAction={patchParameterDraft}
+              createNamesAction={createNames}
+              createDescriptionsAction={createDescriptions}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/management/parameters/new"
+        />
+      );
     }
-  });
-
-  // Inline server-side parsers for parameter search params (navigation/search params only)
-  const parameterSearchParams = {
-    draftId: parseAsString,
-    // Search/filter params
-    fieldSearch: parseAsString,
-    fieldShowSelected: parseAsBoolean,
-  };
-  const loadParameterSearchParams = createLoader(parameterSearchParams);
-  const q = loadParameterSearchParams(searchParamsObj);
-
-  // Fetch default parameter detail server-side with filter params and draft_id (parameter_id = null for new mode)
-  const input: ParameterGetIn = {
-    body: {
-      parameter_id: null, // NULL for new mode
-      draft_id: q.draftId ?? null,
-    } as ParameterGetIn["body"],
-  };
-  const [parameterDetailDefault, draftsResult, groupResult] = await Promise.all([
-    getParameterDefault(input),
-    api.post("/parameter/drafts", {}),
-    api.post("/parameter/group", { body: {} } as GroupParameterIn),
-  ]);
-
-  return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "parameter",
-          createFeedback: createParameterProblem,
-        }}
-        breadcrumbs={[
-          { title: "Management", section: "management", url: "/management" },
-          { title: "Parameters", section: "parameters", url: "/management/parameters" },
-          { title: "New Parameter" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "parameter",
-          groupId: (groupResult as GroupParameterOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateParameter,
-          operations: ["draft", "get", "group"],
-          getGroupHistory: getParameterGroupHistory,
-          searchGroups: searchParameterGroups,
-          prompts: context.prompts?.prompts,
-        }}
-      >
-        <div className="space-y-6 px-4" data-page="parameter-new">
-          <Parameter
-            key={q.draftId || "no-draft"}
-            mode="create"
-            parameterData={parameterDetailDefault}
-            createParameterAction={createParameter}
-            patchParameterDraftAction={patchParameterDraft}
-            createNamesAction={createNames}
-            createDescriptionsAction={createDescriptions}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

@@ -111,12 +111,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ parameterId: string }>;
 }): Promise<Metadata> {
-  const { parameterId } = await params;
-  const context = await api.post("/parameter/context", { body: { entity_id: parameterId } } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.detail.title,
-    description: context.page_metadata?.detail.description,
-  };
+  try {
+    const { parameterId } = await params;
+    const context = await api.post("/parameter/context", { body: { entity_id: parameterId } } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Parameters" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -235,7 +239,7 @@ export default async function ParameterEditPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      error.status === 403
+      (error.status === 401 || error.status === 403)
     ) {
       return (
         <UnifiedAccessDenied

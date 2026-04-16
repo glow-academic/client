@@ -5,6 +5,7 @@
  * 01/26/2025
  */
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -87,11 +88,15 @@ async function createEvalProblem(input: ProblemEvalIn): Promise<ProblemEvalOut> 
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Evals" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -113,94 +118,111 @@ export default async function NewEvalPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  // Inline server-side parsers for eval search params
-  const evalSearchParams = {
-    draftId: parseAsString,
-    agentSearch: parseAsString,
-    agentShowSelected: parseAsBoolean,
-    modelRunSearch: parseAsString,
-    modelRunShowSelected: parseAsBoolean,
-    groupSearch: parseAsString,
-    groupShowSelected: parseAsBoolean,
-  };
-  const loadEvalSearchParams = createLoader(evalSearchParams);
-  const q = loadEvalSearchParams(searchParamsObj);
+    // Inline server-side parsers for eval search params
+    const evalSearchParams = {
+      draftId: parseAsString,
+      agentSearch: parseAsString,
+      agentShowSelected: parseAsBoolean,
+      modelRunSearch: parseAsString,
+      modelRunShowSelected: parseAsBoolean,
+      groupSearch: parseAsString,
+      groupShowSelected: parseAsBoolean,
+    };
+    const loadEvalSearchParams = createLoader(evalSearchParams);
+    const q = loadEvalSearchParams(searchParamsObj);
 
-  // Fetch eval default data (for dropdowns and defaults) with draft_id and search params
-  const input: GetEvalIn = {
-    body: {
-      eval_id: null, // NULL for new mode
-      draft_id: q.draftId ?? null,
-      agent_search: q.agentSearch ?? null,
-      group_search: q.groupSearch ?? null,
-      // Note: available_model_runs_search uses modelRunSearch from URL
-      available_model_runs_search: q.modelRunSearch ?? null,
-    } as GetEvalIn["body"],
-  };
-  const [evalDetailDefault, draftsResult, groupResult] = await Promise.all([
-    getEvalDefault(input),
-    api.post("/eval/drafts", {}),
-    api.post("/eval/group", { body: {} } as GroupEvalIn),
-  ]);
+    // Fetch eval default data (for dropdowns and defaults) with draft_id and search params
+    const input: GetEvalIn = {
+      body: {
+        eval_id: null, // NULL for new mode
+        draft_id: q.draftId ?? null,
+        agent_search: q.agentSearch ?? null,
+        group_search: q.groupSearch ?? null,
+        // Note: available_model_runs_search uses modelRunSearch from URL
+        available_model_runs_search: q.modelRunSearch ?? null,
+      } as GetEvalIn["body"],
+    };
+    const [evalDetailDefault, draftsResult, groupResult] = await Promise.all([
+      getEvalDefault(input),
+      api.post("/eval/drafts", {}),
+      api.post("/eval/group", { body: {} } as GroupEvalIn),
+    ]);
 
-  return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "eval",
-          createFeedback: createEvalProblem,
-        }}
-        breadcrumbs={[
-          { title: "System", section: "system", url: "/system" },
-          { title: "Evals", section: "evals", url: "/system/evals" },
-          { title: "New Eval" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "eval",
-          groupId: (groupResult as GroupEvalOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateEval,
-          operations: ["draft", "get", "group"],
-          getGroupHistory: getEvalGroupHistory,
-          searchGroups: searchEvalGroups,
-          prompts: context.prompts?.prompts,
-        }}
-      >
-        <div
-          className="space-y-6 px-4"
-          data-page="eval-new"
-          aria-label="Create new eval page"
+    return (
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "eval",
+            createFeedback: createEvalProblem,
+          }}
+          breadcrumbs={[
+            { title: "System", section: "system", url: "/system" },
+            { title: "Evals", section: "evals", url: "/system/evals" },
+            { title: "New Eval" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "eval",
+            groupId: (groupResult as GroupEvalOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateEval,
+            operations: ["draft", "get", "group"],
+            getGroupHistory: getEvalGroupHistory,
+            searchGroups: searchEvalGroups,
+            prompts: context.prompts?.prompts,
+          }}
         >
-          <Eval
-            evalDetailDefault={evalDetailDefault}
-            createEvalAction={createEval}
-            patchEvalDraftAction={patchEvalDraft}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+          <div
+            className="space-y-6 px-4"
+            data-page="eval-new"
+            aria-label="Create new eval page"
+          >
+            <Eval
+              evalDetailDefault={evalDetailDefault}
+              createEvalAction={createEval}
+              patchEvalDraftAction={patchEvalDraft}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/system/evals/new"
+        />
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component ---- */

@@ -18,6 +18,7 @@ import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { loadPricingSearchParams } from "@/lib/search-params/pricing";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
 
 /** ---- Strong types from OpenAPI ---- */
@@ -53,11 +54,15 @@ const getPricingAnalytics = async (input: PricingIn): Promise<PricingOut> => {
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/system/pricing/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/system/pricing/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Pricing" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -78,93 +83,110 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/system/pricing/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/system/pricing/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params via nuqs loader
-  const q = loadPricingSearchParams(await searchParams);
+    // Parse search params via nuqs loader
+    const q = loadPricingSearchParams(await searchParams);
 
-  // Pricing-specific params with defaults
-  const pricingPage = q.pricingPage ?? 0;
-  const pricingPageSize = q.pricingPageSize ?? 10;
-  const pricingModelIds = q.pricingModelIds ?? undefined;
-  const pricingSortBy = q.pricingSortBy ?? "date";
-  const pricingSortOrder = q.pricingSortOrder ?? "desc";
+    // Pricing-specific params with defaults
+    const pricingPage = q.pricingPage ?? 0;
+    const pricingPageSize = q.pricingPageSize ?? 10;
+    const pricingModelIds = q.pricingModelIds ?? undefined;
+    const pricingSortBy = q.pricingSortBy ?? "date";
+    const pricingSortOrder = q.pricingSortOrder ?? "desc";
 
-  // Map frontend sort field to backend field name
-  const sortBy = pricingSortBy === "createdAt" ? "date" : pricingSortBy;
+    // Map frontend sort field to backend field name
+    const sortBy = pricingSortBy === "createdAt" ? "date" : pricingSortBy;
 
-  // Use first model ID if provided (endpoint accepts single model_id)
-  const modelId = pricingModelIds?.[0] ?? null;
+    // Use first model ID if provided (endpoint accepts single model_id)
+    const modelId = pricingModelIds?.[0] ?? null;
 
-  // Fetch pricing data, view cookie, and group in parallel
-  const [pricingData, initialColumnVisibility, groupResult] = await Promise.all([
-    getPricingAnalytics({
-      body: {
-        start_date: q.startDate ?? undefined,
-        end_date: q.endDate ?? undefined,
-        department_ids: q.departmentIds ?? [],
-        roles: q.roles ?? [],
-        page_limit: 100,
-        page_offset: 0,
-        // Embedded group history params
-        history_page: pricingPage,
-        history_page_size: pricingPageSize,
-        history_sort_by: sortBy,
-        history_sort_order: pricingSortOrder,
-        history_model_id: modelId,
-      },
-    }),
-    readViewCookie("pricing"),
-    api.post("/system/pricing/group", { body: {} } as GroupPricingIn),
-  ]);
+    // Fetch pricing data, view cookie, and group in parallel
+    const [pricingData, initialColumnVisibility, groupResult] = await Promise.all([
+      getPricingAnalytics({
+        body: {
+          start_date: q.startDate ?? undefined,
+          end_date: q.endDate ?? undefined,
+          department_ids: q.departmentIds ?? [],
+          roles: q.roles ?? [],
+          page_limit: 100,
+          page_offset: 0,
+          // Embedded group history params
+          history_page: pricingPage,
+          history_page_size: pricingPageSize,
+          history_sort_by: sortBy,
+          history_sort_order: pricingSortOrder,
+          history_model_id: modelId,
+        },
+      }),
+      readViewCookie("pricing"),
+      api.post("/system/pricing/group", { body: {} } as GroupPricingIn),
+    ]);
 
-  // Extract inline analytics facets
-  const facets = pricingData.analytics;
+    // Extract inline analytics facets
+    const facets = pricingData.analytics;
 
-  // Extract embedded history or use empty fallback
-  const runsData: PricingRunsOut = pricingData.history ?? {
-    items: [],
-    total_count: 0,
-  };
+    // Extract embedded history or use empty fallback
+    const runsData: PricingRunsOut = pricingData.history ?? {
+      items: [],
+      total_count: 0,
+    };
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "pricing",
-        createFeedback: createPricingProblem,
-      }}
-      breadcrumbs={[
-        { title: "Analytics", section: "analytics", url: "/analytics" },
-        { title: "Pricing" },
-      ]}
-      toolbar={
-        <AnalyticsFilters
-          refreshAction={refreshPricing}
-          analyticsFilters={facets}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "pricing",
+          createFeedback: createPricingProblem,
+        }}
+        breadcrumbs={[
+          { title: "Analytics", section: "analytics", url: "/analytics" },
+          { title: "Pricing" },
+        ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshAction={refreshPricing}
+            analyticsFilters={facets}
+          />
+        }
+        panelProps={{
+          artifactType: "pricing",
+          groupId: (groupResult as GroupPricingOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generatePricing,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getPricingGroupHistory,
+          searchGroups: searchPricingGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4" data-page="pricing-index">
+          <PricingSummary pricingData={pricingData} />
+          <PricingRunsClient runsData={runsData} isLoading={false} initialColumnVisibility={initialColumnVisibility} />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/analytics/pricing"
         />
-      }
-      panelProps={{
-        artifactType: "pricing",
-        groupId: (groupResult as GroupPricingOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generatePricing,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getPricingGroupHistory,
-        searchGroups: searchPricingGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4" data-page="pricing-index">
-        <PricingSummary pricingData={pricingData} />
-        <PricingRunsClient runsData={runsData} isLoading={false} initialColumnVisibility={initialColumnVisibility} />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Strongly-typed server actions ---- */

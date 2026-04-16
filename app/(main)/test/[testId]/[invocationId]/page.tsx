@@ -17,6 +17,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
 /** ---- Strong types from OpenAPI ---- */
 type ContextIn = InputOf<"/test/invocation/context", "post">;
@@ -106,35 +107,52 @@ export default async function InvocationPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/test/invocation/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/test/invocation/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  const bundleData = await getBenchmarkBundle(invocationId, draftId);
+    const bundleData = await getBenchmarkBundle(invocationId, draftId);
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "benchmark",
-        createFeedback: createTestProblem,
-      }}
-      breadcrumbs={[
-        { title: "Benchmark", section: "benchmark", url: "/benchmark" },
-        { title: "Test", url: `/test/${testId}` },
-        { title: "Invocation" },
-      ]}
-    >
-      <div className="px-4">
-        <Invocation
-          bundleData={bundleData as InvocationData}
-          testId={testId}
-          patchBenchmarkDraftAction={patchBenchmarkDraft}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "benchmark",
+          createFeedback: createTestProblem,
+        }}
+        breadcrumbs={[
+          { title: "Benchmark", section: "benchmark", url: "/benchmark" },
+          { title: "Test", url: `/test/${testId}` },
+          { title: "Invocation" },
+        ]}
+      >
+        <div className="px-4">
+          <Invocation
+            bundleData={bundleData as InvocationData}
+            testId={testId}
+            patchBenchmarkDraftAction={patchBenchmarkDraft}
+          />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname={`/test/${testId}/${invocationId}`}
         />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }

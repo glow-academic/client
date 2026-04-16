@@ -7,6 +7,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -112,11 +113,15 @@ async function createDepartmentProblem(input: ProblemDepartmentIn): Promise<Prob
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/department/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/department/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Departments" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -138,87 +143,104 @@ export default async function NewDepartmentPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/department/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/department/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  // Inline server-side parsers for department search params
-  const departmentSearchParams = {
-    draftId: parseAsString,
-  };
-  const loadDepartmentSearchParams = createLoader(departmentSearchParams);
-  const q = loadDepartmentSearchParams(searchParamsObj);
+    // Inline server-side parsers for department search params
+    const departmentSearchParams = {
+      draftId: parseAsString,
+    };
+    const loadDepartmentSearchParams = createLoader(departmentSearchParams);
+    const q = loadDepartmentSearchParams(searchParamsObj);
 
-  // Fetch default department detail server-side with draft_id (unified get endpoint with department_id = null)
-  const input: GetDepartmentIn = {
-    body: {
-      department_id: null, // NULL for new mode
-      draft_id: q.draftId ?? null,
-    } as GetDepartmentIn["body"],
-  };
-  const [departmentDetailDefault, draftsResult, groupResult] = await Promise.all([
-    getDepartmentDefault(input),
-    api.post("/department/drafts", {}),
-    api.post("/department/group", { body: {} } as GroupDepartmentIn),
-  ]);
+    // Fetch default department detail server-side with draft_id (unified get endpoint with department_id = null)
+    const input: GetDepartmentIn = {
+      body: {
+        department_id: null, // NULL for new mode
+        draft_id: q.draftId ?? null,
+      } as GetDepartmentIn["body"],
+    };
+    const [departmentDetailDefault, draftsResult, groupResult] = await Promise.all([
+      getDepartmentDefault(input),
+      api.post("/department/drafts", {}),
+      api.post("/department/group", { body: {} } as GroupDepartmentIn),
+    ]);
 
-  return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "department",
-          createFeedback: createDepartmentProblem,
-        }}
-        breadcrumbs={[
-          { title: "System", section: "system", url: "/system" },
-          { title: "Departments", section: "departments", url: "/system/departments" },
-          { title: "New Department" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "department",
-          groupId: (groupResult as GroupDepartmentOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateDepartment,
-          operations: ["draft", "get", "group"],
-          getGroupHistory: getDepartmentGroupHistory,
-          searchGroups: searchDepartmentGroups,
-          prompts: context.prompts?.prompts,
-        }}
-      >
-        <div
-          className="space-y-6 px-4"
-          data-page="department-new"
-          aria-label="Create new department page"
+    return (
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "department",
+            createFeedback: createDepartmentProblem,
+          }}
+          breadcrumbs={[
+            { title: "System", section: "system", url: "/system" },
+            { title: "Departments", section: "departments", url: "/system/departments" },
+            { title: "New Department" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "department",
+            groupId: (groupResult as GroupDepartmentOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateDepartment,
+            operations: ["draft", "get", "group"],
+            getGroupHistory: getDepartmentGroupHistory,
+            searchGroups: searchDepartmentGroups,
+            prompts: context.prompts?.prompts,
+          }}
         >
-          <Department
-            key={q.draftId || "no-draft"}
-            departmentData={departmentDetailDefault}
-            createDepartmentAction={createDepartment}
-            patchDepartmentDraftAction={patchDepartmentDraft}
-            createNamesAction={createDraftNames}
-            createDescriptionsAction={createDraftDescriptions}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+          <div
+            className="space-y-6 px-4"
+            data-page="department-new"
+            aria-label="Create new department page"
+          >
+            <Department
+              key={q.draftId || "no-draft"}
+              departmentData={departmentDetailDefault}
+              createDepartmentAction={createDepartment}
+              patchDepartmentDraftAction={patchDepartmentDraft}
+              createNamesAction={createDraftNames}
+              createDescriptionsAction={createDraftDescriptions}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/system/departments/new"
+        />
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

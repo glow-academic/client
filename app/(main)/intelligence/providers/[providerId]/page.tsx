@@ -150,12 +150,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ providerId: string }>;
 }): Promise<Metadata> {
-  const { providerId } = await params;
-  const context = await api.post("/provider/context", { body: { entity_id: providerId } } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.detail.title,
-    description: context.page_metadata?.detail.description,
-  };
+  try {
+    const { providerId } = await params;
+    const context = await api.post("/provider/context", { body: { entity_id: providerId } } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Providers" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -179,10 +183,6 @@ export default async function EditProviderPage({
   const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
-
-  // Profile data for providers
-  const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const paramsObj = await searchParams;
@@ -223,6 +223,7 @@ export default async function EditProviderPage({
       throw new Error("Provider not found");
     }
 
+    const snapshot = buildSnapshot(session, context.profile);
     const entityName = context.page_metadata?.detail.title;
 
     return (
@@ -278,7 +279,7 @@ export default async function EditProviderPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      error.status === 403
+      (error.status === 401 || error.status === 403)
     ) {
       return (
         <UnifiedAccessDenied

@@ -7,6 +7,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -148,11 +149,15 @@ async function createRubricProblem(input: ProblemRubricIn): Promise<ProblemRubri
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Rubrics" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -173,83 +178,100 @@ export default async function NewRubricPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
+    });
+
+    // Inline server-side parsers for rubric search params
+    const rubricSearchParams = {
+      draftId: parseAsString,
+      descriptionSearch: parseAsString,
+      standardGroupSearch: parseAsString,
+    };
+    const loadRubricSearchParams = createLoader(rubricSearchParams);
+    const q = loadRubricSearchParams(searchParamsObj);
+
+    // SSR data fetches
+    const [rubricData, draftsResult, groupResult] = await Promise.all([
+      getRubric(
+        q.draftId ?? null,
+        q.descriptionSearch ?? null,
+        q.standardGroupSearch ?? null,
+      ),
+      api.post("/rubric/drafts", {}),
+      api.post("/rubric/group", { body: {} } as GroupRubricIn),
+    ]);
+
+    return (
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "rubric",
+            createFeedback: createRubricProblem,
+          }}
+          breadcrumbs={[
+            { title: "System", section: "system", url: "/system" },
+            { title: "Rubrics", section: "rubrics", url: "/system/rubrics" },
+            { title: "New Rubric" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "rubric",
+            groupId: (groupResult as GroupRubricOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateRubric,
+            operations: ["draft", "get", "group"],
+            getGroupHistory: getRubricGroupHistory,
+            searchGroups: searchRubricGroups,
+            prompts: context.prompts?.prompts,
+          }}
+        >
+          <div className="space-y-6 px-4" data-page="rubric-new">
+            <Rubric
+              key={q.draftId || "no-draft"}
+              rubricData={rubricData}
+              createRubricAction={createRubric}
+              patchRubricDraftAction={patchRubricDraft}
+              createNamesAction={createDraftNames}
+              createDescriptionsAction={createDraftDescriptions}
+              createPointsAction={createDraftPoints}
+              createStandardGroupsAction={createDraftStandardGroups}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/system/rubrics/new"
+        />
+      );
     }
-  });
-
-  // Inline server-side parsers for rubric search params
-  const rubricSearchParams = {
-    draftId: parseAsString,
-    descriptionSearch: parseAsString,
-    standardGroupSearch: parseAsString,
-  };
-  const loadRubricSearchParams = createLoader(rubricSearchParams);
-  const q = loadRubricSearchParams(searchParamsObj);
-
-  // SSR data fetches
-  const [rubricData, draftsResult, groupResult] = await Promise.all([
-    getRubric(
-      q.draftId ?? null,
-      q.descriptionSearch ?? null,
-      q.standardGroupSearch ?? null,
-    ),
-    api.post("/rubric/drafts", {}),
-    api.post("/rubric/group", { body: {} } as GroupRubricIn),
-  ]);
-
-  return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "rubric",
-          createFeedback: createRubricProblem,
-        }}
-        breadcrumbs={[
-          { title: "System", section: "system", url: "/system" },
-          { title: "Rubrics", section: "rubrics", url: "/system/rubrics" },
-          { title: "New Rubric" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "rubric",
-          groupId: (groupResult as GroupRubricOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateRubric,
-          operations: ["draft", "get", "group"],
-          getGroupHistory: getRubricGroupHistory,
-          searchGroups: searchRubricGroups,
-          prompts: context.prompts?.prompts,
-        }}
-      >
-        <div className="space-y-6 px-4" data-page="rubric-new">
-          <Rubric
-            key={q.draftId || "no-draft"}
-            rubricData={rubricData}
-            createRubricAction={createRubric}
-            patchRubricDraftAction={patchRubricDraft}
-            createNamesAction={createDraftNames}
-            createDescriptionsAction={createDraftDescriptions}
-            createPointsAction={createDraftPoints}
-            createStandardGroupsAction={createDraftStandardGroups}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+    throw error;
+  }
 }

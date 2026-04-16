@@ -7,6 +7,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -127,11 +128,15 @@ async function createAuthProblem(input: ProblemAuthIn): Promise<ProblemAuthOut> 
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/auth/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/auth/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Auth" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -153,85 +158,102 @@ export default async function AuthCreatePage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/auth/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/auth/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
+    });
+
+    // Inline server-side parsers for auth search params
+    const authSearchParams = {
+      draftId: parseAsString,
+    };
+    const loadAuthSearchParams = createLoader(authSearchParams);
+    const q = loadAuthSearchParams(searchParamsObj);
+
+    // Fetch default auth detail with draft_id (auth_id = NULL for new mode)
+    const input: GetAuthIn = {
+      body: {
+        auth_id: null, // NULL for new mode
+        draft_id: q.draftId ?? null,
+      } as GetAuthIn["body"],
+    };
+    const [authData, draftsResult, groupResult] = await Promise.all([
+      getAuthDefault(input),
+      api.post("/auth/drafts", {}),
+      api.post("/auth/group", { body: {} } as GroupAuthIn),
+    ]);
+
+    return (
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "auth",
+            createFeedback: createAuthProblem,
+          }}
+          breadcrumbs={[
+            { title: "System", section: "system", url: "/system" },
+            { title: "Auth", section: "auth", url: "/system/auth" },
+            { title: "New Auth" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "auth",
+            groupId: (groupResult as GroupAuthOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateAuth,
+            operations: ["draft", "get", "group"],
+            getGroupHistory: getAuthGroupHistory,
+            searchGroups: searchAuthGroups,
+            prompts: context.prompts?.prompts,
+          }}
+        >
+          <div className="space-y-6 px-4" data-page="auth-create">
+            <Auth
+              key={q.draftId || "no-draft"}
+              authData={authData}
+              createAuthAction={createAuth}
+              patchAuthDraftAction={patchAuthDraft}
+              createNamesAction={createDraftNames}
+              createDescriptionsAction={createDraftDescriptions}
+              createProtocolsAction={createDraftProtocols}
+              createSlugsAction={createDraftSlugs}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/system/auth/new"
+        />
+      );
     }
-  });
-
-  // Inline server-side parsers for auth search params
-  const authSearchParams = {
-    draftId: parseAsString,
-  };
-  const loadAuthSearchParams = createLoader(authSearchParams);
-  const q = loadAuthSearchParams(searchParamsObj);
-
-  // Fetch default auth detail with draft_id (auth_id = NULL for new mode)
-  const input: GetAuthIn = {
-    body: {
-      auth_id: null, // NULL for new mode
-      draft_id: q.draftId ?? null,
-    } as GetAuthIn["body"],
-  };
-  const [authData, draftsResult, groupResult] = await Promise.all([
-    getAuthDefault(input),
-    api.post("/auth/drafts", {}),
-    api.post("/auth/group", { body: {} } as GroupAuthIn),
-  ]);
-
-  return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "auth",
-          createFeedback: createAuthProblem,
-        }}
-        breadcrumbs={[
-          { title: "System", section: "system", url: "/system" },
-          { title: "Auth", section: "auth", url: "/system/auth" },
-          { title: "New Auth" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "auth",
-          groupId: (groupResult as GroupAuthOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateAuth,
-          operations: ["draft", "get", "group"],
-          getGroupHistory: getAuthGroupHistory,
-          searchGroups: searchAuthGroups,
-          prompts: context.prompts?.prompts,
-        }}
-      >
-        <div className="space-y-6 px-4" data-page="auth-create">
-          <Auth
-            key={q.draftId || "no-draft"}
-            authData={authData}
-            createAuthAction={createAuth}
-            patchAuthDraftAction={patchAuthDraft}
-            createNamesAction={createDraftNames}
-            createDescriptionsAction={createDraftDescriptions}
-            createProtocolsAction={createDraftProtocols}
-            createSlugsAction={createDraftSlugs}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

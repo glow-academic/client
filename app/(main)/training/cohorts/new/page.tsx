@@ -7,6 +7,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -86,11 +87,15 @@ async function createCohortProblem(input: ProblemCohortIn): Promise<ProblemCohor
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Cohorts" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -111,128 +116,145 @@ export default async function NewCohortPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers (until /cohorts/context returns full profile)
-  const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers (until /cohorts/context returns full profile)
+    const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  // Inline server-side parsers for cohort search params
-  const cohortSearchParams = {
-    draftId: parseAsString,
-    descriptionSearch: parseAsString,
-    simulationSearch: parseAsString,
-    simulationShowSelected: parseAsBoolean,
-    profileSearch: parseAsString,
-    profileShowSelected: parseAsBoolean,
-  };
-  const loadCohortSearchParams = createLoader(cohortSearchParams);
-  const q = loadCohortSearchParams(searchParamsObj);
+    // Inline server-side parsers for cohort search params
+    const cohortSearchParams = {
+      draftId: parseAsString,
+      descriptionSearch: parseAsString,
+      simulationSearch: parseAsString,
+      simulationShowSelected: parseAsBoolean,
+      profileSearch: parseAsString,
+      profileShowSelected: parseAsBoolean,
+    };
+    const loadCohortSearchParams = createLoader(cohortSearchParams);
+    const q = loadCohortSearchParams(searchParamsObj);
 
-  // Fetch default cohort detail server-side with filter params and draft_id
-  const body: GetCohortIn["body"] = {
-    id: null,
-    draft_id: q.draftId ?? null,
-    ...(q.descriptionSearch
-      ? {
-          descriptions: {
-            search: q.descriptionSearch,
-          },
-        }
-      : {}),
-    ...(q.simulationSearch || q.simulationShowSelected
-      ? {
-          simulations: {
-            ...(q.simulationSearch ? { search: q.simulationSearch } : {}),
-            ...(q.simulationShowSelected !== null
-              ? { selected: q.simulationShowSelected }
-              : {}),
-          },
-        }
-      : {}),
-    ...(q.profileSearch || q.profileShowSelected
-      ? {
-          profiles: {
-            ...(q.profileSearch ? { search: q.profileSearch } : {}),
-            ...(q.profileShowSelected !== null
-              ? { selected: q.profileShowSelected }
-              : {}),
-          },
-        }
-      : {}),
-  };
+    // Fetch default cohort detail server-side with filter params and draft_id
+    const body: GetCohortIn["body"] = {
+      id: null,
+      draft_id: q.draftId ?? null,
+      ...(q.descriptionSearch
+        ? {
+            descriptions: {
+              search: q.descriptionSearch,
+            },
+          }
+        : {}),
+      ...(q.simulationSearch || q.simulationShowSelected
+        ? {
+            simulations: {
+              ...(q.simulationSearch ? { search: q.simulationSearch } : {}),
+              ...(q.simulationShowSelected !== null
+                ? { selected: q.simulationShowSelected }
+                : {}),
+            },
+          }
+        : {}),
+      ...(q.profileSearch || q.profileShowSelected
+        ? {
+            profiles: {
+              ...(q.profileSearch ? { search: q.profileSearch } : {}),
+              ...(q.profileShowSelected !== null
+                ? { selected: q.profileShowSelected }
+                : {}),
+            },
+          }
+        : {}),
+    };
 
-  const input = {
-    path: undefined,
-    body,
-  } as GetCohortIn;
+    const input = {
+      path: undefined,
+      body,
+    } as GetCohortIn;
 
-  const [cohortData, draftsResult, groupResult] = await Promise.all([
-    getCohortDefault(input),
-    api.post(
-      "/cohort/drafts",
-      { path: undefined } as InputOf<"/cohort/drafts", "post">,
-    ),
-    api.post("/cohort/group", { body: {} } as GroupCohortIn),
-  ]);
+    const [cohortData, draftsResult, groupResult] = await Promise.all([
+      getCohortDefault(input),
+      api.post(
+        "/cohort/drafts",
+        { path: undefined } as InputOf<"/cohort/drafts", "post">,
+      ),
+      api.post("/cohort/group", { body: {} } as GroupCohortIn),
+    ]);
 
-  return (
-    <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
-      <FullPageLayout
-        {...({
-          profileData: context.profile,
-          sessionSnapshot: snapshot,
-          initialSidebarOpen,
-          initialPanelOpen,
-          sidebarProps: {
-            activeSection: "cohort",
-            createFeedback: createCohortProblem as any,
-          },
-          breadcrumbs: [
-            { title: "Training", section: "training", url: "/training" },
-            { title: "Cohorts", section: "cohorts", url: "/training/cohorts" },
-            { title: "New Cohort" },
-          ],
-          toolbar: <SaveToolbar />,
-          panelProps: {
-            artifactType: "cohort",
-            groupId:
-              (groupResult as GroupCohortOut & { group_id?: string })?.group_id ??
-              null,
-            generateAction: generateCohort,
-            operations: ["draft", "get", "group"],
-            getGroupHistory: getCohortGroupHistory,
-            searchGroups: searchCohortGroups,
-            prompts: context.prompts?.prompts,
-          },
-        } as any)}
-      >
-        <div
-          className="space-y-6 px-4"
-          data-page="cohort-new"
-          aria-label="Create new cohort page"
+    return (
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
+        <FullPageLayout
+          {...({
+            profileData: context.profile,
+            sessionSnapshot: snapshot,
+            initialSidebarOpen,
+            initialPanelOpen,
+            sidebarProps: {
+              activeSection: "cohort",
+              createFeedback: createCohortProblem as any,
+            },
+            breadcrumbs: [
+              { title: "Training", section: "training", url: "/training" },
+              { title: "Cohorts", section: "cohorts", url: "/training/cohorts" },
+              { title: "New Cohort" },
+            ],
+            toolbar: <SaveToolbar />,
+            panelProps: {
+              artifactType: "cohort",
+              groupId:
+                (groupResult as GroupCohortOut & { group_id?: string })?.group_id ??
+                null,
+              generateAction: generateCohort,
+              operations: ["draft", "get", "group"],
+              getGroupHistory: getCohortGroupHistory,
+              searchGroups: searchCohortGroups,
+              prompts: context.prompts?.prompts,
+            },
+          } as any)}
         >
-          <Cohort
-            key={q.draftId || "no-draft"}
-            cohortData={cohortData}
-            createCohortAction={createCohort}
-            patchCohortDraftAction={patchCohortDraft}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+          <div
+            className="space-y-6 px-4"
+            data-page="cohort-new"
+            aria-label="Create new cohort page"
+          >
+            <Cohort
+              key={q.draftId || "no-draft"}
+              cohortData={cohortData}
+              createCohortAction={createCohort}
+              patchCohortDraftAction={patchCohortDraft}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/training/cohorts/new"
+        />
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

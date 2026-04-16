@@ -147,12 +147,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ modelId: string }>;
 }): Promise<Metadata> {
-  const { modelId } = await params;
-  const context = await api.post("/model/context", { body: { entity_id: modelId } } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.detail.title,
-    description: context.page_metadata?.detail.description,
-  };
+  try {
+    const { modelId } = await params;
+    const context = await api.post("/model/context", { body: { entity_id: modelId } } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Models" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -176,10 +180,6 @@ export default async function ModelEditPage({
   const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
-
-  // Profile data for providers
-  const context = await api.post("/model/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const paramsObj = await searchParams;
@@ -215,6 +215,7 @@ export default async function ModelEditPage({
       api.post("/model/group", { body: {} } as GroupModelIn),
     ]);
 
+    const snapshot = buildSnapshot(session, context.profile);
     const entityName = context.page_metadata?.detail.title;
 
     return (
@@ -270,7 +271,7 @@ export default async function ModelEditPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      error.status === 403
+      (error.status === 401 || error.status === 403)
     ) {
       return (
         <UnifiedAccessDenied

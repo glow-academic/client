@@ -18,6 +18,7 @@ import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { loadLeaderboardSearchParams } from "@/lib/search-params/leaderboard";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
 /** ---- Strong types from OpenAPI ---- */
 type LeaderboardIn = InputOf<"/attempt/leaderboard/get", "post">;
@@ -83,11 +84,15 @@ async function createLeaderboardProblem(input: ProblemLeaderboardIn): Promise<Pr
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/attempt/leaderboard/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/attempt/leaderboard/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Leaderboard" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -110,71 +115,88 @@ export default async function LeaderboardPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/attempt/leaderboard/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/attempt/leaderboard/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params via nuqs loader
-  const q = loadLeaderboardSearchParams(await searchParams);
+    // Parse search params via nuqs loader
+    const q = loadLeaderboardSearchParams(await searchParams);
 
-  // Read view cookie for column visibility
-  const initialColumnVisibility = await readViewCookie("leaderboard");
+    // Read view cookie for column visibility
+    const initialColumnVisibility = await readViewCookie("leaderboard");
 
-  // Fetch leaderboard data and group in parallel
-  const [leaderboardData, groupResult] = await Promise.all([
-    getLeaderboard({
-      body: {
-        start_date: q.startDate ?? undefined,
-        end_date: q.endDate ?? undefined,
-        cohort_ids: q.cohortIds ?? undefined,
-        department_ids: q.departmentIds ?? undefined,
-        simulation_filters: q.simulationFilters ?? undefined,
-        sort_by: "highest_score",
-        sort_order: "desc",
-        page_limit: 50,
-        page_offset: 0,
-      },
-    }),
-    api.post("/attempt/leaderboard/group", { body: {} } as GroupLeaderboardIn),
-  ]);
+    // Fetch leaderboard data and group in parallel
+    const [leaderboardData, groupResult] = await Promise.all([
+      getLeaderboard({
+        body: {
+          start_date: q.startDate ?? undefined,
+          end_date: q.endDate ?? undefined,
+          cohort_ids: q.cohortIds ?? undefined,
+          department_ids: q.departmentIds ?? undefined,
+          simulation_filters: q.simulationFilters ?? undefined,
+          sort_by: "highest_score",
+          sort_order: "desc",
+          page_limit: 50,
+          page_offset: 0,
+        },
+      }),
+      api.post("/attempt/leaderboard/group", { body: {} } as GroupLeaderboardIn),
+    ]);
 
-  // Compute initial filters from inline facets
-  const facets = leaderboardData.analytics;
+    // Compute initial filters from inline facets
+    const facets = leaderboardData.analytics;
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "leaderboard",
-        createFeedback: createLeaderboardProblem,
-      }}
-      breadcrumbs={[
-        { title: "Leaderboard", section: "leaderboard", url: "/leaderboard" },
-      ]}
-      toolbar={
-        <AnalyticsFilters
-          refreshAction={refreshLeaderboard}
-          analyticsFilters={facets}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "leaderboard",
+          createFeedback: createLeaderboardProblem,
+        }}
+        breadcrumbs={[
+          { title: "Leaderboard", section: "leaderboard", url: "/leaderboard" },
+        ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshAction={refreshLeaderboard}
+            analyticsFilters={facets}
+          />
+        }
+        panelProps={{
+          artifactType: "leaderboard",
+          groupId: (groupResult as GroupLeaderboardOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateLeaderboard,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getLeaderboardGroupHistory,
+          searchGroups: searchLeaderboardGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4" data-page="leaderboard-index">
+          <Leaderboard leaderboardData={leaderboardData} initialColumnVisibility={initialColumnVisibility} />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/leaderboard"
         />
-      }
-      panelProps={{
-        artifactType: "leaderboard",
-        groupId: (groupResult as GroupLeaderboardOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateLeaderboard,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getLeaderboardGroupHistory,
-        searchGroups: searchLeaderboardGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4" data-page="leaderboard-index">
-        <Leaderboard leaderboardData={leaderboardData} initialColumnVisibility={initialColumnVisibility} />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

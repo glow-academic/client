@@ -72,12 +72,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ personaId: string }>;
 }): Promise<Metadata> {
-  const { personaId } = await params;
-  const context = await api.post("/persona/context", { body: { entity_id: personaId } } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.detail.title,
-    description: context.page_metadata?.detail.description,
-  };
+  try {
+    const { personaId } = await params;
+    const context = await api.post("/persona/context", { body: { entity_id: personaId } } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Personas" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -100,10 +104,6 @@ export default async function PersonaEditPage({
   const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
-
-  // Profile data for providers
-  const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const paramsObj = await searchParams;
@@ -170,6 +170,7 @@ export default async function PersonaEditPage({
     ]);
 
     const entityName = context.page_metadata?.detail.title;
+    const snapshot = buildSnapshot(session, context.profile);
 
     return (
       <DraftProviderClient drafts={draftsResult.entries ?? []}>
@@ -216,7 +217,7 @@ export default async function PersonaEditPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      error.status === 403
+      (error.status === 401 || error.status === 403)
     ) {
       return (
         <UnifiedAccessDenied

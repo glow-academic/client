@@ -6,6 +6,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Departments from "@/components/artifacts/department/Departments";
@@ -96,11 +97,15 @@ async function createDepartmentProblem(input: ProblemDepartmentIn): Promise<Prob
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/department/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/department/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Departments" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -117,50 +122,67 @@ export default async function DepartmentsPage() {
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/department/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/department/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Fetch list data and group in parallel
-  const [listData, groupResult] = await Promise.all([
-    getDepartmentsList(),
-    api.post("/department/group", { body: {} } as GroupDepartmentIn),
-  ]);
+    // Fetch list data and group in parallel
+    const [listData, groupResult] = await Promise.all([
+      getDepartmentsList(),
+      api.post("/department/group", { body: {} } as GroupDepartmentIn),
+    ]);
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "department",
-        createFeedback: createDepartmentProblem,
-      }}
-      breadcrumbs={[
-        { title: "System", section: "system", url: "/system" },
-        { title: "Departments" },
-      ]}
-      toolbar={<NewArtifactButton label="New Department" href="/system/departments/new" />}
-      panelProps={{
-        artifactType: "department",
-        groupId: (groupResult as GroupDepartmentOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateDepartment,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getDepartmentGroupHistory,
-        searchGroups: searchDepartmentGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4" data-page="departments-index">
-        <Departments
-          listData={listData}
-          duplicateDepartmentAction={duplicateDepartment}
-          deleteDepartmentAction={deleteDepartment}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "department",
+          createFeedback: createDepartmentProblem,
+        }}
+        breadcrumbs={[
+          { title: "System", section: "system", url: "/system" },
+          { title: "Departments" },
+        ]}
+        toolbar={<NewArtifactButton label="New Department" href="/system/departments/new" />}
+        panelProps={{
+          artifactType: "department",
+          groupId: (groupResult as GroupDepartmentOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateDepartment,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getDepartmentGroupHistory,
+          searchGroups: searchDepartmentGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4" data-page="departments-index">
+          <Departments
+            listData={listData}
+            duplicateDepartmentAction={duplicateDepartment}
+            deleteDepartmentAction={deleteDepartment}
+          />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/system/departments"
         />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

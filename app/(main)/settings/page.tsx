@@ -6,6 +6,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Settings from "@/components/artifacts/setting/Settings";
@@ -76,11 +77,15 @@ async function createSettingProblem(input: ProblemSettingIn): Promise<ProblemSet
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/setting/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/setting/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Settings" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -97,45 +102,62 @@ export default async function SettingsPage() {
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/setting/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/setting/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Fetch list data and group in parallel
-  const [listData, groupResult] = await Promise.all([
-    getSettingsList(),
-    api.post("/setting/group", { body: {} } as GroupSettingIn),
-  ]);
+    // Fetch list data and group in parallel
+    const [listData, groupResult] = await Promise.all([
+      getSettingsList(),
+      api.post("/setting/group", { body: {} } as GroupSettingIn),
+    ]);
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "setting",
-        createFeedback: createSettingProblem,
-      }}
-      breadcrumbs={[
-        { title: "Settings" },
-      ]}
-      toolbar={<NewArtifactButton label="New Setting" href="/setting/new" />}
-      panelProps={{
-        artifactType: "setting",
-        groupId: (groupResult as GroupSettingOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateSetting,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getSettingGroupHistory,
-        searchGroups: searchSettingGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4" data-page="settings-index">
-        <Settings listData={listData} />
-      </div>
-    </FullPageLayout>
-  );
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "setting",
+          createFeedback: createSettingProblem,
+        }}
+        breadcrumbs={[
+          { title: "Settings" },
+        ]}
+        toolbar={<NewArtifactButton label="New Setting" href="/setting/new" />}
+        panelProps={{
+          artifactType: "setting",
+          groupId: (groupResult as GroupSettingOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateSetting,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getSettingGroupHistory,
+          searchGroups: searchSettingGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4" data-page="settings-index">
+          <Settings listData={listData} />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/settings"
+        />
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

@@ -12,6 +12,8 @@ import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Tool from "@/components/artifacts/tool/Tool";
 
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -127,11 +129,15 @@ async function createToolProblem(input: ProblemToolIn): Promise<ProblemToolOut> 
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/tool/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/tool/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Tools" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -153,88 +159,105 @@ export default async function NewToolPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/tool/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/tool/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  // Inline server-side parsers for tool search params
-  const toolSearchParams = {
-    draftId: parseAsString,
-  };
-  const loadToolSearchParams = createLoader(toolSearchParams);
-  const q = loadToolSearchParams(searchParamsObj);
+    // Inline server-side parsers for tool search params
+    const toolSearchParams = {
+      draftId: parseAsString,
+    };
+    const loadToolSearchParams = createLoader(toolSearchParams);
+    const q = loadToolSearchParams(searchParamsObj);
 
-  // Fetch tool default data (for dropdowns and defaults) with draft_id
-  const input: GetToolIn = {
-    body: {
-      tool_id: null,
-      draft_id: q.draftId ?? null,
-    } as GetToolIn["body"],
-  };
-  const [toolDetailDefault, draftsResult, groupResult] = await Promise.all([
-    getToolDefault(input),
-    api.post("/tool/drafts", {}),
-    api.post("/tool/group", { body: {} } as GroupToolIn),
-  ]);
+    // Fetch tool default data (for dropdowns and defaults) with draft_id
+    const input: GetToolIn = {
+      body: {
+        tool_id: null,
+        draft_id: q.draftId ?? null,
+      } as GetToolIn["body"],
+    };
+    const [toolDetailDefault, draftsResult, groupResult] = await Promise.all([
+      getToolDefault(input),
+      api.post("/tool/drafts", {}),
+      api.post("/tool/group", { body: {} } as GroupToolIn),
+    ]);
 
-  return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "tool",
-          createFeedback: createToolProblem,
-        }}
-        breadcrumbs={[
-          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
-          { title: "Tools", section: "tools", url: "/intelligence/tools" },
-          { title: "New Tool" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "tool",
-          groupId: (groupResult as GroupToolOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateTool,
-          operations: ["draft", "get", "group"],
-          getGroupHistory: getToolGroupHistory,
-          searchGroups: searchToolGroups,
-          prompts: context.prompts?.prompts,
-        }}
-      >
-        <div
-          className="space-y-6 px-4"
-          data-page="tool-new"
-          aria-label="Create new tool page"
+    return (
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "tool",
+            createFeedback: createToolProblem,
+          }}
+          breadcrumbs={[
+            { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+            { title: "Tools", section: "tools", url: "/intelligence/tools" },
+            { title: "New Tool" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "tool",
+            groupId: (groupResult as GroupToolOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateTool,
+            operations: ["draft", "get", "group"],
+            getGroupHistory: getToolGroupHistory,
+            searchGroups: searchToolGroups,
+            prompts: context.prompts?.prompts,
+          }}
         >
-          <Tool
-            key={q.draftId || "no-draft"}
-            toolData={toolDetailDefault}
-            createToolAction={createTool}
-            patchToolDraftAction={patchToolDraft}
-            createArgsAction={createDraftArgs}
-            createArgPositionsAction={createDraftArgPositions}
-            createArgsOutputsAction={createDraftArgsOutputs}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+          <div
+            className="space-y-6 px-4"
+            data-page="tool-new"
+            aria-label="Create new tool page"
+          >
+            <Tool
+              key={q.draftId || "no-draft"}
+              toolData={toolDetailDefault}
+              createToolAction={createTool}
+              patchToolDraftAction={patchToolDraft}
+              createArgsAction={createDraftArgs}
+              createArgPositionsAction={createDraftArgPositions}
+              createArgsOutputsAction={createDraftArgsOutputs}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/intelligence/tools/new"
+        />
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component ---- */

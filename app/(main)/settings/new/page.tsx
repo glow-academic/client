@@ -7,6 +7,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -149,11 +150,15 @@ async function createSettingProblem(input: ProblemSettingIn): Promise<ProblemSet
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/setting/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/setting/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Settings" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -174,98 +179,115 @@ export default async function NewSettingPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/setting/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/setting/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  // Inline server-side parsers for setting search params (navigation/search params only)
-  const settingSearchParams = {
-    draftId: parseAsString,
-    // Search/filter params
-    colorSearch: parseAsString,
-  };
-  const loadSettingSearchParams = createLoader(settingSearchParams);
-  const q = loadSettingSearchParams(searchParamsObj);
+    // Inline server-side parsers for setting search params (navigation/search params only)
+    const settingSearchParams = {
+      draftId: parseAsString,
+      // Search/filter params
+      colorSearch: parseAsString,
+    };
+    const loadSettingSearchParams = createLoader(settingSearchParams);
+    const q = loadSettingSearchParams(searchParamsObj);
 
-  // Fetch default setting detail server-side with filter params and draft_id
-  const input: GetSettingIn = {
-    body: {
-      settings_id: null, // NULL for new mode
-      draft_id: q.draftId ?? null,
-      color_search: q.colorSearch ?? null,
-    } as GetSettingIn["body"],
-  };
-  const [settingDetailDefault, draftsResult, groupResult] = await Promise.all([
-    getSettingDefault(input),
-    api.post("/setting/drafts", {}),
-    api.post("/setting/group", { body: {} } as GroupSettingIn),
-  ]);
+    // Fetch default setting detail server-side with filter params and draft_id
+    const input: GetSettingIn = {
+      body: {
+        settings_id: null, // NULL for new mode
+        draft_id: q.draftId ?? null,
+        color_search: q.colorSearch ?? null,
+      } as GetSettingIn["body"],
+    };
+    const [settingDetailDefault, draftsResult, groupResult] = await Promise.all([
+      getSettingDefault(input),
+      api.post("/setting/drafts", {}),
+      api.post("/setting/group", { body: {} } as GroupSettingIn),
+    ]);
 
-  return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "setting",
-          createFeedback: createSettingProblem,
-        }}
-        breadcrumbs={[
-          { title: "Settings", section: "settings", url: "/setting" },
-          { title: "New Setting" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "setting",
-          groupId: (groupResult as GroupSettingOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateSetting,
-          operations: ["draft", "get", "group"],
-          getGroupHistory: getSettingGroupHistory,
-          searchGroups: searchSettingGroups,
-          prompts: context.prompts?.prompts,
-        }}
-      >
-        <div
-          className="space-y-6 px-4"
-          data-page="setting-new"
-          aria-label="Create new settings page"
+    return (
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "setting",
+            createFeedback: createSettingProblem,
+          }}
+          breadcrumbs={[
+            { title: "Settings", section: "settings", url: "/setting" },
+            { title: "New Setting" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "setting",
+            groupId: (groupResult as GroupSettingOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateSetting,
+            operations: ["draft", "get", "group"],
+            getGroupHistory: getSettingGroupHistory,
+            searchGroups: searchSettingGroups,
+            prompts: context.prompts?.prompts,
+          }}
         >
-          <Setting
-            key={q.draftId || "no-draft"}
-            settingData={settingDetailDefault}
-            createSettingAction={createSetting}
-            patchSettingDraftAction={patchSettingDraft}
-            createNamesAction={createDraftNames}
-            createDescriptionsAction={createDraftDescriptions}
-            createColorsAction={createDraftColors}
-            createProviderKeysAction={async (input) => {
-              "use server";
-              return createProviderKeys({ body: { ...input, mcp: false } });
-            }}
-            createAuthItemKeysAction={async (input) => {
-              "use server";
-              return createAuthItemKeys({ body: { ...input, mcp: false } });
-            }}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+          <div
+            className="space-y-6 px-4"
+            data-page="setting-new"
+            aria-label="Create new settings page"
+          >
+            <Setting
+              key={q.draftId || "no-draft"}
+              settingData={settingDetailDefault}
+              createSettingAction={createSetting}
+              patchSettingDraftAction={patchSettingDraft}
+              createNamesAction={createDraftNames}
+              createDescriptionsAction={createDraftDescriptions}
+              createColorsAction={createDraftColors}
+              createProviderKeysAction={async (input) => {
+                "use server";
+                return createProviderKeys({ body: { ...input, mcp: false } });
+              }}
+              createAuthItemKeysAction={async (input) => {
+                "use server";
+                return createAuthItemKeys({ body: { ...input, mcp: false } });
+              }}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/settings/new"
+        />
+      );
+    }
+    throw error;
+  }
 }
 
 // Types are now defined inline in components using InputOf/OutputOf

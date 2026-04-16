@@ -7,6 +7,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -124,11 +125,15 @@ async function createFieldProblem(input: ProblemFieldIn): Promise<ProblemFieldOu
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Fields" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -150,94 +155,111 @@ export default async function NewFieldPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  // Inline server-side parsers for field search params
-  const fieldSearchParams = {
-    draftId: parseAsString,
-    descriptionSearch: parseAsString,
-    conditionalParameterSearch: parseAsString,
-    conditionalParameterShowSelected: parseAsBoolean,
-  };
-  const loadFieldSearchParams = createLoader(fieldSearchParams);
-  const q = loadFieldSearchParams(searchParamsObj);
+    // Inline server-side parsers for field search params
+    const fieldSearchParams = {
+      draftId: parseAsString,
+      descriptionSearch: parseAsString,
+      conditionalParameterSearch: parseAsString,
+      conditionalParameterShowSelected: parseAsBoolean,
+    };
+    const loadFieldSearchParams = createLoader(fieldSearchParams);
+    const q = loadFieldSearchParams(searchParamsObj);
 
-  // Fetch default field data with draft_id (field_id = null for new mode)
-  const input: GetFieldIn = {
-    body: {
-      field_id: null, // NULL for new mode
-      draft_id: q.draftId ?? null,
-      description_search: q.descriptionSearch ?? null,
-      conditional_parameter_search: q.conditionalParameterSearch ?? null,
-      conditional_parameter_show_selected:
-        q.conditionalParameterShowSelected ?? null,
-    } as GetFieldIn["body"],
-  };
-  const [fieldData, draftsResult, groupResult] = await Promise.all([
-    getFieldDefault(input),
-    api.post("/field/drafts", {}),
-    api.post("/field/group", { body: {} } as GroupFieldIn),
-  ]);
+    // Fetch default field data with draft_id (field_id = null for new mode)
+    const input: GetFieldIn = {
+      body: {
+        field_id: null, // NULL for new mode
+        draft_id: q.draftId ?? null,
+        description_search: q.descriptionSearch ?? null,
+        conditional_parameter_search: q.conditionalParameterSearch ?? null,
+        conditional_parameter_show_selected:
+          q.conditionalParameterShowSelected ?? null,
+      } as GetFieldIn["body"],
+    };
+    const [fieldData, draftsResult, groupResult] = await Promise.all([
+      getFieldDefault(input),
+      api.post("/field/drafts", {}),
+      api.post("/field/group", { body: {} } as GroupFieldIn),
+    ]);
 
-  return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "field",
-          createFeedback: createFieldProblem,
-        }}
-        breadcrumbs={[
-          { title: "Management", section: "management", url: "/management" },
-          { title: "Fields", section: "fields", url: "/management/fields" },
-          { title: "New Field" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "field",
-          groupId: (groupResult as GroupFieldOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateField,
-          operations: ["draft", "get", "group"],
-          getGroupHistory: getFieldGroupHistory,
-          searchGroups: searchFieldGroups,
-          prompts: context.prompts?.prompts,
-        }}
-      >
-        <div
-          className="space-y-6 px-4"
-          data-page="field-new"
-          aria-label="Create new field page"
+    return (
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "field",
+            createFeedback: createFieldProblem,
+          }}
+          breadcrumbs={[
+            { title: "Management", section: "management", url: "/management" },
+            { title: "Fields", section: "fields", url: "/management/fields" },
+            { title: "New Field" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "field",
+            groupId: (groupResult as GroupFieldOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateField,
+            operations: ["draft", "get", "group"],
+            getGroupHistory: getFieldGroupHistory,
+            searchGroups: searchFieldGroups,
+            prompts: context.prompts?.prompts,
+          }}
         >
-          <Field
-            key={q.draftId || "no-draft"}
-            fieldData={fieldData}
-            createFieldAction={createField}
-            patchFieldDraftAction={patchFieldDraft}
-            createNamesAction={createNames}
-            createDescriptionsAction={createDescriptions}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+          <div
+            className="space-y-6 px-4"
+            data-page="field-new"
+            aria-label="Create new field page"
+          >
+            <Field
+              key={q.draftId || "no-draft"}
+              fieldData={fieldData}
+              createFieldAction={createField}
+              patchFieldDraftAction={patchFieldDraft}
+              createNamesAction={createNames}
+              createDescriptionsAction={createDescriptions}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/management/fields/new"
+        />
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

@@ -126,12 +126,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ departmentId: string }>;
 }): Promise<Metadata> {
-  const { departmentId } = await params;
-  const context = await api.post("/department/context", { body: { entity_id: departmentId } } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.detail.title,
-    description: context.page_metadata?.detail.description,
-  };
+  try {
+    const { departmentId } = await params;
+    const context = await api.post("/department/context", { body: { entity_id: departmentId } } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Departments" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -249,7 +253,7 @@ export default async function DepartmentEditPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      error.status === 403
+      (error.status === 401 || error.status === 403)
     ) {
       return (
         <UnifiedAccessDenied

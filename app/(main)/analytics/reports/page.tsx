@@ -17,6 +17,7 @@ import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { loadReportsSearchParams } from "@/lib/search-params/reports";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
 
 /** ---- Strong types from OpenAPI ---- */
@@ -55,11 +56,15 @@ const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/attempt/report/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/attempt/report/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Reports" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -82,171 +87,188 @@ export default async function ReportsFullPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/attempt/report/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/attempt/report/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params via nuqs loader
-  const q = loadReportsSearchParams(await searchParams);
+    // Parse search params via nuqs loader
+    const q = loadReportsSearchParams(await searchParams);
 
-  // Compute initial date range from search params (with 30-day fallback)
-  const defaultStartDate = (() => {
-    if (q.startDate) return q.startDate;
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    d.setHours(0, 0, 0, 0);
-    return d.toISOString();
-  })();
-  const defaultEndDate = (() => {
-    if (q.endDate) return q.endDate;
-    const d = new Date();
-    d.setHours(23, 59, 59, 999);
-    return d.toISOString();
-  })();
+    // Compute initial date range from search params (with 30-day fallback)
+    const defaultStartDate = (() => {
+      if (q.startDate) return q.startDate;
+      const d = new Date();
+      d.setDate(d.getDate() - 30);
+      d.setHours(0, 0, 0, 0);
+      return d.toISOString();
+    })();
+    const defaultEndDate = (() => {
+      if (q.endDate) return q.endDate;
+      const d = new Date();
+      d.setHours(23, 59, 59, 999);
+      return d.toISOString();
+    })();
 
-  // Build filters from search params (replaces computeAnalyticsDefaults + resolveAnalyticsFilters)
-  const filters = {
-    startDate: defaultStartDate,
-    endDate: defaultEndDate,
-    cohortIds: q.cohortIds ?? ([] as string[]),
-    departmentIds: q.departmentIds ?? ([] as string[]),
-    roles: q.roles ?? ([] as string[]),
-    simulationFilters: q.simulationFilters ?? (["general"] as string[]),
-  };
+    // Build filters from search params (replaces computeAnalyticsDefaults + resolveAnalyticsFilters)
+    const filters = {
+      startDate: defaultStartDate,
+      endDate: defaultEndDate,
+      cohortIds: q.cohortIds ?? ([] as string[]),
+      departmentIds: q.departmentIds ?? ([] as string[]),
+      roles: q.roles ?? ([] as string[]),
+      simulationFilters: q.simulationFilters ?? (["general"] as string[]),
+    };
 
-  // Reports-specific params with defaults
-  const reportsPage = q.reportsPage ?? 0;
-  const reportsPageSize = q.reportsPageSize ?? 100;
-  const reportsSearch = q.reportsSearch ?? undefined;
-  const reportsProfileIds = q.reportsProfileIds ?? undefined;
-  const reportsSimulationIds = q.reportsSimulationIds ?? undefined;
-  const reportsScenarioIds = q.reportsScenarioIds ?? undefined;
-  const reportsSortBy = q.reportsSortBy ?? "averageScore";
-  const reportsSortOrder = q.reportsSortOrder ?? "desc";
+    // Reports-specific params with defaults
+    const reportsPage = q.reportsPage ?? 0;
+    const reportsPageSize = q.reportsPageSize ?? 100;
+    const reportsSearch = q.reportsSearch ?? undefined;
+    const reportsProfileIds = q.reportsProfileIds ?? undefined;
+    const reportsSimulationIds = q.reportsSimulationIds ?? undefined;
+    const reportsScenarioIds = q.reportsScenarioIds ?? undefined;
+    const reportsSortBy = q.reportsSortBy ?? "averageScore";
+    const reportsSortOrder = q.reportsSortOrder ?? "desc";
 
-  // Fetch reports data, view cookie, and group in parallel
-  const [reportsData, initialColumnVisibility, groupResult] = await Promise.all([
-    getReports({
-      body: {
-        start_date: filters.startDate,
-        end_date: filters.endDate,
-        ...(filters.cohortIds.length > 0 && { cohort_ids: filters.cohortIds }),
-        ...(filters.departmentIds.length > 0 && { department_ids: filters.departmentIds }),
-        ...(filters.roles.length > 0 && { roles: filters.roles }),
-        ...(filters.simulationFilters.length > 0 && { simulation_filters: filters.simulationFilters }),
-        page_limit: reportsPageSize,
-        page_offset: reportsPage * reportsPageSize,
-        ...(reportsSearch && { search: reportsSearch }),
-        sort_by: reportsSortBy,
-        sort_order: reportsSortOrder,
-        ...(reportsProfileIds &&
-          reportsProfileIds.length > 0 && {
-            profile_ids: reportsProfileIds,
-          }),
-        ...(reportsSimulationIds &&
-          reportsSimulationIds.length > 0 && {
-            simulation_ids: reportsSimulationIds,
-          }),
-        ...(reportsScenarioIds &&
-          reportsScenarioIds.length > 0 && {
-            scenario_ids: reportsScenarioIds,
-          }),
-      },
-    }),
-    readViewCookie("reports"),
-    api.post("/attempt/report/group", { body: {} } as GroupReportsIn),
-  ]);
+    // Fetch reports data, view cookie, and group in parallel
+    const [reportsData, initialColumnVisibility, groupResult] = await Promise.all([
+      getReports({
+        body: {
+          start_date: filters.startDate,
+          end_date: filters.endDate,
+          ...(filters.cohortIds.length > 0 && { cohort_ids: filters.cohortIds }),
+          ...(filters.departmentIds.length > 0 && { department_ids: filters.departmentIds }),
+          ...(filters.roles.length > 0 && { roles: filters.roles }),
+          ...(filters.simulationFilters.length > 0 && { simulation_filters: filters.simulationFilters }),
+          page_limit: reportsPageSize,
+          page_offset: reportsPage * reportsPageSize,
+          ...(reportsSearch && { search: reportsSearch }),
+          sort_by: reportsSortBy,
+          sort_order: reportsSortOrder,
+          ...(reportsProfileIds &&
+            reportsProfileIds.length > 0 && {
+              profile_ids: reportsProfileIds,
+            }),
+          ...(reportsSimulationIds &&
+            reportsSimulationIds.length > 0 && {
+              simulation_ids: reportsSimulationIds,
+            }),
+          ...(reportsScenarioIds &&
+            reportsScenarioIds.length > 0 && {
+              scenario_ids: reportsScenarioIds,
+            }),
+        },
+      }),
+      readViewCookie("reports"),
+      api.post("/attempt/report/group", { body: {} } as GroupReportsIn),
+    ]);
 
-  // Extract inline analytics facets from response (replaces computeAnalyticsDefaults)
-  const facets = reportsData.analytics;
+    // Extract inline analytics facets from response (replaces computeAnalyticsDefaults)
+    const facets = reportsData.analytics;
 
-  // Extract filter options from API response (snake_case from server)
-  const profileOptions =
-    reportsData && "profile_options" in reportsData
-      ? (reportsData.profile_options || []).map(
-          (opt: {
-            value?: string | null;
-            label?: string | null;
-            count?: number | null;
-          }) => ({
-            value: String(opt.value || ""),
-            label: String(opt.label || ""),
-            count: typeof opt.count === "number" ? opt.count : 0,
-          })
-        )
-      : [];
-  const simulationOptions =
-    reportsData && "simulation_options" in reportsData
-      ? (reportsData.simulation_options || []).map(
-          (opt: {
-            value?: string | null;
-            label?: string | null;
-            count?: number | null;
-          }) => ({
-            value: String(opt.value || ""),
-            label: String(opt.label || ""),
-            count: typeof opt.count === "number" ? opt.count : 0,
-          })
-        )
-      : [];
-  const scenarioOptions =
-    reportsData && "scenario_options" in reportsData
-      ? (reportsData.scenario_options || []).map(
-          (opt: {
-            value?: string | null;
-            label?: string | null;
-            count?: number | null;
-          }) => ({
-            value: String(opt.value || ""),
-            label: String(opt.label || ""),
-            count: typeof opt.count === "number" ? opt.count : 0,
-          })
-        )
-      : [];
+    // Extract filter options from API response (snake_case from server)
+    const profileOptions =
+      reportsData && "profile_options" in reportsData
+        ? (reportsData.profile_options || []).map(
+            (opt: {
+              value?: string | null;
+              label?: string | null;
+              count?: number | null;
+            }) => ({
+              value: String(opt.value || ""),
+              label: String(opt.label || ""),
+              count: typeof opt.count === "number" ? opt.count : 0,
+            })
+          )
+        : [];
+    const simulationOptions =
+      reportsData && "simulation_options" in reportsData
+        ? (reportsData.simulation_options || []).map(
+            (opt: {
+              value?: string | null;
+              label?: string | null;
+              count?: number | null;
+            }) => ({
+              value: String(opt.value || ""),
+              label: String(opt.label || ""),
+              count: typeof opt.count === "number" ? opt.count : 0,
+            })
+          )
+        : [];
+    const scenarioOptions =
+      reportsData && "scenario_options" in reportsData
+        ? (reportsData.scenario_options || []).map(
+            (opt: {
+              value?: string | null;
+              label?: string | null;
+              count?: number | null;
+            }) => ({
+              value: String(opt.value || ""),
+              label: String(opt.label || ""),
+              count: typeof opt.count === "number" ? opt.count : 0,
+            })
+          )
+        : [];
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "reports",
-        createFeedback: createReportsProblem,
-      }}
-      breadcrumbs={[
-        { title: "Analytics", section: "analytics", url: "/analytics" },
-        { title: "Reports" },
-      ]}
-      toolbar={
-        <AnalyticsFilters
-          refreshAction={refreshReports}
-          analyticsFilters={facets}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "reports",
+          createFeedback: createReportsProblem,
+        }}
+        breadcrumbs={[
+          { title: "Analytics", section: "analytics", url: "/analytics" },
+          { title: "Reports" },
+        ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshAction={refreshReports}
+            analyticsFilters={facets}
+          />
+        }
+        panelProps={{
+          artifactType: "reports",
+          groupId: (groupResult as GroupReportsOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateReports,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getReportsGroupHistory,
+          searchGroups: searchReportsGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4" data-page="reports-index">
+          <Reports
+            reportsData={reportsData}
+            filters={filters}
+            isLoading={false}
+            profileOptions={profileOptions}
+            simulationOptions={simulationOptions}
+            scenarioOptions={scenarioOptions}
+            initialColumnVisibility={initialColumnVisibility}
+          />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/analytics/reports"
         />
-      }
-      panelProps={{
-        artifactType: "reports",
-        groupId: (groupResult as GroupReportsOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateReports,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getReportsGroupHistory,
-        searchGroups: searchReportsGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4" data-page="reports-index">
-        <Reports
-          reportsData={reportsData}
-          filters={filters}
-          isLoading={false}
-          profileOptions={profileOptions}
-          simulationOptions={simulationOptions}
-          scenarioOptions={scenarioOptions}
-          initialColumnVisibility={initialColumnVisibility}
-        />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Strongly-typed server actions ---- */

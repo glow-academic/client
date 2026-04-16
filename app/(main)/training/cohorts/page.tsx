@@ -6,6 +6,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Cohorts from "@/components/artifacts/cohort/Cohorts";
@@ -128,11 +129,15 @@ async function createCohortProblem(input: ProblemCohortIn): Promise<ProblemCohor
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Cohorts" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -153,97 +158,114 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  const q = loadCohortsListSearchParams(searchParamsObj);
+    const q = loadCohortsListSearchParams(searchParamsObj);
 
-  // Compute pagination
-  const pageIndex = q.page ?? 0;
-  const pageSize = q.pageSize ?? 12;
-  const offset = pageIndex * pageSize;
+    // Compute pagination
+    const pageIndex = q.page ?? 0;
+    const pageSize = q.pageSize ?? 12;
+    const offset = pageIndex * pageSize;
 
-  // Build request body with filter values from URL
-  const body: CohortsListBody = {
-    search: q.search || null,
-    filter_simulation_ids: q.simulationIds && q.simulationIds.length > 0 ? q.simulationIds : null,
-    filter_profile_ids: q.profileIds && q.profileIds.length > 0 ? q.profileIds : null,
-    filter_department_ids: q.departmentIds && q.departmentIds.length > 0 ? q.departmentIds : null,
-    simulation_search: q.simulationSearch || null,
-    profile_search: q.profileSearch || null,
-    department_search: q.departmentSearch || null,
-    flag_search: q.flagSearch || null,
-    page_size: pageSize,
-    page_offset: offset,
-  };
+    // Build request body with filter values from URL
+    const body: CohortsListBody = {
+      search: q.search || null,
+      filter_simulation_ids: q.simulationIds && q.simulationIds.length > 0 ? q.simulationIds : null,
+      filter_profile_ids: q.profileIds && q.profileIds.length > 0 ? q.profileIds : null,
+      filter_department_ids: q.departmentIds && q.departmentIds.length > 0 ? q.departmentIds : null,
+      simulation_search: q.simulationSearch || null,
+      profile_search: q.profileSearch || null,
+      department_search: q.departmentSearch || null,
+      flag_search: q.flagSearch || null,
+      page_size: pageSize,
+      page_offset: offset,
+    };
 
-  // Fetch list data, view cookie, and group in parallel
-  const [listData, initialColumnVisibility, groupResult] = await Promise.all([
-    getCohortsList(body),
-    readViewCookie("cohorts"),
-    api.post("/cohort/group", { body: {} } as GroupCohortIn),
-  ]);
+    // Fetch list data, view cookie, and group in parallel
+    const [listData, initialColumnVisibility, groupResult] = await Promise.all([
+      getCohortsList(body),
+      readViewCookie("cohorts"),
+      api.post("/cohort/group", { body: {} } as GroupCohortIn),
+    ]);
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "cohort",
-        createFeedback: createCohortProblem,
-      }}
-      breadcrumbs={[
-        { title: "Training", section: "training", url: "/training" },
-        { title: "Cohorts" },
-      ]}
-      toolbar={<NewArtifactButton label="New Cohort" href="/training/cohorts/new" />}
-      panelProps={{
-        artifactType: "cohort",
-        groupId: (groupResult as GroupCohortOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateCohort,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getCohortGroupHistory,
-        searchGroups: searchCohortGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4" data-page="cohorts-index">
-        <Cohorts
-          listData={listData}
-          initialColumnVisibility={initialColumnVisibility}
-          duplicateCohortAction={duplicateCohort}
-          deleteCohortAction={deleteCohort}
-          createCohortAction={createCohort}
-          updateCohortAction={updateCohort}
-          parseCsvAction={parseCsv}
-          importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
-          pageIndex={pageIndex}
-          pageSize={pageSize}
-          totalCount={listData.total_count ?? 0}
-          simulationSearch={q.simulationSearch ?? ""}
-          profileSearch={q.profileSearch ?? ""}
-          departmentSearch={q.departmentSearch ?? ""}
-          flagSearch={q.flagSearch ?? ""}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "cohort",
+          createFeedback: createCohortProblem,
+        }}
+        breadcrumbs={[
+          { title: "Training", section: "training", url: "/training" },
+          { title: "Cohorts" },
+        ]}
+        toolbar={<NewArtifactButton label="New Cohort" href="/training/cohorts/new" />}
+        panelProps={{
+          artifactType: "cohort",
+          groupId: (groupResult as GroupCohortOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateCohort,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getCohortGroupHistory,
+          searchGroups: searchCohortGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4" data-page="cohorts-index">
+          <Cohorts
+            listData={listData}
+            initialColumnVisibility={initialColumnVisibility}
+            duplicateCohortAction={duplicateCohort}
+            deleteCohortAction={deleteCohort}
+            createCohortAction={createCohort}
+            updateCohortAction={updateCohort}
+            parseCsvAction={parseCsv}
+            importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
+            pageIndex={pageIndex}
+            pageSize={pageSize}
+            totalCount={listData.total_count ?? 0}
+            simulationSearch={q.simulationSearch ?? ""}
+            profileSearch={q.profileSearch ?? ""}
+            departmentSearch={q.departmentSearch ?? ""}
+            flagSearch={q.flagSearch ?? ""}
+          />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/training/cohorts"
         />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

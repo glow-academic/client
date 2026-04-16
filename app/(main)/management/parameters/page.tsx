@@ -6,6 +6,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Parameters from "@/components/artifacts/parameter/Parameters";
@@ -94,11 +95,15 @@ async function createParameterProblem(input: ProblemParameterIn): Promise<Proble
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/parameter/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/parameter/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Parameters" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -115,50 +120,67 @@ export default async function ContextPage() {
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/parameter/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/parameter/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Fetch list data and group in parallel
-  const [listData, groupResult] = await Promise.all([
-    getParametersList(),
-    api.post("/parameter/group", { body: {} } as GroupParameterIn),
-  ]);
+    // Fetch list data and group in parallel
+    const [listData, groupResult] = await Promise.all([
+      getParametersList(),
+      api.post("/parameter/group", { body: {} } as GroupParameterIn),
+    ]);
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "parameter",
-        createFeedback: createParameterProblem,
-      }}
-      breadcrumbs={[
-        { title: "Management", section: "management", url: "/management" },
-        { title: "Parameters" },
-      ]}
-      toolbar={<NewArtifactButton label="New Parameter" href="/management/parameters/new" />}
-      panelProps={{
-        artifactType: "parameter",
-        groupId: (groupResult as GroupParameterOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateParameter,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getParameterGroupHistory,
-        searchGroups: searchParameterGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4" data-page="parameters-index">
-        <Parameters
-          listData={listData}
-          duplicateParameterAction={duplicateParameter}
-          deleteParameterAction={deleteParameter}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "parameter",
+          createFeedback: createParameterProblem,
+        }}
+        breadcrumbs={[
+          { title: "Management", section: "management", url: "/management" },
+          { title: "Parameters" },
+        ]}
+        toolbar={<NewArtifactButton label="New Parameter" href="/management/parameters/new" />}
+        panelProps={{
+          artifactType: "parameter",
+          groupId: (groupResult as GroupParameterOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateParameter,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getParameterGroupHistory,
+          searchGroups: searchParameterGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4" data-page="parameters-index">
+          <Parameters
+            listData={listData}
+            duplicateParameterAction={duplicateParameter}
+            deleteParameterAction={deleteParameter}
+          />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/management/parameters"
         />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

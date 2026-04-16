@@ -7,6 +7,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -69,11 +70,15 @@ async function createPersonaProblem(input: ProblemPersonaIn): Promise<ProblemPer
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Personas" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -94,109 +99,126 @@ export default async function NewPersonaPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers (until /personas/context returns full profile)
-  const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers (until /personas/context returns full profile)
+    const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  const personaSearchParams = {
-    draftId: parseAsString,
-    colorSearch: parseAsString,
-    iconSearch: parseAsString,
-    descriptionSearch: parseAsString,
-    instructionsSearch: parseAsString,
-    fieldSearch: parseAsString,
-    colorShowSelected: parseAsBoolean,
-    iconShowSelected: parseAsBoolean,
-    fieldShowSelected: parseAsBoolean,
-    parameterIds: parseAsArrayOf(parseAsString),
-  };
-  const loadPersonaSearchParams = createLoader(personaSearchParams);
-  const q = loadPersonaSearchParams(searchParamsObj);
+    const personaSearchParams = {
+      draftId: parseAsString,
+      colorSearch: parseAsString,
+      iconSearch: parseAsString,
+      descriptionSearch: parseAsString,
+      instructionsSearch: parseAsString,
+      fieldSearch: parseAsString,
+      colorShowSelected: parseAsBoolean,
+      iconShowSelected: parseAsBoolean,
+      fieldShowSelected: parseAsBoolean,
+      parameterIds: parseAsArrayOf(parseAsString),
+    };
+    const loadPersonaSearchParams = createLoader(personaSearchParams);
+    const q = loadPersonaSearchParams(searchParamsObj);
 
-  // SSR data fetches
-  const input: GetPersonaIn = {
-    body: {
-      id: null,
-      draft_id: q.draftId ?? null,
-      colors: q.colorSearch || q.colorShowSelected ? {
-        search: q.colorSearch ?? undefined,
-        selected: q.colorShowSelected ?? undefined,
-      } : undefined,
-      icons: q.iconSearch || q.iconShowSelected ? {
-        search: q.iconSearch ?? undefined,
-        selected: q.iconShowSelected ?? undefined,
-      } : undefined,
-      descriptions: q.descriptionSearch ? {
-        search: q.descriptionSearch,
-      } : undefined,
-      instructions: q.instructionsSearch ? {
-        search: q.instructionsSearch,
-      } : undefined,
-      parameter_fields: q.fieldSearch || q.fieldShowSelected || q.parameterIds ? {
-        search: q.fieldSearch ?? undefined,
-        selected: q.fieldShowSelected ?? undefined,
-        parameter_ids: q.parameterIds ?? undefined,
-      } : undefined,
-    } as GetPersonaIn["body"],
-  };
+    // SSR data fetches
+    const input: GetPersonaIn = {
+      body: {
+        id: null,
+        draft_id: q.draftId ?? null,
+        colors: q.colorSearch || q.colorShowSelected ? {
+          search: q.colorSearch ?? undefined,
+          selected: q.colorShowSelected ?? undefined,
+        } : undefined,
+        icons: q.iconSearch || q.iconShowSelected ? {
+          search: q.iconSearch ?? undefined,
+          selected: q.iconShowSelected ?? undefined,
+        } : undefined,
+        descriptions: q.descriptionSearch ? {
+          search: q.descriptionSearch,
+        } : undefined,
+        instructions: q.instructionsSearch ? {
+          search: q.instructionsSearch,
+        } : undefined,
+        parameter_fields: q.fieldSearch || q.fieldShowSelected || q.parameterIds ? {
+          search: q.fieldSearch ?? undefined,
+          selected: q.fieldShowSelected ?? undefined,
+          parameter_ids: q.parameterIds ?? undefined,
+        } : undefined,
+      } as GetPersonaIn["body"],
+    };
 
-  const [personaDetailDefault, draftsResult, groupResult] = await Promise.all([
-    getPersonaDefault(input),
-    api.post("/persona/drafts", {}),
-    api.post("/persona/group", { body: {} } as GroupPersonaIn),
-  ]);
+    const [personaDetailDefault, draftsResult, groupResult] = await Promise.all([
+      getPersonaDefault(input),
+      api.post("/persona/drafts", {}),
+      api.post("/persona/group", { body: {} } as GroupPersonaIn),
+    ]);
 
-  return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "persona",
-          createFeedback: createPersonaProblem,
-        }}
-        breadcrumbs={[
-          { title: "Training", section: "training", url: "/training" },
-          { title: "Personas", section: "personas", url: "/training/personas" },
-          { title: "New Persona" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "persona",
-          groupId: (groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null,
-          operations: ["draft", "get", "group"],
-          prompts: context.prompts?.prompts,
-        }}
-      >
-        <div
-          className="space-y-6 px-4"
-          data-page="persona-new"
-          aria-label="Create new persona page"
+    return (
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "persona",
+            createFeedback: createPersonaProblem,
+          }}
+          breadcrumbs={[
+            { title: "Training", section: "training", url: "/training" },
+            { title: "Personas", section: "personas", url: "/training/personas" },
+            { title: "New Persona" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "persona",
+            groupId: (groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null,
+            operations: ["draft", "get", "group"],
+            prompts: context.prompts?.prompts,
+          }}
         >
-          <Persona
-            key={q.draftId || "no-draft"}
-            groupId={(groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null}
-            personaData={personaDetailDefault}
-            createPersonaAction={createPersona}
-            patchPersonaDraftAction={patchPersonaDraft}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+          <div
+            className="space-y-6 px-4"
+            data-page="persona-new"
+            aria-label="Create new persona page"
+          >
+            <Persona
+              key={q.draftId || "no-draft"}
+              groupId={(groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null}
+              personaData={personaDetailDefault}
+              createPersonaAction={createPersona}
+              patchPersonaDraftAction={patchPersonaDraft}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/training/personas/new"
+        />
+      );
+    }
+    throw error;
+  }
 }

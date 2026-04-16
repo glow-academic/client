@@ -12,6 +12,8 @@ import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Model from "@/components/artifacts/model/Model";
 
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -137,11 +139,15 @@ async function createModelProblem(input: ProblemModelIn): Promise<ProblemModelOu
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/model/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/model/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Models" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -163,85 +169,102 @@ export default async function NewModelPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/model/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/model/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
+    });
+
+    // Inline server-side parsers for model search params (draftId only)
+    const modelSearchParams = {
+      draftId: parseAsString,
+    };
+    const loadModelSearchParams = createLoader(modelSearchParams);
+    const q = loadModelSearchParams(searchParamsObj);
+
+    // Fetch default model data with draft_id (model_id = null for new mode)
+    const input: GetModelIn = {
+      body: {
+        model_id: null,
+        draft_id: q.draftId ?? null,
+      },
+    };
+    const [modelDetailDefault, draftsResult, groupResult] = await Promise.all([
+      getModelDetailDefault(input),
+      api.post("/model/drafts", {}),
+      api.post("/model/group", { body: {} } as GroupModelIn),
+    ]);
+
+    return (
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "model",
+            createFeedback: createModelProblem,
+          }}
+          breadcrumbs={[
+            { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+            { title: "Models", section: "models", url: "/intelligence/models" },
+            { title: "New Model" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "model",
+            groupId: (groupResult as GroupModelOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateModel,
+            operations: ["draft", "get", "group"],
+            getGroupHistory: getModelGroupHistory,
+            searchGroups: searchModelGroups,
+            prompts: context.prompts?.prompts,
+          }}
+        >
+          <div className="space-y-6 px-4" data-page="model-new" aria-label="Create new model page">
+            <Model
+              modelDetailDefault={modelDetailDefault}
+              createModelAction={createModel}
+              patchModelDraftAction={patchModelDraft}
+              createNamesAction={createDraftNames}
+              createDescriptionsAction={createDraftDescriptions}
+              createValuesAction={createDraftValues}
+              createPricingAction={createDraftPricing}
+              createVoicesAction={createDraftVoices}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/intelligence/models/new"
+        />
+      );
     }
-  });
-
-  // Inline server-side parsers for model search params (draftId only)
-  const modelSearchParams = {
-    draftId: parseAsString,
-  };
-  const loadModelSearchParams = createLoader(modelSearchParams);
-  const q = loadModelSearchParams(searchParamsObj);
-
-  // Fetch default model data with draft_id (model_id = null for new mode)
-  const input: GetModelIn = {
-    body: {
-      model_id: null,
-      draft_id: q.draftId ?? null,
-    },
-  };
-  const [modelDetailDefault, draftsResult, groupResult] = await Promise.all([
-    getModelDetailDefault(input),
-    api.post("/model/drafts", {}),
-    api.post("/model/group", { body: {} } as GroupModelIn),
-  ]);
-
-  return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "model",
-          createFeedback: createModelProblem,
-        }}
-        breadcrumbs={[
-          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
-          { title: "Models", section: "models", url: "/intelligence/models" },
-          { title: "New Model" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "model",
-          groupId: (groupResult as GroupModelOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateModel,
-          operations: ["draft", "get", "group"],
-          getGroupHistory: getModelGroupHistory,
-          searchGroups: searchModelGroups,
-          prompts: context.prompts?.prompts,
-        }}
-      >
-        <div className="space-y-6 px-4" data-page="model-new" aria-label="Create new model page">
-          <Model
-            modelDetailDefault={modelDetailDefault}
-            createModelAction={createModel}
-            patchModelDraftAction={patchModelDraft}
-            createNamesAction={createDraftNames}
-            createDescriptionsAction={createDraftDescriptions}
-            createValuesAction={createDraftValues}
-            createPricingAction={createDraftPricing}
-            createVoicesAction={createDraftVoices}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

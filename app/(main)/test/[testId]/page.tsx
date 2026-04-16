@@ -76,12 +76,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ testId: string }>;
 }): Promise<Metadata> {
-  const { testId } = await params;
-  const context = await api.post("/test/context", { body: { entity_id: testId } } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.detail.title,
-    description: context.page_metadata?.detail.description,
-  };
+  try {
+    const { testId } = await params;
+    const context = await api.post("/test/context", { body: { entity_id: testId } } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Test" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -167,7 +171,7 @@ export default async function TestPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      error.status === 403
+      (error.status === 401 || error.status === 403)
     ) {
       return (
         <UnifiedAccessDenied

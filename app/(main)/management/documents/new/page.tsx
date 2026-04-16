@@ -7,6 +7,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -175,11 +176,15 @@ async function createDocumentProblem(input: ProblemDocumentIn): Promise<ProblemD
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/document/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/document/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Documents" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -200,93 +205,110 @@ export default async function NewDocumentPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/document/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/document/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  const documentSearchParams = {
-    draftId: parseAsString,
-    descriptionSearch: parseAsString,
-    fieldSearch: parseAsString,
-    fieldShowSelected: parseAsBoolean,
-  };
-  const loadDocumentSearchParams = createLoader(documentSearchParams);
-  const q = loadDocumentSearchParams(searchParamsObj);
+    const documentSearchParams = {
+      draftId: parseAsString,
+      descriptionSearch: parseAsString,
+      fieldSearch: parseAsString,
+      fieldShowSelected: parseAsBoolean,
+    };
+    const loadDocumentSearchParams = createLoader(documentSearchParams);
+    const q = loadDocumentSearchParams(searchParamsObj);
 
-  const input: GetDocumentIn = {
-    body: {
-      document_id: null,
-      draft_id: q.draftId ?? null,
-    } as GetDocumentIn["body"],
-  };
+    const input: GetDocumentIn = {
+      body: {
+        document_id: null,
+        draft_id: q.draftId ?? null,
+      } as GetDocumentIn["body"],
+    };
 
-  const [documentDetailDefault, draftsResult, groupResult] = await Promise.all([
-    getDocumentDefault(input),
-    api.post("/document/drafts", {}),
-    api.post("/document/group", { body: {} } as GroupDocumentIn),
-  ]);
+    const [documentDetailDefault, draftsResult, groupResult] = await Promise.all([
+      getDocumentDefault(input),
+      api.post("/document/drafts", {}),
+      api.post("/document/group", { body: {} } as GroupDocumentIn),
+    ]);
 
-  return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "document",
-          createFeedback: createDocumentProblem,
-        }}
-        breadcrumbs={[
-          { title: "Management", section: "management", url: "/management" },
-          { title: "Documents", section: "documents", url: "/management/documents" },
-          { title: "New Document" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "document",
-          groupId: (groupResult as GroupDocumentOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateDocument,
-          operations: ["draft", "get", "group"],
-          getGroupHistory: getDocumentGroupHistory,
-          searchGroups: searchDocumentGroups,
-          prompts: context.prompts?.prompts,
-        }}
-      >
-        <div
-          className="space-y-6 px-4"
-          data-page="document-new"
-          aria-label="Create new document page"
+    return (
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "document",
+            createFeedback: createDocumentProblem,
+          }}
+          breadcrumbs={[
+            { title: "Management", section: "management", url: "/management" },
+            { title: "Documents", section: "documents", url: "/management/documents" },
+            { title: "New Document" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "document",
+            groupId: (groupResult as GroupDocumentOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateDocument,
+            operations: ["draft", "get", "group"],
+            getGroupHistory: getDocumentGroupHistory,
+            searchGroups: searchDocumentGroups,
+            prompts: context.prompts?.prompts,
+          }}
         >
-          <Document
-            key={q.draftId || "no-draft"}
-            mode="create"
-            documentDetailDefault={documentDetailDefault}
-            createDocumentAction={createDocument}
-            patchDocumentDraftAction={patchDocumentDraft}
-            createNamesAction={createDraftNames}
-            createDescriptionsAction={createDraftDescriptions}
-            createUploadsAction={createDraftUploads}
-            createImagesAction={createDraftImages}
-            createTextsAction={createDraftTexts}
-            uploadBasePath="/document"
-            uploadFileAction={uploadFile}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
+          <div
+            className="space-y-6 px-4"
+            data-page="document-new"
+            aria-label="Create new document page"
+          >
+            <Document
+              key={q.draftId || "no-draft"}
+              mode="create"
+              documentDetailDefault={documentDetailDefault}
+              createDocumentAction={createDocument}
+              patchDocumentDraftAction={patchDocumentDraft}
+              createNamesAction={createDraftNames}
+              createDescriptionsAction={createDraftDescriptions}
+              createUploadsAction={createDraftUploads}
+              createImagesAction={createDraftImages}
+              createTextsAction={createDraftTexts}
+              uploadBasePath="/document"
+              uploadFileAction={uploadFile}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/management/documents/new"
+        />
+      );
+    }
+    throw error;
+  }
 }

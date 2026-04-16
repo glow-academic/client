@@ -16,6 +16,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
 /** ---- Strong types from OpenAPI ---- */
 type PricingGroupDetailIn = InputOf<"/system/group/get", "post">;
@@ -76,9 +77,13 @@ export async function generateMetadata({
 }: {
   params: Promise<{ groupId: string }>;
 }): Promise<Metadata> {
-  const { groupId } = await params;
-  const context = await api.post("/system/group/context", { body: { entity_id: groupId } } as ContextIn) as ContextOut;
-  return { title: context.page_metadata?.detail.title, description: context.page_metadata?.detail.description };
+  try {
+    const { groupId } = await params;
+    const context = await api.post("/system/group/context", { body: { entity_id: groupId } } as ContextIn) as ContextOut;
+    return { title: context.page_metadata?.detail.title, description: context.page_metadata?.detail.description };
+  } catch {
+    return { title: "Pricing Group" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -104,52 +109,69 @@ export default async function PricingGroupPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const pageContext = await api.post("/system/group/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, pageContext.profile);
+  try {
+    // Profile data for providers
+    const pageContext = await api.post("/system/group/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, pageContext.profile);
 
-  const [groupDetail, context, genGroupResult] = await Promise.all([
-    getPricingGroupDetail({
-      body: {
-        group_id: groupId,
-      },
-    }),
-    api.post("/system/group/context", { body: { entity_id: groupId } } as ContextIn) as Promise<ContextOut>,
-    api.post("/system/group/group", { body: {} } as GroupGroupIn),
-  ]);
+    const [groupDetail, context, genGroupResult] = await Promise.all([
+      getPricingGroupDetail({
+        body: {
+          group_id: groupId,
+        },
+      }),
+      api.post("/system/group/context", { body: { entity_id: groupId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/system/group/group", { body: {} } as GroupGroupIn),
+    ]);
 
-  const _entityName = context.page_metadata?.detail.title;
+    const _entityName = context.page_metadata?.detail.title;
 
-  return (
-    <FullPageLayout
-      profileData={pageContext.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "pricing",
-        createFeedback: createGroupProblem,
-      }}
-      breadcrumbs={[
-        { title: "Analytics", section: "analytics", url: "/analytics" },
-        { title: "Pricing", section: "pricing", url: "/analytics/pricing" },
-        { title: "Group" },
-      ]}
-      panelProps={{
-        artifactType: "group",
-        groupId: (genGroupResult as GroupGroupOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateGroup,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getGroupGroupHistory,
-        searchGroups: searchGroupGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
-        <Group groupDetail={groupDetail} />
-      </div>
-    </FullPageLayout>
-  );
+    return (
+      <FullPageLayout
+        profileData={pageContext.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "pricing",
+          createFeedback: createGroupProblem,
+        }}
+        breadcrumbs={[
+          { title: "Analytics", section: "analytics", url: "/analytics" },
+          { title: "Pricing", section: "pricing", url: "/analytics/pricing" },
+          { title: "Group" },
+        ]}
+        panelProps={{
+          artifactType: "group",
+          groupId: (genGroupResult as GroupGroupOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateGroup,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getGroupGroupHistory,
+          searchGroups: searchGroupGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
+          <Group groupDetail={groupDetail} />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname={`/analytics/pricing/${groupId}`}
+        />
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

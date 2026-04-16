@@ -5,6 +5,7 @@
  * 01/26/2025
  */
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Evals from "@/components/artifacts/eval/Evals";
@@ -89,11 +90,15 @@ async function createEvalProblem(input: ProblemEvalIn): Promise<ProblemEvalOut> 
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Evals" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -114,82 +119,99 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  const q = loadEvalsSearchParams(searchParamsObj);
+    const q = loadEvalsSearchParams(searchParamsObj);
 
-  // Compute pagination
-  const pageIndex = q.page ?? 0;
-  const pageSize = q.pageSize ?? 12;
-  const offset = pageIndex * pageSize;
+    // Compute pagination
+    const pageIndex = q.page ?? 0;
+    const pageSize = q.pageSize ?? 12;
+    const offset = pageIndex * pageSize;
 
-  // Build request body with filter values from URL
-  const body: EvalsListBody = {
-    search: q.search || null,
-    filter_department_ids: q.departmentIds && q.departmentIds.length > 0 ? q.departmentIds : null,
-    department_search: q.departmentSearch || null,
-    page_size: pageSize,
-    page_offset: offset,
-  };
+    // Build request body with filter values from URL
+    const body: EvalsListBody = {
+      search: q.search || null,
+      filter_department_ids: q.departmentIds && q.departmentIds.length > 0 ? q.departmentIds : null,
+      department_search: q.departmentSearch || null,
+      page_size: pageSize,
+      page_offset: offset,
+    };
 
-  // Fetch list data and group in parallel
-  const [listData, groupResult] = await Promise.all([
-    getEvalsList(body),
-    api.post("/eval/group", { body: {} } as GroupEvalIn),
-  ]);
+    // Fetch list data and group in parallel
+    const [listData, groupResult] = await Promise.all([
+      getEvalsList(body),
+      api.post("/eval/group", { body: {} } as GroupEvalIn),
+    ]);
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "eval",
-        createFeedback: createEvalProblem,
-      }}
-      breadcrumbs={[
-        { title: "System", section: "system", url: "/system" },
-        { title: "Evals" },
-      ]}
-      toolbar={<NewArtifactButton label="New Eval" href="/system/evals/new" />}
-      panelProps={{
-        artifactType: "eval",
-        groupId: (groupResult as GroupEvalOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateEval,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getEvalGroupHistory,
-        searchGroups: searchEvalGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4" data-page="evals-index">
-        <Evals
-          listData={listData}
-          deleteEvalAction={deleteEval}
-          pageIndex={pageIndex}
-          pageSize={pageSize}
-          totalCount={listData.total_count ?? 0}
-          departmentSearch={q.departmentSearch ?? ""}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "eval",
+          createFeedback: createEvalProblem,
+        }}
+        breadcrumbs={[
+          { title: "System", section: "system", url: "/system" },
+          { title: "Evals" },
+        ]}
+        toolbar={<NewArtifactButton label="New Eval" href="/system/evals/new" />}
+        panelProps={{
+          artifactType: "eval",
+          groupId: (groupResult as GroupEvalOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateEval,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getEvalGroupHistory,
+          searchGroups: searchEvalGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4" data-page="evals-index">
+          <Evals
+            listData={listData}
+            deleteEvalAction={deleteEval}
+            pageIndex={pageIndex}
+            pageSize={pageSize}
+            totalCount={listData.total_count ?? 0}
+            departmentSearch={q.departmentSearch ?? ""}
+          />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/system/evals"
         />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component ---- */

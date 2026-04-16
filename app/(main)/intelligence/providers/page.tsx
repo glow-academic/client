@@ -10,6 +10,8 @@ import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Providers from "@/components/artifacts/provider/Providers";
 
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -102,11 +104,15 @@ async function createProviderProblem(input: ProblemProviderIn): Promise<ProblemP
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Providers" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -127,86 +133,103 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params using nuqs
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
       }
-    }
-  });
+    });
 
-  const q = loadProvidersSearchParams(searchParamsObj);
+    const q = loadProvidersSearchParams(searchParamsObj);
 
-  // Compute pagination
-  const pageIndex = q.page ?? 0;
-  const pageSize = q.pageSize ?? 12;
-  const offset = pageIndex * pageSize;
+    // Compute pagination
+    const pageIndex = q.page ?? 0;
+    const pageSize = q.pageSize ?? 12;
+    const offset = pageIndex * pageSize;
 
-  // Build request body with filter values from URL
-  const body: ProvidersListBody = {
-    search: q.search || null,
-    filter_department_ids: q.departmentIds && q.departmentIds.length > 0 ? q.departmentIds : null,
-    filter_model_ids: q.modelIds && q.modelIds.length > 0 ? q.modelIds : null,
-    filter_status: q.statusIds && q.statusIds.length > 0 ? q.statusIds : null,
-    department_search: q.departmentSearch || null,
-    model_search: q.modelSearch || null,
-    page_size: pageSize,
-    page_offset: offset,
-  };
+    // Build request body with filter values from URL
+    const body: ProvidersListBody = {
+      search: q.search || null,
+      filter_department_ids: q.departmentIds && q.departmentIds.length > 0 ? q.departmentIds : null,
+      filter_model_ids: q.modelIds && q.modelIds.length > 0 ? q.modelIds : null,
+      filter_status: q.statusIds && q.statusIds.length > 0 ? q.statusIds : null,
+      department_search: q.departmentSearch || null,
+      model_search: q.modelSearch || null,
+      page_size: pageSize,
+      page_offset: offset,
+    };
 
-  // Fetch list data, and group in parallel
-  const [listData, groupResult] = await Promise.all([
-    getProvidersList(body),
-    api.post("/provider/group", { body: {} } as GroupProviderIn),
-  ]);
+    // Fetch list data, and group in parallel
+    const [listData, groupResult] = await Promise.all([
+      getProvidersList(body),
+      api.post("/provider/group", { body: {} } as GroupProviderIn),
+    ]);
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "provider",
-        createFeedback: createProviderProblem,
-      }}
-      breadcrumbs={[
-        { title: "Intelligence", section: "intelligence", url: "/intelligence" },
-        { title: "Providers" },
-      ]}
-      toolbar={<NewArtifactButton label="New Provider" href="/intelligence/providers/new" />}
-      panelProps={{
-        artifactType: "provider",
-        groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateProvider,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getProviderGroupHistory,
-        searchGroups: searchProviderGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4" data-page="providers-index">
-        <Providers
-          listData={listData}
-          deleteProviderAction={deleteProvider}
-          pageIndex={pageIndex}
-          pageSize={pageSize}
-          totalCount={listData.total_count ?? 0}
-          departmentSearch={q.departmentSearch ?? ""}
-          modelSearch={q.modelSearch ?? ""}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "provider",
+          createFeedback: createProviderProblem,
+        }}
+        breadcrumbs={[
+          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+          { title: "Providers" },
+        ]}
+        toolbar={<NewArtifactButton label="New Provider" href="/intelligence/providers/new" />}
+        panelProps={{
+          artifactType: "provider",
+          groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateProvider,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getProviderGroupHistory,
+          searchGroups: searchProviderGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4" data-page="providers-index">
+          <Providers
+            listData={listData}
+            deleteProviderAction={deleteProvider}
+            pageIndex={pageIndex}
+            pageSize={pageSize}
+            totalCount={listData.total_count ?? 0}
+            departmentSearch={q.departmentSearch ?? ""}
+            modelSearch={q.modelSearch ?? ""}
+          />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/intelligence/providers"
         />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

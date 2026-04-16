@@ -105,11 +105,15 @@ async function createSimulationProblem(input: ProblemSimulationIn): Promise<Prob
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/simulation/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.new.title,
-    description: context.page_metadata?.new.description,
-  };
+  try {
+    const context = await api.post("/simulation/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
+    };
+  } catch {
+    return { title: "Simulations" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -129,10 +133,6 @@ export default async function NewSimulationPage({
   const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
-
-  // Profile data for providers
-  const context = await api.post("/simulation/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -170,65 +170,72 @@ export default async function NewSimulationPage({
     } as GetSimulationIn["body"],
   } as GetSimulationIn;
 
-  const draftsResult = await api.post("/simulation/drafts", {} as never);
-
-  let simulationDataDefault: GetSimulationOut | null = null;
   try {
-    simulationDataDefault = await getSimulationDefault(input);
-  } catch (error) {
+    // Profile data for providers
+    const context = await api.post("/simulation/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
+
+    const draftsResult = await api.post("/simulation/drafts", {} as never);
+    const simulationDataDefault = await getSimulationDefault(input);
+
+    const groupResult = await api.post("/simulation/group", { body: {} } as GroupSimulationIn);
+
+    return (
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as never}>
+        <FullPageLayout
+          profileData={context.profile}
+          sessionSnapshot={snapshot}
+          {...(initialSidebarOpen !== undefined ? { initialSidebarOpen } : {})}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "simulation",
+            createFeedback: createSimulationProblem,
+          } as never}
+          breadcrumbs={[
+            { title: "Training", section: "training", url: "/training" },
+            { title: "Simulations", section: "simulations", url: "/training/simulations" },
+            { title: "New Simulation" },
+          ]}
+          toolbar={<SaveToolbar />}
+          panelProps={{
+            artifactType: "simulation",
+            groupId: (groupResult as GroupSimulationOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateSimulation,
+            operations: ["draft", "get", "group"],
+            getGroupHistory: getSimulationGroupHistory,
+            searchGroups: searchSimulationGroups,
+            prompts: context.prompts?.prompts,
+          } as never}
+        >
+          <div
+            className="space-y-6 px-4"
+            data-page="simulation-new"
+            aria-label="Create new simulation page"
+          >
+            <Simulation
+              key={q.draftId || "no-draft"}
+              simulationData={simulationDataDefault}
+              createSimulationAction={createSimulation}
+              patchSimulationDraftAction={patchSimulationDraft}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
     if (
-      error instanceof Error &&
-      (error.message.includes("403") ||
-        error.message.includes("access denied") ||
-        error.message.includes("Access denied"))
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
     ) {
-      return <UnifiedAccessDenied reason="department" resourceType="simulation" redirectPath="/training/simulations" />;
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/training/simulations/new"
+        />
+      );
     }
     throw error;
   }
-
-  const groupResult = await api.post("/simulation/group", { body: {} } as GroupSimulationIn);
-
-  return (
-    <DraftProviderClient drafts={(draftsResult.entries ?? []) as never}>
-      <FullPageLayout
-        profileData={context.profile}
-        sessionSnapshot={snapshot}
-        {...(initialSidebarOpen !== undefined ? { initialSidebarOpen } : {})}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "simulation",
-          createFeedback: createSimulationProblem,
-        } as never}
-        breadcrumbs={[
-          { title: "Training", section: "training", url: "/training" },
-          { title: "Simulations", section: "simulations", url: "/training/simulations" },
-          { title: "New Simulation" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "simulation",
-          groupId: (groupResult as GroupSimulationOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateSimulation,
-          operations: ["draft", "get", "group"],
-          getGroupHistory: getSimulationGroupHistory,
-          searchGroups: searchSimulationGroups,
-          prompts: context.prompts?.prompts,
-        } as never}
-      >
-        <div
-          className="space-y-6 px-4"
-          data-page="simulation-new"
-          aria-label="Create new simulation page"
-        >
-          <Simulation
-            key={q.draftId || "no-draft"}
-            simulationData={simulationDataDefault}
-            createSimulationAction={createSimulation}
-            patchSimulationDraftAction={patchSimulationDraft}
-          />
-        </div>
-      </FullPageLayout>
-    </DraftProviderClient>
-  );
 }

@@ -35,7 +35,7 @@ export function useAttemptRoute(): UseAttemptRouteReturn {
         setError(null);
         setStage("loading");
         const chat = await transport.send("/attempt/chat/get", {
-          id: params.chatId,
+          chat_entry_id: params.chatId,
         });
 
         if (chat["is_lobby"] || chat["continuation_options"]) {

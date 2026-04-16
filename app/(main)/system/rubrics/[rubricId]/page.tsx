@@ -161,12 +161,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ rubricId: string }>;
 }): Promise<Metadata> {
-  const { rubricId } = await params;
-  const context = await api.post("/rubric/context", { body: { entity_id: rubricId } } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.detail.title,
-    description: context.page_metadata?.detail.description,
-  };
+  try {
+    const { rubricId } = await params;
+    const context = await api.post("/rubric/context", { body: { entity_id: rubricId } } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Rubrics" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -283,7 +287,7 @@ export default async function EditRubricPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      error.status === 403
+      (error.status === 401 || error.status === 403)
     ) {
       return (
         <UnifiedAccessDenied

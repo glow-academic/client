@@ -6,6 +6,7 @@
  */
 
 import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Fields from "@/components/artifacts/field/Fields";
@@ -89,11 +90,15 @@ async function createFieldProblem(input: ProblemFieldIn): Promise<ProblemFieldOu
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Fields" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -110,50 +115,67 @@ export default async function FieldsPage() {
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Fetch list data and group in parallel
-  const [listData, groupResult] = await Promise.all([
-    getFieldsList(),
-    api.post("/field/group", { body: {} } as GroupFieldIn),
-  ]);
+    // Fetch list data and group in parallel
+    const [listData, groupResult] = await Promise.all([
+      getFieldsList(),
+      api.post("/field/group", { body: {} } as GroupFieldIn),
+    ]);
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "field",
-        createFeedback: createFieldProblem,
-      }}
-      breadcrumbs={[
-        { title: "Management", section: "management", url: "/management" },
-        { title: "Fields" },
-      ]}
-      toolbar={<NewArtifactButton label="New Field" href="/management/fields/new" />}
-      panelProps={{
-        artifactType: "field",
-        groupId: (groupResult as GroupFieldOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateField,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getFieldGroupHistory,
-        searchGroups: searchFieldGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="space-y-6 px-4" data-page="fields-index">
-        <Fields
-          listData={listData}
-          duplicateFieldAction={duplicateField}
-          deleteFieldAction={deleteField}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "field",
+          createFeedback: createFieldProblem,
+        }}
+        breadcrumbs={[
+          { title: "Management", section: "management", url: "/management" },
+          { title: "Fields" },
+        ]}
+        toolbar={<NewArtifactButton label="New Field" href="/management/fields/new" />}
+        panelProps={{
+          artifactType: "field",
+          groupId: (groupResult as GroupFieldOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateField,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getFieldGroupHistory,
+          searchGroups: searchFieldGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="space-y-6 px-4" data-page="fields-index">
+          <Fields
+            listData={listData}
+            duplicateFieldAction={duplicateField}
+            deleteFieldAction={deleteField}
+          />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/management/fields"
         />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

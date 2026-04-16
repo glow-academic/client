@@ -118,12 +118,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ simulationId: string }>;
 }): Promise<Metadata> {
-  const { simulationId } = await params;
-  const context = await api.post("/simulation/context", { body: { entity_id: simulationId } } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.detail.title,
-    description: context.page_metadata?.detail.description,
-  };
+  try {
+    const { simulationId } = await params;
+    const context = await api.post("/simulation/context", { body: { entity_id: simulationId } } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Simulations" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -147,10 +151,6 @@ export default async function EditSimulationPage({
   const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
-
-  // Profile data for providers
-  const context = await api.post("/simulation/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const paramsObj = await searchParams;
@@ -196,6 +196,7 @@ export default async function EditSimulationPage({
     ]);
 
     const entityName = context.page_metadata?.detail.title;
+    const snapshot = buildSnapshot(session, context.profile);
 
     return (
       <DraftProviderClient drafts={(draftsResult.entries ?? []) as never}>
@@ -241,14 +242,10 @@ export default async function EditSimulationPage({
     );
   } catch (error: unknown) {
     if (
-      error instanceof Error &&
-      (error.message.includes("403") ||
-        error.message.includes("access denied") ||
-        error.message.includes("Access denied") ||
-        (error &&
-          typeof error === "object" &&
-          "status" in error &&
-          error.status === 403))
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
     ) {
       return (
         <UnifiedAccessDenied

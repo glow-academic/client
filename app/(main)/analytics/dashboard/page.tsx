@@ -18,6 +18,7 @@ import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { loadDashboardSearchParams } from "@/lib/search-params/dashboard";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
 
 /** ---- Strong types from OpenAPI ---- */
@@ -56,11 +57,15 @@ const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/attempt/dashboard/context", { body: {} } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.list.title,
-    description: context.page_metadata?.list.description,
-  };
+  try {
+    const context = await api.post("/attempt/dashboard/context", { body: {} } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.list.title,
+      description: context.page_metadata?.list.description,
+    };
+  } catch {
+    return { title: "Dashboard" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -83,164 +88,181 @@ export default async function DashboardPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/attempt/dashboard/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
+  try {
+    // Profile data for providers
+    const context = await api.post("/attempt/dashboard/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, context.profile);
 
-  // Parse search params via nuqs loader
-  const q = loadDashboardSearchParams(await searchParams);
+    // Parse search params via nuqs loader
+    const q = loadDashboardSearchParams(await searchParams);
 
-  // Section picker params (canonical — shared across charts in each section)
-  const rubricIds = q.rubricIds ?? undefined;
-  const rubricSearch = q.rubricSearch ?? undefined;
-  const rubricIndex = q.rubricIndex ?? 0;
-  const simulationPickerIds = q.simulationPickerIds ?? undefined;
-  const simulationPickerSearch = q.simulationPickerSearch ?? undefined;
-  const simulationIndex = q.simulationIndex ?? 0;
-  const parameterIds = q.parameterIds ?? undefined;
-  const parameterSearch = q.parameterSearch ?? undefined;
-  const parameterIndex = q.parameterIndex ?? 0;
-  const scenarioIds = q.scenarioIds ?? undefined;
-  const scenarioSearch = q.scenarioSearch ?? undefined;
-  const scenarioIndex = q.scenarioIndex ?? 0;
+    // Section picker params (canonical — shared across charts in each section)
+    const rubricIds = q.rubricIds ?? undefined;
+    const rubricSearch = q.rubricSearch ?? undefined;
+    const rubricIndex = q.rubricIndex ?? 0;
+    const simulationPickerIds = q.simulationPickerIds ?? undefined;
+    const simulationPickerSearch = q.simulationPickerSearch ?? undefined;
+    const simulationIndex = q.simulationIndex ?? 0;
+    const parameterIds = q.parameterIds ?? undefined;
+    const parameterSearch = q.parameterSearch ?? undefined;
+    const parameterIndex = q.parameterIndex ?? 0;
+    const scenarioIds = q.scenarioIds ?? undefined;
+    const scenarioSearch = q.scenarioSearch ?? undefined;
+    const scenarioIndex = q.scenarioIndex ?? 0;
 
-  // History params with defaults
-  const historyPage = q.historyPage ?? 0;
-  const historyPageSize = q.historyPageSize ?? 10;
-  const historySearch = q.historySearch ?? undefined;
-  const _historyProfileIds = q.historyProfileIds ?? undefined;
-  const _historySimulationIds = q.historySimulationIds ?? undefined;
-  const historyScenarioIds = q.historyScenarioIds ?? undefined;
-  const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
-  const historySortBy = q.historySortBy ?? "date";
-  const historySortOrder = q.historySortOrder ?? "desc";
-  const historyProfileSearch = q.historyProfileSearch ?? undefined;
-  const historySimulationSearch = q.historySimulationSearch ?? undefined;
-  const historyScenarioSearch = q.historyScenarioSearch ?? undefined;
+    // History params with defaults
+    const historyPage = q.historyPage ?? 0;
+    const historyPageSize = q.historyPageSize ?? 10;
+    const historySearch = q.historySearch ?? undefined;
+    const _historyProfileIds = q.historyProfileIds ?? undefined;
+    const _historySimulationIds = q.historySimulationIds ?? undefined;
+    const historyScenarioIds = q.historyScenarioIds ?? undefined;
+    const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
+    const historySortBy = q.historySortBy ?? "date";
+    const historySortOrder = q.historySortOrder ?? "desc";
+    const historyProfileSearch = q.historyProfileSearch ?? undefined;
+    const historySimulationSearch = q.historySimulationSearch ?? undefined;
+    const historyScenarioSearch = q.historyScenarioSearch ?? undefined;
 
-  // Single API call returning all dashboard data + group in parallel
-  const [data, initialHistoryVisibility, groupResult] = await Promise.all([
-    getDashboard({
-      body: {
-        ...(q.startDate && { start_date: q.startDate }),
-        ...(q.endDate && { end_date: q.endDate }),
-        ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
-        ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
-        ...(q.roles?.length && { roles: q.roles }),
-        ...(q.simulationFilters?.length && { simulation_filters: q.simulationFilters }),
-        page_limit: 50,
-        page_offset: 0,
-        // Section pickers (canonical)
-        ...(rubricIds?.length && { rubric_ids: rubricIds }),
-        ...(rubricSearch && { rubric_search: rubricSearch }),
-        ...(simulationPickerIds?.length && { simulation_picker_ids: simulationPickerIds }),
-        ...(simulationPickerSearch && { simulation_picker_search: simulationPickerSearch }),
-        ...(parameterIds?.length && { parameter_ids: parameterIds }),
-        ...(parameterSearch && { parameter_search: parameterSearch }),
-        ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
-        ...(scenarioSearch && { scenario_search: scenarioSearch }),
-        // History
-        history_page: historyPage,
-        history_page_size: historyPageSize,
-        history_sort_by: historySortBy,
-        history_sort_order: historySortOrder,
-        ...(historySearch && { history_simulation_search: historySearch }),
-        ...(historyScenarioIds?.length && { history_scenario_ids: historyScenarioIds }),
-        ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
-        ...(historyProfileSearch && { history_profile_search: historyProfileSearch }),
-        ...(historySimulationSearch && { history_simulation_search: historySimulationSearch }),
-        ...(historyScenarioSearch && { history_scenario_search: historyScenarioSearch }),
-      },
-    }),
-    readViewCookie("history"),
-    api.post("/attempt/dashboard/group", { body: {} } as GroupDashboardIn),
-  ]);
+    // Single API call returning all dashboard data + group in parallel
+    const [data, initialHistoryVisibility, groupResult] = await Promise.all([
+      getDashboard({
+        body: {
+          ...(q.startDate && { start_date: q.startDate }),
+          ...(q.endDate && { end_date: q.endDate }),
+          ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
+          ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
+          ...(q.roles?.length && { roles: q.roles }),
+          ...(q.simulationFilters?.length && { simulation_filters: q.simulationFilters }),
+          page_limit: 50,
+          page_offset: 0,
+          // Section pickers (canonical)
+          ...(rubricIds?.length && { rubric_ids: rubricIds }),
+          ...(rubricSearch && { rubric_search: rubricSearch }),
+          ...(simulationPickerIds?.length && { simulation_picker_ids: simulationPickerIds }),
+          ...(simulationPickerSearch && { simulation_picker_search: simulationPickerSearch }),
+          ...(parameterIds?.length && { parameter_ids: parameterIds }),
+          ...(parameterSearch && { parameter_search: parameterSearch }),
+          ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
+          ...(scenarioSearch && { scenario_search: scenarioSearch }),
+          // History
+          history_page: historyPage,
+          history_page_size: historyPageSize,
+          history_sort_by: historySortBy,
+          history_sort_order: historySortOrder,
+          ...(historySearch && { history_simulation_search: historySearch }),
+          ...(historyScenarioIds?.length && { history_scenario_ids: historyScenarioIds }),
+          ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
+          ...(historyProfileSearch && { history_profile_search: historyProfileSearch }),
+          ...(historySimulationSearch && { history_simulation_search: historySimulationSearch }),
+          ...(historyScenarioSearch && { history_scenario_search: historyScenarioSearch }),
+        },
+      }),
+      readViewCookie("history"),
+      api.post("/attempt/dashboard/group", { body: {} } as GroupDashboardIn),
+    ]);
 
-  // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
-  const facets = data.analytics;
-  const defaultStartDate = (() => {
-    if (q.startDate) return q.startDate;
-    if (facets?.date_range_earliest) {
-      const d = new Date(facets.date_range_earliest);
+    // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
+    const facets = data.analytics;
+    const defaultStartDate = (() => {
+      if (q.startDate) return q.startDate;
+      if (facets?.date_range_earliest) {
+        const d = new Date(facets.date_range_earliest);
+        d.setHours(0, 0, 0, 0);
+        return d.toISOString();
+      }
+      const d = new Date();
+      d.setDate(d.getDate() - 30);
       d.setHours(0, 0, 0, 0);
       return d.toISOString();
-    }
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    d.setHours(0, 0, 0, 0);
-    return d.toISOString();
-  })();
-  const defaultEndDate = (() => {
-    if (q.endDate) return q.endDate;
-    const d = new Date();
-    d.setHours(23, 59, 59, 999);
-    return d.toISOString();
-  })();
-  const defaultFilters = {
-    startDate: defaultStartDate,
-    endDate: defaultEndDate,
-    cohortIds: q.cohortIds ?? [],
-    departmentIds: q.departmentIds ?? [],
-    roles: q.roles ?? [],
-  };
+    })();
+    const defaultEndDate = (() => {
+      if (q.endDate) return q.endDate;
+      const d = new Date();
+      d.setHours(23, 59, 59, 999);
+      return d.toISOString();
+    })();
+    const defaultFilters = {
+      startDate: defaultStartDate,
+      endDate: defaultEndDate,
+      cohortIds: q.cohortIds ?? [],
+      departmentIds: q.departmentIds ?? [],
+      roles: q.roles ?? [],
+    };
 
-  return (
-    <FullPageLayout
-      profileData={context.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "dashboard",
-        createFeedback: createDashboardProblem,
-      }}
-      breadcrumbs={[
-        { title: "Analytics", section: "analytics", url: "/analytics" },
-        { title: "Dashboard" },
-      ]}
-      toolbar={
-        <AnalyticsFilters
-          refreshAction={refreshDashboard}
-          analyticsFilters={facets}
+    return (
+      <FullPageLayout
+        profileData={context.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "dashboard",
+          createFeedback: createDashboardProblem,
+        }}
+        breadcrumbs={[
+          { title: "Analytics", section: "analytics", url: "/analytics" },
+          { title: "Dashboard" },
+        ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshAction={refreshDashboard}
+            analyticsFilters={facets}
+          />
+        }
+        panelProps={{
+          artifactType: "dashboard",
+          groupId: (groupResult as GroupDashboardOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateDashboard,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getDashboardGroupHistory,
+          searchGroups: searchDashboardGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="px-4">
+          <Dashboard
+            data={data}
+            initialColumnVisibility={initialHistoryVisibility}
+            rubricIds={rubricIds}
+            rubricSearch={rubricSearch}
+            rubricIndex={rubricIndex}
+            simulationPickerIds={simulationPickerIds}
+            simulationPickerSearch={simulationPickerSearch}
+            simulationIndex={simulationIndex}
+            parameterIds={parameterIds}
+            parameterSearch={parameterSearch}
+            parameterIndex={parameterIndex}
+            scenarioIds={scenarioIds}
+            scenarioSearch={scenarioSearch}
+            scenarioIndex={scenarioIndex}
+            historyPage={historyPage}
+            historyPageSize={historyPageSize}
+            defaultFilters={defaultFilters}
+            bulkArchiveAttemptsAction={bulkArchiveAttempts}
+            historyProfileSearch={historyProfileSearch}
+            historySimulationSearch={historySimulationSearch}
+            historyScenarioSearch={historyScenarioSearch}
+          />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/analytics/dashboard"
         />
-      }
-      panelProps={{
-        artifactType: "dashboard",
-        groupId: (groupResult as GroupDashboardOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateDashboard,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getDashboardGroupHistory,
-        searchGroups: searchDashboardGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="px-4">
-        <Dashboard
-          data={data}
-          initialColumnVisibility={initialHistoryVisibility}
-          rubricIds={rubricIds}
-          rubricSearch={rubricSearch}
-          rubricIndex={rubricIndex}
-          simulationPickerIds={simulationPickerIds}
-          simulationPickerSearch={simulationPickerSearch}
-          simulationIndex={simulationIndex}
-          parameterIds={parameterIds}
-          parameterSearch={parameterSearch}
-          parameterIndex={parameterIndex}
-          scenarioIds={scenarioIds}
-          scenarioSearch={scenarioSearch}
-          scenarioIndex={scenarioIndex}
-          historyPage={historyPage}
-          historyPageSize={historyPageSize}
-          defaultFilters={defaultFilters}
-          bulkArchiveAttemptsAction={bulkArchiveAttempts}
-          historyProfileSearch={historyProfileSearch}
-          historySimulationSearch={historySimulationSearch}
-          historyScenarioSearch={historyScenarioSearch}
-        />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Strongly-typed server actions ---- */

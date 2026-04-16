@@ -19,6 +19,7 @@ import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { loadProfileReportSearchParams } from "@/lib/search-params/profile-report";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
 
 /** ---- Strong types from OpenAPI ---- */
@@ -79,9 +80,13 @@ export async function generateMetadata({
 }: {
   params: Promise<{ recordId: string }>;
 }): Promise<Metadata> {
-  const { recordId } = await params;
-  const context = await api.post("/attempt/record/context", { body: { entity_id: recordId } } as ContextIn) as ContextOut;
-  return { title: context.page_metadata?.detail.title, description: context.page_metadata?.detail.description };
+  try {
+    const { recordId } = await params;
+    const context = await api.post("/attempt/record/context", { body: { entity_id: recordId } } as ContextIn) as ContextOut;
+    return { title: context.page_metadata?.detail.title, description: context.page_metadata?.detail.description };
+  } catch {
+    return { title: "Profile Report" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -107,167 +112,184 @@ export default async function RecordPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const pageContext = await api.post("/attempt/record/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, pageContext.profile);
+  try {
+    // Profile data for providers
+    const pageContext = await api.post("/attempt/record/context", { body: {} } as ContextIn) as ContextOut;
+    const snapshot = buildSnapshot(session, pageContext.profile);
 
-  // Parse search params via nuqs loader
-  const q = loadProfileReportSearchParams(await searchParams);
+    // Parse search params via nuqs loader
+    const q = loadProfileReportSearchParams(await searchParams);
 
-  // actor_profile_id comes from the context call above
+    // actor_profile_id comes from the context call above
 
-  // Compute initial date range from search params (with 30-day fallback)
-  const defaultStartDate = (() => {
-    if (q.startDate) return q.startDate;
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    d.setHours(0, 0, 0, 0);
-    return d.toISOString();
-  })();
-  const defaultEndDate = (() => {
-    if (q.endDate) return q.endDate;
-    const d = new Date();
-    d.setHours(23, 59, 59, 999);
-    return d.toISOString();
-  })();
+    // Compute initial date range from search params (with 30-day fallback)
+    const defaultStartDate = (() => {
+      if (q.startDate) return q.startDate;
+      const d = new Date();
+      d.setDate(d.getDate() - 30);
+      d.setHours(0, 0, 0, 0);
+      return d.toISOString();
+    })();
+    const defaultEndDate = (() => {
+      if (q.endDate) return q.endDate;
+      const d = new Date();
+      d.setHours(23, 59, 59, 999);
+      return d.toISOString();
+    })();
 
-  // Section picker params (canonical — shared across charts in each section)
-  const rubricIds = q.rubricIds ?? undefined;
-  const rubricSearch = q.rubricSearch ?? undefined;
-  const rubricIndex = q.rubricIndex ?? 0;
-  const simulationPickerIds = q.simulationPickerIds ?? undefined;
-  const simulationPickerSearch = q.simulationPickerSearch ?? undefined;
-  const simulationIndex = q.simulationIndex ?? 0;
-  const parameterIds = q.parameterIds ?? undefined;
-  const parameterSearch = q.parameterSearch ?? undefined;
-  const parameterIndex = q.parameterIndex ?? 0;
-  const scenarioIds = q.scenarioIds ?? undefined;
-  const scenarioSearch = q.scenarioSearch ?? undefined;
-  const scenarioIndex = q.scenarioIndex ?? 0;
+    // Section picker params (canonical — shared across charts in each section)
+    const rubricIds = q.rubricIds ?? undefined;
+    const rubricSearch = q.rubricSearch ?? undefined;
+    const rubricIndex = q.rubricIndex ?? 0;
+    const simulationPickerIds = q.simulationPickerIds ?? undefined;
+    const simulationPickerSearch = q.simulationPickerSearch ?? undefined;
+    const simulationIndex = q.simulationIndex ?? 0;
+    const parameterIds = q.parameterIds ?? undefined;
+    const parameterSearch = q.parameterSearch ?? undefined;
+    const parameterIndex = q.parameterIndex ?? 0;
+    const scenarioIds = q.scenarioIds ?? undefined;
+    const scenarioSearch = q.scenarioSearch ?? undefined;
+    const scenarioIndex = q.scenarioIndex ?? 0;
 
-  // History params with defaults
-  const historyPage = q.historyPage ?? 0;
-  const historyPageSize = q.historyPageSize ?? 10;
-  const historySearch = q.historySearch ?? undefined;
-  const _historySimulationIds = q.historySimulationIds ?? undefined;
-  const historyScenarioIds = q.historyScenarioIds ?? undefined;
-  const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
-  const historySortBy = q.historySortBy ?? "date";
-  const historySortOrder = q.historySortOrder ?? "desc";
+    // History params with defaults
+    const historyPage = q.historyPage ?? 0;
+    const historyPageSize = q.historyPageSize ?? 10;
+    const historySearch = q.historySearch ?? undefined;
+    const _historySimulationIds = q.historySimulationIds ?? undefined;
+    const historyScenarioIds = q.historyScenarioIds ?? undefined;
+    const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
+    const historySortBy = q.historySortBy ?? "date";
+    const historySortOrder = q.historySortOrder ?? "desc";
 
-  // Single API call returning all dashboard data
-  const [data, context, groupResult] = await Promise.all([
-    getDashboard({
-      body: {
-        start_date: defaultStartDate,
-        end_date: defaultEndDate,
-        ...(q.cohortIds && q.cohortIds.length > 0 && { cohort_ids: q.cohortIds }),
-        ...(q.departmentIds && q.departmentIds.length > 0 && { department_ids: q.departmentIds }),
-        ...(q.roles && q.roles.length > 0 && { roles: q.roles }),
-        ...(q.simulationFilters && q.simulationFilters.length > 0 && { simulation_filters: q.simulationFilters }),
-        target_profile_id: recordId,
-        actor_profile_id: pageContext.profile.id || recordId,
-        page_limit: 50,
-        page_offset: 0,
-        // Section pickers (canonical)
-        ...(rubricIds?.length && { rubric_ids: rubricIds }),
-        ...(rubricSearch && { rubric_search: rubricSearch }),
-        ...(simulationPickerIds?.length && { simulation_picker_ids: simulationPickerIds }),
-        ...(simulationPickerSearch && { simulation_picker_search: simulationPickerSearch }),
-        ...(parameterIds?.length && { parameter_ids: parameterIds }),
-        ...(parameterSearch && { parameter_search: parameterSearch }),
-        ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
-        ...(scenarioSearch && { scenario_search: scenarioSearch }),
-        // History
-        history_page: historyPage,
-        history_page_size: historyPageSize,
-        history_sort_by: historySortBy,
-        history_sort_order: historySortOrder,
-        ...(historySearch && { history_simulation_search: historySearch }),
-        ...(historyScenarioIds?.length && { history_scenario_ids: historyScenarioIds }),
-        ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
-      },
-    }),
-    api.post("/attempt/record/context", { body: { entity_id: recordId } } as ContextIn) as Promise<ContextOut>,
-    api.post("/attempt/record/group", { body: {} } as GroupRecordIn),
-  ]);
+    // Single API call returning all dashboard data
+    const [data, context, groupResult] = await Promise.all([
+      getDashboard({
+        body: {
+          start_date: defaultStartDate,
+          end_date: defaultEndDate,
+          ...(q.cohortIds && q.cohortIds.length > 0 && { cohort_ids: q.cohortIds }),
+          ...(q.departmentIds && q.departmentIds.length > 0 && { department_ids: q.departmentIds }),
+          ...(q.roles && q.roles.length > 0 && { roles: q.roles }),
+          ...(q.simulationFilters && q.simulationFilters.length > 0 && { simulation_filters: q.simulationFilters }),
+          target_profile_id: recordId,
+          actor_profile_id: pageContext.profile.id || recordId,
+          page_limit: 50,
+          page_offset: 0,
+          // Section pickers (canonical)
+          ...(rubricIds?.length && { rubric_ids: rubricIds }),
+          ...(rubricSearch && { rubric_search: rubricSearch }),
+          ...(simulationPickerIds?.length && { simulation_picker_ids: simulationPickerIds }),
+          ...(simulationPickerSearch && { simulation_picker_search: simulationPickerSearch }),
+          ...(parameterIds?.length && { parameter_ids: parameterIds }),
+          ...(parameterSearch && { parameter_search: parameterSearch }),
+          ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
+          ...(scenarioSearch && { scenario_search: scenarioSearch }),
+          // History
+          history_page: historyPage,
+          history_page_size: historyPageSize,
+          history_sort_by: historySortBy,
+          history_sort_order: historySortOrder,
+          ...(historySearch && { history_simulation_search: historySearch }),
+          ...(historyScenarioIds?.length && { history_scenario_ids: historyScenarioIds }),
+          ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
+        },
+      }),
+      api.post("/attempt/record/context", { body: { entity_id: recordId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/attempt/record/group", { body: {} } as GroupRecordIn),
+    ]);
 
-  const _entityName = context.page_metadata?.detail.title;
+    const _entityName = context.page_metadata?.detail.title;
 
-  // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
-  const facets = data.analytics;
-  const initialFilters = {
-    startDate: defaultStartDate,
-    endDate: defaultEndDate,
-    cohortIds: q.cohortIds ?? [],
-    departmentIds: q.departmentIds ?? [],
-    roles: q.roles ?? [],
-    simulationFilters: q.simulationFilters ?? ["general"],
-  };
+    // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
+    const facets = data.analytics;
+    const initialFilters = {
+      startDate: defaultStartDate,
+      endDate: defaultEndDate,
+      cohortIds: q.cohortIds ?? [],
+      departmentIds: q.departmentIds ?? [],
+      roles: q.roles ?? [],
+      simulationFilters: q.simulationFilters ?? ["general"],
+    };
 
-  const recordProfileData = {
-    name: data.profile_name || null,
-    emails: data.profile_emails || null,
-    primary_email: data.profile_primary_email || null,
-    role: data.profile_role || null,
-  };
+    const recordProfileData = {
+      name: data.profile_name || null,
+      emails: data.profile_emails || null,
+      primary_email: data.profile_primary_email || null,
+      role: data.profile_role || null,
+    };
 
-  return (
-    <FullPageLayout
-      profileData={pageContext.profile}
-      sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
-      initialPanelOpen={initialPanelOpen}
-      sidebarProps={{
-        activeSection: "reports",
-        createFeedback: createRecordProblem,
-      }}
-      breadcrumbs={[
-        { title: "Analytics", section: "analytics", url: "/analytics" },
-        { title: "Reports", section: "reports", url: "/analytics/reports" },
-        { title: "Profile" },
-      ]}
-      toolbar={
-        <AnalyticsFilters
-          refreshAction={refreshReports}
-          analyticsFilters={facets}
+    return (
+      <FullPageLayout
+        profileData={pageContext.profile}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "reports",
+          createFeedback: createRecordProblem,
+        }}
+        breadcrumbs={[
+          { title: "Analytics", section: "analytics", url: "/analytics" },
+          { title: "Reports", section: "reports", url: "/analytics/reports" },
+          { title: "Profile" },
+        ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshAction={refreshReports}
+            analyticsFilters={facets}
+          />
+        }
+        panelProps={{
+          artifactType: "record",
+          groupId: (groupResult as GroupRecordOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateRecord,
+          operations: ["draft", "get", "group"],
+          getGroupHistory: getRecordGroupHistory,
+          searchGroups: searchRecordGroups,
+          prompts: context.prompts?.prompts,
+        }}
+      >
+        <div className="px-4">
+          <Record
+            data={data}
+            profileData={recordProfileData}
+            profileId={recordId}
+            rubricIds={rubricIds}
+            rubricSearch={rubricSearch}
+            rubricIndex={rubricIndex}
+            simulationPickerIds={simulationPickerIds}
+            simulationPickerSearch={simulationPickerSearch}
+            simulationIndex={simulationIndex}
+            parameterIds={parameterIds}
+            parameterSearch={parameterSearch}
+            parameterIndex={parameterIndex}
+            scenarioIds={scenarioIds}
+            scenarioSearch={scenarioSearch}
+            scenarioIndex={scenarioIndex}
+            historyPage={historyPage}
+            historyPageSize={historyPageSize}
+            defaultFilters={initialFilters}
+            initialColumnVisibility={await readViewCookie("history")}
+          />
+        </div>
+      </FullPageLayout>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname={`/analytics/reports/${recordId}`}
         />
-      }
-      panelProps={{
-        artifactType: "record",
-        groupId: (groupResult as GroupRecordOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generateRecord,
-        operations: ["draft", "get", "group"],
-        getGroupHistory: getRecordGroupHistory,
-        searchGroups: searchRecordGroups,
-        prompts: context.prompts?.prompts,
-      }}
-    >
-      <div className="px-4">
-        <Record
-          data={data}
-          profileData={recordProfileData}
-          profileId={recordId}
-          rubricIds={rubricIds}
-          rubricSearch={rubricSearch}
-          rubricIndex={rubricIndex}
-          simulationPickerIds={simulationPickerIds}
-          simulationPickerSearch={simulationPickerSearch}
-          simulationIndex={simulationIndex}
-          parameterIds={parameterIds}
-          parameterSearch={parameterSearch}
-          parameterIndex={parameterIndex}
-          scenarioIds={scenarioIds}
-          scenarioSearch={scenarioSearch}
-          scenarioIndex={scenarioIndex}
-          historyPage={historyPage}
-          historyPageSize={historyPageSize}
-          defaultFilters={initialFilters}
-          initialColumnVisibility={await readViewCookie("history")}
-        />
-      </div>
-    </FullPageLayout>
-  );
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

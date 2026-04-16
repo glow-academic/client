@@ -129,12 +129,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ fieldId: string }>;
 }): Promise<Metadata> {
-  const { fieldId } = await params;
-  const context = await api.post("/field/context", { body: { entity_id: fieldId } } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.detail.title,
-    description: context.page_metadata?.detail.description,
-  };
+  try {
+    const { fieldId } = await params;
+    const context = await api.post("/field/context", { body: { entity_id: fieldId } } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Fields" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -257,7 +261,7 @@ export default async function FieldEditPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      error.status === 403
+      (error.status === 401 || error.status === 403)
     ) {
       return (
         <UnifiedAccessDenied

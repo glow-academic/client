@@ -91,12 +91,16 @@ export async function generateMetadata({
 }: {
   params: Promise<{ cohortId: string }>;
 }): Promise<Metadata> {
-  const { cohortId } = await params;
-  const context = await api.post("/cohort/context", { body: { entity_id: cohortId } } as ContextIn) as ContextOut;
-  return {
-    title: context.page_metadata?.detail.title,
-    description: context.page_metadata?.detail.description,
-  };
+  try {
+    const { cohortId } = await params;
+    const context = await api.post("/cohort/context", { body: { entity_id: cohortId } } as ContextIn) as ContextOut;
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Cohorts" };
+  }
 }
 
 /** ---- Cookies ---- */
@@ -120,10 +124,6 @@ export default async function CohortEditPage({
   const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
-
-  // Profile data for providers
-  const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const params_obj = await searchParams;
@@ -200,6 +200,7 @@ export default async function CohortEditPage({
     ]);
 
     const entityName = context.page_metadata?.detail.title ?? "Cohort";
+    const snapshot = buildSnapshot(session, context.profile);
 
     return (
       <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
@@ -254,7 +255,7 @@ export default async function CohortEditPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      error.status === 403
+      (error.status === 401 || error.status === 403)
     ) {
       return (
         <UnifiedAccessDenied
