@@ -77,7 +77,7 @@ export function useAttemptEnd(): UseAttemptEndReturn {
           }, 120_000);
 
           const unsubComplete = transport.on(
-            "attempt.chat.grade_complete",
+            "attempt.chat_grade.completed",
             (data) => {
               if (data["chat_id"] !== params.chatId) return;
               clearTimeout(timeout);
@@ -87,7 +87,7 @@ export function useAttemptEnd(): UseAttemptEndReturn {
             },
           );
           const unsubFail = transport.on(
-            "attempt.chat.grade_failed",
+            "attempt.chat_grade.failed",
             (data) => {
               if (data["chat_id"] !== params.chatId) return;
               clearTimeout(timeout);
@@ -100,9 +100,15 @@ export function useAttemptEnd(): UseAttemptEndReturn {
           );
 
           transport
-            .send("/attempt/chat/grade", {
-              attempt_id: params.attemptId,
-              chat_id: params.chatId,
+            .send("/attempt/generate", {
+              instructions: ["Grade this attempt chat based on the rubric and conversation."],
+              config: {
+                operations: ["chat_grade", "chat_feedback", "chat_strengths", "chat_improvements", "chat_analyses", "chat_complete", "get"],
+                params: {
+                  attempt_id: params.attemptId,
+                  chat_id: params.chatId,
+                },
+              },
             })
             .catch((err) => {
               clearTimeout(timeout);
@@ -133,21 +139,21 @@ export function useAttemptEnd(): UseAttemptEndReturn {
 
   const findNextAndRoute = useCallback(
     async (attemptId: string) => {
-      const attempt = await transport.send("/attempt/get", { id: attemptId });
-      const chats = attempt["chats"] as
-        | Array<Record<string, unknown>>
-        | undefined;
-      const nextChat = chats?.find((c) => c["status"] === "pending");
+      const attempt = await transport.send("/attempt/get", {
+        attempt_id: attemptId,
+      });
 
-      if (nextChat) {
+      const nextChatEntryId = attempt["next_chat_entry_id"] as
+        | string
+        | undefined;
+
+      if (nextChatEntryId) {
         await routeHook.route({
           attemptId,
-          chatId: nextChat["chat_id"] as string,
+          chatId: nextChatEntryId,
         });
       } else {
-        // No more chats — end attempt
-        setStage("ending_attempt");
-        await transport.send("/attempt/end", { attempt_id: attemptId });
+        // All chats completed — navigate to results
         setStage("done");
         router.push(`/attempt/${attemptId}`);
         router.refresh();
@@ -156,14 +162,14 @@ export function useAttemptEnd(): UseAttemptEndReturn {
     [transport, router, routeHook],
   );
 
-  // ── endChat: end single chat → find next → route or end attempt ──
+  // ── endChat: complete chat → find next → route or end attempt ──
 
   const endChat = useCallback(
     async (params: { attemptId: string; chatId: string }) => {
       try {
         setStage("ending");
-        await transport.send("/attempt/chat/end", {
-          attempt_id: params.attemptId,
+        // Mark the chat as completed (idempotent — safe if grading already did this)
+        await transport.send("/attempt/chat/complete", {
           chat_id: params.chatId,
         });
         await findNextAndRoute(params.attemptId);

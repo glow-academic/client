@@ -31,12 +31,7 @@ export interface UseAttemptLifecycleReturn {
     practiceId?: string;
     infiniteMode?: boolean;
   }) => void;
-  nextScenario: (attemptId: string, opts?: { draftId?: string }) => void;
-  endChat: (
-    attemptId: string,
-    chatId: string,
-    opts?: { grade?: boolean },
-  ) => void;
+  completeChat: (chatId: string) => void;
   endAll: (attemptId: string) => void;
   usePrevious: (
     attemptId: string,
@@ -120,7 +115,7 @@ export function useAttemptLifecycle({
       transport.on("attempt.chat.started", handleChatStarted),
       transport.on("attempt.chat.ended", handleChatEnded),
       transport.on("attempt.ended", handleEnded),
-      transport.on("attempt.chat.grade_complete", handleGradeComplete),
+      transport.on("attempt.chat_grade.completed", handleGradeComplete),
       transport.on("attempt.error", handleError),
       transport.on("attempt.chat.response_result", handleResponseResult),
     ];
@@ -145,26 +140,10 @@ export function useAttemptLifecycle({
     [transport],
   );
 
-  const nextScenario = useCallback(
-    (attemptIdArg: string, opts?: { draftId?: string }) => {
-      transport.send("/attempt/next", {
-        attempt_id: attemptIdArg,
-        ...(opts?.draftId && { draft_id: opts.draftId }),
-      });
-    },
-    [transport],
-  );
-
-  const endChat = useCallback(
-    (
-      attemptIdArg: string,
-      chatIdArg: string,
-      opts?: { grade?: boolean },
-    ) => {
-      transport.send("/attempt/chat/end", {
-        attempt_id: attemptIdArg,
+  const completeChat = useCallback(
+    (chatIdArg: string) => {
+      transport.send("/attempt/chat/complete", {
         chat_id: chatIdArg,
-        grade: opts?.grade ?? true,
       });
     },
     [transport],
@@ -191,8 +170,7 @@ export function useAttemptLifecycle({
 
   return {
     startAttempt,
-    nextScenario,
-    endChat,
+    completeChat,
     endAll,
     usePrevious,
   };
