@@ -203,7 +203,7 @@ export function useAttemptEnd(): UseAttemptEndReturn {
     [transport, router],
   );
 
-  // ── usePrevious: copy grades → find next → route ──
+  // ── usePrevious: bridge old chats via chat_create → find next → route ──
 
   const usePrevious = useCallback(
     async (params: {
@@ -213,10 +213,17 @@ export function useAttemptEnd(): UseAttemptEndReturn {
       try {
         setError(null);
         setStage("copying");
-        await transport.send("/attempt/previous", {
-          attempt_id: params.attemptId,
-          previous_chat_map: params.previousChatMap,
-        });
+        // Bridge each previous chat into the current attempt
+        for (const [chatEntryId, attemptChatId] of Object.entries(
+          params.previousChatMap,
+        )) {
+          if (!attemptChatId) continue;
+          await transport.send("/attempt/chat/create", {
+            attempt_id: params.attemptId,
+            chat_id: chatEntryId,
+            previous_attempt_chat_id: attemptChatId,
+          });
+        }
         await findNextAndRoute(params.attemptId);
       } catch (err) {
         setStage("error");
