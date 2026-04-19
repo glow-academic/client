@@ -636,7 +636,7 @@ export function AttemptChat({
   const chatAreaViewMode: ChatAreaViewMode = useMemo(() => {
     if (showGrades) return "rubric";
     const currentChatData = attemptData?.entries?.attempt_chat?.[currentChatIndex];
-    const hasVideo = !!resolvedChat?.video?.upload_id;
+    const hasVideo = !!resolvedChat?.video?.video_id;
     const hasVideoQuestions = resolvedChat?.questions && resolvedChat.questions.length > 0;
 
     // graded-video mode when viewing responses for completed video with questions
@@ -690,7 +690,7 @@ export function AttemptChat({
           setForkAtMessageId(null);
         }
 
-        sendMessage(currentChat.id, attempt_id, message, parentMessageId);
+        sendMessage(currentChat.id, attempt_id, message, parentMessageId, attemptData?.attempt?.user_persona_id ?? undefined);
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
         setIsSendingMessage(false);
@@ -700,14 +700,14 @@ export function AttemptChat({
   );
 
   const handleStopMessage = useCallback(async () => {
-    if (!currentChat || isStoppingMessage) return;
+    if (isStoppingMessage) return;
     try {
-      stopMessage(currentChat.id);
+      stopMessage();
     } catch (error) {
       toast.error(`Failed to stop message: ${error}`);
       setIsStoppingMessage(false);
     }
-  }, [currentChat, isStoppingMessage, stopMessage, setIsStoppingMessage]);
+  }, [isStoppingMessage, stopMessage, setIsStoppingMessage]);
 
   const handleQuizResponse = useCallback(
     (questionId: string, optionIds: string[]) => {
