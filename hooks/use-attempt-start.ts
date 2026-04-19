@@ -38,11 +38,7 @@ export function useAttemptStart(): UseAttemptStartReturn {
         setError(null);
         setStage("starting");
 
-        const endpoint = opts.practiceId
-          ? "/attempt/practice/start"
-          : "/attempt/home/start";
-
-        const result = await transport.send(endpoint, {
+        const result = await transport.send("/attempt/start", {
           ...(opts.practiceId && { practice_id: opts.practiceId }),
           ...(opts.homeId && { home_id: opts.homeId }),
           infinite_mode: opts.infiniteMode ?? false,
