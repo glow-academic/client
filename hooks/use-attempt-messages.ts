@@ -351,7 +351,7 @@ export function useAttemptMessages({
     () => {
       if (!activeGroupIdRef.current) return;
       setIsStopping(true);
-      transport.send("/stop", { group_id: activeGroupIdRef.current });
+      transport.send("/attempt/stop", { group_id: activeGroupIdRef.current });
     },
     [transport],
   );
