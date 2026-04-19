@@ -501,25 +501,26 @@ export function AttemptChat({
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    if (!currentChat?.id) return;
-    if (currentRoomRef.current === currentChat.id) return;
+    const group_id = attemptData?.group_id;
+    if (!group_id) return;
+    if (currentRoomRef.current === group_id) return;
 
     if (currentRoomRef.current) {
-      transport.send("/attempt/leave", { chat_id: currentRoomRef.current });
+      transport.send("/attempt/leave", { group_id: currentRoomRef.current });
     }
 
-    transport.send("/attempt/join", { chat_id: currentChat.id });
-    currentRoomRef.current = currentChat.id;
-    currentChatIdRef.current = currentChat.id;
+    transport.send("/attempt/join", { group_id });
+    currentRoomRef.current = group_id;
+    currentChatIdRef.current = currentChat?.id ?? null;
 
     return () => {
       if (currentRoomRef.current) {
-        transport.send("/attempt/leave", { chat_id: currentRoomRef.current });
+        transport.send("/attempt/leave", { group_id: currentRoomRef.current });
         currentRoomRef.current = null;
         currentChatIdRef.current = null;
       }
     };
-  }, [currentChat?.id, transport]);
+  }, [attemptData?.group_id, currentChat?.id, transport]);
 
   useEffect(() => {
     const chatId = currentChat?.id ?? null;
