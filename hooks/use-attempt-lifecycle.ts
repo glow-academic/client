@@ -32,7 +32,7 @@ export interface UseAttemptLifecycleReturn {
     infiniteMode?: boolean;
   }) => void;
   completeChat: (chatId: string) => void;
-  endAll: (attemptId: string) => void;
+  completeAttempt: (attemptId: string) => void;
   usePrevious: (
     attemptId: string,
     previousChatMap: Record<string, string>,
@@ -149,9 +149,9 @@ export function useAttemptLifecycle({
     [transport],
   );
 
-  const endAll = useCallback(
+  const completeAttempt = useCallback(
     (attemptIdArg: string) => {
-      transport.send("/attempt/end", {
+      transport.send("/attempt/complete", {
         attempt_id: attemptIdArg,
       });
     },
@@ -171,7 +171,7 @@ export function useAttemptLifecycle({
   return {
     startAttempt,
     completeChat,
-    endAll,
+    completeAttempt,
     usePrevious,
   };
 }

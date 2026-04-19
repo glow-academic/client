@@ -191,7 +191,7 @@ export function useAttemptEnd(): UseAttemptEndReturn {
       try {
         setError(null);
         setStage("ending_attempt");
-        await transport.send("/attempt/end", { attempt_id: attemptId });
+        await transport.send("/attempt/complete", { attempt_id: attemptId });
         setStage("done");
         router.push(`/attempt/${attemptId}`);
         router.refresh();

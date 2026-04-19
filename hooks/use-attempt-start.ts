@@ -53,7 +53,7 @@ export function useAttemptStart(): UseAttemptStartReturn {
 
         // No chat returned — end attempt immediately
         if (!chatId) {
-          await transport.send("/attempt/end", { attempt_id: attemptId });
+          await transport.send("/attempt/complete", { attempt_id: attemptId });
           setStage("idle");
           return;
         }
