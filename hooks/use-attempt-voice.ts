@@ -150,7 +150,7 @@ export function useAttemptVoice({
   const sendFrame = useCallback(
     (audio: ArrayBuffer) => {
       if (!chatIdRef.current) return;
-      transport.send("/attempt/chat/send", { chat_id: chatIdRef.current, audio });
+      transport.send("/attempt/chat/speak", { chat_id: chatIdRef.current, audio });
     },
     [transport, chatIdRef],
   );

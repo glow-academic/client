@@ -295,7 +295,7 @@ export function useAttemptMessages({
       transport.on("attempt.generate.completed", handleGenerateCompleted),
       transport.on("attempt.generate.failed", handleGenerateFailed),
       // Canonical: message persisted
-      transport.on("attempt.chat_send.completed", handleChatSendCompleted),
+      transport.on("attempt.chat_message.completed", handleChatSendCompleted),
       // Legacy attempt events (user message, stop, error)
       transport.on("attempt.chat.assistant_start", handleAssistantStart),
       transport.on("attempt.chat.assistant_progress", handleAssistantDelta),
@@ -322,8 +322,7 @@ export function useAttemptMessages({
       setIsSending(true);
 
       // Part 1: Persist the user message
-      await transport.send("/attempt/chat/send", {
-        attempt_id: attemptId,
+      await transport.send("/attempt/chat/message", {
         chat_id: chatId,
         text: message,
         ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
@@ -331,11 +330,10 @@ export function useAttemptMessages({
       });
 
       // Part 2: Trigger AI response via canonical generate
-      // Model calls Attempt_Chat_Send tool to persist its response as an attempt message
       const generateResult = await transport.send("/attempt/generate", {
         instructions: ["Respond to the user's latest message in character."],
         config: {
-          operations: ["chat_send", "get"],
+          operations: ["chat_message", "get"],
           params: {
             attempt_id: attemptId,
             chat_id: chatId,
