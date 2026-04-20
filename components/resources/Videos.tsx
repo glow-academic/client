@@ -2,7 +2,7 @@
  * Videos.tsx
  * Resource component for video selection
  * Redesigned to match ContentSection interface-first pattern with video picker and preview
- * Manages video_ids array and reports to parent
+ * Pure UI: data in, IDs out via onChange. Parent owns creation.
  */
 
 "use client";
@@ -16,21 +16,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Upload, Video, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
-type CreateDraftVideosIn = InputOf<"/api/v5/resources/videos", "post">;
-type CreateDraftVideosOut = OutputOf<"/api/v5/resources/videos", "post">;
-
 export interface VideoResourceItem {
   video_id?: string | null;
   name?: string | null;
   length_seconds?: number | null;
-  upload_id?: string | null;
   generated?: boolean | null;
   pending?: boolean | null;
 }
@@ -40,16 +35,13 @@ export interface VideoItem {
   name: string;
   description?: string;
   length_seconds?: number;
-  upload_id?: string;
 }
 
 export interface VideosProps {
   video_ids?: string[]; // Current video artifact IDs (standardized prop name)
   video_resources?: VideoResourceItem[]; // Selected video resources
   show_videos?: boolean; // Whether to show this resource picker
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
   videos_required?: boolean; // Whether this resource is required
-  video_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   videos?: VideoResourceItem[]; // All available videos from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update video_ids in form state
@@ -58,16 +50,9 @@ export interface VideosProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  createVideosAction?:
-    | ((input: CreateDraftVideosIn) => Promise<CreateDraftVideosOut>)
-    | undefined;
   onVideoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; // Upload handler
   videoInputRef?: React.RefObject<HTMLInputElement>; // Ref for file input
   isUploadingVideo?: boolean; // Whether video is currently uploading
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ video_ids: string[] } | void>) => void;
   /** Artifact-scoped base path for upload/download URLs (e.g., "/scenario") */
   uploadBasePath?: string;
   /** Server action to upload a file — receives FormData, returns upload_id */
@@ -84,11 +69,9 @@ export interface VideosProps {
 
 export function Videos({
   video_ids,
-  video_resources,
+  video_resources: _video_resources,
   show_videos = false,
-  create_tool_id,
   videos_required,
-  video_suggestions: _video_suggestions,
   videos,
   disabled = false,
   onChange,
@@ -97,12 +80,9 @@ export function Videos({
   required = false,
   placeholder = "Select video...",
   description: _description,
-  createVideosAction,
   onVideoUpload,
   videoInputRef,
   isUploadingVideo = false,
-  isAutosaveEnabled = true,
-  registerFlush,
   uploadBasePath,
   uploadFileAction,
   onVideoUploadValue,
@@ -117,19 +97,12 @@ export function Videos({
     id: string;
     name: string;
     length_seconds: number;
-    upload_id?: string;
   } | null>(() => {
-    // Initialize from video_resources or videos array
     if (ids.length > 0 && allVideos.length > 0) {
       const video = allVideos.find((v) => v.video_id === ids[0]);
       const videoId = video?.video_id;
       if (video && videoId && video.name && video.length_seconds !== null && video.length_seconds !== undefined) {
-        return {
-          id: videoId,
-          name: video.name,
-          length_seconds: video.length_seconds,
-          ...(video.upload_id ? { upload_id: video.upload_id } : {}),
-        };
+        return { id: videoId, name: video.name, length_seconds: video.length_seconds };
       }
     }
     return null;
@@ -141,12 +114,7 @@ export function Videos({
       const video = allVideos.find((v) => v.video_id === ids[0]);
       const videoId = video?.video_id;
       if (video && videoId && video.name && video.length_seconds !== null && video.length_seconds !== undefined) {
-        setSelectedVideo({
-          id: videoId,
-          name: video.name,
-          length_seconds: video.length_seconds,
-          ...(video.upload_id ? { upload_id: video.upload_id } : {}),
-        });
+        setSelectedVideo({ id: videoId, name: video.name, length_seconds: video.length_seconds });
       }
     } else if (ids.length === 0) {
       setSelectedVideo(null);
@@ -155,10 +123,6 @@ export function Videos({
 
   // Create internal file input ref (must be before any early returns — rules of hooks)
   const internalVideoInputRef = useRef<HTMLInputElement>(null);
-
-  // Track which video IDs have already had resources created
-  const createdVideoIdsRef = useRef<Set<string>>(new Set());
-  const flushRef = useRef<(() => Promise<{ video_ids: string[] } | void>) | undefined>(undefined);
 
   // TUS upload state
   const [activeUploads, setActiveUploads] = useState<
@@ -173,11 +137,6 @@ export function Videos({
     >
   >(new Map());
 
-  // Initialize createdVideoIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdVideoIdsRef.current.add(id));
-  }, [ids]);
-
   // Build video mapping for GenericPicker (matching ContentSection pattern)
   // API returns video_id, not id
   const videoMapping = useMemo(() => {
@@ -189,7 +148,6 @@ export function Videos({
           id: videoId,
           name: v.name,
           length_seconds: v.length_seconds,
-          ...(v.upload_id ? { upload_id: v.upload_id } : {}),
         };
       }
     });
@@ -197,94 +155,21 @@ export function Videos({
   }, [allVideos]);
 
   const handleVideoSelect = useCallback(
-    async (selectedIds: string[]) => {
+    (selectedIds: string[]) => {
       const videoId = selectedIds[0] || null;
-
-      if (videoId && videoMapping[videoId]) {
-        const selectedVideoItem = videoMapping[videoId];
-
-        // Find if this is a newly selected video
-        const isNewlySelected = !ids.includes(videoId) && !createdVideoIdsRef.current.has(videoId);
-
-        // Create resource for newly selected video (only if autosave is enabled)
-        if (isAutosaveEnabled && isNewlySelected) {
-          if (createVideosAction && create_tool_id) {
-            try {
-              await createVideosAction({
-                body: {
-                  name: selectedVideoItem.name ?? "",
-                  length_seconds: selectedVideoItem.length_seconds ?? 0,
-                  description: selectedVideoItem.description ?? "",
-                  mcp: false,
-                  tool_id: create_tool_id ?? undefined,
-                },
-              });
-              createdVideoIdsRef.current.add(videoId);
-            } catch (error) {
-              // eslint-disable-next-line no-console
-              console.error(
-                `Failed to create video resource for ${videoId}:`,
-                error
-              );
-              // Don't block UI - still update selection
-            }
-          }
-        }
-
-        // Update parent state
+      if (videoId) {
         onChange([videoId]);
-      } else if (!videoId) {
-        // Clear selection
+      } else {
         onChange([]);
       }
     },
-    [ids, onChange, createVideosAction, create_tool_id, videoMapping, isAutosaveEnabled]
+    [onChange]
   );
-
-  // Flush function for manual save mode - creates pending resources and returns all IDs
-  flushRef.current = async (): Promise<{ video_ids: string[] } | void> => {
-    if (!createVideosAction || !create_tool_id) {
-      return { video_ids: ids };
-    }
-
-    const allIds: string[] = [...ids];
-
-    // Create resources for any selected videos that haven't been created yet
-    for (const videoId of ids) {
-      if (!createdVideoIdsRef.current.has(videoId)) {
-        try {
-          const videoItem = videoMapping[videoId];
-          await createVideosAction({
-            body: {
-              name: videoItem?.name ?? "",
-              length_seconds: videoItem?.length_seconds ?? 0,
-              description: videoItem?.description ?? "",
-              mcp: false,
-              tool_id: create_tool_id ?? undefined,
-            },
-          });
-          createdVideoIdsRef.current.add(videoId);
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error(`Failed to create video resource for ${videoId}:`, error);
-        }
-      }
-    }
-
-    return { video_ids: allIds };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Upload function via server action
   const uploadFile = useCallback(
     async (file: File) => {
-      if (!uploadFileAction || !createVideosAction || !create_tool_id) {
+      if (!uploadFileAction) {
         toast.error("Upload functionality not available");
         return;
       }
@@ -318,36 +203,6 @@ export function Videos({
 
         // Report upload value upward for unified draft pattern
         onVideoUploadValue?.({ name: file.name, description: "", upload_id: databaseUploadId, length_seconds: 0 });
-
-        // Create video resource entry
-        const createResult = await createVideosAction({
-          body: {
-            name: file.name,
-            length_seconds: 0,
-            description: "",
-            upload_id: databaseUploadId,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-
-        if (!createResult.id) {
-          throw new Error("Failed to create video resource");
-        }
-
-        const videoResourceId = createResult.id;
-        createdVideoIdsRef.current.add(videoResourceId);
-
-        // Add to selection
-        onChange([videoResourceId]);
-
-        // Update selectedVideo state
-        setSelectedVideo({
-          id: videoResourceId,
-          name: file.name,
-          length_seconds: 0,
-          upload_id: databaseUploadId,
-        });
 
         toast.success(`Upload completed: ${file.name}!`, {
           description: "Video uploaded successfully",
@@ -386,9 +241,6 @@ export function Videos({
     },
     [
       uploadFileAction,
-      createVideosAction,
-      create_tool_id,
-      onChange,
       onVideoUploadValue,
     ]
   );
@@ -574,9 +426,9 @@ export function Videos({
         )}
 
         {selectedVideo ? (
-          selectedVideo.upload_id ? (
+          selectedVideo.id ? (
             <video
-              src={`/api/${uploadBasePath?.split("/").pop() || "scenarios"}/download/${selectedVideo.upload_id}`}
+              src={`/api/system/video/${selectedVideo.id}`}
               controls
               className="w-full h-full object-contain"
             />

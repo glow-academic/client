@@ -16,19 +16,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-
-type CreateDraftSlugsIn = InputOf<"/api/v5/resources/slugs", "post">;
-type CreateDraftSlugsOut = OutputOf<"/api/v5/resources/slugs", "post">;
+import { Check, X } from "lucide-react";
+import { useCallback, useMemo } from "react";
 
 export interface SlugResourceItem {
   id?: string | null;
   value?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface SlugItem {
@@ -40,8 +37,7 @@ export interface SlugsProps {
   slug_ids?: string[]; // Current slug resource IDs (standardized prop name)
   slug_resources?: SlugResourceItem[]; // Selected slug resources (each includes generated field)
   show_slugs?: boolean; // Whether to show this resource picker
-  slug_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  slugs?: SlugResourceItem[]; // All available slugs from API (each includes generated field)
+  slugs?: SlugResourceItem[]; // All available slugs from API (each includes generated, suggested, and pending fields)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update slug_ids in form state
   label?: string;
@@ -49,25 +45,15 @@ export interface SlugsProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createSlugsAction?:
-    | ((input: CreateDraftSlugsIn) => Promise<CreateDraftSlugsOut>)
-    | undefined;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   aiSlugResources?: Array<{ id?: string | null; value?: string | null }> | null;
-  /** When false, skip automatic resource creation (manual save mode) */
+  // Legacy props kept for backward compatibility (unused after pending migration)
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ slug_ids: string[] | null } | void>) => void;
 }
 
 export function Slugs({
   slug_ids,
-  slug_resources,
+  slug_resources: _slug_resources,
   show_slugs = false,
-  slug_suggestions,
   slugs,
   disabled = false,
   onChange,
@@ -76,79 +62,21 @@ export function Slugs({
   required = false,
   placeholder = "Select slugs...",
   description,
-  group_id,
-  create_tool_id,
-  createSlugsAction,
-  onGenerate,
-  showAiGenerate = false,
-  isAutosaveEnabled = true,
-  registerFlush,
+  aiSlugResources: _aiSlugResources,
 }: SlugsProps) {
   const ids = useMemo(() => slug_ids ?? [], [slug_ids]);
   const show = show_slugs ?? false;
   const allSlugs = useMemo(() => slugs ?? [], [slugs]);
-  const suggestionsList = useMemo(
-    () => slug_suggestions ?? [],
-    [slug_suggestions]
+
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allSlugs.filter((s) => s.pending && s.id);
+  }, [allSlugs]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((s) => s.id).filter(Boolean) as string[]),
+    [pendingItems]
   );
-
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "slugs",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // Track which slug IDs have already had resources created
-  const createdSlugIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdSlugIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdSlugIdsRef.current.add(id));
-  }, [ids]);
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ slug_ids: string[] | null } | void>) | undefined>(undefined);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ slug_ids: string[] | null } | void> => {
-    // Skip if no action available
-    if (!createSlugsAction || !group_id) {
-      return;
-    }
-
-    // Find IDs that haven't been created yet
-    const uncreatedIds = ids.filter((id) => !createdSlugIdsRef.current.has(id));
-
-    if (uncreatedIds.length === 0) {
-      return { slug_ids: ids };
-    }
-
-    try {
-      for (const slugId of uncreatedIds) {
-        await createSlugsAction({
-          body: {
-            slug_id: slugId,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        createdSlugIdsRef.current.add(slugId);
-      }
-      return { slug_ids: ids };
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to create slug resources:", error);
-      throw error;
-    }
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Convert slugs array to SlugItem format for GenericPicker
   const slugItems = useMemo(() => {
@@ -160,78 +88,34 @@ export function Slugs({
       }));
   }, [allSlugs]);
 
-  // Check if a slug is suggested
+  // Check if a slug is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
-    (slugId: string) => suggestionsList.includes(slugId),
-    [suggestionsList]
+    (slugId: string) => {
+      const slug = allSlugs.find((s) => s.id === slugId);
+      return slug?.suggested === true;
+    },
+    [allSlugs]
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdSlugIdsRef.current.has(id)
-      );
-
-      // Create resources for newly selected slugs - only when autosave is enabled
-      if (
-        isAutosaveEnabled &&
-        newlySelected.length > 0 &&
-        createSlugsAction &&
-        create_tool_id &&
-        group_id
-      ) {
-        for (const slugId of newlySelected) {
-          try {
-            await createSlugsAction({
-              body: {
-                slug_id: slugId,
-                mcp: false,
-                tool_id: create_tool_id ?? undefined,
-              },
-            });
-            createdSlugIdsRef.current.add(slugId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create slug resource for ${slugId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
-
-      // Update parent state
+    (selectedIds: string[]) => {
       onChange(selectedIds);
     },
-    [ids, onChange, createSlugsAction, create_tool_id, group_id, isAutosaveEnabled]
+    [onChange]
   );
 
-  // Check if any slug resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return slug_resources?.some((s) => s.generated) ?? false;
-  }, [slug_resources]);
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-
-  // Accept AI suggestion - add AI-suggested slugs to selection
+  // Accept pending — keep pending slugs in selection (no-op, they're already in ids)
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((s) => s.id)
-      .filter((id): id is string => !!id);
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending slugs from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    const newIds = ids.filter((id) => !pendingIds.has(id));
+    onChange(newIds);
+  }, [ids, pendingIds, onChange]);
 
   // Don't render if show_slugs is false (AFTER all hooks)
   if (!show) {
@@ -251,31 +135,6 @@ export function Slugs({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -314,25 +173,6 @@ export function Slugs({
           )}
         </div>
       )}
-      {/* AI-suggested slugs preview */}
-      {showDiff && aiSuggestions.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Slugs</p>
-          <div className="space-y-2">
-            {aiSuggestions.map((item, idx) => (
-              <div
-                key={item.id || idx}
-                className={cn(
-                  "p-3 rounded-lg border-2 border-success bg-success/10",
-                  "text-sm"
-                )}
-              >
-                {item.value || ""}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
       <GenericPicker<SlugItem>
         items={slugItems}
         itemIds={allSlugs
@@ -343,31 +183,47 @@ export function Slugs({
         multiSelect={true}
         getId={(item) => item.id}
         getLabel={(item) => item.value}
-        renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                    </TooltipTrigger>
-                    <TooltipContent side="top">Suggested</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.value}</div>
+        renderItem={(item, isSelected) => {
+          const isPending = pendingIds.has(item.id);
+
+          return (
+            <div className={cn(
+              "flex items-center justify-between w-full",
+              isPending && "ring-2 ring-success bg-success/10 rounded-md px-1",
+            )}>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {/* Pending badge - priority over selected and suggested */}
+                {isPending && (
+                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium shrink-0">
+                    Pending
+                  </span>
+                )}
+                {/* Suggested dot indicator */}
+                {isSuggested(item.id) && !isSelected && !isPending && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Suggested</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="truncate">{item.value}</div>
+                </div>
               </div>
-            </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
+              {!isPending && (
+                <Check
+                  className={cn(
+                    "ml-auto flex-shrink-0 h-4 w-4",
+                    isSelected ? "opacity-100" : "opacity-0"
+                  )}
+                />
               )}
-            />
-          </div>
-        )}
+            </div>
+          );
+        }}
         placeholder={placeholder}
         disabled={disabled}
         showLabel={false}

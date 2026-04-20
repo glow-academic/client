@@ -172,15 +172,6 @@ export interface SimulationProps {
   ) => Promise<PatchSimulationDraftOut>;
 }
 
-const FLUSH_KEYS = [
-  "names",
-  "descriptions",
-  "scenario_flags",
-  "scenario_positions",
-  "scenario_rubrics",
-  "scenario_time_limits",
-] as const;
-
 const VALID_RESOURCE_TYPES: SimulationResourceType[] = [
   "names",
   "descriptions",
@@ -248,8 +239,8 @@ function SimulationComponent({
   const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
 
   // --- Flush Registry ---
-  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
-    useFlushRegistry<FlushResult>(FLUSH_KEYS);
+  const { flushRegistryRef, flushAllResources } =
+    useFlushRegistry<FlushResult>([]);
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   // Memoize to prevent new object reference on every render
@@ -607,6 +598,23 @@ function SimulationComponent({
     formStateRef,
   });
 
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((id: string | null) => {
+    setFormState((prev) => ({ ...prev, name_id: id, name: null }));
+  }, []);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({ ...prev, name, name_id: null }));
+  }, []);
+
+  const handleDescriptionIdChange = useCallback((id: string | null) => {
+    setFormState((prev) => ({ ...prev, description_id: id, description: null }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({ ...prev, description, description_id: null }));
+  }, []);
+
   React.useEffect(() => {
     if (patchSimulationDraftAction) {
       patchActionRef.current = async (payload: Record<string, unknown>) => {
@@ -617,30 +625,60 @@ function SimulationComponent({
         // Sync form_state from server response (server is source of truth)
         const fs = (result as Record<string, unknown>)?.["form_state"] as Record<string, unknown> | undefined;
         if (fs) {
-          serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name_id: (fs["name_id"] as string) ?? prev.name_id,
-            description_id: (fs["description_id"] as string) ?? prev.description_id,
-            flag_ids: (fs["flag_ids"] as string[]) ?? prev.flag_ids,
-            department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
-            scenario_ids: (fs["scenario_ids"] as string[]) ?? prev.scenario_ids,
-            scenario_flag_ids: (fs["scenario_flag_ids"] as string[]) ?? prev.scenario_flag_ids,
-            scenario_position_ids: (fs["scenario_position_ids"] as string[]) ?? prev.scenario_position_ids,
-            scenario_rubric_ids: (fs["scenario_rubric_ids"] as string[]) ?? prev.scenario_rubric_ids,
-            scenario_time_limit_ids: (fs["scenario_time_limit_ids"] as string[]) ?? prev.scenario_time_limit_ids,
-            pending_ids: (fs["pending_ids"] as string[]) ?? prev.pending_ids,
-            // Keep echoed values only when the server has not resolved them to IDs yet.
-            name: fs["name_id"] ? null : ((fs["name"] as string | null | undefined) ?? prev.name),
-            description: fs["description_id"]
-              ? null
-              : ((fs["description"] as string | null | undefined) ?? prev.description),
-            // Clear multi-select values — server merged them into IDs
-            scenario_flags: null,
-            scenario_positions: null,
-            scenario_rubrics: null,
-            scenario_time_limits: null,
-          }));
+          setFormState((prev) => {
+            const next = {
+              ...prev,
+              name_id: (fs["name_id"] as string) ?? prev.name_id,
+              description_id: (fs["description_id"] as string) ?? prev.description_id,
+              flag_ids: (fs["flag_ids"] as string[]) ?? prev.flag_ids,
+              department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
+              scenario_ids: (fs["scenario_ids"] as string[]) ?? prev.scenario_ids,
+              scenario_flag_ids: (fs["scenario_flag_ids"] as string[]) ?? prev.scenario_flag_ids,
+              scenario_position_ids: (fs["scenario_position_ids"] as string[]) ?? prev.scenario_position_ids,
+              scenario_rubric_ids: (fs["scenario_rubric_ids"] as string[]) ?? prev.scenario_rubric_ids,
+              scenario_time_limit_ids: (fs["scenario_time_limit_ids"] as string[]) ?? prev.scenario_time_limit_ids,
+              pending_ids: (fs["pending_ids"] as string[]) ?? prev.pending_ids,
+              // Clear value fields only once the server has resolved them to IDs.
+              // Keeping the value would cause infinite re-saves (value takes
+              // precedence → new resource → new id → repeat).
+              name: fs["name_id"] ? null : ((fs["name"] as string | null | undefined) ?? prev.name),
+              description: fs["description_id"]
+                ? null
+                : ((fs["description"] as string | null | undefined) ?? prev.description),
+              // Only clear multi-text arrays when server returned IDs for them.
+              // Previously these were cleared unconditionally, which would
+              // clobber a mid-typed value on a "no-op" server sync.
+              scenario_flags: (fs["scenario_flag_ids"] as string[])?.length ? null : prev.scenario_flags,
+              scenario_positions: (fs["scenario_position_ids"] as string[])?.length ? null : prev.scenario_positions,
+              scenario_rubrics: (fs["scenario_rubric_ids"] as string[])?.length ? null : prev.scenario_rubrics,
+              scenario_time_limits: (fs["scenario_time_limit_ids"] as string[])?.length ? null : prev.scenario_time_limits,
+            };
+            // Only set the server-sync absorb flag when the state actually
+            // changes. If the server returned identical values, setting the
+            // flag unconditionally would let it stick until the next user
+            // action and silently swallow that action's save. (Same fix as
+            // Persona and Scenario.)
+            const changed =
+              prev.name_id !== next.name_id ||
+              prev.name !== next.name ||
+              prev.description_id !== next.description_id ||
+              prev.description !== next.description ||
+              JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
+              JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
+              JSON.stringify(prev.scenario_ids) !== JSON.stringify(next.scenario_ids) ||
+              JSON.stringify(prev.scenario_flag_ids) !== JSON.stringify(next.scenario_flag_ids) ||
+              JSON.stringify(prev.scenario_position_ids) !== JSON.stringify(next.scenario_position_ids) ||
+              JSON.stringify(prev.scenario_rubric_ids) !== JSON.stringify(next.scenario_rubric_ids) ||
+              JSON.stringify(prev.scenario_time_limit_ids) !== JSON.stringify(next.scenario_time_limit_ids) ||
+              JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids) ||
+              JSON.stringify(prev.scenario_flags) !== JSON.stringify(next.scenario_flags) ||
+              JSON.stringify(prev.scenario_positions) !== JSON.stringify(next.scenario_positions) ||
+              JSON.stringify(prev.scenario_rubrics) !== JSON.stringify(next.scenario_rubrics) ||
+              JSON.stringify(prev.scenario_time_limits) !== JSON.stringify(next.scenario_time_limits);
+            if (!changed) return prev;
+            serverSyncPendingRef.current = true;
+            return next;
+          });
         }
 
         return result;
@@ -1181,17 +1219,12 @@ function SimulationComponent({
                   show_name={true}
                   names={s.names ?? []}
                   disabled={disabled}
-                  onNameIdChange={(id) =>
-                    setFormState((prev) => ({ ...prev, name_id: id, name: null }))
-                  }
-                  onNameChange={(name) =>
-                    setFormState((prev) => ({ ...prev, name, name_id: null }))
-                  }
+                  onNameIdChange={handleNameIdChange}
+                  onNameChange={handleNameChange}
                   required={SIMULATION_REQUIRED.names}
                   placeholder="Simulation name"
                   defaultName="New Simulation"
                   hideDescription={true}
-                  isAutosaveEnabled={isAutosaveEnabled}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
@@ -1219,18 +1252,13 @@ function SimulationComponent({
                   show_description={true}
                   descriptions={s.descriptions ?? []}
                   disabled={disabled}
-                  onDescriptionIdChange={(id) =>
-                    setFormState((prev) => ({ ...prev, description_id: id, description: null }))
-                  }
-                  onDescriptionChange={(description) =>
-                    setFormState((prev) => ({ ...prev, description, description_id: null }))
-                  }
+                  onDescriptionIdChange={handleDescriptionIdChange}
+                  onDescriptionChange={handleDescriptionChange}
                   searchTerm={descriptionSearch ?? ""}
                   onSearchChange={(term: string) =>
                     setStepFormData({ descriptionSearch: term || null })
                   }
                   required={SIMULATION_REQUIRED.descriptions}
-                  isAutosaveEnabled={isAutosaveEnabled}
                 />
                 <Departments
                   department_ids={formState.department_ids ?? []}
@@ -1406,8 +1434,6 @@ function SimulationComponent({
                       scenario_flags: flags.length > 0 ? flags : null,
                     }))
                   }
-                  isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["scenario_flags"]}
                 />
                 <ScenarioPositions
                   scenario_position_ids={formState.scenario_position_ids ?? []}
@@ -1433,14 +1459,10 @@ function SimulationComponent({
                       scenario_positions: positions.length > 0 ? positions : null,
                     }))
                   }
-                  isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["scenario_positions"]}
                 />
                 <ScenarioRubrics
-                  scenario_rubric_ids={formState.scenario_rubric_ids ?? []}
                   scenario_rubric_resources={selectedScenarioRubrics}
                   show_scenario_rubrics={showScenarioRubrics}
-                  scenario_rubrics={s.scenario_rubrics ?? []}
                   rubrics={(s.rubrics ?? [])
                     .filter((rubric) => rubric.id && rubric.name)
                     .map((rubric) => ({
@@ -1465,8 +1487,6 @@ function SimulationComponent({
                       scenario_rubrics: rubrics.length > 0 ? rubrics : null,
                     }))
                   }
-                  isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["scenario_rubrics"]}
                 />
                 <ScenarioTimeLimits
                   scenario_time_limit_ids={
@@ -1491,8 +1511,6 @@ function SimulationComponent({
                       scenario_time_limits: timeLimits.length > 0 ? timeLimits : null,
                     }))
                   }
-                  isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["scenario_time_limits"]}
                 />
               </div>
             </StepCard>
@@ -1520,7 +1538,6 @@ function SimulationComponent({
       handleDirectStepGenerate,
       scenarioResourcesWithShowHints,
       isAutosaveEnabled,
-      registerFlushCallbacks,
     ],
   );
 

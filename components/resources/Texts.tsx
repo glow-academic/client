@@ -2,7 +2,7 @@
  * Texts.tsx
  * Resource component for text content selection
  * Simple multi-select component with GenericPicker and textarea for creating new texts
- * Manages text_ids array and reports to parent
+ * Pure UI: data in, IDs out via onChange
  */
 
 "use client";
@@ -18,13 +18,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Check, FileText, Loader2, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
-
-type CreateDraftTextsIn = InputOf<"/api/v5/resources/texts", "post">;
-type CreateDraftTextsOut = OutputOf<"/api/v5/resources/texts", "post">;
+import { Check, FileText, X } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 
 export interface TextResourceItem {
   texts_id?: string | null;
@@ -46,8 +41,6 @@ export interface TextsProps {
   text_ids?: string[];
   text_resources?: TextItem[];
   show_texts?: boolean;
-  create_tool_id?: string | null;
-  text_suggestions?: string[];
   texts?: TextItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
@@ -56,15 +49,8 @@ export interface TextsProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  createTextsAction?:
-    | ((input: CreateDraftTextsIn) => Promise<CreateDraftTextsOut>)
-    | undefined;
   searchTerm?: string;
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ text_ids: string[] } | void>) => void;
-  /** Called when text content is created in autosave mode — reports content for server-side chain creation */
+  /** Called when text content is created — reports content for server-side chain creation */
   onTextContentCreate?: (content: string) => void;
 }
 
@@ -72,25 +58,16 @@ export function Texts({
   text_ids = [],
   text_resources = [],
   show_texts = true,
-  create_tool_id,
-  text_suggestions: _textSuggestions = [],
   texts = [],
   disabled = false,
   onChange,
   label = "Texts",
   required = false,
-  createTextsAction,
   searchTerm,
-  isAutosaveEnabled = true,
-  registerFlush,
   onTextContentCreate,
 }: TextsProps) {
-  const [isCreating, setIsCreating] = useState(false);
   const [newTextContent, setNewTextContent] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
-
-  const createdTextIdsRef = useRef<Set<string>>(new Set());
-  const flushRef = useRef<(() => Promise<{ text_ids: string[] } | void>) | undefined>(undefined);
 
   // Derive selected texts from text_resources or texts list
   const selectedTexts = useMemo(() => {
@@ -116,51 +93,16 @@ export function Texts({
     [text_ids, onChange],
   );
 
-  // Handle creating a new text
-  const handleCreate = useCallback(async () => {
-    if (!newTextContent.trim()) {
-      toast.error("Text content cannot be empty");
-      return;
-    }
+  // Handle creating a new text — report content to parent
+  const handleCreate = useCallback(() => {
+    if (!newTextContent.trim()) return;
 
-    if (isAutosaveEnabled && onTextContentCreate) {
-      // In autosave mode, report content to parent for server-side chain creation
+    if (onTextContentCreate) {
       onTextContentCreate(newTextContent.trim());
       setNewTextContent("");
       setShowCreateForm(false);
-      toast.success("Text added");
-      return;
     }
-
-    if (!createTextsAction) {
-      toast.error("Create action not available");
-      return;
-    }
-
-    setIsCreating(true);
-    try {
-      const result = await createTextsAction({
-        body: {
-          content: newTextContent.trim(),
-          agent_id: create_tool_id || "00000000-0000-0000-0000-000000000000",
-          mcp: false,
-          tool_id: create_tool_id ?? undefined,
-        },
-      });
-      const newTextId = result?.texts_id;
-      if (newTextId) {
-        createdTextIdsRef.current.add(newTextId);
-        onChange([...text_ids, newTextId]);
-        setNewTextContent("");
-        setShowCreateForm(false);
-        toast.success("Text created");
-      }
-    } catch {
-      toast.error("Failed to create text");
-    } finally {
-      setIsCreating(false);
-    }
-  }, [newTextContent, createTextsAction, create_tool_id, text_ids, onChange, isAutosaveEnabled, onTextContentCreate]);
+  }, [newTextContent, onTextContentCreate]);
 
   // Pending state: items with pending=true from soft draft connections
   const pendingItems = useMemo(() => {
@@ -183,18 +125,6 @@ export function Texts({
     const newIds = text_ids.filter((id) => !pendingIds.has(id));
     onChange(newIds);
   }, [text_ids, pendingIds, onChange]);
-
-  // Flush function for manual save mode - returns all current text IDs
-  flushRef.current = async (): Promise<{ text_ids: string[] } | void> => {
-    return { text_ids };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   if (!show_texts) return null;
 
@@ -308,7 +238,7 @@ export function Texts({
       )}
 
       {/* Create new text */}
-      {!disabled && createTextsAction && (
+      {!disabled && onTextContentCreate && (
         <div className="space-y-2">
           {!showCreateForm ? (
             <Button
@@ -326,20 +256,15 @@ export function Texts({
                 onChange={(e) => setNewTextContent(e.target.value)}
                 placeholder="Enter text content..."
                 rows={4}
-                disabled={isCreating}
               />
               <div className="flex items-center gap-2">
                 <Button
                   type="button"
                   size="sm"
                   onClick={handleCreate}
-                  disabled={isCreating || !newTextContent.trim()}
+                  disabled={!newTextContent.trim()}
                 >
-                  {isCreating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-                  ) : (
-                    <Check className="h-3.5 w-3.5 mr-1" />
-                  )}
+                  <Check className="h-3.5 w-3.5 mr-1" />
                   Create
                 </Button>
                 <Button
@@ -350,7 +275,6 @@ export function Texts({
                     setShowCreateForm(false);
                     setNewTextContent("");
                   }}
-                  disabled={isCreating}
                 >
                   Cancel
                 </Button>

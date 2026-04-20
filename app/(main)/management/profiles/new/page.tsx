@@ -209,7 +209,6 @@ export default async function NewProfilePage({
             aria-label="Create new profile page"
           >
             <Profile
-              key={q.draftId || "no-draft"}
               mode="create"
               profileData={profileDetailDefault}
               createProfileAction={createProfile}

@@ -43,7 +43,7 @@ import {
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/contexts/profile-context";
@@ -138,6 +138,37 @@ export default function SimulationCard({
 
   const isStarting = stage !== "idle" && stage !== "error";
 
+  // Update toast as stage progresses
+  const toastIdRef = useRef<string | number | null>(null);
+  useEffect(() => {
+    const id = toastIdRef.current;
+    if (!id) return;
+
+    const stageMessages: Record<string, string> = {
+      starting: "Creating attempt...",
+      loading: "Loading chat configuration...",
+      lobby: "Entering lobby...",
+      drafting: "Preparing scenario draft...",
+      generating: "Generating training scenario...",
+      ready: "Ready! Redirecting...",
+    };
+
+    const message = stageMessages[stage];
+    if (message) {
+      toast.loading(message, { id, dismissible: true });
+    }
+    if (stage === "ready") {
+      toast.success("Ready! Redirecting...", { id, duration: 1500 });
+      toastIdRef.current = null;
+    } else if (stage === "idle" && id) {
+      toast.dismiss(id);
+      toastIdRef.current = null;
+    } else if (stage === "error") {
+      toast.error(startError || "Failed to start simulation.", { id });
+      toastIdRef.current = null;
+    }
+  }, [stage, startError]);
+
   // Start training function — orchestrates create → route → generate via hook
   const handleStartTraining = useCallback(
     async (infiniteMode: boolean = false) => {
@@ -146,7 +177,7 @@ export default function SimulationCard({
         return;
       }
 
-      toast.loading(
+      toastIdRef.current = toast.loading(
         infiniteMode ? "Starting infinite mode..." : "Starting simulation...",
         { dismissible: true },
       );
@@ -163,12 +194,8 @@ export default function SimulationCard({
           detail: { simulationId: id },
         }),
       );
-
-      if (startError) {
-        toast.error(startError || "Failed to start simulation.");
-      }
     },
-    [homeId, practiceId, start, id, startError],
+    [homeId, practiceId, start, id],
   );
 
   // Determine which Lucide fallback icon to use (when no SVG icon is provided)

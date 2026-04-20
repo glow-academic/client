@@ -2,7 +2,7 @@
  * Model.tsx
  * Implementation using modular resource components
  * Used to create and manage models - supports both creation and editing
- * Section-first API pattern (gold standard)
+ * Canonical composed GET + draft flow
  * @AshokSaravanan222 & @siladiea
  * 01/08/2026
  */
@@ -13,6 +13,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { toast } from "sonner";
@@ -40,12 +41,10 @@ import { Label } from "@/components/ui/label";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
-import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   buildDraftPayload,
   checkHasResourceIds,
-  computeEffectiveFormState,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
@@ -65,10 +64,7 @@ const MODEL_VALID_RESOURCE_TYPES: ResourceType[] = [
 
 // Helper: find current flag option ID from flags section by key
 const findCurrentFlagId = (
-  flags:
-    | Array<{ key?: string; flag_option_id?: string | null }>
-    | null
-    | undefined,
+  flags: CanonicalFlag[] | null | undefined,
   key: string,
 ): string | null => flags?.find((f) => f.key === key)?.flag_option_id ?? null;
 
@@ -82,45 +78,65 @@ type PatchModelDraftOut = OutputOf<"/model/draft", "patch">;
 
 type ModelData = OutputOf<"/model/get", "post">;
 
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftValuesIn = InputOf<"/api/v5/resources/values", "post">;
-type CreateDraftValuesOut = OutputOf<"/api/v5/resources/values", "post">;
-type CreateDraftPricingIn = InputOf<"/api/v5/resources/pricing", "post">;
-type CreateDraftPricingOut = OutputOf<"/api/v5/resources/pricing", "post">;
-type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
-type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
-
-type FlushResult = {
-  name_id?: string | null;
-  description_id?: string | null;
-  value_ids?: string[];
-  pricing_id?: string | null;
-  voice_ids?: string[];
+type CanonicalFlag = {
+  key?: string | null;
+  label?: string | null;
+  description?: string | null;
+  icon_id?: string | null;
+  flag_option_id?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+  show?: boolean | null;
+  required?: boolean | null;
 };
 
-const FLUSH_KEYS = ["names", "descriptions", "values", "pricing", "voices"] as const;
+
+
+const toSingleSection = <T extends { id?: string | null; selected?: boolean | null; suggested?: boolean | null }>(
+  items: T[] | null | undefined,
+  opts: { show?: boolean; required?: boolean; showAiGenerate?: boolean } = {},
+) => {
+  const list = items ?? [];
+  return {
+    resource: list.find((item) => item.selected) ?? null,
+    resources: list,
+    suggestions: list.filter((item) => item.suggested).map((item) => item.id).filter(Boolean),
+    show: opts.show ?? true,
+    required: opts.required ?? false,
+    show_ai_generate: opts.showAiGenerate ?? false,
+  };
+};
+
+const toMultiSection = <T extends { id?: string | null; selected?: boolean | null; suggested?: boolean | null }>(
+  items: T[] | null | undefined,
+  opts: { show?: boolean; required?: boolean; showAiGenerate?: boolean } = {},
+) => {
+  const list = items ?? [];
+  return {
+    current: list.filter((item) => item.selected),
+    resources: list,
+    suggestions: list.filter((item) => item.suggested).map((item) => item.id).filter(Boolean),
+    show: opts.show ?? true,
+    required: opts.required ?? false,
+    show_ai_generate: opts.showAiGenerate ?? false,
+  };
+};
 
 const MODEL_RESOURCES: ResourceConfig[] = [
-  { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
+  { key: "names", formKey: "name_id", flushKey: null, type: "single" },
   {
     key: "descriptions",
     formKey: "description_id",
-    flushKey: "description_id",
+    flushKey: null,
     type: "single",
   },
+  { key: "values", formKey: "value_id", flushKey: null, type: "single" },
   { key: "providers", formKey: "provider_id", flushKey: null, type: "single" },
   {
     key: "departments",
-    formKey: "departmentIds",
+    formKey: "department_ids",
     flushKey: null,
     type: "multi",
   },
@@ -139,7 +155,7 @@ const MODEL_RESOURCES: ResourceConfig[] = [
     type: "multi",
   },
   { key: "qualities", formKey: "quality_ids", flushKey: null, type: "multi" },
-  { key: "voices", formKey: "voice_ids", flushKey: "voice_ids", type: "multi" },
+  { key: "voices", formKey: "voice_ids", flushKey: null, type: "multi" },
 ];
 
 export interface ModelProps {
@@ -151,21 +167,6 @@ export interface ModelProps {
   patchModelDraftAction?: (
     input: PatchModelDraftIn,
   ) => Promise<PatchModelDraftOut>;
-  createNamesAction?: (
-    input: CreateDraftNamesIn,
-  ) => Promise<CreateDraftNamesOut>;
-  createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn,
-  ) => Promise<CreateDraftDescriptionsOut>;
-  createValuesAction?: (
-    input: CreateDraftValuesIn,
-  ) => Promise<CreateDraftValuesOut>;
-  createPricingAction?: (
-    input: CreateDraftPricingIn,
-  ) => Promise<CreateDraftPricingOut>;
-  createVoicesAction?: (
-    input: CreateDraftVoicesIn,
-  ) => Promise<CreateDraftVoicesOut>;
 }
 
 function ModelComponent({
@@ -175,18 +176,14 @@ function ModelComponent({
   createModelAction,
   updateModelAction,
   patchModelDraftAction,
-  createNamesAction,
-  createDescriptionsAction,
-  createValuesAction,
-  createPricingAction,
-  createVoicesAction,
 }: ModelProps) {
   const router = useRouter();
   const isEditMode = !!modelId;
   const { profile } = useProfile();
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
-  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
-    useFlushRegistry<FlushResult>(FLUSH_KEYS);
+  const emptyFlushRegistryRef = useRef<
+    Map<string, () => Promise<Record<string, unknown> | void>>
+  >(new Map());
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   const modelSearchParamsClient = useMemo(
@@ -205,10 +202,79 @@ function ModelComponent({
     [],
   );
 
-  // Use server-provided data (section-first)
-  const modelData = isEditMode ? serverModelDetail : modelDetailDefault;
-  // Shorthand for section-first data access
-  const s = modelData;
+  const modelData = (
+    isEditMode ? serverModelDetail : modelDetailDefault
+  ) as ModelData | undefined;
+  const s = useMemo(() => {
+    if (!modelData) return null;
+    return {
+      ...modelData,
+      names: toSingleSection(modelData.names, {
+        show: true,
+        required: true,
+        showAiGenerate: !!modelData.basic_show_ai_generate,
+      }),
+      descriptions: toSingleSection(modelData.descriptions, {
+        show: true,
+        required: false,
+        showAiGenerate: !!modelData.basic_show_ai_generate,
+      }),
+      values: toSingleSection(modelData.values, {
+        show: true,
+        required: true,
+        showAiGenerate: !!modelData.basic_show_ai_generate,
+      }),
+      providers: toSingleSection(modelData.providers, {
+        show: true,
+        required: true,
+        showAiGenerate: !!modelData.provider_show_ai_generate,
+      }),
+      flags: {
+        current: (modelData.flags ?? []).filter((flag) => flag.selected),
+        resources: modelData.flags ?? [],
+        show: true,
+        required: false,
+        show_ai_generate: !!modelData.basic_show_ai_generate,
+      },
+      departments: {
+        current: (modelData.departments ?? []).filter((item) => item.selected),
+        resources: modelData.departments ?? [],
+        show: true,
+        required: false,
+        show_ai_generate: false,
+      },
+      modalities: toMultiSection(modelData.modalities, {
+        show: true,
+        required: false,
+        showAiGenerate: !!modelData.features_show_ai_generate,
+      }),
+      temperature_levels: toMultiSection(modelData.temperature_levels, {
+        show: true,
+        required: false,
+        showAiGenerate: !!modelData.features_show_ai_generate,
+      }),
+      pricing: toMultiSection(modelData.pricing, {
+        show: true,
+        required: false,
+        showAiGenerate: !!modelData.features_show_ai_generate,
+      }),
+      reasoning_levels: toMultiSection(modelData.reasoning_levels, {
+        show: true,
+        required: false,
+        showAiGenerate: !!modelData.features_show_ai_generate,
+      }),
+      qualities: toMultiSection(modelData.qualities, {
+        show: true,
+        required: false,
+        showAiGenerate: !!modelData.features_show_ai_generate,
+      }),
+      voices: toMultiSection(modelData.voices, {
+        show: true,
+        required: false,
+        showAiGenerate: !!modelData.features_show_ai_generate,
+      }),
+    };
+  }, [modelData]);
 
   const modelDataRef = React.useRef(modelData);
   React.useEffect(() => {
@@ -216,13 +282,17 @@ function ModelComponent({
   }, [modelData]);
 
   const isSuperadmin = true;
+  const primaryDepartmentId =
+    (
+      profile as { primary_department_id?: string | null } | null | undefined
+    )?.primary_department_id ?? null;
   const defaultDepartmentIds = useMemo(
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        profile?.primary_department_id || null,
+        primaryDepartmentId,
       ),
-    [isSuperadmin, profile?.primary_department_id],
+    [isSuperadmin, primaryDepartmentId],
   );
 
   const getInitialFormState = useCallback(() => {
@@ -233,6 +303,7 @@ function ModelComponent({
         name_id: null as string | null,
         description: null as string | null,
         description_id: null as string | null,
+        value: null as string | null,
         value_id: null as string | null,
         provider_id: null as string | null,
         active_flag_id: null as string | null,
@@ -248,24 +319,22 @@ function ModelComponent({
         quality_ids: [] as string[],
         pricing_ids: [] as string[],
         voice_ids: [] as string[],
-        departmentIds: defaultDepartmentIds,
+        department_ids: defaultDepartmentIds,
+        pending_ids: [] as string[],
       };
     }
 
-    // Section-first: extract resource IDs from section structure
-    const curFlags = data.flags?.current ?? [];
+    const curFlags = data.flags ?? [];
 
     return {
-      // Value fields (null when loading from server - server already has IDs)
       name: null as string | null,
+      value: null as string | null,
       description: null as string | null,
-      // Single-select IDs from section.resource.id
-      name_id: (data.names?.resource?.id as string) ?? null,
-      description_id: (data.descriptions?.resource?.id as string) ?? null,
-      value_id: (data.values?.resource?.id as string) ?? null,
-      provider_id: (data.providers?.resource?.id as string) ?? null,
-
-      // Flag IDs from flags section by key
+      name_id: data.names?.find((item) => item.selected)?.id ?? null,
+      description_id:
+        data.descriptions?.find((item) => item.selected)?.id ?? null,
+      value_id: data.values?.find((item) => item.selected)?.id ?? null,
+      provider_id: data.providers?.find((item) => item.selected)?.id ?? null,
       active_flag_id: findCurrentFlagId(curFlags, "active"),
       modalities_enabled_flag_id: findCurrentFlagId(
         curFlags,
@@ -285,32 +354,38 @@ function ModelComponent({
         curFlags,
         "qualities_enabled",
       ),
-
-      // Multi-select IDs from section.current arrays (unified modalities)
-      modality_ids: (data.modalities?.current ?? [])
+      modality_ids: (data.modalities ?? [])
+        .filter((item) => item.selected)
         .map((m) => m.id as string)
         .filter(Boolean),
-      temperature_level_ids: (data.temperature_levels?.current ?? [])
+      temperature_level_ids: (data.temperature_levels ?? [])
+        .filter((item) => item.selected)
         .map((t) => t.id as string)
         .filter(Boolean),
-      reasoning_level_ids: (data.reasoning_levels?.current ?? [])
+      reasoning_level_ids: (data.reasoning_levels ?? [])
+        .filter((item) => item.selected)
         .map((r) => r.id as string)
         .filter(Boolean),
-      quality_ids: (data.qualities?.current ?? [])
+      quality_ids: (data.qualities ?? [])
+        .filter((item) => item.selected)
         .map((q) => q.id as string)
         .filter(Boolean),
-      pricing_ids: (data.pricing?.current ?? [])
+      pricing_ids: (data.pricing ?? [])
+        .filter((item) => item.selected)
         .map((p) => p.id as string)
         .filter(Boolean),
-      voice_ids: (data.voices?.current ?? [])
+      voice_ids: (data.voices ?? [])
+        .filter((item) => item.selected)
         .map((v) => v.id as string)
         .filter(Boolean),
-      departmentIds: (() => {
-        const ids = (data.departments?.current ?? [])
+      department_ids: (() => {
+        const ids = (data.departments ?? [])
+          .filter((item) => item.selected)
           .map((d) => d.department_id as string)
           .filter(Boolean);
         return ids.length > 0 ? ids : defaultDepartmentIds;
       })(),
+      pending_ids: data.pending_ids ?? [],
     };
   }, [defaultDepartmentIds]);
 
@@ -408,8 +483,8 @@ function ModelComponent({
         prev.reasoning_levels_enabled_flag_id !==
           newState.reasoning_levels_enabled_flag_id ||
         prev.qualities_enabled_flag_id !== newState.qualities_enabled_flag_id ||
-        JSON.stringify(prev.departmentIds) !==
-          JSON.stringify(newState.departmentIds) ||
+        JSON.stringify(prev.department_ids) !==
+          JSON.stringify(newState.department_ids) ||
         JSON.stringify(prev.modality_ids) !==
           JSON.stringify(newState.modality_ids) ||
         JSON.stringify(prev.temperature_level_ids) !==
@@ -420,7 +495,8 @@ function ModelComponent({
           JSON.stringify(newState.quality_ids) ||
         JSON.stringify(prev.pricing_ids) !==
           JSON.stringify(newState.pricing_ids) ||
-        JSON.stringify(prev.voice_ids) !== JSON.stringify(newState.voice_ids)
+        JSON.stringify(prev.voice_ids) !== JSON.stringify(newState.voice_ids) ||
+        JSON.stringify(prev.pending_ids) !== JSON.stringify(newState.pending_ids)
       ) {
         return newState;
       }
@@ -442,13 +518,7 @@ function ModelComponent({
     voiceIdsStr,
   ]);
 
-  const formStateKey = React.useMemo(
-    () => {
-      if (serverSyncPendingRef.current) return undefined;
-      return JSON.stringify(formState);
-    },
-    [formState],
-  );
+  const formStateKey = React.useMemo(() => JSON.stringify(formState), [formState]);
 
   const serverSyncPendingRef = React.useRef(false);
 
@@ -462,15 +532,48 @@ function ModelComponent({
           body: payload,
         } as PatchModelDraftIn);
         // Sync form state from server-authoritative form_state
-        const fs = (res as Record<string, unknown>)?.form_state as Record<string, unknown> | undefined;
+        const fs = (res as { form_state?: Partial<typeof formState> | null })
+          .form_state;
         if (fs) {
           serverSyncPendingRef.current = true;
           setFormState((prev) => ({
             ...prev,
-            name_id: (fs.name_id as string) ?? prev.name_id,
-            name: fs.name_id ? null : prev.name,
-            description_id: (fs.description_id as string) ?? prev.description_id,
-            description: fs.description_id ? null : prev.description,
+            name_id: fs.name_id ?? prev.name_id,
+            name: fs.name ?? prev.name,
+            description_id: fs.description_id ?? prev.description_id,
+            description: fs.description ?? prev.description,
+            value_id: fs.value_id ?? prev.value_id,
+            value: fs.value ?? prev.value,
+            provider_id: fs.provider_id ?? prev.provider_id,
+            active_flag_id: fs.active_flag_id ?? prev.active_flag_id,
+            modalities_enabled_flag_id:
+              fs.modalities_enabled_flag_id ??
+              prev.modalities_enabled_flag_id,
+            temperature_enabled_flag_id:
+              fs.temperature_enabled_flag_id ??
+              prev.temperature_enabled_flag_id,
+            pricing_enabled_flag_id:
+              fs.pricing_enabled_flag_id ??
+              prev.pricing_enabled_flag_id,
+            voices_enabled_flag_id:
+              fs.voices_enabled_flag_id ??
+              prev.voices_enabled_flag_id,
+            reasoning_levels_enabled_flag_id:
+              fs.reasoning_levels_enabled_flag_id ??
+              prev.reasoning_levels_enabled_flag_id,
+            qualities_enabled_flag_id:
+              fs.qualities_enabled_flag_id ??
+              prev.qualities_enabled_flag_id,
+            department_ids: fs.department_ids ?? prev.department_ids,
+            modality_ids: fs.modality_ids ?? prev.modality_ids,
+            temperature_level_ids:
+              fs.temperature_level_ids ?? prev.temperature_level_ids,
+            pricing_ids: fs.pricing_ids ?? prev.pricing_ids,
+            reasoning_level_ids:
+              fs.reasoning_level_ids ?? prev.reasoning_level_ids,
+            quality_ids: fs.quality_ids ?? prev.quality_ids,
+            voice_ids: fs.voice_ids ?? prev.voice_ids,
+            pending_ids: fs.pending_ids ?? prev.pending_ids,
           }));
           requestAnimationFrame(() => {
             serverSyncPendingRef.current = false;
@@ -502,40 +605,16 @@ function ModelComponent({
     !!formState.qualities_enabled_flag_id;
 
   const buildPatchPayload = useCallback(
-    (
-      inputDraftId: string | null,
-      flushResults?: Record<string, unknown>,
-    ): Record<string, unknown> => {
-      const effectiveFormState = computeEffectiveFormState(
-        MODEL_RESOURCES,
-        formStateRef.current as unknown as Record<string, unknown>,
-        flushResults ?? {},
-      ) as typeof formState;
-      const flushedValueIds = flushResults?.["value_ids"] as
-        | string[]
-        | undefined;
-      const flushedPricingId = flushResults?.["pricing_id"] as
-        | string
-        | null
-        | undefined;
-
-      const valueId = flushedValueIds?.[0] ?? effectiveFormState.value_id;
-      const pricingIds =
-        flushedPricingId && !effectiveFormState.pricing_ids.includes(flushedPricingId)
-          ? [...effectiveFormState.pricing_ids, flushedPricingId]
-          : effectiveFormState.pricing_ids;
-
+    (inputDraftId: string | null): Record<string, unknown> => {
+      const effectiveFormState = formStateRef.current as typeof formState;
       const payload: Record<string, unknown> = {
+        draft_id: inputDraftId || null,
         input_draft_id: inputDraftId || null,
         ...buildDraftPayload(MODEL_RESOURCES, {
-          formState: {
-            ...effectiveFormState,
-            pricing_ids: pricingIds,
-          } as unknown as Record<string, unknown>,
+          formState: effectiveFormState as unknown as Record<string, unknown>,
           referenceState: lastPatchedFormStateRef.current,
-          flushResults: flushResults ?? {},
+          flushResults: {},
         }),
-        value_id: valueId || null,
         flag_ids: [
           effectiveFormState.active_flag_id,
           effectiveFormState.modalities_enabled_flag_id,
@@ -545,17 +624,34 @@ function ModelComponent({
           effectiveFormState.reasoning_levels_enabled_flag_id,
           effectiveFormState.qualities_enabled_flag_id,
         ].filter((id): id is string => id != null),
+        active_flag_id: effectiveFormState.active_flag_id ?? null,
+        modalities_enabled_flag_id:
+          effectiveFormState.modalities_enabled_flag_id ?? null,
+        temperature_enabled_flag_id:
+          effectiveFormState.temperature_enabled_flag_id ?? null,
+        pricing_enabled_flag_id:
+          effectiveFormState.pricing_enabled_flag_id ?? null,
+        voices_enabled_flag_id:
+          effectiveFormState.voices_enabled_flag_id ?? null,
+        reasoning_levels_enabled_flag_id:
+          effectiveFormState.reasoning_levels_enabled_flag_id ?? null,
+        qualities_enabled_flag_id:
+          effectiveFormState.qualities_enabled_flag_id ?? null,
+        pending_ids: effectiveFormState.pending_ids ?? [],
       };
 
-      // Value field overlay: send raw value instead of ID when set
       const currentFs = formStateRef.current as typeof formState;
-      if (currentFs.name) {
-        payload.name = currentFs.name;
-        delete payload.name_id;
+      if (currentFs["name"]) {
+        payload["name"] = currentFs["name"];
+        delete payload["name_id"];
       }
-      if (currentFs.description) {
-        payload.description = currentFs.description;
-        delete payload.description_id;
+      if (currentFs["description"]) {
+        payload["description"] = currentFs["description"];
+        delete payload["description_id"];
+      }
+      if (currentFs["value"]) {
+        payload["value"] = currentFs["value"];
+        delete payload["value_id"];
       }
 
       return payload;
@@ -572,7 +668,7 @@ function ModelComponent({
       buildPatchPayload,
       setSelectedDraftId,
       hasResourceIds,
-      flushRegistryRef,
+      flushRegistryRef: emptyFlushRegistryRef,
       formStateRef: formStateRef as React.MutableRefObject<Record<string, unknown>>,
       onPatchSuccess: () => {
         lastPatchedFormStateRef.current =
@@ -626,10 +722,6 @@ function ModelComponent({
   );
   const handleGenerateReasoningLevels = useCallback(
     async () => handleGenerateResources(["reasoning_levels"]),
-    [handleGenerateResources],
-  );
-  const handleGenerateVoices = useCallback(
-    async () => handleGenerateResources(["voices"]),
     [handleGenerateResources],
   );
   const handleGenerateQualities = useCallback(
@@ -726,37 +818,17 @@ function ModelComponent({
     [stepResources, handleGenerateResources],
   );
 
-  // Submit handler - builds nested resource actions for save
+  // Submit handler - saves the canonical selected IDs
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      let flushResults: Record<string, unknown> = {};
-      if (!isAutosaveEnabled) {
-        flushResults = await flushAllResources();
-      }
-
-      const effectiveFormState = computeEffectiveFormState(
-        MODEL_RESOURCES,
-        formStateRef.current as unknown as Record<string, unknown>,
-        flushResults,
-      ) as typeof formState;
-      const flushedValueIds = flushResults["value_ids"] as string[] | undefined;
-      const flushedPricingId = flushResults["pricing_id"] as
-        | string
-        | null
-        | undefined;
-      const valueId = flushedValueIds?.[0] ?? effectiveFormState.value_id;
-      const pricingIds =
-        flushedPricingId &&
-        !effectiveFormState.pricing_ids.includes(flushedPricingId)
-          ? [...effectiveFormState.pricing_ids, flushedPricingId]
-          : effectiveFormState.pricing_ids;
+      const effectiveFormState = formStateRef.current as typeof formState;
 
       if (s?.names?.required && !effectiveFormState.name_id) {
         toast.error("Model name is required");
         throw new Error("Model name is required");
       }
 
-      if (s?.values?.required && !valueId) {
+      if (s?.values?.required && !effectiveFormState.value_id) {
         toast.error("Model value is required");
         throw new Error("Model value is required");
       }
@@ -790,38 +862,38 @@ function ModelComponent({
                 model_id: modelId,
                 name_id: efs.name_id!,
                 description_id: efs.description_id ?? null,
-                provider_ids: efs.provider_id ? [efs.provider_id] : null,
-                value_ids: valueId ? [valueId] : null,
+                provider_id: efs.provider_id ?? null,
+                value_id: efs.value_id ?? null,
                 flag_ids: flagIds.length ? flagIds : null,
-                department_ids: efs.departmentIds?.length ? efs.departmentIds : null,
+                department_ids: efs.department_ids?.length ? efs.department_ids : null,
                 modality_ids: efs.modality_ids?.length ? efs.modality_ids : null,
                 temperature_level_ids: efs.temperature_level_ids?.length ? efs.temperature_level_ids : null,
-                pricing_ids: pricingIds?.length ? pricingIds : null,
+                pricing_ids: efs.pricing_ids?.length ? efs.pricing_ids : null,
                 reasoning_level_ids: efs.reasoning_level_ids?.length ? efs.reasoning_level_ids : null,
                 quality_ids: efs.quality_ids?.length ? efs.quality_ids : null,
                 voice_ids: efs.voice_ids?.length ? efs.voice_ids : null,
               }],
             },
-          });
+          } as unknown as UpdateModelIn);
         } else if (createModelAction) {
           await createModelAction({
             body: {
               models: [{
                 name_id: efs.name_id!,
                 description_id: efs.description_id ?? null,
-                provider_ids: efs.provider_id ? [efs.provider_id] : null,
-                value_ids: valueId ? [valueId] : null,
+                provider_id: efs.provider_id ?? null,
+                value_id: efs.value_id ?? null,
                 flag_ids: flagIds.length ? flagIds : null,
-                department_ids: efs.departmentIds?.length ? efs.departmentIds : null,
+                department_ids: efs.department_ids?.length ? efs.department_ids : null,
                 modality_ids: efs.modality_ids?.length ? efs.modality_ids : null,
                 temperature_level_ids: efs.temperature_level_ids?.length ? efs.temperature_level_ids : null,
-                pricing_ids: pricingIds?.length ? pricingIds : null,
+                pricing_ids: efs.pricing_ids?.length ? efs.pricing_ids : null,
                 reasoning_level_ids: efs.reasoning_level_ids?.length ? efs.reasoning_level_ids : null,
                 quality_ids: efs.quality_ids?.length ? efs.quality_ids : null,
                 voice_ids: efs.voice_ids?.length ? efs.voice_ids : null,
               }],
             },
-          });
+          } as unknown as CreateModelIn);
         } else {
           toast.error("Save action not available");
           throw new Error("Save action not available");
@@ -844,8 +916,6 @@ function ModelComponent({
       createModelAction,
       updateModelAction,
       router,
-      isAutosaveEnabled,
-      flushAllResources,
       s?.names?.required,
       s?.values?.required,
     ],
@@ -954,7 +1024,7 @@ function ModelComponent({
           "reasoning_levels_enabled_flag_id",
           "qualities_enabled_flag_id",
           "departmentSearch",
-          "departmentIds",
+          "department_ids",
         ],
       },
       {
@@ -1022,7 +1092,7 @@ function ModelComponent({
       "qualities_enabled_flag_id",
       "value_id",
       "provider_id",
-      "departmentIds",
+      "department_ids",
       "modality_ids",
       "temperature_level_ids",
       "pricing_ids",
@@ -1081,7 +1151,7 @@ function ModelComponent({
             voices_enabled_flag_id: null,
             reasoning_levels_enabled_flag_id: null,
             qualities_enabled_flag_id: null,
-            departmentIds: [],
+            department_ids: [],
           };
         case "provider":
           return { ...prev, provider_id: null };
@@ -1171,7 +1241,6 @@ function ModelComponent({
                   name_id={formState.name_id ?? null}
                   name_resource={s?.names?.resource ?? null}
                   show_name={s?.names?.show ?? true}
-                  name_suggestions={s?.names?.suggestions ?? []}
                   names={s?.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(id) =>
@@ -1180,15 +1249,10 @@ function ModelComponent({
                   onNameChange={(name) =>
                     setFormState((prev) => ({ ...prev, name, name_id: null }))
                   }
-                  onGenerate={handleGenerateName}
                   placeholder="e.g., GPT-4"
                   defaultName="New Model"
                   required={s?.names?.required ?? true}
                   hideDescription={true}
-                  showAiGenerate={s?.names?.show_ai_generate ?? false}
-                  createNamesAction={createNamesAction}
-                  isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["names"]}
                 />
               }
               resetFields={[
@@ -1202,7 +1266,7 @@ function ModelComponent({
                 "voices_enabled_flag_id",
                 "reasoning_levels_enabled_flag_id",
                 "qualities_enabled_flag_id",
-                "departmentIds",
+                "department_ids",
               ]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -1226,7 +1290,6 @@ function ModelComponent({
                   description_id={formState.description_id ?? null}
                   description_resource={s?.descriptions?.resource ?? null}
                   show_description={s?.descriptions?.show ?? true}
-                  description_suggestions={s?.descriptions?.suggestions ?? []}
                   descriptions={s?.descriptions?.resources ?? []}
                   searchTerm={descriptionSearch}
                   onSearchChange={(term: string) =>
@@ -1239,35 +1302,35 @@ function ModelComponent({
                   onDescriptionChange={(description) =>
                     setFormState((prev) => ({ ...prev, description, description_id: null }))
                   }
-                  onGenerate={handleGenerateDescription}
                   placeholder="Enter a brief description"
                   required={s?.descriptions?.required ?? false}
-                  showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
-                  createDescriptionsAction={createDescriptionsAction}
-                  isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["descriptions"]}
                 />
 
                 <Values
                   value_ids={formState.value_id ? [formState.value_id] : []}
-                  value_resources={
+                  value_resources={(
                     formState.value_id && s?.values?.resource
                       ? [
                           {
-                            value_id: s.values.resource.id,
-                            name: s.values.resource.value,
+                            id: s.values.resource.id,
+                            value: s.values.resource.value,
                             generated: s.values.resource.generated,
                           },
                         ]
                       : []
-                  }
+                  ) as any}
                   show_values={s?.values?.show ?? true}
-                  value_suggestions={s?.values?.suggestions ?? []}
-                  values={(s?.values?.resources ?? []).map((v) => ({
-                    value_id: v.id,
-                    name: v.value,
+                  value_suggestions={
+                    ((s?.values?.suggestions ?? []).filter(Boolean) as string[])
+                  }
+                  values={((s?.values?.resources ?? []).map((v) => ({
+                    id: v.id,
+                    value: v.value,
                     generated: v.generated,
-                  }))}
+                    suggested: v.suggested,
+                    pending: v.pending,
+                    selected: v.selected,
+                  })) as any)}
                   searchTerm={valueSearch}
                   onSearchChange={(term: string) =>
                     setFormData({ valueSearch: term || null })
@@ -1277,16 +1340,22 @@ function ModelComponent({
                     setFormState({
                       ...formState,
                       value_id: ids.length > 0 ? (ids[0] ?? null) : null,
+                      value: null,
                     })
+                  }
+                  value={formState.value}
+                  onValueChange={(nextValue) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      value: nextValue,
+                      value_id: nextValue ? null : prev.value_id,
+                    }))
                   }
                   label="Value"
                   placeholder="Select model value identifier (e.g., gpt-4, gemini-pro)"
                   required={s?.values?.required ?? true}
                   description="Unique identifier for this model (used in API calls)"
-                  showAiGenerate={s?.values?.show_ai_generate ?? false}
-                  createValuesAction={createValuesAction}
                   isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["values"]}
                 />
 
                 {validDepartmentIds && validDepartmentIds.length > 1 && (
@@ -1299,11 +1368,11 @@ function ModelComponent({
                         description: d.description ?? "",
                       }))}
                       itemIds={validDepartmentIds}
-                      selectedIds={formState.departmentIds}
+                      selectedIds={formState.department_ids}
                       onSelect={(ids) =>
                         setFormState({
                           ...formState,
-                          departmentIds: ids.length > 0 ? ids : [],
+                          department_ids: ids.length > 0 ? ids : [],
                         })
                       }
                       getId={(dept: { id: string }) => dept.id}
@@ -1329,7 +1398,7 @@ function ModelComponent({
                 )}
 
                 <Flags
-                  flags={allFlags.filter(f => f.key === "active")}
+                  flags={allFlags.filter(f => f.key === "active") as any}
                   flag_id={formState.active_flag_id ?? null}
                   show_flags={flagConfig("active")?.show ?? false}
                   columns={1}
@@ -1338,11 +1407,10 @@ function ModelComponent({
                   onChange={(id) =>
                     setFormState((prev) => ({ ...prev, active_flag_id: id }))
                   }
-                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
                 <Flags
-                  flags={allFlags.filter(f => f.key === "modalities_enabled")}
+                  flags={allFlags.filter(f => f.key === "modalities_enabled") as any}
                   flag_id={formState.modalities_enabled_flag_id ?? null}
                   show_flags={flagConfig("modalities_enabled")?.show ?? false}
                   columns={1}
@@ -1355,11 +1423,10 @@ function ModelComponent({
                       modality_ids: id ? prev.modality_ids : [],
                     }));
                   }}
-                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
                 <Flags
-                  flags={allFlags.filter(f => f.key === "temperature_enabled")}
+                  flags={allFlags.filter(f => f.key === "temperature_enabled") as any}
                   flag_id={formState.temperature_enabled_flag_id ?? null}
                   show_flags={flagConfig("temperature_enabled")?.show ?? false}
                   columns={1}
@@ -1374,11 +1441,10 @@ function ModelComponent({
                         : [],
                     }));
                   }}
-                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
                 <Flags
-                  flags={allFlags.filter(f => f.key === "pricing_enabled")}
+                  flags={allFlags.filter(f => f.key === "pricing_enabled") as any}
                   flag_id={formState.pricing_enabled_flag_id ?? null}
                   show_flags={flagConfig("pricing_enabled")?.show ?? false}
                   columns={1}
@@ -1391,11 +1457,10 @@ function ModelComponent({
                       pricing_ids: id ? prev.pricing_ids : [],
                     }));
                   }}
-                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
                 <Flags
-                  flags={allFlags.filter(f => f.key === "voices_enabled")}
+                  flags={allFlags.filter(f => f.key === "voices_enabled") as any}
                   flag_id={formState.voices_enabled_flag_id ?? null}
                   show_flags={flagConfig("voices_enabled")?.show ?? false}
                   columns={1}
@@ -1408,11 +1473,10 @@ function ModelComponent({
                       voice_ids: id ? prev.voice_ids : [],
                     }));
                   }}
-                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
                 <Flags
-                  flags={allFlags.filter(f => f.key === "reasoning_levels_enabled")}
+                  flags={allFlags.filter(f => f.key === "reasoning_levels_enabled") as any}
                   flag_id={formState.reasoning_levels_enabled_flag_id ?? null}
                   show_flags={
                     flagConfig("reasoning_levels_enabled")?.show ?? false
@@ -1427,11 +1491,10 @@ function ModelComponent({
                       reasoning_level_ids: id ? prev.reasoning_level_ids : [],
                     }));
                   }}
-                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
                 <Flags
-                  flags={allFlags.filter(f => f.key === "qualities_enabled")}
+                  flags={allFlags.filter(f => f.key === "qualities_enabled") as any}
                   flag_id={formState.qualities_enabled_flag_id ?? null}
                   show_flags={flagConfig("qualities_enabled")?.show ?? false}
                   columns={1}
@@ -1444,7 +1507,6 @@ function ModelComponent({
                       quality_ids: id ? prev.quality_ids : [],
                     }));
                   }}
-                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
               </div>
             </StepCard>
@@ -1531,18 +1593,20 @@ function ModelComponent({
             >
               <Modalities
                 modality_ids={formState.modality_ids}
-                modality_resources={(s?.modalities?.current ?? []).map((m) => ({
+                modality_resources={((s?.modalities?.current ?? []).map((m) => ({
                   modality_id: m.id,
                   name: m.modality,
                   generated: m.generated,
-                }))}
+                })) as any)}
                 show_modalities={s?.modalities?.show ?? true}
-                modality_suggestions={s?.modalities?.suggestions ?? []}
-                modalities={(s?.modalities?.resources ?? []).map((m) => ({
+                modality_suggestions={
+                  ((s?.modalities?.suggestions ?? []).filter(Boolean) as string[])
+                }
+                modalities={((s?.modalities?.resources ?? []).map((m) => ({
                   modality_id: m.id,
                   name: m.modality,
                   generated: m.generated,
-                }))}
+                })) as any)}
                 searchTerm={modalitySearch}
                 onSearchChange={(term: string) =>
                   setFormData({ modalitySearch: term || null })
@@ -1554,7 +1618,7 @@ function ModelComponent({
                 label="Modalities"
                 placeholder="Select modalities"
                 required={s?.modalities?.required ?? true}
-                showAiGenerate={s?.modalities?.show_ai_generate ?? false}
+                showAiGenerate={false}
                 onGenerate={handleGenerateModalities}
               />
             </StepCard>
@@ -1599,7 +1663,7 @@ function ModelComponent({
                     ? (formState.temperature_level_ids[0] ?? null)
                     : null
                 }
-                temperature_level_resource={
+                temperature_level_resource={(
                   formState.temperature_level_ids.length > 0 &&
                   s?.temperature_levels?.current?.[0]
                     ? {
@@ -1611,19 +1675,17 @@ function ModelComponent({
                         generated: s.temperature_levels.current[0].generated,
                       }
                     : null
-                }
+                ) as any}
                 show_temperature_levels={s?.temperature_levels?.show ?? true}
                 temperature_level_suggestions={
-                  s?.temperature_levels?.suggestions ?? []
+                  ((s?.temperature_levels?.suggestions ?? []).filter(Boolean) as string[])
                 }
-                temperature_levels={(
-                  s?.temperature_levels?.resources ?? []
-                ).map((t) => ({
+                temperature_levels={((s?.temperature_levels?.resources ?? []).map((t) => ({
                   id: t.id,
                   temperature: String(t.temperature),
                   is_upper: false,
                   generated: t.generated,
-                }))}
+                })) as any)}
                 searchTerm={temperatureSearch}
                 onSearchChange={(term: string) =>
                   setFormData({ temperatureSearch: term || null })
@@ -1638,9 +1700,7 @@ function ModelComponent({
                 label="Temperature Levels"
                 placeholder="Select temperature levels"
                 required={s?.temperature_levels?.required ?? false}
-                showAiGenerate={
-                  s?.temperature_levels?.show_ai_generate ?? false
-                }
+                showAiGenerate={false}
                 onGenerate={handleGenerateTemperatureLevels}
               />
             </StepCard>
@@ -1681,20 +1741,22 @@ function ModelComponent({
             >
               <Pricing
                 pricing_ids={formState.pricing_ids}
-                pricing_resources={(s?.pricing?.current ?? []).map((p) => ({
+                pricing_resources={((s?.pricing?.current ?? []).map((p) => ({
                   pricing_id: p.id,
                   name: `${p.pricing_type}`,
                   description: `${p.price}`,
                   generated: p.generated,
-                }))}
+                })) as any)}
                 show_pricing={s?.pricing?.show ?? true}
-                pricing_suggestions={s?.pricing?.suggestions ?? []}
-                pricings={(s?.pricing?.resources ?? []).map((p) => ({
+                pricing_suggestions={
+                  ((s?.pricing?.suggestions ?? []).filter(Boolean) as string[])
+                }
+                pricings={((s?.pricing?.resources ?? []).map((p) => ({
                   pricing_id: p.id,
                   name: `${p.pricing_type}`,
                   description: `${p.price}`,
                   generated: p.generated,
-                }))}
+                })) as any)}
                 searchTerm={pricingSearch}
                 onSearchChange={(term: string) =>
                   setFormData({ pricingSearch: term || null })
@@ -1706,12 +1768,10 @@ function ModelComponent({
                 label="Pricing"
                 placeholder="Select pricing configurations"
                 required={s?.pricing?.required ?? false}
-                showAiGenerate={s?.pricing?.show_ai_generate ?? false}
-                createPricingAction={createPricingAction}
-                onGenerate={handleGeneratePricing}
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["pricing"]}
-              />
+                showAiGenerate={false}
+                  onGenerate={handleGeneratePricing}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                />
             </StepCard>
           );
 
@@ -1754,7 +1814,7 @@ function ModelComponent({
                     ? (formState.reasoning_level_ids[0] ?? null)
                     : null
                 }
-                reasoning_level_resource={
+                reasoning_level_resource={(
                   formState.reasoning_level_ids.length > 0 &&
                   s?.reasoning_levels?.current?.[0]
                     ? {
@@ -1764,18 +1824,18 @@ function ModelComponent({
                         generated: s.reasoning_levels.current[0].generated,
                       }
                     : null
-                }
+                ) as any}
                 show_reasoning_levels={s?.reasoning_levels?.show ?? true}
                 reasoning_level_suggestions={
-                  s?.reasoning_levels?.suggestions ?? []
+                  ((s?.reasoning_levels?.suggestions ?? []).filter(Boolean) as string[])
                 }
-                reasoning_levels={(s?.reasoning_levels?.resources ?? []).map(
+                reasoning_levels={((s?.reasoning_levels?.resources ?? []).map(
                   (r) => ({
                     id: r.id,
                     reasoning_level: r.reasoning_level,
                     generated: r.generated,
                   }),
-                )}
+                ) as any)}
                 searchTerm={reasoningSearch}
                 onSearchChange={(term: string) =>
                   setFormData({ reasoningSearch: term || null })
@@ -1790,9 +1850,7 @@ function ModelComponent({
                 label="Reasoning Levels"
                 placeholder="Select reasoning levels"
                 required={s?.reasoning_levels?.required ?? false}
-                showAiGenerate={
-                  s?.reasoning_levels?.show_ai_generate ?? false
-                }
+                showAiGenerate={false}
                 onGenerate={handleGenerateReasoningLevels}
               />
             </StepCard>
@@ -1835,7 +1893,6 @@ function ModelComponent({
                 voice_ids={formState.voice_ids}
                 voice_resources={s?.voices?.current ?? []}
                 show_voices={s?.voices?.show ?? true}
-                voice_suggestions={s?.voices?.suggestions ?? []}
                 voices={s?.voices?.resources ?? []}
                 disabled={disabled}
                 onVoiceIdsChange={(ids) =>
@@ -1843,10 +1900,6 @@ function ModelComponent({
                 }
                 label="Voices"
                 required={s?.voices?.required ?? false}
-                createVoicesAction={createVoicesAction}
-                onGenerate={handleGenerateVoices}
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["voices"]}
               />
             </StepCard>
           );
@@ -1886,18 +1939,17 @@ function ModelComponent({
             >
               <Qualities
                 quality_ids={formState.quality_ids}
-                quality_resources={(s?.qualities?.current ?? []).map((q) => ({
+                quality_resources={((s?.qualities?.current ?? []).map((q) => ({
                   quality_id: q.id,
                   name: q.quality,
                   generated: q.generated,
-                }))}
+                })) as any)}
                 show_qualities={s?.qualities?.show ?? true}
-                quality_suggestions={s?.qualities?.suggestions ?? []}
-                qualities={(s?.qualities?.resources ?? []).map((q) => ({
+                qualities={((s?.qualities?.resources ?? []).map((q) => ({
                   quality_id: q.id,
                   name: q.quality,
                   generated: q.generated,
-                }))}
+                })) as any)}
                 searchTerm={qualitySearch}
                 onSearchChange={(term: string) =>
                   setFormData({ qualitySearch: term || null })
@@ -1909,8 +1961,6 @@ function ModelComponent({
                 label="Qualities"
                 placeholder="Select quality levels"
                 required={s?.qualities?.required ?? false}
-                showAiGenerate={s?.qualities?.show_ai_generate ?? false}
-                onGenerate={handleGenerateQualities}
               />
             </StepCard>
           );
@@ -1931,11 +1981,6 @@ function ModelComponent({
       handleGenerateName,
       handleGenerateDescription,
       isGenerating,
-      createNamesAction,
-      createDescriptionsAction,
-      createValuesAction,
-      createPricingAction,
-      createVoicesAction,
     ],
   );
 

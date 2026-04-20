@@ -90,6 +90,9 @@ export function ParameterFields({
   const [pendingSelections, setPendingSelections] = useState<Set<string>>(new Set());
   const hasInitializedRef = useRef(false);
   const lastEmittedRef = useRef<string>("");
+  // Dirty flag: only emit upward when the user actually toggled; server-sync
+  // updates to resourceIds shouldn't re-trigger a save.
+  const isDirtyRef = useRef(false);
   // Sync resourceIds with selected resources from server
   useEffect(() => {
     setResourceIds((prev) => {
@@ -103,7 +106,9 @@ export function ParameterFields({
     });
   }, [selectedResources]);
 
-  // Emit changes to parent
+  // Emit changes to parent. Only fire when the user has actually toggled —
+  // server-sync-driven resourceIds updates just re-baseline lastEmittedRef
+  // without emitting, so they don't trigger spurious saves.
   useEffect(() => {
     if (!hasInitializedRef.current) {
       hasInitializedRef.current = true;
@@ -111,6 +116,10 @@ export function ParameterFields({
       return;
     }
     const currentIds = Array.from(resourceIds.values()).sort().join(",");
+    if (!isDirtyRef.current) {
+      lastEmittedRef.current = currentIds;
+      return;
+    }
     if (currentIds !== lastEmittedRef.current) {
       lastEmittedRef.current = currentIds;
       onChange(Array.from(resourceIds.values()));
@@ -127,6 +136,7 @@ export function ParameterFields({
 
   const handleToggle = useCallback(
     (option: AvailableFieldOption, checked: boolean) => {
+      isDirtyRef.current = true;
       const key = `${option.parameter_id}:${option.field_id}`;
       const existingResourceId = selectedFieldKeyToResourceId.get(key) ?? localKeyToResourceId.get(key);
 
@@ -192,6 +202,7 @@ export function ParameterFields({
 
   // Reject pending — remove pending item IDs from selection
   const handleReject = useCallback(() => {
+    isDirtyRef.current = true;
     const pendingResourceIds = new Set(
       pendingItems.map((f) => f.id).filter((id): id is string => !!id)
     );
@@ -401,29 +412,44 @@ export function ParameterFields({
                           <div className="flex-1 min-w-0 overflow-hidden">
                             <div className="flex items-center gap-1 pr-8">
                               {hasExplore && (
-                                <button
-                                  type="button"
+                                <span
+                                  role="button"
+                                  tabIndex={disabled ? -1 : 0}
+                                  aria-disabled={disabled}
+                                  aria-expanded={isExploreExpanded}
                                   className={cn(
-                                    "p-0.5 -ml-1 rounded transition-colors shrink-0",
+                                    "p-0.5 -ml-1 rounded transition-colors shrink-0 cursor-pointer inline-flex items-center",
+                                    disabled && "pointer-events-none opacity-50",
                                     isExploreExpanded
                                       ? "text-muted-foreground hover:bg-accent/50"
                                       : "text-primary hover:text-primary/80 hover:bg-primary/10"
                                   )}
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    if (disabled) return;
                                     onToggleParameter(
                                       item.conditional_parameter_id!,
                                       !isExploreExpanded
                                     );
                                   }}
-                                  disabled={disabled}
+                                  onKeyDown={(e) => {
+                                    if (disabled) return;
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      onToggleParameter(
+                                        item.conditional_parameter_id!,
+                                        !isExploreExpanded
+                                      );
+                                    }
+                                  }}
                                 >
                                   {isExploreExpanded ? (
                                     <ChevronDown className="h-3.5 w-3.5" />
                                   ) : (
                                     <ChevronRight className="h-3.5 w-3.5" />
                                   )}
-                                </button>
+                                </span>
                               )}
                               <h3 className="font-medium text-sm leading-tight truncate">{item.name}</h3>
                             </div>

@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface ProfileResourceItem {
@@ -39,7 +39,6 @@ export interface ProfilesProps {
   profile_ids?: string[]; // Current profiles artifact IDs (standardized prop name)
   profile_resources?: ProfileResourceItem[]; // Selected profiles resources (each includes generated field)
   show_profiles?: boolean; // Whether to show this resource picker
-  profile_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   profiles?: ProfileResourceItem[]; // All available profiles from API (each includes generated and suggested fields)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update profile_ids in form state
@@ -48,17 +47,14 @@ export interface ProfilesProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   searchTerm?: string; // Search term for filtering profiles
   showSelectedFilter?: boolean; // Whether to show only selected profiles
 }
 
 export function Profiles({
   profile_ids,
-  profile_resources,
+  profile_resources: _profile_resources,
   show_profiles = false,
-  profile_suggestions: _profile_suggestions,
   profiles,
   disabled = false,
   onChange,
@@ -66,8 +62,6 @@ export function Profiles({
   id = "profiles",
   required = false,
   description,
-  onGenerate,
-  showAiGenerate = false,
   searchTerm = "",
   showSelectedFilter = false,
 }: ProfilesProps) {
@@ -143,11 +137,6 @@ export function Profiles({
     [ids, onChange]
   );
 
-  // Check if any profile resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return profile_resources?.some((p) => p.generated) ?? false;
-  }, [profile_resources]);
-
   // Accept pending — keep pending profiles in selection
   const handleAccept = useCallback(() => {
     // Pending items are already in ids (selected=true), just confirm
@@ -179,27 +168,6 @@ export function Profiles({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || showDiff}
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>

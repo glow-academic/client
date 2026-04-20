@@ -48,6 +48,7 @@ export interface PersonaResourceItem {
   name?: string | null;
   description?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
   pending?: boolean | null;
   video_persona?: boolean | null;
   non_video_persona?: boolean | null;
@@ -67,7 +68,6 @@ export interface PersonasProps {
   persona_ids?: string[]; // Current persona artifact IDs (standardized prop name)
   persona_resources?: PersonaResourceItem[]; // Selected persona resources (each includes generated field)
   show_personas?: boolean; // Whether to show this resource picker
-  persona_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   personas?: PersonaResourceItem[]; // All available personas from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update persona_ids in form state
@@ -83,7 +83,6 @@ export function Personas({
   persona_ids,
   persona_resources,
   show_personas = false,
-  persona_suggestions,
   personas,
   disabled = false,
   onChange,
@@ -117,10 +116,6 @@ export function Personas({
       return hasNonVideoFlag;
     });
   }, [allPersonas, videoEnabled]);
-  const suggestionsList = useMemo(
-    () => persona_suggestions ?? [],
-    [persona_suggestions]
-  );
 
   // Convert personas array to PersonaItem format for GenericPicker
   const personaItems = useMemo(() => {
@@ -135,10 +130,13 @@ export function Personas({
       }));
   }, [filteredPersonas]);
 
-  // Check if a persona is suggested
+  // Check if a persona is suggested (from persona.suggested field)
   const isSuggested = useCallback(
-    (personaId: string) => suggestionsList.includes(personaId),
-    [suggestionsList]
+    (personaId: string) => {
+      const persona = filteredPersonas.find((p) => p.persona_id === personaId);
+      return persona?.suggested === true;
+    },
+    [filteredPersonas]
   );
 
   const handleSelect = useCallback(

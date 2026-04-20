@@ -27,10 +27,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { ROLE_ICON_MAP, ROLE_ICON_NAMES } from "@/utils/role-icons";
-import { Check, Loader2, Pencil, Plus, Sparkles, User, X } from "lucide-react";
+import { Check, Pencil, Plus, User, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
 export interface RolesResourceItem {
@@ -72,10 +71,6 @@ export interface RolesProps {
       color_hex: string;
     }
   ) => void;
-  showAiGenerate?: boolean;
-  onGenerate?: () => void | Promise<void>;
-  group_id?: string | null;
-  aiRoleResources?: Pick<RolesResourceItem, "id" | "name">[] | null;
 }
 
 type RoleItem = {
@@ -100,7 +95,6 @@ type IconOption = {
 };
 
 type RoleIconKey = keyof typeof ROLE_ICON_MAP;
-type AiRoleSuggestion = { id?: string | null };
 
 const formatIconLabel = (iconName: string) =>
   iconName.replace(/([A-Z])/g, " $1").trim();
@@ -258,28 +252,20 @@ export function Roles({
   showSelectedFilter = false,
   emptyMessage = "No roles found. Try adjusting your search.",
   onRoleResourceChange,
-  showAiGenerate = false,
-  onGenerate,
-  group_id,
 }: RolesProps) {
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "roles",
-    groupId: group_id,
-    accumulate: true,
-  });
-  const aiRoleSuggestions = aiSuggestions as AiRoleSuggestion[];
-
-  // AI suggestion state
-  const showDiff = multiSelect && aiRoleSuggestions.length > 0;
-  const aiSuggestedIds = useMemo(
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return (roles ?? []).filter((r) => r.pending && (r.id ?? r.role));
+  }, [roles]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
     () =>
       new Set(
-        aiRoleSuggestions
-          .map((r) => r.id)
-          .filter(Boolean) as string[]
+        pendingItems
+          .map((r) => (r.id ?? r.role) as string)
+          .filter(Boolean)
       ),
-    [aiRoleSuggestions]
+    [pendingItems]
   );
 
   const [roleOverrides, setRoleOverrides] = useState<
@@ -419,27 +405,19 @@ export function Roles({
     return [...roles];
   }, [availableRoles, searchTerm, showSelectedFilter, role]);
 
-  // Accept AI suggestion - add AI-suggested roles to selection (multi-select only)
+  // Accept pending — pending items are already in selection, no-op
   const handleAccept = useCallback(() => {
-    if (aiRoleSuggestions.length === 0 || !multiSelect || !onRolesChange) return;
-    const currentIds = role_ids ?? [];
-    const newIds = aiRoleSuggestions
-      .map((r) => r.id)
-      .filter((id): id is string => !!id && !currentIds.includes(id));
-    if (newIds.length > 0) {
-      onRolesChange([...currentIds, ...newIds]);
-    }
-    clearAi();
-  }, [aiRoleSuggestions, role_ids, onRolesChange, clearAi, multiSelect]);
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending roles from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
-
-  const hasGenerated = useMemo(() => {
-    return roles?.some((r) => r.generated) ?? false;
-  }, [roles]);
+    if (!multiSelect || !onRolesChange) return;
+    const currentIds = role_ids ?? [];
+    const newIds = currentIds.filter((id) => !pendingIds.has(id));
+    onRolesChange(newIds);
+  }, [role_ids, pendingIds, onRolesChange, multiSelect]);
 
   if (!show_roles) {
     return null;
@@ -453,31 +431,6 @@ export function Roles({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -538,9 +491,8 @@ export function Roles({
           const IconComponent = item.icon;
           const gradientStyle = generateGradientFromHex(item.color);
           const isEditing = editingRoleId === item.id;
-          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const isPending = pendingIds.has(item.id);
           const sourceRole = roles?.find((roleItem) => (roleItem.id ?? roleItem.role ?? roleItem.name) === item.id);
-          const isPending = sourceRole?.pending === true;
           const isSuggested = sourceRole?.suggested === true;
 
           return (
@@ -550,9 +502,7 @@ export function Roles({
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && !isPending && "ring-2 ring-primary bg-accent",
-                (isAiSuggested || isPending) &&
-                  !isSelected &&
-                  "ring-2 ring-success bg-success/10"
+                isPending && "ring-2 ring-success bg-success/10",
               )}
             >
               {!disabled && editable && (
@@ -661,12 +611,7 @@ export function Roles({
                   Pending
                 </div>
               )}
-              {isAiSuggested && !isSelected && (
-                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  AI Suggested
-                </div>
-              )}
-              {isSuggested && !isSelected && !isPending && !isAiSuggested && (
+              {isSuggested && !isSelected && !isPending && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

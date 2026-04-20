@@ -2,7 +2,7 @@
  * ProblemStatements.tsx
  * Resource component for problem statement input fields
  * Header-style input with accept/reject for pending changes
- * Creates resources independently and reports resource IDs to parent
+ * Pure UI: data in, IDs out via onChange. Parent owns creation.
  */
 
 "use client";
@@ -20,18 +20,6 @@ import {
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-type CreateDraftProblemStatementsIn = {
-  body: {
-    name: string;
-    problem_statement: string;
-    mcp: boolean;
-    tool_id?: string;
-  };
-};
-type CreateDraftProblemStatementsOut = {
-  problem_statement_id?: string | null;
-};
 
 export interface ProblemStatementResourceItem {
   id?: string | null;
@@ -157,7 +145,6 @@ export interface ProblemStatementsProps {
   problem_statement_id?: string | null; // Current problem_statement_id (standardized prop name)
   problem_statement_resource?: ProblemStatementResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_problem_statement?: boolean; // Whether to show this resource picker
-  problem_statement_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   problem_statements?: ProblemStatementResourceItem[]; // Array of problem statement suggestion objects (for autocomplete)
   disabled?: boolean; // Based on can_edit flag
   onProblemStatementIdChange: (problemStatementId: string | null) => void; // Update problem_statement_id in parent form state
@@ -169,27 +156,16 @@ export interface ProblemStatementsProps {
   "data-testid"?: string;
   defaultProblemStatement?: string; // Default problem statement value (for header style - reverts to this on blur if empty)
   hideDescription?: boolean; // Legacy prop (no-op)
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createProblemStatementsAction?:
-    | ((
-        input: CreateDraftProblemStatementsIn
-      ) => Promise<CreateDraftProblemStatementsOut>)
-    | undefined;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   /** Report value changes upward (unified draft pattern — parent owns creation) */
   onProblemStatementChange?: (problemStatement: string) => void;
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created ID */
-  registerFlush?: (flush: () => Promise<{ problem_statement_id: string | null } | void>) => void;
 }
 
 export function ProblemStatements({
   problem_statement_id,
   problem_statement_resource,
   show_problem_statement = true,
-  problem_statement_suggestions,
   problem_statements,
   disabled = false,
   onProblemStatementIdChange,
@@ -200,21 +176,13 @@ export function ProblemStatements({
   id = "problem_statement",
   "data-testid": dataTestId,
   defaultProblemStatement,
-  create_tool_id,
-  createProblemStatementsAction,
   searchTerm,
   onSearchChange,
   onProblemStatementChange,
-  isAutosaveEnabled = true,
-  registerFlush,
 }: ProblemStatementsProps) {
   const resource = problem_statement_resource ?? null;
   const resourceId = problem_statement_id ?? null;
   const show = show_problem_statement ?? true;
-  const suggestionsList = useMemo(
-    () => problem_statement_suggestions ?? [],
-    [problem_statement_suggestions]
-  );
   const problemStatementsArray = useMemo(
     () => problem_statements ?? [],
     [problem_statements]
@@ -225,169 +193,15 @@ export function ProblemStatements({
   const initialValue =
     resourceProblemStatement || defaultProblemStatement || "";
   const [internalValue, setInternalValue] = useState(initialValue);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedValueRef = useRef<string>(initialValue);
-  const isInitialMountRef = useRef(true);
-  const saveSeqRef = useRef(0);
   const isDirtyRef = useRef(false);
   const lastServerTextRef = useRef<string>(initialValue);
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ problem_statement_id: string | null } | void>) | undefined>(undefined);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ problem_statement_id: string | null } | void> => {
-    // Skip if no action available
-    if (!createProblemStatementsAction || !create_tool_id) {
-      return { problem_statement_id: resourceId };
-    }
-
-    // Skip if no change AND we already have a resource for this value
-    if (internalValue === lastSavedValueRef.current && resourceId) {
-      return { problem_statement_id: resourceId };
-    }
-
-    try {
-      if (internalValue.trim()) {
-        const result = await createProblemStatementsAction({
-          body: {
-            name: "",
-            problem_statement: internalValue,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        if (result.problem_statement_id) {
-          onProblemStatementIdChange(result.problem_statement_id);
-          lastSavedValueRef.current = internalValue;
-          isDirtyRef.current = false;
-          return { problem_statement_id: result.problem_statement_id };
-        }
-      } else {
-        onProblemStatementIdChange(null);
-        lastSavedValueRef.current = internalValue;
-        isDirtyRef.current = false;
-        return { problem_statement_id: null };
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to create problem statement resource:", error);
-      throw error;
-    }
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
-  // Debounced resource creation - only when autosave is enabled
-  useEffect(() => {
-    // Skip if autosave is disabled (manual save mode)
-    if (!isAutosaveEnabled) {
-      return;
-    }
-
-    // Skip on initial mount
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      lastSavedValueRef.current = internalValue;
-      return;
-    }
-
-    // Skip if value hasn't changed
-    if (internalValue === lastSavedValueRef.current) {
-      return;
-    }
-
-    // Skip if no action
-    if (!createProblemStatementsAction) {
-      return;
-    }
-
-    // Clear existing timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set new timer
-    debounceTimerRef.current = setTimeout(async () => {
-      const seq = ++saveSeqRef.current;
-      try {
-        if (internalValue.trim() && create_tool_id) {
-          const result = await createProblemStatementsAction({
-            body: {
-              name: "",
-              problem_statement: internalValue,
-              mcp: false,
-              tool_id: create_tool_id ?? undefined,
-            },
-          });
-          if (seq !== saveSeqRef.current) return;
-          if (result.problem_statement_id) {
-            onProblemStatementIdChange(result.problem_statement_id);
-          }
-        } else {
-          if (seq !== saveSeqRef.current) return;
-          // Clear resource ID if value is empty
-          onProblemStatementIdChange(null);
-        }
-        lastSavedValueRef.current = internalValue;
-        isDirtyRef.current = false;
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to create problem statement resource:", error);
-      }
-    }, 1000);
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [
-    internalValue,
-    createProblemStatementsAction,
-    onProblemStatementIdChange,
-    create_tool_id,
-    isAutosaveEnabled,
-  ]);
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
     isDirtyRef.current = newValue !== lastSavedValueRef.current;
     onProblemStatementChange?.(newValue);
   }, [onProblemStatementChange]);
-
-  // Use problem_statements array if available, otherwise create placeholder mapping
-  const suggestionsMapping = useMemo(() => {
-    if (problemStatementsArray.length > 0) {
-      const mapping: Record<string, { id: string; problem_statement: string }> =
-        {};
-      problemStatementsArray.forEach((ps) => {
-        if (ps.id) {
-          mapping[ps.id] = {
-            id: ps.id,
-            problem_statement:
-              ps.problem_statement ||
-              `Problem statement ${ps.id.slice(0, 8)}...`,
-          };
-        }
-      });
-      return mapping;
-    }
-    const mapping: Record<string, { id: string; problem_statement: string }> =
-      {};
-    suggestionsList.forEach((suggestionId) => {
-      mapping[suggestionId] = {
-        id: suggestionId,
-        problem_statement: `Problem statement ${suggestionId.slice(0, 8)}...`,
-      };
-    });
-    return mapping;
-  }, [problemStatementsArray, suggestionsList]);
 
   const problemStatementsById = useMemo(() => {
     const mapping: Record<string, string> = {};
@@ -433,17 +247,14 @@ export function ProblemStatements({
   // Transform to ensure id and problem_statement are non-null for GenericPicker
   // API returns problem_statement_id, not id
   const pickerItems = useMemo(() => {
-    if (problemStatementsArray.length > 0) {
-      return problemStatementsArray
-        .filter((ps) => (ps.problem_statement_id || ps.id) != null && ps.problem_statement != null)
-        .map((ps) => ({
-          id: (ps.problem_statement_id ?? ps.id)!,
-          problem_statement: ps.problem_statement!,
-          ...(ps.generated !== undefined ? { generated: ps.generated } : {}),
-        }));
-    }
-    return Object.values(suggestionsMapping);
-  }, [problemStatementsArray, suggestionsMapping]);
+    return problemStatementsArray
+      .filter((ps) => (ps.problem_statement_id || ps.id) != null && ps.problem_statement != null)
+      .map((ps) => ({
+        id: (ps.problem_statement_id ?? ps.id)!,
+        problem_statement: ps.problem_statement!,
+        ...(ps.generated !== undefined ? { generated: ps.generated } : {}),
+      }));
+  }, [problemStatementsArray]);
 
   // Pending state: current resource has pending=true (soft draft, awaiting acceptance)
   const isPending = resource?.pending === true;
@@ -454,8 +265,6 @@ export function ProblemStatements({
   // Accept pending — confirm the pending resource as the active selection
   const handleAccept = useCallback(() => {
     if (!resource?.id) return;
-    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    saveSeqRef.current += 1;
     const text = resource.problem_statement || "";
     setInternalValue(text);
     lastSavedValueRef.current = text;
@@ -524,10 +333,6 @@ export function ProblemStatements({
           selectedIds={resourceId ? [resourceId] : []}
           onSelect={(ids) => {
             const selectedId = ids[0] || null;
-            if (debounceTimerRef.current) {
-              clearTimeout(debounceTimerRef.current);
-            }
-            saveSeqRef.current += 1;
             if (selectedId) {
               const nextValue = problemStatementsById[selectedId] ?? "";
               setInternalValue(nextValue);

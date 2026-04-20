@@ -9,10 +9,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Check, X } from "lucide-react";
+import { useCallback, useMemo } from "react";
 
 export interface AuthItemKeysResourceItem {
   id?: string | null;
@@ -22,6 +21,7 @@ export interface AuthItemKeysResourceItem {
   key_name?: string | null;
   key_description?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 type AuthOption = {
@@ -48,18 +48,6 @@ export interface AuthItemKeysProps {
   label?: string;
   description?: string;
   show_auth_item_keys?: boolean;
-  getAuthItemKeysAction?:
-    | ((ids: string[]) => Promise<AuthItemKeysResourceItem[]>)
-    | undefined;
-  createAuthItemKeysAction?:
-    | ((input: {
-        auth_id: string;
-        key_id: string;
-      }) => Promise<{ auth_item_keys_id?: string | null }>)
-    | undefined;
-  create_tool_id?: string | null;
-  showAiGenerate?: boolean;
-  onGenerate?: () => void | Promise<void>;
 }
 
 export function AuthItemKeys({
@@ -73,25 +61,16 @@ export function AuthItemKeys({
   label = "Auth Item Keys",
   description = "Select which keys are available for each auth.",
   show_auth_item_keys = true,
-  getAuthItemKeysAction,
-  createAuthItemKeysAction,
-  create_tool_id,
-  showAiGenerate = false,
-  onGenerate,
 }: AuthItemKeysProps) {
   const selectedIds = useMemo(() => auth_item_key_ids ?? [], [auth_item_key_ids]);
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating } = useResourceAi({
-    resourceType: "auth_item_keys",
-    groupId: undefined,
-    accumulate: true,
-  });
-
-  const [resourcesById, setResourcesById] = useState<Map<string, AuthItemKeysResourceItem>>(
-    new Map()
-  );
-  const creatingRef = useRef<Set<string>>(new Set());
+  const resourcesById = useMemo(() => {
+    const map = new Map<string, AuthItemKeysResourceItem>();
+    (auth_item_key_resources ?? []).forEach((r) => {
+      if (r.id) map.set(r.id, r);
+    });
+    return map;
+  }, [auth_item_key_resources]);
 
   const authItems = useMemo(
     () =>
@@ -99,7 +78,7 @@ export function AuthItemKeys({
         .filter((a): a is Required<Pick<AuthOption, "auth_id" | "name">> & AuthOption => !!a.auth_id && !!a.name)
         .filter((a) =>
           selected_auth_ids && selected_auth_ids.length > 0
-            ? selected_auth_ids.includes(a.auth_id)
+            ? selected_auth_ids.includes(a.auth_id!)
             : true
         ),
     [auths, selected_auth_ids]
@@ -114,36 +93,6 @@ export function AuthItemKeys({
     [keys]
   );
 
-  useEffect(() => {
-    if (!auth_item_key_resources || auth_item_key_resources.length === 0) return;
-    setResourcesById((prev) => {
-      const next = new Map(prev);
-      auth_item_key_resources.forEach((r) => {
-        if (r.id) next.set(r.id, r);
-      });
-      return next;
-    });
-  }, [auth_item_key_resources]);
-
-  useEffect(() => {
-    const missing = selectedIds.filter((id) => !resourcesById.has(id));
-    if (missing.length === 0 || !getAuthItemKeysAction) return;
-    let cancelled = false;
-    void getAuthItemKeysAction(missing).then((items) => {
-      if (cancelled) return;
-      setResourcesById((prev) => {
-        const next = new Map(prev);
-        items.forEach((r) => {
-          if (r.id) next.set(r.id, r);
-        });
-        return next;
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedIds, resourcesById, getAuthItemKeysAction]);
-
   const pairToId = useMemo(() => {
     const map = new Map<string, string>();
     resourcesById.forEach((r, id) => {
@@ -153,6 +102,16 @@ export function AuthItemKeys({
   }, [resourcesById]);
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const pendingIds = useMemo(
+    () =>
+      new Set(
+        (auth_item_key_resources ?? [])
+          .filter((item) => item.pending && item.id)
+          .map((item) => item.id as string)
+      ),
+    [auth_item_key_resources]
+  );
+  const showDiff = pendingIds.size > 0;
 
   const emit = useCallback(
     (nextIds: string[]) => {
@@ -162,7 +121,7 @@ export function AuthItemKeys({
   );
 
   const togglePair = useCallback(
-    async (authId: string, keyId: string, checked: boolean) => {
+    (authId: string, keyId: string, checked: boolean) => {
       const pairKey = `${authId}:${keyId}`;
       const existingId = pairToId.get(pairKey);
 
@@ -177,48 +136,19 @@ export function AuthItemKeys({
         return;
       }
 
-      if (!createAuthItemKeysAction || creatingRef.current.has(pairKey)) return;
-      creatingRef.current.add(pairKey);
-      try {
-        const result = await createAuthItemKeysAction({ auth_id: authId, key_id: keyId, tool_id: create_tool_id ?? undefined });
-        const createdId = result.auth_item_keys_id ?? null;
-        if (!createdId) return;
-        setResourcesById((prev) => {
-          const next = new Map(prev);
-          const authName = authItems.find((a) => a.auth_id === authId)?.name ?? null;
-          const keyName = keyItems.find((k) => k.key_id === keyId)?.name ?? null;
-          const keyDescription =
-            keyItems.find((k) => k.key_id === keyId)?.description ?? null;
-          next.set(createdId, {
-            id: createdId,
-            auth_id: authId,
-            key_id: keyId,
-            auth_name: authName,
-            key_name: keyName,
-            key_description: keyDescription,
-          });
-          return next;
-        });
-        emit([...selectedIds, createdId]);
-      } finally {
-        creatingRef.current.delete(pairKey);
-      }
+      // No existing resource for this pair — nothing to select yet.
+      // The parent artifact will handle creation via draft patches.
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      pairToId,
-      emit,
-      selectedIds,
-      selectedSet,
-      createAuthItemKeysAction,
-      authItems,
-      keyItems,
-    ]
+    [pairToId, emit, selectedIds, selectedSet]
   );
 
-  const hasGenerated = useMemo(() => {
-    return auth_item_key_resources?.some((a) => a.generated) ?? false;
-  }, [auth_item_key_resources]);
+  const handleAccept = useCallback(() => {
+    // Pending pairs remain selected; the next non-pending draft save confirms them.
+  }, []);
+
+  const handleReject = useCallback(() => {
+    emit(selectedIds.filter((id) => !pendingIds.has(id)));
+  }, [emit, pendingIds, selectedIds]);
 
   if (!show_auth_item_keys) return null;
 
@@ -226,30 +156,41 @@ export function AuthItemKeys({
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Label className="flex items-center gap-1">{label}</Label>
-        {onGenerate && showAiGenerate && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={onGenerate}
-                  disabled={disabled || aiIsGenerating}
-                >
-                  {aiIsGenerating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {hasGenerated ? "Regenerate" : "Generate"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        {showDiff && (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-success hover:text-success"
+                    onClick={handleAccept}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Accept</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
         )}
       </div>
       <p className="text-xs text-muted-foreground">{description}</p>
@@ -269,14 +210,21 @@ export function AuthItemKeys({
                     const keyId = key.key_id!;
                     const pairId = pairToId.get(`${authId}:${keyId}`);
                     const checked = pairId ? selectedSet.has(pairId) : false;
+                    const isPending = pairId ? pendingIds.has(pairId) : false;
                     return (
                       <div
                         key={`${authId}:${keyId}`}
                         className={cn(
-                          "flex items-center justify-between rounded border px-2 py-1.5",
-                          checked && "border-primary bg-primary/5"
+                          "relative flex items-center justify-between rounded border px-2 py-1.5",
+                          checked && !isPending && "border-primary bg-primary/5",
+                          isPending && "ring-2 ring-success bg-success/10"
                         )}
                       >
+                        {isPending && (
+                          <div className="absolute top-1 right-1 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                            Pending
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <div className="truncate text-sm">{key.name}</div>
                           {key.masked_key && (
@@ -289,7 +237,7 @@ export function AuthItemKeys({
                           checked={checked}
                           disabled={disabled}
                           onCheckedChange={(value) =>
-                            void togglePair(authId, keyId, value)
+                            togglePair(authId, keyId, value)
                           }
                         />
                       </div>

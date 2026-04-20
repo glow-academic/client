@@ -1,16 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
-import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
-import { StepCard } from "@/components/common/forms/StepCard";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
+import { StepCard } from "@/components/common/forms/StepCard";
+import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Endpoints } from "@/components/resources/Endpoints";
@@ -21,82 +21,56 @@ import { Values } from "@/components/resources/Values";
 import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
-import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   buildDraftPayload,
   checkHasResourceIds,
-  computeEffectiveFormState,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
-import type { Parser } from "nuqs";
-import { parseAsString } from "nuqs";
+import { parseAsString, type Parser } from "nuqs";
 
 type CreateProviderIn = InputOf<"/provider/create", "post">;
 type CreateProviderOut = OutputOf<"/provider/create", "post">;
 type UpdateProviderIn = InputOf<"/provider/update", "post">;
 type UpdateProviderOut = OutputOf<"/provider/update", "post">;
 type PatchProviderDraftIn = InputOf<"/provider/draft", "patch">;
-type PatchProviderDraftOut = OutputOf<
-  "/provider/draft",
-  "patch"
->;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftValuesIn = InputOf<"/api/v5/resources/values", "post">;
-type CreateDraftValuesOut = OutputOf<"/api/v5/resources/values", "post">;
-type CreateDraftEndpointsIn = InputOf<"/api/v5/resources/endpoints", "post">;
-type CreateDraftEndpointsOut = OutputOf<"/api/v5/resources/endpoints", "post">;
+type PatchProviderDraftOut = OutputOf<"/provider/draft", "patch">;
 type ProviderData = OutputOf<"/provider/get", "post">;
 
 type ProviderFormState = {
-  name: string | null;
   name_id: string | null;
-  description: string | null;
+  name: string | null;
   description_id: string | null;
+  description: string | null;
   active_flag_id: string | null;
   department_ids: string[];
   value_id: string | null;
+  value: string | null;
   endpoint_id: string | null;
+  endpoint: string | null;
   key_id: string | null;
+  pending_ids: string[];
 };
 
-const FLUSH_KEYS = ["names", "descriptions", "values", "endpoints"] as const;
-const PROVIDER_RESOURCE_CONFIG: ResourceConfig[] = [
-  { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
-  {
-    key: "descriptions",
-    formKey: "description_id",
-    flushKey: "description_id",
-    type: "single",
-  },
+const PROVIDER_RESOURCES: ResourceConfig[] = [
+  { key: "names", formKey: "name_id", flushKey: null, type: "single" },
+  { key: "descriptions", formKey: "description_id", flushKey: null, type: "single" },
   { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
-  {
-    key: "departments",
-    formKey: "department_ids",
-    flushKey: null,
-    type: "multi",
-  },
+  { key: "departments", formKey: "department_ids", flushKey: null, type: "multi" },
   { key: "values", formKey: "value_id", flushKey: null, type: "single" },
-  { key: "endpoints", formKey: "endpoint_id", flushKey: "endpoint_id", type: "single" },
+  { key: "endpoints", formKey: "endpoint_id", flushKey: null, type: "single" },
   { key: "keys", formKey: "key_id", flushKey: null, type: "single" },
 ];
-const PROVIDER_RESOURCES: ResourceType[] = [
+
+const VALID_RESOURCE_TYPES: ResourceType[] = [
   "names",
   "descriptions",
   "flags",
   "departments",
   "values",
   "endpoints",
+  "keys",
 ];
 
 export interface ProviderProps {
@@ -107,18 +81,6 @@ export interface ProviderProps {
   patchProviderDraftAction?: (
     input: PatchProviderDraftIn
   ) => Promise<PatchProviderDraftOut>;
-  createNamesAction?: (
-    input: CreateDraftNamesIn
-  ) => Promise<CreateDraftNamesOut>;
-  createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn
-  ) => Promise<CreateDraftDescriptionsOut>;
-  createValuesAction?: (
-    input: CreateDraftValuesIn
-  ) => Promise<CreateDraftValuesOut>;
-  createEndpointsAction?: (
-    input: CreateDraftEndpointsIn
-  ) => Promise<CreateDraftEndpointsOut>;
 }
 
 export default function Provider({
@@ -127,54 +89,51 @@ export default function Provider({
   createProviderAction,
   updateProviderAction,
   patchProviderDraftAction,
-  createNamesAction,
-  createDescriptionsAction,
-  createValuesAction,
-  createEndpointsAction,
 }: ProviderProps) {
-  const isEditMode = !!providerId;
   const router = useRouter();
+  const isEditMode = !!providerId;
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
-  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
-    useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
-
-  const s = providerData;
+  const emptyFlushRegistryRef = useRef<
+    Map<string, () => Promise<Record<string, unknown> | void>>
+  >(new Map());
+  const s = providerData as (ProviderData & Record<string, any>) | undefined;
 
   const getInitialFormState = useCallback((): ProviderFormState => {
-    if (!s) {
-      return {
-        name: null,
-        name_id: null,
-        description: null,
-        description_id: null,
-        active_flag_id: null,
-        department_ids: [],
-        value_id: null,
-        endpoint_id: null,
-        key_id: null,
-      };
-    }
+    const selectedName = s?.names?.find((item: any) => item.selected) ?? null;
+    const selectedDescription =
+      s?.descriptions?.find((item: any) => item.selected) ?? null;
+    const selectedFlag = s?.flags?.find((item: any) => item.selected) ?? null;
+    const selectedValue = s?.values?.find((item: any) => item.selected) ?? null;
+    const selectedEndpoint = s?.endpoints?.find((item: any) => item.selected) ?? null;
+    const selectedKey = s?.keys?.find((item: any) => item.selected) ?? null;
+
     return {
+      name_id: selectedName?.id ?? null,
       name: null,
-      name_id: (s.names?.resource?.id as string) ?? null,
+      description_id: selectedDescription?.id ?? null,
       description: null,
-      description_id: (s.descriptions?.resource?.id as string) ?? null,
-      active_flag_id: (s.flags?.current?.[0]?.flag_option_id as string) ?? null,
-      department_ids: (s.departments?.current ?? [])
-        .map((d) => d.department_id as string)
+      active_flag_id: selectedFlag?.flag_option_id ?? null,
+      department_ids: (s?.departments?.filter((item: any) => item.selected) ?? [])
+        .map((item: any) => item.department_id)
         .filter(Boolean),
-      value_id: (s.values?.resource?.id as string) ?? null,
-      endpoint_id: (s.endpoints?.resource?.id as string) ?? null,
-      key_id: (s.keys?.resource?.id as string) ?? null,
+      value_id: selectedValue?.id ?? null,
+      value: null,
+      endpoint_id: selectedEndpoint?.id ?? null,
+      endpoint: null,
+      key_id: selectedKey?.id ?? null,
+      pending_ids: (s?.pending_ids ?? []) as string[],
     };
   }, [s]);
 
   const [formState, setFormState] = useState<ProviderFormState>(getInitialFormState);
-  const referenceStateRef = React.useRef<ProviderFormState>(getInitialFormState());
-  const formStateRef = React.useRef(formState);
+  const referenceStateRef = useRef<ProviderFormState>(getInitialFormState());
+  const formStateRef = useRef(formState);
+  const serverSyncPendingRef = useRef(false);
+
   useEffect(() => {
     formStateRef.current = formState;
   }, [formState]);
+
   useEffect(() => {
     const initial = getInitialFormState();
     setFormState(initial);
@@ -183,102 +142,138 @@ export default function Provider({
 
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "provider",
-    validResourceTypes: PROVIDER_RESOURCES as string[],
+    validResourceTypes: VALID_RESOURCE_TYPES as string[],
   });
 
   const providerSearchParamsClient = useMemo(
     () => ({ draftId: parseAsString }),
     []
   );
-  const serverSyncPendingRef = React.useRef(false);
 
   const formStateKey = useMemo(() => {
-    if (serverSyncPendingRef.current) return undefined;
+    if (serverSyncPendingRef.current) {
+      return JSON.stringify(referenceStateRef.current);
+    }
     return JSON.stringify(formState);
   }, [formState]);
 
-  const patchActionRef = React.useRef<
-    | ((
-        payload: Record<string, unknown>
-      ) => Promise<{ draft_id?: string | null }>)
+  const patchActionRef = useRef<
+    | ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>)
     | undefined
   >(undefined);
+
   useEffect(() => {
-    if (patchProviderDraftAction) {
-      patchActionRef.current = async (payload: Record<string, unknown>) => {
-        const res = await patchProviderDraftAction({ body: payload } as PatchProviderDraftIn);
-        const fs = (res as Record<string, unknown>)?.form_state as Record<string, unknown> | undefined;
-        if (fs) {
-          serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name_id: (fs.name_id as string) ?? prev.name_id,
-            name: fs.name_id ? null : prev.name,
-            description_id: (fs.description_id as string) ?? prev.description_id,
-            description: fs.description_id ? null : prev.description,
-          }));
-          requestAnimationFrame(() => {
-            serverSyncPendingRef.current = false;
-          });
-        }
-        return res;
-      };
-    } else {
+    if (!patchProviderDraftAction) {
       patchActionRef.current = undefined;
+      return;
     }
+
+    patchActionRef.current = async (payload: Record<string, unknown>) => {
+      const result = await patchProviderDraftAction({
+        body: payload,
+      } as PatchProviderDraftIn);
+      const fs = (result as Record<string, unknown>)?.["form_state"] as
+        | Record<string, unknown>
+        | undefined;
+      if (fs) {
+        serverSyncPendingRef.current = true;
+        setFormState((prev) => ({
+          ...prev,
+          name_id: (fs["name_id"] as string | null) ?? null,
+          name: (fs["name"] as string | null) ?? null,
+          description_id: (fs["description_id"] as string | null) ?? null,
+          description: (fs["description"] as string | null) ?? null,
+          active_flag_id:
+            ((fs["active_flag_id"] as string | null) ??
+              (fs["flag_id"] as string | null)) ??
+            null,
+          department_ids: (fs["department_ids"] as string[] | null) ?? [],
+          value_id: (fs["value_id"] as string | null) ?? null,
+          value: (fs["value"] as string | null) ?? null,
+          endpoint_id:
+            ((fs["endpoint_id"] as string | null) ??
+              ((fs["endpoint_ids"] as string[] | null)?.[0] ?? null)) ??
+            null,
+          endpoint: (fs["endpoint"] as string | null) ?? null,
+          key_id:
+            ((fs["key_id"] as string | null) ??
+              ((fs["key_ids"] as string[] | null)?.[0] ?? null)) ??
+            null,
+          pending_ids: (fs["pending_ids"] as string[] | null) ?? [],
+        }));
+        requestAnimationFrame(() => {
+          serverSyncPendingRef.current = false;
+        });
+      }
+      return result;
+    };
   }, [patchProviderDraftAction]);
 
-  const hasResourceIds = checkHasResourceIds(
-    PROVIDER_RESOURCE_CONFIG,
-    formState as unknown as Record<string, unknown>
+  const buildPatchPayload = useCallback(
+    (draftId: string | null) => {
+      const currentFormState = formStateRef.current;
+      const payload: Record<string, unknown> = {
+        draft_id: draftId,
+        input_draft_id: draftId,
+        ...buildDraftPayload(PROVIDER_RESOURCES, {
+          formState: currentFormState as unknown as Record<string, unknown>,
+          referenceState: referenceStateRef.current as unknown as Record<string, unknown>,
+          flushResults: {},
+        }),
+      };
+
+      if (currentFormState["name"] && !currentFormState["name_id"]) {
+        payload["name"] = currentFormState["name"];
+        delete payload["name_id"];
+      }
+      if (currentFormState["description"] && !currentFormState["description_id"]) {
+        payload["description"] = currentFormState["description"];
+        delete payload["description_id"];
+      }
+      if (currentFormState["value"] && !currentFormState["value_id"]) {
+        payload["value"] = currentFormState["value"];
+        delete payload["value_id"];
+      }
+      if (currentFormState["endpoint"] && !currentFormState["endpoint_id"]) {
+        payload["endpoint"] = currentFormState["endpoint"];
+        delete payload["endpoint_id"];
+      }
+      payload["pending_ids"] = currentFormState["pending_ids"];
+
+      return payload;
+    },
+    []
   );
 
-  const { setUrlFormDataRef, onFormDataChange, flushAllAndSave, formDataRef } =
-    useDraftLifecycle({
-      formStateKey,
-      patchActionRef,
-      isAutosaveEnabled,
-      buildPatchPayload: (
-        inputDraftId: string | null,
-        flushResults?: Record<string, unknown>
-      ) => {
-        const payload: Record<string, unknown> = {
-          input_draft_id: inputDraftId,
-          ...buildDraftPayload(PROVIDER_RESOURCE_CONFIG, {
-            formState: computeEffectiveFormState(
-              PROVIDER_RESOURCE_CONFIG,
-              formStateRef.current as unknown as Record<string, unknown>,
-              flushResults ?? {}
-            ),
-            referenceState: referenceStateRef.current as unknown as Record<
-              string,
-              unknown
-            >,
-            flushResults: flushResults ?? {},
-          }),
-        };
+  const hasResourceIds =
+    checkHasResourceIds(
+      PROVIDER_RESOURCES,
+      formState as unknown as Record<string, unknown>
+    ) ||
+    !!formState.name ||
+    !!formState.description ||
+    !!formState.value ||
+    !!formState.endpoint ||
+    formState.pending_ids.length > 0;
 
-        // Value field overlay: send raw value instead of ID when set
-        const currentFs = formStateRef.current;
-        if (currentFs.name) {
-          payload.name = currentFs.name;
-          delete payload.name_id;
-        }
-        if (currentFs.description) {
-          payload.description = currentFs.description;
-          delete payload.description_id;
-        }
-
-        return payload;
-      },
-      setSelectedDraftId,
-      hasResourceIds,
-      flushRegistryRef,
-      formStateRef: formStateRef as React.MutableRefObject<Record<string, unknown>>,
-    });
+  const {
+    setUrlFormDataRef,
+    onFormDataChange,
+    flushAllAndSave,
+    formDataRef,
+  } = useDraftLifecycle({
+    formStateKey,
+    patchActionRef,
+    isAutosaveEnabled,
+    buildPatchPayload,
+    setSelectedDraftId,
+    hasResourceIds,
+    flushRegistryRef: emptyFlushRegistryRef,
+    formStateRef: formStateRef as React.MutableRefObject<Record<string, unknown>>,
+  });
 
   const handleGenerateResources = useCallback(
-    async (resourceTypes: ResourceType[], userInstructions?: string) => {
+    async (resourceTypes: ResourceType[]) => {
       let currentDraftId =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!currentDraftId) currentDraftId = await flushAllAndSave();
@@ -287,118 +282,132 @@ export default function Provider({
         return;
       }
       generate(resourceTypes, {
-        user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: currentDraftId,
         artifact_id: providerId ?? null,
       });
     },
-    [
-      generate,
-      formDataRef,
-      flushAllAndSave,
-      providerId,
-    ]
+    [flushAllAndSave, formDataRef, generate, providerId]
   );
 
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({
       basic: ["names", "descriptions", "flags", "departments"],
-      integrations: ["values", "endpoints"],
-      all: ["names", "descriptions", "flags", "departments", "values", "endpoints"],
+      integrations: ["values", "endpoints", "keys"],
+      all: ["names", "descriptions", "flags", "departments", "values", "endpoints", "keys"],
     }),
     []
   );
 
   const canRegenerate = useCallback(
-    (rt: ResourceType) => {
+    (resourceType: ResourceType) => {
       if (!s) return false;
-      if (rt === "names") return s.names?.resource?.generated ?? false;
-      if (rt === "descriptions") return s.descriptions?.resource?.generated ?? false;
-      if (rt === "flags") return s.flags?.current?.some((f) => f.generated) ?? false;
-      if (rt === "departments") {
-        return s.departments?.current?.some((d) => d.generated) ?? false;
+      if (resourceType === "names") {
+        return s.names?.find((item: any) => item.selected)?.generated ?? false;
       }
-      if (rt === "values") return s.values?.resource?.generated ?? false;
-      if (rt === "endpoints") return s.endpoints?.resource?.generated ?? false;
+      if (resourceType === "descriptions") {
+        return (
+          s.descriptions?.find((item: any) => item.selected)?.generated ?? false
+        );
+      }
+      if (resourceType === "flags") {
+        return s.flags?.some((item: any) => item.selected && item.generated) ?? false;
+      }
+      if (resourceType === "departments") {
+        return (
+          s.departments?.some((item: any) => item.selected && item.generated) ?? false
+        );
+      }
+      if (resourceType === "values") {
+        return s.values?.find((item: any) => item.selected)?.generated ?? false;
+      }
+      if (resourceType === "endpoints") {
+        return s.endpoints?.find((item: any) => item.selected)?.generated ?? false;
+      }
+      if (resourceType === "keys") {
+        return s.keys?.find((item: any) => item.selected)?.generated ?? false;
+      }
       return false;
     },
     [s]
   );
 
-  const handleDirectStepGenerate = useCallback(
-    (stepId: string, _mode: "generate" | "regenerate") => {
-      const resources = stepResources[stepId];
-      if (resources) {
-        handleGenerateResources(resources);
-      }
-    },
-    [stepResources, handleGenerateResources],
-  );
-
   const handleSubmit = useCallback(async () => {
-    let flushResults: Record<string, unknown> = {};
-    if (!isAutosaveEnabled) flushResults = await flushAllResources();
-    const effectiveState = computeEffectiveFormState(
-      PROVIDER_RESOURCE_CONFIG,
-      formStateRef.current as unknown as Record<string, unknown>,
-      flushResults
-    );
-    const nameId = effectiveState["name_id"] as string | null;
-    const valueId = effectiveState["value_id"] as string | null;
-    if (!nameId) throw new Error("Name is required");
-    if (!valueId) throw new Error("Value is required");
+    const hasRawFields =
+      !!formStateRef.current.name ||
+      !!formStateRef.current.description ||
+      !!formStateRef.current.value ||
+      !!formStateRef.current.endpoint;
 
-    const flagId = (effectiveState["active_flag_id"] as string) ?? null;
-    const deptIds = (effectiveState["department_ids"] as string[])?.length
-      ? (effectiveState["department_ids"] as string[])
-      : null;
-    const endpointId = (effectiveState["endpoint_id"] as string) ?? null;
-    const keyId = (effectiveState["key_id"] as string) ?? null;
+    if (hasRawFields) {
+      await flushAllAndSave();
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+    }
+
+    const effectiveState = formStateRef.current;
+    if (!effectiveState.name_id) {
+      throw new Error("Name is required");
+    }
+    if (!effectiveState.value_id) {
+      throw new Error("Value is required");
+    }
 
     if (isEditMode && providerId && updateProviderAction) {
       await updateProviderAction({
         body: {
-          providers: [{
-            provider_id: providerId,
-            name_id: nameId,
-            description_id: (effectiveState["description_id"] as string) ?? null,
-            active_flag_id: flagId,
-            value_ids: valueId ? [valueId] : null,
-            endpoint_ids: endpointId ? [endpointId] : null,
-            key_ids: keyId ? [keyId] : null,
-            department_ids: deptIds,
-          }],
+          providers: [
+            {
+              provider_id: providerId,
+              name_id: effectiveState.name_id,
+              description_id: effectiveState.description_id,
+              active_flag_id: effectiveState.active_flag_id,
+              department_ids:
+                effectiveState.department_ids.length > 0
+                  ? effectiveState.department_ids
+                  : null,
+              endpoint_ids: effectiveState.endpoint_id
+                ? [effectiveState.endpoint_id]
+                : null,
+              key_ids: effectiveState.key_id ? [effectiveState.key_id] : null,
+              value_id: effectiveState.value_id,
+            },
+          ],
         },
-      });
+      } as UpdateProviderIn);
     } else if (createProviderAction) {
       await createProviderAction({
         body: {
-          providers: [{
-            name_id: nameId,
-            description_id: (effectiveState["description_id"] as string) ?? null,
-            active_flag_id: flagId,
-            value_ids: valueId ? [valueId] : null,
-            endpoint_ids: endpointId ? [endpointId] : null,
-            key_ids: keyId ? [keyId] : null,
-            department_ids: deptIds,
-          }],
+          providers: [
+            {
+              name_id: effectiveState.name_id,
+              description_id: effectiveState.description_id,
+              active_flag_id: effectiveState.active_flag_id,
+              department_ids:
+                effectiveState.department_ids.length > 0
+                  ? effectiveState.department_ids
+                  : null,
+              endpoint_ids: effectiveState.endpoint_id
+                ? [effectiveState.endpoint_id]
+                : null,
+              key_ids: effectiveState.key_id ? [effectiveState.key_id] : null,
+              value_id: effectiveState.value_id,
+            },
+          ],
         },
-      });
+      } as CreateProviderIn);
     } else {
-      toast.error("Save action not available");
       throw new Error("Save action not available");
     }
+
     toast.success(isEditMode ? "Provider updated" : "Provider created");
     router.push("/intelligence/providers");
     router.refresh();
   }, [
     createProviderAction,
-    updateProviderAction,
-    providerId,
+    flushAllAndSave,
     isEditMode,
-    isAutosaveEnabled,
-    flushAllResources,
+    providerId,
     router,
+    updateProviderAction,
   ]);
 
   const disabled = !s?.can_edit;
@@ -420,29 +429,16 @@ export default function Provider({
 
   const getStepStatus = useCallback(
     (stepId: string): StepStatus => {
-      if (stepId === "basic") return formState.name_id ? "completed" : "active";
+      if (stepId === "basic") {
+        return formState.name_id || formState.name ? "completed" : "active";
+      }
       if (stepId === "integrations") {
-        return formState.value_id ? "completed" : "pending";
+        return formState.value_id || formState.value ? "completed" : "pending";
       }
       return "pending";
     },
-    [formState.name_id, formState.value_id]
+    [formState.name, formState.name_id, formState.value, formState.value_id]
   );
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const NamesAny = Names as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const DescriptionsAny = Descriptions as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const FlagsAny = Flags as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const DepartmentsAny = Departments as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ValuesAny = Values as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const EndpointsAny = Endpoints as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const KeysAny = Keys as any;
 
   const renderStep = useCallback(
     ({
@@ -470,83 +466,85 @@ export default function Provider({
             actions={
               <StepCardAiButton
                 stepId="basic"
-                resourceTypes={["names", "descriptions", "flags", "departments"]}
+                resourceTypes={stepResources["basic"] ?? []}
                 canRegenerate={canRegenerate as (rt: string) => boolean}
                 isGenerating={isGenerating as (rt: string) => boolean}
-                onOpenModal={handleDirectStepGenerate}
+                onOpenModal={(id) => {
+                  const resources = stepResources[id];
+                  if (resources) {
+                    void handleGenerateResources(resources);
+                  }
+                }}
                 disabled={disabled || !s?.basic_show_ai_generate}
               />
             }
           >
-            <NamesAny
+            <Names
               name_id={formState.name_id}
-              name_resource={s?.names?.resource}
-              show_name={s?.names?.show}
-              name_suggestions={s?.names?.suggestions ?? undefined}
-              names={s?.names?.resources ?? undefined}
-              required={s?.names?.required}
+              name_resource={s?.names?.find((item: any) => item.selected) ?? null}
+              show_name={true}
+              names={s?.names ?? []}
               disabled={disabled}
-              showAiGenerate={s?.names?.show_ai_generate}
-              createNamesAction={createNamesAction}
-              registerFlush={(
-                registerFlushCallbacks as Record<
-                  string,
-                  (flush: () => Promise<Record<string, unknown> | void>) => void
-                >
-              )["names"]}
-              isAutosaveEnabled={isAutosaveEnabled}
-              onNameIdChange={(id: string | null) =>
-                setFormState((prev) => ({ ...prev, name_id: id, name: null }))
+              onNameIdChange={(id) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  name_id: id,
+                  name: null,
+                  pending_ids: prev.pending_ids.filter((pendingId) => pendingId !== prev.name_id),
+                }))
               }
-              onNameChange={(name: string | null) =>
-                setFormState((prev) => ({ ...prev, name, name_id: null }))
+              onNameChange={(name) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  name_id: null,
+                  name,
+                }))
               }
+              defaultName="New Provider"
+              hideDescription={true}
+              required={true}
             />
-            <DescriptionsAny
+            <Descriptions
               description_id={formState.description_id}
-              description_resource={s?.descriptions?.resource}
-              show_description={s?.descriptions?.show}
-              description_suggestions={s?.descriptions?.suggestions ?? undefined}
-              descriptions={s?.descriptions?.resources ?? undefined}
-              required={s?.descriptions?.required}
+              description_resource={
+                s?.descriptions?.find((item: any) => item.selected) ?? null
+              }
+              show_description={true}
+              descriptions={s?.descriptions ?? []}
               disabled={disabled}
-              showAiGenerate={s?.descriptions?.show_ai_generate}
-              createDescriptionsAction={createDescriptionsAction}
-              registerFlush={(
-                registerFlushCallbacks as Record<
-                  string,
-                  (flush: () => Promise<Record<string, unknown> | void>) => void
-                >
-              )["descriptions"]}
-              isAutosaveEnabled={isAutosaveEnabled}
-              onDescriptionIdChange={(id: string | null) =>
-                setFormState((prev) => ({ ...prev, description_id: id, description: null }))
+              onDescriptionIdChange={(id) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  description_id: id,
+                  description: null,
+                }))
               }
-              onDescriptionChange={(description: string | null) =>
-                setFormState((prev) => ({ ...prev, description, description_id: null }))
+              onDescriptionChange={(description) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  description_id: null,
+                  description,
+                }))
               }
+              required={false}
             />
-            <FlagsAny
+            <Flags
               mode="single"
               flag_id={formState.active_flag_id}
-              show_flags={s?.flags?.show ?? false}
-              flags={s?.flags?.resources ?? []}
-              showAiGenerate={s?.flags?.show_ai_generate}
+              show_flags={true}
+              flags={s?.flags ?? []}
               disabled={disabled}
-              onChange={(id: string | null) =>
+              onChange={(id) =>
                 setFormState((prev) => ({ ...prev, active_flag_id: id }))
               }
             />
-            <DepartmentsAny
+            <Departments
               department_ids={formState.department_ids}
-              department_resources={s?.departments?.current ?? undefined}
-              show_departments={s?.departments?.show}
-              department_suggestions={s?.departments?.suggestions ?? undefined}
-              departments={s?.departments?.resources ?? undefined}
-              required={s?.departments?.required}
-              showAiGenerate={s?.departments?.show_ai_generate}
+              department_resources={s?.departments?.filter((item: any) => item.selected) ?? []}
+              show_departments={true}
+              departments={s?.departments ?? []}
               disabled={disabled}
-              onChange={(ids: string[]) =>
+              onChange={(ids) =>
                 setFormState((prev) => ({ ...prev, department_ids: ids }))
               }
             />
@@ -564,150 +562,108 @@ export default function Provider({
           actions={
             <StepCardAiButton
               stepId="integrations"
-              resourceTypes={["values", "endpoints"]}
+                resourceTypes={stepResources["integrations"] ?? []}
               canRegenerate={canRegenerate as (rt: string) => boolean}
               isGenerating={isGenerating as (rt: string) => boolean}
-              onOpenModal={handleDirectStepGenerate}
+              onOpenModal={(id) => {
+                const resources = stepResources[id];
+                if (resources) {
+                  void handleGenerateResources(resources);
+                }
+              }}
               disabled={disabled || !s?.integrations_show_ai_generate}
             />
           }
         >
-          <ValuesAny
+          <Values
             value_ids={formState.value_id ? [formState.value_id] : []}
-            value_resources={
-              s?.values?.resource
-                ? [
-                    {
-                      value_id: s.values.resource.id,
-                      name: s.values.resource.value,
-                      generated: s.values.resource.generated,
-                    },
-                  ]
-                : undefined
+            value_resources={s?.values?.filter((item: any) => item.selected) ?? []}
+            values={s?.values ?? []}
+            value={formState.value}
+            onValueChange={(value) =>
+              setFormState((prev) => ({
+                ...prev,
+                value_id: value ? null : prev.value_id,
+                value,
+              }))
             }
-            show_values={s?.values?.show}
-            value_suggestions={s?.values?.suggestions ?? undefined}
-            values={
-              s?.values?.resources?.map((r) => ({
-                value_id: r.id,
-                name: r.value,
-                generated: r.generated,
-              })) ?? undefined
-            }
-            required={s?.values?.required}
+            show_values={true}
             disabled={disabled}
-            showAiGenerate={s?.values?.show_ai_generate}
-            createValuesAction={createValuesAction}
-            registerFlush={(
-              registerFlushCallbacks as Record<
-                string,
-                (flush: () => Promise<Record<string, unknown> | void>) => void
-              >
-            )["values"]}
-            isAutosaveEnabled={isAutosaveEnabled}
-            onChange={(ids: string[]) =>
-              setFormState((prev) => ({ ...prev, value_id: ids[0] ?? null }))
+            required={true}
+            onChange={(ids) =>
+              setFormState((prev) => ({
+                ...prev,
+                value_id: ids[0] ?? null,
+                value: null,
+              }))
             }
           />
-          <EndpointsAny
+          <Endpoints
             endpoint_ids={formState.endpoint_id ? [formState.endpoint_id] : []}
-            endpoint_resources={
-              s?.endpoints?.resource
-                ? [
-                    {
-                      endpoint_id: s.endpoints.resource.id,
-                      name: s.endpoints.resource.base_url,
-                      generated: s.endpoints.resource.generated,
-                    },
-                  ]
-                : undefined
+            endpoint_resources={s?.endpoints?.filter((item: any) => item.selected) ?? []}
+            endpoints={s?.endpoints ?? []}
+            endpoint={formState.endpoint}
+            onEndpointChange={(endpoint) =>
+              setFormState((prev) => ({
+                ...prev,
+                endpoint_id: endpoint ? null : prev.endpoint_id,
+                endpoint,
+              }))
             }
-            show_endpoints={s?.endpoints?.show}
-            endpoint_suggestions={s?.endpoints?.suggestions ?? undefined}
-            endpoints={
-              s?.endpoints?.resources?.map((r) => ({
-                endpoint_id: r.id,
-                name: r.base_url,
-                generated: r.generated,
-              })) ?? undefined
-            }
-            required={s?.endpoints?.required}
+            show_endpoints={true}
             disabled={disabled}
-            showAiGenerate={s?.endpoints?.show_ai_generate}
-            createEndpointsAction={createEndpointsAction}
-            registerFlush={(
-              registerFlushCallbacks as Record<
-                string,
-                (flush: () => Promise<Record<string, unknown> | void>) => void
-              >
-            )["endpoints"]}
-            isAutosaveEnabled={isAutosaveEnabled}
-            onChange={(ids: string[]) =>
-              setFormState((prev) => ({ ...prev, endpoint_id: ids[0] ?? null }))
+            onChange={(ids) =>
+              setFormState((prev) => ({
+                ...prev,
+                endpoint_id: ids[0] ?? null,
+                endpoint: null,
+              }))
             }
           />
-          <KeysAny
+          <Keys
             key_id={formState.key_id}
-            key_resource={
-              s?.keys?.resource
-                ? {
-                    id: s.keys.resource.id,
-                    name: s.keys.resource.name,
-                    description: s.keys.resource.description,
-                    key_masked: s.keys.resource.key,
-                    active: true,
-                    generated: s.keys.resource.generated,
-                  }
-                : null
-            }
-            show_key={s?.keys?.show}
-            key_suggestions={s?.keys?.suggestions ?? undefined}
+            key_resource={s?.keys?.find((item: any) => item.selected) ?? null}
             keys={
-              s?.keys?.resources?.map((r) => ({
-                id: r.id,
-                name: r.name,
-                description: r.description,
-                key_masked: r.key,
+              (s?.keys ?? []).map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                description: item.description,
+                key_masked: item.key,
                 active: true,
-                generated: r.generated,
-              })) ?? undefined
+                generated: item.generated,
+              }))
             }
-            required={s?.keys?.required}
+            show_key={true}
             disabled={disabled}
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-            onKeyIdChange={(id: string | null) =>
+            onKeyIdChange={(id) =>
               setFormState((prev) => ({ ...prev, key_id: id }))
             }
           />
         </StepCard>
       );
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      s,
-      formState,
-      disabled,
       canRegenerate,
+      disabled,
+      formState.active_flag_id,
+      formState.department_ids,
+      formState.description_id,
+      formState.endpoint,
+      formState.endpoint_id,
+      formState.key_id,
+      formState.name_id,
+      formState.pending_ids,
+      formState.value,
+      formState.value_id,
+      handleGenerateResources,
       isGenerating,
-      handleDirectStepGenerate,
-      createNamesAction,
-      createDescriptionsAction,
-      createValuesAction,
-      createEndpointsAction,
-      registerFlushCallbacks,
-      isAutosaveEnabled,
-      DepartmentsAny,
-      DescriptionsAny,
-      EndpointsAny,
-      FlagsAny,
-      KeysAny,
-      NamesAny,
-      ValuesAny,
+      s,
+      stepResources,
     ]
   );
 
   return (
-    <div className="w-full p-6 space-y-8">
+    <div className="w-full space-y-8 p-6">
       <ReadOnlyBanner
         disabled={disabled}
         disabledReason={s?.disabled_reason ?? null}

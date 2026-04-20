@@ -25,19 +25,6 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftScenarioPositionsIn = {
-  body: {
-    simulation_id: string;
-    scenario_id: string;
-    value: number;
-    mcp: boolean;
-    tool_id?: string;
-  };
-};
-type CreateDraftScenarioPositionsOut = {
-  id?: string | null;
-};
-
 export interface ScenarioPositionResourceItem {
   id?: string | null;
   scenario_id?: string | null;
@@ -56,7 +43,6 @@ export interface ScenarioPositionsProps {
   scenario_position_ids?: string[]; // Current scenario position resource IDs (composite keys represented as UUIDs)
   scenario_position_resources?: ScenarioPositionResourceItem[]; // Selected scenario position resources
   show_scenario_positions?: boolean; // Whether to show this resource picker
-  scenario_position_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   scenario_positions?: ScenarioPositionResourceItem[]; // All available scenario positions from API
   scenarios?: Array<{
     id?: string | null;
@@ -75,26 +61,13 @@ export interface ScenarioPositionsProps {
   }>; // Server-confirmed scenario resources for label lookup
   disabled?: boolean; // Based on can_edit flag
   onChange: (positions: ScenarioPositionItem[]) => void; // Update scenario positions in form state
-  simulation_id?: string | null; // Current simulation ID (required for creating positions)
+  simulation_id?: string | null; // Current simulation ID (required for position items)
   scenario_ids?: string[]; // Current scenario IDs to position
   label?: string;
   id?: string;
   required?: boolean;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createScenarioPositionsAction?:
-    | ((
-        input: CreateDraftScenarioPositionsIn,
-      ) => Promise<CreateDraftScenarioPositionsOut>)
-    | undefined;
   onPositionIdsChange?: (ids: string[]) => void;
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (
-    flush: () => Promise<{ scenario_position_ids: string[] } | void>,
-  ) => void;
   /** Value callback for unified draft — reports all scenario+position pairs */
   onScenarioPositionValues?: (positions: Array<{ scenario_id: string; value: number }>) => void;
 }
@@ -112,12 +85,7 @@ export function ScenarioPositions({
   id = "scenario_positions",
   required = false,
   description,
-  group_id,
-  create_tool_id,
-  createScenarioPositionsAction,
   onPositionIdsChange,
-  isAutosaveEnabled = true,
-  registerFlush,
   onScenarioPositionValues,
 }: ScenarioPositionsProps) {
   const show = show_scenario_positions ?? false;
@@ -161,37 +129,9 @@ export function ScenarioPositions({
     [pendingItems]
   );
 
-  // Map resource ID → artifact ID for API calls (API expects scenario_artifact.id)
-  // From get_simulation SQL: s.id = scenarios_resource.id, s.scenario_id = scenario_artifact.id (via junction)
-  const artifactIdMap = useMemo(() => {
-    const map = new Map<string, string>();
-    (scenarios ?? []).forEach((s) => {
-      // s.id = scenarios_resource.id (denormalized), s.scenario_id = scenario_artifact.id (canonical)
-      if (s.id && s.scenario_id) {
-        map.set(s.id, s.scenario_id);
-      } else if (s.scenario_id) {
-        map.set(s.scenario_id, s.scenario_id);
-      }
-    });
-    (scenario_resources ?? []).forEach((s) => {
-      if (s.id && s.scenario_id) {
-        map.set(s.id, s.scenario_id);
-      } else if (s.scenario_id) {
-        map.set(s.scenario_id, s.scenario_id);
-      }
-    });
-    return map;
-  }, [scenarios, scenario_resources]);
   const [positionIdsByScenario, setPositionIdsByScenario] = useState<
     Map<string, string>
   >(new Map());
-  const positionIdsByScenarioRef = useRef<Map<string, string>>(new Map());
-  // Keep ref in sync with state for use in useEffect without causing loops
-  positionIdsByScenarioRef.current = positionIdsByScenario;
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<
-    (() => Promise<{ scenario_position_ids: string[] } | void>) | null
-  >(null);
 
   // Initialize positionIdsByScenario from server resources
   // Use the resource's own id field, NOT index-based correlation with scenarioPositionIds
@@ -230,23 +170,6 @@ export function ScenarioPositions({
       onPositionIdsChangeRef.current(ids);
     }
   }, [positionIdsByScenario, scenario_ids]);
-
-  // Update flush function - returns current IDs from local state
-  flushRef.current = async (): Promise<{
-    scenario_position_ids: string[];
-  } | void> => {
-    const ids = scenario_ids
-      .map((scenarioId) => positionIdsByScenario.get(scenarioId))
-      .filter((value): value is string => Boolean(value));
-    return { scenario_position_ids: ids };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Build position map from current positions
   const positionMap = useMemo(() => {
@@ -300,9 +223,6 @@ export function ScenarioPositions({
     onScenarioPositionValuesRef.current(values);
   }, [localPositions]);
 
-  // Auto-creation of positions is now handled only on explicit user action (handlePositionChange)
-  // to prevent infinite loops and unwanted API calls on component mount
-
   const handlePositionChange = useCallback(
     (scenarioId: string, newValue: number) => {
       const updated = new Map(localPositions);
@@ -320,59 +240,8 @@ export function ScenarioPositions({
       }));
 
       onChange(positionsArray);
-
-      const shouldCreateResource =
-        isAutosaveEnabled &&
-        createScenarioPositionsAction &&
-        create_tool_id &&
-        group_id &&
-        simulation_id;
-      if (!shouldCreateResource) {
-        return;
-      }
-
-      // Resolve resource ID to artifact ID for the API
-      const artifactScenarioId = artifactIdMap.get(scenarioId) ?? scenarioId;
-
-      void (async () => {
-        try {
-          const result = await createScenarioPositionsAction({
-            body: {
-              simulation_id: simulation_id,
-              scenario_id: artifactScenarioId,
-              value: newValue,
-              mcp: false,
-              tool_id: create_tool_id ?? undefined,
-            },
-          });
-
-          if (!result?.id) {
-            return;
-          }
-
-          setPositionIdsByScenario((prev) => {
-            const next = new Map(prev);
-            next.set(scenarioId, result.id as string);
-            return next;
-          });
-        } catch {
-          // Resource creation errors are handled by API; keep UI state intact.
-        }
-      })();
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      localPositions,
-      simulation_id,
-      onChange,
-      isAutosaveEnabled,
-      createScenarioPositionsAction,
-      create_tool_id,
-      group_id,
-      onPositionIdsChange,
-      scenario_ids,
-      artifactIdMap,
-    ],
+    [localPositions, simulation_id, onChange],
   );
 
   const handleMoveUp = useCallback(

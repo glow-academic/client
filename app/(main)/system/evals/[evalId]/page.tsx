@@ -131,10 +131,6 @@ export default async function EvalDetailPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
-
   // Parse search params using nuqs
   const paramsObj = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -151,63 +147,67 @@ export default async function EvalDetailPage({
   // Inline server-side parsers for eval search params
   const evalSearchParams = {
     draftId: parseAsString,
-    agentSearch: parseAsString,
-    agentShowSelected: parseAsBoolean,
-    modelRunSearch: parseAsString,
-    modelRunShowSelected: parseAsBoolean,
-    groupSearch: parseAsString,
-    groupShowSelected: parseAsBoolean,
+    modelSearch: parseAsString,
+    modelShowSelected: parseAsBoolean,
   };
   const loadEvalSearchParams = createLoader(evalSearchParams);
   const q = loadEvalSearchParams(searchParamsObj);
 
   try {
     // Fetch eval detail with draft_id and search params
-    const input: GetEvalIn = {
+    const input = {
       body: {
-        eval_id: evalId, // Provided for detail mode
+        id: evalId,
         draft_id: q.draftId ?? null,
-        agent_search: q.agentSearch ?? null,
-        group_search: q.groupSearch ?? null,
-        // Note: available_model_runs_search uses modelRunSearch from URL
-        available_model_runs_search: q.modelRunSearch ?? null,
-      } as GetEvalIn["body"],
-    };
+        models:
+          q.modelSearch || q.modelShowSelected
+            ? {
+                search: q.modelSearch ?? undefined,
+                selected: q.modelShowSelected ?? undefined,
+              }
+            : undefined,
+      },
+    } as unknown as GetEvalIn;
     const [evalDetail, context, draftsResult, groupResult] = await Promise.all([
       getEvalDetail(input),
       api.post("/eval/context", { body: { entity_id: evalId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/eval/drafts", {}),
+      api.post("/eval/drafts", {} as never),
       api.post("/eval/group", { body: {} } as GroupEvalIn),
     ]);
+    const snapshot = buildSnapshot(session, context.profile);
 
     const entityName = context.page_metadata?.detail.title;
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as never}>
         <FullPageLayout
           profileData={context.profile}
           sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
+          initialSidebarOpen={initialSidebarOpen ?? false}
           initialPanelOpen={initialPanelOpen}
           sidebarProps={{
             activeSection: "eval",
-            createFeedback: createEvalProblem,
+            createFeedback: createEvalProblem as never,
           }}
           breadcrumbs={[
             { title: "System", section: "system", url: "/system" },
             { title: "Evals", section: "evals", url: "/system/evals" },
-            { title: entityName },
+            { title: entityName ?? "Eval" },
           ]}
           toolbar={<SaveToolbar />}
           panelProps={{
             artifactType: "eval",
-            groupId: (groupResult as GroupEvalOut & { group_id?: string })?.group_id ?? null,
+            groupId:
+              (groupResult as GroupEvalOut & { group_id?: string })?.group_id ??
+              "",
             generateAction: generateEval,
             operations: ["draft", "get", "group"],
             getGroupHistory: getEvalGroupHistory,
             searchGroups: searchEvalGroups,
-            prompts: context.prompts?.prompts,
-          }}
+            ...(context.prompts?.prompts
+              ? { prompts: context.prompts.prompts }
+              : {}),
+          } as never}
         >
           <div
             className="space-y-6 px-4"

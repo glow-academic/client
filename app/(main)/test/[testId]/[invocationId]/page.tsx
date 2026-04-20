@@ -20,12 +20,12 @@ import { buildSnapshot } from "@/lib/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
 /** ---- Strong types from OpenAPI ---- */
-type ContextIn = InputOf<"/test/invocation/context", "post">;
-type ContextOut = OutputOf<"/test/invocation/context", "post">;
+type ContextIn = InputOf<"/test/context", "post">;
+type ContextOut = OutputOf<"/test/context", "post">;
 type GetBenchmarkBundleOut = OutputOf<
   "/test/invocation/get",
   "post"
->;
+> & InvocationData;
 type PatchBenchmarkDraftIn = InputOf<
   "/test/invocation/draft",
   "patch"
@@ -38,24 +38,26 @@ type ProblemTestIn = InputOf<"/test/problem", "post">;
 type ProblemTestOut = OutputOf<"/test/problem", "post">;
 
 const getBenchmarkBundle = async (
+  testId: string,
   bundleId: string,
   draftId: string | null,
 ): Promise<GetBenchmarkBundleOut> => {
-  return api.post(
+  return (await api.post(
     "/test/invocation/get",
-    {
+    ({
       body: {
-        benchmark_bundle_entry_id: bundleId,
+        test_id: testId,
+        invocation_id: bundleId,
         draft_id: draftId,
       },
-    },
+    } as unknown as InputOf<"/test/invocation/get", "post">),
     {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
       },
     },
-  );
+  )) as GetBenchmarkBundleOut;
 };
 
 async function patchBenchmarkDraft(
@@ -103,16 +105,16 @@ export default async function InvocationPage({
   // Read UI preferences from cookies for SSR
   const cookieStore = await cookies();
   const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
-  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : false;
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   try {
     // Profile data for providers
-    const context = await api.post("/test/invocation/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await api.post("/test/context", { body: {} } as ContextIn) as ContextOut;
     const snapshot = buildSnapshot(session, context.profile);
 
-    const bundleData = await getBenchmarkBundle(invocationId, draftId);
+    const bundleData = await getBenchmarkBundle(testId, invocationId, draftId);
 
     return (
       <FullPageLayout
@@ -122,7 +124,9 @@ export default async function InvocationPage({
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "benchmark",
-          createFeedback: createTestProblem,
+          createFeedback: createTestProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Benchmark", section: "benchmark", url: "/benchmark" },
@@ -134,7 +138,7 @@ export default async function InvocationPage({
           <Invocation
             bundleData={bundleData as InvocationData}
             testId={testId}
-            patchBenchmarkDraftAction={patchBenchmarkDraft}
+            patchInvocationDraftAction={patchBenchmarkDraft}
           />
         </div>
       </FullPageLayout>

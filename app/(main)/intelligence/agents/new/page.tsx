@@ -29,14 +29,8 @@ type CreateAgentIn = InputOf<"/agent/create", "post">;
 type CreateAgentOut = OutputOf<"/agent/create", "post">;
 type PatchAgentDraftIn = InputOf<"/agent/draft", "patch">;
 type PatchAgentDraftOut = OutputOf<"/agent/draft", "patch">;
-type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
-type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
 type GroupAgentIn = InputOf<"/agent/group", "post">;
 type GroupAgentOut = OutputOf<"/agent/group", "post">;
-type GenerateAgentIn = InputOf<"/agent/generate", "post">;
-type GenerateAgentOut = OutputOf<"/agent/generate", "post">;
-type GenerationsIn = InputOf<"/agent/generations", "post">;
-type GenerationsOut = OutputOf<"/agent/generations", "post">;
 type ProblemAgentIn = InputOf<"/agent/problem", "post">;
 type ProblemAgentOut = OutputOf<"/agent/problem", "post">;
 type ContextIn = InputOf<"/agent/context", "post">;
@@ -59,28 +53,6 @@ async function createAgent(input: CreateAgentIn): Promise<CreateAgentOut> {
 async function patchAgentDraft(input: PatchAgentDraftIn): Promise<PatchAgentDraftOut> {
   "use server";
   return api.patch("/agent/draft", input);
-}
-
-async function createDraftVoices(input: CreateDraftVoicesIn): Promise<CreateDraftVoicesOut> {
-  "use server";
-  return api.post("/resources/voices", input);
-}
-
-async function generateAgent(
-  input: GenerateAgentIn
-): Promise<GenerateAgentOut> {
-  "use server";
-  return api.post("/agent/generate", input);
-}
-
-async function getAgentGroupHistory(groupId: string): Promise<GroupAgentOut> {
-  "use server";
-  return api.post("/agent/group", { body: { group_id: groupId } } as GroupAgentIn);
-}
-
-async function searchAgentGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/agent/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createAgentProblem(input: ProblemAgentIn): Promise<ProblemAgentOut> {
@@ -140,34 +112,62 @@ export default async function NewAgentPage({
     // Inline server-side parsers for agent search params
     const agentSearchParams = {
       draftId: parseAsString,
+      modelSearch: parseAsString,
+      toolSearch: parseAsString,
+      toolShowSelected: parseAsString,
+      modelShowSelected: parseAsString,
+      reasoningSearch: parseAsString,
+      voiceSearch: parseAsString,
+      descriptionSearch: parseAsString,
+      promptSearch: parseAsString,
+      instructionsSearch: parseAsString,
     };
     const loadAgentSearchParams = createLoader(agentSearchParams);
     const q = loadAgentSearchParams(searchParamsObj);
 
     // SSR data fetches
-    const input: GetAgentIn = {
+    const input = {
       body: {
-        agent_id: null,
+        id: null,
         draft_id: q.draftId ?? null,
+        descriptions: q.descriptionSearch ? { search: q.descriptionSearch } : undefined,
+        models:
+          q.modelSearch || q.modelShowSelected
+            ? {
+                search: q.modelSearch ?? undefined,
+                selected: q.modelShowSelected === "true" ? true : undefined,
+              }
+            : undefined,
+        prompts: q.promptSearch ? { search: q.promptSearch } : undefined,
+        instructions: q.instructionsSearch ? { search: q.instructionsSearch } : undefined,
+        tools:
+          q.toolSearch || q.toolShowSelected
+            ? {
+                search: q.toolSearch ?? undefined,
+                selected: q.toolShowSelected === "true" ? true : undefined,
+              }
+            : undefined,
+        reasoning_levels: q.reasoningSearch ? { search: q.reasoningSearch } : undefined,
+        voices: q.voiceSearch ? { search: q.voiceSearch } : undefined,
       } as GetAgentIn["body"],
-    };
+    } as unknown as GetAgentIn;
 
     const [agentDetailDefault, draftsResult, groupResult] = await Promise.all([
       getAgent(input),
-      api.post("/agent/drafts", {}),
+      api.post("/agent/drafts", {} as any),
       api.post("/agent/group", { body: {} } as GroupAgentIn),
     ]);
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
         <FullPageLayout
           profileData={context.profile}
           sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
-          initialPanelOpen={initialPanelOpen}
+          {...(initialSidebarOpen !== undefined ? { initialSidebarOpen } : {})}
+          {...(initialPanelOpen !== undefined ? { initialPanelOpen } : {})}
           sidebarProps={{
             activeSection: "agent",
-            createFeedback: createAgentProblem,
+            createFeedback: createAgentProblem as any,
           }}
           breadcrumbs={[
             { title: "Intelligence", section: "intelligence", url: "/intelligence" },
@@ -175,15 +175,16 @@ export default async function NewAgentPage({
             { title: "New Agent" },
           ]}
           toolbar={<SaveToolbar />}
-          panelProps={{
-            artifactType: "agent",
-            groupId: (groupResult as GroupAgentOut & { group_id?: string })?.group_id ?? null,
-            generateAction: generateAgent,
-            operations: ["draft", "get", "group"],
-            getGroupHistory: getAgentGroupHistory,
-            searchGroups: searchAgentGroups,
-            prompts: context.prompts?.prompts,
-          }}
+          panelProps={
+            {
+              artifactType: "agent",
+              groupId: (groupResult as GroupAgentOut & { group_id?: string })?.group_id ?? null,
+              operations: ["draft", "get", "group"],
+              ...(context.prompts?.prompts
+                ? { prompts: context.prompts.prompts }
+                : {}),
+            } as any
+          }
         >
           <div
             className="space-y-6 px-4"
@@ -195,7 +196,6 @@ export default async function NewAgentPage({
               agentDetailDefault={agentDetailDefault}
               createAgentAction={createAgent}
               patchAgentDraftAction={patchAgentDraft}
-              createVoicesAction={createDraftVoices}
             />
           </div>
         </FullPageLayout>

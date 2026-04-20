@@ -17,14 +17,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface TemperatureLevelResourceItem {
   id?: string | null;
   temperature?: number | string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface TemperatureLevelItem {
@@ -37,7 +38,6 @@ export interface TemperatureLevelsProps {
   temperature_level_id?: string | null; // Current temperature_level_id (standardized prop name)
   temperature_level_resource?: TemperatureLevelResourceItem | null; // Resource data from server
   show_temperature_levels?: boolean; // Whether to show this resource picker
-  temperature_level_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   temperature_levels?: TemperatureLevelResourceItem[]; // Array of all available temperature level options
   temperature_lower?: number | null; // Lower bound for slider (optional)
   temperature_upper?: number | null; // Upper bound for slider (optional)
@@ -45,8 +45,6 @@ export interface TemperatureLevelsProps {
   onTemperatureLevelIdChange: (
     temperatureLevelId: string | null
   ) => void; // Update temperature_level_id in parent form state
-  onGenerate?: () => Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   label?: string;
   placeholder?: string;
   required?: boolean;
@@ -56,24 +54,17 @@ export interface TemperatureLevelsProps {
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   showSlider?: boolean; // Whether to show slider for visual feedback
-  group_id?: string | null; // Group ID for linking resources
-  aiTemperatureLevelResources?: Array<{
-    temperature_level_id?: string | null;
-    name?: string | null;
-  }> | null; // AI diff - fields don't map to resource item type
 }
 
 export function TemperatureLevels({
   temperature_level_id,
-  temperature_level_resource,
+  temperature_level_resource: _temperature_level_resource,
   show_temperature_levels = true,
   temperature_levels,
   temperature_lower,
   temperature_upper,
   disabled = false,
   onTemperatureLevelIdChange,
-  onGenerate,
-  showAiGenerate = false,
   label = "Temperature Level",
   placeholder = "Select a temperature level",
   required = false,
@@ -83,32 +74,33 @@ export function TemperatureLevels({
   searchTerm,
   onSearchChange,
   showSlider = false,
-  group_id,
 }: TemperatureLevelsProps) {
-  const resource = temperature_level_resource ?? null;
   const resourceId = temperature_level_id ?? null;
   const show = show_temperature_levels ?? true;
+  const allTemperatureLevels = useMemo(() => temperature_levels ?? [], [temperature_levels]);
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
-    resourceType: "temperature_levels",
-    groupId: group_id,
-  });
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allTemperatureLevels.filter((tl) => tl.pending && tl.id);
+  }, [allTemperatureLevels]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((tl) => tl.id).filter(Boolean) as string[]),
+    [pendingItems]
+  );
 
-  // AI suggestion state
-  const showDiff = !!aiSuggestion?.temperature_level_id;
-
-  // Accept AI suggestion - select AI-suggested temperature level
+  // Accept pending — keep pending selection (already selected, no-op)
   const handleAccept = useCallback(() => {
-    if (!aiSuggestion?.temperature_level_id) return;
-    onTemperatureLevelIdChange(aiSuggestion.temperature_level_id);
-    clearAi();
-  }, [aiSuggestion, onTemperatureLevelIdChange, clearAi]);
+    // Pending item is already the selected temperature_level_id
+    // The next draft save will persist it as active
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — clear the pending selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    if (resourceId && pendingIds.has(resourceId)) {
+      onTemperatureLevelIdChange(null);
+    }
+  }, [resourceId, pendingIds, onTemperatureLevelIdChange]);
 
   const filteredTemperatureLevels = useMemo(() => {
     if (!searchTerm?.trim()) {
@@ -168,13 +160,13 @@ export function TemperatureLevels({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-end justify-between">
-        <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1">
-            {label}
-            {required && <span className="text-destructive">*</span>}
-          </Label>
-          {onGenerate && showAiGenerate && (
+      <div className="flex items-center gap-2">
+        <Label htmlFor={id} className="flex items-center gap-1">
+          {label}
+          {required && <span className="text-destructive">*</span>}
+        </Label>
+        {showDiff && (
+          <>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -182,60 +174,33 @@ export function TemperatureLevels({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
+                    className="h-6 w-6 text-success hover:text-success"
+                    onClick={handleAccept}
                   >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
+                    <Check className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  {resource?.generated ? "Regenerate" : "Generate"}
-                </TooltipContent>
+                <TooltipContent>Accept</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          )}
-          {showDiff && (
-            <>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-success hover:text-success"
-                      onClick={handleAccept}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Accept</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-destructive hover:text-destructive"
-                      onClick={handleReject}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Reject</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </>
-          )}
-        </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
+        )}
       </div>
 
       {/* Slider for visual feedback (optional) */}

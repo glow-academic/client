@@ -234,7 +234,6 @@ export default async function NewFieldPage({
             aria-label="Create new field page"
           >
             <Field
-              key={q.draftId || "no-draft"}
               mode="create"
               fieldData={fieldData}
               createFieldAction={createField}

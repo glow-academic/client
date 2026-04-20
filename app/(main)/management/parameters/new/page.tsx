@@ -213,7 +213,6 @@ export default async function NewParameterPage({
         >
           <div className="space-y-6 px-4" data-page="parameter-new">
             <Parameter
-              key={q.draftId || "no-draft"}
               mode="create"
               parameterData={parameterDetailDefault}
               createParameterAction={createParameter}

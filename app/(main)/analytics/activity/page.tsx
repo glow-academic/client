@@ -10,6 +10,7 @@ import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import Activity from "@/components/artifacts/activity/Activity";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { buildSnapshot } from "@/lib/auth";
+import { guardPage } from "@/lib/permissions";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -30,16 +31,16 @@ export type ActivityOut = {
 };
 
 /** ---- Generation types ---- */
-type ContextIn = InputOf<"/system/activity/context", "post">;
-type ContextOut = OutputOf<"/system/activity/context", "post">;
-type GenerateActivityIn = InputOf<"/system/activity/generate", "post">;
-type GenerateActivityOut = OutputOf<"/system/activity/generate", "post">;
-type GenerationsIn = InputOf<"/system/activity/generations", "post">;
-type GenerationsOut = OutputOf<"/system/activity/generations", "post">;
-type GroupActivityIn = InputOf<"/system/activity/group", "post">;
-type GroupActivityOut = OutputOf<"/system/activity/group", "post">;
-type ProblemActivityIn = InputOf<"/system/activity/problem", "post">;
-type ProblemActivityOut = OutputOf<"/system/activity/problem", "post">;
+type ContextIn = InputOf<"/system/context", "post">;
+type ContextOut = OutputOf<"/system/context", "post">;
+type GenerateActivityIn = InputOf<"/system/generate", "post">;
+type GenerateActivityOut = OutputOf<"/system/generate", "post">;
+type GenerationsIn = InputOf<"/system/generations", "post">;
+type GenerationsOut = OutputOf<"/system/generations", "post">;
+type GroupActivityIn = InputOf<"/system/group", "post">;
+type GroupActivityOut = OutputOf<"/system/group", "post">;
+type ProblemActivityIn = InputOf<"/system/problem", "post">;
+type ProblemActivityOut = OutputOf<"/system/problem", "post">;
 
 /** ---- Direct fetch functions ---- */
 const getActivityBundle = async (
@@ -60,7 +61,7 @@ const getActivityBundle = async (
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/system/activity/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await api.post("/system/context", { body: {} } as ContextIn) as ContextOut;
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -92,8 +93,9 @@ export default async function ActivityPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/system/activity/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await api.post("/system/context", { body: {} } as ContextIn) as ContextOut;
     const snapshot = buildSnapshot(session, context.profile);
+    guardPage("/analytics/activity", context.profile.role_permissions);
 
     // Parse search params via nuqs loader
     const q = loadActivitySearchParams(await searchParams);
@@ -126,7 +128,7 @@ export default async function ActivityPage({
           history_sort_order: "desc",
         },
       }),
-      api.post("/system/activity/group", { body: {} } as GroupActivityIn),
+      api.post("/system/group", { body: {} } as GroupActivityIn),
     ]);
 
     // Extract inline analytics facets from response
@@ -210,22 +212,22 @@ async function generateActivity(
   input: GenerateActivityIn
 ): Promise<GenerateActivityOut> {
   "use server";
-  return api.post("/system/activity/generate", input);
+  return api.post("/system/generate", input);
 }
 
 async function getActivityGroupHistory(groupId: string): Promise<GroupActivityOut> {
   "use server";
-  return api.post("/system/activity/group", { body: { group_id: groupId } } as GroupActivityIn);
+  return api.post("/system/group", { body: { group_id: groupId } } as GroupActivityIn);
 }
 
 async function searchActivityGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/system/activity/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/system/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createActivityProblem(input: ProblemActivityIn): Promise<ProblemActivityOut> {
   "use server";
-  return api.post("/system/activity/problem", input);
+  return api.post("/system/problem", input);
 }
 
 /** ---- Export types for client (type-only imports) ---- */

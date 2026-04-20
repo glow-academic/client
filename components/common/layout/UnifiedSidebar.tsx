@@ -8,7 +8,7 @@ import type {
   CreateFeedbackIn,
   CreateFeedbackOut,
 } from "@/lib/actions/feedback";
-import { getSidebarSections } from "@/lib/sidebar-config";
+import { getSidebarSectionsFromPermissions } from "@/lib/sidebar-config";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
@@ -44,9 +45,11 @@ import { useProfile } from "@/contexts/profile-context";
 import { useFederatedLogout } from "@/hooks/useFederatedLogout";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { useTheme } from "next-themes";
 import {
   Activity,
   AlertCircle,
+  Check,
   ChevronRight,
   ChevronsUpDown,
   ClipboardList,
@@ -54,11 +57,14 @@ import {
   GraduationCap,
   Home,
   LogOut,
+  Monitor,
+  Moon,
   PieChart,
   Search,
   Server,
   Settings,
   Sparkles,
+  Sun,
   Target,
   Trophy,
 } from "lucide-react";
@@ -114,6 +120,33 @@ const getInitials = (name?: string): string => {
     .slice(0, 2);
 };
 
+const THEME_OPTIONS = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "System", icon: Monitor },
+] as const;
+
+function ThemeOptions() {
+  const { theme, setTheme } = useTheme();
+
+  const handleSetTheme = (value: string) => {
+    setTheme(value);
+    document.cookie = `theme=${value};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`;
+  };
+
+  return (
+    <>
+      {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+        <DropdownMenuItem key={value} onClick={() => handleSetTheme(value)}>
+          <Icon className="h-4 w-4 mr-2" />
+          {label}
+          {theme === value && <Check className="h-4 w-4 ml-auto" />}
+        </DropdownMenuItem>
+      ))}
+    </>
+  );
+}
+
 export function UnifiedSidebar({
   activeSection,
   onSectionChange,
@@ -140,12 +173,12 @@ export function UnifiedSidebar({
   const { isMobile, setOpenMobile } = useSidebar();
 
   // Use the profile context
-  const { profile, roleArtifacts } =
+  const { profile, rolePermissions } =
     useProfile();
   const navMain = useMemo(() => {
     if (!profile) return [];
 
-    const sections = getSidebarSections(roleArtifacts);
+    const sections = getSidebarSectionsFromPermissions(rolePermissions);
     const menu: NavSection[] = sections.map((section) => {
       const IconComponent = SIDEBAR_ICONS[section.icon] ?? Home;
       const items: MenuItem[] | undefined = section.items
@@ -194,7 +227,7 @@ export function UnifiedSidebar({
     }
 
     return menu;
-  }, [profile, searchTerm, roleArtifacts]);
+  }, [profile, searchTerm, rolePermissions]);
 
   // Resolve the href for any menu item (for use with <Link>)
   const getItemHref = useCallback(
@@ -347,6 +380,8 @@ export function UnifiedSidebar({
                   className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                   align="start"
                 >
+                  <ThemeOptions />
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleLoginOrLogout}
                     disabled={isLoggingOut}

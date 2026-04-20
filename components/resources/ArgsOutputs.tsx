@@ -1,7 +1,7 @@
 /**
  * ArgsOutputs.tsx
  * Component for editing args_outputs Jinja templates
- * Follows SchemaOutput.tsx pattern - manages own state, calls save actions directly
+ * Pure UI: receives data arrays + selected IDs, reports changes via onChange
  */
 
 "use client";
@@ -18,15 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-type CreateDraftArgsOutputsIn = InputOf<"/api/v5/resources/args_outputs", "post">;
-type CreateDraftArgsOutputsOut = OutputOf<
-  "/api/v5/resources/args_outputs",
-  "post"
->;
 
 export interface ArgsOutputsResourceItem {
   id?: string | null;
@@ -39,6 +31,7 @@ export interface ArgsOutputsDetail {
   name: string;
   template: string;
   generated: boolean;
+  pending?: boolean | null;
 }
 
 export interface ArgsFieldDetail {
@@ -56,22 +49,8 @@ export interface ArgsOutputsProps {
   output_args_outputs: ArgsOutputsDetail[]; // From API - detailed args_outputs data for selected args_outputs_ids
   input_args_fields: ArgsFieldDetail[]; // From API - for Jinja variable autocomplete/reference
   disabled: boolean; // Based on can_edit flag from Tool.tsx
-  // Note: args_outputs_ids selection is managed by Tool.tsx in separate "args_outputs" step
-  // This component only edits args_outputs within selected args_outputs_ids
-  createArgsOutputsAction?:
-    | ((input: CreateDraftArgsOutputsIn) => Promise<CreateDraftArgsOutputsOut>)
-    | undefined;
-  group_id?: string | null; // Group ID for resource creation
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  // Component handles args_outputs changes internally and calls createArgsOutputsAction
-  // No onChange callback needed - component manages its own state like SchemaOutput
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created ID */
-  registerFlush?: (flush: () => Promise<{ args_outputs_id: string | null } | void>) => void;
-  aiArgsOutputsResources?: Pick<ArgsOutputsResourceItem, "id" | "name">[] | null;
-  showAiGenerate?: boolean;
-  onGenerate?: () => void | Promise<void>;
+  /** Callback to update args_outputs_ids in parent (used for reject pending) */
+  onArgsOutputsIdsChange?: (ids: string[]) => void;
 }
 
 export function ArgsOutputs({
@@ -79,14 +58,7 @@ export function ArgsOutputs({
   output_args_outputs,
   input_args_fields,
   disabled = false,
-  createArgsOutputsAction,
-  group_id,
-  create_tool_id,
-  isAutosaveEnabled = true,
-  registerFlush,
-  aiArgsOutputsResources: _aiArgsOutputsResources,
-  showAiGenerate: _showAiGenerate = false,
-  onGenerate: _onGenerate,
+  onArgsOutputsIdsChange,
 }: ArgsOutputsProps) {
   // Get available Jinja variables from input args fields
   const availableVariables = useMemo(() => {
@@ -124,7 +96,6 @@ export function ArgsOutputs({
 
   // Internal state for args_outputs names
   const [outputNames, setOutputNames] = useState<Record<string, string>>({});
-  const nameDebounceTimerRef = useRef<Record<string, NodeJS.Timeout>>({});
   const lastSavedNamesRef = useRef<Record<string, string>>({});
   const isNameInitialMountRef = useRef(true);
 
@@ -164,12 +135,8 @@ export function ArgsOutputs({
   const [outputTemplates, setOutputTemplates] = useState<
     Record<string, string>
   >({});
-  const templateDebounceTimerRef = useRef<Record<string, NodeJS.Timeout>>({});
   const lastSavedTemplatesRef = useRef<Record<string, string>>({});
   const isTemplateInitialMountRef = useRef(true);
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ args_outputs_id: string | null } | void>) | undefined>(undefined);
 
   // Initialize output templates from props
   useEffect(() => {
@@ -204,218 +171,50 @@ export function ArgsOutputs({
     }
   }, [output_args_outputs]);
 
-  // Debounced save function for output name (creates new args_outputs resource)
-  const saveOutputName = useCallback(
-    async (outputId: string, name: string) => {
-      if (!createArgsOutputsAction || !create_tool_id || !group_id) return;
-
-      const output = output_args_outputs.find(
-        (o) => o.args_outputs_id === outputId
-      );
-      if (!output) return;
-
-      try {
-        // Create new args_outputs resource with updated name (write-only pattern)
-        await createArgsOutputsAction({
-          body: {
-            args_id: output.args_id,
-            name: name,
-            template: outputTemplates[outputId] ?? output.template,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        lastSavedNamesRef.current[outputId] = name;
-        // Note: The new args_outputs will need to be linked to the tool via tool_args_outputs junction table
-        // This happens when Tool.tsx saves with the new args_outputs_id
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to create args_outputs:", error);
-      }
-    },
-    [
-      createArgsOutputsAction,
-      output_args_outputs,
-      create_tool_id,
-      group_id,
-      outputTemplates,
-    ]
-  );
-
-  // Debounced save function for output template (creates new args_outputs resource)
-  const saveOutputTemplate = useCallback(
-    async (outputId: string, template: string) => {
-      if (!createArgsOutputsAction || !create_tool_id || !group_id) return;
-
-      const output = output_args_outputs.find(
-        (o) => o.args_outputs_id === outputId
-      );
-      if (!output) return;
-
-      try {
-        // Create new args_outputs resource with updated template (write-only pattern)
-        await createArgsOutputsAction({
-          body: {
-            args_id: output.args_id,
-            name: outputNames[outputId] ?? output.name,
-            template: template,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        lastSavedTemplatesRef.current[outputId] = template;
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to create args_outputs:", error);
-      }
-    },
-    [
-      createArgsOutputsAction,
-      output_args_outputs,
-      create_tool_id,
-      group_id,
-      outputNames,
-    ]
-  );
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ args_outputs_id: string | null } | void> => {
-    // Skip if no action available
-    if (!createArgsOutputsAction || !group_id) {
-      return;
-    }
-
-    // Flush all pending name changes
-    for (const outputId of Object.keys(outputNames)) {
-      const currentName = outputNames[outputId];
-      const lastSavedName = lastSavedNamesRef.current[outputId];
-      if (currentName && currentName !== lastSavedName) {
-        await saveOutputName(outputId, currentName);
-      }
-    }
-
-    // Flush all pending template changes
-    for (const outputId of Object.keys(outputTemplates)) {
-      const currentTemplate = outputTemplates[outputId];
-      const lastSavedTemplate = lastSavedTemplatesRef.current[outputId];
-      if (currentTemplate && currentTemplate !== lastSavedTemplate) {
-        await saveOutputTemplate(outputId, currentTemplate);
-      }
-    }
-
-    // Return null since ArgsOutputs manages multiple outputs, not a single resource ID
-    return { args_outputs_id: null };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
-  // Handle output name change with debouncing
+  // Handle output name change
   const handleOutputNameChange = useCallback(
     (outputId: string, name: string) => {
       setOutputNames((prev) => ({
         ...prev,
         [outputId]: name,
       }));
-
-      // Skip autosave if disabled (manual save mode)
-      if (!isAutosaveEnabled) {
-        return;
-      }
-
-      // Clear existing timer for this output
-      if (nameDebounceTimerRef.current[outputId]) {
-        clearTimeout(nameDebounceTimerRef.current[outputId]);
-      }
-
-      // Set new timer (500ms debounce)
-      nameDebounceTimerRef.current[outputId] = setTimeout(() => {
-        const lastSaved = lastSavedNamesRef.current[outputId];
-        // Only save if value actually changed
-        if (!lastSaved || lastSaved !== name) {
-          saveOutputName(outputId, name);
-        }
-      }, 500);
     },
-    [saveOutputName, isAutosaveEnabled]
+    []
   );
 
-  // Handle output template change with debouncing
+  // Handle output template change
   const handleOutputTemplateChange = useCallback(
     (outputId: string, template: string) => {
       setOutputTemplates((prev) => ({
         ...prev,
         [outputId]: template,
       }));
-
-      // Skip autosave if disabled (manual save mode)
-      if (!isAutosaveEnabled) {
-        return;
-      }
-
-      // Clear existing timer for this output
-      if (templateDebounceTimerRef.current[outputId]) {
-        clearTimeout(templateDebounceTimerRef.current[outputId]);
-      }
-
-      // Set new timer (500ms debounce)
-      templateDebounceTimerRef.current[outputId] = setTimeout(() => {
-        const lastSaved = lastSavedTemplatesRef.current[outputId];
-        // Only save if value actually changed
-        if (!lastSaved || lastSaved !== template) {
-          saveOutputTemplate(outputId, template);
-        }
-      }, 500);
     },
-    [saveOutputTemplate, isAutosaveEnabled]
+    []
   );
 
-  // Cleanup timers on unmount
-  useEffect(() => {
-    return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      Object.values(nameDebounceTimerRef.current).forEach((timer) => {
-        if (timer) clearTimeout(timer);
-      });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      Object.values(templateDebounceTimerRef.current).forEach((timer) => {
-        if (timer) clearTimeout(timer);
-      });
-    };
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return output_args_outputs.filter((o) => o.pending && o.args_outputs_id);
+  }, [output_args_outputs]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((o) => o.args_outputs_id).filter(Boolean)),
+    [pendingItems]
+  );
+
+  // Accept pending — keep pending items in selection (no-op, they're already included)
+  const handleAccept = useCallback(() => {
+    // Pending items are already in args_outputs_ids (selected=true), just confirm
+    // The next draft save will persist them as active
   }, []);
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: _aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "args_outputs",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-
-  // Accept AI suggestion - add AI-suggested args_outputs names
-  const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    // For ArgsOutputs, we accept the suggested output names by updating internal state
-    const newOutputNames: Record<string, string> = { ...outputNames };
-    aiSuggestions.forEach((aiOutput) => {
-      if (aiOutput.id && aiOutput.name) {
-        newOutputNames[aiOutput.id] = aiOutput.name;
-      }
-    });
-    setOutputNames(newOutputNames);
-    clearAi();
-  }, [aiSuggestions, outputNames, clearAi]);
-
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending items from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    if (!onArgsOutputsIdsChange) return;
+    const newIds = args_outputs_ids.filter((id) => !pendingIds.has(id));
+    onArgsOutputsIdsChange(newIds);
+  }, [args_outputs_ids, pendingIds, onArgsOutputsIdsChange]);
 
   // Don't render if no args_outputs selected
   if (args_outputs_ids.length === 0) {
@@ -438,7 +237,7 @@ export function ArgsOutputs({
 
   return (
     <div className="space-y-6">
-      {/* Header with AI diff controls */}
+      {/* Header with pending accept/reject controls */}
       {showDiff && (
         <div className="flex items-center gap-2">
           <Label className="flex items-center gap-1">Args Outputs</Label>
@@ -474,26 +273,6 @@ export function ArgsOutputs({
               <TooltipContent>Reject</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </div>
-      )}
-
-      {/* AI-suggested args_outputs preview */}
-      {showDiff && aiSuggestions.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Args Outputs</p>
-          <div className="space-y-2">
-            {aiSuggestions.map((item, idx) => (
-              <div
-                key={item.id || idx}
-                className={cn(
-                  "p-3 rounded-lg border-2 border-success bg-success/10",
-                  "text-sm"
-                )}
-              >
-                {item.name || ""}
-              </div>
-            ))}
-          </div>
         </div>
       )}
 
@@ -542,11 +321,22 @@ export function ArgsOutputs({
                   outputNames[output.args_outputs_id] ?? output.name;
                 const outputTemplate =
                   outputTemplates[output.args_outputs_id] ?? output.template;
+                const isPending = pendingIds.has(output.args_outputs_id);
                 return (
                   <div
                     key={output.args_outputs_id}
-                    className="border rounded p-4 space-y-3 bg-muted/30"
+                    className={cn(
+                      "relative border rounded p-4 space-y-3 bg-muted/30",
+                      isPending && "ring-2 ring-success bg-success/10"
+                    )}
                   >
+                    {/* Pending badge */}
+                    {isPending && (
+                      <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                        Pending
+                      </div>
+                    )}
+
                     {/* Output Name */}
                     <div className="space-y-2">
                       <Label htmlFor={`${output.args_outputs_id}-name`}>

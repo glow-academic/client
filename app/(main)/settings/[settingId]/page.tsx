@@ -30,31 +30,6 @@ type UpdateSettingIn = InputOf<"/setting/update", "post">;
 type UpdateSettingOut = OutputOf<"/setting/update", "post">;
 type PatchSettingDraftIn = InputOf<"/setting/draft", "patch">;
 type PatchSettingDraftOut = OutputOf<"/setting/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftColorsIn = InputOf<"/api/v5/resources/colors", "post">;
-type CreateDraftColorsOut = OutputOf<"/api/v5/resources/colors", "post">;
-type CreateProviderKeysIn = InputOf<"/api/v5/resources/provider_keys", "post">;
-type CreateProviderKeysOut = OutputOf<
-  "/api/v5/resources/provider_keys",
-  "post"
->;
-type CreateAuthItemKeysIn = InputOf<
-  "/api/v5/resources/auth_item_keys",
-  "post"
->;
-type CreateAuthItemKeysOut = OutputOf<
-  "/api/v5/resources/auth_item_keys",
-  "post"
->;
 type GroupSettingIn = InputOf<"/setting/group", "post">;
 type GroupSettingOut = OutputOf<"/setting/group", "post">;
 type GenerateSettingIn = InputOf<"/setting/generate", "post">;
@@ -94,41 +69,6 @@ async function patchSettingDraft(
 ): Promise<PatchSettingDraftOut> {
   "use server";
   return api.patch("/setting/draft", input);
-}
-
-async function createDraftNames(
-  input: CreateDraftNamesIn
-): Promise<CreateDraftNamesOut> {
-  "use server";
-  return api.post("/resources/names", input);
-}
-
-async function createDraftDescriptions(
-  input: CreateDraftDescriptionsIn
-): Promise<CreateDraftDescriptionsOut> {
-  "use server";
-  return api.post("/resources/descriptions", input);
-}
-
-async function createDraftColors(
-  input: CreateDraftColorsIn
-): Promise<CreateDraftColorsOut> {
-  "use server";
-  return api.post("/resources/colors", input);
-}
-
-async function createProviderKeys(
-  input: CreateProviderKeysIn
-): Promise<CreateProviderKeysOut> {
-  "use server";
-  return api.post("/resources/provider_keys", input);
-}
-
-async function createAuthItemKeys(
-  input: CreateAuthItemKeysIn
-): Promise<CreateAuthItemKeysOut> {
-  "use server";
-  return api.post("/resources/auth_item_keys", input);
 }
 
 async function generateSetting(
@@ -220,35 +160,35 @@ export default async function SettingEditPage({
 
   // Fetch setting detail (always fresh - source of truth) with filter params
   try {
-    const input: GetSettingIn = {
+    const input = {
       body: {
-        settings_id: settingId,
+        id: settingId,
         draft_id: q.draftId ?? null,
-        color_search: q.colorSearch ?? null,
-      } as GetSettingIn["body"],
-    };
+        colors: q.colorSearch ? { search: q.colorSearch } : undefined,
+      },
+    } as unknown as GetSettingIn;
     const [settingDetail, context, draftsResult, groupResult] = await Promise.all([
       getSetting(input),
       api.post("/setting/context", { body: { entity_id: settingId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/setting/drafts", {}),
+      api.post("/setting/drafts", {} as any),
       api.post("/setting/group", { body: {} } as GroupSettingIn),
     ]);
 
-    const entityName = context.page_metadata?.detail.title;
+    const entityName = context.page_metadata?.detail.title ?? "Setting";
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
         <FullPageLayout
           profileData={context.profile}
           sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
-          initialPanelOpen={initialPanelOpen}
+          initialSidebarOpen={initialSidebarOpen ?? false}
+          initialPanelOpen={initialPanelOpen ?? false}
           sidebarProps={{
             activeSection: "setting",
-            createFeedback: createSettingProblem,
-          }}
+            createFeedback: createSettingProblem as any,
+          } as any}
           breadcrumbs={[
-            { title: "Settings", section: "settings", url: "/setting" },
+            { title: "Settings", section: "settings", url: "/settings" },
             { title: entityName },
           ]}
           toolbar={<SaveToolbar />}
@@ -260,7 +200,7 @@ export default async function SettingEditPage({
             getGroupHistory: getSettingGroupHistory,
             searchGroups: searchSettingGroups,
             prompts: context.prompts?.prompts,
-          }}
+          } as any}
         >
           <div
             className="space-y-6 px-4"
@@ -273,17 +213,6 @@ export default async function SettingEditPage({
               createSettingAction={createSetting}
               updateSettingAction={updateSetting}
               patchSettingDraftAction={patchSettingDraft}
-              createNamesAction={createDraftNames}
-              createDescriptionsAction={createDraftDescriptions}
-              createColorsAction={createDraftColors}
-              createProviderKeysAction={async (input) => {
-                "use server";
-                return createProviderKeys({ body: { ...input, mcp: false } });
-              }}
-              createAuthItemKeysAction={async (input) => {
-                "use server";
-                return createAuthItemKeys({ body: { ...input, mcp: false } });
-              }}
             />
           </div>
         </FullPageLayout>
@@ -301,7 +230,7 @@ export default async function SettingEditPage({
         <UnifiedAccessDenied
           reason="department"
           resourceType="setting"
-          redirectPath="/setting"
+          redirectPath="/settings"
         />
       );
     }

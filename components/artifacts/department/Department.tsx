@@ -1,81 +1,74 @@
 /**
  * Department.tsx
- * Canonical department create/edit component (persona parity pattern).
+ * Canonical department create/edit component.
  */
+
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
-import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
+import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { Settings } from "@/components/resources/Settings";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
+import { useProfile } from "@/contexts/profile-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
-import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   buildDraftPayload,
   checkHasResourceIds,
-  computeEffectiveFormState,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
-import type { ResourceType } from "@/lib/resources/types";
 import { parseAsString, type Parser } from "nuqs";
 
 type CreateDepartmentIn = InputOf<"/department/create", "post">;
 type CreateDepartmentOut = OutputOf<"/department/create", "post">;
 type UpdateDepartmentIn = InputOf<"/department/update", "post">;
 type UpdateDepartmentOut = OutputOf<"/department/update", "post">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type PatchDepartmentDraftIn = InputOf<
-  "/department/draft",
-  "patch"
->;
-type PatchDepartmentDraftOut = OutputOf<
-  "/department/draft",
-  "patch"
->;
+type PatchDepartmentDraftIn = InputOf<"/department/draft", "patch">;
+type PatchDepartmentDraftOut = OutputOf<"/department/draft", "patch">;
+
 type DepartmentData = OutputOf<"/department/get", "post">;
 
-type DepartmentFormState = {
-  name: string | null;
-  name_id: string | null;
-  description: string | null;
-  description_id: string | null;
-  active_flag_id: string | null;
-  settings_ids: string[];
-};
 
-type FlushResult = {
+type DepartmentDraftFormState = {
   name_id?: string | null;
+  name?: string | null;
   description_id?: string | null;
+  description?: string | null;
+  flag_id?: string | null;
+  active_flag_id?: string | null;
+  setting_ids?: string[] | null;
+  pending_ids?: string[] | null;
 };
 
-const FLUSH_KEYS = ["names", "descriptions"] as const;
+type CanonicalDepartmentData = DepartmentData;
 
-const VALID_RESOURCE_TYPES: ResourceType[] = [
+type DepartmentResourceType = "names" | "descriptions" | "flags" | "settings";
+
+type DepartmentFormState = {
+  name_id: string | null;
+  name: string | null;
+  description_id: string | null;
+  description: string | null;
+  active_flag_id: string | null;
+  setting_ids: string[];
+  pending_ids: string[];
+};
+
+const VALID_RESOURCE_TYPES: DepartmentResourceType[] = [
   "names",
   "descriptions",
   "flags",
@@ -91,16 +84,12 @@ const DEPARTMENT_RESOURCES: ResourceConfig[] = [
     type: "single",
   },
   { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
-  {
-    key: "settings",
-    formKey: "settings_ids",
-    flushKey: null,
-    type: "multi",
-  },
+  { key: "settings", formKey: "setting_ids", flushKey: "setting_ids", type: "multi" },
 ];
 
 export interface DepartmentProps {
   departmentId?: string;
+  mode?: "create" | "edit";
   departmentData?: DepartmentData;
   createDepartmentAction?: (
     input: CreateDepartmentIn,
@@ -111,225 +100,283 @@ export interface DepartmentProps {
   patchDepartmentDraftAction?: (
     input: PatchDepartmentDraftIn,
   ) => Promise<PatchDepartmentDraftOut>;
-  createNamesAction?: (
-    input: CreateDraftNamesIn,
-  ) => Promise<CreateDraftNamesOut>;
-  createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn,
-  ) => Promise<CreateDraftDescriptionsOut>;
 }
 
 function DepartmentComponent({
   departmentId,
+  mode = departmentId ? "edit" : "create",
   departmentData,
   createDepartmentAction,
   updateDepartmentAction,
   patchDepartmentDraftAction,
-  createNamesAction,
-  createDescriptionsAction,
 }: DepartmentProps) {
   const router = useRouter();
-  const isEditMode = !!departmentId;
-  const s = departmentData;
-
-  const [formState, setFormState] = useState<DepartmentFormState>({
-    name: null,
-    name_id: null,
-    description: null,
-    description_id: null,
-    active_flag_id: null,
-    settings_ids: [],
-  });
-
+  const isEditMode = mode === "edit" && !!departmentId;
   const { profile } = useProfile();
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
-  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
-    useFlushRegistry<FlushResult>(FLUSH_KEYS);
+  const department = departmentData as unknown as CanonicalDepartmentData | undefined;
+  const emptyFlushRegistryRef = useRef<
+    Map<string, () => Promise<Record<string, unknown> | void>>
+  >(new Map());
 
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "department",
-    validResourceTypes: VALID_RESOURCE_TYPES as string[],
-  });
+  const departmentDataRef = useRef<CanonicalDepartmentData | undefined>(department);
+  useEffect(() => {
+    departmentDataRef.current = department;
+  }, [department]);
+
+  const stableDepartmentData = useMemo(() => {
+    if (!department) return null;
+    return {
+      names: department.names,
+      descriptions: department.descriptions,
+      flags: department.flags,
+      settings: department.settings,
+      basic_show_ai_generate: department.basic_show_ai_generate ?? false,
+      show_ai_generate: department.show_ai_generate ?? false,
+      group_id: department.group_id,
+    };
+  }, [
+    department?.names,
+    department?.descriptions,
+    department?.flags,
+    department?.settings,
+    department?.basic_show_ai_generate,
+    department?.show_ai_generate,
+    department?.group_id,
+  ]);
 
   const getInitialFormState = useCallback((): DepartmentFormState => {
-    if (!s) {
+    const data = departmentDataRef.current;
+    if (!data) {
       return {
-        name: null,
         name_id: null,
-        description: null,
+        name: null,
         description_id: null,
+        description: null,
         active_flag_id: null,
-        settings_ids: [],
+        setting_ids: [],
+        pending_ids: [],
       };
     }
-    return {
-      name: null,
-      name_id: s.names?.resource?.id ?? null,
-      description: null,
-      description_id: s.descriptions?.resource?.id ?? null,
-      active_flag_id: s.flags?.current?.[0]?.flag_option_id ?? null,
-      settings_ids:
-        s.settings?.current
-          ?.map((x) => x.settings_id)
-          .filter((x): x is string => !!x) ?? [],
-    };
-  }, [s]);
 
-  const formStateRef = React.useRef(formState as Record<string, unknown>);
+    return {
+      name_id: data.names?.find((item) => item.selected)?.id ?? null,
+      name: null,
+      description_id:
+        data.descriptions?.find((item) => item.selected)?.id ?? null,
+      description: null,
+      active_flag_id:
+        data.flags?.find((item) => item.selected)?.flag_option_id ?? null,
+      setting_ids:
+        (data.settings?.filter((item) => item.selected) ?? [])
+          .map((item) => item.id)
+          .filter((id): id is string => !!id),
+      pending_ids:
+        data.pending_ids?.filter((id): id is string => !!id) ?? [],
+    };
+  }, []);
+
+  const [formState, setFormState] = useState<DepartmentFormState>(
+    getInitialFormState,
+  );
+
+  useEffect(() => {
+    const nextState = getInitialFormState();
+    setFormState((prev) =>
+      JSON.stringify(prev) === JSON.stringify(nextState) ? prev : nextState,
+    );
+  }, [getInitialFormState]);
+
+  const formStateRef = useRef<Record<string, unknown>>(
+    formState as Record<string, unknown>,
+  );
   useEffect(() => {
     formStateRef.current = formState as Record<string, unknown>;
   }, [formState]);
 
-  useEffect(() => {
-    const next = getInitialFormState();
-    setFormState((prev) => {
-      if (JSON.stringify(prev) !== JSON.stringify(next)) return next;
-      return prev;
-    });
-  }, [getInitialFormState]);
-
-  const serverSyncPendingRef = React.useRef(false);
-  const formStateKey = useMemo(() => {
-    if (serverSyncPendingRef.current) return undefined;
-    return JSON.stringify(formState);
-  }, [formState]);
-  const patchActionRef = React.useRef<
-    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>) | undefined
+  const lastPatchedFormStateRef = useRef<Record<string, unknown> | null>(null);
+  const patchActionRef = useRef<
+    | ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>)
+    | undefined
   >(undefined);
+
   useEffect(() => {
     if (!patchDepartmentDraftAction) {
       patchActionRef.current = undefined;
       return;
     }
+
     patchActionRef.current = async (payload: Record<string, unknown>) => {
-      const result = await patchDepartmentDraftAction({ body: payload } as PatchDepartmentDraftIn);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const formStateFromServer = (result as any).form_state;
+      const result = await patchDepartmentDraftAction({
+        body: payload,
+      } as PatchDepartmentDraftIn);
+
+      const formStateFromServer =
+        (result?.form_state ?? null) as DepartmentDraftFormState | null;
       if (formStateFromServer) {
-        serverSyncPendingRef.current = true;
         setFormState((prev) => ({
           ...prev,
           name_id: formStateFromServer.name_id ?? prev.name_id,
-          description_id: formStateFromServer.description_id ?? prev.description_id,
+          name:
+            formStateFromServer.name !== undefined
+              ? formStateFromServer.name
+              : formStateFromServer.name_id
+                ? null
+                : prev.name,
+          description_id:
+            formStateFromServer.description_id ?? prev.description_id,
+          description:
+            formStateFromServer.description !== undefined
+              ? formStateFromServer.description
+              : formStateFromServer.description_id
+                ? null
+                : prev.description,
+          active_flag_id:
+            formStateFromServer.active_flag_id ??
+            formStateFromServer.flag_id ??
+            prev.active_flag_id,
+          setting_ids: formStateFromServer.setting_ids ?? prev.setting_ids,
+          pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
         }));
-        requestAnimationFrame(() => {
-          serverSyncPendingRef.current = false;
-        });
       }
+
       return result;
     };
   }, [patchDepartmentDraftAction]);
 
-  const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
-    null,
-  );
-  const hasResourceIds = checkHasResourceIds(
-    DEPARTMENT_RESOURCES,
-    formState as unknown as Record<string, unknown>,
-  );
+  const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
 
   const buildPatchPayload = useCallback(
     (
       inputDraftId: string | null,
       flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => {
+      const currentFormState =
+        formStateRef.current as unknown as DepartmentFormState;
       const payload: Record<string, unknown> = {
+        draft_id: inputDraftId || null,
         input_draft_id: inputDraftId || null,
         ...buildDraftPayload(DEPARTMENT_RESOURCES, {
-          formState: formStateRef.current,
+          formState: currentFormState as unknown as Record<string, unknown>,
           referenceState: lastPatchedFormStateRef.current,
           flushResults: flushResults ?? {},
         }),
+        pending_ids:
+          currentFormState.pending_ids.length > 0
+            ? currentFormState.pending_ids
+            : null,
       };
 
-      const fs = formStateRef.current as unknown as DepartmentFormState;
-      if (fs.name) {
-        payload.name = fs.name;
-        delete payload.name_id;
+      if (currentFormState.name != null) {
+        payload["name"] = currentFormState.name;
+        delete payload["name_id"];
       }
-      if (fs.description) {
-        payload.description = fs.description;
-        delete payload.description_id;
+      if (currentFormState.description != null) {
+        payload["description"] = currentFormState.description;
+        delete payload["description_id"];
       }
 
       return payload;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
-  const { setUrlFormDataRef, onFormDataChange, flushAllAndSave, formDataRef } =
-    useDraftLifecycle({
-      formStateKey,
-      patchActionRef,
-      isAutosaveEnabled,
-      buildPatchPayload,
-      setSelectedDraftId,
-      hasResourceIds,
-      flushRegistryRef,
-      formStateRef,
-      onPatchSuccess: () => {
-        lastPatchedFormStateRef.current = { ...formStateRef.current };
-      },
-    });
+  const hasResourceIds = checkHasResourceIds(
+    DEPARTMENT_RESOURCES,
+    formState as unknown as Record<string, unknown>,
+  );
+
+  const {
+    setUrlFormDataRef,
+    onFormDataChange,
+    flushAllAndSave,
+    formDataRef,
+  } = useDraftLifecycle({
+    formStateKey,
+    patchActionRef,
+    isAutosaveEnabled,
+    buildPatchPayload,
+    setSelectedDraftId,
+    hasResourceIds,
+    flushRegistryRef: emptyFlushRegistryRef,
+    formStateRef,
+    onPatchSuccess: () => {
+      lastPatchedFormStateRef.current = {
+        ...(formStateRef.current as Record<string, unknown>),
+      };
+    },
+  });
+
+  const { isGenerating, generate } = useArtifactAi({
+    artifactType: "department",
+    validResourceTypes: VALID_RESOURCE_TYPES as string[],
+  });
 
   const handleGenerateResources = useCallback(
-    async (resourceTypes: ResourceType[], userInstructions?: string) => {
-      let currentDraftId =
-        (formDataRef.current["draftId"] as string | undefined) ?? null;
-      if (!currentDraftId) currentDraftId = await flushAllAndSave();
-      if (!currentDraftId) {
+    async (resourceTypes: DepartmentResourceType[], userInstructions?: string) => {
+      let draftId = (formDataRef.current["draftId"] as string | undefined) ?? null;
+      if (!draftId) {
+        draftId = await flushAllAndSave();
+      }
+      if (!draftId) {
         toast.error("Please save a draft before generating with AI");
         return;
       }
+
       generate(resourceTypes, {
-        draft_id: currentDraftId,
+        draft_id: draftId,
         artifact_id: departmentId || null,
         user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
-    [
-      departmentId,
-      generate,
-      formDataRef,
-      flushAllAndSave,
-    ],
+    [departmentId, flushAllAndSave, formDataRef, generate],
   );
 
   const canRegenerate = useCallback(
-    (rt: ResourceType): boolean => {
-      if (!s) return false;
-      switch (rt) {
+    (resourceType: DepartmentResourceType) => {
+      if (!stableDepartmentData) return false;
+      switch (resourceType) {
         case "names":
-          return s.names?.resource?.generated ?? false;
+          return stableDepartmentData.names?.find((item) => item.selected)?.generated ?? false;
         case "descriptions":
-          return s.descriptions?.resource?.generated ?? false;
+          return (
+            stableDepartmentData.descriptions?.find((item) => item.selected)?.generated ??
+            false
+          );
         case "flags":
-          return s.flags?.current?.some((f) => f.generated) ?? false;
+          return (
+            stableDepartmentData.flags?.some((item) => item.selected && item.generated) ??
+            false
+          );
         case "settings":
-          return false;
+          return (
+            stableDepartmentData.settings?.some((item) => item.selected && item.generated) ??
+            false
+          );
         default:
           return false;
       }
     },
-    [s],
+    [stableDepartmentData],
   );
+
   const canRegenerateForStepCard = useCallback(
-    (rt: string) => canRegenerate(rt as ResourceType),
+    (resourceType: string) => canRegenerate(resourceType as DepartmentResourceType),
     [canRegenerate],
   );
   const isGeneratingForStepCard = useCallback(
-    (rt: string) => isGenerating(rt as ResourceType),
+    (resourceType: string) => isGenerating(resourceType as DepartmentResourceType),
     [isGenerating],
   );
 
-  const stepResources: Record<string, ResourceType[]> = useMemo(
+  const stepResources: Record<string, DepartmentResourceType[]> = useMemo(
     () => ({
       basic: ["names", "descriptions", "flags", "settings"],
       all: ["names", "descriptions", "flags", "settings"],
     }),
     [],
   );
+
   const handleDirectStepGenerate = useCallback(
     (stepId: string, _mode: "generate" | "regenerate") => {
       const resources = stepResources[stepId];
@@ -337,25 +384,20 @@ function DepartmentComponent({
         handleGenerateResources(resources);
       }
     },
-    [stepResources, handleGenerateResources],
+    [handleGenerateResources, stepResources],
   );
 
-  const disabled = useMemo(() => !s?.can_edit, [s?.can_edit]);
+  const disabled = useMemo(
+    () => !department?.can_edit,
+    [department?.can_edit],
+  );
 
   const handleSubmit = useCallback(
-    async (_formData: Record<string, unknown>) => {
-      let flushResults: Record<string, unknown> = {};
-      if (!isAutosaveEnabled) {
-        flushResults = await flushAllResources();
-      }
+    async () => {
+      const effectiveFormState =
+        formStateRef.current as unknown as DepartmentFormState;
 
-      const effectiveFormState = computeEffectiveFormState(
-        DEPARTMENT_RESOURCES,
-        formStateRef.current,
-        flushResults,
-      ) as unknown as DepartmentFormState;
-
-      if (s?.names?.required && !effectiveFormState.name_id) {
+      if (!effectiveFormState.name_id) {
         throw new Error("Department name is required");
       }
       if (!profile?.id) {
@@ -371,12 +413,12 @@ function DepartmentComponent({
                 name_id: effectiveFormState.name_id ?? undefined,
                 description_id: effectiveFormState.description_id ?? undefined,
                 active_flag_id: effectiveFormState.active_flag_id ?? undefined,
-                settings_ids: effectiveFormState.settings_ids?.length
-                  ? effectiveFormState.settings_ids
+                settings_ids: effectiveFormState.setting_ids.length
+                  ? effectiveFormState.setting_ids
                   : null,
               },
             ],
-            group_id: s?.group_id ?? null,
+            group_id: stableDepartmentData?.group_id ?? null,
           },
         } as UpdateDepartmentIn);
       } else if (createDepartmentAction) {
@@ -387,12 +429,12 @@ function DepartmentComponent({
                 name_id: effectiveFormState.name_id ?? undefined,
                 description_id: effectiveFormState.description_id ?? undefined,
                 active_flag_id: effectiveFormState.active_flag_id ?? undefined,
-                settings_ids: effectiveFormState.settings_ids?.length
-                  ? effectiveFormState.settings_ids
+                settings_ids: effectiveFormState.setting_ids.length
+                  ? effectiveFormState.setting_ids
                   : null,
               },
             ],
-            group_id: s?.group_id ?? null,
+            group_id: stableDepartmentData?.group_id ?? null,
           },
         } as CreateDepartmentIn);
       } else {
@@ -405,23 +447,21 @@ function DepartmentComponent({
       router.push("/system/departments");
     },
     [
-      isAutosaveEnabled,
-      flushAllResources,
-      s,
-      profile?.id,
       createDepartmentAction,
-      updateDepartmentAction,
-      isEditMode,
       departmentId,
+      isEditMode,
+      profile?.id,
       router,
+      stableDepartmentData?.group_id,
+      updateDepartmentAction,
     ],
   );
 
   const getStepStatus = useCallback(
     (_stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      return formState.name_id && formState.description_id ? "completed" : "active";
+      return formState.name_id ? "completed" : "active";
     },
-    [formState.name_id, formState.description_id],
+    [formState.name_id],
   );
 
   const steps = useMemo(
@@ -429,16 +469,20 @@ function DepartmentComponent({
       {
         id: "basic",
         title: "Basic Information",
-        description:
-          "Set the department name, description, active status, and settings.",
-        resetFields: ["name_id", "description_id", "active_flag_id", "settings_ids"],
+        description: "Set the department name, description, active status, and settings.",
+        resetFields: [
+          "name_id",
+          "description_id",
+          "active_flag_id",
+          "setting_ids",
+        ],
       },
     ],
     [],
   );
 
   const formFieldKeys = useMemo(
-    () => ["name_id", "description_id", "active_flag_id", "settings_ids"],
+    () => ["name_id", "description_id", "active_flag_id", "setting_ids"],
     [],
   );
 
@@ -470,10 +514,11 @@ function DepartmentComponent({
         customHeader={
           <Names
             name_id={formState.name_id}
-            name_resource={s?.names?.resource ?? null}
-            show_name={s?.names?.show ?? true}
-            name_suggestions={s?.names?.suggestions ?? []}
-            names={s?.names?.resources ?? []}
+            name_resource={
+              department?.names?.find((item) => item.selected) ?? null
+            }
+            show_name={true}
+            names={department?.names ?? []}
             disabled={disabled}
             onNameIdChange={(nameId) =>
               setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
@@ -481,19 +526,14 @@ function DepartmentComponent({
             onNameChange={(name) =>
               setFormState((prev) => ({ ...prev, name }))
             }
-            onGenerate={() => handleGenerateResources(["names"])}
-            required={s?.names?.required ?? false}
+            required={true}
             hideDescription={true}
-
-            showAiGenerate={s?.names?.show_ai_generate ?? false}
-            createNamesAction={createNamesAction}
             isAutosaveEnabled={isAutosaveEnabled}
-            registerFlush={registerFlushCallbacks["names"]}
           />
         }
-        resetFields={["name_id", "description_id", "active_flag_id", "settings_ids"]}
+        resetFields={["name_id", "description_id", "active_flag_id", "setting_ids"]}
         actions={
-          s?.basic_show_ai_generate ? (
+          stableDepartmentData?.basic_show_ai_generate ? (
             <StepCardAiButton
               stepId="basic"
               resourceTypes={(stepResources["basic"] ?? []) as string[]}
@@ -509,72 +549,67 @@ function DepartmentComponent({
         <div className="space-y-4">
           <Descriptions
             description_id={formState.description_id}
-            description_resource={s?.descriptions?.resource ?? null}
-            show_description={s?.descriptions?.show ?? true}
-            description_suggestions={s?.descriptions?.suggestions ?? []}
-            descriptions={s?.descriptions?.resources ?? []}
+            description_resource={
+              department?.descriptions?.find((item) => item.selected) ?? null
+            }
+            show_description={true}
+            descriptions={department?.descriptions ?? []}
             disabled={disabled}
             onDescriptionIdChange={(descriptionId) =>
-              setFormState((prev) => ({ ...prev, description_id: descriptionId, description: null }))
+              setFormState((prev) => ({
+                ...prev,
+                description_id: descriptionId,
+                description: null,
+              }))
             }
             onDescriptionChange={(description) =>
               setFormState((prev) => ({ ...prev, description }))
             }
-            onGenerate={() => handleGenerateResources(["descriptions"])}
-            required={s?.descriptions?.required ?? false}
-
-            showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
-            createDescriptionsAction={createDescriptionsAction}
+            required={false}
             isAutosaveEnabled={isAutosaveEnabled}
-            registerFlush={registerFlushCallbacks["descriptions"]}
           />
 
           <Flags
-            flags={s?.flags?.resources ?? []}
+            flags={department?.flags ?? []}
             flag_id={formState.active_flag_id}
-            show_flags={s?.flags?.show ?? false}
+            show_flags={(department?.flags?.length ?? 0) > 0}
             columns={1}
             disabled={disabled}
             onChange={(flagId) =>
               setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
             }
-            onGenerate={() => handleGenerateResources(["flags"])}
-
-            showAiGenerate={s?.flags?.show_ai_generate ?? false}
           />
 
           <Settings
-            settings_ids={formState.settings_ids}
-            settings_resources={s?.settings?.current ?? []}
-            show_settings={s?.settings?.show ?? false}
-            settings_suggestions={s?.settings?.suggestions ?? []}
-            settings={s?.settings?.resources ?? []}
+            settings_ids={formState.setting_ids}
+            settings={department?.settings ?? []}
             disabled={disabled}
             onChange={(ids) =>
-              setFormState((prev) => ({ ...prev, settings_ids: ids }))
+              setFormState((prev) => ({ ...prev, setting_ids: ids }))
             }
-            onGenerate={() => handleGenerateResources(["settings"])}
-            required={s?.settings?.required ?? false}
-
-            showAiGenerate={s?.settings?.show_ai_generate ?? false}
+            required={false}
           />
         </div>
       </StepCard>
     ),
     [
+      department?.descriptions,
+      department?.flags,
+      department?.names,
+      department?.settings,
       disabled,
-      isEditMode,
-      formState,
-      s,
+      formState.active_flag_id,
+      formState.description_id,
+      formState.name_id,
+      formState.setting_ids,
+      handleDirectStepGenerate,
       handleGenerateResources,
-      createNamesAction,
-      createDescriptionsAction,
       isAutosaveEnabled,
-      registerFlushCallbacks,
-      stepResources,
+      isEditMode,
+      stableDepartmentData?.basic_show_ai_generate,
+      stepResources["basic"],
       canRegenerateForStepCard,
       isGeneratingForStepCard,
-      handleDirectStepGenerate,
     ],
   );
 
@@ -587,28 +622,34 @@ function DepartmentComponent({
 
   return (
     <TooltipProvider>
-      <div className="w-full p-6 space-y-8" data-page={`department-${isEditMode ? "edit" : "new"}`}>
+      <div
+        className="w-full space-y-8 p-6"
+        data-page={`department-${isEditMode ? "edit" : "new"}`}
+      >
         <ReadOnlyBanner
           disabled={disabled}
-          disabledReason={s?.disabled_reason ?? null}
+          disabledReason={department?.disabled_reason ?? null}
           entityType="department"
         />
         <GenericForm
-          nuqsParsers={departmentSearchParamsClient as Record<string, Parser<unknown>>}
+          nuqsParsers={
+            departmentSearchParamsClient as Record<string, Parser<unknown>>
+          }
           steps={steps}
           getStepStatus={getStepStatus}
-          serverData={s}
+          serverData={departmentData as unknown as Record<string, unknown> | undefined}
           formFieldKeys={formFieldKeys}
           resetSuccessMessage={() => "Basic information reset"}
           onReset={(stepId) => {
             if (stepId === "basic") {
               setFormState({
-                name: null,
                 name_id: null,
-                description: null,
+                name: null,
                 description_id: null,
+                description: null,
                 active_flag_id: null,
-                settings_ids: [],
+                setting_ids: [],
+                pending_ids: [],
               });
             }
           }}

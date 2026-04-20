@@ -9,10 +9,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Check, X } from "lucide-react";
+import { useCallback, useMemo } from "react";
 
 export interface ProviderKeysResourceItem {
   id?: string | null;
@@ -22,6 +21,7 @@ export interface ProviderKeysResourceItem {
   key_name?: string | null;
   key_description?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 type ProviderOption = {
@@ -48,18 +48,6 @@ export interface ProviderKeysProps {
   label?: string;
   description?: string;
   show_provider_keys?: boolean;
-  getProviderKeysAction?:
-    | ((ids: string[]) => Promise<ProviderKeysResourceItem[]>)
-    | undefined;
-  createProviderKeysAction?:
-    | ((input: {
-        provider_id: string;
-        key_id: string;
-      }) => Promise<{ provider_keys_id?: string | null }>)
-    | undefined;
-  create_tool_id?: string | null;
-  showAiGenerate?: boolean;
-  onGenerate?: () => void | Promise<void>;
 }
 
 export function ProviderKeys({
@@ -73,25 +61,16 @@ export function ProviderKeys({
   label = "Provider Keys",
   description = "Select which keys are available for each provider.",
   show_provider_keys = true,
-  getProviderKeysAction,
-  createProviderKeysAction,
-  create_tool_id,
-  showAiGenerate = false,
-  onGenerate,
 }: ProviderKeysProps) {
   const selectedIds = useMemo(() => provider_key_ids ?? [], [provider_key_ids]);
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating } = useResourceAi({
-    resourceType: "provider_keys",
-    groupId: undefined,
-    accumulate: true,
-  });
-
-  const [resourcesById, setResourcesById] = useState<Map<string, ProviderKeysResourceItem>>(
-    new Map()
-  );
-  const creatingRef = useRef<Set<string>>(new Set());
+  const resourcesById = useMemo(() => {
+    const map = new Map<string, ProviderKeysResourceItem>();
+    (provider_key_resources ?? []).forEach((r) => {
+      if (r.id) map.set(r.id, r);
+    });
+    return map;
+  }, [provider_key_resources]);
 
   const providerItems = useMemo(
     () =>
@@ -99,7 +78,7 @@ export function ProviderKeys({
         .filter((p): p is Required<Pick<ProviderOption, "provider_id" | "name">> & ProviderOption => !!p.provider_id && !!p.name)
         .filter((p) =>
           selected_provider_ids && selected_provider_ids.length > 0
-            ? selected_provider_ids.includes(p.provider_id)
+            ? selected_provider_ids.includes(p.provider_id!)
             : true
         ),
     [providers, selected_provider_ids]
@@ -114,36 +93,6 @@ export function ProviderKeys({
     [keys]
   );
 
-  useEffect(() => {
-    if (!provider_key_resources || provider_key_resources.length === 0) return;
-    setResourcesById((prev) => {
-      const next = new Map(prev);
-      provider_key_resources.forEach((r) => {
-        if (r.id) next.set(r.id, r);
-      });
-      return next;
-    });
-  }, [provider_key_resources]);
-
-  useEffect(() => {
-    const missing = selectedIds.filter((id) => !resourcesById.has(id));
-    if (missing.length === 0 || !getProviderKeysAction) return;
-    let cancelled = false;
-    void getProviderKeysAction(missing).then((items) => {
-      if (cancelled) return;
-      setResourcesById((prev) => {
-        const next = new Map(prev);
-        items.forEach((r) => {
-          if (r.id) next.set(r.id, r);
-        });
-        return next;
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedIds, resourcesById, getProviderKeysAction]);
-
   const pairToId = useMemo(() => {
     const map = new Map<string, string>();
     resourcesById.forEach((r, id) => {
@@ -155,6 +104,16 @@ export function ProviderKeys({
   }, [resourcesById]);
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const pendingIds = useMemo(
+    () =>
+      new Set(
+        (provider_key_resources ?? [])
+          .filter((item) => item.pending && item.id)
+          .map((item) => item.id as string)
+      ),
+    [provider_key_resources]
+  );
+  const showDiff = pendingIds.size > 0;
 
   const emit = useCallback(
     (nextIds: string[]) => {
@@ -165,7 +124,7 @@ export function ProviderKeys({
   );
 
   const togglePair = useCallback(
-    async (providerId: string, keyId: string, checked: boolean) => {
+    (providerId: string, keyId: string, checked: boolean) => {
       const pairKey = `${providerId}:${keyId}`;
       const existingId = pairToId.get(pairKey);
 
@@ -180,53 +139,19 @@ export function ProviderKeys({
         return;
       }
 
-      if (!createProviderKeysAction || creatingRef.current.has(pairKey)) return;
-      creatingRef.current.add(pairKey);
-      try {
-        const result = await createProviderKeysAction({
-          provider_id: providerId,
-          key_id: keyId,
-          tool_id: create_tool_id ?? undefined,
-        });
-        const createdId = result.provider_keys_id ?? null;
-        if (!createdId) return;
-        setResourcesById((prev) => {
-          const next = new Map(prev);
-          const providerName =
-            providerItems.find((p) => p.provider_id === providerId)?.name ?? null;
-          const keyName = keyItems.find((k) => k.key_id === keyId)?.name ?? null;
-          const keyDescription =
-            keyItems.find((k) => k.key_id === keyId)?.description ?? null;
-          next.set(createdId, {
-            id: createdId,
-            provider_id: providerId,
-            key_id: keyId,
-            provider_name: providerName,
-            key_name: keyName,
-            key_description: keyDescription,
-          });
-          return next;
-        });
-        emit([...selectedIds, createdId]);
-      } finally {
-        creatingRef.current.delete(pairKey);
-      }
+      // No existing resource for this pair — nothing to select yet.
+      // The parent artifact will handle creation via draft patches.
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      pairToId,
-      emit,
-      selectedIds,
-      selectedSet,
-      createProviderKeysAction,
-      providerItems,
-      keyItems,
-    ]
+    [pairToId, emit, selectedIds, selectedSet]
   );
 
-  const hasGenerated = useMemo(() => {
-    return provider_key_resources?.some((p) => p.generated) ?? false;
-  }, [provider_key_resources]);
+  const handleAccept = useCallback(() => {
+    // Pending pairs remain selected; the next non-pending draft save confirms them.
+  }, []);
+
+  const handleReject = useCallback(() => {
+    emit(selectedIds.filter((id) => !pendingIds.has(id)));
+  }, [emit, pendingIds, selectedIds]);
 
   if (!show_provider_keys) return null;
 
@@ -234,30 +159,41 @@ export function ProviderKeys({
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Label className="flex items-center gap-1">{label}</Label>
-        {onGenerate && showAiGenerate && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={onGenerate}
-                  disabled={disabled || aiIsGenerating}
-                >
-                  {aiIsGenerating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {hasGenerated ? "Regenerate" : "Generate"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        {showDiff && (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-success hover:text-success"
+                    onClick={handleAccept}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Accept</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
         )}
       </div>
       <p className="text-xs text-muted-foreground">{description}</p>
@@ -280,14 +216,21 @@ export function ProviderKeys({
                     const keyId = key.key_id!;
                     const pairId = pairToId.get(`${providerId}:${keyId}`);
                     const checked = pairId ? selectedSet.has(pairId) : false;
+                    const isPending = !!(pairId && pendingIds.has(pairId));
                     return (
                       <div
                         key={`${providerId}:${keyId}`}
                         className={cn(
-                          "flex items-center justify-between rounded border px-2 py-1.5",
-                          checked && "border-primary bg-primary/5"
+                          "relative flex items-center justify-between rounded border px-2 py-1.5",
+                          checked && !isPending && "border-primary bg-primary/5",
+                          isPending && "ring-2 ring-success bg-success/10"
                         )}
                       >
+                        {isPending && (
+                          <div className="absolute top-1 right-1 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                            Pending
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <div className="truncate text-sm">{key.name}</div>
                           {key.masked_key && (
@@ -300,7 +243,7 @@ export function ProviderKeys({
                           checked={checked}
                           disabled={disabled}
                           onCheckedChange={(value) =>
-                            void togglePair(providerId, keyId, value)
+                            togglePair(providerId, keyId, value)
                           }
                         />
                       </div>

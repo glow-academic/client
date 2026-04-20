@@ -2,7 +2,7 @@
  * Emails.tsx
  * Resource component for email selection
  * Uses GenericPicker to select existing email resources
- * Manages email_ids array with primary email index and reports to parent
+ * Pure UI: data in, IDs out via onChange
  */
 
 "use client";
@@ -18,7 +18,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import {
   Check,
@@ -29,10 +28,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-type CreateDraftEmailsIn = InputOf<"/api/v5/resources/emails", "post">;
-type CreateDraftEmailsOut = OutputOf<"/api/v5/resources/emails", "post">;
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export interface EmailResourceItem {
   id?: string | null;
@@ -60,16 +56,8 @@ export interface EmailsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createEmailsAction?:
-    | ((input: CreateDraftEmailsIn) => Promise<CreateDraftEmailsOut>)
-    | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created ID */
-  registerFlush?: (flush: () => Promise<{ emails_id: string | null } | void>) => void;
   aiEmailResources?: Pick<EmailResourceItem, "id" | "email">[] | null;
 }
 
@@ -88,12 +76,8 @@ export function Emails({
   placeholder = "Select emails...",
   description,
   group_id,
-  create_tool_id,
-  createEmailsAction,
   onGenerate,
   showAiGenerate = false,
-  isAutosaveEnabled = true,
-  registerFlush,
   aiEmailResources: _aiEmailResources,
 }: EmailsProps) {
   const ids = useMemo(() => email_ids ?? [], [email_ids]);
@@ -136,17 +120,6 @@ export function Emails({
     return map;
   }, [allEmails, email_resources, createdEmailValues]);
 
-  // Track which email IDs have already had resources created
-  const createdEmailIdsRef = useRef<Set<string>>(new Set());
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ emails_id: string | null } | void>) | undefined>(undefined);
-
-  // Initialize createdEmailIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdEmailIdsRef.current.add(id));
-  }, [ids]);
-
   // Update primary index when prop changes
   useEffect(() => {
     if (primary_email_index !== undefined) {
@@ -177,45 +150,7 @@ export function Emails({
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdEmailIdsRef.current.has(id)
-      );
-
-      // Create resources for newly selected emails (only if autosave is enabled)
-      if (
-        isAutosaveEnabled &&
-        newlySelected.length > 0 &&
-        createEmailsAction &&
-        create_tool_id &&
-        group_id
-      ) {
-        for (const emailId of newlySelected) {
-          try {
-            // Find email text from emails array
-            const emailObj = allEmails.find((e) => e.id === emailId);
-            if (emailObj?.email) {
-              await createEmailsAction({
-                body: {
-                  email: emailObj.email,
-                  mcp: false,
-                  tool_id: create_tool_id ?? undefined,
-                },
-              });
-              createdEmailIdsRef.current.add(emailId);
-            }
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create email resource for ${emailId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
-
+    (selectedIds: string[]) => {
       // Ensure primary index is valid
       const validPrimaryIndex = Math.min(
         primaryIndex,
@@ -225,16 +160,7 @@ export function Emails({
       // Update parent state
       onChange(selectedIds, validPrimaryIndex);
     },
-    [
-      ids,
-      onChange,
-      createEmailsAction,
-      create_tool_id,
-      group_id,
-      allEmails,
-      primaryIndex,
-      isAutosaveEnabled,
-    ]
+    [onChange, primaryIndex]
   );
 
   const handlePrimaryChange = useCallback(
@@ -246,59 +172,8 @@ export function Emails({
     },
     [ids, onChange]
   );
-  const createEmailResource = useCallback(
-    async (value: string) => {
-      if (!createEmailsAction || !create_tool_id || !group_id) {
-        return null;
-      }
-      const trimmed = value.trim();
-      if (!trimmed) return null;
 
-      try {
-        const result = await createEmailsAction({
-          body: {
-            email: trimmed,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        return result.emails_id ?? null;
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to create email resource:", error);
-        return null;
-      }
-    },
-    [create_tool_id, group_id, createEmailsAction]
-  );
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ emails_id: string | null } | void> => {
-    // Skip if no action available
-    if (!createEmailsAction || !group_id) {
-      return;
-    }
-
-    // For emails, flush creates a resource if there's a pending new email being added
-    if (isAddingEmail && newEmailValue.trim()) {
-      const newId = await createEmailResource(newEmailValue.trim());
-      if (newId) {
-        return { emails_id: newId };
-      }
-    }
-
-    // Return null if nothing to flush
-    return { emails_id: null };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
-  const handleSaveEdit = useCallback(async () => {
+  const handleSaveEdit = useCallback(() => {
     if (!editingEmailId) return;
     const trimmed = editingEmailValue.trim();
     if (!trimmed) {
@@ -306,56 +181,39 @@ export function Emails({
       setEditingEmailValue("");
       return;
     }
-    const newId = await createEmailResource(trimmed);
-    if (!newId) return;
 
-    const index = ids.indexOf(editingEmailId);
-    if (index < 0) return;
-
-    const nextIds = [...ids];
-    nextIds[index] = newId;
-    createdEmailIdsRef.current.add(newId);
-    setCreatedEmailValues((prev) => ({ ...prev, [newId]: trimmed }));
-
-    const nextPrimaryIndex = index === primaryIndex ? index : primaryIndex;
-    setPrimaryIndex(nextPrimaryIndex);
-    onChange(nextIds, nextPrimaryIndex);
+    // Update the email value in local lookup
+    setCreatedEmailValues((prev) => ({ ...prev, [editingEmailId]: trimmed }));
     setEditingEmailId(null);
     setEditingEmailValue("");
-  }, [
-    editingEmailId,
-    editingEmailValue,
-    createEmailResource,
-    ids,
-    onChange,
-    primaryIndex,
-  ]);
-  const handleAddEmail = useCallback(async () => {
+  }, [editingEmailId, editingEmailValue]);
+
+  const handleAddEmail = useCallback(() => {
     const trimmed = newEmailValue.trim();
     if (!trimmed) {
       setIsAddingEmail(false);
       setNewEmailValue("");
       return;
     }
-    const newId = await createEmailResource(trimmed);
-    if (!newId) return;
 
-    const nextIds = [...ids, newId];
-    const nextPrimaryIndex =
-      nextIds.length === 1 ? 0 : Math.min(primaryIndex, nextIds.length - 1);
-    createdEmailIdsRef.current.add(newId);
-    setCreatedEmailValues((prev) => ({ ...prev, [newId]: trimmed }));
-    setPrimaryIndex(nextPrimaryIndex);
-    onChange(nextIds, nextPrimaryIndex);
+    // For pure UI, we can't create a server resource. The parent handles creation via draft patches.
+    // We need the parent to provide a way to add new emails. For now, this is a no-op
+    // if there's no matching email in the allEmails list.
+    const existingEmail = allEmails.find(
+      (e) => e.email?.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (existingEmail?.id) {
+      const nextIds = [...ids, existingEmail.id];
+      const nextPrimaryIndex =
+        nextIds.length === 1 ? 0 : Math.min(primaryIndex, nextIds.length - 1);
+      setPrimaryIndex(nextPrimaryIndex);
+      onChange(nextIds, nextPrimaryIndex);
+    }
+
     setIsAddingEmail(false);
     setNewEmailValue("");
-  }, [
-    newEmailValue,
-    createEmailResource,
-    ids,
-    onChange,
-    primaryIndex,
-  ]);
+  }, [newEmailValue, allEmails, ids, onChange, primaryIndex]);
+
   const handleRemove = useCallback(
     (emailId: string) => {
       const removeIndex = ids.indexOf(emailId);
@@ -433,7 +291,7 @@ export function Emails({
                 </span>
               )}
             </Label>
-            {onGenerate && showAiGenerate && create_tool_id && (
+            {onGenerate && showAiGenerate && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

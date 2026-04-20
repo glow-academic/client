@@ -21,16 +21,16 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 /** ---- Strong types from OpenAPI ---- */
 type SessionDetailIn = InputOf<"/system/session/get", "post">;
 type SessionDetailOut = OutputOf<"/system/session/get", "post">;
-type ContextIn = InputOf<"/system/session/context", "post">;
-type ContextOut = OutputOf<"/system/session/context", "post">;
-type GenerateSessionIn = InputOf<"/system/session/generate", "post">;
-type GenerateSessionOut = OutputOf<"/system/session/generate", "post">;
-type GenerationsIn = InputOf<"/system/session/generations", "post">;
-type GenerationsOut = OutputOf<"/system/session/generations", "post">;
-type GroupSessionIn = InputOf<"/system/session/group", "post">;
-type GroupSessionOut = OutputOf<"/system/session/group", "post">;
-type ProblemSessionIn = InputOf<"/system/session/problem", "post">;
-type ProblemSessionOut = OutputOf<"/system/session/problem", "post">;
+type ContextIn = InputOf<"/system/context", "post">;
+type ContextOut = OutputOf<"/system/context", "post">;
+type GenerateSessionIn = InputOf<"/system/generate", "post">;
+type GenerateSessionOut = OutputOf<"/system/generate", "post">;
+type GenerationsIn = InputOf<"/system/generations", "post">;
+type GenerationsOut = OutputOf<"/system/generations", "post">;
+type GroupSessionIn = InputOf<"/system/group", "post">;
+type GroupSessionOut = OutputOf<"/system/group", "post">;
+type ProblemSessionIn = InputOf<"/system/problem", "post">;
+type ProblemSessionOut = OutputOf<"/system/problem", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -56,22 +56,22 @@ async function generateSession(
   input: GenerateSessionIn
 ): Promise<GenerateSessionOut> {
   "use server";
-  return api.post("/system/session/generate", input);
+  return api.post("/system/generate", input);
 }
 
 async function getSessionGroupHistory(groupId: string): Promise<GroupSessionOut> {
   "use server";
-  return api.post("/system/session/group", { body: { group_id: groupId } } as GroupSessionIn);
+  return api.post("/system/group", { body: { group_id: groupId } } as GroupSessionIn);
 }
 
 async function searchSessionGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/system/session/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/system/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createSessionProblem(input: ProblemSessionIn): Promise<ProblemSessionOut> {
   "use server";
-  return api.post("/system/session/problem", input);
+  return api.post("/system/problem", input);
 }
 
 /** ---- Page metadata ---- */
@@ -82,7 +82,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { sessionId } = await params;
-    const context = await api.post("/system/session/context", { body: { entity_id: sessionId } } as ContextIn) as ContextOut;
+    const context = await api.post("/system/context", { body: { entity_id: sessionId } } as ContextIn) as ContextOut;
     return { title: context.page_metadata?.detail.title, description: context.page_metadata?.detail.description };
   } catch {
     return { title: "Session" };
@@ -114,7 +114,7 @@ export default async function SessionDetailPage({
 
   try {
     // Profile data for providers
-    const pageContext = await api.post("/system/session/context", { body: {} } as ContextIn) as ContextOut;
+    const pageContext = await api.post("/system/context", { body: {} } as ContextIn) as ContextOut;
     const snapshot = buildSnapshot(session, pageContext.profile);
 
     const [sessionDetail, context, groupResult] = await Promise.all([
@@ -123,8 +123,8 @@ export default async function SessionDetailPage({
           session_id: sessionId,
         },
       }),
-      api.post("/system/session/context", { body: { entity_id: sessionId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/system/session/group", { body: {} } as GroupSessionIn),
+      api.post("/system/context", { body: { entity_id: sessionId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/system/group", { body: {} } as GroupSessionIn),
     ]);
 
     const _entityName = context.page_metadata?.detail.title;

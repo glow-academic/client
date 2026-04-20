@@ -19,18 +19,6 @@ import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftScenarioRubricsIn = {
-  body: {
-    scenario_id: string;
-    rubric_id: string;
-    mcp: boolean;
-    tool_id?: string;
-  };
-};
-type CreateDraftScenarioRubricsOut = {
-  id?: string | null;
-};
-
 export interface ScenarioRubricResourceItem {
   id?: string | null;
   scenario_id?: string | null;
@@ -40,10 +28,8 @@ export interface ScenarioRubricResourceItem {
 }
 
 export interface ScenarioRubricsProps {
-  scenario_rubric_ids?: string[];
   scenario_rubric_resources?: ScenarioRubricResourceItem[];
   show_scenario_rubrics?: boolean;
-  scenario_rubrics?: ScenarioRubricResourceItem[];
   rubrics?: Array<{
     id: string | null;
     name: string | null;
@@ -71,19 +57,6 @@ export interface ScenarioRubricsProps {
   id?: string;
   required?: boolean;
   description?: string;
-  group_id?: string | null;
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createScenarioRubricsAction?:
-    | ((
-        input: CreateDraftScenarioRubricsIn,
-      ) => Promise<CreateDraftScenarioRubricsOut>)
-    | undefined;
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (
-    flush: () => Promise<{ scenario_rubric_ids: string[] } | void>,
-  ) => void;
   /** Value callback for unified draft — reports all scenario+rubric pairs */
   onScenarioRubricValues?: (rubrics: Array<{ scenario_id: string; rubric_id: string }>) => void;
 }
@@ -98,10 +71,8 @@ type ScenarioRubricOption = {
 };
 
 export function ScenarioRubrics({
-  scenario_rubric_ids: _scenario_rubric_ids,
   scenario_rubric_resources,
   show_scenario_rubrics = false,
-  scenario_rubrics: _scenario_rubrics,
   rubrics,
   scenario_ids = [],
   scenarios,
@@ -112,11 +83,6 @@ export function ScenarioRubrics({
   id = "scenario_rubrics",
   required = false,
   description,
-  group_id,
-  create_tool_id,
-  createScenarioRubricsAction,
-  isAutosaveEnabled = true,
-  registerFlush,
   onScenarioRubricValues,
 }: ScenarioRubricsProps) {
   const show = show_scenario_rubrics ?? false;
@@ -161,40 +127,12 @@ export function ScenarioRubrics({
     });
     return map;
   }, [scenarios, scenario_resources]);
-  // Map resource ID → artifact ID for API calls
-  // Note: After SQL fix, API now accepts scenarios_resource.id directly, but we keep mapping for consistency
-  const artifactIdMap = useMemo(() => {
-    const map = new Map<string, string>();
-    (scenarios ?? []).forEach((s) => {
-      // s.id = scenarios_resource.id, s.scenario_id = scenario_artifact.id (via junction)
-      if (s.id && s.scenario_id) {
-        map.set(s.id, s.scenario_id);
-      } else if (s.scenario_id) {
-        map.set(s.scenario_id, s.scenario_id);
-      }
-    });
-    (scenario_resources ?? []).forEach((s) => {
-      if (s.id && s.scenario_id) {
-        map.set(s.id, s.scenario_id);
-      } else if (s.scenario_id) {
-        map.set(s.scenario_id, s.scenario_id);
-      }
-    });
-    return map;
-  }, [scenarios, scenario_resources]);
 
   const [rubricIdByScenario, setRubricIdByScenario] = useState<
     Map<string, string | null>
   >(new Map());
   const [scenarioRubricIdsByScenario, setScenarioRubricIdsByScenario] =
     useState<Map<string, string>>(new Map());
-  const createdRubricKeysRef = useRef<Set<string>>(new Set());
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<
-    (() => Promise<{ scenario_rubric_ids: string[] } | void>) | null
-  >(null);
-
   useEffect(() => {
     const nextRubrics = new Map<string, string | null>();
     const nextIds = new Map<string, string>();
@@ -259,70 +197,6 @@ export function ScenarioRubrics({
     onScenarioRubricValuesRef.current(values);
   }, [rubricIdByScenario]);
 
-  // Update flush function - returns current IDs from local state
-  flushRef.current = async (): Promise<{
-    scenario_rubric_ids: string[];
-  } | void> => {
-    const ids = scenario_ids
-      .map((scenarioId) => scenarioRubricIdsByScenario.get(scenarioId))
-      .filter((value): value is string => Boolean(value));
-    return { scenario_rubric_ids: ids };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
-  const createScenarioRubric = useCallback(
-    async (scenarioId: string, rubricId: string) => {
-      if (!isAutosaveEnabled || !createScenarioRubricsAction || !group_id) {
-        return;
-      }
-      const key = `${scenarioId}:${rubricId}`;
-      if (createdRubricKeysRef.current.has(key)) {
-        return;
-      }
-      createdRubricKeysRef.current.add(key);
-
-      // Resolve resource ID to artifact ID for the API (now optional since SQL accepts both)
-      const artifactScenarioId = artifactIdMap.get(scenarioId) ?? scenarioId;
-
-      try {
-        const result = await createScenarioRubricsAction({
-          body: {
-            scenario_id: artifactScenarioId,
-            rubric_id: rubricId,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-
-        if (!result?.id) {
-          return;
-        }
-
-        // Update state - useEffect will sync to parent via onChange
-        setScenarioRubricIdsByScenario((prev) => {
-          const next = new Map(prev);
-          next.set(scenarioId, result.id as string);
-          return next;
-        });
-      } catch {
-        // Resource creation errors are handled by API; keep UI state intact.
-      }
-    },
-    [
-      isAutosaveEnabled,
-      createScenarioRubricsAction,
-      create_tool_id,
-      group_id,
-      artifactIdMap,
-    ],
-  );
-
   const handleSelect = useCallback(
     (scenarioId: string, value: string) => {
       const nextRubricId = value === NONE_OPTION ? null : value;
@@ -343,7 +217,7 @@ export function ScenarioRubrics({
         return;
       }
 
-      // Clear existing before creating new - useEffect will sync to parent via onChange
+      // Clear existing before setting new - useEffect will sync to parent via onChange
       setScenarioRubricIdsByScenario((prev) => {
         const next = new Map(prev);
         if (next.has(scenarioId)) {
@@ -351,10 +225,8 @@ export function ScenarioRubrics({
         }
         return next;
       });
-
-      void createScenarioRubric(scenarioId, nextRubricId);
     },
-    [createScenarioRubric],
+    [],
   );
 
   const rubricOptions = useMemo<ScenarioRubricOption[]>(() => {

@@ -91,7 +91,7 @@ export interface DocumentsProps {
 type DocumentRow = NonNullable<DocumentsListOut["documents"]>[number];
 
 const DocumentPreviewThumb = ({ document }: { document: DocumentRow }) => {
-  const hasPreview = Boolean(document.upload_id);
+  const hasPreview = Boolean(document.file_id);
   const [showPreview, setShowPreview] = useState(hasPreview);
 
   useEffect(() => {
@@ -109,7 +109,7 @@ const DocumentPreviewThumb = ({ document }: { document: DocumentRow }) => {
   return (
     <div className="h-12 w-10 rounded border overflow-hidden bg-muted/40">
       <img
-        src={`/api/documents/download/${document.upload_id}?preview=true`}
+        src={`/api/documents/preview/${document.file_id}`}
         alt={document.name ?? "Document preview"}
         className="h-full w-full object-cover"
         loading="lazy"
@@ -807,7 +807,7 @@ export default function Documents({
                     can_delete: previewDocument.can_delete ?? null,
                     active: previewDocument.active ?? null,
                     department_ids: previewDocument.department_ids ?? null,
-                    upload_id: previewDocument.upload_id ?? null,
+                    file_id: previewDocument.file_id ?? null,
                     field_ids: previewDocument.field_ids ?? null,
                     valid_field_ids: previewDocument.valid_field_ids ?? null,
                     active_scenario_count:

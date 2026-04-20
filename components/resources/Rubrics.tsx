@@ -16,9 +16,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface RubricsResourceItem {
@@ -26,6 +25,8 @@ export interface RubricsResourceItem {
   name?: string | null;
   description?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface RubricItem {
@@ -38,57 +39,33 @@ export interface RubricsProps {
   rubric_ids?: string[];
   rubric_resources?: RubricsResourceItem[];
   show_rubrics?: boolean;
-  rubric_suggestions?: string[];
   rubrics?: RubricsResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
-  group_id?: string | null;
-  // AI diff props (deprecated - now handled by useResourceAi hook)
-  aiRubricResources?: Pick<RubricsResourceItem, "id" | "name">[] | null;
-  showAiGenerate?: boolean;
-  onGenerate?: () => void | Promise<void>;
 }
 
 export function Rubrics({
   rubric_ids,
-  rubric_resources,
+  rubric_resources: _rubric_resources,
   show_rubrics = false,
-  rubric_suggestions,
   rubrics,
   disabled = false,
   onChange,
   label = "Rubrics",
-  group_id,
-  // AI diff props (deprecated - now handled by useResourceAi hook)
-  showAiGenerate,
-  onGenerate,
 }: RubricsProps) {
   const ids = useMemo(() => rubric_ids ?? [], [rubric_ids]);
   const show = show_rubrics ?? false;
   const allRubrics = useMemo(() => rubrics ?? [], [rubrics]);
-  const suggestionsList = useMemo(
-    () => rubric_suggestions ?? [],
-    [rubric_suggestions]
-  );
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "rubrics",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestions
-          .map((r) => r.id)
-          .filter(Boolean) as string[]
-      ),
-    [aiSuggestions]
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allRubrics.filter((r) => r.pending && r.id);
+  }, [allRubrics]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((r) => r.id).filter(Boolean) as string[]),
+    [pendingItems]
   );
 
   // Convert to items format for SelectableGrid
@@ -102,9 +79,13 @@ export function Rubrics({
       }));
   }, [allRubrics]);
 
+  // Check if a rubric is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
-    (rubricId: string) => suggestionsList.includes(rubricId),
-    [suggestionsList]
+    (rubricId: string) => {
+      const rubric = allRubrics.find((r) => r.id === rubricId);
+      return rubric?.suggested === true;
+    },
+    [allRubrics]
   );
 
   const handleSelect = useCallback(
@@ -114,26 +95,18 @@ export function Rubrics({
     [onChange]
   );
 
-  // Accept AI suggestion
+  // Accept pending — keep pending rubrics in selection
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((r) => r.id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
+  }, []);
 
+  // Reject pending — remove pending rubrics from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
-
-  // Check if any rubric resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return rubric_resources?.some((r) => r.generated) ?? false;
-  }, [rubric_resources]);
+    const newIds = ids.filter((id) => !pendingIds.has(id));
+    onChange(newIds);
+  }, [ids, pendingIds, onChange]);
 
   // Don't render if show is false (AFTER all hooks)
   if (!show) {
@@ -145,31 +118,6 @@ export function Rubrics({
       {label && (
         <div className="flex items-center gap-2">
           <Label className="flex items-center gap-1">{label}</Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -221,7 +169,7 @@ export function Rubrics({
         }}
         getId={(item) => item.id}
         renderItem={(item, isSelected) => {
-          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const isPending = pendingIds.has(item.id);
 
           return (
             <div
@@ -229,23 +177,26 @@ export function Rubrics({
                 "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested &&
-                  !isSelected &&
-                  "ring-2 ring-success bg-success/10"
+                isSelected && !isPending && "ring-2 ring-primary bg-accent",
+                isPending && "ring-2 ring-success bg-success/10",
               )}
             >
-              {isSelected && (
+              {/* Check icon - top right */}
+              {isSelected && !isPending && (
                 <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
                   <Check className="h-3 w-3 text-primary-foreground" />
                 </div>
               )}
-              {isAiSuggested && !isSelected && (
+
+              {/* Pending badge - top right */}
+              {isPending && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  AI Suggested
+                  Pending
                 </div>
               )}
-              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+
+              {/* Suggested dot indicator - top right */}
+              {isSuggested(item.id) && !isSelected && !isPending && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -255,6 +206,7 @@ export function Rubrics({
                   </Tooltip>
                 </TooltipProvider>
               )}
+
               <div className="flex flex-col justify-center gap-1 flex-1 overflow-hidden">
                 <span className="text-sm font-medium truncate">
                   {item.name}

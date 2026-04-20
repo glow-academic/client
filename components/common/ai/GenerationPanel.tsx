@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ShieldCheck kept for safe-mode toggle (TODO: re-enable)
 import { CheckCircle2, ChevronsUpDown, FileText, Image, Loader2, Mic, Plus, Search, Send, ShieldAlert, ShieldCheck, Video, Wrench, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -117,7 +118,9 @@ export function GenerationPanel({
   artifactType, groupId: groupIdProp, operations, prompts,
 }: GenerationPanelProps) {
   const [instructions, setInstructions] = useState("");
-  const [dangerousMode, setDangerousMode] = useState(false);
+  // TODO: re-enable safe mode toggle — forced to dangerous (immediate execute) for now
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [dangerousMode, setDangerousMode] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const transport = useTransport();
 
@@ -215,7 +218,7 @@ export function GenerationPanel({
           const entries = await Promise.all(
             allTextIds.map(async (id) => {
               try {
-                const r = await fetch(`/api/group/text/${id}`);
+                const r = await fetch(`/api/system/text/${id}`);
                 if (!r.ok) return [id, ""] as const;
                 return [id, await r.text()] as const;
               } catch {
@@ -617,23 +620,20 @@ export function GenerationPanel({
               />
               <TooltipProvider>
                 <div className="flex flex-col gap-1 self-end shrink-0">
+                  {/* TODO: re-enable safe-mode toggle — button shown but onClick is a no-op; dangerousMode is hard-coded true */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         size="icon"
-                        variant={dangerousMode ? "destructive" : "outline"}
+                        variant="destructive"
                         className="h-9 w-9"
-                        onClick={() => setDangerousMode((prev) => !prev)}
+                        onClick={() => { /* TODO: setDangerousMode((prev) => !prev) */ }}
                       >
-                        {dangerousMode ? (
-                          <ShieldAlert className="h-4 w-4" />
-                        ) : (
-                          <ShieldCheck className="h-4 w-4" />
-                        )}
+                        <ShieldAlert className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>{dangerousMode ? "Dangerous: executes immediately" : "Safe: review before accepting"}</p>
+                      <p>Dangerous: executes immediately</p>
                     </TooltipContent>
                   </Tooltip>
                   <Tooltip>

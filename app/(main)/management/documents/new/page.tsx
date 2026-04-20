@@ -48,7 +48,7 @@ type DocumentSectionFilter = Exclude<
 >;
 
 /** Upload action result — matches the interface expected by resource components */
-type UploadResult = { success: boolean; upload_id?: string; message?: string };
+type UploadResult = { success: boolean; file_id?: string; message?: string };
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getDocumentDefault = async (
@@ -101,7 +101,7 @@ async function uploadFile(formData: FormData): Promise<UploadResult> {
     }
 
     const result = await response.json();
-    return { success: true, upload_id: result.upload_id };
+    return { success: true, file_id: result.file_id };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Upload failed";
     return { success: false, message };
@@ -249,7 +249,6 @@ export default async function NewDocumentPage({
             aria-label="Create new document page"
           >
             <Document
-              key={q.draftId || "no-draft"}
               mode="create"
               documentDetailDefault={documentDetailDefault}
               createDocumentAction={createDocument}

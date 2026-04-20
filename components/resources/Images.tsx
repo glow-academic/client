@@ -2,7 +2,7 @@
  * Images.tsx
  * Resource component for image selection
  * Redesigned to match ContentSection interface-first pattern with horizontal scrollable row and upload box
- * Manages image_ids array and reports to parent
+ * Pure UI: data in, IDs out via onChange. Parent owns creation.
  */
 
 "use client";
@@ -30,22 +30,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
-type CreateDraftImagesIn = {
-  body: {
-    name: string;
-    description: string;
-    upload_id?: string;
-    mcp?: boolean;
-    tool_id?: string;
-  };
-};
-type CreateDraftImagesOut = { id?: string | null };
-
 export interface ImageResourceItem {
   image_id?: string | null;
   id?: string | null;
   name?: string | null;
-  upload_id?: string | null;
   generated?: boolean | null;
   pending?: boolean | null;
 }
@@ -54,7 +42,6 @@ export interface ImageItem {
   id: string;
   name: string;
   description?: string;
-  upload_id?: string;
   updated_at?: string;
 }
 
@@ -62,9 +49,7 @@ export interface ImagesProps {
   image_ids?: string[]; // Current image artifact IDs (standardized prop name)
   image_resources?: ImageResourceItem[]; // Selected image resources (each includes generated field)
   show_images?: boolean; // Whether to show this resource picker
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
   images_required?: boolean; // Whether this resource is required
-  image_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   images?: ImageResourceItem[]; // All available images from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update image_ids in form state
@@ -73,20 +58,11 @@ export interface ImagesProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  createImagesAction?:
-    | ((input: CreateDraftImagesIn) => Promise<CreateDraftImagesOut>)
-    | undefined;
   multiSelect?: boolean; // Whether to allow multiple image selection
   maxImages?: number; // Maximum number of images allowed
   onImageUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; // Upload handler
   imageInputRef?: React.RefObject<HTMLInputElement>; // Ref for file input
   isUploadingImage?: boolean; // Whether image is currently uploading
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (
-    flush: () => Promise<{ image_ids: string[] } | void>
-  ) => void;
   /** Artifact-scoped base path for upload/download URLs (e.g., "/document") */
   uploadBasePath?: string;
   /** Server action to upload a file — receives FormData, returns upload_id */
@@ -109,9 +85,7 @@ export function Images({
   image_ids,
   image_resources,
   show_images = false,
-  create_tool_id,
   images_required,
-  image_suggestions: _image_suggestions,
   images,
   disabled = false,
   onChange,
@@ -120,14 +94,11 @@ export function Images({
   required = false,
   placeholder = "Select images...",
   description: _description,
-  createImagesAction,
   multiSelect = false,
   maxImages = 1,
   onImageUpload,
   imageInputRef,
   isUploadingImage = false,
-  isAutosaveEnabled = true,
-  registerFlush,
   uploadBasePath: _uploadBasePath,
   uploadFileAction,
   onImageUploadValue,
@@ -135,21 +106,18 @@ export function Images({
   const ids = useMemo(() => image_ids ?? [], [image_ids]);
   const show = show_images ?? false;
   const allImages = useMemo(() => images ?? [], [images]);
-  const downloadBaseUrl = "/api/group/image";
+  const downloadBaseUrl = "/api/system/image";
 
   // Internal state for selected images (for display)
   const [selectedImages, setSelectedImages] = useState<
-    Array<{ id: string; name: string; upload_id: string }>
+    Array<{ id: string; name: string }>
   >(() => {
-    // Initialize from image_resources or images array
-    // API returns image_id, not id. Use upload_id for downloads.
     if (image_resources && image_resources.length > 0) {
       return image_resources
         .filter((img) => (img.image_id || img.id) && img.name)
         .map((img) => ({
           id: (img.image_id ?? img.id)!,
           name: img.name!,
-          upload_id: img.upload_id || (img.image_id ?? img.id)!,
         }));
     }
     if (ids.length > 0 && allImages.length > 0) {
@@ -158,24 +126,16 @@ export function Images({
           const img = allImages.find((i) => (i.image_id ?? i.id) === id);
           const imgId = img?.image_id ?? img?.id;
           if (img && imgId && img.name) {
-            return {
-              id: imgId,
-              name: img.name,
-              upload_id: img.upload_id || imgId,
-            };
+            return { id: imgId, name: img.name };
           }
           return null;
         })
-        .filter(
-          (img): img is { id: string; name: string; upload_id: string } =>
-            img !== null
-        );
+        .filter((img): img is { id: string; name: string } => img !== null);
     }
     return [];
   });
 
   // Sync selectedImages when ids change
-  // API returns image_id, not id
   useEffect(() => {
     if (ids.length > 0 && allImages.length > 0) {
       const newSelectedImages = ids
@@ -183,29 +143,17 @@ export function Images({
           const img = allImages.find((i) => (i.image_id ?? i.id) === id);
           const imgId = img?.image_id ?? img?.id;
           if (img && imgId && img.name) {
-            return {
-              id: imgId,
-              name: img.name,
-              upload_id: img.upload_id || imgId,
-            };
+            return { id: imgId, name: img.name };
           }
           return null;
         })
-        .filter(
-          (img): img is { id: string; name: string; upload_id: string } =>
-            img !== null
-        );
+        .filter((img): img is { id: string; name: string } => img !== null);
       setSelectedImages(newSelectedImages);
     } else if (ids.length === 0) {
       setSelectedImages([]);
     }
   }, [ids, allImages]);
 
-  // Track which image IDs have already had resources created
-  const createdImageIdsRef = useRef<Set<string>>(new Set());
-  const flushRef = useRef<
-    (() => Promise<{ image_ids: string[] } | void>) | undefined
-  >(undefined);
   const [previewImageId, setPreviewImageId] = useState<string | null>(null);
 
   // TUS upload state
@@ -221,11 +169,6 @@ export function Images({
     >
   >(new Map());
 
-  // Initialize createdImageIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdImageIdsRef.current.add(id));
-  }, [ids]);
-
   // Build image mapping for GenericPicker
   // API returns image_id, not id
   const imageMapping = useMemo(() => {
@@ -236,7 +179,6 @@ export function Images({
         mapping[imgId] = {
           id: imgId,
           name: img.name,
-          ...(img.upload_id ? { upload_id: img.upload_id } : {}),
         };
       }
     });
@@ -244,104 +186,16 @@ export function Images({
   }, [allImages]);
 
   const handleImageSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdImageIdsRef.current.has(id)
-      );
-
-      // Create resources for newly selected images (only if autosave is enabled)
-      if (
-        isAutosaveEnabled &&
-        newlySelected.length > 0 &&
-        createImagesAction &&
-        create_tool_id
-      ) {
-        for (const imageId of newlySelected) {
-          try {
-            const imageItem = imageMapping[imageId];
-            await createImagesAction({
-              body: {
-                name: imageItem?.name ?? "",
-                description: imageItem?.description ?? "",
-                mcp: false,
-                ...(create_tool_id ? { tool_id: create_tool_id } : {}),
-              },
-            });
-            createdImageIdsRef.current.add(imageId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create image resource for ${imageId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
-
+    (selectedIds: string[]) => {
       onChange(selectedIds);
     },
-    [
-      ids,
-      onChange,
-      createImagesAction,
-      create_tool_id,
-      imageMapping,
-      isAutosaveEnabled,
-    ]
+    [onChange]
   );
-
-  // Flush function for manual save mode - creates pending resources and returns all IDs
-  flushRef.current = async (): Promise<{ image_ids: string[] } | void> => {
-    if (!createImagesAction || !create_tool_id) {
-      return { image_ids: ids };
-    }
-
-    const allIds: string[] = [...ids];
-
-    // Create resources for any selected images that haven't been created yet
-    for (const imageId of ids) {
-      if (!createdImageIdsRef.current.has(imageId)) {
-        try {
-          const imageItem = imageMapping[imageId];
-          await createImagesAction({
-            body: {
-              name: imageItem?.name ?? "",
-              description: imageItem?.description ?? "",
-              mcp: false,
-              ...(create_tool_id ? { tool_id: create_tool_id } : {}),
-            },
-          });
-          createdImageIdsRef.current.add(imageId);
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error(
-            `Failed to create image resource for ${imageId}:`,
-            error
-          );
-        }
-      }
-    }
-
-    return { image_ids: allIds };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Upload function via server action
   const uploadFile = useCallback(
     async (file: File) => {
-      if (
-        !uploadFileAction ||
-        (!isAutosaveEnabled && (!createImagesAction || !create_tool_id)) ||
-        (isAutosaveEnabled && !onImageUploadValue && !createImagesAction)
-      ) {
+      if (!uploadFileAction) {
         toast.error("Upload functionality not available");
         return;
       }
@@ -380,62 +234,6 @@ export function Images({
           upload_id: databaseUploadId,
         });
 
-        if (isAutosaveEnabled) {
-          toast.success(`Upload completed: ${file.name}!`, {
-            description: "Image uploaded successfully",
-            id: toastId,
-          });
-
-          setActiveUploads((prev) => {
-            const newMap = new Map(prev);
-            const upload = newMap.get(fileId);
-            if (upload) {
-              newMap.set(fileId, { ...upload, status: "completed" });
-            }
-            return newMap;
-          });
-
-          setTimeout(() => {
-            setActiveUploads((prev) => {
-              const newMap = new Map(prev);
-              newMap.delete(fileId);
-              return newMap;
-            });
-          }, 2000);
-
-          return;
-        }
-
-        if (!createImagesAction) {
-          throw new Error("Create action not available");
-        }
-
-        const createResult = (await createImagesAction({
-          body: {
-            name: file.name,
-            description: "",
-            upload_id: databaseUploadId,
-            mcp: false,
-            ...(create_tool_id ? { tool_id: create_tool_id } : {}),
-          },
-        })) as CreateDraftImagesOut;
-
-        if (!createResult.id) {
-          throw new Error("Failed to create image resource");
-        }
-
-        const imageResourceId = createResult.id;
-        createdImageIdsRef.current.add(imageResourceId);
-        onChange([...ids, imageResourceId]);
-        setSelectedImages((prev) => [
-          ...prev,
-          {
-            id: imageResourceId,
-            name: file.name,
-            upload_id: databaseUploadId,
-          },
-        ]);
-
         toast.success(`Upload completed: ${file.name}!`, {
           description: "Image uploaded successfully",
           id: toastId,
@@ -450,7 +248,6 @@ export function Images({
           return newMap;
         });
 
-        // Remove completed upload from state after delay
         setTimeout(() => {
           setActiveUploads((prev) => {
             const newMap = new Map(prev);
@@ -473,11 +270,6 @@ export function Images({
     },
     [
       uploadFileAction,
-      createImagesAction,
-      create_tool_id,
-      isAutosaveEnabled,
-      ids,
-      onChange,
       onImageUploadValue,
     ]
   );
@@ -672,7 +464,7 @@ export function Images({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setPreviewImageId(img.upload_id);
+                    setPreviewImageId(img.id);
                   }}
                   className="absolute top-1 left-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
                   disabled={disabled}
@@ -692,7 +484,7 @@ export function Images({
                   <X className="h-3.5 w-3.5 text-primary-foreground" />
                 </button>
                 <ImageViewer
-                  imageId={img.upload_id}
+                  imageId={img.id}
                   name={img.name}
                   bare={true}
                   downloadBaseUrl={downloadBaseUrl}
@@ -785,7 +577,7 @@ export function Images({
               imageId={previewImageId}
               name={
                 selectedImages.find(
-                  (img) => img.upload_id === previewImageId
+                  (img) => img.id === previewImageId
                 )?.name || "Image"
               }
               downloadBaseUrl={downloadBaseUrl}

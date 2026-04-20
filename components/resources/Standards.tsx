@@ -17,8 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface StandardResourceItem {
@@ -28,6 +27,8 @@ export interface StandardResourceItem {
   description?: string | null;
   points?: number | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface StandardItem {
@@ -43,7 +44,6 @@ export interface StandardsProps {
   standard_ids?: string[]; // Current standard resource IDs (standardized prop name)
   standard_resources?: StandardResourceItem[]; // Selected standards resources
   show_standards?: boolean; // Whether to show this resource picker
-  standard_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   standards?: StandardResourceItem[]; // All available standards from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update standard_ids in form state
@@ -52,17 +52,13 @@ export interface StandardsProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   aiStandardResources?: Pick<StandardResourceItem, "standard_id" | "name">[] | null;
 }
 
 export function Standards({
   standard_ids,
-  standard_resources,
+  standard_resources: _standard_resources,
   show_standards = false,
-  standard_suggestions,
   standards,
   disabled = false,
   onChange,
@@ -71,35 +67,20 @@ export function Standards({
   required = false,
   placeholder = "Select standards...",
   description,
-  group_id: _group_id,
-  onGenerate,
-  showAiGenerate = false,
+  aiStandardResources: _aiStandardResources,
 }: StandardsProps) {
   const ids = useMemo(() => standard_ids ?? [], [standard_ids]);
   const show = show_standards ?? false;
   const allStandards = useMemo(() => standards ?? [], [standards]);
-  const suggestionsList = useMemo(
-    () => standard_suggestions ?? [],
-    [standard_suggestions]
-  );
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "standards",
-    groupId: _group_id,
-    accumulate: true,
-  });
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestions
-          .map((s) => s.standard_id)
-          .filter(Boolean) as string[]
-      ),
-    [aiSuggestions]
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allStandards.filter((s) => s.pending && s.standard_id);
+  }, [allStandards]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((s) => s.standard_id).filter(Boolean) as string[]),
+    [pendingItems]
   );
 
   const standardItems = useMemo(() => {
@@ -120,8 +101,11 @@ export function Standards({
   }, [allStandards]);
 
   const isSuggested = useCallback(
-    (standardId: string) => suggestionsList.includes(standardId),
-    [suggestionsList]
+    (standardId: string) => {
+      const standard = allStandards.find((s) => s.standard_id === standardId);
+      return standard?.suggested === true;
+    },
+    [allStandards]
   );
 
   const handleSelect = useCallback(
@@ -131,26 +115,18 @@ export function Standards({
     [onChange]
   );
 
-  const hasGenerated = useMemo(() => {
-    return standard_resources?.some((std) => std.generated) ?? false;
-  }, [standard_resources]);
-
-  // Accept AI suggestion - add AI-suggested standards to selection
+  // Accept pending — keep pending standards in selection
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((s) => s.standard_id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending standards from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    const newIds = ids.filter((id) => !pendingIds.has(id));
+    onChange(newIds);
+  }, [ids, pendingIds, onChange]);
 
   if (!show) {
     return null;
@@ -164,31 +140,6 @@ export function Standards({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-        )}
-        {onGenerate && showAiGenerate && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={onGenerate}
-                  disabled={disabled || aiIsGenerating || showDiff}
-                >
-                  {aiIsGenerating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {hasGenerated ? "Regenerate" : "Generate"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         )}
         {showDiff && (
           <>
@@ -233,7 +184,7 @@ export function Standards({
       )}
 
       <GenericPicker<StandardItem>
-        items={standardItems}
+        items={standardItems as StandardItem[]}
         selectedIds={ids}
         onSelect={handleSelect}
         multiSelect
@@ -243,12 +194,12 @@ export function Standards({
           [item.name, item.description ?? ""].filter(Boolean).join(" ")
         }
         renderItem={(item, isSelected) => {
-          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const isPending = pendingIds.has(item.id);
 
           return (
             <div className={cn(
               "flex items-center justify-between w-full",
-              isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10 rounded px-2 py-1 -mx-2 -my-1"
+              isPending && "ring-2 ring-success bg-success/10 rounded px-2 py-1 -mx-2 -my-1"
             )}>
               <div className="flex flex-col">
                 <span className="text-sm font-medium">{item.name}</span>
@@ -262,15 +213,15 @@ export function Standards({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {isAiSuggested && !isSelected && (
+                {isPending && (
                   <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                    AI Suggested
+                    Pending
                   </span>
                 )}
-                {isSuggested(item.id) && !isAiSuggested && (
+                {isSuggested(item.id) && !isPending && (
                   <span className="text-xs text-muted-foreground">Suggested</span>
                 )}
-                {isSelected && (
+                {isSelected && !isPending && (
                   <Check className="h-4 w-4 text-primary shrink-0" />
                 )}
               </div>

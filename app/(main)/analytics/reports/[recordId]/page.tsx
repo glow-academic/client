@@ -26,16 +26,16 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 type DashboardIn = InputOf<"/attempt/dashboard/get", "post">;
 type DashboardOut = OutputOf<"/attempt/dashboard/get", "post">;
 type ReportHistoryOut = NonNullable<DashboardOut["history"]>;
-type ContextIn = InputOf<"/attempt/record/context", "post">;
-type ContextOut = OutputOf<"/attempt/record/context", "post">;
-type GenerateRecordIn = InputOf<"/attempt/record/generate", "post">;
-type GenerateRecordOut = OutputOf<"/attempt/record/generate", "post">;
-type GenerationsIn = InputOf<"/attempt/record/generations", "post">;
-type GenerationsOut = OutputOf<"/attempt/record/generations", "post">;
-type GroupRecordIn = InputOf<"/attempt/record/group", "post">;
-type GroupRecordOut = OutputOf<"/attempt/record/group", "post">;
-type ProblemRecordIn = InputOf<"/attempt/record/problem", "post">;
-type ProblemRecordOut = OutputOf<"/attempt/record/problem", "post">;
+type ContextIn = InputOf<"/attempt/context", "post">;
+type ContextOut = OutputOf<"/attempt/context", "post">;
+type GenerateRecordIn = InputOf<"/attempt/generate", "post">;
+type GenerateRecordOut = OutputOf<"/attempt/generate", "post">;
+type GenerationsIn = InputOf<"/attempt/generations", "post">;
+type GenerationsOut = OutputOf<"/attempt/generations", "post">;
+type GroupRecordIn = InputOf<"/attempt/group", "post">;
+type GroupRecordOut = OutputOf<"/attempt/group", "post">;
+type ProblemRecordIn = InputOf<"/attempt/problem", "post">;
+type ProblemRecordOut = OutputOf<"/attempt/problem", "post">;
 
 /** ---- Fetch function ---- */
 const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
@@ -56,22 +56,22 @@ async function generateRecord(
   input: GenerateRecordIn
 ): Promise<GenerateRecordOut> {
   "use server";
-  return api.post("/attempt/record/generate", input);
+  return api.post("/attempt/generate", input);
 }
 
 async function getRecordGroupHistory(groupId: string): Promise<GroupRecordOut> {
   "use server";
-  return api.post("/attempt/record/group", { body: { group_id: groupId } } as GroupRecordIn);
+  return api.post("/attempt/group", { body: { group_id: groupId } } as GroupRecordIn);
 }
 
 async function searchRecordGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/attempt/record/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/attempt/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createRecordProblem(input: ProblemRecordIn): Promise<ProblemRecordOut> {
   "use server";
-  return api.post("/attempt/record/problem", input);
+  return api.post("/attempt/problem", input);
 }
 
 /** ---- Page metadata ---- */
@@ -82,7 +82,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { recordId } = await params;
-    const context = await api.post("/attempt/record/context", { body: { entity_id: recordId } } as ContextIn) as ContextOut;
+    const context = await api.post("/attempt/context", { body: { entity_id: recordId } } as ContextIn) as ContextOut;
     return { title: context.page_metadata?.detail.title, description: context.page_metadata?.detail.description };
   } catch {
     return { title: "Profile Report" };
@@ -114,7 +114,7 @@ export default async function RecordPage({
 
   try {
     // Profile data for providers
-    const pageContext = await api.post("/attempt/record/context", { body: {} } as ContextIn) as ContextOut;
+    const pageContext = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
     const snapshot = buildSnapshot(session, pageContext.profile);
 
     // Parse search params via nuqs loader
@@ -194,8 +194,8 @@ export default async function RecordPage({
           ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
         },
       }),
-      api.post("/attempt/record/context", { body: { entity_id: recordId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/attempt/record/group", { body: {} } as GroupRecordIn),
+      api.post("/attempt/context", { body: { entity_id: recordId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/attempt/group", { body: {} } as GroupRecordIn),
     ]);
 
     const _entityName = context.page_metadata?.detail.title;

@@ -19,8 +19,10 @@ export interface DocumentViewerProps {
   bare?: boolean;
   isFormDocument?: boolean;
   compact?: boolean;
-  /** Base URL for downloads. */
+  /** Base URL for file downloads (e.g. /api/attempts/file). */
   downloadBaseUrl: string;
+  /** Base URL for text downloads (e.g. /api/attempts/text). Used for template/HTML documents. */
+  textDownloadBaseUrl?: string;
 }
 
 // Detect iOS Safari (native PDF viewer has scroll issues in iframes)
@@ -41,6 +43,7 @@ export default function DocumentViewer({
   isFormDocument = false,
   compact = false,
   downloadBaseUrl,
+  textDownloadBaseUrl,
 }: DocumentViewerProps) {
   const [content, setContent] = useState<string | null>(null);
   const [type, setType] = useState<string | null>(null);
@@ -67,26 +70,31 @@ export default function DocumentViewer({
         }
         setContent(null);
 
-        // HTML documents (no upload, content stored in texts_entry)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((document as any).template && !document.upload_id) {
-          const response = await fetch("/api/resources/documents/html", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+        const doc = document as any;
+
+        // Text-based documents (templates / HTML content stored in texts_entry)
+        if (doc.text_id && textDownloadBaseUrl) {
+          const response = await fetch(`${textDownloadBaseUrl}/${doc.text_id}`, {
+            method: "GET",
             credentials: "include",
-            body: JSON.stringify({ id: document.document_id }),
           });
 
           if (!response.ok) {
             throw new Error(`Failed to load HTML document: ${response.status}`);
           }
 
-          const data = await response.json();
-          setType("text/html");
-          setContent(data.html ?? "");
-        } else if (document.upload_id) {
-          // File-based documents — download via upload
-          let url = `${downloadBaseUrl}/${document.upload_id}`;
+          const text = await response.text();
+          const contentType = response.headers.get("content-type") || "";
+          if (contentType.includes("text/html") || doc.template) {
+            setType("text/html");
+          } else {
+            setType(contentType || "text/plain");
+          }
+          setContent(text);
+        } else if (doc.file_id) {
+          // File-based documents — download via file resource ID
+          let url = `${downloadBaseUrl}/${doc.file_id}`;
 
           // Add preview parameter for compact mode (backend will only generate previews for PDFs)
           if (compact) {
@@ -149,8 +157,11 @@ export default function DocumentViewer({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    document,
+    document.file_id,
+    document.text_id,
+    document.name,
     downloadBaseUrl,
+    textDownloadBaseUrl,
     isFormDocument,
     compact,
   ]);

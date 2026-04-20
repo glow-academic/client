@@ -20,17 +20,6 @@ import { cn } from "@/lib/utils";
 import { Check, Power, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftSimulationScenarioFlagsIn = {
-  body: {
-    scenario_id: string;
-    flag_id: string;
-    mcp: boolean;
-  };
-};
-type CreateDraftSimulationScenarioFlagsOut = {
-  scenario_flags_id?: string | null;
-};
-
 export interface ScenarioFlagsResourceItem {
   id?: string | null;
   scenario_id?: string | null;
@@ -80,17 +69,6 @@ export interface ScenarioFlagsProps {
   id?: string;
   required?: boolean;
   description?: string;
-  group_id?: string | null;
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createScenarioFlagsAction?:
-    | ( (
-        input: CreateDraftSimulationScenarioFlagsIn
-      ) => Promise<CreateDraftSimulationScenarioFlagsOut>)
-    | undefined;
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ scenario_flag_ids: string[] } | void>) => void;
   /** Value callback for unified draft — reports all selected scenario+flag pairs */
   onScenarioFlagValues?: (flags: Array<{ scenario_id: string; flag_id: string }>) => void;
 }
@@ -116,11 +94,6 @@ export function ScenarioFlags({
   id = "scenario_flags",
   required = false,
   description,
-  group_id,
-  create_tool_id,
-  createScenarioFlagsAction,
-  isAutosaveEnabled = true,
-  registerFlush,
   onScenarioFlagValues,
 }: ScenarioFlagsProps) {
   const show = show_scenario_flags ?? false;
@@ -157,27 +130,6 @@ export function ScenarioFlags({
     });
     return map;
   }, [scenarios, scenario_resources]);
-  // Map resource ID → artifact ID for API calls (API expects scenario_artifact.id)
-  // From get_simulation SQL: s.id = scenarios_resource.id, s.scenario_id = scenario_artifact.id (via junction)
-  const artifactIdMap = useMemo(() => {
-    const map = new Map<string, string>();
-    (scenarios ?? []).forEach((s) => {
-      // s.id = scenarios_resource.id (denormalized), s.scenario_id = scenario_artifact.id (canonical)
-      if (s.id && s.scenario_id) {
-        map.set(s.id, s.scenario_id);
-      } else if (s.scenario_id) {
-        map.set(s.scenario_id, s.scenario_id);
-      }
-    });
-    (scenario_resources ?? []).forEach((s) => {
-      if (s.id && s.scenario_id) {
-        map.set(s.id, s.scenario_id);
-      } else if (s.scenario_id) {
-        map.set(s.scenario_id, s.scenario_id);
-      }
-    });
-    return map;
-  }, [scenarios, scenario_resources]);
 
   // Multi-select: maps scenarioId → Set of selected flagIds
   const [selectedFlagsByScenario, setSelectedFlagsByScenario] = useState<
@@ -187,11 +139,6 @@ export function ScenarioFlags({
   const [scenarioFlagResourceIds, setScenarioFlagResourceIds] = useState<
     Map<string, string>
   >(new Map());
-  const createdFlagKeysRef = useRef<Set<string>>(new Set());
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ scenario_flag_ids: string[] } | void>) | null>(null);
-
   // Detect pending items from current resources (items with pending: true)
   const pendingResources = useMemo(
     () => currentResources.filter((r) => r.pending),
@@ -283,66 +230,6 @@ export function ScenarioFlags({
     onScenarioFlagValuesRef.current(values);
   }, [selectedFlagsByScenario]);
 
-  // Update flush function - returns current IDs from local state
-  flushRef.current = async (): Promise<{ scenario_flag_ids: string[] } | void> => {
-    const ids = Array.from(scenarioFlagResourceIds.values());
-    return { scenario_flag_ids: ids };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
-  const createScenarioFlag = useCallback(
-    async (scenarioId: string, flagId: string) => {
-      if (!isAutosaveEnabled || !createScenarioFlagsAction || !group_id) {
-        return;
-      }
-      const key = `${scenarioId}:${flagId}`;
-      if (createdFlagKeysRef.current.has(key)) {
-        return;
-      }
-      createdFlagKeysRef.current.add(key);
-
-      // Resolve resource ID to artifact ID for the API
-      const artifactScenarioId = artifactIdMap.get(scenarioId) ?? scenarioId;
-
-      try {
-        const result = await createScenarioFlagsAction({
-          body: {
-            scenario_id: artifactScenarioId,
-            flag_id: flagId,
-            mcp: false,
-          },
-        });
-
-        if (!result?.scenario_flags_id) {
-          return;
-        }
-
-        const resultId = result.scenario_flags_id as string;
-        setScenarioFlagResourceIds((prev) => {
-          const next = new Map(prev);
-          next.set(key, resultId);
-          return next;
-        });
-      } catch {
-        // Resource creation errors are handled by API; keep UI state intact.
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      isAutosaveEnabled,
-      createScenarioFlagsAction,
-      create_tool_id,
-      group_id,
-      artifactIdMap,
-    ]
-  );
-
   const handleToggle = useCallback(
     (scenarioId: string, flagId: string, checked: boolean) => {
       const key = `${scenarioId}:${flagId}`;
@@ -359,9 +246,7 @@ export function ScenarioFlags({
         return next;
       });
 
-      if (checked) {
-        void createScenarioFlag(scenarioId, flagId);
-      } else {
+      if (!checked) {
         setScenarioFlagResourceIds((prev) => {
           const next = new Map(prev);
           next.delete(key);
@@ -369,7 +254,7 @@ export function ScenarioFlags({
         });
       }
     },
-    [createScenarioFlag]
+    []
   );
 
   // Group flags by scenario_id (resource ID) from the SQL query

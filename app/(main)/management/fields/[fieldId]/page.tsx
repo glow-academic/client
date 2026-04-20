@@ -139,10 +139,6 @@ export default async function FieldEditPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
-
   // Parse search params using nuqs
   const paramsObj = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -205,6 +201,7 @@ export default async function FieldEditPage({
       ),
       api.post("/field/group", { body: {} } as GroupFieldIn),
     ]);
+    const snapshot = buildSnapshot(session, context.profile);
 
     const entityName = context.page_metadata?.detail.title;
 

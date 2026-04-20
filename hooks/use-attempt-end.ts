@@ -21,6 +21,8 @@ export interface UseAttemptEndReturn {
     attemptId: string;
     chatId: string;
     endAfter?: boolean;
+    operations?: string[];
+    instructions?: string[];
   }) => Promise<void>;
 
   /** End a single chat. Finds next chat — routes or ends attempt if none left. */
@@ -45,6 +47,7 @@ export function useAttemptEnd(): UseAttemptEndReturn {
   const [stage, setStage] = useState<EndStage>("idle");
   const [error, setError] = useState<string | null>(null);
   const routeHook = useAttemptRoute();
+  const gradeInFlightRef = useRef(false);
 
   // Propagate child stage/error
   useEffect(() => {
@@ -64,7 +67,11 @@ export function useAttemptEnd(): UseAttemptEndReturn {
       attemptId: string;
       chatId: string;
       endAfter?: boolean;
+      operations?: string[];
+      instructions?: string[];
     }) => {
+      if (gradeInFlightRef.current) return;
+      gradeInFlightRef.current = true;
       try {
         setError(null);
         setStage("grading");
@@ -101,9 +108,19 @@ export function useAttemptEnd(): UseAttemptEndReturn {
 
           transport
             .send("/attempt/generate", {
-              instructions: ["Grade this attempt chat based on the rubric and conversation."],
+              instructions: params.instructions ?? [
+                "Grade this attempt chat based on the rubric and conversation.",
+              ],
               config: {
-                operations: ["chat_grade", "chat_feedback", "chat_strengths", "chat_improvements", "chat_analyses", "chat_complete", "get"],
+                operations: params.operations ?? [
+                  "chat_grade",
+                  "chat_feedback",
+                  "chat_strengths",
+                  "chat_improvements",
+                  "chat_analyses",
+                  "chat_complete",
+                  "get",
+                ],
                 params: {
                   attempt_id: params.attemptId,
                   chat_id: params.chatId,
@@ -130,6 +147,8 @@ export function useAttemptEnd(): UseAttemptEndReturn {
       } catch (err) {
         setStage("error");
         setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        gradeInFlightRef.current = false;
       }
     },
     [transport],

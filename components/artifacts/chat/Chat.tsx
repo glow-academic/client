@@ -24,10 +24,28 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type GetChatOut = OutputOf<
-  "/chat/get",
+  "/attempt/chat/get",
   "post"
 >;
-export type ChatData = GetChatOut;
+export type ChatData = GetChatOut & {
+  profile_has_access?: boolean | null;
+  simulation_name?: string | null;
+  names?: Array<{ id?: string | null; name?: string | null; selected?: boolean | null; suggested?: boolean | null; pending?: boolean | null; generated?: boolean | null }> | null;
+  descriptions?: Array<{ id?: string | null; description?: string | null; selected?: boolean | null; suggested?: boolean | null; pending?: boolean | null; generated?: boolean | null }> | null;
+  departments?: Array<{ department_id?: string | null; name?: string | null; description?: string | null; selected?: boolean | null; suggested?: boolean | null; pending?: boolean | null; generated?: boolean | null }> | null;
+  personas?: Array<{ persona_id?: string | null; name?: string | null; description?: string | null; color?: string | null; icon?: string | null; selected?: boolean | null; suggested?: boolean | null; pending?: boolean | null; generated?: boolean | null }> | null;
+  documents?: Array<{ document_id?: string | null; name?: string | null; description?: string | null; selected?: boolean | null; suggested?: boolean | null; pending?: boolean | null; generated?: boolean | null }> | null;
+  parameter_fields?: Array<{ id?: string | null; field_id?: string | null; parameter_id?: string | null; name?: string | null; parameter_name?: string | null; selected?: boolean | null; suggested?: boolean | null; pending?: boolean | null; generated?: boolean | null }> | null;
+  questions?: Array<{ question_id?: string | null; question_text?: string | null; selected?: boolean | null; suggested?: boolean | null; pending?: boolean | null; generated?: boolean | null }> | null;
+  options?: Array<{ option_id?: string | null; option_text?: string | null; question_id?: string | null; is_correct?: boolean | null; selected?: boolean | null; suggested?: boolean | null; pending?: boolean | null; generated?: boolean | null }> | null;
+  videos?: Array<{ video_id?: string | null; name?: string | null; upload_id?: string | null; selected?: boolean | null; suggested?: boolean | null; pending?: boolean | null; generated?: boolean | null }> | null;
+  images?: Array<{ image_id?: string | null; id?: string | null; name?: string | null; upload_id?: string | null; selected?: boolean | null; suggested?: boolean | null; pending?: boolean | null; generated?: boolean | null }> | null;
+  problem_statements?: Array<{ problem_statement_id?: string | null; problem_statement?: string | null; selected?: boolean | null; suggested?: boolean | null; pending?: boolean | null; generated?: boolean | null }> | null;
+  objectives?: Array<{ id?: string | null; objective?: string | null; selected?: boolean | null; suggested?: boolean | null; pending?: boolean | null; generated?: boolean | null }> | null;
+  scenario_ids?: string[] | null;
+  field_ids?: string[] | null;
+  flag_ids?: string[] | null;
+};
 type PatchChatDraftIn = InputOf<
   "/attempt/draft",
   "patch"
@@ -38,19 +56,25 @@ type PatchChatDraftOut = OutputOf<
 >;
 
 type ChatFormState = {
+  name_id: string | null;
+  name: string | null;
+  description_id: string | null;
+  description: string | null;
+  problem_statement_id: string | null;
+  problem_statement: string | null;
   department_ids: string[];
   persona_ids: string[];
   document_ids: string[];
   parameter_field_ids: string[];
+  scenario_ids: string[];
+  field_ids: string[];
+  flag_ids: string[];
   question_ids: string[];
   option_ids: string[];
   video_ids: string[];
   image_ids: string[];
-  problem_statement_ids: string[];
   objective_ids: string[];
-  // Value fields for unified draft (creatable resources)
-  name: string | null;
-  description: string | null;
+  pending_ids: string[];
 };
 
 interface ChatProps {
@@ -72,6 +96,12 @@ function extractIds<T>(
     .filter((id): id is string => !!id);
 }
 
+function selectedItem<T extends { selected?: boolean | null }>(
+  items: T[] | null | undefined,
+): T | null {
+  return items?.find((item) => item.selected) ?? null;
+}
+
 export default function Chat({
   bundleData,
   patchChatDraftAction,
@@ -80,32 +110,79 @@ export default function Chat({
 }: ChatProps) {
   const router = useRouter();
   const { socket, isConnected } = useSocket();
-  const s = bundleData;
+  const s = bundleData as ChatData;
   const isStartingRef = useRef(false);
+
+  const selectedName = useMemo(() => selectedItem(s.names), [s.names]);
+  const selectedDescription = useMemo(
+    () => selectedItem(s.descriptions),
+    [s.descriptions],
+  );
+  const selectedProblemStatement = useMemo(
+    () => selectedItem(s.problem_statements),
+    [s.problem_statements],
+  );
+  const selectedQuestions = useMemo(
+    () => (s.questions ?? []).filter((q) => q.selected),
+    [s.questions],
+  );
+
+  const allParameters = useMemo(() => {
+    const seen = new Set<string>();
+    return (s.parameter_fields ?? [])
+      .filter((field) => field.parameter_id && field.parameter_name)
+      .filter((field) => {
+        const parameterId = field.parameter_id!;
+        if (seen.has(parameterId)) return false;
+        seen.add(parameterId);
+        return true;
+      })
+      .map((field) => ({
+        parameter_id: field.parameter_id ?? null,
+        name: field.parameter_name ?? null,
+        description: null,
+        conditional: false,
+      }));
+  }, [s.parameter_fields]);
+
+  const [expandedParameterIds, setExpandedParameterIds] = useState<string[]>([]);
 
   const initialFormState = useMemo<ChatFormState>(
     () => ({
-      department_ids: extractIds(s.departments?.current, "department_id"),
-      persona_ids: extractIds(s.personas?.current, "persona_id"),
-      document_ids: extractIds(s.documents?.current, "document_id"),
-      parameter_field_ids: extractIds(
-        s.parameter_fields?.current,
-        "field_id",
-      ),
-      question_ids: extractIds(s.questions?.current, "question_id"),
-      option_ids: extractIds(s.options?.current, "option_id"),
-      video_ids: extractIds(s.videos?.current, "video_id"),
-      image_ids: extractIds(s.images?.current, "image_id"),
-      problem_statement_ids: extractIds(
-        s.problem_statements?.current,
-        "problem_statement_id",
-      ),
-      objective_ids: extractIds(s.objectives?.current, "objective_id"),
-      name: null,
-      description: null,
+      name_id: selectedName?.id ?? null,
+      name: selectedName?.name ?? null,
+      description_id: selectedDescription?.id ?? null,
+      description: selectedDescription?.description ?? null,
+      problem_statement_id: selectedProblemStatement?.problem_statement_id ?? null,
+      problem_statement: selectedProblemStatement?.problem_statement ?? null,
+      department_ids: extractIds((s.departments ?? []).filter((item) => item.selected), "department_id"),
+      persona_ids: extractIds((s.personas ?? []).filter((item) => item.selected), "persona_id"),
+      document_ids: extractIds((s.documents ?? []).filter((item) => item.selected), "document_id"),
+      parameter_field_ids: extractIds((s.parameter_fields ?? []).filter((item) => item.selected), "id"),
+      scenario_ids: s.scenario_ids ?? [],
+      field_ids: s.field_ids ?? [],
+      flag_ids: s.flag_ids ?? [],
+      question_ids: extractIds(selectedQuestions, "question_id"),
+      option_ids: extractIds((s.options ?? []).filter((item) => item.selected), "option_id"),
+      video_ids: extractIds((s.videos ?? []).filter((item) => item.selected), "video_id"),
+      image_ids: extractIds((s.images ?? []).filter((item) => item.selected), "image_id"),
+      objective_ids: extractIds((s.objectives ?? []).filter((item) => item.selected), "id"),
+      pending_ids: [
+        ...extractIds((s.names ?? []).filter((item) => item.pending), "id"),
+        ...extractIds((s.descriptions ?? []).filter((item) => item.pending), "id"),
+        ...extractIds((s.departments ?? []).filter((item) => item.pending), "department_id"),
+        ...extractIds((s.personas ?? []).filter((item) => item.pending), "persona_id"),
+        ...extractIds((s.documents ?? []).filter((item) => item.pending), "document_id"),
+        ...extractIds((s.parameter_fields ?? []).filter((item) => item.pending), "id"),
+        ...extractIds((s.questions ?? []).filter((item) => item.pending), "question_id"),
+        ...extractIds((s.options ?? []).filter((item) => item.pending), "option_id"),
+        ...extractIds((s.videos ?? []).filter((item) => item.pending), "video_id"),
+        ...extractIds((s.images ?? []).filter((item) => item.pending), "image_id"),
+        ...extractIds((s.problem_statements ?? []).filter((item) => item.pending), "problem_statement_id"),
+        ...extractIds((s.objectives ?? []).filter((item) => item.pending), "id"),
+      ],
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [s, selectedName, selectedDescription, selectedProblemStatement, selectedQuestions],
   );
 
   const [formState, setFormState] =
@@ -148,27 +225,37 @@ export default function Chat({
     try {
       // Build payload — ID fields + value fields for creatables
       const payload: Record<string, unknown> = {
-        input_draft_id: draftId,
+        draft_id: draftId,
+        name_id: formState.name_id,
+        description_id: formState.description_id,
+        problem_statement_id: formState.problem_statement_id,
         department_ids: formState.department_ids,
         persona_ids: formState.persona_ids,
         document_ids: formState.document_ids,
         parameter_field_ids: formState.parameter_field_ids,
+        scenario_ids: formState.scenario_ids,
+        field_ids: formState.field_ids,
+        flag_ids: formState.flag_ids,
         question_ids: formState.question_ids,
         option_ids: formState.option_ids,
         video_ids: formState.video_ids,
         image_ids: formState.image_ids,
-        problem_statement_ids: formState.problem_statement_ids,
         objective_ids: formState.objective_ids,
+        pending_ids: formState.pending_ids,
       };
 
       // Single-select creatables: value clears the corresponding IDs
-      if (formState.name) {
+      if (formState.name && !formState.name_id) {
         payload["name"] = formState.name;
-        delete payload["name_ids"];
       }
-      if (formState.description) {
+      if (formState.description && !formState.description_id) {
         payload["description"] = formState.description;
-        delete payload["description_ids"];
+      }
+      if (
+        formState.problem_statement &&
+        !formState.problem_statement_id
+      ) {
+        payload["problem_statement"] = formState.problem_statement;
       }
 
       const result = await patchChatDraftAction({
@@ -182,34 +269,51 @@ export default function Chat({
       // Sync form_state from server response (server is source of truth)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const formStateData = (result as any).form_state as {
+        name_id?: string | null;
+        name?: string | null;
+        description_id?: string | null;
+        description?: string | null;
+        problem_statement_id?: string | null;
+        problem_statement?: string | null;
         department_ids?: string[];
         persona_ids?: string[];
         document_ids?: string[];
         parameter_field_ids?: string[];
+        scenario_ids?: string[];
+        field_ids?: string[];
+        flag_ids?: string[];
         question_ids?: string[];
         option_ids?: string[];
         video_ids?: string[];
         image_ids?: string[];
-        problem_statement_ids?: string[];
         objective_ids?: string[];
+        pending_ids?: string[];
       } | undefined;
       if (formStateData) {
         serverSyncPendingRef.current = true;
         setFormState((prev) => ({
           ...prev,
+          name_id: formStateData.name_id ?? prev.name_id,
+          name: formStateData.name ?? prev.name,
+          description_id: formStateData.description_id ?? prev.description_id,
+          description: formStateData.description ?? prev.description,
+          problem_statement_id:
+            formStateData.problem_statement_id ?? prev.problem_statement_id,
+          problem_statement:
+            formStateData.problem_statement ?? prev.problem_statement,
           department_ids: formStateData.department_ids ?? prev.department_ids,
           persona_ids: formStateData.persona_ids ?? prev.persona_ids,
           document_ids: formStateData.document_ids ?? prev.document_ids,
           parameter_field_ids: formStateData.parameter_field_ids ?? prev.parameter_field_ids,
+          scenario_ids: formStateData.scenario_ids ?? prev.scenario_ids,
+          field_ids: formStateData.field_ids ?? prev.field_ids,
+          flag_ids: formStateData.flag_ids ?? prev.flag_ids,
           question_ids: formStateData.question_ids ?? prev.question_ids,
           option_ids: formStateData.option_ids ?? prev.option_ids,
           video_ids: formStateData.video_ids ?? prev.video_ids,
           image_ids: formStateData.image_ids ?? prev.image_ids,
-          problem_statement_ids: formStateData.problem_statement_ids ?? prev.problem_statement_ids,
           objective_ids: formStateData.objective_ids ?? prev.objective_ids,
-          // Clear value fields after server resolves them
-          name: null,
-          description: null,
+          pending_ids: formStateData.pending_ids ?? prev.pending_ids,
         }));
       }
     } catch {
@@ -250,8 +354,13 @@ export default function Chat({
       await generate({
         attemptId,
         chatId: chatEntryId,
-        chatConfig: formState as unknown as Record<string, unknown>,
-        draftId: draftId ?? undefined,
+        chatConfig: {
+          ...formState,
+          problem_statement_ids: formState.problem_statement_id
+            ? [formState.problem_statement_id]
+            : [],
+        } as unknown as Record<string, unknown>,
+        ...(draftId ? { draftId } : {}),
       });
       setIsSaving(false);
       isStartingRef.current = false;
@@ -279,29 +388,37 @@ export default function Chat({
         </p>
       </div>
 
-      {s.names?.show && (
+      {s.names && (
         <Names
-          name_id={s.names.current?.[0]?.name_id ?? null}
-          name_resource={s.names.current?.[0] ?? null}
-          show_name={s.names.show}
-          names={s.names.resources ?? []}
+          name_id={formState.name_id}
+          name_resource={selectedName}
+          show_name={true}
+          names={s.names ?? []}
           disabled={false}
           onNameIdChange={(nameId) =>
-            setFormState((prev) => ({ ...prev, name: null, name_id: nameId }))
+            setFormState((prev) => ({
+              ...prev,
+              name_id: nameId,
+              name: nameId ? (s.names?.find((item) => item.id === nameId)?.name ?? null) : null,
+            }))
           }
           onNameChange={(name) =>
-            setFormState((prev) => ({ ...prev, name: name || null }))
+            setFormState((prev) => ({
+              ...prev,
+              name: name || null,
+              name_id: null,
+            }))
           }
           placeholder="Enter name"
         />
       )}
 
-      {s.departments?.show && (
+      {s.departments && (
         <Departments
           department_ids={formState.department_ids}
-          department_resources={s.departments.current ?? []}
-          show_departments={s.departments.show}
-          departments={s.departments.resources ?? []}
+          department_resources={(s.departments ?? []).filter((item) => item.selected)}
+          show_departments={true}
+          departments={s.departments ?? []}
           onChange={(ids) =>
             setFormState((prev) => ({ ...prev, department_ids: ids }))
           }
@@ -310,12 +427,12 @@ export default function Chat({
         />
       )}
 
-      {s.personas?.show && (
+      {s.personas && (
         <Personas
           persona_ids={formState.persona_ids}
-          persona_resources={s.personas.current ?? []}
-          show_personas={s.personas.show}
-          personas={s.personas.resources ?? []}
+          persona_resources={(s.personas ?? []).filter((item) => item.selected)}
+          show_personas={true}
+          personas={s.personas ?? []}
           onChange={(ids) =>
             setFormState((prev) => ({ ...prev, persona_ids: ids }))
           }
@@ -324,12 +441,12 @@ export default function Chat({
         />
       )}
 
-      {s.documents?.show && (
+      {s.documents && (
         <Documents
           document_ids={formState.document_ids}
-          document_resources={s.documents.current ?? []}
-          show_documents={s.documents.show}
-          documents={s.documents.resources ?? []}
+          document_resources={(s.documents ?? []).filter((item) => item.selected)}
+          show_documents={true}
+          documents={s.documents ?? []}
           onChange={(ids) =>
             setFormState((prev) => ({ ...prev, document_ids: ids }))
           }
@@ -338,12 +455,20 @@ export default function Chat({
         />
       )}
 
-      {s.parameter_fields?.show && (
+      {s.parameter_fields && (
         <ParameterFields
-          parameter_field_ids={formState.parameter_field_ids}
-          parameter_field_resources={s.parameter_fields.current ?? []}
-          show_parameter_fields={s.parameter_fields.show}
-          parameter_fields={s.parameter_fields.resources ?? []}
+          parameterIds={expandedParameterIds}
+          parameterFieldIds={formState.parameter_field_ids}
+          parameterFieldResources={(s.parameter_fields ?? []).filter((item) => item.selected)}
+          allParameters={allParameters}
+          availableFields={s.parameter_fields ?? []}
+          onToggleParameter={(parameterId, open) =>
+            setExpandedParameterIds((prev) =>
+              open
+                ? Array.from(new Set([...prev, parameterId]))
+                : prev.filter((id) => id !== parameterId),
+            )
+          }
           onChange={(ids) =>
             setFormState((prev) => ({ ...prev, parameter_field_ids: ids }))
           }
@@ -352,12 +477,12 @@ export default function Chat({
         />
       )}
 
-      {s.questions?.show && (
+      {s.questions && (
         <Questions
           question_ids={formState.question_ids}
-          question_resources={s.questions.current ?? []}
-          show_questions={s.questions.show}
-          questions={s.questions.resources ?? []}
+          question_resources={selectedQuestions}
+          show_questions={true}
+          questions={s.questions ?? []}
           onChange={(ids) =>
             setFormState((prev) => ({ ...prev, question_ids: ids }))
           }
@@ -366,14 +491,14 @@ export default function Chat({
         />
       )}
 
-      {s.options?.show && (
+      {s.options && (
         <Options
           option_ids={formState.option_ids}
-          option_resources={s.options.current ?? []}
-          show_options={s.options.show}
-          options={s.options.resources ?? []}
+          option_resources={(s.options ?? []).filter((item) => item.selected)}
+          show_options={true}
+          options={s.options ?? []}
           question_ids={formState.question_ids}
-          question_resources={s.questions?.current ?? []}
+          question_resources={selectedQuestions}
           disabled={false}
           onChange={(ids) =>
             setFormState((prev) => ({ ...prev, option_ids: ids }))
@@ -381,12 +506,12 @@ export default function Chat({
         />
       )}
 
-      {s.videos?.show && (
+      {s.videos && (
         <Videos
           video_ids={formState.video_ids}
-          video_resources={s.videos.current ?? []}
-          show_videos={s.videos.show}
-          videos={s.videos.resources ?? []}
+          video_resources={(s.videos ?? []).filter((item) => item.selected)}
+          show_videos={true}
+          videos={s.videos ?? []}
           onChange={(ids) =>
             setFormState((prev) => ({ ...prev, video_ids: ids }))
           }
@@ -395,12 +520,12 @@ export default function Chat({
         />
       )}
 
-      {s.images?.show && (
+      {s.images && (
         <Images
           image_ids={formState.image_ids}
-          image_resources={s.images.current ?? []}
-          show_images={s.images.show}
-          images={s.images.resources ?? []}
+          image_resources={(s.images ?? []).filter((item) => item.selected)}
+          show_images={true}
+          images={s.images ?? []}
           onChange={(ids) =>
             setFormState((prev) => ({ ...prev, image_ids: ids }))
           }
@@ -409,16 +534,30 @@ export default function Chat({
         />
       )}
 
-      {s.problem_statements?.show && (
+      {s.problem_statements && (
         <ProblemStatements
-          problem_statement_ids={formState.problem_statement_ids}
-          problem_statement_resources={s.problem_statements.current ?? []}
-          show_problem_statements={s.problem_statements.show}
-          problem_statements={s.problem_statements.resources ?? []}
-          onChange={(ids) =>
+          problem_statement_id={formState.problem_statement_id}
+          problem_statement_resource={selectedProblemStatement}
+          show_problem_statement={true}
+          problem_statements={s.problem_statements ?? []}
+          onProblemStatementIdChange={(problemStatementId) =>
             setFormState((prev) => ({
               ...prev,
-              problem_statement_ids: ids,
+              problem_statement_id: problemStatementId,
+              problem_statement: problemStatementId
+                ? (
+                    s.problem_statements?.find(
+                      (item) => item.problem_statement_id === problemStatementId,
+                    )?.problem_statement ?? null
+                  )
+                : null,
+            }))
+          }
+          onProblemStatementChange={(problemStatement) =>
+            setFormState((prev) => ({
+              ...prev,
+              problem_statement: problemStatement || null,
+              problem_statement_id: null,
             }))
           }
           disabled={false}
@@ -426,12 +565,12 @@ export default function Chat({
         />
       )}
 
-      {s.objectives?.show && (
+      {s.objectives && (
         <Objectives
           objective_ids={formState.objective_ids}
-          objective_resources={s.objectives.current ?? []}
-          show_objectives={s.objectives.show}
-          objectives={s.objectives.resources ?? []}
+          objective_resources={(s.objectives ?? []).filter((item) => item.selected)}
+          show_objectives={true}
+          objectives={s.objectives ?? []}
           onChange={(ids) =>
             setFormState((prev) => ({ ...prev, objective_ids: ids }))
           }

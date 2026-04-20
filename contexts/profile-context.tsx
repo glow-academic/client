@@ -36,6 +36,7 @@ interface ProfileContextType {
 
   // Permissions data (from server)
   roleArtifacts: string[];
+  rolePermissions: [string, string][]; // Full (artifact, operation) tuples for granular gating
   scopedRoles: string[]; // Roles that the effective profile has scope to see
   roleResources: RoleResourceItem[];
 }
@@ -80,6 +81,7 @@ export function ProfileProviderClient({
 
     // Permissions data (from server)
     roleArtifacts: initial?.artifact_access ?? [],
+    rolePermissions: (initial?.role_permissions ?? []) as [string, string][],
     scopedRoles: initial?.scoped_roles ?? [],
     roleResources: initial?.role_resources ?? [],
   };

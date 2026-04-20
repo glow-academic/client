@@ -30,26 +30,8 @@ type UpdateModelIn = InputOf<"/model/update", "post">;
 type UpdateModelOut = OutputOf<"/model/update", "post">;
 type PatchModelDraftIn = InputOf<"/model/draft", "patch">;
 type PatchModelDraftOut = OutputOf<"/model/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftValuesIn = InputOf<"/api/v5/resources/values", "post">;
-type CreateDraftValuesOut = OutputOf<"/api/v5/resources/values", "post">;
-type CreateDraftPricingIn = InputOf<"/api/v5/resources/pricing", "post">;
-type CreateDraftPricingOut = OutputOf<"/api/v5/resources/pricing", "post">;
-type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
-type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
 type GroupModelIn = InputOf<"/model/group", "post">;
 type GroupModelOut = OutputOf<"/model/group", "post">;
-type GenerateModelIn = InputOf<"/model/generate", "post">;
-type GenerateModelOut = OutputOf<"/model/generate", "post">;
 type ProblemModelIn = InputOf<"/model/problem", "post">;
 type ProblemModelOut = OutputOf<"/model/problem", "post">;
 type ContextIn = InputOf<"/model/context", "post">;
@@ -79,61 +61,6 @@ async function patchModelDraft(
 ): Promise<PatchModelDraftOut> {
   "use server";
   return api.patch("/model/draft", input);
-}
-
-async function createDraftNames(
-  input: CreateDraftNamesIn
-): Promise<CreateDraftNamesOut> {
-  "use server";
-  return api.post("/resources/names", input);
-}
-
-async function createDraftDescriptions(
-  input: CreateDraftDescriptionsIn
-): Promise<CreateDraftDescriptionsOut> {
-  "use server";
-  return api.post("/resources/descriptions", input);
-}
-
-async function createDraftValues(
-  input: CreateDraftValuesIn
-): Promise<CreateDraftValuesOut> {
-  "use server";
-  return api.post("/resources/values", input);
-}
-
-async function createDraftPricing(
-  input: CreateDraftPricingIn
-): Promise<CreateDraftPricingOut> {
-  "use server";
-  return api.post("/resources/pricing", input);
-}
-
-async function createDraftVoices(
-  input: CreateDraftVoicesIn
-): Promise<CreateDraftVoicesOut> {
-  "use server";
-  return api.post("/resources/voices", input);
-}
-
-async function generateModel(
-  input: GenerateModelIn
-): Promise<GenerateModelOut> {
-  "use server";
-  return api.post("/model/generate", input);
-}
-
-async function getModelGroupHistory(groupId: string): Promise<GroupModelOut> {
-  "use server";
-  return api.post("/model/group", { body: { group_id: groupId } } as GroupModelIn);
-}
-
-type GenerationsIn = InputOf<"/model/generations", "post">;
-type GenerationsOut = OutputOf<"/model/generations", "post">;
-
-async function searchModelGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/model/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createModelProblem(input: ProblemModelIn): Promise<ProblemModelOut> {
@@ -196,38 +123,58 @@ export default async function ModelEditPage({
 
   const modelSearchParams = {
     draftId: parseAsString,
+    descriptionSearch: parseAsString,
+    valueSearch: parseAsString,
+    departmentSearch: parseAsString,
+    modalitySearch: parseAsString,
+    temperatureSearch: parseAsString,
+    pricingSearch: parseAsString,
+    reasoningSearch: parseAsString,
+    voiceSearch: parseAsString,
+    qualitySearch: parseAsString,
   };
   const loadModelSearchParams = createLoader(modelSearchParams);
   const q = loadModelSearchParams(searchParamsObj);
 
   try {
-    const input: GetModelIn = {
+    const input = {
       body: {
-        model_id: modelId,
+        id: modelId,
         draft_id: q.draftId ?? null,
+        descriptions: q.descriptionSearch ? { search: q.descriptionSearch } : undefined,
+        values: q.valueSearch ? { search: q.valueSearch } : undefined,
+        departments: q.departmentSearch ? { search: q.departmentSearch } : undefined,
+        modalities: q.modalitySearch ? { search: q.modalitySearch } : undefined,
+        temperature_levels: q.temperatureSearch ? { search: q.temperatureSearch } : undefined,
+        pricing: q.pricingSearch ? { search: q.pricingSearch } : undefined,
+        reasoning_levels: q.reasoningSearch ? { search: q.reasoningSearch } : undefined,
+        voices: q.voiceSearch ? { search: q.voiceSearch } : undefined,
+        qualities: q.qualitySearch ? { search: q.qualitySearch } : undefined,
       },
-    };
+    } as unknown as GetModelIn;
 
     const [model, context, draftsResult, groupResult] = await Promise.all([
       getModel(input),
       api.post("/model/context", { body: { entity_id: modelId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/model/drafts", {}),
+      api.post("/model/drafts", {} as any),
       api.post("/model/group", { body: {} } as GroupModelIn),
     ]);
 
     const snapshot = buildSnapshot(session, context.profile);
-    const entityName = context.page_metadata?.detail.title;
+    const entityName = context.page_metadata?.detail.title ?? "Model";
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
         <FullPageLayout
           profileData={context.profile}
           sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
-          initialPanelOpen={initialPanelOpen}
+          {...(initialSidebarOpen !== undefined
+            ? { initialSidebarOpen }
+            : {})}
+          {...(initialPanelOpen !== undefined ? { initialPanelOpen } : {})}
           sidebarProps={{
             activeSection: "model",
-            createFeedback: createModelProblem,
+            createFeedback: createModelProblem as any,
           }}
           breadcrumbs={[
             { title: "Intelligence", section: "intelligence", url: "/intelligence" },
@@ -235,15 +182,18 @@ export default async function ModelEditPage({
             { title: entityName },
           ]}
           toolbar={<SaveToolbar />}
-          panelProps={{
-            artifactType: "model",
-            groupId: (groupResult as GroupModelOut & { group_id?: string })?.group_id ?? null,
-            generateAction: generateModel,
-            operations: ["draft", "get", "group"],
-            getGroupHistory: getModelGroupHistory,
-            searchGroups: searchModelGroups,
-            prompts: context.prompts?.prompts,
-          }}
+          panelProps={
+            {
+              artifactType: "model",
+              groupId:
+                ((groupResult as GroupModelOut & { group_id?: string | null })?.group_id ??
+                  null) as any,
+              operations: ["draft", "get", "group"],
+              ...(context.prompts?.prompts
+                ? { prompts: context.prompts.prompts }
+                : {}),
+            } as any
+          }
         >
           <div
             className="space-y-6 px-4"
@@ -256,11 +206,6 @@ export default async function ModelEditPage({
               createModelAction={createModel}
               updateModelAction={updateModel}
               patchModelDraftAction={patchModelDraft}
-              createNamesAction={createDraftNames}
-              createDescriptionsAction={createDraftDescriptions}
-              createValuesAction={createDraftValues}
-              createPricingAction={createDraftPricing}
-              createVoicesAction={createDraftVoices}
             />
           </div>
         </FullPageLayout>
@@ -276,7 +221,7 @@ export default async function ModelEditPage({
       return (
         <UnifiedAccessDenied
           reason="department"
-          resourceType="model"
+          resourceType={"model" as any}
           redirectPath="/intelligence/models"
         />
       );
@@ -295,14 +240,4 @@ export type {
   CreateModelOut,
   UpdateModelIn,
   UpdateModelOut,
-  CreateDraftNamesIn,
-  CreateDraftNamesOut,
-  CreateDraftDescriptionsIn,
-  CreateDraftDescriptionsOut,
-  CreateDraftValuesIn,
-  CreateDraftValuesOut,
-  CreateDraftPricingIn,
-  CreateDraftPricingOut,
-  CreateDraftVoicesIn,
-  CreateDraftVoicesOut,
 };

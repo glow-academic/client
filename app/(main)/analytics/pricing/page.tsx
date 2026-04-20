@@ -11,6 +11,7 @@ import { PricingRunsClient } from "@/components/artifacts/pricing/PricingRunsCli
 import { PricingSummary } from "@/components/artifacts/pricing/PricingSummary";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { buildSnapshot } from "@/lib/auth";
+import { guardPage } from "@/lib/permissions";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -27,16 +28,16 @@ type PricingOut = OutputOf<"/system/pricing/get", "post">;
 type PricingRunsOut = NonNullable<PricingOut["history"]>;
 
 /** ---- Generation types ---- */
-type ContextIn = InputOf<"/system/pricing/context", "post">;
-type ContextOut = OutputOf<"/system/pricing/context", "post">;
-type GeneratePricingIn = InputOf<"/system/pricing/generate", "post">;
-type GeneratePricingOut = OutputOf<"/system/pricing/generate", "post">;
-type GenerationsIn = InputOf<"/system/pricing/generations", "post">;
-type GenerationsOut = OutputOf<"/system/pricing/generations", "post">;
-type GroupPricingIn = InputOf<"/system/pricing/group", "post">;
-type GroupPricingOut = OutputOf<"/system/pricing/group", "post">;
-type ProblemPricingIn = InputOf<"/system/pricing/problem", "post">;
-type ProblemPricingOut = OutputOf<"/system/pricing/problem", "post">;
+type ContextIn = InputOf<"/system/context", "post">;
+type ContextOut = OutputOf<"/system/context", "post">;
+type GeneratePricingIn = InputOf<"/system/generate", "post">;
+type GeneratePricingOut = OutputOf<"/system/generate", "post">;
+type GenerationsIn = InputOf<"/system/generations", "post">;
+type GenerationsOut = OutputOf<"/system/generations", "post">;
+type GroupPricingIn = InputOf<"/system/group", "post">;
+type GroupPricingOut = OutputOf<"/system/group", "post">;
+type ProblemPricingIn = InputOf<"/system/problem", "post">;
+type ProblemPricingOut = OutputOf<"/system/problem", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getPricingAnalytics = async (input: PricingIn): Promise<PricingOut> => {
@@ -55,7 +56,7 @@ const getPricingAnalytics = async (input: PricingIn): Promise<PricingOut> => {
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/system/pricing/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await api.post("/system/context", { body: {} } as ContextIn) as ContextOut;
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -85,8 +86,9 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
 
   try {
     // Profile data for providers
-    const context = await api.post("/system/pricing/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await api.post("/system/context", { body: {} } as ContextIn) as ContextOut;
     const snapshot = buildSnapshot(session, context.profile);
+    guardPage("/analytics/pricing", context.profile.role_permissions);
 
     // Parse search params via nuqs loader
     const q = loadPricingSearchParams(await searchParams);
@@ -123,7 +125,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
         },
       }),
       readViewCookie("pricing"),
-      api.post("/system/pricing/group", { body: {} } as GroupPricingIn),
+      api.post("/system/group", { body: {} } as GroupPricingIn),
     ]);
 
     // Extract inline analytics facets
@@ -199,22 +201,22 @@ async function generatePricing(
   input: GeneratePricingIn
 ): Promise<GeneratePricingOut> {
   "use server";
-  return api.post("/system/pricing/generate", input);
+  return api.post("/system/generate", input);
 }
 
 async function getPricingGroupHistory(groupId: string): Promise<GroupPricingOut> {
   "use server";
-  return api.post("/system/pricing/group", { body: { group_id: groupId } } as GroupPricingIn);
+  return api.post("/system/group", { body: { group_id: groupId } } as GroupPricingIn);
 }
 
 async function searchPricingGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/system/pricing/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/system/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createPricingProblem(input: ProblemPricingIn): Promise<ProblemPricingOut> {
   "use server";
-  return api.post("/system/pricing/problem", input);
+  return api.post("/system/problem", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

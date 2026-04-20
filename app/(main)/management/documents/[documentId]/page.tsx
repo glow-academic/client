@@ -51,7 +51,7 @@ type DocumentSectionFilter = Exclude<
 >;
 
 /** Upload action result — matches the interface expected by resource components */
-type UploadResult = { success: boolean; upload_id?: string; message?: string };
+type UploadResult = { success: boolean; file_id?: string; message?: string };
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getDocumentDefault = async (
@@ -109,7 +109,7 @@ async function uploadFile(formData: FormData): Promise<UploadResult> {
     }
 
     const result = await response.json();
-    return { success: true, upload_id: result.upload_id };
+    return { success: true, file_id: result.file_id };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Upload failed";
     return { success: false, message };
@@ -177,10 +177,6 @@ export default async function DocumentEditPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/document/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
-
   // Parse search params using nuqs
   const paramsObj = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -230,6 +226,7 @@ export default async function DocumentEditPage({
       api.post("/document/drafts", {} as DocumentDraftsIn),
       api.post("/document/group", { body: {} } as GroupDocumentIn),
     ]);
+    const snapshot = buildSnapshot(session, context.profile);
 
     const entityName = context.page_metadata?.detail.title;
 

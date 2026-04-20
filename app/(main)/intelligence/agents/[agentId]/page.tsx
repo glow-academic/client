@@ -30,16 +30,8 @@ type UpdateAgentIn = InputOf<"/agent/update", "post">;
 type UpdateAgentOut = OutputOf<"/agent/update", "post">;
 type PatchAgentDraftIn = InputOf<"/agent/draft", "patch">;
 type PatchAgentDraftOut = OutputOf<"/agent/draft", "patch">;
-type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
-type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
-type CreateDraftPromptsIn = InputOf<"/api/v5/resources/prompts", "post">;
-type CreateDraftPromptsOut = OutputOf<"/api/v5/resources/prompts", "post">;
 type GroupAgentIn = InputOf<"/agent/group", "post">;
 type GroupAgentOut = OutputOf<"/agent/group", "post">;
-type GenerateAgentIn = InputOf<"/agent/generate", "post">;
-type GenerateAgentOut = OutputOf<"/agent/generate", "post">;
-type GenerationsIn = InputOf<"/agent/generations", "post">;
-type GenerationsOut = OutputOf<"/agent/generations", "post">;
 type ProblemAgentIn = InputOf<"/agent/problem", "post">;
 type ProblemAgentOut = OutputOf<"/agent/problem", "post">;
 type ContextIn = InputOf<"/agent/context", "post">;
@@ -71,36 +63,6 @@ async function patchAgentDraft(
   return api.patch("/agent/draft", input);
 }
 
-async function createDraftVoices(
-  input: CreateDraftVoicesIn
-): Promise<CreateDraftVoicesOut> {
-  "use server";
-  return api.post("/resources/voices", input);
-}
-
-async function createDraftPrompts(
-  input: CreateDraftPromptsIn
-): Promise<CreateDraftPromptsOut> {
-  "use server";
-  return api.post("/resources/prompts", input);
-}
-
-async function generateAgent(
-  input: GenerateAgentIn
-): Promise<GenerateAgentOut> {
-  "use server";
-  return api.post("/agent/generate", input);
-}
-
-async function getAgentGroupHistory(groupId: string): Promise<GroupAgentOut> {
-  "use server";
-  return api.post("/agent/group", { body: { group_id: groupId } } as GroupAgentIn);
-}
-
-async function searchAgentGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/agent/generations", { body: { search: query || null } } as GenerationsIn);
-}
 
 async function createAgentProblem(input: ProblemAgentIn): Promise<ProblemAgentOut> {
   "use server";
@@ -162,38 +124,66 @@ export default async function AgentEditPage({
   // Inline server-side parsers for agent search params
   const agentSearchParams = {
     draftId: parseAsString,
+    modelSearch: parseAsString,
+    toolSearch: parseAsString,
+    toolShowSelected: parseAsString,
+    modelShowSelected: parseAsString,
+    reasoningSearch: parseAsString,
+    voiceSearch: parseAsString,
+    descriptionSearch: parseAsString,
+    promptSearch: parseAsString,
+    instructionsSearch: parseAsString,
   };
   const loadAgentSearchParams = createLoader(agentSearchParams);
   const q = loadAgentSearchParams(searchParamsObj);
 
   try {
-    const input: GetAgentIn = {
+    const input = {
       body: {
-        agent_id: agentId,
+        id: agentId,
         draft_id: q.draftId ?? null,
+        descriptions: q.descriptionSearch ? { search: q.descriptionSearch } : undefined,
+        models:
+          q.modelSearch || q.modelShowSelected
+            ? {
+                search: q.modelSearch ?? undefined,
+                selected: q.modelShowSelected === "true" ? true : undefined,
+              }
+            : undefined,
+        prompts: q.promptSearch ? { search: q.promptSearch } : undefined,
+        instructions: q.instructionsSearch ? { search: q.instructionsSearch } : undefined,
+        tools:
+          q.toolSearch || q.toolShowSelected
+            ? {
+                search: q.toolSearch ?? undefined,
+                selected: q.toolShowSelected === "true" ? true : undefined,
+              }
+            : undefined,
+        reasoning_levels: q.reasoningSearch ? { search: q.reasoningSearch } : undefined,
+        voices: q.voiceSearch ? { search: q.voiceSearch } : undefined,
       } as GetAgentIn["body"],
-    };
+    } as unknown as GetAgentIn;
 
     const [agentDetail, context, draftsResult, groupResult] = await Promise.all([
       getAgent(input),
       api.post("/agent/context", { body: { entity_id: agentId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/agent/drafts", {}),
+      api.post("/agent/drafts", {} as any),
       api.post("/agent/group", { body: {} } as GroupAgentIn),
     ]);
 
     const snapshot = buildSnapshot(session, context.profile);
-    const entityName = context.page_metadata?.detail.title;
+    const entityName = context.page_metadata?.detail.title ?? "Agent";
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
         <FullPageLayout
           profileData={context.profile}
           sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
-          initialPanelOpen={initialPanelOpen}
+          {...(initialSidebarOpen !== undefined ? { initialSidebarOpen } : {})}
+          {...(initialPanelOpen !== undefined ? { initialPanelOpen } : {})}
           sidebarProps={{
             activeSection: "agent",
-            createFeedback: createAgentProblem,
+            createFeedback: createAgentProblem as any,
           }}
           breadcrumbs={[
             { title: "Intelligence", section: "intelligence", url: "/intelligence" },
@@ -201,15 +191,16 @@ export default async function AgentEditPage({
             { title: entityName },
           ]}
           toolbar={<SaveToolbar />}
-          panelProps={{
-            artifactType: "agent",
-            groupId: (groupResult as GroupAgentOut & { group_id?: string })?.group_id ?? null,
-            generateAction: generateAgent,
-            operations: ["draft", "get", "group"],
-            getGroupHistory: getAgentGroupHistory,
-            searchGroups: searchAgentGroups,
-            prompts: context.prompts?.prompts,
-          }}
+          panelProps={
+            {
+              artifactType: "agent",
+              groupId: (groupResult as GroupAgentOut & { group_id?: string })?.group_id ?? null,
+              operations: ["draft", "get", "group"],
+              ...(context.prompts?.prompts
+                ? { prompts: context.prompts.prompts }
+                : {}),
+            } as any
+          }
         >
           <div className="space-y-6 px-4" data-page="agent-edit" data-agent-id={agentId}>
             <Agent
@@ -218,8 +209,6 @@ export default async function AgentEditPage({
               createAgentAction={createAgent}
               updateAgentAction={updateAgent}
               patchAgentDraftAction={patchAgentDraft}
-              createVoicesAction={createDraftVoices}
-              createPromptsAction={createDraftPrompts}
             />
           </div>
         </FullPageLayout>

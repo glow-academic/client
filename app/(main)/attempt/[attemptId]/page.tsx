@@ -128,16 +128,14 @@ export default async function AttemptPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
-
   try {
+    // Profile data for providers + attempt data in parallel
     const [attemptData, context, groupResult] = await Promise.all([
       getAttemptDetail(attemptId),
       api.post("/attempt/context", { body: { entity_id: attemptId } } as ContextIn) as Promise<ContextOut>,
       api.post("/attempt/group", { body: {} } as GroupAttemptIn),
     ]);
+    const snapshot = buildSnapshot(session, context.profile);
 
     if (attemptData.access_denied) {
       return (
@@ -170,16 +168,18 @@ export default async function AttemptPage({
               attemptId={attemptId}
               currentChatId={attemptData.current_chat_id}
               hasMessages={attemptData.has_messages ?? false}
+              isQuizMode={Boolean(
+                attemptData.chats?.find(
+                  (c) => c.id === attemptData.current_chat_id,
+                )?.question_ids?.length,
+              )}
             />
           ) : undefined
         }
         panelProps={{
           artifactType: "attempt",
           groupId: (groupResult as GroupAttemptOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateAttempt,
           operations: ["draft", "get", "group"],
-          getGroupHistory: getAttemptGroupHistory,
-          searchGroups: searchAttemptGroups,
           prompts: context.prompts?.prompts,
         }}
       >
@@ -203,9 +203,8 @@ export default async function AttemptPage({
     ) {
       return (
         <UnifiedAccessDenied
-          reason="department"
-          resourceType="scenario"
-          redirectPath="/home"
+          reason="not-logged-in"
+          pathname={`/attempt/${attemptId}`}
         />
       );
     }

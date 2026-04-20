@@ -12,6 +12,7 @@ import SimulationHistory from "@/components/common/SimulationHistory";
 import Practice from "@/components/artifacts/practice/Practice";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { buildSnapshot } from "@/lib/auth";
+import { guardPage } from "@/lib/permissions";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -24,16 +25,12 @@ import { loadPracticeSearchParams } from "@/lib/search-params/practice";
 type PracticeIn = InputOf<"/attempt/practice/get", "post">;
 type PracticeOut = OutputOf<"/attempt/practice/get", "post">;
 type PracticeHistoryOut = NonNullable<PracticeOut["history"]>;
-type GeneratePracticeIn = InputOf<"/attempt/practice/generate", "post">;
-type GeneratePracticeOut = OutputOf<"/attempt/practice/generate", "post">;
-type GenerationsIn = InputOf<"/attempt/practice/generations", "post">;
-type GenerationsOut = OutputOf<"/attempt/practice/generations", "post">;
-type GroupPracticeIn = InputOf<"/attempt/practice/group", "post">;
-type GroupPracticeOut = OutputOf<"/attempt/practice/group", "post">;
-type ProblemPracticeIn = InputOf<"/attempt/practice/problem", "post">;
-type ProblemPracticeOut = OutputOf<"/attempt/practice/problem", "post">;
-type ContextIn = InputOf<"/attempt/practice/context", "post">;
-type ContextOut = OutputOf<"/attempt/practice/context", "post">;
+type ContextIn = InputOf<"/attempt/context", "post">;
+type ContextOut = OutputOf<"/attempt/context", "post">;
+type GroupIn = InputOf<"/attempt/group", "post">;
+type GroupOut = OutputOf<"/attempt/group", "post">;
+type ProblemIn = InputOf<"/attempt/problem", "post">;
+type ProblemOut = OutputOf<"/attempt/problem", "post">;
 
 /** ---- Direct fetch for practice data (cards + embedded history) ---- */
 const getPracticeData = async (input: PracticeIn): Promise<PracticeOut> => {
@@ -55,34 +52,17 @@ async function refreshChat(): Promise<void> {
   await api.post("/chat/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
-async function generatePractice(
-  input: GeneratePracticeIn
-): Promise<GeneratePracticeOut> {
+async function createPracticeProblem(input: ProblemIn): Promise<ProblemOut> {
   "use server";
-  return api.post("/attempt/practice/generate", input);
-}
-
-async function getPracticeGroupHistory(groupId: string): Promise<GroupPracticeOut> {
-  "use server";
-  return api.post("/attempt/practice/group", { body: { group_id: groupId } } as GroupPracticeIn);
-}
-
-async function searchPracticeGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/attempt/practice/generations", { body: { search: query || null } } as GenerationsIn);
-}
-
-async function createPracticeProblem(input: ProblemPracticeIn): Promise<ProblemPracticeOut> {
-  "use server";
-  return api.post("/attempt/practice/problem", input);
+  return api.post("/attempt/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/attempt/practice/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
     return {
-      title: context.page_metadata?.list.title,
+      title: "Practice",
       description: context.page_metadata?.list.description,
     };
   } catch {
@@ -112,8 +92,9 @@ export default async function PracticePage({
 
   try {
   // Profile data for providers
-  const context = await api.post("/attempt/practice/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
+  guardPage("/practice", context.profile.role_permissions);
 
   // Parse search params via nuqs loader
   const q = loadPracticeSearchParams(await searchParams);
@@ -128,25 +109,27 @@ export default async function PracticePage({
   const historySortBy = q.historySortBy ?? "date";
   const historySortOrder = q.historySortOrder ?? "desc";
 
-  // Single fetch: cards + embedded history + group in parallel
-  const [practiceData, groupResult] = await Promise.all([
-    getPracticeData({
+  // Parallel fetch: cards + history search + group
+  type SearchIn = InputOf<"/attempt/practice/search", "post">;
+  type SearchOut = OutputOf<"/attempt/practice/search", "post">;
+  const [practiceData, historyResult, groupResult] = await Promise.all([
+    getPracticeData({ body: {} }),
+    api.post("/attempt/practice/search", {
       body: {
-        history_page: historyPage,
-        history_page_size: historyPageSize,
-        history_sort_by: historySortBy,
-        history_sort_order: historySortOrder,
-        ...(historySearch && { history_simulation_search: historySearch }),
+        page: historyPage,
+        page_size: historyPageSize,
+        sort_by: historySortBy,
+        sort_order: historySortOrder,
         ...(historyScenarioIds &&
           historyScenarioIds.length > 0 && {
-            history_scenario_ids: historyScenarioIds,
+            scenario_ids: historyScenarioIds,
           }),
         ...(historyInfiniteMode !== undefined && {
-          history_infinite_mode: historyInfiniteMode,
+          infinite_mode: historyInfiniteMode,
         }),
       },
-    }),
-    api.post("/attempt/practice/group", { body: {} } as GroupPracticeIn),
+    } as SearchIn) as SearchOut,
+    api.post("/attempt/group", { body: {} } as GroupIn),
   ]);
 
   // Check if user is a guest (no items means no access / guest)
@@ -180,8 +163,8 @@ export default async function PracticePage({
     roles: q.roles ?? [],
   };
 
-  // Extract history from embedded response
-  const historyData: PracticeHistoryOut = practiceData.history || {
+  // History from separate search endpoint
+  const historyData = historyResult || {
     data: [],
     total_count: 0,
     page: 0,
@@ -242,12 +225,9 @@ export default async function PracticePage({
         />
       }
       panelProps={{
-        artifactType: "practice",
-        groupId: (groupResult as GroupPracticeOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generatePractice,
+        artifactType: "attempt",
+        groupId: (groupResult as GroupOut & { group_id?: string })?.group_id ?? null,
         operations: ["draft", "get", "group"],
-        getGroupHistory: getPracticeGroupHistory,
-        searchGroups: searchPracticeGroups,
         prompts: context.prompts?.prompts,
       }}
     >

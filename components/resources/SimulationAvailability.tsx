@@ -19,19 +19,6 @@ import { cn } from "@/lib/utils";
 import { Calendar, Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftSimulationAvailabilityIn = {
-  body: {
-    simulation_id: string;
-    availability_time: string;
-    type: string;
-    mcp: boolean;
-    tool_id?: string;
-  };
-};
-type CreateDraftSimulationAvailabilityOut = {
-  id?: string | null;
-};
-
 export interface SimulationAvailabilityResourceItem {
   id?: string | null;
   simulation_id?: string | null;
@@ -64,21 +51,9 @@ export interface SimulationAvailabilityProps {
   id?: string;
   required?: boolean;
   description?: string;
-  group_id?: string | null;
-  create_tool_id?: string | null;
-  createSimulationAvailabilityAction?:
-    | ((
-        input: CreateDraftSimulationAvailabilityIn,
-      ) => Promise<CreateDraftSimulationAvailabilityOut>)
-    | undefined;
   onAvailabilityIdsChange?: (ids: string[]) => void;
   /** Callback to emit availability values for unified draft */
   onSimulationAvailabilityValues?: (values: Array<{ simulation_id: string; time: string; type: string }>) => void;
-  onGenerate?: () => void | Promise<void>;
-  isAutosaveEnabled?: boolean;
-  registerFlush?: (
-    flush: () => Promise<{ simulation_availability_ids: string[] } | void>,
-  ) => void;
 }
 
 export function SimulationAvailability({
@@ -92,14 +67,8 @@ export function SimulationAvailability({
   id = "simulation_availability",
   required = false,
   description,
-  group_id,
-  create_tool_id,
-  createSimulationAvailabilityAction,
   onAvailabilityIdsChange,
   onSimulationAvailabilityValues,
-  onGenerate: _onGenerate,
-  isAutosaveEnabled = true,
-  registerFlush,
 }: SimulationAvailabilityProps) {
   const show = show_simulation_availability ?? false;
   const availabilityResources = useMemo(
@@ -152,14 +121,15 @@ export function SimulationAvailability({
   const [availabilityIds, setAvailabilityIds] = useState<Map<string, string>>(
     new Map(),
   );
-  const createdKeysRef = useRef<Set<string>>(new Set());
+  // Dirty flag: once the user interacts, stop syncing from server data and
+  // stop emitting on pure re-renders (same pattern as Examples.tsx).
+  const isDirtyRef = useRef(false);
+  const isInitialMountRef = useRef(true);
 
-  const flushRef = useRef<
-    (() => Promise<{ simulation_availability_ids: string[] } | void>) | null
-  >(null);
-
-  // Initialize state from resources
+  // Initialize state from resources — skip while the user is editing so
+  // in-progress times aren't clobbered.
   useEffect(() => {
+    if (isDirtyRef.current) return;
     const nextAvailability = new Map<
       string,
       { start?: string; end?: string }
@@ -208,11 +178,21 @@ export function SimulationAvailability({
     });
   }, [simulation_ids, availabilityResources]);
 
-  // Sync IDs to parent
+  // Sync IDs to parent. Only emit after user has interacted — otherwise a
+  // server-driven availabilityIds change would trigger a save.
   const onAvailabilityIdsChangeRef = useRef(onAvailabilityIdsChange);
   onAvailabilityIdsChangeRef.current = onAvailabilityIdsChange;
   const prevIdsRef = useRef<string[]>([]);
   useEffect(() => {
+    if (isInitialMountRef.current) {
+      // First mount: set baseline but don't emit. Consume the flag so this
+      // effect won't keep short-circuiting on subsequent availabilityIds
+      // updates.
+      isInitialMountRef.current = false;
+      prevIdsRef.current = Array.from(availabilityIds.values());
+      return;
+    }
+    if (!isDirtyRef.current) return;
     if (!onAvailabilityIdsChangeRef.current) return;
     const ids = Array.from(availabilityIds.values());
     const idsKey = ids.join(",");
@@ -223,10 +203,13 @@ export function SimulationAvailability({
     }
   }, [availabilityIds]);
 
-  // Emit availability values for unified draft
+  // Emit availability values for unified draft — same dirty/initial guards.
   const onSimulationAvailabilityValuesRef = useRef(onSimulationAvailabilityValues);
   onSimulationAvailabilityValuesRef.current = onSimulationAvailabilityValues;
   useEffect(() => {
+    // isInitialMountRef is consumed by the availabilityIds effect above; this
+    // emit still needs a dirty guard so server-driven changes don't emit.
+    if (!isDirtyRef.current) return;
     if (!onSimulationAvailabilityValuesRef.current) return;
     const values: Array<{ simulation_id: string; time: string; type: string }> = [];
     availabilityBySimulation.forEach((availability, simulationId) => {
@@ -240,65 +223,9 @@ export function SimulationAvailability({
     onSimulationAvailabilityValuesRef.current(values);
   }, [availabilityBySimulation]);
 
-  // Flush function for manual save mode
-  flushRef.current = async (): Promise<{
-    simulation_availability_ids: string[];
-  } | void> => {
-    const ids = Array.from(availabilityIds.values());
-    return { simulation_availability_ids: ids };
-  };
-
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
-  const createAvailability = useCallback(
-    async (simulationId: string, time: string, type: "start" | "end") => {
-      if (
-        !isAutosaveEnabled ||
-        !createSimulationAvailabilityAction ||
-        !group_id
-      ) {
-        return;
-      }
-      const key = `${simulationId}:${type}:${time}`;
-      if (createdKeysRef.current.has(key)) return;
-      createdKeysRef.current.add(key);
-
-      try {
-        const result = await createSimulationAvailabilityAction({
-          body: {
-            simulation_id: simulationId,
-            availability_time: new Date(time).toISOString(),
-            type: type,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-
-        if (!result?.id) return;
-
-        setAvailabilityIds((prev) => {
-          const next = new Map(prev);
-          next.set(`${simulationId}:${type}`, result.id as string);
-          return next;
-        });
-      } catch {
-        // Resource creation errors handled by API
-      }
-    },
-    [
-      isAutosaveEnabled,
-      createSimulationAvailabilityAction,
-      create_tool_id,
-      group_id,
-    ],
-  );
-
   const handleTimeChange = useCallback(
     (simulationId: string, type: "start" | "end", value: string) => {
+      isDirtyRef.current = true;
       setAvailabilityBySimulation((prev) => {
         const next = new Map(prev);
         const existing = next.get(simulationId) ?? {};
@@ -310,12 +237,8 @@ export function SimulationAvailability({
         next.set(simulationId, { ...existing });
         return next;
       });
-
-      if (value) {
-        void createAvailability(simulationId, value, type);
-      }
     },
-    [createAvailability],
+    [],
   );
 
   // Accept pending — pending items are already in the resources, just confirm (no-op)

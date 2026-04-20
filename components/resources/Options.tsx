@@ -2,7 +2,7 @@
  * Options.tsx
  * Dependent child resource component for answer options
  * Groups options by question_id, with inline editing (text + correct toggle)
- * Creates option resources with question_id linkage via createOptionsAction
+ * Pure UI: data in, IDs out via onChange. Parent owns creation.
  */
 
 "use client";
@@ -17,7 +17,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   Check,
   GripVertical,
@@ -29,9 +28,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { QuestionsResourceItem } from "./Questions";
 
-type CreateDraftOptionsIn = InputOf<"/api/v5/resources/options", "post">;
-type CreateDraftOptionsOut = OutputOf<"/api/v5/resources/options", "post">;
-
 export interface OptionResourceItem {
   option_id?: string | null;
   option_text?: string | null;
@@ -40,8 +36,6 @@ export interface OptionResourceItem {
   pending?: boolean | null;
   question_id?: string | null;
 }
-
-type FlushResult = { option_ids: string[] } | void;
 
 // Internal option type for editing
 type InternalOption = {
@@ -55,7 +49,6 @@ export interface OptionsProps {
   option_ids?: string[];
   option_resources?: OptionResourceItem[];
   show_options?: boolean;
-  option_suggestions?: string[];
   options?: OptionResourceItem[];
   question_ids?: string[];
   question_resources?: QuestionsResourceItem[];
@@ -63,10 +56,6 @@ export interface OptionsProps {
   internalQuestions?: { id: string; question_text: string }[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
-  create_tool_id?: string | null;
-  createOptionsAction?:
-    | ((input: CreateDraftOptionsIn) => Promise<CreateDraftOptionsOut>)
-    | undefined;
   /** Report value changes upward (unified draft pattern -- parent owns creation) */
   onOptionsChange?: (
     options: Array<{
@@ -75,8 +64,6 @@ export interface OptionsProps {
       question_id: string;
     }>
   ) => void;
-  isAutosaveEnabled?: boolean;
-  registerFlush?: (flush: () => Promise<FlushResult>) => void;
 }
 
 export function Options({
@@ -89,11 +76,7 @@ export function Options({
   internalQuestions: internalQuestionsProp,
   disabled = false,
   onChange,
-  create_tool_id,
-  createOptionsAction,
   onOptionsChange,
-  isAutosaveEnabled = true,
-  registerFlush,
 }: OptionsProps) {
   const ids = useMemo(() => option_ids ?? [], [option_ids]);
   const show = show_options ?? false;
@@ -152,19 +135,17 @@ export function Options({
 
   // Internal state for inline editing
   const [internalOptions, setInternalOptions] = useState<InternalOption[]>([]);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedRef = useRef<InternalOption[]>([]);
-  const isInitialMountRef = useRef(true);
-  const optionIdMapRef = useRef<Map<string, string>>(new Map());
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
   const onOptionsChangeRef = useRef(onOptionsChange);
   onOptionsChangeRef.current = onOptionsChange;
-  const lastReportedIdsRef = useRef<string[]>(ids);
-  const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
+  // Dirty flag: once the user interacts, stop syncing from server data and
+  // stop emitting on pure re-renders (same pattern as Examples.tsx).
+  const isDirtyRef = useRef(false);
+  const isInitialMountRef = useRef(true);
 
-  // Sync from external IDs
+  // Sync from external IDs — skip while the user is editing so their input
+  // isn't clobbered.
   useEffect(() => {
+    if (isDirtyRef.current) return;
     if (ids.length > 0 && Object.keys(optionMapping).length > 0) {
       const newOptions: InternalOption[] = ids
         .map((id) => {
@@ -184,16 +165,6 @@ export function Options({
         if (prevStr === newStr) return prev;
         return newOptions;
       });
-      ids.forEach((id) => {
-        const mapped = optionMapping[id];
-        if (mapped) {
-          optionIdMapRef.current.set(
-            `${mapped.option_text}|${mapped.is_correct}|${mapped.question_id}`,
-            id
-          );
-        }
-      });
-      lastReportedIdsRef.current = ids;
     }
   }, [ids, optionMapping]);
 
@@ -220,8 +191,15 @@ export function Options({
     });
   }, [internalQuestions]);
 
-  // Report value changes upward (unified draft pattern)
+  // Report value changes upward. Only emit after the user has actually
+  // interacted — otherwise we'd emit on the initial sync effect's state set
+  // and every server-triggered re-render, producing spurious saves.
   useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    if (!isDirtyRef.current) return;
     onOptionsChangeRef.current?.(
       internalOptions
         .filter((o) => o.option_text.trim())
@@ -232,119 +210,6 @@ export function Options({
         }))
     );
   }, [internalOptions]);
-
-  // Debounced resource creation
-  useEffect(() => {
-    if (!isAutosaveEnabled) return;
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      lastSavedRef.current = internalOptions;
-      return;
-    }
-
-    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-
-    const hasToCreate = internalOptions.some(
-      (o) =>
-        o.option_text.trim() &&
-        !optionIdMapRef.current.has(
-          `${o.option_text}|${o.is_correct}|${o.question_id}`
-        )
-    );
-
-    if (!hasToCreate) {
-      const allIds = internalOptions
-        .filter((o) => o.option_text.trim())
-        .map((o) =>
-          optionIdMapRef.current.get(
-            `${o.option_text}|${o.is_correct}|${o.question_id}`
-          )
-        )
-        .filter((id): id is string => id !== undefined);
-      if (
-        JSON.stringify(lastReportedIdsRef.current) !== JSON.stringify(allIds)
-      ) {
-        lastReportedIdsRef.current = allIds;
-        onChangeRef.current(allIds);
-      }
-      return;
-    }
-
-    debounceTimerRef.current = setTimeout(() => {
-      flushRef.current?.();
-    }, 1000);
-
-    lastSavedRef.current = internalOptions;
-
-    return () => {
-      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [internalOptions, createOptionsAction, isAutosaveEnabled]);
-
-  // Flush function
-  flushRef.current = async (): Promise<FlushResult> => {
-    if (!createOptionsAction || !create_tool_id) return;
-
-    // Only flush options whose parent question has a real server ID (not pending-*)
-    const toCreate = internalOptions.filter(
-      (o) =>
-        o.option_text.trim() &&
-        !o.question_id.startsWith("pending-") &&
-        !optionIdMapRef.current.has(
-          `${o.option_text}|${o.is_correct}|${o.question_id}`
-        )
-    );
-
-    for (const option of toCreate) {
-      try {
-        const result = await createOptionsAction({
-          body: {
-            option_text: option.option_text,
-            is_correct: option.is_correct,
-            question_id: option.question_id || undefined,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        if (result.option_id) {
-          optionIdMapRef.current.set(
-            `${option.option_text}|${option.is_correct}|${option.question_id}`,
-            result.option_id
-          );
-        }
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(
-          `Failed to create option: "${option.option_text}"`,
-          error
-        );
-        throw error;
-      }
-    }
-
-    const allIds = internalOptions
-      .filter((o) => o.option_text.trim())
-      .map((o) =>
-        optionIdMapRef.current.get(
-          `${o.option_text}|${o.is_correct}|${o.question_id}`
-        )
-      )
-      .filter((id): id is string => id !== undefined);
-
-    lastReportedIdsRef.current = allIds;
-    onChangeRef.current(allIds);
-    lastSavedRef.current = internalOptions;
-
-    return { option_ids: allIds };
-  };
-
-  // Register flush callback
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Drag state
   const [draggedIndex, setDraggedIndex] = useState<{
@@ -371,6 +236,7 @@ export function Options({
         toast.error("Maximum 5 options per question");
         return;
       }
+      isDirtyRef.current = true;
       setInternalOptions((prev) => [
         ...prev,
         {
@@ -386,6 +252,7 @@ export function Options({
 
   const handleRemoveOption = useCallback(
     (questionId: string, optionIndex: number) => {
+      isDirtyRef.current = true;
       setInternalOptions((prev) => {
         let count = 0;
         return prev.filter((o) => {
@@ -403,6 +270,7 @@ export function Options({
 
   const handleOptionTextChange = useCallback(
     (questionId: string, optionIndex: number, text: string) => {
+      isDirtyRef.current = true;
       setInternalOptions((prev) => {
         let count = 0;
         return prev.map((o) => {
@@ -422,6 +290,7 @@ export function Options({
 
   const handleToggleCorrect = useCallback(
     (questionId: string, optionIndex: number) => {
+      isDirtyRef.current = true;
       setInternalOptions((prev) => {
         let count = 0;
         return prev.map((o) => {
@@ -463,6 +332,7 @@ export function Options({
         setDraggedIndex(null);
         return;
       }
+      isDirtyRef.current = true;
       setInternalOptions((prev) => {
         const questionOpts = prev.filter(
           (o) => o.question_id === questionId
@@ -614,7 +484,7 @@ export function Options({
                     handleOptionTextChange(qId, optIdx, e.target.value)
                   }
                   placeholder={`Option ${optIdx + 1}`}
-                  className={cn("flex-1 min-w-0", showDiff && option.option_id && pendingIds.has(option.option_id) && "ring-2 ring-success bg-success/5")}
+                  className={cn("flex-1 min-w-0", showDiff && option.id && pendingIds.has(option.id) && "ring-2 ring-success bg-success/5")}
                   disabled={disabled}
                   onDragStart={(e) => e.preventDefault()}
                 />

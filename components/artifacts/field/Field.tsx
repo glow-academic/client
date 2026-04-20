@@ -212,34 +212,45 @@ function FieldComponent({
 
       const formStateFromServer = result?.form_state;
       if (formStateFromServer) {
-        setFormState((prev) => ({
-          ...prev,
-          name_id: formStateFromServer.name_id ?? prev.name_id,
-          name:
-            formStateFromServer.name !== undefined
-              ? formStateFromServer.name
-              : formStateFromServer.name_id
-                ? null
-                : prev.name,
-          description_id:
-            formStateFromServer.description_id ?? prev.description_id,
-          description:
-            formStateFromServer.description !== undefined
-              ? formStateFromServer.description
-              : formStateFromServer.description_id
-                ? null
-                : prev.description,
-          active_flag_id:
-            formStateFromServer.active_flag_id ??
-            formStateFromServer.flag_id ??
-            prev.active_flag_id,
-          department_ids:
-            formStateFromServer.department_ids ?? prev.department_ids,
-          conditional_parameter_ids:
-            formStateFromServer.conditional_parameter_ids ??
-            prev.conditional_parameter_ids,
-          pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
-        }));
+        setFormState((prev) => {
+          const next = {
+            ...prev,
+            name_id: formStateFromServer.name_id ?? prev.name_id,
+            // Clear value fields only once the server has resolved them to
+            // IDs — keeping the value would cause infinite re-saves (value
+            // takes precedence → new resource → new id → repeat).
+            name: formStateFromServer.name_id ? null : prev.name,
+            description_id:
+              formStateFromServer.description_id ?? prev.description_id,
+            description: formStateFromServer.description_id
+              ? null
+              : prev.description,
+            active_flag_id:
+              formStateFromServer.active_flag_id ??
+              formStateFromServer.flag_id ??
+              prev.active_flag_id,
+            department_ids:
+              formStateFromServer.department_ids ?? prev.department_ids,
+            conditional_parameter_ids:
+              formStateFromServer.conditional_parameter_ids ??
+              prev.conditional_parameter_ids,
+            pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
+          };
+          // Only set the server-sync absorb flag when state actually changes.
+          // (Same fix as Persona / Parameter / Profile.)
+          const changed =
+            prev.name_id !== next.name_id ||
+            prev.name !== next.name ||
+            prev.description_id !== next.description_id ||
+            prev.description !== next.description ||
+            prev.active_flag_id !== next.active_flag_id ||
+            JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
+            JSON.stringify(prev.conditional_parameter_ids) !== JSON.stringify(next.conditional_parameter_ids) ||
+            JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
+          if (!changed) return prev;
+          serverSyncPendingRef.current = true;
+          return next;
+        });
       }
 
       return result;
@@ -287,10 +298,36 @@ function FieldComponent({
     formState as unknown as Record<string, unknown>,
   );
 
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((nameId: string | null) => {
+    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }));
+  }, []);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({ ...prev, name, name_id: null }));
+  }, []);
+
+  const handleDescriptionIdChange = useCallback((descriptionId: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      description_id: descriptionId,
+      description: null,
+    }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      description,
+      description_id: null,
+    }));
+  }, []);
+
   const {
     setUrlFormDataRef,
     onFormDataChange,
     flushAllAndSave,
+    serverSyncPendingRef,
     formDataRef,
   } = useDraftLifecycle({
     formStateKey,
@@ -628,12 +665,8 @@ function FieldComponent({
                   show_name={true}
                   names={fieldData?.names ?? []}
                   disabled={disabled}
-                  onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
-                  }
-                  onNameChange={(name) =>
-                    setFormState((prev) => ({ ...prev, name, name_id: null }))
-                  }
+                  onNameIdChange={handleNameIdChange}
+                  onNameChange={handleNameChange}
                   placeholder="e.g., Learning Style"
                   defaultName="New Field"
                   required={true}
@@ -666,20 +699,8 @@ function FieldComponent({
                   show_description={true}
                   descriptions={fieldData?.descriptions ?? []}
                   disabled={disabled}
-                  onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description_id: descriptionId,
-                      description: null,
-                    }))
-                  }
-                  onDescriptionChange={(description) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description,
-                      description_id: null,
-                    }))
-                  }
+                  onDescriptionIdChange={handleDescriptionIdChange}
+                  onDescriptionChange={handleDescriptionChange}
                   label="Description"
                   placeholder="Enter a brief description (optional)"
                   required={false}
@@ -782,8 +803,6 @@ function FieldComponent({
                     conditional_parameter_ids: ids,
                   }))
                 }
-                showAiGenerate={fieldData?.show_ai_generate ?? false}
-                onGenerate={() => handleGenerateResources(["conditional_parameters"])}
               />
             </StepCard>
           );

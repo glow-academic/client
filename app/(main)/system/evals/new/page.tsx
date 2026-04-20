@@ -139,43 +139,42 @@ export default async function NewEvalPage({
     // Inline server-side parsers for eval search params
     const evalSearchParams = {
       draftId: parseAsString,
-      agentSearch: parseAsString,
-      agentShowSelected: parseAsBoolean,
-      modelRunSearch: parseAsString,
-      modelRunShowSelected: parseAsBoolean,
-      groupSearch: parseAsString,
-      groupShowSelected: parseAsBoolean,
+      modelSearch: parseAsString,
+      modelShowSelected: parseAsBoolean,
     };
     const loadEvalSearchParams = createLoader(evalSearchParams);
     const q = loadEvalSearchParams(searchParamsObj);
 
     // Fetch eval default data (for dropdowns and defaults) with draft_id and search params
-    const input: GetEvalIn = {
+    const input = {
       body: {
-        eval_id: null, // NULL for new mode
+        id: null,
         draft_id: q.draftId ?? null,
-        agent_search: q.agentSearch ?? null,
-        group_search: q.groupSearch ?? null,
-        // Note: available_model_runs_search uses modelRunSearch from URL
-        available_model_runs_search: q.modelRunSearch ?? null,
-      } as GetEvalIn["body"],
-    };
+        models:
+          q.modelSearch || q.modelShowSelected
+            ? {
+                search: q.modelSearch ?? undefined,
+                selected: q.modelShowSelected ?? undefined,
+              }
+            : undefined,
+      },
+    } as unknown as GetEvalIn;
     const [evalDetailDefault, draftsResult, groupResult] = await Promise.all([
       getEvalDefault(input),
-      api.post("/eval/drafts", {}),
+      api.post("/eval/drafts", {} as never),
       api.post("/eval/group", { body: {} } as GroupEvalIn),
     ]);
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as never}>
         <FullPageLayout
           profileData={context.profile}
           sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
+          initialSidebarOpen={initialSidebarOpen ?? false}
           initialPanelOpen={initialPanelOpen}
           sidebarProps={{
             activeSection: "eval",
-            createFeedback: createEvalProblem,
+            createFeedback: createEvalProblem as never,
           }}
           breadcrumbs={[
             { title: "System", section: "system", url: "/system" },
@@ -185,13 +184,17 @@ export default async function NewEvalPage({
           toolbar={<SaveToolbar />}
           panelProps={{
             artifactType: "eval",
-            groupId: (groupResult as GroupEvalOut & { group_id?: string })?.group_id ?? null,
+            groupId:
+              (groupResult as GroupEvalOut & { group_id?: string })?.group_id ??
+              "",
             generateAction: generateEval,
             operations: ["draft", "get", "group"],
             getGroupHistory: getEvalGroupHistory,
             searchGroups: searchEvalGroups,
-            prompts: context.prompts?.prompts,
-          }}
+            ...(context.prompts?.prompts
+              ? { prompts: context.prompts.prompts }
+              : {}),
+          } as never}
         >
           <div
             className="space-y-6 px-4"

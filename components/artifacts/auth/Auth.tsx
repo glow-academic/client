@@ -28,12 +28,6 @@ import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import {
-  buildDraftPayload,
-  checkHasResourceIds,
-  computeEffectiveFormState,
-  type ResourceConfig,
-} from "@/lib/resources/action-builders";
 import { parseAsString, type Parser } from "nuqs";
 
 type CreateAuthIn = InputOf<"/auth/create", "post">;
@@ -42,24 +36,9 @@ type UpdateAuthIn = InputOf<"/auth/update", "post">;
 type UpdateAuthOut = OutputOf<"/auth/update", "post">;
 type PatchAuthDraftIn = InputOf<"/auth/draft", "patch">;
 type PatchAuthDraftOut = OutputOf<"/auth/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftProtocolsIn = InputOf<"/api/v5/resources/protocols", "post">;
-type CreateDraftProtocolsOut = OutputOf<
-  "/api/v5/resources/protocols",
-  "post"
->;
-type CreateDraftSlugsIn = InputOf<"/api/v5/resources/slugs", "post">;
-type CreateDraftSlugsOut = OutputOf<"/api/v5/resources/slugs", "post">;
 type AuthData = OutputOf<"/auth/get", "post">;
+
+type CanonicalAuthData = AuthData;
 
 type AuthFormState = {
   name: string | null;
@@ -67,9 +46,11 @@ type AuthFormState = {
   description: string | null;
   description_id: string | null;
   active_flag_id: string | null;
+  department_ids: string[];
   protocol_ids: string[];
   slug_ids: string[];
   item_ids: string[];
+  pending_ids: string[];
   items: Array<{
     name: string;
     description: string;
@@ -81,10 +62,7 @@ type AuthFormState = {
 };
 
 type FlushResult = {
-  name_id?: string | null;
-  description_id?: string | null;
-  protocol_ids?: string[];
-  slug_ids?: string[];
+  draft_id?: string | null;
 };
 
 type AuthResourceType =
@@ -95,7 +73,7 @@ type AuthResourceType =
   | "slugs"
   | "items";
 
-const FLUSH_KEYS = ["names", "descriptions", "protocols", "slugs"] as const;
+const FLUSH_KEYS = [] as const;
 
 const VALID_RESOURCE_TYPES: AuthResourceType[] = [
   "names",
@@ -106,43 +84,12 @@ const VALID_RESOURCE_TYPES: AuthResourceType[] = [
   "items",
 ];
 
-const AUTH_RESOURCES: ResourceConfig[] = [
-  { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
-  {
-    key: "descriptions",
-    formKey: "description_id",
-    flushKey: "description_id",
-    type: "single",
-  },
-  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
-  {
-    key: "protocols",
-    formKey: "protocol_ids",
-    flushKey: "protocol_ids",
-    type: "multi",
-  },
-  { key: "slugs", formKey: "slug_ids", flushKey: "slug_ids", type: "multi" },
-  { key: "items", formKey: "item_ids", flushKey: null, type: "multi" },
-];
-
 export interface AuthProps {
   authId?: string;
   authData?: AuthData;
   createAuthAction?: (input: CreateAuthIn) => Promise<CreateAuthOut>;
   updateAuthAction?: (input: UpdateAuthIn) => Promise<UpdateAuthOut>;
   patchAuthDraftAction?: (input: PatchAuthDraftIn) => Promise<PatchAuthDraftOut>;
-  createNamesAction?: (
-    input: CreateDraftNamesIn,
-  ) => Promise<CreateDraftNamesOut>;
-  createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn,
-  ) => Promise<CreateDraftDescriptionsOut>;
-  createProtocolsAction?: (
-    input: CreateDraftProtocolsIn,
-  ) => Promise<CreateDraftProtocolsOut>;
-  createSlugsAction?: (
-    input: CreateDraftSlugsIn,
-  ) => Promise<CreateDraftSlugsOut>;
 }
 
 function AuthComponent({
@@ -151,14 +98,10 @@ function AuthComponent({
   createAuthAction,
   updateAuthAction,
   patchAuthDraftAction,
-  createNamesAction,
-  createDescriptionsAction,
-  createProtocolsAction,
-  createSlugsAction,
 }: AuthProps) {
   const router = useRouter();
   const isEditMode = !!authId;
-  const s = authData;
+  const s = authData as CanonicalAuthData | undefined;
 
   const [formState, setFormState] = useState<AuthFormState>({
     name: null,
@@ -166,16 +109,17 @@ function AuthComponent({
     description: null,
     description_id: null,
     active_flag_id: null,
+    department_ids: [],
     protocol_ids: [],
     slug_ids: [],
     item_ids: [],
+    pending_ids: [],
     items: [],
   });
 
   const { profile } = useProfile();
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
-  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
-    useFlushRegistry<FlushResult>(FLUSH_KEYS);
+  const { flushRegistryRef, flushAllResources } = useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "auth",
@@ -190,34 +134,52 @@ function AuthComponent({
         description: null,
         description_id: null,
         active_flag_id: null,
+        department_ids: [],
         protocol_ids: [],
         slug_ids: [],
         item_ids: [],
+        pending_ids: [],
         items: [],
       };
     }
 
+    const selectedName = s.names?.find((item) => item.selected) ?? null;
+    const selectedDescription = s.descriptions?.find((item) => item.selected) ?? null;
+    const selectedFlag = s.flags?.find((item) => item.selected) ?? null;
+    const selectedProtocols = (s.protocols?.filter((item) => item.selected) ?? [])
+      .map((item) => item.id)
+      .filter((item): item is string => !!item);
+    const selectedSlugs = (s.slugs?.filter((item) => item.selected) ?? [])
+      .map((item) => item.id)
+      .filter((item): item is string => !!item);
+    const selectedItems = (s.items?.filter((item) => item.selected) ?? [])
+      .map((item) => item.id)
+      .filter((item): item is string => !!item);
+    const selectedDepartments = (s.departments?.filter((item) => item.selected) ?? [])
+      .map((item) => item.department_id)
+      .filter((item): item is string => !!item);
+    const selectedItemResources = s.items?.filter((item) => item.selected) ?? [];
+
     return {
-      name: null,
-      name_id: s.names?.resource?.id ?? null,
-      description: null,
-      description_id: s.descriptions?.resource?.id ?? null,
-      active_flag_id: s.flags?.current?.[0]?.flag_option_id ?? null,
-      protocol_ids:
-        s.protocols?.current?.map((x) => x.id).filter((x): x is string => !!x) ??
-        [],
-      slug_ids: s.slugs?.current?.map((x) => x.id).filter((x): x is string => !!x) ?? [],
-      item_ids:
-        s.items?.current?.map((x) => x.auth_item_id).filter((x): x is string => !!x) ?? [],
+      name: selectedName?.name ?? null,
+      name_id: selectedName?.id ?? null,
+      description: selectedDescription?.description ?? null,
+      description_id: selectedDescription?.id ?? null,
+      active_flag_id: selectedFlag?.flag_option_id ?? null,
+      department_ids: selectedDepartments,
+      protocol_ids: selectedProtocols,
+      slug_ids: selectedSlugs,
+      item_ids: selectedItems,
+      pending_ids: (s.pending_ids ?? []).filter((item): item is string => !!item),
       items:
-        s.items?.current?.map((item, index) => ({
+        selectedItemResources.map((item, index) => ({
           name: item.name ?? "",
           description: item.description ?? "",
           encrypted: item.encrypted ?? true,
           position: item.position ?? index + 1,
-          active: item.active ?? true,
-          key_id: item.key_id ?? null,
-        })) ?? [],
+          active: true,
+          key_id: null,
+        })),
     };
   }, [s]);
 
@@ -236,7 +198,7 @@ function AuthComponent({
 
   const serverSyncPendingRef = React.useRef(false);
   const formStateKey = useMemo(() => {
-    if (serverSyncPendingRef.current) return undefined;
+    if (serverSyncPendingRef.current) return "";
     return JSON.stringify(formState);
   }, [formState]);
   const patchActionRef = React.useRef<
@@ -249,15 +211,34 @@ function AuthComponent({
     }
     patchActionRef.current = async (payload: Record<string, unknown>) => {
       const result = await patchAuthDraftAction({ body: payload } as PatchAuthDraftIn);
-      // Sync form_state from server (resolved IDs for creatables)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const formStateFromServer = (result as any).form_state;
+      const formStateFromServer = (result as PatchAuthDraftOut & {
+        form_state?: {
+          name?: string | null;
+          name_id?: string | null;
+          description?: string | null;
+          description_id?: string | null;
+          flag_id?: string | null;
+          department_ids?: string[] | null;
+          protocol_ids?: string[] | null;
+          slug_ids?: string[] | null;
+          item_ids?: string[] | null;
+          pending_ids?: string[] | null;
+        } | null;
+      }).form_state;
       if (formStateFromServer) {
         serverSyncPendingRef.current = true;
         setFormState((prev) => ({
           ...prev,
+          name: formStateFromServer.name ?? prev.name,
           name_id: formStateFromServer.name_id ?? prev.name_id,
+          description: formStateFromServer.description ?? prev.description,
           description_id: formStateFromServer.description_id ?? prev.description_id,
+          active_flag_id: formStateFromServer.flag_id ?? prev.active_flag_id,
+          department_ids: formStateFromServer.department_ids ?? prev.department_ids,
+          protocol_ids: formStateFromServer.protocol_ids ?? prev.protocol_ids,
+          slug_ids: formStateFromServer.slug_ids ?? prev.slug_ids,
+          item_ids: formStateFromServer.item_ids ?? prev.item_ids,
+          pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
         }));
         requestAnimationFrame(() => {
           serverSyncPendingRef.current = false;
@@ -270,47 +251,42 @@ function AuthComponent({
   const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
     null,
   );
-  const hasResourceIds = checkHasResourceIds(
-    AUTH_RESOURCES,
-    formState as unknown as Record<string, unknown>,
-  ) || formState.items.length > 0 || formState.item_ids.length > 0;
+  const hasResourceIds =
+    !!formState.name_id ||
+    !!formState.description_id ||
+    !!formState.active_flag_id ||
+    formState.department_ids.length > 0 ||
+    formState.protocol_ids.length > 0 ||
+    formState.slug_ids.length > 0 ||
+    formState.item_ids.length > 0 ||
+    formState.items.length > 0;
 
   const buildPatchPayload = useCallback(
-    (
-      inputDraftId: string | null,
-      flushResults?: Record<string, unknown>,
-    ): Record<string, unknown> => {
+    (inputDraftId: string | null): Record<string, unknown> => {
+      const fs = formStateRef.current as unknown as AuthFormState;
       const payload: Record<string, unknown> = {
-        input_draft_id: inputDraftId || null,
-        ...buildDraftPayload(AUTH_RESOURCES, {
-          formState: formStateRef.current,
-          referenceState: lastPatchedFormStateRef.current,
-          flushResults: flushResults ?? {},
-        }),
-        items:
-          ((formStateRef.current["items"] as AuthFormState["items"]) ?? []).length > 0
-            ? ((formStateRef.current["items"] as AuthFormState["items"]) ?? [])
-            : null,
-        item_ids:
-          ((formStateRef.current["item_ids"] as AuthFormState["item_ids"]) ?? []).length > 0
-            ? ((formStateRef.current["item_ids"] as AuthFormState["item_ids"]) ?? [])
-            : null,
+        draft_id: inputDraftId || null,
+        flag_id: fs.active_flag_id ?? null,
+        department_ids: fs.department_ids.length > 0 ? fs.department_ids : [],
+        protocol_ids: fs.protocol_ids.length > 0 ? fs.protocol_ids : [],
+        slug_ids: fs.slug_ids.length > 0 ? fs.slug_ids : [],
+        item_ids: fs.item_ids.length > 0 ? fs.item_ids : [],
+        pending_ids: fs.pending_ids,
       };
 
-      // Value field overlay — send raw value instead of ID for creatables
-      const fs = formStateRef.current as unknown as AuthFormState;
-      if (fs.name) {
-        payload.name = fs.name;
-        delete payload.name_id;
+      if (fs.name && fs.name.trim().length > 0) {
+        payload["name"] = fs.name;
+      } else {
+        payload["name_id"] = fs.name_id ?? null;
       }
-      if (fs.description) {
-        payload.description = fs.description;
-        delete payload.description_id;
+      if (fs.description && fs.description.trim().length > 0) {
+        payload["description"] = fs.description;
+      } else {
+        payload["description_id"] = fs.description_id ?? null;
       }
 
       return payload;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
@@ -331,9 +307,9 @@ function AuthComponent({
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: AuthResourceType[], userInstructions?: string) => {
-      let currentDraftId =
+      let currentDraftId: string | null =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
-      if (!currentDraftId) currentDraftId = await flushAllAndSave();
+      if (!currentDraftId) currentDraftId = (await flushAllAndSave()) ?? null;
       if (!currentDraftId) {
         toast.error("Please save a draft before generating with AI");
         return;
@@ -357,17 +333,17 @@ function AuthComponent({
       if (!s) return false;
       switch (rt) {
         case "names":
-          return s.names?.resource?.generated ?? false;
+          return s.names?.find((item) => item.selected)?.generated ?? false;
         case "descriptions":
-          return s.descriptions?.resource?.generated ?? false;
+          return s.descriptions?.find((item) => item.selected)?.generated ?? false;
         case "flags":
-          return s.flags?.current?.some((f) => f.generated) ?? false;
+          return s.flags?.some((item) => item.selected && item.generated) ?? false;
         case "protocols":
-          return s.protocols?.current?.some((x) => x.generated) ?? false;
+          return s.protocols?.some((item) => item.selected && item.generated) ?? false;
         case "slugs":
-          return s.slugs?.current?.some((x) => x.generated) ?? false;
+          return s.slugs?.some((item) => item.selected && item.generated) ?? false;
         case "items":
-          return s.items?.current?.some((x) => x.generated) ?? false;
+          return s.items?.some((item) => item.selected && item.generated) ?? false;
         default:
           return false;
       }
@@ -404,30 +380,51 @@ function AuthComponent({
   );
 
   const disabled = useMemo(() => !s?.can_edit, [s?.can_edit]);
+  const showProtocols = (s?.protocols?.length ?? 0) > 0;
+  const showSlugs = (s?.slugs?.length ?? 0) > 0;
+  const showItems = (s?.items?.length ?? 0) > 0;
+  const nameRequired = true;
+  const descriptionRequired = false;
+  const protocolsRequired = showProtocols;
+  const slugsRequired = showSlugs;
+  const sectionResourceIds = useMemo(
+    () => ({
+      names: new Set((s?.names ?? []).map((item) => item.id).filter((item): item is string => !!item)),
+      descriptions: new Set((s?.descriptions ?? []).map((item) => item.id).filter((item): item is string => !!item)),
+      flags: new Set((s?.flags ?? []).map((item) => item.flag_option_id).filter((item): item is string => !!item)),
+      protocols: new Set((s?.protocols ?? []).map((item) => item.id).filter((item): item is string => !!item)),
+      slugs: new Set((s?.slugs ?? []).map((item) => item.id).filter((item): item is string => !!item)),
+      items: new Set((s?.items ?? []).map((item) => item.id).filter((item): item is string => !!item)),
+    }),
+    [s],
+  );
+
+  const retainPendingIds = useCallback(
+    (prevPendingIds: string[], section: keyof typeof sectionResourceIds, nextSelectedIds: string[]) =>
+      prevPendingIds.filter(
+        (id) => !sectionResourceIds[section].has(id) || nextSelectedIds.includes(id),
+      ),
+    [sectionResourceIds],
+  );
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      let flushResults: Record<string, unknown> = {};
       if (!isAutosaveEnabled) {
-        flushResults = await flushAllResources();
+        await flushAllResources();
       }
 
-      const effectiveFormState = computeEffectiveFormState(
-        AUTH_RESOURCES,
-        formStateRef.current,
-        flushResults,
-      ) as unknown as AuthFormState;
+      const effectiveFormState = formStateRef.current as unknown as AuthFormState;
 
-      if (s?.names?.required && !effectiveFormState.name_id) {
+      if (nameRequired && !effectiveFormState.name_id) {
         throw new Error("Auth name is required");
       }
-      if (s?.descriptions?.required && !effectiveFormState.description_id) {
+      if (descriptionRequired && !effectiveFormState.description_id) {
         throw new Error("Description is required");
       }
-      if (s?.protocols?.required && effectiveFormState.protocol_ids.length === 0) {
+      if (protocolsRequired && effectiveFormState.protocol_ids.length === 0) {
         throw new Error("Protocols are required");
       }
-      if (s?.slugs?.required && effectiveFormState.slug_ids.length === 0) {
+      if (slugsRequired && effectiveFormState.slug_ids.length === 0) {
         throw new Error("Slugs are required");
       }
       if (!profile?.id) {
@@ -493,13 +490,16 @@ function AuthComponent({
     [
       isAutosaveEnabled,
       flushAllResources,
-      s,
       profile?.id,
       createAuthAction,
       updateAuthAction,
       isEditMode,
       authId,
       router,
+      nameRequired,
+      descriptionRequired,
+      protocolsRequired,
+      slugsRequired,
     ],
   );
 
@@ -635,25 +635,24 @@ function AuthComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id}
-                  name_resource={s?.names?.resource ?? null}
-                  show_name={s?.names?.show ?? true}
-                  name_suggestions={s?.names?.suggestions ?? []}
-                  names={s?.names?.resources ?? []}
+                  name_resource={s?.names?.find((item) => item.selected) ?? null}
+                  show_name={true}
+                  names={s?.names ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      name_id: nameId,
+                      name: null,
+                      pending_ids: retainPendingIds(prev.pending_ids, "names", nameId ? [nameId] : []),
+                    }))
                   }
                   onNameChange={(name) =>
                     setFormState((prev) => ({ ...prev, name }))
                   }
-                  onGenerate={() => handleGenerateResources(["names"])}
-                  required={s?.names?.required ?? false}
+                  required={nameRequired}
                   hideDescription={true}
-
-                  showAiGenerate={s?.names?.show_ai_generate ?? false}
-                  createNamesAction={createNamesAction}
                   isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["names"]}
                 />
               }
               resetFields={["name_id", "description_id", "active_flag_id"]}
@@ -674,18 +673,25 @@ function AuthComponent({
               <div className="space-y-4">
                 <Descriptions
                   description_id={formState.description_id}
-                  description_resource={s?.descriptions?.resource ?? null}
-                  show_description={s?.descriptions?.show ?? true}
-                  description_suggestions={s?.descriptions?.suggestions ?? []}
-                  descriptions={s?.descriptions?.resources ?? []}
+                  description_resource={s?.descriptions?.find((item) => item.selected) ?? null}
+                  show_description={true}
+                  descriptions={s?.descriptions ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({ ...prev, description_id: descriptionId, description: null }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      description_id: descriptionId,
+                      description: null,
+                      pending_ids: retainPendingIds(
+                        prev.pending_ids,
+                        "descriptions",
+                        descriptionId ? [descriptionId] : [],
+                      ),
+                    }))
                   }
                   onDescriptionChange={(description) =>
                     setFormState((prev) => ({ ...prev, description }))
                   }
-                  onGenerate={() => handleGenerateResources(["descriptions"])}
                   searchTerm={
                     (stepFormData["descriptionSearch"] as
                       | string
@@ -695,26 +701,23 @@ function AuthComponent({
                   onSearchChange={(term: string) =>
                     setStepFormData({ descriptionSearch: term || null })
                   }
-                  required={s?.descriptions?.required ?? false}
-
-                  showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
-                  createDescriptionsAction={createDescriptionsAction}
+                  required={descriptionRequired}
                   isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["descriptions"]}
                 />
 
                 <Flags
-                  flags={s?.flags?.resources ?? []}
+                  flags={s?.flags ?? []}
                   flag_id={formState.active_flag_id}
-                  show_flags={s?.flags?.show ?? false}
+                  show_flags={true}
                   columns={1}
                   disabled={disabled}
                   onChange={(flagId) =>
-                    setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      active_flag_id: flagId,
+                      pending_ids: retainPendingIds(prev.pending_ids, "flags", flagId ? [flagId] : []),
+                    }))
                   }
-                  onGenerate={() => handleGenerateResources(["flags"])}
-
-                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
               </div>
             </StepCard>
@@ -731,7 +734,7 @@ function AuthComponent({
               isEditMode={isEditMode}
               resetFields={["protocol_ids"]}
               actions={
-                s?.protocols?.show_ai_generate ? (
+                s?.show_ai_generate ? (
                   <StepCardAiButton
                     stepId="protocols"
                     resourceTypes={stepResources["protocols"] ?? []}
@@ -746,21 +749,18 @@ function AuthComponent({
             >
               <Protocols
                 protocol_ids={formState.protocol_ids}
-                protocol_resources={s?.protocols?.current ?? []}
-                show_protocols={s?.protocols?.show ?? false}
-                protocol_suggestions={s?.protocols?.suggestions ?? []}
-                protocols={s?.protocols?.resources ?? []}
+                protocol_resources={s?.protocols?.filter((item) => item.selected) ?? []}
+                show_protocols={showProtocols}
+                protocols={s?.protocols ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, protocol_ids: ids }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    protocol_ids: ids,
+                    pending_ids: retainPendingIds(prev.pending_ids, "protocols", ids),
+                  }))
                 }
-                onGenerate={() => handleGenerateResources(["protocols"])}
-                required={s?.protocols?.required ?? false}
-
-                showAiGenerate={s?.protocols?.show_ai_generate ?? false}
-                createProtocolsAction={createProtocolsAction}
-                registerFlush={registerFlushCallbacks["protocols"]}
-                isAutosaveEnabled={isAutosaveEnabled}
+                required={protocolsRequired}
               />
             </StepCard>
           );
@@ -776,7 +776,7 @@ function AuthComponent({
               isEditMode={isEditMode}
               resetFields={["slug_ids"]}
               actions={
-                s?.slugs?.show_ai_generate ? (
+                s?.show_ai_generate ? (
                   <StepCardAiButton
                     stepId="slugs"
                     resourceTypes={stepResources["slugs"] ?? []}
@@ -791,21 +791,18 @@ function AuthComponent({
             >
               <Slugs
                 slug_ids={formState.slug_ids}
-                slug_resources={s?.slugs?.current ?? []}
-                show_slugs={s?.slugs?.show ?? false}
-                slug_suggestions={s?.slugs?.suggestions ?? []}
-                slugs={s?.slugs?.resources ?? []}
+                slug_resources={s?.slugs?.filter((item) => item.selected) ?? []}
+                show_slugs={showSlugs}
+                slugs={s?.slugs ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, slug_ids: ids }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    slug_ids: ids,
+                    pending_ids: retainPendingIds(prev.pending_ids, "slugs", ids),
+                  }))
                 }
-                onGenerate={() => handleGenerateResources(["slugs"])}
-                required={s?.slugs?.required ?? false}
-
-                showAiGenerate={s?.slugs?.show_ai_generate ?? false}
-                createSlugsAction={createSlugsAction}
-                registerFlush={registerFlushCallbacks["slugs"]}
-                isAutosaveEnabled={isAutosaveEnabled}
+                required={slugsRequired}
               />
             </StepCard>
           );
@@ -821,7 +818,7 @@ function AuthComponent({
               isEditMode={isEditMode}
               resetFields={["item_ids", "items"]}
               actions={
-                s?.items?.show_ai_generate ? (
+                s?.show_ai_generate ? (
                   <StepCardAiButton
                     stepId="items"
                     resourceTypes={stepResources["items"] ?? []}
@@ -836,30 +833,33 @@ function AuthComponent({
             >
               <Items
                 item_ids={formState.item_ids}
-                item_resources={(s?.items?.current ?? []).map((x) => ({
-                  id: x.auth_item_id,
-                  name: x.name,
-                  description: x.description,
-                  encrypted: x.encrypted,
-                  position: x.position,
-                  generated: x.generated,
+                item_resources={(s?.items?.filter((item) => item.selected) ?? []).map((x) => ({
+                  id: x.id ?? null,
+                  name: x.name ?? null,
+                  description: x.description ?? null,
+                  encrypted: x.encrypted ?? null,
+                  position: x.position ?? null,
+                  generated: x.generated ?? null,
                 }))}
-                show_items={s?.items?.show ?? false}
-                item_suggestions={s?.items?.suggestions ?? []}
-                items={(s?.items?.resources ?? []).map((x) => ({
-                  id: x.auth_item_id,
-                  name: x.name,
-                  description: x.description,
-                  encrypted: x.encrypted,
-                  position: x.position,
-                  generated: x.generated,
+                show_items={showItems}
+                items={(s?.items ?? []).map((x) => ({
+                  id: x.id ?? null,
+                  name: x.name ?? null,
+                  description: x.description ?? null,
+                  encrypted: x.encrypted ?? null,
+                  position: x.position ?? null,
+                  generated: x.generated ?? null,
+                  suggested: x.suggested ?? null,
+                  pending: x.pending ?? null,
                 }))}
                 disabled={disabled}
                 onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, item_ids: ids }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    item_ids: ids,
+                    pending_ids: retainPendingIds(prev.pending_ids, "items", ids),
+                  }))
                 }
-                onGenerate={() => handleGenerateResources(["items"])}
-                showAiGenerate={s?.items?.show_ai_generate ?? false}
               />
               <AuthItemCardGrid
                 items={authItemCards}
@@ -879,18 +879,21 @@ function AuthComponent({
       formState,
       s,
       handleGenerateResources,
-      createNamesAction,
-      createDescriptionsAction,
-      createProtocolsAction,
-      createSlugsAction,
       isAutosaveEnabled,
-      registerFlushCallbacks,
       stepResources,
       canRegenerateForStepCard,
       isGeneratingForStepCard,
       handleDirectStepGenerate,
       authItemCards,
       handleItemsChange,
+      retainPendingIds,
+      nameRequired,
+      descriptionRequired,
+      protocolsRequired,
+      slugsRequired,
+      showProtocols,
+      showSlugs,
+      showItems,
     ],
   );
 
@@ -938,16 +941,38 @@ function AuthComponent({
                   name_id: null,
                   description_id: null,
                   active_flag_id: null,
+                  pending_ids: retainPendingIds(
+                    retainPendingIds(
+                      retainPendingIds(prev.pending_ids, "names", []),
+                      "descriptions",
+                      [],
+                    ),
+                    "flags",
+                    [],
+                  ),
                 }));
                 break;
               case "protocols":
-                setFormState((prev) => ({ ...prev, protocol_ids: [] }));
+                setFormState((prev) => ({
+                  ...prev,
+                  protocol_ids: [],
+                  pending_ids: retainPendingIds(prev.pending_ids, "protocols", []),
+                }));
                 break;
               case "slugs":
-                setFormState((prev) => ({ ...prev, slug_ids: [] }));
+                setFormState((prev) => ({
+                  ...prev,
+                  slug_ids: [],
+                  pending_ids: retainPendingIds(prev.pending_ids, "slugs", []),
+                }));
                 break;
               case "items":
-                setFormState((prev) => ({ ...prev, item_ids: [], items: [] }));
+                setFormState((prev) => ({
+                  ...prev,
+                  item_ids: [],
+                  items: [],
+                  pending_ids: retainPendingIds(prev.pending_ids, "items", []),
+                }));
                 break;
               default:
                 break;

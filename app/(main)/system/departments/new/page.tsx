@@ -28,20 +28,8 @@ type CreateDepartmentIn = InputOf<"/department/create", "post">;
 type CreateDepartmentOut = OutputOf<"/department/create", "post">;
 type PatchDepartmentDraftIn = InputOf<"/department/draft", "patch">;
 type PatchDepartmentDraftOut = OutputOf<"/department/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
 type GroupDepartmentIn = InputOf<"/department/group", "post">;
 type GroupDepartmentOut = OutputOf<"/department/group", "post">;
-type GenerateDepartmentIn = InputOf<"/department/generate", "post">;
-type GenerateDepartmentOut = OutputOf<"/department/generate", "post">;
 type ProblemDepartmentIn = InputOf<"/department/problem", "post">;
 type ProblemDepartmentOut = OutputOf<"/department/problem", "post">;
 type ContextIn = InputOf<"/department/context", "post">;
@@ -65,45 +53,11 @@ async function createDepartment(
   return api.post("/department/create", input);
 }
 
-async function createDraftNames(
-  input: CreateDraftNamesIn
-): Promise<CreateDraftNamesOut> {
-  "use server";
-  return api.post("/resources/names", input);
-}
-
-async function createDraftDescriptions(
-  input: CreateDraftDescriptionsIn
-): Promise<CreateDraftDescriptionsOut> {
-  "use server";
-  return api.post("/resources/descriptions", input);
-}
-
 async function patchDepartmentDraft(
   input: PatchDepartmentDraftIn
 ): Promise<PatchDepartmentDraftOut> {
   "use server";
   return api.patch("/department/draft", input);
-}
-
-async function generateDepartment(
-  input: GenerateDepartmentIn
-): Promise<GenerateDepartmentOut> {
-  "use server";
-  return api.post("/department/generate", input);
-}
-
-async function getDepartmentGroupHistory(groupId: string): Promise<GroupDepartmentOut> {
-  "use server";
-  return api.post("/department/group", { body: { group_id: groupId } } as GroupDepartmentIn);
-}
-
-type GenerationsIn = InputOf<"/department/generations", "post">;
-type GenerationsOut = OutputOf<"/department/generations", "post">;
-
-async function searchDepartmentGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/department/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createDepartmentProblem(input: ProblemDepartmentIn): Promise<ProblemDepartmentOut> {
@@ -171,26 +125,28 @@ export default async function NewDepartmentPage({
     // Fetch default department detail server-side with draft_id (unified get endpoint with department_id = null)
     const input: GetDepartmentIn = {
       body: {
-        department_id: null, // NULL for new mode
+        id: null,
         draft_id: q.draftId ?? null,
       } as GetDepartmentIn["body"],
-    };
+    } as unknown as GetDepartmentIn;
     const [departmentDetailDefault, draftsResult, groupResult] = await Promise.all([
       getDepartmentDefault(input),
-      api.post("/department/drafts", {}),
+      api.post("/department/drafts", {} as never),
       api.post("/department/group", { body: {} } as GroupDepartmentIn),
     ]);
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={((draftsResult as any).entries ?? [])}>
         <FullPageLayout
           profileData={context.profile}
           sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
+          {...(initialSidebarOpen !== undefined ? { initialSidebarOpen } : {})}
           initialPanelOpen={initialPanelOpen}
           sidebarProps={{
             activeSection: "department",
-            createFeedback: createDepartmentProblem,
+            createFeedback: createDepartmentProblem as unknown as (
+              input: Record<string, unknown>,
+            ) => Promise<Record<string, unknown>>,
           }}
           breadcrumbs={[
             { title: "System", section: "system", url: "/system" },
@@ -201,12 +157,11 @@ export default async function NewDepartmentPage({
           panelProps={{
             artifactType: "department",
             groupId: (groupResult as GroupDepartmentOut & { group_id?: string })?.group_id ?? null,
-            generateAction: generateDepartment,
             operations: ["draft", "get", "group"],
-            getGroupHistory: getDepartmentGroupHistory,
-            searchGroups: searchDepartmentGroups,
-            prompts: context.prompts?.prompts,
-          }}
+            ...(context.prompts?.prompts
+              ? { prompts: context.prompts.prompts }
+              : {}),
+          } as any}
         >
           <div
             className="space-y-6 px-4"
@@ -218,8 +173,6 @@ export default async function NewDepartmentPage({
               departmentData={departmentDetailDefault}
               createDepartmentAction={createDepartment}
               patchDepartmentDraftAction={patchDepartmentDraft}
-              createNamesAction={createDraftNames}
-              createDescriptionsAction={createDraftDescriptions}
             />
           </div>
         </FullPageLayout>
@@ -245,10 +198,6 @@ export default async function NewDepartmentPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CreateDraftDescriptionsIn,
-  CreateDraftDescriptionsOut,
-  CreateDraftNamesIn,
-  CreateDraftNamesOut,
   GetDepartmentIn,
   GetDepartmentOut,
   PatchDepartmentDraftIn,

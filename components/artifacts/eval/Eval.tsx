@@ -48,35 +48,103 @@ type PatchEvalDraftIn = InputOf<"/eval/draft", "patch">;
 type PatchEvalDraftOut = OutputOf<"/eval/draft", "patch">;
 type EvalData = OutputOf<"/eval/get", "post">;
 
-// Resource creation endpoints
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftFlagsIn = InputOf<"/api/v5/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v5/resources/flags", "post">;
-type CreateDraftModelPositionsIn = InputOf<
-  "/api/v5/resources/model_positions",
-  "post"
->;
-type CreateDraftModelPositionsOut = OutputOf<
-  "/api/v5/resources/model_positions",
-  "post"
->;
-type CreateDraftModelRubricsIn = InputOf<
-  "/api/v5/resources/model_rubrics",
-  "post"
->;
-type CreateDraftModelRubricsOut = OutputOf<
-  "/api/v5/resources/model_rubrics",
-  "post"
->;
+type EvalNameItem = {
+  id?: string | null;
+  name?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type EvalDescriptionItem = {
+  id?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type EvalFlagItem = {
+  key: string;
+  label: string;
+  description?: string | null;
+  icon_id?: string | null;
+  flag_option_id?: string | null;
+  show?: boolean;
+  required?: boolean;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type EvalDepartmentItem = {
+  department_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type EvalModelItem = {
+  id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  modality_ids?: string[] | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type EvalModelFlagItem = {
+  id?: string | null;
+  model_id?: string | null;
+  flag_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  icon?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type EvalModelPositionItem = {
+  id?: string | null;
+  model_id?: string | null;
+  value?: number | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type EvalModelRubricItem = {
+  id?: string | null;
+  model_id?: string | null;
+  rubric_id?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+
+type EvalDraftFormState = {
+  name_id?: string | null;
+  name?: string | null;
+  description_id?: string | null;
+  description?: string | null;
+  flag_ids?: string[] | null;
+  department_ids?: string[] | null;
+  model_ids?: string[] | null;
+  pending_ids?: string[] | null;
+};
 
 export interface EvalProps {
   evalId?: string;
@@ -89,25 +157,6 @@ export interface EvalProps {
   patchEvalDraftAction?: (
     input: PatchEvalDraftIn
   ) => Promise<PatchEvalDraftOut>;
-  // Resource creation actions
-  createNamesAction?: (
-    input: CreateDraftNamesIn
-  ) => Promise<CreateDraftNamesOut>;
-  createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn
-  ) => Promise<CreateDraftDescriptionsOut>;
-  createFlagsAction?: (
-    input: CreateDraftFlagsIn
-  ) => Promise<CreateDraftFlagsOut>;
-  createModelFlagsAction?: React.ComponentProps<
-    typeof ModelFlags
-  >["createModelFlagsAction"];
-  createModelPositionsAction?: (
-    input: CreateDraftModelPositionsIn
-  ) => Promise<CreateDraftModelPositionsOut>;
-  createModelRubricsAction?: (
-    input: CreateDraftModelRubricsIn
-  ) => Promise<CreateDraftModelRubricsOut>;
 }
 
 type EvalResourceType =
@@ -134,6 +183,7 @@ interface EvalFormState {
   model_flags: Array<{ model_id: string; flag_id: string }> | null;
   model_positions: Array<{ model_id: string; value: number }> | null;
   model_rubrics: Array<{ model_id: string; rubric_id: string }> | null;
+  pending_ids: string[];
 }
 
 function EvalComponent({
@@ -143,26 +193,20 @@ function EvalComponent({
   createEvalAction,
   updateEvalAction,
   patchEvalDraftAction,
-  createNamesAction,
-  createDescriptionsAction,
-  createFlagsAction: _createFlagsAction,
-  createModelFlagsAction,
-  createModelPositionsAction,
-  createModelRubricsAction,
 }: EvalProps) {
   const router = useRouter();
   const isEditMode = !!evalId;
   const { profile } = useProfile();
   const { selectedDraftId, setSelectedDraftId } = useDrafts();
-  const evalData = isEditMode ? evalDetail : evalDetailDefault;
+  const evalData = (isEditMode ? evalDetail : evalDetailDefault) as
+    | EvalData
+    | undefined;
   const s = useMemo(() => {
     if (!evalData) return null;
     return {
       names: evalData.names,
       descriptions: evalData.descriptions,
-      active_flags: evalData.active_flags,
-      dynamic_flags: evalData.dynamic_flags,
-      groups_flags: evalData.groups_flags,
+      flags: evalData.flags,
       departments: evalData.departments,
       models: evalData.models,
       model_flags: evalData.model_flags,
@@ -173,7 +217,7 @@ function EvalComponent({
       group_id: evalData.group_id,
       can_edit: evalData.can_edit,
       disabled_reason: evalData.disabled_reason,
-      draft_version: evalData.draft_version,
+      pending_ids: evalData.pending_ids,
     };
   }, [evalData]);
 
@@ -206,42 +250,52 @@ function EvalComponent({
 
   const getInitialFormState = useCallback((): EvalFormState => {
     const data = evalDataRef.current;
+    const selectedFlags = data?.flags?.filter((flag) => flag.selected) ?? [];
+    const flagIdForKey = (key: string) =>
+      selectedFlags.find((flag) => flag.key === key)?.flag_option_id ?? null;
     return {
       name: null,
-      name_id: data?.names?.resource?.id ?? null,
+      name_id: data?.names?.find((item) => item.selected)?.id ?? null,
       description: null,
-      description_id: data?.descriptions?.resource?.id ?? null,
-      active_flag_id: data?.active_flags?.resource?.flag_option_id ?? null,
-      dynamic_flag_id: data?.dynamic_flags?.resource?.flag_option_id ?? null,
-      groups_flag_id: data?.groups_flags?.resource?.flag_option_id ?? null,
+      description_id:
+        data?.descriptions?.find((item) => item.selected)?.id ?? null,
+      active_flag_id: flagIdForKey("active"),
+      dynamic_flag_id: flagIdForKey("dynamic"),
+      groups_flag_id: flagIdForKey("groups"),
       department_ids:
-        data?.departments?.current
+        (data?.departments ?? [])
+          .filter((d) => d.selected)
           ?.map((d) => d.department_id)
           .filter(Boolean)
           .map(String) ?? [],
       model_ids:
-        data?.models?.current
+        (data?.models ?? [])
+          .filter((m) => m.selected)
           ?.map((m) => m.id)
           .filter(Boolean)
           .map(String) ?? [],
       model_flag_ids:
-        data?.model_flags?.current
+        (data?.model_flags ?? [])
+          .filter((f) => f.selected)
           ?.map((f) => f.id)
           .filter(Boolean)
           .map(String) ?? [],
       model_position_ids:
-        data?.model_positions?.current
+        (data?.model_positions ?? [])
+          .filter((p) => p.selected)
           ?.map((p) => p.id)
           .filter(Boolean)
           .map(String) ?? [],
       model_rubric_ids:
-        data?.model_rubrics?.current
+        (data?.model_rubrics ?? [])
+          .filter((r) => r.selected)
           ?.map((r) => r.id)
           .filter(Boolean)
           .map(String) ?? [],
       model_flags: null,
       model_positions: null,
       model_rubrics: null,
+      pending_ids: data?.pending_ids?.filter(Boolean).map(String) ?? [],
     };
   }, []);
 
@@ -251,57 +305,57 @@ function EvalComponent({
   const departmentIdsStr = useMemo(
     () =>
       JSON.stringify(
-        s?.departments?.current
+        (s?.departments ?? [])
+          .filter((d) => d.selected)
           ?.map((d) => d.department_id)
           .filter(Boolean)
           .map(String) ?? []
       ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [s?.departments?.current]
+    [s?.departments]
   );
   const modelIdsStr = useMemo(
     () =>
       JSON.stringify(
-        s?.models?.current
+        (s?.models ?? [])
+          .filter((m) => m.selected)
           ?.map((m) => m.id)
           .filter(Boolean)
           .map(String) ?? []
       ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [s?.models?.current]
+    [s?.models]
   );
   const modelFlagIdsStr = useMemo(
     () =>
       JSON.stringify(
-        s?.model_flags?.current
+        (s?.model_flags ?? [])
+          .filter((f) => f.selected)
           ?.map((f) => f.id)
           .filter(Boolean)
           .map(String) ?? []
       ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [s?.model_flags?.current]
+    [s?.model_flags]
   );
   const modelPositionIdsStr = useMemo(
     () =>
       JSON.stringify(
-        s?.model_positions?.current
+        (s?.model_positions ?? [])
+          .filter((p) => p.selected)
           ?.map((p) => p.id)
           .filter(Boolean)
           .map(String) ?? []
       ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [s?.model_positions?.current]
+    [s?.model_positions]
   );
   const modelRubricIdsStr = useMemo(
     () =>
       JSON.stringify(
-        s?.model_rubrics?.current
+        (s?.model_rubrics ?? [])
+          .filter((r) => r.selected)
           ?.map((r) => r.id)
           .filter(Boolean)
           .map(String) ?? []
       ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [s?.model_rubrics?.current]
+    [s?.model_rubrics]
   );
 
   // Sync form state when server data changes
@@ -332,9 +386,7 @@ function EvalComponent({
   }, [
     s?.names,
     s?.descriptions,
-    s?.active_flags,
-    s?.dynamic_flags,
-    s?.groups_flags,
+    s?.flags,
     departmentIdsStr,
     modelIdsStr,
     modelFlagIdsStr,
@@ -383,9 +435,7 @@ function EvalComponent({
       groups_flag_id: formState.groups_flag_id,
       department_ids: formState.department_ids,
       model_ids: formState.model_ids,
-      model_flag_ids: formState.model_flag_ids,
-      model_position_ids: formState.model_position_ids,
-      model_rubric_ids: formState.model_rubric_ids,
+      pending_ids: formState.pending_ids,
     });
   }, [formState]);
 
@@ -423,10 +473,11 @@ function EvalComponent({
 
         // Build payload with value field overlay
         const payload: Record<string, unknown> = {
-          input_draft_id: draftId || null,
+          draft_id: draftId || null,
           flag_ids: flagIds.length > 0 ? flagIds : null,
           department_ids: formState.department_ids.length > 0 ? formState.department_ids : null,
           model_ids: formState.model_ids.length > 0 ? formState.model_ids : null,
+          pending_ids: formState.pending_ids.length > 0 ? formState.pending_ids : null,
         };
         if (formState.name) {
           payload["name"] = formState.name;
@@ -446,14 +497,39 @@ function EvalComponent({
         lastPatchedKeyRef.current = draftPatchKey;
 
         // Sync form_state from server response
-        if (result.form_state) {
+        const serverFormState = result.form_state as EvalDraftFormState | null | undefined;
+        if (serverFormState) {
+          const serverFlagIds = serverFormState.flag_ids ?? [];
+          const flagLookup = new Map(
+            (s?.flags ?? [])
+              .filter((flag) => flag.flag_option_id)
+              .map((flag) => [flag.flag_option_id as string, flag.key]),
+          );
+          const nextFlagId = (key: string) =>
+            serverFlagIds.find((flagId) => flagLookup.get(flagId) === key) ?? null;
+
           serverSyncPendingRef.current = true;
           setFormState((prev) => ({
             ...prev,
-            name: null,
-            name_id: (result.form_state!.name_id as string) ?? prev.name_id,
-            description: null,
-            description_id: (result.form_state!.description_id as string) ?? prev.description_id,
+            name: (serverFormState.name as string | null | undefined) ?? null,
+            name_id: (serverFormState.name_id as string | null | undefined) ?? prev.name_id,
+            description:
+              (serverFormState.description as string | null | undefined) ?? null,
+            description_id:
+              (serverFormState.description_id as string | null | undefined) ??
+              prev.description_id,
+            active_flag_id: nextFlagId("active"),
+            dynamic_flag_id: nextFlagId("dynamic"),
+            groups_flag_id: nextFlagId("groups"),
+            department_ids:
+              (serverFormState.department_ids as string[] | null | undefined) ??
+              prev.department_ids,
+            model_ids:
+              (serverFormState.model_ids as string[] | null | undefined) ??
+              prev.model_ids,
+            pending_ids:
+              (serverFormState.pending_ids as string[] | null | undefined) ??
+              prev.pending_ids,
           }));
           requestAnimationFrame(() => {
             serverSyncPendingRef.current = false;
@@ -470,7 +546,7 @@ function EvalComponent({
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [draftPatchKey, draftId, formState]);
+  }, [draftPatchKey, draftId, formState, s]);
 
   // Readonly logic using server-provided can_edit flag
   const disabled = useMemo(() => {
@@ -484,26 +560,21 @@ function EvalComponent({
       if (!s) return false;
       switch (resourceType) {
         case "names":
-          return s.names?.resource?.generated ?? false;
+          return s.names?.find((item) => item.selected)?.generated ?? false;
         case "descriptions":
-          return s.descriptions?.resource?.generated ?? false;
+          return s.descriptions?.find((item) => item.selected)?.generated ?? false;
         case "flags":
-          return (
-            s.active_flags?.resource?.generated ||
-            s.dynamic_flags?.resource?.generated ||
-            s.groups_flags?.resource?.generated ||
-            false
-          );
+          return s.flags?.some((flag) => flag.selected && flag.generated) ?? false;
         case "departments":
-          return s.departments?.current?.some((d) => d.generated) ?? false;
+          return s.departments?.some((d) => d.selected && d.generated) ?? false;
         case "models":
-          return s.models?.current?.some((m) => m.generated) ?? false;
+          return s.models?.some((m) => m.selected && m.generated) ?? false;
         case "model_flags":
-          return s.model_flags?.current?.some((f) => f.generated) ?? false;
+          return s.model_flags?.some((f) => f.selected && f.generated) ?? false;
         case "model_positions":
-          return s.model_positions?.current?.some((p) => p.generated) ?? false;
+          return s.model_positions?.some((p) => p.selected && p.generated) ?? false;
         case "model_rubrics":
-          return s.model_rubrics?.current?.some((r) => r.generated) ?? false;
+          return s.model_rubrics?.some((r) => r.selected && r.generated) ?? false;
         default:
           return false;
       }
@@ -552,26 +623,6 @@ function EvalComponent({
   );
 
   // Individual generation handlers
-  const handleGenerateNames = useCallback(
-    async () => handleGenerateResources(["names"]),
-    [handleGenerateResources]
-  );
-
-  const handleGenerateDescriptions = useCallback(
-    async () => handleGenerateResources(["descriptions"]),
-    [handleGenerateResources]
-  );
-
-  const handleGenerateFlags = useCallback(
-    async () => handleGenerateResources(["flags"]),
-    [handleGenerateResources]
-  );
-
-  const handleGenerateDepartments = useCallback(
-    async () => handleGenerateResources(["departments"]),
-    [handleGenerateResources]
-  );
-
   const handleGenerateModels = useCallback(
     async () => handleGenerateResources(["models"]),
     [handleGenerateResources]
@@ -605,32 +656,6 @@ function EvalComponent({
   // Submit handler
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      if (s?.names?.required && !formState.name_id) {
-        toast.error("Eval name is required");
-        throw new Error("Eval name is required");
-      }
-
-      if (s?.descriptions?.required && !formState.description_id) {
-        toast.error("Eval description is required");
-        throw new Error("Eval description is required");
-      }
-
-      if (
-        s?.departments?.required &&
-        (!formState.department_ids || formState.department_ids.length === 0)
-      ) {
-        toast.error("Departments are required");
-        throw new Error("Departments are required");
-      }
-
-      if (
-        s?.models?.required &&
-        (!formState.model_ids || formState.model_ids.length === 0)
-      ) {
-        toast.error("Models are required");
-        throw new Error("Models are required");
-      }
-
       if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
@@ -708,10 +733,6 @@ function EvalComponent({
       updateEvalAction,
       createEvalAction,
       router,
-      s?.names?.required,
-      s?.descriptions?.required,
-      s?.departments?.required,
-      s?.models?.required,
     ]
   );
 
@@ -720,18 +741,10 @@ function EvalComponent({
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
       const hasName = !!formState.name_id;
       const hasDescription = !!formState.description_id;
-      const hasModels =
-        !(s?.models?.required ?? false) ||
-        formState.model_ids.length > 0;
-      const hasModelFlags =
-        !(s?.model_flags?.required ?? false) ||
-        formState.model_flag_ids.length > 0;
-      const hasModelPositions =
-        !(s?.model_positions?.required ?? false) ||
-        formState.model_position_ids.length > 0;
-      const hasModelRubrics =
-        !(s?.model_rubrics?.required ?? false) ||
-        formState.model_rubric_ids.length > 0;
+      const hasModels = true;
+      const hasModelFlags = true;
+      const hasModelPositions = true;
+      const hasModelRubrics = true;
 
       switch (stepId) {
         case "basic":
@@ -885,10 +898,9 @@ function EvalComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={s?.names?.resource ?? null}
-                  show_name={s?.names?.show ?? true}
-                  name_suggestions={s?.names?.suggestions?.map(String) ?? []}
-                  names={s?.names?.resources ?? []}
+                  name_resource={s?.names?.find((item) => item.selected) ?? null}
+                  show_name={true}
+                  names={s?.names ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
@@ -896,13 +908,10 @@ function EvalComponent({
                   onNameChange={(name) =>
                     setFormState((prev) => ({ ...prev, name }))
                   }
-                  onGenerate={handleGenerateNames}
-                  createNamesAction={createNamesAction}
-                  required={s?.names?.required ?? false}
+                  required={true}
                   placeholder="Eval name"
                   defaultName="New Eval"
                   hideDescription={true}
-                  showAiGenerate={s?.names?.show_ai_generate ?? false}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
@@ -926,12 +935,11 @@ function EvalComponent({
               <div className="space-y-4">
                 <Descriptions
                   description_id={formState.description_id ?? null}
-                  description_resource={s?.descriptions?.resource ?? null}
-                  show_description={s?.descriptions?.show ?? true}
-                  description_suggestions={
-                    s?.descriptions?.suggestions?.map(String) ?? []
+                  description_resource={
+                    s?.descriptions?.find((item) => item.selected) ?? null
                   }
-                  descriptions={s?.descriptions?.resources ?? []}
+                  show_description={true}
+                  descriptions={s?.descriptions ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
                     setFormState((prev) => ({
@@ -943,16 +951,13 @@ function EvalComponent({
                   onDescriptionChange={(description) =>
                     setFormState((prev) => ({ ...prev, description }))
                   }
-                  onGenerate={handleGenerateDescriptions}
-                  createDescriptionsAction={createDescriptionsAction}
-                  required={s?.descriptions?.required ?? false}
-                  showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
+                  required={false}
                 />
 
                 <Flags
-                  flags={s?.active_flags?.resources ?? []}
+                  flags={(s?.flags ?? []).filter((flag) => flag.key === "active")}
                   flag_id={formState.active_flag_id ?? null}
-                  show_flags={s?.active_flags?.show ?? false}
+                  show_flags={(s?.flags ?? []).some((flag) => flag.key === "active" && flag.show !== false)}
                   columns={1}
                   label="Active"
                   disabled={disabled}
@@ -962,13 +967,12 @@ function EvalComponent({
                       active_flag_id: flagId,
                     }))
                   }
-                  onGenerate={handleGenerateFlags}
                 />
 
                 <Flags
-                  flags={s?.dynamic_flags?.resources ?? []}
+                  flags={(s?.flags ?? []).filter((flag) => flag.key === "dynamic")}
                   flag_id={formState.dynamic_flag_id ?? null}
-                  show_flags={s?.dynamic_flags?.show ?? false}
+                  show_flags={(s?.flags ?? []).some((flag) => flag.key === "dynamic" && flag.show !== false)}
                   columns={1}
                   label="Dynamic"
                   disabled={disabled}
@@ -978,13 +982,12 @@ function EvalComponent({
                       dynamic_flag_id: flagId,
                     }))
                   }
-                  onGenerate={handleGenerateFlags}
                 />
 
                 <Flags
-                  flags={s?.groups_flags?.resources ?? []}
+                  flags={(s?.flags ?? []).filter((flag) => flag.key === "groups")}
                   flag_id={formState.groups_flag_id ?? null}
-                  show_flags={s?.groups_flags?.show ?? false}
+                  show_flags={(s?.flags ?? []).some((flag) => flag.key === "groups" && flag.show !== false)}
                   columns={1}
                   label="Use Groups"
                   disabled={disabled}
@@ -994,24 +997,20 @@ function EvalComponent({
                       groups_flag_id: flagId,
                     }))
                   }
-                  onGenerate={handleGenerateFlags}
                 />
 
                 <Departments
                   department_ids={formState.department_ids ?? []}
-                  department_resources={s?.departments?.current ?? []}
-                  show_departments={s?.departments?.show ?? false}
-                  department_suggestions={
-                    s?.departments?.suggestions?.map(String) ?? []
+                  department_resources={
+                    (s?.departments ?? []).filter((item) => item.selected) ?? []
                   }
-                  departments={s?.departments?.resources ?? []}
+                  show_departments={(s?.departments?.length ?? 0) > 0}
+                  departments={s?.departments ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
-                  onGenerate={handleGenerateDepartments}
-                  required={s?.departments?.required ?? false}
-                  showAiGenerate={s?.departments?.show_ai_generate ?? false}
+                  required={false}
                 />
               </div>
             </StepCard>
@@ -1026,11 +1025,11 @@ function EvalComponent({
           const hasSelectedModels =
             (formState.model_ids ?? []).length > 0;
           const showModelFlags =
-            (s?.model_flags?.show ?? false) || hasSelectedModels;
+            (s?.model_flags?.length ?? 0) > 0 || hasSelectedModels;
           const showModelPositions =
-            (s?.model_positions?.show ?? false) || hasSelectedModels;
+            (s?.model_positions?.length ?? 0) > 0 || hasSelectedModels;
           const showModelRubrics =
-            (s?.model_rubrics?.show ?? false) || hasSelectedModels;
+            (s?.model_rubrics?.length ?? 0) > 0 || hasSelectedModels;
 
           return (
             <StepCard
@@ -1083,8 +1082,9 @@ function EvalComponent({
               <div className="space-y-6">
                 <Models
                   model_id={formState.model_ids?.[0] ?? null}
-                  show_models={(s?.models?.show ?? false) || (s?.models?.required ?? false)}
-                  models={s?.models?.resources ?? []}
+                  model_resource={s?.models?.find((item) => item.selected) ?? null}
+                  show_models={(s?.models?.length ?? 0) > 0}
+                  models={s?.models ?? []}
                   disabled={disabled}
                   onModelIdChange={(id) =>
                     setFormState((prev) => ({
@@ -1092,20 +1092,19 @@ function EvalComponent({
                       model_ids: id ? [id] : [],
                     }))
                   }
-                  onGenerate={handleGenerateModels}
-                  required={s?.models?.required ?? false}
-                  showAiGenerate={s?.models?.show_ai_generate ?? false}
+                  required={false}
                   searchTerm={modelSearch ?? ""}
                   showSelectedFilter={modelShowSelected}
                 />
                 <ModelFlags
-                  model_flag_ids={formState.model_flag_ids ?? []}
-                  model_flag_resources={s?.model_flags?.current ?? []}
+                  model_flag_resources={
+                    (s?.model_flags ?? []).filter((item) => item.selected) ?? []
+                  }
                   show_model_flags={showModelFlags}
-                  model_flags={s?.model_flags?.resources ?? []}
+                  model_flags={s?.model_flags ?? []}
                   model_ids={formState.model_ids ?? []}
-                  models={s?.models?.resources ?? []}
-                  model_resources={s?.models?.current ?? []}
+                  models={s?.models ?? []}
+                  model_resources={(s?.models ?? []).filter((item) => item.selected)}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({
@@ -1113,10 +1112,7 @@ function EvalComponent({
                       model_flag_ids: ids,
                     }))
                   }
-                  createModelFlagsAction={createModelFlagsAction}
-                  onGenerate={handleGenerateModelFlags}
-                  required={s?.model_flags?.required ?? false}
-                  showAiGenerate={s?.model_flags?.show_ai_generate ?? false}
+                  required={false}
                   onModelFlagValues={(flags) =>
                     setFormState((prev) => ({
                       ...prev,
@@ -1126,11 +1122,13 @@ function EvalComponent({
                 />
                 <ModelPositions
                   model_position_ids={formState.model_position_ids ?? []}
-                  model_position_resources={s?.model_positions?.current ?? []}
+                  model_position_resources={
+                    (s?.model_positions ?? []).filter((item) => item.selected) ?? []
+                  }
                   show_model_positions={showModelPositions}
-                  model_positions={s?.model_positions?.resources ?? []}
-                  models={s?.models?.resources ?? []}
-                  model_resources={s?.models?.current ?? []}
+                  model_positions={s?.model_positions ?? []}
+                  models={s?.models ?? []}
+                  model_resources={(s?.models ?? []).filter((item) => item.selected)}
                   disabled={disabled}
                   onChange={() => {}}
                   onPositionIdsChange={(ids) =>
@@ -1139,12 +1137,10 @@ function EvalComponent({
                       model_position_ids: ids,
                     }))
                   }
-                  eval_id={evalId || null}
+                  simulation_id={evalId || null}
                   model_ids={formState.model_ids}
-                  createModelPositionsAction={createModelPositionsAction}
                   onGenerate={handleGenerateModelPositions}
-                  required={s?.model_positions?.required ?? false}
-                  showAiGenerate={s?.model_positions?.show_ai_generate ?? false}
+                  required={false}
                   onModelPositionValues={(positions) =>
                     setFormState((prev) => ({
                       ...prev,
@@ -1153,13 +1149,13 @@ function EvalComponent({
                   }
                 />
                 <ModelRubrics
-                  model_rubric_ids={formState.model_rubric_ids ?? []}
-                  model_rubric_resources={s?.model_rubrics?.current ?? []}
+                  model_rubric_resources={
+                    (s?.model_rubrics ?? []).filter((item) => item.selected) ?? []
+                  }
                   show_model_rubrics={showModelRubrics}
-                  model_rubrics={s?.model_rubrics?.resources ?? []}
                   model_ids={formState.model_ids ?? []}
-                  models={s?.models?.resources ?? []}
-                  model_resources={s?.models?.current ?? []}
+                  models={s?.models ?? []}
+                  model_resources={(s?.models ?? []).filter((item) => item.selected)}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({
@@ -1167,10 +1163,7 @@ function EvalComponent({
                       model_rubric_ids: ids,
                     }))
                   }
-                  createModelRubricsAction={createModelRubricsAction}
-                  onGenerate={handleGenerateModelRubrics}
-                  required={s?.model_rubrics?.required ?? false}
-                  showAiGenerate={s?.model_rubrics?.show_ai_generate ?? false}
+                  required={false}
                   onModelRubricValues={(rubrics) =>
                     setFormState((prev) => ({
                       ...prev,
@@ -1194,10 +1187,6 @@ function EvalComponent({
       disabled,
       isEditMode,
       evalId,
-      handleGenerateNames,
-      handleGenerateDescriptions,
-      handleGenerateDepartments,
-      handleGenerateFlags,
       handleGenerateModels,
       handleGenerateModelFlags,
       handleGenerateModelPositions,
@@ -1206,11 +1195,6 @@ function EvalComponent({
       stepResources,
       canRegenerate,
       handleDirectStepGenerate,
-      createNamesAction,
-      createDescriptionsAction,
-      createModelFlagsAction,
-      createModelPositionsAction,
-      createModelRubricsAction,
       makeOnGenerationComplete,
     ]
   );

@@ -10,6 +10,7 @@ import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import Leaderboard from "@/components/artifacts/leaderboard/Leaderboard";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { buildSnapshot } from "@/lib/auth";
+import { guardPage } from "@/lib/permissions";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -23,16 +24,16 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 /** ---- Strong types from OpenAPI ---- */
 type LeaderboardIn = InputOf<"/attempt/leaderboard/get", "post">;
 type LeaderboardOut = OutputOf<"/attempt/leaderboard/get", "post">;
-type GenerateLeaderboardIn = InputOf<"/attempt/leaderboard/generate", "post">;
-type GenerateLeaderboardOut = OutputOf<"/attempt/leaderboard/generate", "post">;
-type GenerationsIn = InputOf<"/attempt/leaderboard/generations", "post">;
-type GenerationsOut = OutputOf<"/attempt/leaderboard/generations", "post">;
-type GroupLeaderboardIn = InputOf<"/attempt/leaderboard/group", "post">;
-type GroupLeaderboardOut = OutputOf<"/attempt/leaderboard/group", "post">;
-type ProblemLeaderboardIn = InputOf<"/attempt/leaderboard/problem", "post">;
-type ProblemLeaderboardOut = OutputOf<"/attempt/leaderboard/problem", "post">;
-type ContextIn = InputOf<"/attempt/leaderboard/context", "post">;
-type ContextOut = OutputOf<"/attempt/leaderboard/context", "post">;
+type GenerateLeaderboardIn = InputOf<"/attempt/generate", "post">;
+type GenerateLeaderboardOut = OutputOf<"/attempt/generate", "post">;
+type GenerationsIn = InputOf<"/attempt/generations", "post">;
+type GenerationsOut = OutputOf<"/attempt/generations", "post">;
+type GroupLeaderboardIn = InputOf<"/attempt/group", "post">;
+type GroupLeaderboardOut = OutputOf<"/attempt/group", "post">;
+type ProblemLeaderboardIn = InputOf<"/attempt/problem", "post">;
+type ProblemLeaderboardOut = OutputOf<"/attempt/problem", "post">;
+type ContextIn = InputOf<"/attempt/context", "post">;
+type ContextOut = OutputOf<"/attempt/context", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Leaderboard responses can get large and exceed Next.js 2MB cache limit.
@@ -64,28 +65,28 @@ async function generateLeaderboard(
   input: GenerateLeaderboardIn
 ): Promise<GenerateLeaderboardOut> {
   "use server";
-  return api.post("/attempt/leaderboard/generate", input);
+  return api.post("/attempt/generate", input);
 }
 
 async function getLeaderboardGroupHistory(groupId: string): Promise<GroupLeaderboardOut> {
   "use server";
-  return api.post("/attempt/leaderboard/group", { body: { group_id: groupId } } as GroupLeaderboardIn);
+  return api.post("/attempt/group", { body: { group_id: groupId } } as GroupLeaderboardIn);
 }
 
 async function searchLeaderboardGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/attempt/leaderboard/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/attempt/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createLeaderboardProblem(input: ProblemLeaderboardIn): Promise<ProblemLeaderboardOut> {
   "use server";
-  return api.post("/attempt/leaderboard/problem", input);
+  return api.post("/attempt/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/attempt/leaderboard/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -117,8 +118,9 @@ export default async function LeaderboardPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/attempt/leaderboard/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
     const snapshot = buildSnapshot(session, context.profile);
+    guardPage("/leaderboard", context.profile.role_permissions);
 
     // Parse search params via nuqs loader
     const q = loadLeaderboardSearchParams(await searchParams);
@@ -141,7 +143,7 @@ export default async function LeaderboardPage({
           page_offset: 0,
         },
       }),
-      api.post("/attempt/leaderboard/group", { body: {} } as GroupLeaderboardIn),
+      api.post("/attempt/group", { body: {} } as GroupLeaderboardIn),
     ]);
 
     // Compute initial filters from inline facets

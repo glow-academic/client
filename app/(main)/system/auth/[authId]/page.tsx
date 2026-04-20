@@ -30,20 +30,6 @@ type UpdateAuthIn = InputOf<"/auth/update", "post">;
 type UpdateAuthOut = OutputOf<"/auth/update", "post">;
 type PatchAuthDraftIn = InputOf<"/auth/draft", "patch">;
 type PatchAuthDraftOut = OutputOf<"/auth/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftProtocolsIn = InputOf<"/api/v5/resources/protocols", "post">;
-type CreateDraftProtocolsOut = OutputOf<"/api/v5/resources/protocols", "post">;
-type CreateDraftSlugsIn = InputOf<"/api/v5/resources/slugs", "post">;
-type CreateDraftSlugsOut = OutputOf<"/api/v5/resources/slugs", "post">;
 type GroupAuthIn = InputOf<"/auth/group", "post">;
 type GroupAuthOut = OutputOf<"/auth/group", "post">;
 type GenerateAuthIn = InputOf<"/auth/generate", "post">;
@@ -81,34 +67,6 @@ async function patchAuthDraft(
 ): Promise<PatchAuthDraftOut> {
   "use server";
   return api.patch("/auth/draft", input);
-}
-
-async function createDraftNames(
-  input: CreateDraftNamesIn
-): Promise<CreateDraftNamesOut> {
-  "use server";
-  return api.post("/resources/names", input);
-}
-
-async function createDraftDescriptions(
-  input: CreateDraftDescriptionsIn
-): Promise<CreateDraftDescriptionsOut> {
-  "use server";
-  return api.post("/resources/descriptions", input);
-}
-
-async function createDraftProtocols(
-  input: CreateDraftProtocolsIn
-): Promise<CreateDraftProtocolsOut> {
-  "use server";
-  return api.post("/resources/protocols", input);
-}
-
-async function createDraftSlugs(
-  input: CreateDraftSlugsIn
-): Promise<CreateDraftSlugsOut> {
-  "use server";
-  return api.post("/resources/slugs", input);
 }
 
 async function generateAuth(
@@ -199,48 +157,48 @@ export default async function AuthEditPage({
 
   // Fetch auth detail (always fresh - source of truth) with draft_id
   try {
-    const input: GetAuthIn = {
+    const input = {
       body: {
         auth_id: authId,
         draft_id: q.draftId ?? null,
       } as GetAuthIn["body"],
-    };
+    } as GetAuthIn;
     const [authData, context, draftsResult, groupResult] = await Promise.all([
       getAuth(input),
       api.post("/auth/context", { body: { entity_id: authId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/auth/drafts", {}),
+      api.post("/auth/drafts", {} as never),
       api.post("/auth/group", { body: {} } as GroupAuthIn),
     ]);
 
-    const entityName = context.page_metadata?.detail.title;
+    const entityName = context.page_metadata?.detail.title ?? "Auth";
 
+    const layoutProps = {
+      profileData: context.profile,
+      sessionSnapshot: snapshot,
+      sidebarProps: {
+        activeSection: "auth",
+        createFeedback: createAuthProblem as never,
+      },
+      breadcrumbs: [
+        { title: "System", section: "system", url: "/system" },
+        { title: "Auth", section: "auth", url: "/system/auth" },
+        { title: entityName },
+      ],
+      toolbar: <SaveToolbar />,
+      panelProps: {
+        artifactType: "auth",
+        groupId: (groupResult as GroupAuthOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateAuth,
+        operations: ["draft", "get", "group"],
+        getGroupHistory: getAuthGroupHistory,
+        searchGroups: searchAuthGroups,
+      },
+      ...(initialSidebarOpen !== undefined ? { initialSidebarOpen } : {}),
+      ...(initialPanelOpen !== undefined ? { initialPanelOpen } : {}),
+    };
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
-        <FullPageLayout
-          profileData={context.profile}
-          sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
-          initialPanelOpen={initialPanelOpen}
-          sidebarProps={{
-            activeSection: "auth",
-            createFeedback: createAuthProblem,
-          }}
-          breadcrumbs={[
-            { title: "System", section: "system", url: "/system" },
-            { title: "Auth", section: "auth", url: "/system/auth" },
-            { title: entityName },
-          ]}
-          toolbar={<SaveToolbar />}
-          panelProps={{
-            artifactType: "auth",
-            groupId: (groupResult as GroupAuthOut & { group_id?: string })?.group_id ?? null,
-            generateAction: generateAuth,
-            operations: ["draft", "get", "group"],
-            getGroupHistory: getAuthGroupHistory,
-            searchGroups: searchAuthGroups,
-            prompts: context.prompts?.prompts,
-          }}
-        >
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as never}>
+        <FullPageLayout {...layoutProps}>
           <div className="space-y-6 px-4" data-page="auth-edit" data-auth-id={authId}>
             <Auth
               key={q.draftId || "no-draft"}
@@ -249,10 +207,6 @@ export default async function AuthEditPage({
               createAuthAction={createAuth}
               updateAuthAction={updateAuth}
               patchAuthDraftAction={patchAuthDraft}
-              createNamesAction={createDraftNames}
-              createDescriptionsAction={createDraftDescriptions}
-              createProtocolsAction={createDraftProtocols}
-              createSlugsAction={createDraftSlugs}
             />
           </div>
         </FullPageLayout>
@@ -281,14 +235,6 @@ export default async function AuthEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CreateDraftDescriptionsIn,
-  CreateDraftDescriptionsOut,
-  CreateDraftNamesIn,
-  CreateDraftNamesOut,
-  CreateDraftProtocolsIn,
-  CreateDraftProtocolsOut,
-  CreateDraftSlugsIn,
-  CreateDraftSlugsOut,
   GetAuthIn,
   GetAuthOut,
   PatchAuthDraftIn,

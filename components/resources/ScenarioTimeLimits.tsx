@@ -21,19 +21,6 @@ import { cn } from "@/lib/utils";
 import { Check, Clock, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftScenarioTimeLimitsIn = {
-  body: {
-    scenario_id: string;
-    time_limit_seconds: number;
-    mcp: boolean;
-    tool_id?: string;
-    negative: boolean;
-  };
-};
-type CreateDraftScenarioTimeLimitsOut = {
-  id?: string | null;
-};
-
 export interface ScenarioTimeLimitResourceItem {
   id?: string | null;
   scenario_id?: string | null;
@@ -68,20 +55,7 @@ export interface ScenarioTimeLimitsProps {
   id?: string;
   required?: boolean;
   description?: string;
-  group_id?: string | null;
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createScenarioTimeLimitsAction?:
-    | ((
-        input: CreateDraftScenarioTimeLimitsIn,
-      ) => Promise<CreateDraftScenarioTimeLimitsOut>)
-    | undefined;
   onTimeLimitIdsChange?: (ids: string[]) => void;
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (
-    flush: () => Promise<{ scenario_time_limit_ids: string[] } | void>,
-  ) => void;
   /** Value callback for unified draft — reports all scenario+time_limit pairs */
   onScenarioTimeLimitValues?: (timeLimits: Array<{ scenario_id: string; time_limit_seconds: number; negative: boolean }>) => void;
 }
@@ -97,12 +71,7 @@ export function ScenarioTimeLimits({
   id = "scenario_time_limits",
   required = false,
   description,
-  group_id,
-  create_tool_id,
-  createScenarioTimeLimitsAction,
   onTimeLimitIdsChange,
-  isAutosaveEnabled = true,
-  registerFlush,
   onScenarioTimeLimitValues,
 }: ScenarioTimeLimitsProps) {
   const show = show_scenario_time_limits ?? false;
@@ -147,27 +116,6 @@ export function ScenarioTimeLimits({
     });
     return map;
   }, [scenarios, scenario_resources]);
-  // Map resource ID → artifact ID for API calls (API expects scenario_artifact.id)
-  // From get_simulation SQL: s.id = scenarios_resource.id, s.scenario_id = scenario_artifact.id (via junction)
-  const artifactIdMap = useMemo(() => {
-    const map = new Map<string, string>();
-    (scenarios ?? []).forEach((s) => {
-      // s.id = scenarios_resource.id (denormalized), s.scenario_id = scenario_artifact.id (canonical)
-      if (s.id && s.scenario_id) {
-        map.set(s.id, s.scenario_id);
-      } else if (s.scenario_id) {
-        map.set(s.scenario_id, s.scenario_id);
-      }
-    });
-    (scenario_resources ?? []).forEach((s) => {
-      if (s.id && s.scenario_id) {
-        map.set(s.id, s.scenario_id);
-      } else if (s.scenario_id) {
-        map.set(s.scenario_id, s.scenario_id);
-      }
-    });
-    return map;
-  }, [scenarios, scenario_resources]);
 
   const [timeLimitByScenario, setTimeLimitByScenario] = useState<
     Map<string, number | null>
@@ -178,13 +126,6 @@ export function ScenarioTimeLimits({
   const [timeLimitIdsByScenario, setTimeLimitIdsByScenario] = useState<
     Map<string, string>
   >(new Map());
-  const createdTimeLimitKeysRef = useRef<Set<string>>(new Set());
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<
-    (() => Promise<{ scenario_time_limit_ids: string[] } | void>) | null
-  >(null);
-
   useEffect(() => {
     const nextLimits = new Map<string, number | null>();
     const nextIds = new Map<string, string>();
@@ -267,73 +208,6 @@ export function ScenarioTimeLimits({
     onScenarioTimeLimitValuesRef.current(values);
   }, [timeLimitByScenario, negativeByScenario]);
 
-  // Update flush function - returns current IDs from local state
-  flushRef.current = async (): Promise<{
-    scenario_time_limit_ids: string[];
-  } | void> => {
-    const ids = scenario_ids
-      .map((scenarioId) => timeLimitIdsByScenario.get(scenarioId))
-      .filter((value): value is string => Boolean(value));
-    return { scenario_time_limit_ids: ids };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
-  const createTimeLimit = useCallback(
-    async (scenarioId: string, value: number, negative?: boolean) => {
-      if (!isAutosaveEnabled || !createScenarioTimeLimitsAction || !group_id) {
-        return;
-      }
-      const negFlag = negative ?? negativeByScenario.get(scenarioId) ?? false;
-      const key = `${scenarioId}:${value}:${negFlag}`;
-      if (createdTimeLimitKeysRef.current.has(key)) {
-        return;
-      }
-      createdTimeLimitKeysRef.current.add(key);
-
-      // Resolve resource ID to artifact ID for the API
-      const artifactScenarioId = artifactIdMap.get(scenarioId) ?? scenarioId;
-
-      try {
-        const result = await createScenarioTimeLimitsAction({
-          body: {
-            scenario_id: artifactScenarioId,
-            time_limit_seconds: value,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-            negative: negFlag,
-          },
-        });
-
-        if (!result?.id) {
-          return;
-        }
-
-        // Update state - useEffect will sync to parent via onTimeLimitIdsChange
-        setTimeLimitIdsByScenario((prev) => {
-          const next = new Map(prev);
-          next.set(scenarioId, result.id as string);
-          return next;
-        });
-      } catch {
-        // Resource creation errors are handled by API; keep UI state intact.
-      }
-    },
-    [
-      isAutosaveEnabled,
-      createScenarioTimeLimitsAction,
-      create_tool_id,
-      group_id,
-      artifactIdMap,
-      negativeByScenario,
-    ],
-  );
-
   const handleChange = useCallback(
     (scenarioId: string, value: string) => {
       const parsed = value.trim() === "" ? null : Number(value);
@@ -347,12 +221,8 @@ export function ScenarioTimeLimits({
         next.set(scenarioId, nextValue);
         return next;
       });
-
-      if (nextValue !== null) {
-        void createTimeLimit(scenarioId, nextValue);
-      }
     },
-    [createTimeLimit],
+    [],
   );
 
   // Accept pending — pending items are already in form state, nothing to change
@@ -478,10 +348,6 @@ export function ScenarioTimeLimits({
               next.set(scenarioId, checked);
               return next;
             });
-            // Re-create resource with updated negative flag
-            if (currentValue !== null) {
-              void createTimeLimit(scenarioId, currentValue, checked);
-            }
           };
 
           return (

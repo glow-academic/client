@@ -11,6 +11,7 @@ import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import Dashboard from "@/components/artifacts/dashboard/Dashboard";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { buildSnapshot } from "@/lib/auth";
+import { guardPage } from "@/lib/permissions";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -35,16 +36,16 @@ type BulkArchiveAttemptsOut = OutputOf<
 >;
 
 /** ---- Generation types ---- */
-type ContextIn = InputOf<"/attempt/dashboard/context", "post">;
-type ContextOut = OutputOf<"/attempt/dashboard/context", "post">;
-type GenerateDashboardIn = InputOf<"/attempt/dashboard/generate", "post">;
-type GenerateDashboardOut = OutputOf<"/attempt/dashboard/generate", "post">;
-type GenerationsIn = InputOf<"/attempt/dashboard/generations", "post">;
-type GenerationsOut = OutputOf<"/attempt/dashboard/generations", "post">;
-type GroupDashboardIn = InputOf<"/attempt/dashboard/group", "post">;
-type GroupDashboardOut = OutputOf<"/attempt/dashboard/group", "post">;
-type ProblemDashboardIn = InputOf<"/attempt/dashboard/problem", "post">;
-type ProblemDashboardOut = OutputOf<"/attempt/dashboard/problem", "post">;
+type ContextIn = InputOf<"/attempt/context", "post">;
+type ContextOut = OutputOf<"/attempt/context", "post">;
+type GenerateDashboardIn = InputOf<"/attempt/generate", "post">;
+type GenerateDashboardOut = OutputOf<"/attempt/generate", "post">;
+type GenerationsIn = InputOf<"/attempt/generations", "post">;
+type GenerationsOut = OutputOf<"/attempt/generations", "post">;
+type GroupDashboardIn = InputOf<"/attempt/group", "post">;
+type GroupDashboardOut = OutputOf<"/attempt/group", "post">;
+type ProblemDashboardIn = InputOf<"/attempt/problem", "post">;
+type ProblemDashboardOut = OutputOf<"/attempt/problem", "post">;
 
 /** ---- Fetch function ---- */
 const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
@@ -58,7 +59,7 @@ const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/attempt/dashboard/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -90,8 +91,9 @@ export default async function DashboardPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/attempt/dashboard/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
     const snapshot = buildSnapshot(session, context.profile);
+    guardPage("/analytics/dashboard", context.profile.role_permissions);
 
     // Parse search params via nuqs loader
     const q = loadDashboardSearchParams(await searchParams);
@@ -124,8 +126,10 @@ export default async function DashboardPage({
     const historySimulationSearch = q.historySimulationSearch ?? undefined;
     const historyScenarioSearch = q.historyScenarioSearch ?? undefined;
 
-    // Single API call returning all dashboard data + group in parallel
-    const [data, initialHistoryVisibility, groupResult] = await Promise.all([
+    // Parallel fetch: dashboard data + history search + group
+    type SearchIn = InputOf<"/attempt/dashboard/search", "post">;
+    type SearchOut = OutputOf<"/attempt/dashboard/search", "post">;
+    const [data, historyResult, initialHistoryVisibility, groupResult] = await Promise.all([
       getDashboard({
         body: {
           ...(q.startDate && { start_date: q.startDate }),
@@ -145,22 +149,31 @@ export default async function DashboardPage({
           ...(parameterSearch && { parameter_search: parameterSearch }),
           ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
           ...(scenarioSearch && { scenario_search: scenarioSearch }),
-          // History
-          history_page: historyPage,
-          history_page_size: historyPageSize,
-          history_sort_by: historySortBy,
-          history_sort_order: historySortOrder,
-          ...(historySearch && { history_simulation_search: historySearch }),
-          ...(historyScenarioIds?.length && { history_scenario_ids: historyScenarioIds }),
-          ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
-          ...(historyProfileSearch && { history_profile_search: historyProfileSearch }),
-          ...(historySimulationSearch && { history_simulation_search: historySimulationSearch }),
-          ...(historyScenarioSearch && { history_scenario_search: historyScenarioSearch }),
         },
       }),
+      api.post("/attempt/dashboard/search", {
+        body: {
+          page: historyPage,
+          page_size: historyPageSize,
+          sort_by: historySortBy,
+          sort_order: historySortOrder,
+          ...(historySearch && { simulation_search: historySearch }),
+          ...(historyScenarioIds?.length && { scenario_ids: historyScenarioIds }),
+          ...(historyInfiniteMode !== undefined && { infinite_mode: historyInfiniteMode }),
+          ...(historyProfileSearch && { profile_search: historyProfileSearch }),
+          ...(historySimulationSearch && { simulation_search: historySimulationSearch }),
+          ...(historyScenarioSearch && { scenario_search: historyScenarioSearch }),
+          ...(q.startDate && { start_date: q.startDate }),
+          ...(q.endDate && { end_date: q.endDate }),
+          ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
+          ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
+        },
+      } as SearchIn) as SearchOut,
       readViewCookie("history"),
-      api.post("/attempt/dashboard/group", { body: {} } as GroupDashboardIn),
+      api.post("/attempt/group", { body: {} } as GroupDashboardIn),
     ]);
+    // Inject history into data so Dashboard component can read it
+    (data as Record<string, unknown>).history = historyResult;
 
     // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
     const facets = data.analytics;
@@ -282,22 +295,22 @@ async function generateDashboard(
   input: GenerateDashboardIn
 ): Promise<GenerateDashboardOut> {
   "use server";
-  return api.post("/attempt/dashboard/generate", input);
+  return api.post("/attempt/generate", input);
 }
 
 async function getDashboardGroupHistory(groupId: string): Promise<GroupDashboardOut> {
   "use server";
-  return api.post("/attempt/dashboard/group", { body: { group_id: groupId } } as GroupDashboardIn);
+  return api.post("/attempt/group", { body: { group_id: groupId } } as GroupDashboardIn);
 }
 
 async function searchDashboardGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/attempt/dashboard/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/attempt/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createDashboardProblem(input: ProblemDashboardIn): Promise<ProblemDashboardOut> {
   "use server";
-  return api.post("/attempt/dashboard/problem", input);
+  return api.post("/attempt/problem", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

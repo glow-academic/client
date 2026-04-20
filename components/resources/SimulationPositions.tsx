@@ -59,28 +59,8 @@ export interface SimulationPositionsProps {
   id?: string;
   required?: boolean;
   description?: string;
-  group_id?: string | null;
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  onGenerate?: (() => void | Promise<void>) | undefined;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  createSimulationPositionsAction?:
-    | ((input: {
-        body: {
-          group_id: string;
-          simulation_id: string;
-          value: number;
-          mcp: boolean;
-        };
-      }) => Promise<unknown>)
-    | undefined;
   /** Callback to emit position values for unified draft */
   onSimulationPositionValues?: (positions: Array<{ simulation_id: string; value: number }>) => void;
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created positions */
-  registerFlush?: (
-    flush: () => Promise<{ simulation_position_ids: string[] | null } | void>,
-  ) => void;
 }
 
 export function SimulationPositions({
@@ -95,14 +75,7 @@ export function SimulationPositions({
   id = "simulation_positions",
   required = false,
   description,
-  group_id,
-  create_tool_id,
-  onGenerate: _onGenerate,
-  showAiGenerate: _showAiGenerate = false,
-  createSimulationPositionsAction,
   onSimulationPositionValues,
-  isAutosaveEnabled = true,
-  registerFlush,
 }: SimulationPositionsProps) {
   const show = show_simulation_positions ?? false;
   const selectedSimulationIds = useMemo(
@@ -189,13 +162,13 @@ export function SimulationPositions({
     },
   );
 
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<
-    | (() => Promise<{ simulation_position_ids: string[] | null } | void>)
-    | undefined
-  >(undefined);
+  // Dirty flag: once the user interacts, stop syncing from server data and
+  // stop emitting on pure re-renders (same pattern as Examples.tsx).
+  const isDirtyRef = useRef(false);
+  const isInitialMountRef = useRef(true);
 
   useEffect(() => {
+    if (isDirtyRef.current) return;
     const newMap = new Map<string, number>();
     selectedSimulationIds.forEach((simulationId, index) => {
       const existingPosition = positionMap.get(simulationId);
@@ -204,10 +177,17 @@ export function SimulationPositions({
     setLocalPositions(newMap);
   }, [selectedSimulationIds, positionMap]);
 
-  // Emit position values for unified draft
+  // Emit position values for unified draft. Only emit after the user has
+  // actually interacted — otherwise the initial sync effect would emit and
+  // trigger a spurious save.
   const onSimulationPositionValuesRef = useRef(onSimulationPositionValues);
   onSimulationPositionValuesRef.current = onSimulationPositionValues;
   useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    if (!isDirtyRef.current) return;
     if (!onSimulationPositionValuesRef.current) return;
     const values: Array<{ simulation_id: string; value: number }> = [];
     localPositions.forEach((value, simulationId) => {
@@ -215,55 +195,6 @@ export function SimulationPositions({
     });
     onSimulationPositionValuesRef.current(values);
   }, [localPositions]);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{
-    simulation_position_ids: string[] | null;
-  } | void> => {
-    // Skip if no action available
-    if (!createSimulationPositionsAction || !group_id) {
-      return;
-    }
-
-    const positionsArray: SimulationPositionItem[] = Array.from(
-      localPositions.entries(),
-    ).map(([sid, value]) => ({
-      simulation_id: sid,
-      value,
-      generated: false,
-    }));
-
-    if (positionsArray.length === 0) {
-      return { simulation_position_ids: null };
-    }
-
-    try {
-      const createdIds: string[] = [];
-      for (const pos of positionsArray) {
-        await createSimulationPositionsAction({
-          body: {
-            simulation_id: pos.simulation_id,
-            value: pos.value,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        createdIds.push(pos.simulation_id);
-      }
-      return { simulation_position_ids: createdIds };
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to create simulation position resources:", error);
-      throw error;
-    }
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   const emitPositions = useCallback(
     (updated: Map<string, number>) => {
@@ -275,43 +206,13 @@ export function SimulationPositions({
         generated: false,
       }));
       onChange(positionsArray);
-
-      // Create resource entries for each position - only when autosave is enabled
-      if (
-        isAutosaveEnabled &&
-        createSimulationPositionsAction &&
-        create_tool_id &&
-        group_id
-      ) {
-        for (const pos of positionsArray) {
-          createSimulationPositionsAction({
-            body: {
-              simulation_id: pos.simulation_id,
-              value: pos.value,
-              mcp: false,
-              tool_id: create_tool_id ?? undefined,
-            },
-          }).catch((error) => {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create simulation position resource for ${pos.simulation_id}:`,
-              error,
-            );
-          });
-        }
-      }
     },
-    [
-      onChange,
-      createSimulationPositionsAction,
-      create_tool_id,
-      group_id,
-      isAutosaveEnabled,
-    ],
+    [onChange],
   );
 
   const updatePositions = useCallback(
     (updater: (prev: Map<string, number>) => Map<string, number>) => {
+      isDirtyRef.current = true;
       setLocalPositions((prev) => {
         const updated = updater(new Map(prev));
         emitPositions(updated);

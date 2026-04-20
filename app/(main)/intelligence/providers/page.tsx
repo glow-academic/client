@@ -19,6 +19,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
+import { guardPage } from "@/lib/permissions";
 import { loadProvidersSearchParams } from "@/lib/search-params/providers";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -137,6 +138,7 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
     // Profile data for providers
     const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
     const snapshot = buildSnapshot(session, context.profile);
+    guardPage("/intelligence/providers", context.profile.role_permissions);
 
     // Parse search params using nuqs
     const params = await searchParams;

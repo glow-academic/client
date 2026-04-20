@@ -46,7 +46,6 @@ import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   type ResourceConfig,
-  buildDraftPayload,
   checkHasResourceIds,
 } from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
@@ -331,7 +330,7 @@ function PersonaComponent({
         .map((d) => d.department_id)
         .filter(Boolean) as string[],
       parameter_field_ids: (data.parameter_fields?.filter((p: any) => p.selected) ?? [])
-        .map((f) => f.field_id)
+        .map((f) => f.id)
         .filter(Boolean) as string[],
       example_ids: (data.examples?.filter((e: any) => e.selected) ?? [])
         .map((e) => e.id)
@@ -364,9 +363,6 @@ function PersonaComponent({
     useState<PersonaFormState>(getInitialFormState);
   const formStateRef = React.useRef<Record<string, unknown>>(
     formState as unknown as Record<string, unknown>,
-  );
-  const lastPatchedFormStateRef = useRef<PersonaFormState | null>(
-    getInitialFormState(),
   );
   React.useEffect(() => {
     formStateRef.current = formState as unknown as Record<string, unknown>;
@@ -412,29 +408,6 @@ function PersonaComponent({
     | undefined
   >(undefined);
 
-  const formStateDepartmentIdsStr = React.useMemo(
-    () => JSON.stringify(formState.department_ids),
-    [formState.department_ids],
-  );
-  const formStateParameterFieldIdsStr = React.useMemo(
-    () => JSON.stringify(formState.parameter_field_ids),
-    [formState.parameter_field_ids],
-  );
-  const formStateExampleIdsStr = React.useMemo(
-    () => JSON.stringify(formState.example_ids),
-    [formState.example_ids],
-  );
-  const formStateVoiceIdsStr = React.useMemo(
-    () => JSON.stringify(formState.voice_ids),
-    [formState.voice_ids],
-  );
-
-  // Memoize stringified value fields
-  const formStateExamplesStr = React.useMemo(
-    () => JSON.stringify(formState.examples),
-    [formState.examples],
-  );
-
   // formStateKey excludes draftId — the hook prepends it
   const formStateKey = React.useMemo(
     () =>
@@ -463,14 +436,19 @@ function PersonaComponent({
       formState.icon_id,
       formState.instructions_id,
       formState.active_flag_id,
-      formStateDepartmentIdsStr,
-      formStateParameterFieldIdsStr,
-      formStateExampleIdsStr,
-      formStateVoiceIdsStr,
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.department_ids),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.parameter_field_ids),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.example_ids),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.voice_ids),
       formState.name,
       formState.description,
       formState.instructions,
-      formStateExamplesStr,
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.examples),
     ],
   );
 
@@ -485,68 +463,52 @@ function PersonaComponent({
     formState.examples.length > 0;
 
   const buildPatchPayload = useCallback(
-    (
-      draftId: string | null,
-      flushResults?: Record<string, unknown>,
-    ): Record<string, unknown> => {
+    (): Record<string, unknown> => {
       const current = formStateRef.current as unknown as PersonaFormState;
-      const ref = lastPatchedFormStateRef.current;
 
-      // Build ID-only payload for non-creatable resources
-      const idPayload = buildDraftPayload(PERSONA_RESOURCES, {
-        formState: formStateRef.current,
-        referenceState: lastPatchedFormStateRef.current as unknown as Record<
-          string,
-          unknown
-        > | null,
-        flushResults: (flushResults ?? {}) as Record<string, unknown>,
-      });
+      // Append-only: always send full current state as a complete snapshot
+      const payload: Record<string, unknown> = {};
 
-      // Add value fields for creatables (value takes precedence over ID)
+      // For creatables: value takes precedence over ID
       if (current.name != null) {
-        if (!ref || current.name !== ref.name) {
-          idPayload["name"] = current.name;
-          delete idPayload["name_id"];
-        }
-      }
-      if (current.description != null) {
-        if (!ref || current.description !== ref.description) {
-          idPayload["description"] = current.description;
-          delete idPayload["description_id"];
-        }
-      }
-      if (current.instructions != null) {
-        if (!ref || current.instructions !== ref.instructions) {
-          idPayload["instructions"] = current.instructions;
-          delete idPayload["instructions_id"];
-        }
-      }
-      if (current.examples.length > 0) {
-        if (
-          !ref ||
-          JSON.stringify(current.examples) !== JSON.stringify(ref.examples)
-        ) {
-          idPayload["examples"] = current.examples;
-          delete idPayload["example_ids"];
-        }
+        payload.name = current.name;
+      } else if (current.name_id) {
+        payload.name_id = current.name_id;
       }
 
-      // Include pending_ids if any resources are still pending
-      const currentPendingIds = (formStateRef.current as unknown as PersonaFormState).pending_ids;
-      return {
-        input_draft_id: draftId || null,
-        ...idPayload,
-        ...(currentPendingIds?.length ? { pending_ids: currentPendingIds } : {}),
-      };
+      if (current.description != null) {
+        payload.description = current.description;
+      } else if (current.description_id) {
+        payload.description_id = current.description_id;
+      }
+
+      if (current.instructions != null) {
+        payload.instructions = current.instructions;
+      } else if (current.instructions_id) {
+        payload.instructions_id = current.instructions_id;
+      }
+
+      if (current.examples.length > 0) {
+        payload.examples = current.examples;
+      } else if (current.example_ids.length > 0) {
+        payload.example_ids = current.example_ids;
+      }
+
+      // Non-creatable resources: always send IDs
+      if (current.color_id) payload.color_id = current.color_id;
+      if (current.icon_id) payload.icon_id = current.icon_id;
+      if (current.active_flag_id) payload.active_flag_id = current.active_flag_id;
+      if (current.department_ids.length > 0) payload.department_ids = current.department_ids;
+      if (current.parameter_field_ids.length > 0) payload.parameter_field_ids = current.parameter_field_ids;
+      if (current.voice_ids.length > 0) payload.voice_ids = current.voice_ids;
+
+      // Pending state
+      if (current.pending_ids.length > 0) payload.pending_ids = current.pending_ids;
+
+      return payload;
     },
     [],
   );
-
-  const onPatchSuccess = useCallback(() => {
-    lastPatchedFormStateRef.current = {
-      ...(formStateRef.current as unknown as PersonaFormState),
-    };
-  }, []);
 
   // --- Value Change Handlers (creatables report values upward) ---
   const handleNameChange = useCallback((name: string) => {
@@ -570,12 +532,70 @@ function PersonaComponent({
   }, []);
 
   const handleExamplesChange = useCallback((examples: string[]) => {
-    setFormState((prev) => ({
-      ...prev,
-      examples: examples.filter(Boolean),
-      example_ids: [],
-    }));
+    // Resolve text→id against SSR examples. If every text matches an existing
+    // example, route via example_ids instead of creating duplicate resources.
+    // Why: tab-to-autocomplete fills in a suggestion's exact text; sending it as
+    // `examples: [...]` would make the server create a new resource (or churn
+    // on dedup) every save, producing the "indefinite saving" loop.
+    const textToId = new Map<string, string>();
+    for (const ex of stablePersonaDataFields?.examples ?? []) {
+      if (ex.id && ex.example) textToId.set(ex.example, ex.id);
+    }
+    const texts = examples.filter(Boolean);
+    const resolvedIds = texts.map((t) => textToId.get(t));
+    const allResolved = texts.length > 0 && resolvedIds.every((id) => !!id);
+
+    setFormState((prev) => {
+      if (allResolved) {
+        return {
+          ...prev,
+          example_ids: resolvedIds as string[],
+          examples: [],
+        };
+      }
+      return {
+        ...prev,
+        examples: texts,
+        example_ids: [],
+      };
+    });
+  }, [stablePersonaDataFields?.examples]);
+
+  const handleParameterFieldIdsChange = useCallback((ids: string[]) => {
+    setFormState((prev) => {
+      const removedIds = prev.parameter_field_ids.filter((id) => !ids.includes(id));
+      return {
+        ...prev,
+        parameter_field_ids: ids,
+        pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+      };
+    });
   }, []);
+
+  const handleExampleIdsChange = useCallback((ids: string[]) => {
+    setFormState((prev) => {
+      const removedIds = prev.example_ids.filter((id) => !ids.includes(id));
+      return {
+        ...prev,
+        example_ids: ids,
+        examples: [],
+        pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+      };
+    });
+  }, []);
+
+  // Stable id→text mapping, paired by example id (not index). Only includes examples
+  // present in SSR data; newly created examples won't be here, which is the signal
+  // for Examples.tsx to leave user-typed text alone instead of overwriting it.
+  const exampleMapping = useMemo(() => {
+    const mapping: Record<string, string> = {};
+    for (const ex of stablePersonaDataFields?.examples ?? []) {
+      if (ex.id && ex.example) {
+        mapping[ex.id] = ex.example;
+      }
+    }
+    return mapping;
+  }, [stablePersonaDataFields?.examples]);
 
   const {
     setUrlFormDataRef,
@@ -592,7 +612,6 @@ function PersonaComponent({
     hasResourceIds,
     flushRegistryRef: emptyFlushRegistryRef,
     formStateRef,
-    onPatchSuccess,
   });
 
   // --- AI Draft Sync (generic: update draftId when AI saves) ---
@@ -629,7 +648,6 @@ function PersonaComponent({
           JSON.stringify(newState.voice_ids)
       ) {
         serverSyncPendingRef.current = true;
-        lastPatchedFormStateRef.current = newState;
         return newState;
       }
       return prev;
@@ -663,20 +681,51 @@ function PersonaComponent({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const fs = (result as any)?.form_state as Record<string, unknown> | undefined;
         if (fs) {
-          serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name_id: (fs["name_id"] as string) ?? prev.name_id,
-            description_id: (fs["description_id"] as string) ?? prev.description_id,
-            instructions_id: (fs["instructions_id"] as string) ?? prev.instructions_id,
-            color_id: (fs["color_id"] as string) ?? prev.color_id,
-            icon_id: (fs["icon_id"] as string) ?? prev.icon_id,
-            active_flag_id: (fs["active_flag_id"] as string) ?? prev.active_flag_id,
-            department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
-            parameter_field_ids: (fs["parameter_field_ids"] as string[]) ?? prev.parameter_field_ids,
-            example_ids: (fs["example_ids"] as string[]) ?? prev.example_ids,
-            voice_ids: (fs["voice_ids"] as string[]) ?? prev.voice_ids,
-          }));
+          setFormState((prev) => {
+            const next = {
+              ...prev,
+              // Sync resolved IDs and clear value fields — server created the resource,
+              // so the ID is now the source of truth. Keeping the value would cause
+              // infinite re-saves (value takes precedence → creates new resource → new ID → repeat).
+              name_id: (fs["name_id"] as string) ?? prev.name_id,
+              name: fs["name_id"] ? null : prev.name,
+              description_id: (fs["description_id"] as string) ?? prev.description_id,
+              description: fs["description_id"] ? null : prev.description,
+              instructions_id: (fs["instructions_id"] as string) ?? prev.instructions_id,
+              instructions: fs["instructions_id"] ? null : prev.instructions,
+              color_id: (fs["color_id"] as string) ?? prev.color_id,
+              icon_id: (fs["icon_id"] as string) ?? prev.icon_id,
+              active_flag_id: (fs["active_flag_id"] as string) ?? prev.active_flag_id,
+              department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
+              parameter_field_ids: (fs["parameter_field_ids"] as string[]) ?? prev.parameter_field_ids,
+              example_ids: (fs["example_ids"] as string[]) ?? prev.example_ids,
+              examples: (fs["example_ids"] as string[])?.length ? [] : prev.examples,
+              voice_ids: (fs["voice_ids"] as string[]) ?? prev.voice_ids,
+            };
+            // Only set the server-sync "absorb" flag when the state actually changes.
+            // If we set it unconditionally, the flag can stick (when server returns the
+            // same values the client already has — e.g. after a picker selection) and
+            // silently absorb the NEXT user action. Why: the autosave effect only runs
+            // when draftPatchKey changes, so an unchanged sync never consumes the flag.
+            const changed =
+              prev.name_id !== next.name_id ||
+              prev.name !== next.name ||
+              prev.description_id !== next.description_id ||
+              prev.description !== next.description ||
+              prev.instructions_id !== next.instructions_id ||
+              prev.instructions !== next.instructions ||
+              prev.color_id !== next.color_id ||
+              prev.icon_id !== next.icon_id ||
+              prev.active_flag_id !== next.active_flag_id ||
+              JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
+              JSON.stringify(prev.parameter_field_ids) !== JSON.stringify(next.parameter_field_ids) ||
+              JSON.stringify(prev.example_ids) !== JSON.stringify(next.example_ids) ||
+              JSON.stringify(prev.examples) !== JSON.stringify(next.examples) ||
+              JSON.stringify(prev.voice_ids) !== JSON.stringify(next.voice_ids);
+            if (!changed) return prev;
+            serverSyncPendingRef.current = true;
+            return next;
+          });
         }
 
         return result;
@@ -1294,16 +1343,7 @@ function PersonaComponent({
                     });
                   }
                 }}
-                onChange={(ids) =>
-                  setFormState((prev) => {
-                    const removedIds = prev.parameter_field_ids.filter((id) => !ids.includes(id));
-                    return {
-                      ...prev,
-                      parameter_field_ids: ids,
-                      pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
-                    };
-                  })
-                }
+                onChange={handleParameterFieldIdsChange}
                 disabled={disabled}
 
                 showAiGenerate={false}
@@ -1552,17 +1592,7 @@ function PersonaComponent({
                 show_examples={true}
                 examples={s?.examples ?? []}
                 disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => {
-                    const removedIds = prev.example_ids.filter((id) => !ids.includes(id));
-                    return {
-                      ...prev,
-                      example_ids: ids,
-                      examples: [],
-                      pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
-                    };
-                  })
-                }
+                onChange={handleExampleIdsChange}
                 onExamplesChange={handleExamplesChange}
                 onGenerate={generateHandlers["examples"]}
                 maxItems={10}
@@ -1571,18 +1601,7 @@ function PersonaComponent({
 
                 showAiGenerate={false}
                 required={false}
-                exampleMapping={
-                  s?.examples && formState.example_ids
-                    ? Object.fromEntries(
-                        s.examples
-                          .map((ex, idx) => [
-                            formState.example_ids?.[idx] || "",
-                            ex.example || "",
-                          ])
-                          .filter(([id]) => id),
-                      )
-                    : {}
-                }
+                exampleMapping={exampleMapping}
               />
               <Voices
                 voice_ids={formState.voice_ids ?? []}
@@ -1637,6 +1656,9 @@ function PersonaComponent({
       handleDescriptionChange,
       handleInstructionsChange,
       handleExamplesChange,
+      handleParameterFieldIdsChange,
+      handleExampleIdsChange,
+      exampleMapping,
     ],
   );
 

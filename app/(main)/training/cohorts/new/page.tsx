@@ -230,7 +230,6 @@ export default async function NewCohortPage({
             aria-label="Create new cohort page"
           >
             <Cohort
-              key={q.draftId || "no-draft"}
               cohortData={cohortData}
               createCohortAction={createCohort}
               patchCohortDraftAction={patchCohortDraft}

@@ -16,16 +16,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { Check, X } from "lucide-react";
+import { useCallback, useMemo } from "react";
 
 export interface ToolResourceItem {
   id?: string | null;
   name?: string | null;
   description?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface ToolsItem {
@@ -38,7 +39,6 @@ export interface ToolsProps {
   tool_ids?: string[]; // Current tools resource IDs (standardized prop name)
   tool_resources?: ToolResourceItem[]; // Selected tools resources
   show_tools?: boolean; // Whether to show this resource picker
-  tool_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   tools?: ToolResourceItem[]; // All available tools from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update tool_ids in form state
@@ -47,102 +47,38 @@ export interface ToolsProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   searchTerm?: string; // Search term for filtering tools
   onSearchChange?: (term: string) => void; // Callback when search term changes
   showSelectedFilter?: boolean; // Whether to show only selected tools
   onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
-  aiToolResources?: Pick<ToolResourceItem, "id" | "name">[] | null;
 }
 
 export function Tools({
   tool_ids,
-  tool_resources,
   show_tools = false,
-  tool_suggestions,
   tools,
   disabled = false,
   onChange,
   label = "Tools",
   id = "tools",
   required = false,
-  group_id,
-  onGenerate,
-  showAiGenerate = false,
+  description,
   searchTerm = "",
-  onSearchChange,
   showSelectedFilter = false,
-  onShowSelectedChange,
-  aiToolResources: _aiToolResources,
 }: ToolsProps) {
   const ids = useMemo(() => tool_ids ?? [], [tool_ids]);
   const show = show_tools ?? false;
   const allTools = useMemo(() => tools ?? [], [tools]);
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "tools",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestions
-          .map((t) => t.id)
-          .filter(Boolean) as string[]
-      ),
-    [aiSuggestions]
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allTools.filter((t) => t.pending && t.id);
+  }, [allTools]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((t) => t.id).filter(Boolean) as string[]),
+    [pendingItems]
   );
-
-  // Accept AI suggestion - add AI-suggested tools to selection
-  const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((t) => t.id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
-
-  // Reject AI suggestion - just clear the pending state
-  const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
-
-  const suggestionsList = useMemo(
-    () => tool_suggestions ?? [],
-    [tool_suggestions]
-  );
-
-  // Track which tools IDs have already had resources created
-  const createdToolsIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdToolsIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdToolsIdsRef.current.add(id));
-  }, [ids]);
-
-  // Handle search term changes
-  useEffect(() => {
-    if (onSearchChange && searchTerm !== undefined) {
-      onSearchChange(searchTerm);
-    }
-  }, [searchTerm, onSearchChange]);
-
-  // Handle showSelected filter changes
-  useEffect(() => {
-    if (onShowSelectedChange && showSelectedFilter !== undefined) {
-      onShowSelectedChange(showSelectedFilter);
-    }
-  }, [showSelectedFilter, onShowSelectedChange]);
 
   // Convert tools array to ToolsItem format for SelectableGrid
   const toolsItems = useMemo(() => {
@@ -177,10 +113,13 @@ export function Tools({
     return filteredTools.filter((tool) => ids.includes(tool.id));
   }, [filteredTools, showSelectedFilter, ids]);
 
-  // Check if a tool is suggested
+  // Check if a tool is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
-    (toolId: string) => suggestionsList.includes(toolId),
-    [suggestionsList]
+    (toolId: string) => {
+      const tool = allTools.find((t) => t.id === toolId);
+      return tool?.suggested === true;
+    },
+    [allTools]
   );
 
   const handleSelect = useCallback(
@@ -195,9 +134,18 @@ export function Tools({
     [ids, onChange]
   );
 
-  const hasGenerated = useMemo(() => {
-    return tool_resources?.some((t) => t.generated) ?? false;
-  }, [tool_resources]);
+  // Accept pending — keep pending tools in selection
+  const handleAccept = useCallback(() => {
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
+  }, []);
+
+  // Reject pending — remove pending tools from selection
+  const handleReject = useCallback(() => {
+    const newIds = ids.filter((id) => !pendingIds.has(id));
+    onChange(newIds);
+  }, [ids, pendingIds, onChange]);
 
   // Don't render if show_tools is false (AFTER all hooks)
   if (!show) {
@@ -210,32 +158,12 @@ export function Tools({
         <Label htmlFor={id} className="flex items-center gap-1">
           {label}
           {required && <span className="text-destructive">*</span>}
+          {description && (
+            <span className="text-xs text-muted-foreground ml-2">
+              {description}
+            </span>
+          )}
         </Label>
-        {onGenerate && showAiGenerate && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={onGenerate}
-                  disabled={disabled || aiIsGenerating || showDiff}
-                >
-                  {aiIsGenerating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {hasGenerated ? "Regenerate" : "Generate"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
         {showDiff && (
           <>
             <TooltipProvider>
@@ -281,7 +209,7 @@ export function Tools({
         onSelect={handleSelect}
         getId={(item) => item.id}
         renderItem={(item, isSelected) => {
-          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const isPending = showDiff && pendingIds.has(item.id);
 
           return (
             <div
@@ -289,26 +217,26 @@ export function Tools({
                 "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isSelected && !isPending && "ring-2 ring-primary bg-accent",
+                isPending && "ring-2 ring-success bg-success/10",
               )}
             >
               {/* Check icon - top right */}
-              {isSelected && (
+              {isSelected && !isPending && (
                 <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
                   <Check className="h-3.5 w-3.5 text-primary-foreground" />
                 </div>
               )}
 
-              {/* AI Suggested badge - top right */}
-              {isAiSuggested && !isSelected && (
+              {/* Pending badge - top right */}
+              {isPending && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  AI Suggested
+                  Pending
                 </div>
               )}
 
               {/* Suggested dot indicator - top right */}
-              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+              {isSuggested(item.id) && !isSelected && !isPending && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

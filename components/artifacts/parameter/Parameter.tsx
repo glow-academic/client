@@ -246,7 +246,6 @@ function ParameterComponent({
     [flagIdByKey]
   );
 
-  const serverSyncPendingRef = useRef(false);
   const patchActionRef = useRef<
     | ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>)
     | undefined
@@ -272,40 +271,54 @@ function ParameterComponent({
           return id ? nextFlagIds.includes(id) : previous;
         };
 
-        serverSyncPendingRef.current = true;
-        setFormState((prev) => ({
-          ...prev,
-          name_id: formStateFromServer.name_id ?? prev.name_id,
-          name:
-            formStateFromServer.name !== undefined
-              ? formStateFromServer.name
-              : formStateFromServer.name_id
-                ? null
-                : prev.name,
-          description_id:
-            formStateFromServer.description_id ?? prev.description_id,
-          description:
-            formStateFromServer.description !== undefined
-              ? formStateFromServer.description
-              : formStateFromServer.description_id
-                ? null
-                : prev.description,
-          active_flag_id:
-            flagIdByKey["active"] && nextFlagIds.includes(flagIdByKey["active"])
-              ? flagIdByKey["active"]
-              : null,
-          flag_ids: nextFlagIds,
-          department_ids: formStateFromServer.department_ids ?? prev.department_ids,
-          field_ids: formStateFromServer.field_ids ?? prev.field_ids,
-          simulation_parameter: resolveBoolean("simulation", prev.simulation_parameter),
-          document_parameter: resolveBoolean("document", prev.document_parameter),
-          persona_parameter: resolveBoolean("persona", prev.persona_parameter),
-          scenario_parameter: resolveBoolean("scenario", prev.scenario_parameter),
-          video_parameter: resolveBoolean("video", prev.video_parameter),
-          pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
-        }));
-        requestAnimationFrame(() => {
-          serverSyncPendingRef.current = false;
+        setFormState((prev) => {
+          const next = {
+            ...prev,
+            name_id: formStateFromServer.name_id ?? prev.name_id,
+            // Clear value fields only once the server has resolved them to
+            // IDs — keeping the value would cause infinite re-saves (value
+            // takes precedence → new resource → new id → repeat).
+            name: formStateFromServer.name_id ? null : prev.name,
+            description_id:
+              formStateFromServer.description_id ?? prev.description_id,
+            description: formStateFromServer.description_id
+              ? null
+              : prev.description,
+            active_flag_id:
+              flagIdByKey["active"] && nextFlagIds.includes(flagIdByKey["active"])
+                ? flagIdByKey["active"]
+                : null,
+            flag_ids: nextFlagIds,
+            department_ids: formStateFromServer.department_ids ?? prev.department_ids,
+            field_ids: formStateFromServer.field_ids ?? prev.field_ids,
+            simulation_parameter: resolveBoolean("simulation", prev.simulation_parameter),
+            document_parameter: resolveBoolean("document", prev.document_parameter),
+            persona_parameter: resolveBoolean("persona", prev.persona_parameter),
+            scenario_parameter: resolveBoolean("scenario", prev.scenario_parameter),
+            video_parameter: resolveBoolean("video", prev.video_parameter),
+            pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
+          };
+          // Only set the server-sync absorb flag when state actually changes.
+          // If the server returned identical values, setting the flag would
+          // let it stick until the next user action and silently swallow it.
+          const changed =
+            prev.name_id !== next.name_id ||
+            prev.name !== next.name ||
+            prev.description_id !== next.description_id ||
+            prev.description !== next.description ||
+            prev.active_flag_id !== next.active_flag_id ||
+            prev.simulation_parameter !== next.simulation_parameter ||
+            prev.document_parameter !== next.document_parameter ||
+            prev.persona_parameter !== next.persona_parameter ||
+            prev.scenario_parameter !== next.scenario_parameter ||
+            prev.video_parameter !== next.video_parameter ||
+            JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
+            JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
+            JSON.stringify(prev.field_ids) !== JSON.stringify(next.field_ids) ||
+            JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
+          if (!changed) return prev;
+          serverSyncPendingRef.current = true;
+          return next;
         });
       }
 
@@ -367,10 +380,36 @@ function ParameterComponent({
       formState as unknown as Record<string, unknown>
     ) || deriveFlagIds(formState).length > 0;
 
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((nameId: string | null) => {
+    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }));
+  }, []);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({ ...prev, name, name_id: null }));
+  }, []);
+
+  const handleDescriptionIdChange = useCallback((descriptionId: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      description_id: descriptionId,
+      description: null,
+    }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      description,
+      description_id: null,
+    }));
+  }, []);
+
   const {
     setUrlFormDataRef,
     onFormDataChange,
     flushAllAndSave,
+    serverSyncPendingRef,
     formDataRef,
   } = useDraftLifecycle({
     formStateKey,
@@ -481,6 +520,8 @@ function ParameterComponent({
         name: item.name ?? null,
         description: item.description ?? null,
         generated: item.generated ?? null,
+        suggested: item.suggested ?? null,
+        pending: item.pending ?? null,
       })),
     [parameterData?.parameter_fields]
   );
@@ -756,12 +797,8 @@ function ParameterComponent({
                   show_name={true}
                   names={parameterData?.names ?? []}
                   disabled={disabled}
-                  onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
-                  }
-                  onNameChange={(name) =>
-                    setFormState((prev) => ({ ...prev, name, name_id: null }))
-                  }
+                  onNameIdChange={handleNameIdChange}
+                  onNameChange={handleNameChange}
                   placeholder="e.g., Student Age"
                   defaultName="New Parameter"
                   required={true}
@@ -795,20 +832,8 @@ function ParameterComponent({
                   show_description={true}
                   descriptions={parameterData?.descriptions ?? []}
                   disabled={disabled}
-                  onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description_id: descriptionId,
-                      description: null,
-                    }))
-                  }
-                  onDescriptionChange={(description) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description,
-                      description_id: null,
-                    }))
-                  }
+                  onDescriptionIdChange={handleDescriptionIdChange}
+                  onDescriptionChange={handleDescriptionChange}
                   label="Description"
                   placeholder="Enter a brief description (optional)"
                   required={false}
@@ -1005,7 +1030,6 @@ function ParameterComponent({
                 }
                 label="Fields"
                 required={false}
-                onGenerate={() => handleGenerateResources(["fields"])}
                 searchTerm={fieldSearchTerm}
                 showSelectedFilter={fieldShowSelected}
               />

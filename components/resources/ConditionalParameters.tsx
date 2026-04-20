@@ -10,7 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface ConditionalParametersResourceItem {
@@ -37,21 +37,17 @@ export interface ConditionalParametersProps {
   onChange: (ids: string[]) => void;
   label?: string;
   required?: boolean;
-  showAiGenerate?: boolean;
-  onGenerate?: () => void | Promise<void>;
 }
 
 export function ConditionalParameters({
   conditional_parameter_ids,
-  conditional_parameter_resources,
+  conditional_parameter_resources: _conditional_parameter_resources,
   show_conditional_parameters = false,
   conditional_parameters,
   disabled = false,
   onChange,
   label = "Conditional Parameters",
   required = false,
-  showAiGenerate = false,
-  onGenerate,
 }: ConditionalParametersProps) {
   const ids = useMemo(
     () => conditional_parameter_ids ?? [],
@@ -85,13 +81,6 @@ export function ConditionalParameters({
     [allItems],
   );
 
-  const hasGenerated = useMemo(
-    () =>
-      conditional_parameter_resources?.some((item) => item.generated) ??
-      allItems.some((item) => item.generated),
-    [allItems, conditional_parameter_resources],
-  );
-
   const isSuggested = useCallback(
     (itemId: string) => {
       const item = allItems.find((entry) => entry.parameter_id === itemId);
@@ -120,27 +109,6 @@ export function ConditionalParameters({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled}
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>

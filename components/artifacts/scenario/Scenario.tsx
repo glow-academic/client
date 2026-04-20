@@ -691,6 +691,49 @@ function ScenarioComponent({
     };
   }, []);
 
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  // These keep child components from seeing a new onChange ref every render.
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({ ...prev, name: name || null, name_id: null }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((desc: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      description: desc || null,
+      description_id: null,
+    }));
+  }, []);
+
+  const handleProblemStatementChange = useCallback((ps: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      problem_statement: ps || null,
+      problem_statement_id: null,
+    }));
+  }, []);
+
+  const handleObjectivesChange = useCallback((objectives: string[]) => {
+    setFormState((prev) => ({
+      ...prev,
+      objectives: objectives.length > 0 ? objectives : null,
+    }));
+  }, []);
+
+  const handleQuestionsChange = useCallback((qs: NonNullable<ScenarioFormState["questions"]>) => {
+    setFormState((prev) => ({
+      ...prev,
+      questions: qs.length > 0 ? qs : null,
+    }));
+  }, []);
+
+  const handleOptionsChange = useCallback((opts: NonNullable<ScenarioFormState["options"]>) => {
+    setFormState((prev) => ({
+      ...prev,
+      options: opts.length > 0 ? opts : null,
+    }));
+  }, []);
+
   // Empty flush registry ref (no more client-side resource creation)
   const emptyFlushRef = useRef(new Map<string, () => Promise<void | Record<string, unknown>>>());
 
@@ -779,33 +822,70 @@ function ScenarioComponent({
         // Sync form_state from server response (server is source of truth)
         const fs = (result as Record<string, unknown>)?.["form_state"] as Record<string, unknown> | undefined;
         if (fs) {
-          serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name_id: (fs["name_id"] as string) ?? prev.name_id,
-            description_id: (fs["description_id"] as string) ?? prev.description_id,
-            problem_statement_id: (fs["problem_statement_id"] as string) ?? prev.problem_statement_id,
-            flag_ids: (fs["flag_ids"] as string[]) ?? prev.active_flag_id,
-            department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
-            persona_ids: (fs["persona_ids"] as string[]) ?? prev.persona_ids,
-            document_ids: (fs["document_ids"] as string[]) ?? prev.document_ids,
-            parameter_field_ids: (fs["parameter_field_ids"] as string[]) ?? prev.parameter_field_ids,
-            objective_ids: (fs["objective_ids"] as string[]) ?? prev.objective_ids,
-            image_ids: (fs["image_ids"] as string[]) ?? prev.image_ids,
-            video_ids: (fs["video_ids"] as string[]) ?? prev.video_ids,
-            question_ids: (fs["question_ids"] as string[]) ?? prev.question_ids,
-            option_ids: (fs["option_ids"] as string[]) ?? prev.option_ids,
-            // Clear value fields after server resolves them to IDs
-            name: fs["name_id"] ? null : prev.name,
-            description: fs["description_id"] ? null : prev.description,
-            problem_statement: fs["problem_statement_id"] ? null : prev.problem_statement,
-            // Clear multi-select values — server merged them into IDs
-            objectives: null,
-            images: null,
-            videos: null,
-            questions: null,
-            options: null,
-          }));
+          setFormState((prev) => {
+            const newObjectiveIds = (fs["objective_ids"] as string[]) ?? prev.objective_ids;
+            const newImageIds = (fs["image_ids"] as string[]) ?? prev.image_ids;
+            const newVideoIds = (fs["video_ids"] as string[]) ?? prev.video_ids;
+            const newQuestionIds = (fs["question_ids"] as string[]) ?? prev.question_ids;
+            const newOptionIds = (fs["option_ids"] as string[]) ?? prev.option_ids;
+
+            const next = {
+              ...prev,
+              name_id: (fs["name_id"] as string) ?? prev.name_id,
+              description_id: (fs["description_id"] as string) ?? prev.description_id,
+              problem_statement_id: (fs["problem_statement_id"] as string) ?? prev.problem_statement_id,
+              department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
+              persona_ids: (fs["persona_ids"] as string[]) ?? prev.persona_ids,
+              document_ids: (fs["document_ids"] as string[]) ?? prev.document_ids,
+              parameter_field_ids: (fs["parameter_field_ids"] as string[]) ?? prev.parameter_field_ids,
+              objective_ids: newObjectiveIds,
+              image_ids: newImageIds,
+              video_ids: newVideoIds,
+              question_ids: newQuestionIds,
+              option_ids: newOptionIds,
+              // Clear value fields only once the server resolves them to IDs,
+              // so a keystroke in flight isn't clobbered to null by a "no-op"
+              // sync that kept the id unchanged.
+              name: fs["name_id"] ? null : prev.name,
+              description: fs["description_id"] ? null : prev.description,
+              problem_statement: fs["problem_statement_id"] ? null : prev.problem_statement,
+              // Only clear multi-text arrays when server actually returned IDs
+              // for them (mirrors the single-value creatables above).
+              objectives: (fs["objective_ids"] as string[])?.length ? null : prev.objectives,
+              images: (fs["image_ids"] as string[])?.length ? null : prev.images,
+              videos: (fs["video_ids"] as string[])?.length ? null : prev.videos,
+              questions: (fs["question_ids"] as string[])?.length ? null : prev.questions,
+              options: (fs["option_ids"] as string[])?.length ? null : prev.options,
+            };
+            // Only set the server-sync absorb flag when the state actually
+            // changes. If the server returned identical values, setting the
+            // flag would let it stick until the next user action and silently
+            // swallow that action's save. (Same fix as Persona.)
+            const changed =
+              prev.name_id !== next.name_id ||
+              prev.name !== next.name ||
+              prev.description_id !== next.description_id ||
+              prev.description !== next.description ||
+              prev.problem_statement_id !== next.problem_statement_id ||
+              prev.problem_statement !== next.problem_statement ||
+              JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
+              JSON.stringify(prev.persona_ids) !== JSON.stringify(next.persona_ids) ||
+              JSON.stringify(prev.document_ids) !== JSON.stringify(next.document_ids) ||
+              JSON.stringify(prev.parameter_field_ids) !== JSON.stringify(next.parameter_field_ids) ||
+              JSON.stringify(prev.objective_ids) !== JSON.stringify(next.objective_ids) ||
+              JSON.stringify(prev.image_ids) !== JSON.stringify(next.image_ids) ||
+              JSON.stringify(prev.video_ids) !== JSON.stringify(next.video_ids) ||
+              JSON.stringify(prev.question_ids) !== JSON.stringify(next.question_ids) ||
+              JSON.stringify(prev.option_ids) !== JSON.stringify(next.option_ids) ||
+              JSON.stringify(prev.objectives) !== JSON.stringify(next.objectives) ||
+              JSON.stringify(prev.images) !== JSON.stringify(next.images) ||
+              JSON.stringify(prev.videos) !== JSON.stringify(next.videos) ||
+              JSON.stringify(prev.questions) !== JSON.stringify(next.questions) ||
+              JSON.stringify(prev.options) !== JSON.stringify(next.options);
+            if (!changed) return prev;
+            serverSyncPendingRef.current = true;
+            return next;
+          });
         }
 
         return result;
@@ -1640,9 +1720,7 @@ function ScenarioComponent({
                       pending_ids: prev.pending_ids.filter((id) => id !== prev.name_id),
                     }))
                   }
-                  onNameChange={(name) =>
-                    setFormState((prev) => ({ ...prev, name: name || null, name_id: null }))
-                  }
+                  onNameChange={handleNameChange}
                   onGenerate={generateHandlers["names"]}
                   placeholder="e.g., Customer Support Escalation"
                   defaultName="New Scenario"
@@ -1690,13 +1768,7 @@ function ScenarioComponent({
                       pending_ids: prev.pending_ids.filter((id) => id !== prev.description_id),
                     }))
                   }
-                  onDescriptionChange={(desc) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description: desc || null,
-                      description_id: null,
-                    }))
-                  }
+                  onDescriptionChange={handleDescriptionChange}
                   onGenerate={generateHandlers["descriptions"]}
                   label="Description"
                   placeholder="Describe the scenario"
@@ -1824,7 +1896,6 @@ function ScenarioComponent({
                     image_resources={s?.images?.filter((i: any) => i.selected) ?? []}
                     show_images={urlImagesEnabled}
                     images_required={false}
-                    image_suggestions={[]}
                     images={s?.images ?? []}
                     disabled={disabled}
                     onChange={(ids) =>
@@ -1845,7 +1916,6 @@ function ScenarioComponent({
                     }
                     multiSelect={true}
                     maxImages={3}
-                    isAutosaveEnabled={isAutosaveEnabled}
                     uploadBasePath={uploadBasePath}
                     uploadFileAction={uploadFileAction}
                   />
@@ -1859,7 +1929,6 @@ function ScenarioComponent({
                       s?.problem_statements?.find((p: any) => p.selected) ?? null
                     }
                     show_problem_statement={urlProblemStatementEnabled}
-                    problem_statement_suggestions={[]}
                     problem_statements={s?.problem_statements ?? []}
                     disabled={disabled}
                     onProblemStatementIdChange={(problemStatementId) =>
@@ -1870,13 +1939,7 @@ function ScenarioComponent({
                         pending_ids: prev.pending_ids.filter((id) => id !== prev.problem_statement_id),
                       }))
                     }
-                    onProblemStatementChange={(ps) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        problem_statement: ps || null,
-                        problem_statement_id: null,
-                      }))
-                    }
+                    onProblemStatementChange={handleProblemStatementChange}
                     label="Problem Statement"
                     placeholder="Define the core problem"
                     required={false}
@@ -1884,7 +1947,6 @@ function ScenarioComponent({
                     onSearchChange={(term: string) =>
                       setFormData({ problemStatementSearch: term || null })
                     }
-                    isAutosaveEnabled={isAutosaveEnabled}
                   />
                 )}
                 {urlObjectivesEnabled && (
@@ -1893,7 +1955,6 @@ function ScenarioComponent({
                     objective_resources={s?.objectives?.filter((o: any) => o.selected) ?? []}
                     show_objectives={urlObjectivesEnabled}
                     objectives_required={false}
-                    objective_suggestions={[]}
                     objectives={s?.objectives ?? []}
                     disabled={disabled}
                     onChange={(ids) =>
@@ -1906,13 +1967,7 @@ function ScenarioComponent({
                         };
                       })
                     }
-                    onObjectivesChange={(objectives) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        objectives: objectives.length > 0 ? objectives : null,
-                      }))
-                    }
-                    isAutosaveEnabled={isAutosaveEnabled}
+                    onObjectivesChange={handleObjectivesChange}
                   />
                 )}
               </div>
@@ -2033,7 +2088,6 @@ function ScenarioComponent({
                   document_ids={formState.document_ids}
                   document_resources={s?.documents?.filter((d: any) => d.selected) ?? []}
                   show_documents={true}
-                  document_suggestions={[]}
                   documents={s?.documents ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
@@ -2166,7 +2220,6 @@ function ScenarioComponent({
                     video_resources={s?.videos?.filter((v: any) => v.selected) ?? []}
                     show_videos={urlVideoEnabled}
                     videos_required={false}
-                    video_suggestions={[]}
                     videos={s?.videos ?? []}
                     disabled={disabled}
                     onChange={(ids) =>
@@ -2185,7 +2238,6 @@ function ScenarioComponent({
                         videos: [...(prev.videos ?? []), vid],
                       }))
                     }
-                    isAutosaveEnabled={isAutosaveEnabled}
                     uploadBasePath={uploadBasePath}
                     uploadFileAction={uploadFileAction}
                   />
@@ -2196,7 +2248,6 @@ function ScenarioComponent({
                     question_resources={s?.questions?.filter((q: any) => q.selected) ?? []}
                     show_questions={urlQuestionsEnabled}
                     questions_required={false}
-                    question_suggestions={[]}
                     questions={s?.questions ?? []}
                     disabled={disabled}
                     onChange={(ids) =>
@@ -2209,13 +2260,7 @@ function ScenarioComponent({
                         };
                       })
                     }
-                    onQuestionsChange={(qs) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        questions: qs.length > 0 ? qs : null,
-                      }))
-                    }
-                    isAutosaveEnabled={isAutosaveEnabled}
+                    onQuestionsChange={handleQuestionsChange}
                     onInternalQuestionsChange={setInternalQuestions}
                   />
                 )}
@@ -2239,13 +2284,7 @@ function ScenarioComponent({
                         };
                       })
                     }
-                    onOptionsChange={(opts) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        options: opts.length > 0 ? opts : null,
-                      }))
-                    }
-                    isAutosaveEnabled={isAutosaveEnabled}
+                    onOptionsChange={handleOptionsChange}
                   />
                 )}
               </div>

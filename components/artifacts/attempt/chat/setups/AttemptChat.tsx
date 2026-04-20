@@ -19,7 +19,7 @@ import type { OutputOf } from "@/lib/api/types";
 
 import { useAttemptMessages } from "@/hooks/use-attempt-messages";
 import { useAttemptVoice } from "@/hooks/use-attempt-voice";
-import type { AttemptUserStartEvent, AttemptUserDeltaEvent, AttemptAssistantAudioEvent } from "@/hooks/use-attempt-voice";
+import type { AttemptUserStartEvent, AttemptAssistantAudioEvent } from "@/hooks/use-attempt-voice";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -723,10 +723,18 @@ export function AttemptChat({
   // Message streaming events are handled by useAttemptMessages hook.
   // ---------------------------------------------------------------------------
 
+  // Ref holding the current attempt id so the voice hook can include it in
+  // the STT follow-up generate call without re-mounting its listener.
+  const attemptIdRef = useRef<string | null>(attempt_id);
+  useEffect(() => {
+    attemptIdRef.current = attempt_id;
+  }, [attempt_id]);
+
   // Voice streaming events + promise-based audio session lifecycle
   const { startAudio, stopAudio, sendFrame, setMicMute } = useAttemptVoice({
     transport,
     chatIdRef: currentChatIdRef,
+    attemptIdRef,
     onUserStart: useCallback((data: AttemptUserStartEvent) => {
       const optimisticMessageId = `optimistic-user-voice-${Date.now()}-${Math.random()}`;
 
@@ -749,7 +757,10 @@ export function AttemptChat({
         return newMap;
       });
 
-      itemIdToOptimisticIdRef.current.set(data.item_id, optimisticMessageId);
+      const itemId = (data.item_id as string | undefined) ?? "";
+      if (itemId) {
+        itemIdToOptimisticIdRef.current.set(itemId, optimisticMessageId);
+      }
 
       setOptimisticMessages((prev) => {
         const newMap = new Map(prev);
@@ -758,28 +769,23 @@ export function AttemptChat({
           type: "query",
           created_at: new Date().toISOString(),
           completed: false,
-          contents: [{ content: "", name: "You" }],
+          contents: [{ content: "…", name: "You" }],
         });
         return newMap;
       });
     }, [setOptimisticMessages]),
-    onUserDelta: useCallback((data: AttemptUserDeltaEvent) => {
-      transcriptDeltasRef.current.set(data.item_id, data.transcript);
-      const optimisticMessageId = itemIdToOptimisticIdRef.current.get(data.item_id);
-
-      if (optimisticMessageId) {
-        setOptimisticMessages((prev) => {
-          const newMap = new Map(prev);
-          const existingMessage = newMap.get(optimisticMessageId);
-          if (existingMessage) {
-            newMap.set(optimisticMessageId, {
-              ...existingMessage,
-              contents: [{ content: data.transcript, name: "You" }],
-            });
+    onUserMessagePersisted: useCallback(() => {
+      // The persisted message will stream in via the canonical chat_message
+      // path — drop any lingering "…" optimistic placeholders.
+      setOptimisticMessages((prev) => {
+        const newMap = new Map(prev);
+        for (const [id, msg] of newMap.entries()) {
+          if (id.startsWith("optimistic-user-voice-") && !msg.completed) {
+            newMap.delete(id);
           }
-          return newMap;
-        });
-      }
+        }
+        return newMap;
+      });
     }, [setOptimisticMessages]),
     onAudioChunk: useCallback((data: AttemptAssistantAudioEvent) => {
       voiceInputRef.current?.enqueue_audio_delta(data.audio);
@@ -820,8 +826,8 @@ export function AttemptChat({
       toast.error("Cannot enable voice mode: chat not available");
       return;
     }
-    await startAudio(currentChat.id);
-  }, [currentChat?.id, startAudio]);
+    await startAudio(currentChat.id, attempt_id);
+  }, [currentChat?.id, attempt_id, startAudio]);
 
   const handleVoiceStop = useCallback(async () => {
     if (!currentChat?.id) return;

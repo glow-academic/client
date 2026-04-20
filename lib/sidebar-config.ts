@@ -1,11 +1,13 @@
 /**
  * Client-side sidebar configuration.
  * Defines the navigation menu structure — filtered at runtime
- * by `role_artifacts` from the profile context.
+ * by `role_permissions` from the profile context.
  *
  * Each section maps to one or more artifacts. A section is visible
- * if the user's role has ANY of the section's artifacts.
+ * if the user's role has matching permission tuples.
  */
+
+import { canAccessSidebarItem } from "@/lib/permissions";
 
 export interface SidebarChildItem {
   title: string;
@@ -134,10 +136,8 @@ export const SIDEBAR_SECTIONS: SidebarSectionConfig[] = [
 ];
 
 /**
- * Filter sidebar sections by role artifacts.
- * A section is visible if the user has ANY of its artifacts.
- * For parent sections with children, uses child artifacts.
- * For leaf sections, uses the section's own artifact.
+ * Filter sidebar sections by role artifacts (legacy, artifact-level only).
+ * @deprecated Use getSidebarSectionsFromPermissions for granular filtering.
  */
 export function getSidebarSections(roleArtifacts: string[]): SidebarSectionConfig[] {
   const artifactSet = new Set(roleArtifacts);
@@ -147,4 +147,30 @@ export function getSidebarSections(roleArtifacts: string[]): SidebarSectionConfi
     }
     return s.artifact ? artifactSet.has(s.artifact) : false;
   });
+}
+
+/**
+ * Filter sidebar sections using granular role_permissions.
+ * Uses compound operation prefixes to determine visibility per VIEW page.
+ * Parent sections are included if the user can access ANY child.
+ * Children that the user can't access are filtered out.
+ */
+export function getSidebarSectionsFromPermissions(
+  rolePermissions: [string, string][],
+): SidebarSectionConfig[] {
+  return SIDEBAR_SECTIONS
+    .map((s) => {
+      if (s.items) {
+        // Parent section: filter children, keep section if any remain
+        const visibleItems = s.items.filter((item) =>
+          canAccessSidebarItem(item.artifact, rolePermissions),
+        );
+        if (visibleItems.length === 0) return null;
+        return { ...s, items: visibleItems, url: visibleItems[0]?.url ?? s.url };
+      }
+      // Leaf section
+      if (!s.artifact) return null;
+      return canAccessSidebarItem(s.artifact, rolePermissions) ? s : null;
+    })
+    .filter((s): s is SidebarSectionConfig => s !== null);
 }

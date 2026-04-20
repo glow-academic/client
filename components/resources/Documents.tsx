@@ -35,10 +35,12 @@ export interface DocumentResourceItem {
   name?: string | null;
   description?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
   pending?: boolean | null;
   video_document?: boolean | null;
   non_video_document?: boolean | null;
   file_path?: string | null;
+  file_id?: string | null;
   upload_id?: string | null;
   field_ids?: string[] | null;
 }
@@ -54,7 +56,6 @@ export interface DocumentsProps {
   document_ids?: string[]; // Current document artifact IDs (standardized prop name)
   document_resources?: DocumentResourceItem[]; // Selected document resources (each includes generated field)
   show_documents?: boolean; // Whether to show this resource picker
-  document_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   documents?: DocumentResourceItem[]; // All available documents from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update document_ids in form state
@@ -68,9 +69,8 @@ export interface DocumentsProps {
 
 export function Documents({
   document_ids,
-  document_resources,
+  document_resources: _document_resources,
   show_documents = false,
-  document_suggestions,
   documents,
   disabled = false,
   onChange,
@@ -104,11 +104,6 @@ export function Documents({
       return hasNonVideoFlag;
     });
   }, [allDocuments, videoEnabled]);
-  const suggestionsList = useMemo(
-    () => document_suggestions ?? [],
-    [document_suggestions]
-  );
-
   // Convert documents array to DocumentItem format for GenericPicker
   const documentItems = useMemo(() => {
     return filteredDocuments
@@ -125,10 +120,13 @@ export function Documents({
     null
   );
 
-  // Check if a document is suggested
+  // Check if a document is suggested (derived from item suggested field)
   const isSuggested = useCallback(
-    (documentId: string) => suggestionsList.includes(documentId),
-    [suggestionsList]
+    (documentId: string) => {
+      const doc = allDocuments.find((d) => d.document_id === documentId);
+      return doc?.suggested === true;
+    },
+    [allDocuments]
   );
 
   const handleSelect = useCallback(
@@ -249,7 +247,7 @@ export function Documents({
             can_delete: false,
             active: true,
             department_ids: [],
-            upload_id: fullDoc?.upload_id ?? null,
+            file_id: fullDoc?.file_id ?? null,
             field_ids: fullDoc?.field_ids || [],
             valid_field_ids: null,
             active_scenario_count: null,
@@ -319,6 +317,7 @@ export function Documents({
                   bare={true}
                   isFormDocument={false}
                   compact={true}
+                  downloadBaseUrl="/api/documents/download"
                 />
               </div>
 
@@ -369,7 +368,7 @@ export function Documents({
                 can_delete: false,
                 active: true,
                 department_ids: [],
-                upload_id: fullDoc?.upload_id ?? null,
+                file_id: fullDoc?.file_id ?? null,
                 field_ids: fullDoc?.field_ids || [],
                 valid_field_ids: null,
                 active_scenario_count: null,
@@ -381,6 +380,7 @@ export function Documents({
                     document={docForViewer}
                     bare={true}
                     isFormDocument={false}
+                    downloadBaseUrl="/api/documents/download"
                   />
                 </div>
               );

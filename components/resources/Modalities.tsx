@@ -16,9 +16,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface ModalityResourceItem {
@@ -28,6 +27,8 @@ export interface ModalityResourceItem {
   name?: string | null;
   description?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface ModalityItem {
@@ -40,8 +41,7 @@ export interface ModalitiesProps {
   modality_ids?: string[]; // Current modality resource IDs (standardized prop name)
   modality_resources?: ModalityResourceItem[]; // Selected modality resources (each includes generated field)
   show_modalities?: boolean; // Whether to show this resource picker
-  modality_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  modalities?: ModalityResourceItem[]; // All available modalities from API (each includes generated field)
+  modalities?: ModalityResourceItem[]; // All available modalities from API (each includes generated and suggested fields)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update modality_ids in form state
   label?: string;
@@ -51,17 +51,11 @@ export interface ModalitiesProps {
   description?: string;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
-  group_id?: string | null; // Group ID for linking resources
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  aiModalityResources?: Pick<ModalityResourceItem, "id" | "modality">[] | null;
 }
 
 export function Modalities({
   modality_ids,
-  modality_resources,
   show_modalities = false,
-  modality_suggestions,
   modalities,
   disabled = false,
   onChange,
@@ -72,35 +66,19 @@ export function Modalities({
   description,
   searchTerm,
   onSearchChange,
-  group_id,
-  onGenerate,
-  showAiGenerate = false,
 }: ModalitiesProps) {
   const ids = useMemo(() => modality_ids ?? [], [modality_ids]);
   const show = show_modalities ?? false;
   const allModalities = useMemo(() => modalities ?? [], [modalities]);
-  const suggestionsList = useMemo(
-    () => modality_suggestions ?? [],
-    [modality_suggestions]
-  );
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "modalities",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestions
-          .map((m) => m.modality_id)
-          .filter(Boolean) as string[]
-      ),
-    [aiSuggestions]
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allModalities.filter((m) => m.pending && m.modality_id);
+  }, [allModalities]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((m) => m.modality_id).filter(Boolean) as string[]),
+    [pendingItems]
   );
 
   const filteredModalities = useMemo(() => {
@@ -126,42 +104,34 @@ export function Modalities({
       }));
   }, [filteredModalities]);
 
-  // Check if a modality is suggested
+  // Check if a modality is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
-    (modalityId: string) => suggestionsList.includes(modalityId),
-    [suggestionsList]
+    (modalityId: string) => {
+      const mod = allModalities.find((m) => m.modality_id === modalityId);
+      return mod?.suggested === true;
+    },
+    [allModalities]
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Modalities are generated, not selected from existing artifacts
-      // Update parent state
+    (selectedIds: string[]) => {
       onChange(selectedIds);
     },
     [onChange]
   );
 
-  // Check if any modality resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return modality_resources?.some((m) => m.generated) ?? false;
-  }, [modality_resources]);
-
-  // Accept AI suggestion - add AI-suggested modalities to selection
+  // Accept pending — keep pending modalities in selection
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((m) => m.modality_id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending modalities from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    const newIds = ids.filter((id) => !pendingIds.has(id));
+    onChange(newIds);
+  }, [ids, pendingIds, onChange]);
 
   // Don't render if show_modalities is false (AFTER all hooks)
   if (!show) {
@@ -181,31 +151,6 @@ export function Modalities({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -255,20 +200,20 @@ export function Modalities({
         getId={(item) => item.id}
         getLabel={(item) => item.name}
         renderItem={(item, isSelected) => {
-          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const isPending = pendingIds.has(item.id);
 
           return (
             <div className={cn(
               "flex items-center justify-between w-full",
-              isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10 rounded px-2 py-1 -mx-2 -my-1"
+              isPending && "ring-2 ring-success bg-success/10 rounded px-2 py-1 -mx-2 -my-1"
             )}>
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                {isAiSuggested && !isSelected && (
+                {isPending && (
                   <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium shrink-0">
-                    AI Suggested
+                    Pending
                   </span>
                 )}
-                {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                {isSuggested(item.id) && !isSelected && !isPending && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -287,12 +232,14 @@ export function Modalities({
                   )}
                 </div>
               </div>
-              <Check
-                className={cn(
-                  "ml-auto flex-shrink-0 h-4 w-4",
-                  isSelected ? "opacity-100" : "opacity-0"
-                )}
-              />
+              {!isPending && (
+                <Check
+                  className={cn(
+                    "ml-auto flex-shrink-0 h-4 w-4",
+                    isSelected ? "opacity-100" : "opacity-0"
+                  )}
+                />
+              )}
             </div>
           );
         }}

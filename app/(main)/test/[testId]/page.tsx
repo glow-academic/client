@@ -111,16 +111,14 @@ export default async function TestPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/test/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
-
   try {
+    // Profile data for providers + test data in parallel
     const [testData, context, groupResult] = await Promise.all([
       getTestArtifact(testId),
       api.post("/test/context", { body: { entity_id: testId } } as ContextIn) as Promise<ContextOut>,
       api.post("/test/group", { body: {} } as GroupTestIn),
     ]);
+    const snapshot = buildSnapshot(session, context.profile);
 
     const entityName = context.page_metadata?.detail.title;
 

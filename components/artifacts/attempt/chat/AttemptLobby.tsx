@@ -7,15 +7,29 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useTransport } from "@/lib/transport/context";
 import { useAttemptGenerate } from "@/hooks/use-attempt-generate";
 import { useAttemptEnd } from "@/hooks/use-attempt-end";
-import type { components } from "@/lib/api/schema";
 import { Play, SlidersHorizontal, SkipForward } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-type AvailableContinuationOptions =
-  components["schemas"]["AvailableContinuationOptions"];
-type _ContinuationOption = components["schemas"]["ContinuationOption"];
+type ContinuationScenario = {
+  chat_entry_id?: string | null;
+  attempt_chat_id?: string | null;
+  scenario_name?: string | null;
+  score?: number | null;
+  percentage?: number | null;
+  time_taken?: number | null;
+};
+
+type ContinuationOption = {
+  total_score: number;
+  total_time: number;
+  scenarios: ContinuationScenario[];
+};
+
+type AvailableContinuationOptions = {
+  options?: ContinuationOption[] | null;
+};
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -118,7 +132,7 @@ export function AttemptLobby({
             onValueChange={setSelectedOptionIndex}
             className="space-y-2"
           >
-            {options.map((opt, idx) => (
+            {options.map((opt: ContinuationOption, idx: number) => (
               <div
                 key={idx}
                 className={`rounded-lg border-2 transition-colors ${
@@ -158,7 +172,7 @@ export function AttemptLobby({
                     </div>
                   </div>
                   <div className="space-y-1 px-3 pb-3 pl-11">
-                    {opt.scenarios.map((s, sIdx) => (
+                    {opt.scenarios.map((s: ContinuationScenario, sIdx: number) => (
                       <div
                         key={sIdx}
                         className="text-sm text-muted-foreground"

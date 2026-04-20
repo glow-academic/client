@@ -217,26 +217,29 @@ export function useGenerate({
       setIsGenerating(false);
     };
 
-    s.on("generate_call_start", handleCallStart);
-    s.on("generate_call_complete", handleCallComplete);
-    s.on("generate_call_progress", handleCallProgress);
-    s.on("generate_call_error", handleCallError);
-    s.on("generate_text_start", handleTextStart);
-    s.on("generate_text_progress", handleTextProgress);
-    s.on("generate_text_complete", handleTextComplete);
-    s.on("generate_run_complete", handleRunComplete);
+    // Canonical artifact-scoped event names: {artifact}.generate.{sub}.{phase}
+    const ev = (sub: string, phase: string) =>
+      `${artifactType}.generate.${sub}.${phase}`;
+    s.on(ev("call", "start"), handleCallStart);
+    s.on(ev("call", "complete"), handleCallComplete);
+    s.on(ev("call", "progress"), handleCallProgress);
+    s.on(ev("call", "error"), handleCallError);
+    s.on(ev("text", "start"), handleTextStart);
+    s.on(ev("text", "progress"), handleTextProgress);
+    s.on(ev("text", "complete"), handleTextComplete);
+    s.on(`${artifactType}.generate.completed`, handleRunComplete);
 
     return () => {
-      s.off("generate_call_start", handleCallStart);
-      s.off("generate_call_complete", handleCallComplete);
-      s.off("generate_call_progress", handleCallProgress);
-      s.off("generate_call_error", handleCallError);
-      s.off("generate_text_start", handleTextStart);
-      s.off("generate_text_progress", handleTextProgress);
-      s.off("generate_text_complete", handleTextComplete);
-      s.off("generate_run_complete", handleRunComplete);
+      s.off(ev("call", "start"), handleCallStart);
+      s.off(ev("call", "complete"), handleCallComplete);
+      s.off(ev("call", "progress"), handleCallProgress);
+      s.off(ev("call", "error"), handleCallError);
+      s.off(ev("text", "start"), handleTextStart);
+      s.off(ev("text", "progress"), handleTextProgress);
+      s.off(ev("text", "complete"), handleTextComplete);
+      s.off(`${artifactType}.generate.completed`, handleRunComplete);
     };
-  }, [socket, isConnected]);
+  }, [socket, isConnected, artifactType]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);

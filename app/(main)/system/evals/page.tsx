@@ -17,6 +17,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
+import { guardPage } from "@/lib/permissions";
 import { loadEvalsSearchParams } from "@/lib/search-params/evals";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -123,6 +124,7 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
     // Profile data for providers
     const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
     const snapshot = buildSnapshot(session, context.profile);
+    guardPage("/system/evals", context.profile.role_permissions);
 
     // Parse search params using nuqs
     const params = await searchParams;

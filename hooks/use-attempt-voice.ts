@@ -3,23 +3,38 @@ import type { Transport } from "@/lib/transport/types";
 
 // Event payload types — loosely typed to match Transport's Record<string, unknown>
 export type AttemptUserStartEvent = Record<string, unknown>;
-export type AttemptUserDeltaEvent = Record<string, unknown>;
+export type AttemptUserAudioEvent = Record<string, unknown>;
 export type AttemptAssistantAudioEvent = Record<string, unknown>;
+export type AttemptAssistantAudioCompleteEvent = Record<string, unknown>;
 export type AttemptAudioReadyEvent = Record<string, unknown>;
 export type AttemptAudioEndedEvent = Record<string, unknown>;
 
 interface UseAttemptVoiceConfig {
   transport: Transport;
   chatIdRef: React.RefObject<string | null>;
+  attemptIdRef?: React.RefObject<string | null>;
   onUserStart?: (data: AttemptUserStartEvent) => void;
-  onUserDelta?: (data: AttemptUserDeltaEvent) => void;
+  /** Per-frame assistant PCM16 — push to AudioContext for realtime playback. */
   onAudioChunk?: (data: AttemptAssistantAudioEvent) => void;
+  /** Assistant turn finished — ``audios_id`` is the persisted full-clip handle. */
+  onAssistantAudioComplete?: (data: {
+    chat_id: string;
+    group_id: string;
+    audios_id: string;
+    duration_ms: number;
+  }) => void;
+  /** Called once the user's transcript has been persisted as a chat message. */
+  onUserMessagePersisted?: (data: {
+    chat_id: string;
+    audios_id: string;
+    text: string;
+  }) => void;
 }
 
 interface UseAttemptVoiceReturn {
   waitForAudioReady: (chatId: string, timeout?: number) => Promise<void>;
   waitForAudioEnded: (chatId: string, timeout?: number) => Promise<void>;
-  startAudio: (chatId: string) => Promise<void>;
+  startAudio: (chatId: string, attemptId: string) => Promise<void>;
   stopAudio: (chatId: string) => Promise<void>;
   sendFrame: (audio: ArrayBuffer) => void;
   setMicMute: (muted: boolean) => void;
@@ -28,21 +43,25 @@ interface UseAttemptVoiceReturn {
 export function useAttemptVoice({
   transport,
   chatIdRef,
+  attemptIdRef,
   onUserStart,
-  onUserDelta,
   onAudioChunk,
+  onAssistantAudioComplete,
+  onUserMessagePersisted,
 }: UseAttemptVoiceConfig): UseAttemptVoiceReturn {
   // Store callbacks in refs to avoid re-registering listeners on every render
   const callbacksRef = useRef({
     onUserStart,
-    onUserDelta,
     onAudioChunk,
+    onAssistantAudioComplete,
+    onUserMessagePersisted,
   });
 
   callbacksRef.current = {
     onUserStart,
-    onUserDelta,
     onAudioChunk,
+    onAssistantAudioComplete,
+    onUserMessagePersisted,
   };
 
   // Persistent streaming event listeners
@@ -52,24 +71,114 @@ export function useAttemptVoice({
       callbacksRef.current.onUserStart?.(data);
     };
 
-    const handleUserDelta = (data: AttemptUserDeltaEvent) => {
-      if (data.chat_id !== chatIdRef.current) return;
-      callbacksRef.current.onUserDelta?.(data);
-    };
-
     const handleAudioChunk = (data: AttemptAssistantAudioEvent) => {
       if (data.chat_id !== chatIdRef.current) return;
       callbacksRef.current.onAudioChunk?.(data);
     };
 
+    const handleAssistantAudioComplete = (
+      data: AttemptAssistantAudioCompleteEvent,
+    ) => {
+      if (data.chat_id !== chatIdRef.current) return;
+      const chatId = data.chat_id as string | undefined;
+      const groupId = data.group_id as string | undefined;
+      const audiosId = data.audios_id as string | undefined;
+      const durationMs = (data.duration_ms as number | undefined) ?? 0;
+      if (!chatId || !groupId || !audiosId) return;
+      callbacksRef.current.onAssistantAudioComplete?.({
+        chat_id: chatId,
+        group_id: groupId,
+        audios_id: audiosId,
+        duration_ms: durationMs,
+      });
+    };
+
+    // Server auto-creates the full audio chain on speech_stopped and
+    // emits a resource-level audios_id. Client does three calls:
+    //   (1) POST /attempt/generate {audios_id}  → STT transcript
+    //   (2) POST /attempt/chat/message {text}   → persist message
+    //   (3) POST /attempt/chat/audio {message_id, audios_id}
+    //                                            → attach audio to message
+    // Post-hoc attach mirrors how hints attach to messages.
+    const handleUserAudio = async (data: AttemptUserAudioEvent) => {
+      const chatId = data.chat_id as string | undefined;
+      const audiosId = data.audios_id as string | undefined;
+      const attemptId = attemptIdRef?.current ?? null;
+      if (!chatId || !audiosId || chatId !== chatIdRef.current) return;
+
+      const waitForTranscript = (groupId: string, timeoutMs = 15000) =>
+        new Promise<string>((resolve, reject) => {
+          const timer = setTimeout(() => {
+            unsub();
+            reject(new Error("STT timed out"));
+          }, timeoutMs);
+          const unsub = transport.on("attempt.generate.text.complete", (ev) => {
+            if (ev.group_id !== groupId) return;
+            clearTimeout(timer);
+            unsub();
+            resolve((ev.text as string) ?? "");
+          });
+        });
+
+      try {
+        // (1) Transcribe via the canonical STT dispatch.
+        const generateResult = await transport.send("/attempt/generate", {
+          modalities: ["text"],
+          audios_id: audiosId,
+          config: {
+            params: {
+              attempt_id: attemptId ?? undefined,
+              chat_id: chatId,
+            },
+          },
+        });
+        const groupId = generateResult.group_id as string | undefined;
+        if (!groupId) {
+          throw new Error("STT generate did not return group_id");
+        }
+        const transcript = (await waitForTranscript(groupId)).trim();
+        if (!transcript) return;
+
+        // (2) Persist as a chat message (text only).
+        const msgResult = await transport.send("/attempt/chat/message", {
+          chat_id: chatId,
+          text: transcript,
+        });
+        const messageId = msgResult.message_id as string | undefined;
+        if (!messageId) {
+          throw new Error("chat/message did not return message_id");
+        }
+
+        // (3) Attach the audio to the message.
+        await transport.send("/attempt/chat/audio", {
+          chat_id: chatId,
+          message_id: messageId,
+          audios_id: audiosId,
+        });
+
+        callbacksRef.current.onUserMessagePersisted?.({
+          chat_id: chatId,
+          audios_id: audiosId,
+          text: transcript,
+        });
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("[Voice] Failed to persist + attach user speech:", err);
+      }
+    };
+
     const unsubs = [
       transport.on("attempt.chat.user_start", handleUserStart),
-      transport.on("attempt.chat.user_progress", handleUserDelta),
+      transport.on("attempt.chat.user_audio", handleUserAudio),
       transport.on("attempt.chat.assistant_audio", handleAudioChunk),
+      transport.on(
+        "attempt.chat.assistant_audio.complete",
+        handleAssistantAudioComplete,
+      ),
     ];
 
     return () => unsubs.forEach((fn) => fn());
-  }, [transport, chatIdRef]);
+  }, [transport, chatIdRef, attemptIdRef]);
 
   // One-shot promise-based listeners for audio session lifecycle
   const waitForAudioReady = useCallback(
@@ -132,9 +241,36 @@ export function useAttemptVoice({
 
   // Combined send + wait methods
   const startAudio = useCallback(
-    async (chatId: string): Promise<void> => {
-      transport.send("/attempt/chat/voice", { chat_id: chatId });
-      await waitForAudioReady(chatId);
+    async (chatId: string, attemptId: string): Promise<void> => {
+      // Step 1: open the realtime conversation (no AI yet).
+      const voiceResult = await transport.send("/attempt/chat/voice", {
+        chat_id: chatId,
+      });
+      const conversationId = voiceResult.conversation_id as string | undefined;
+      if (!conversationId) {
+        throw new Error("Voice start did not return conversation_id");
+      }
+
+      // Arm the voice_ready listener BEFORE triggering generate — the server
+      // can emit voice_ready synchronously as soon as the provider WS opens,
+      // and we'd miss it if we only subscribed afterwards.
+      const voiceReadyPromise = waitForAudioReady(chatId);
+
+      // Step 2: canonical generate — modalities + conversation_id + operations.
+      await transport.send("/attempt/generate", {
+        instructions: ["Start a realtime voice conversation in character."],
+        modalities: ["audio", "call", "text"],
+        conversation_id: conversationId,
+        config: {
+          operations: ["get", "chat_message"],
+          params: {
+            attempt_id: attemptId,
+            chat_id: chatId,
+          },
+        },
+      });
+
+      await voiceReadyPromise;
     },
     [transport, waitForAudioReady],
   );

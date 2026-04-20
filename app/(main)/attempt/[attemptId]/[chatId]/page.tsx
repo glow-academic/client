@@ -21,7 +21,7 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 type ProblemAttemptIn = InputOf<"/attempt/problem", "post">;
 type ProblemAttemptOut = OutputOf<"/attempt/problem", "post">;
 type GetChatBundleOut = OutputOf<
-  "/chat/get",
+  "/attempt/chat/get",
   "post"
 >;
 type PatchChatDraftIn = InputOf<
@@ -32,8 +32,8 @@ type PatchChatDraftOut = OutputOf<
   "/attempt/draft",
   "patch"
 >;
-type ContextIn = InputOf<"/chat/context", "post">;
-type ContextOut = OutputOf<"/chat/context", "post">;
+type ContextIn = InputOf<"/attempt/context", "post">;
+type ContextOut = OutputOf<"/attempt/context", "post">;
 
 const getChatBundle = async (
   bundleId: string,
@@ -41,14 +41,14 @@ const getChatBundle = async (
   draftId: string | null,
 ): Promise<GetChatBundleOut> => {
   return api.post(
-    "/chat/get",
+    "/attempt/chat/get",
     {
       body: {
         chat_entry_id: bundleId,
         attempt_id: attemptId,
         draft_id: draftId,
       },
-    },
+    } as InputOf<"/attempt/chat/get", "post">,
     {
       cache: "no-store",
       headers: {
@@ -81,7 +81,7 @@ export async function generateMetadata({
   const { chatId } = await params;
 
   try {
-    const context = await api.post("/chat/context", { body: { entity_id: chatId } } as ContextIn) as ContextOut;
+    const context = await api.post("/attempt/context", { body: { entity_id: chatId } } as ContextIn) as ContextOut;
     return {
       title: context.page_metadata?.detail.title ?? "Customize Training",
       description: context.page_metadata?.detail.description ?? "Customize and start a bundle-based training session.",
@@ -124,7 +124,7 @@ export default async function ChatPage({
     // Profile + entity context in parallel
     const [bundleData, context] = await Promise.all([
       getChatBundle(chatId, attemptId, draftId),
-      api.post("/chat/context", { body: { entity_id: chatId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/attempt/context", { body: { entity_id: chatId } } as ContextIn) as Promise<ContextOut>,
     ]);
     const snapshot = buildSnapshot(session, context.profile);
 
@@ -134,10 +134,14 @@ export default async function ChatPage({
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined
+          ? { initialSidebarOpen }
+          : {})}
         sidebarProps={{
           activeSection: "practice",
-          createFeedback: createAttemptProblem,
+          createFeedback: createAttemptProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Attempt", url: `/attempt/${attemptId}` },

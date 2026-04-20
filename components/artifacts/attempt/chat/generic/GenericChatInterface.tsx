@@ -120,8 +120,8 @@ export function GenericChatInterface({
   input_area_props,
   input_area_ref,
 }: GenericChatInterfaceProps) {
-  const backgroundImageUrl = background_image?.upload_id
-    ? `/api/attempts/download/${background_image.upload_id}`
+  const backgroundImageUrl = background_image?.image_id
+    ? `/api/system/image/${background_image.image_id}`
     : null;
 
   return (

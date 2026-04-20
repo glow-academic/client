@@ -43,26 +43,6 @@ type UpdateRubricIn = InputOf<"/rubric/update", "post">;
 type UpdateRubricOut = OutputOf<"/rubric/update", "post">;
 type PatchRubricDraftIn = InputOf<"/rubric/draft", "patch">;
 type PatchRubricDraftOut = OutputOf<"/rubric/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftPointsIn = InputOf<"/api/v5/resources/points", "post">;
-type CreateDraftPointsOut = OutputOf<"/api/v5/resources/points", "post">;
-type CreateDraftStandardGroupsIn = InputOf<
-  "/api/v5/resources/standard_groups",
-  "post"
->;
-type CreateDraftStandardGroupsOut = OutputOf<
-  "/api/v5/resources/standard_groups",
-  "post"
->;
 type RubricData = OutputOf<"/rubric/get", "post">;
 type RubricResourceType =
   | "names"
@@ -70,9 +50,96 @@ type RubricResourceType =
   | "flags"
   | "departments"
   | "points"
-  | "pass_points"
   | "standard_groups"
   | "standards";
+
+type RubricDraftFormStateCompat = {
+  name?: string | null;
+  name_id?: string | null;
+  description?: string | null;
+  description_id?: string | null;
+  active_flag_id?: string | null;
+  flag_id?: string | null;
+  department_ids?: string[] | null;
+  point_ids?: string[] | null;
+  standard_group_ids?: string[] | null;
+  standard_ids?: string[] | null;
+  pending_ids?: string[] | null;
+};
+
+type RubricDataCompat = RubricData & {
+  pending_ids?: string[] | null;
+  names?: Array<{
+    id?: string | null;
+    name?: string | null;
+    generated?: boolean | null;
+    selected?: boolean | null;
+    suggested?: boolean | null;
+    pending?: boolean | null;
+  }> | null;
+  descriptions?: Array<{
+    id?: string | null;
+    description?: string | null;
+    generated?: boolean | null;
+    selected?: boolean | null;
+    suggested?: boolean | null;
+    pending?: boolean | null;
+  }> | null;
+  flags?: Array<{
+    key?: string | null;
+    label?: string | null;
+    description?: string | null;
+    icon_id?: string | null;
+    flag_option_id?: string | null;
+    generated?: boolean | null;
+    selected?: boolean | null;
+    suggested?: boolean | null;
+    pending?: boolean | null;
+  }> | null;
+  departments?: Array<{
+    department_id?: string | null;
+    id?: string | null;
+    name?: string | null;
+    description?: string | null;
+    generated?: boolean | null;
+    selected?: boolean | null;
+    suggested?: boolean | null;
+    pending?: boolean | null;
+  }> | null;
+  points?: Array<{
+    id?: string | null;
+    value?: number | null;
+    type?: string | null;
+    generated?: boolean | null;
+    selected?: boolean | null;
+    suggested?: boolean | null;
+    pending?: boolean | null;
+  }> | null;
+  standard_groups?: Array<{
+    id?: string | null;
+    standard_group_id?: string | null;
+    name?: string | null;
+    description?: string | null;
+    points?: number | null;
+    pass_points?: number | null;
+    generated?: boolean | null;
+    selected?: boolean | null;
+    suggested?: boolean | null;
+    pending?: boolean | null;
+  }> | null;
+  standards?: Array<{
+    id?: string | null;
+    standard_id?: string | null;
+    standard_group_id?: string | null;
+    name?: string | null;
+    description?: string | null;
+    points?: number | null;
+    generated?: boolean | null;
+    selected?: boolean | null;
+    suggested?: boolean | null;
+    pending?: boolean | null;
+  }> | null;
+};
 
 type RubricFormState = {
   name: string | null;
@@ -82,9 +149,9 @@ type RubricFormState = {
   active_flag_id: string | null;
   department_ids: string[];
   total_points_id: string | null;
-  pass_points_id: string | null;
   standard_group_ids: string[];
   standard_ids: string[];
+  pending_ids: string[];
 };
 
 const FLUSH_KEYS = [
@@ -92,7 +159,6 @@ const FLUSH_KEYS = [
   "descriptions",
   "departments",
   "points",
-  "pass_points",
   "standard_groups",
 ] as const;
 
@@ -102,7 +168,6 @@ const VALID_RESOURCE_TYPES: RubricResourceType[] = [
   "flags",
   "departments",
   "points",
-  "pass_points",
   "standard_groups",
   "standards",
 ];
@@ -129,12 +194,6 @@ const RUBRIC_RESOURCES: ResourceConfig[] = [
     type: "single",
   },
   {
-    key: "pass_points",
-    formKey: "pass_points_id",
-    flushKey: "pass_points_id",
-    type: "single",
-  },
-  {
     key: "standard_groups",
     formKey: "standard_group_ids",
     flushKey: "standard_group_ids",
@@ -156,18 +215,6 @@ export interface RubricProps {
   patchRubricDraftAction?: (
     input: PatchRubricDraftIn,
   ) => Promise<PatchRubricDraftOut>;
-  createNamesAction?: (
-    input: CreateDraftNamesIn,
-  ) => Promise<CreateDraftNamesOut>;
-  createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn,
-  ) => Promise<CreateDraftDescriptionsOut>;
-  createPointsAction?: (
-    input: CreateDraftPointsIn,
-  ) => Promise<CreateDraftPointsOut>;
-  createStandardGroupsAction?: (
-    input: CreateDraftStandardGroupsIn,
-  ) => Promise<CreateDraftStandardGroupsOut>;
 }
 
 function RubricComponent({
@@ -176,14 +223,10 @@ function RubricComponent({
   createRubricAction,
   updateRubricAction,
   patchRubricDraftAction,
-  createNamesAction,
-  createDescriptionsAction,
-  createPointsAction,
-  createStandardGroupsAction,
 }: RubricProps) {
   const router = useRouter();
   const isEditMode = !!rubricId;
-  const s = rubricData;
+  const s = rubricData as RubricDataCompat | undefined;
 
   const [formState, setFormState] = useState<RubricFormState>({
     name: null,
@@ -193,14 +236,14 @@ function RubricComponent({
     active_flag_id: null,
     department_ids: [],
     total_points_id: null,
-    pass_points_id: null,
     standard_group_ids: [],
     standard_ids: [],
+    pending_ids: [],
   });
 
   const { profile } = useProfile();
   const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
-  const { flushRegistryRef, registerFlushCallbacks } =
+  const { flushRegistryRef } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 
   const { isGenerating, generate } = useArtifactAi({
@@ -218,32 +261,36 @@ function RubricComponent({
         active_flag_id: null,
         department_ids: [],
         total_points_id: null,
-        pass_points_id: null,
         standard_group_ids: [],
         standard_ids: [],
+        pending_ids: [],
       };
     }
 
     return {
       name: null,
-      name_id: s.names?.resource?.id ?? null,
+      name_id: s.names?.find((item) => item.selected)?.id ?? null,
       description: null,
-      description_id: s.descriptions?.resource?.id ?? null,
-      active_flag_id: s.flags?.current?.[0]?.flag_option_id ?? null,
+      description_id: s.descriptions?.find((item) => item.selected)?.id ?? null,
+      active_flag_id:
+        s.flags?.find((item) => item.selected)?.flag_option_id ?? null,
       department_ids:
-        s.departments?.current
+        (s.departments ?? [])
+          .filter((x) => x.selected)
           ?.map((x) => x.department_id)
           .filter((x): x is string => !!x) ?? [],
-      total_points_id: s.points?.resource?.id ?? null,
-      pass_points_id: s.pass_points?.resource?.id ?? null,
+      total_points_id: s.points?.find((item) => item.selected)?.id ?? null,
       standard_group_ids:
-        s.standard_groups?.current
+        (s.standard_groups ?? [])
+          .filter((x) => x.selected)
           ?.map((x) => x.standard_group_id)
           .filter((x): x is string => !!x) ?? [],
       standard_ids:
-        s.standards?.current
+        (s.standards ?? [])
+          .filter((x) => x.selected)
           ?.map((x) => x.standard_id)
           .filter((x): x is string => !!x) ?? [],
+      pending_ids: s.pending_ids ?? [],
     };
   }, [s]);
 
@@ -261,10 +308,7 @@ function RubricComponent({
   }, [getInitialFormState]);
 
   const serverSyncPendingRef = React.useRef(false);
-  const formStateKey = useMemo(() => {
-    if (serverSyncPendingRef.current) return undefined;
-    return JSON.stringify(formState);
-  }, [formState]);
+  const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
   const patchActionRef = React.useRef<
     ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>) | undefined
   >(undefined);
@@ -276,13 +320,34 @@ function RubricComponent({
     patchActionRef.current = async (payload: Record<string, unknown>) => {
       const res = await patchRubricDraftAction({ body: payload } as PatchRubricDraftIn);
       if (res.form_state) {
+        const fs = res.form_state as RubricDraftFormStateCompat;
         serverSyncPendingRef.current = true;
         setFormState((prev) => ({
           ...prev,
-          name: null,
-          name_id: (res.form_state!.name_id as string) ?? prev.name_id,
-          description: null,
-          description_id: (res.form_state!.description_id as string) ?? prev.description_id,
+          name: (fs.name as string | null | undefined) ?? null,
+          name_id: (fs.name_id as string | null | undefined) ?? prev.name_id,
+          description: (fs.description as string | null | undefined) ?? null,
+          description_id:
+            (fs.description_id as string | null | undefined) ??
+            prev.description_id,
+          active_flag_id:
+            (fs.active_flag_id as string | null | undefined) ??
+            (fs.flag_id as string | null | undefined) ??
+            prev.active_flag_id,
+          department_ids:
+            (fs.department_ids as string[] | null | undefined) ??
+            prev.department_ids,
+          total_points_id:
+            (fs.point_ids?.[0] as string | undefined) ?? prev.total_points_id,
+          standard_group_ids:
+            (fs.standard_group_ids as string[] | null | undefined) ??
+            prev.standard_group_ids,
+          standard_ids:
+            (fs.standard_ids as string[] | null | undefined) ??
+            prev.standard_ids,
+          pending_ids:
+            (fs.pending_ids as string[] | null | undefined) ??
+            prev.pending_ids,
         }));
         requestAnimationFrame(() => {
           serverSyncPendingRef.current = false;
@@ -323,6 +388,7 @@ function RubricComponent({
         payload["description"] = fs.description;
         delete payload["description_id"];
       }
+      payload["pending_ids"] = fs.pending_ids;
       return payload;
     },
     [s],
@@ -371,29 +437,19 @@ function RubricComponent({
       if (!s) return false;
       switch (rt) {
         case "names":
-          return s.names?.resource?.generated ?? false;
+          return s.names?.find((item) => item.selected)?.generated ?? false;
         case "descriptions":
-          return s.descriptions?.resource?.generated ?? false;
+          return s.descriptions?.find((item) => item.selected)?.generated ?? false;
         case "flags":
-          return s.flags?.current?.some((f) => f.generated) ?? false;
+          return s.flags?.some((f) => f.selected && f.generated) ?? false;
         case "departments":
-          return s.departments?.current?.some((x) => x.generated) ?? false;
+          return s.departments?.some((x) => x.selected && x.generated) ?? false;
         case "points":
-          return s.points?.resource?.generated ?? false;
-        case "pass_points":
-          return s.pass_points?.resource?.generated ?? false;
+          return s.points?.find((item) => item.selected)?.generated ?? false;
         case "standard_groups":
-          return (
-            s.standard_groups?.current?.some(
-              (x) => (x as { generated?: boolean | null }).generated ?? false,
-            ) ?? false
-          );
+          return s.standard_groups?.some((x) => x.selected && x.generated) ?? false;
         case "standards":
-          return (
-            s.standards?.current?.some(
-              (x) => (x as { generated?: boolean | null }).generated ?? false,
-            ) ?? false
-          );
+          return s.standards?.some((x) => x.selected && x.generated) ?? false;
         default:
           return false;
       }
@@ -404,7 +460,7 @@ function RubricComponent({
   const stepResources: Record<string, RubricResourceType[]> = useMemo(
     () => ({
       basic: ["names", "descriptions", "flags", "departments"],
-      points: ["points", "pass_points"],
+      points: ["points"],
       standard_groups: ["standard_groups"],
       standards: ["standards"],
     }),
@@ -422,6 +478,34 @@ function RubricComponent({
   );
 
   const disabled = useMemo(() => !s?.can_edit, [s?.can_edit]);
+  const selectedNameResource = useMemo(
+    () => s?.names?.find((item) => item.selected) ?? null,
+    [s?.names],
+  );
+  const selectedDescriptionResource = useMemo(
+    () => s?.descriptions?.find((item) => item.selected) ?? null,
+    [s?.descriptions],
+  );
+  const selectedPointResource = useMemo(
+    () => s?.points?.find((item) => item.selected) ?? null,
+    [s?.points],
+  );
+  const pointSuggestions = useMemo(
+    () =>
+      (s?.points ?? [])
+        .filter((item) => item.suggested)
+        .map((item) => item.id)
+        .filter((item): item is string => !!item),
+    [s?.points],
+  );
+  const standardSuggestions = useMemo(
+    () =>
+      (s?.standards ?? [])
+        .filter((item) => item.suggested)
+        .map((item) => item.standard_id ?? item.id)
+        .filter((item): item is string => !!item),
+    [s?.standards],
+  );
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
@@ -443,10 +527,10 @@ function RubricComponent({
         flushResults,
       ) as unknown as RubricFormState;
 
-      if (s?.names?.required && !effectiveFormState.name_id) {
+      if (!effectiveFormState.name_id) {
         throw new Error("Rubric name is required");
       }
-      if (s?.departments?.required && effectiveFormState.department_ids.length === 0) {
+      if (effectiveFormState.department_ids.length === 0) {
         throw new Error("Department is required");
       }
       if (!profile?.id) {
@@ -456,10 +540,9 @@ function RubricComponent({
         throw new Error("Missing group_id");
       }
 
-      const pointIds = [
-        effectiveFormState.total_points_id,
-        effectiveFormState.pass_points_id,
-      ].filter((x): x is string => !!x);
+      const pointIds = [effectiveFormState.total_points_id].filter(
+        (x): x is string => !!x,
+      );
 
       if (isEditMode) {
         if (!updateRubricAction) throw new Error("Update action not available");
@@ -536,7 +619,7 @@ function RubricComponent({
             ? "completed"
             : "active";
         case "points":
-          return formState.pass_points_id ? "completed" : "active";
+          return formState.total_points_id ? "completed" : "active";
         case "standard_groups":
           return formState.standard_group_ids.length > 0 ? "completed" : "active";
         case "standards":
@@ -559,8 +642,8 @@ function RubricComponent({
       {
         id: "points",
         title: "Points",
-        description: "Set total points and pass points.",
-        resetFields: ["total_points_id", "pass_points_id"],
+        description: "Set points for the rubric.",
+        resetFields: ["total_points_id"],
       },
       {
         id: "standard_groups",
@@ -585,9 +668,9 @@ function RubricComponent({
       "active_flag_id",
       "department_ids",
       "total_points_id",
-      "pass_points_id",
       "standard_group_ids",
       "standard_ids",
+      "pending_ids",
     ],
     [],
   );
@@ -623,10 +706,9 @@ function RubricComponent({
             customHeader={
               <Names
                 name_id={formState.name_id}
-                name_resource={s?.names?.resource ?? null}
-                show_name={s?.names?.show ?? true}
-                name_suggestions={s?.names?.suggestions ?? []}
-                names={s?.names?.resources ?? []}
+                name_resource={selectedNameResource}
+                show_name={true}
+                names={s?.names ?? []}
                 disabled={disabled}
                 onNameIdChange={(nameId) =>
                   setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
@@ -634,13 +716,8 @@ function RubricComponent({
                 onNameChange={(name) =>
                   setFormState((prev) => ({ ...prev, name }))
                 }
-                onGenerate={() => handleGenerateResources(["names"])}
-                required={s?.names?.required ?? false}
+                required={true}
                 hideDescription={true}
-                showAiGenerate={s?.names?.show_ai_generate ?? false}
-                createNamesAction={createNamesAction}
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["names"]}
               />
             }
             resetFields={[
@@ -670,10 +747,9 @@ function RubricComponent({
             <div className="space-y-4">
               <Descriptions
                 description_id={formState.description_id}
-                description_resource={s?.descriptions?.resource ?? null}
-                show_description={s?.descriptions?.show ?? true}
-                description_suggestions={s?.descriptions?.suggestions ?? []}
-                descriptions={s?.descriptions?.resources ?? []}
+                description_resource={selectedDescriptionResource}
+                show_description={true}
+                descriptions={s?.descriptions ?? []}
                 disabled={disabled}
                 onDescriptionIdChange={(descriptionId) =>
                   setFormState((prev) => ({ ...prev, description_id: descriptionId, description: null }))
@@ -681,42 +757,30 @@ function RubricComponent({
                 onDescriptionChange={(description) =>
                   setFormState((prev) => ({ ...prev, description }))
                 }
-                onGenerate={() => handleGenerateResources(["descriptions"])}
-                required={s?.descriptions?.required ?? false}
-                showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
-                createDescriptionsAction={createDescriptionsAction}
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["descriptions"]}
+                required={false}
               />
 
               <Departments
                 department_ids={formState.department_ids}
-                department_resources={s?.departments?.current ?? []}
-                show_departments={s?.departments?.show ?? false}
-                department_suggestions={s?.departments?.suggestions ?? []}
-                departments={s?.departments?.resources ?? []}
+                department_resources={(s?.departments ?? []).filter((item) => item.selected)}
+                show_departments={true}
+                departments={s?.departments ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, department_ids: ids }))
                 }
-                onGenerate={() => handleGenerateResources(["departments"])}
-                required={s?.departments?.required ?? false}
-                showAiGenerate={s?.departments?.show_ai_generate ?? false}
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["departments"]}
+                required={true}
               />
 
               <Flags
-                flags={s?.flags?.resources ?? []}
+                flags={s?.flags ?? []}
                 flag_id={formState.active_flag_id}
-                show_flags={s?.flags?.show ?? false}
+                show_flags={Boolean((s?.flags ?? []).length)}
                 columns={1}
                 disabled={disabled}
                 onChange={(flagId) =>
                   setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
                 }
-                onGenerate={() => handleGenerateResources(["flags"])}
-                showAiGenerate={s?.flags?.show_ai_generate ?? false}
               />
             </div>
           </StepCard>
@@ -732,7 +796,7 @@ function RubricComponent({
             stepDescription={stepDescription}
             isReadonly={disabled}
             isEditMode={isEditMode}
-            resetFields={["total_points_id", "pass_points_id"]}
+            resetFields={["total_points_id"]}
             actions={
               s?.content_show_ai_generate ? (
                 <StepCardAiButton
@@ -755,63 +819,33 @@ function RubricComponent({
               <Points
                 points_id={formState.total_points_id}
                 points_resource={
-                  s?.points?.resource
+                  selectedPointResource
                     ? {
-                        id: s.points.resource.id ?? null,
-                        value: s.points.resource.value ?? null,
-                        generated: s.points.resource.generated ?? null,
+                        id: selectedPointResource.id ?? null,
+                        value: selectedPointResource.value ?? null,
+                        generated: selectedPointResource.generated ?? null,
+                        suggested: selectedPointResource.suggested ?? null,
+                        pending: selectedPointResource.pending ?? null,
                       }
                     : null
                 }
-                show_points={s?.points?.show ?? false}
-                points_suggestions={s?.points?.suggestions ?? []}
-                points={(s?.points?.resources ?? []).map((p) => ({
+                show_points={true}
+                points_suggestions={pointSuggestions}
+                points={(s?.points ?? []).map((p) => ({
                   id: p.id ?? null,
                   value: p.value ?? null,
                   generated: p.generated ?? null,
+                  suggested: p.suggested ?? null,
+                  pending: p.pending ?? null,
                 }))}
                 disabled={disabled}
                 onPointsIdChange={(pointsId) =>
                   setFormState((prev) => ({ ...prev, total_points_id: pointsId }))
                 }
                 onGenerate={() => handleGenerateResources(["points"])}
-                label="Total Points"
-                required={s?.points?.required ?? false}
-                showAiGenerate={s?.points?.show_ai_generate ?? false}
-                createPointsAction={createPointsAction}
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["points"]}
-              />
-
-              <Points
-                points_id={formState.pass_points_id}
-                points_resource={
-                  s?.pass_points?.resource
-                    ? {
-                        id: s.pass_points.resource.id ?? null,
-                        value: s.pass_points.resource.value ?? null,
-                        generated: s.pass_points.resource.generated ?? null,
-                      }
-                    : null
-                }
-                show_points={s?.pass_points?.show ?? false}
-                points_suggestions={s?.pass_points?.suggestions ?? []}
-                points={(s?.pass_points?.resources ?? []).map((p) => ({
-                  id: p.id ?? null,
-                  value: p.value ?? null,
-                  generated: p.generated ?? null,
-                }))}
-                disabled={disabled}
-                onPointsIdChange={(pointsId) =>
-                  setFormState((prev) => ({ ...prev, pass_points_id: pointsId }))
-                }
-                onGenerate={() => handleGenerateResources(["pass_points"])}
-                label="Pass Points"
-                required={s?.pass_points?.required ?? false}
-                showAiGenerate={s?.pass_points?.show_ai_generate ?? false}
-                createPointsAction={createPointsAction}
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["pass_points"]}
+                label="Points"
+                required={true}
+                showAiGenerate={false}
               />
             </div>
           </StepCard>
@@ -848,20 +882,14 @@ function RubricComponent({
           >
             <StandardGroups
               standard_group_ids={formState.standard_group_ids}
-              standard_group_resources={s?.standard_groups?.current ?? []}
-              show_standard_groups={s?.standard_groups?.show ?? false}
-              standard_group_suggestions={s?.standard_groups?.suggestions ?? []}
-              standard_groups={s?.standard_groups?.resources ?? []}
+              standard_group_resources={(s?.standard_groups ?? []).filter((item) => item.selected)}
+              show_standard_groups={true}
+              standard_groups={s?.standard_groups ?? []}
               disabled={disabled}
               onChange={(ids) =>
                 setFormState((prev) => ({ ...prev, standard_group_ids: ids }))
               }
-              onGenerate={() => handleGenerateResources(["standard_groups"])}
-              required={s?.standard_groups?.required ?? false}
-              showAiGenerate={s?.standard_groups?.show_ai_generate ?? false}
-              createStandardGroupsAction={createStandardGroupsAction}
-              isAutosaveEnabled={isAutosaveEnabled}
-              registerFlush={registerFlushCallbacks["standard_groups"]}
+              required={true}
             />
           </StepCard>
         );
@@ -896,17 +924,17 @@ function RubricComponent({
         >
           <Standards
             standard_ids={formState.standard_ids}
-            standard_resources={s?.standards?.current ?? []}
-            show_standards={s?.standards?.show ?? false}
-            standard_suggestions={s?.standards?.suggestions ?? []}
-            standards={s?.standards?.resources ?? []}
+            standard_resources={(s?.standards ?? []).filter((item) => item.selected)}
+            show_standards={true}
+            standard_suggestions={standardSuggestions}
+            standards={s?.standards ?? []}
             disabled={disabled}
             onChange={(ids) =>
               setFormState((prev) => ({ ...prev, standard_ids: ids }))
             }
             onGenerate={() => handleGenerateResources(["standards"])}
-            required={s?.standards?.required ?? false}
-            showAiGenerate={s?.standards?.show_ai_generate ?? false}
+            required={true}
+            showAiGenerate={false}
           />
         </StepCard>
       );
@@ -918,15 +946,14 @@ function RubricComponent({
       s,
       handleGenerateResources,
       isGenerating,
-      createNamesAction,
-      createDescriptionsAction,
-      createPointsAction,
-      createStandardGroupsAction,
-      isAutosaveEnabled,
-      registerFlushCallbacks,
       stepResources,
       canRegenerate,
       handleDirectStepGenerate,
+      selectedNameResource,
+      selectedDescriptionResource,
+      selectedPointResource,
+      pointSuggestions,
+      standardSuggestions,
     ],
   );
 
@@ -973,7 +1000,6 @@ function RubricComponent({
               setFormState((prev) => ({
                 ...prev,
                 total_points_id: null,
-                pass_points_id: null,
               }));
             }
             if (stepId === "standard_groups") {

@@ -20,11 +20,11 @@ export default function RootPage() {
     const returnTo = searchParams.get("return_to");
 
     // If return_to is a valid internal path, go there directly after login.
-    // Otherwise, go through /callback for role-based routing.
+    // Otherwise, go to /home — permission-based routing happens in (main) layout.
     signIn("glow", {
       callbackUrl: returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
         ? returnTo
-        : "/callback",
+        : "/home",
     });
   }, [searchParams]);
 

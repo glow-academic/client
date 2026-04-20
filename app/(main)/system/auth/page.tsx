@@ -18,6 +18,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
+import { guardPage } from "@/lib/permissions";
 
 /** ---- Strong types from OpenAPI ---- */
 type AuthListOut = OutputOf<"/auth/search", "post">;
@@ -119,6 +120,7 @@ export default async function AuthPage() {
     // Profile data for providers
     const context = await api.post("/auth/context", { body: {} } as ContextIn) as ContextOut;
     const snapshot = buildSnapshot(session, context.profile);
+    guardPage("/system/auth", context.profile.role_permissions);
 
     // Fetch list data and group in parallel
     const [listData, groupResult] = await Promise.all([

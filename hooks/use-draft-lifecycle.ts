@@ -29,7 +29,7 @@ export function useDraftLifecycle(config: {
     ((payload: Record<string, unknown>) => Promise<PatchResult>) | undefined
   >;
   isAutosaveEnabled: boolean;
-  /** Build the full patch payload given draftId and optional flush results */
+  /** Build the patch payload. Append-only callers send full state and ignore args; legacy callers use draftId/flushResults. */
   buildPatchPayload: (
     draftId: string | null,
     flushResults?: Record<string, unknown>
@@ -41,7 +41,7 @@ export function useDraftLifecycle(config: {
     Map<string, () => Promise<Record<string, unknown> | void>>
   >;
   formStateRef: MutableRefObject<Record<string, unknown>>;
-  /** Called after a successful patch (autosave or flush-and-save) */
+  /** @deprecated No longer needed for append-only drafts. Kept for backward compat during migration. */
   onPatchSuccess?: () => void;
 }) {
   const {
@@ -74,9 +74,6 @@ export function useDraftLifecycle(config: {
       formDataRef.current = fd;
       const nextDraftId = (fd["draftId"] as string | undefined) ?? null;
       setDraftId((prev) => {
-        if (prev === null && nextDraftId !== null) {
-          serverSyncPendingRef.current = true;
-        }
         return prev === nextDraftId ? prev : nextDraftId;
       });
 
@@ -88,23 +85,20 @@ export function useDraftLifecycle(config: {
     [setSelectedDraftId]
   );
 
-  // --- draftPatchKey dedup ---
-  // Prepend draftId to the caller-provided formStateKey to get the full dedup key
-  const draftPatchKey = `{"draftId":${JSON.stringify(draftId ?? null)},${formStateKey.slice(1)}`;
+  // --- dedup key ---
+  // formStateKey alone drives dedup — draftId is excluded because append-only saves
+  // produce a new draftId on every save, which would trigger an infinite loop.
+  // If formState hasn't changed, there's nothing to save regardless of draftId.
+  const draftPatchKey = formStateKey;
 
-  const lastPatchedKeyRef = useRef<string | null>(null);
-  const isFirstPatchRef = useRef(true);
+  // Initialize to current formStateKey so the dedup check skips the initial state
+  // without needing a separate isFirstPatchRef flag
+  const lastPatchedKeyRef = useRef<string | null>(formStateKey);
   const hasPendingChangesRef = useRef(false);
 
   // --- Debounced autosave effect ---
   useEffect(() => {
     if (!hasResourceIds || !patchActionRef.current) {
-      return;
-    }
-
-    if (isFirstPatchRef.current) {
-      isFirstPatchRef.current = false;
-      lastPatchedKeyRef.current = draftPatchKey;
       return;
     }
 

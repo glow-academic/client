@@ -5989,7 +5989,7 @@ export interface paths {
         put?: never;
         /**
          * Start Attempt
-         * @description Create a new attempt using the canonical internal attempt orchestration.
+         * @description Create a new attempt from a home or practice entry.
          */
         post: operations["start_attempt_attempt_start_post"];
         delete?: never;
@@ -5998,7 +5998,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/next": {
+    "/attempt/complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -6008,17 +6008,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Next Attempt
-         * @description Proceed to the next scenario in an existing attempt.
+         * Attempt Complete
+         * @description Mark an entire attempt as completed.
          */
-        post: operations["next_attempt_attempt_next_post"];
+        post: operations["attempt_complete_attempt_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/attempt/end": {
+    "/attempt/stop": {
         parameters: {
             query?: never;
             header?: never;
@@ -6028,50 +6028,30 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * End Attempt
-         * @description End all remaining chats in an attempt.
+         * Attempt Stop
+         * @description Cancel an active generation by group_id.
          */
-        post: operations["end_attempt_attempt_end_post"];
+        post: operations["attempt_stop_attempt_stop_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/attempt/expire": {
+    "/attempt/stream": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
         /**
-         * Expire
-         * @description Find and end all expired attempt chats.
+         * Attempt Stream
+         * @description Stream events for all joined groups via SSE.
          */
-        post: operations["expire_attempt_expire_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/previous": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
+        get: operations["attempt_stream_attempt_stream_get"];
         put?: never;
-        /**
-         * Attempt Previous
-         * @description Copy grades from a previous attempt's chats.
-         */
-        post: operations["attempt_previous_attempt_previous_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6089,7 +6069,7 @@ export interface paths {
         put?: never;
         /**
          * Attempt Join
-         * @description Join a chat room for real-time attempt updates.
+         * @description Subscribe to events for a group.
          */
         post: operations["attempt_join_attempt_join_post"];
         delete?: never;
@@ -6109,7 +6089,7 @@ export interface paths {
         put?: never;
         /**
          * Attempt Leave
-         * @description Leave a chat room, stopping real-time attempt updates.
+         * @description Unsubscribe from events for a group.
          */
         post: operations["attempt_leave_attempt_leave_post"];
         delete?: never;
@@ -6138,7 +6118,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/chat/send": {
+    "/attempt/chat/message": {
         parameters: {
             query?: never;
             header?: never;
@@ -6148,59 +6128,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Chat Send
-         * @description Send text or audio input to an attempt chat.
-         *
-         *     Routing logic:
-         *     - Voice session active + audio_id → feed audio to voice pipeline
-         *     - Voice session active + text → feed text to voice pipeline (TTS)
-         *     - No voice session + text → standard text generation pipeline
-         *     - No voice session + audio_id → STT → standard text pipeline
+         * Chat Message
+         * @description Create a message in an attempt chat.
          */
-        post: operations["chat_send_attempt_chat_send_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/chat/stop": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Chat Stop
-         * @description Stop message generation for an attempt chat.
-         */
-        post: operations["chat_stop_attempt_chat_stop_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/chat/end": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Chat End
-         * @description End a single chat within an attempt.
-         *
-         *     Browser client: sends grade=True, internal AI generates full grade.
-         *     Agent: can optionally provide score, feedbacks, strengths, etc. to skip AI.
-         */
-        post: operations["chat_end_attempt_chat_end_post"];
+        post: operations["chat_message_attempt_chat_message_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6270,7 +6201,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/chat/mute": {
+    "/attempt/chat/speak": {
         parameters: {
             query?: never;
             header?: never;
@@ -6280,10 +6211,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Chat Mute
-         * @description Toggle microphone mute for a voice session.
+         * Chat Speak
+         * @description Push audio bytes into a conversation's inbound buffer.
          */
-        post: operations["chat_mute_attempt_chat_mute_post"];
+        post: operations["chat_speak_attempt_chat_speak_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6304,6 +6235,26 @@ export interface paths {
          * @description End a voice session for an attempt chat.
          */
         post: operations["chat_silence_attempt_chat_silence_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Complete
+         * @description Mark an attempt chat as completed — final step after grading.
+         */
+        post: operations["chat_complete_attempt_chat_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6430,26 +6381,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/chat/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Chat
-         * @description Resolve or create a chat group with optional naming.
-         */
-        post: operations["group_chat_attempt_chat_group_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/attempt/chat/refresh": {
         parameters: {
             query?: never;
@@ -6490,29 +6421,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/chat/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Chat Context
-         * @description Get page context for the chat analytics.
-         *
-         *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
-         */
-        post: operations["get_chat_context_attempt_chat_context_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/attempt/draft": {
         parameters: {
             query?: never;
@@ -6547,26 +6455,6 @@ export interface paths {
          * @description List chat drafts owned by the current profile.
          */
         post: operations["get_chat_drafts_attempt_drafts_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/home/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Start Home Attempt
-         * @description Create a new attempt from a home entry.
-         */
-        post: operations["start_home_attempt_attempt_home_start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6653,129 +6541,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/home/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Home Context
-         * @description Get page context for the home analytics.
-         *
-         *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
-         */
-        post: operations["get_home_context_attempt_home_context_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/home/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate Home
-         * @description Trigger home generation. Returns immediately; progress via events.
-         */
-        post: operations["generate_home_attempt_home_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/home/generations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generations Home
-         * @description List home generation groups — composable infra architecture.
-         */
-        post: operations["generations_home_attempt_home_generations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/home/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Home
-         * @description Resolve or create a home group with optional naming.
-         */
-        post: operations["group_home_attempt_home_group_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/home/problem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Problem Home
-         * @description Report a home problem — composable infra architecture.
-         */
-        post: operations["problem_home_attempt_home_problem_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/practice/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Start Practice Attempt
-         * @description Create a new attempt from a practice entry.
-         */
-        post: operations["start_practice_attempt_attempt_practice_start_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/attempt/practice/get": {
         parameters: {
             query?: never;
@@ -6850,109 +6615,6 @@ export interface paths {
          * @description Export all practice data as a clean, denormalized ZIP.
          */
         post: operations["export_practice_attempt_practice_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/practice/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Practice Context
-         * @description Get page context for the practice analytics.
-         *
-         *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
-         */
-        post: operations["get_practice_context_attempt_practice_context_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/practice/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate Practice
-         * @description Trigger practice generation. Returns immediately; progress via events.
-         */
-        post: operations["generate_practice_attempt_practice_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/practice/generations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generations Practice
-         * @description List practice generation groups — composable infra architecture.
-         */
-        post: operations["generations_practice_attempt_practice_generations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/practice/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Practice
-         * @description Resolve or create a practice group with optional naming.
-         */
-        post: operations["group_practice_attempt_practice_group_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/practice/problem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Problem Practice
-         * @description Report a practice problem — composable infra architecture.
-         */
-        post: operations["problem_practice_attempt_practice_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7036,109 +6698,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/dashboard/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Dashboard Context
-         * @description Get page context for the dashboard.
-         *
-         *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
-         */
-        post: operations["get_dashboard_context_attempt_dashboard_context_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/dashboard/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Dashboard
-         * @description Resolve or create a dashboard group with optional naming.
-         */
-        post: operations["group_dashboard_attempt_dashboard_group_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/dashboard/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate Dashboard
-         * @description Trigger dashboard generation. Returns immediately; progress via events.
-         */
-        post: operations["generate_dashboard_attempt_dashboard_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/dashboard/generations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generations Dashboard
-         * @description List dashboard generation groups — composable infra architecture.
-         */
-        post: operations["generations_dashboard_attempt_dashboard_generations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/dashboard/problem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Problem Dashboard
-         * @description Report a dashboard problem — composable infra architecture.
-         */
-        post: operations["problem_dashboard_attempt_dashboard_problem_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/attempt/leaderboard/get": {
         parameters: {
             query?: never;
@@ -7210,109 +6769,6 @@ export interface paths {
          * @description Export all leaderboard data as a clean, denormalized ZIP.
          */
         post: operations["export_leaderboard_attempt_leaderboard_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/leaderboard/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate Leaderboard
-         * @description Trigger leaderboard generation. Returns immediately; progress via events.
-         */
-        post: operations["generate_leaderboard_attempt_leaderboard_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/leaderboard/generations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generations Leaderboard
-         * @description List leaderboard generation groups — composable infra architecture.
-         */
-        post: operations["generations_leaderboard_attempt_leaderboard_generations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/leaderboard/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Leaderboard Context
-         * @description Get page context for the leaderboard analytics.
-         *
-         *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
-         */
-        post: operations["get_leaderboard_context_attempt_leaderboard_context_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/leaderboard/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Leaderboard
-         * @description Resolve or create a leaderboard group with optional naming.
-         */
-        post: operations["group_leaderboard_attempt_leaderboard_group_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/leaderboard/problem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Problem Leaderboard
-         * @description Report a leaderboard problem — composable infra architecture.
-         */
-        post: operations["problem_leaderboard_attempt_leaderboard_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7399,109 +6855,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/record/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Record Context
-         * @description Get page context for the record analytics.
-         *
-         *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
-         */
-        post: operations["get_record_context_attempt_record_context_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/record/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate Record
-         * @description Trigger record generation. Returns immediately; progress via events.
-         */
-        post: operations["generate_record_attempt_record_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/record/generations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generations Record
-         * @description List record generation groups — composable infra architecture.
-         */
-        post: operations["generations_record_attempt_record_generations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/record/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Record
-         * @description Resolve or create a record group with optional naming.
-         */
-        post: operations["group_record_attempt_record_group_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/record/problem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Problem Record
-         * @description Report a record problem — composable infra architecture.
-         */
-        post: operations["problem_record_attempt_record_problem_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/attempt/report/export": {
         parameters: {
             query?: never;
@@ -7516,86 +6869,6 @@ export interface paths {
          * @description Export all reports data as a clean, denormalized ZIP.
          */
         post: operations["export_reports_attempt_report_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/report/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate Reports
-         * @description Trigger reports generation. Returns immediately; progress via events.
-         */
-        post: operations["generate_reports_attempt_report_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/report/generations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generations Reports
-         * @description List reports generation groups — composable infra architecture.
-         */
-        post: operations["generations_reports_attempt_report_generations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/report/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Reports
-         * @description Resolve or create a reports group with optional naming.
-         */
-        post: operations["group_reports_attempt_report_group_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/report/problem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Problem Reports
-         * @description Report a reports problem — composable infra architecture.
-         */
-        post: operations["problem_reports_attempt_report_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7636,29 +6909,6 @@ export interface paths {
          * @description Refresh reports caches.
          */
         post: operations["reports_refresh_attempt_report_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/report/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Reports Context
-         * @description Get page context for the reports artifact.
-         *
-         *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
-         */
-        post: operations["get_reports_context_attempt_report_context_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8311,109 +7561,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/test/benchmark/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Benchmark Context
-         * @description Get page context for the benchmark artifact.
-         *
-         *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
-         */
-        post: operations["get_benchmark_context_test_benchmark_context_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/benchmark/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Benchmark
-         * @description Resolve or create a benchmark group with optional naming.
-         */
-        post: operations["group_benchmark_test_benchmark_group_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/benchmark/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate Benchmark
-         * @description Trigger benchmark generation. Returns immediately; progress via events.
-         */
-        post: operations["generate_benchmark_test_benchmark_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/benchmark/generations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generations Benchmark
-         * @description List benchmark generation groups — composable infra architecture.
-         */
-        post: operations["generations_benchmark_test_benchmark_generations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/benchmark/problem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Problem Benchmark
-         * @description Report a benchmark problem — composable infra architecture.
-         */
-        post: operations["problem_benchmark_test_benchmark_problem_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/test/invocation/get": {
         parameters: {
             query?: never;
@@ -8428,86 +7575,6 @@ export interface paths {
          * @description Get hydrated resources for benchmark bundle customization.
          */
         post: operations["invocation_get_test_invocation_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/invocation/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Invocation
-         * @description Resolve or create an invocation group with optional naming.
-         */
-        post: operations["group_invocation_test_invocation_group_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/invocation/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate Invocation
-         * @description Trigger invocation generation. Returns immediately; progress via events.
-         */
-        post: operations["generate_invocation_test_invocation_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/invocation/generations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generations Invocation
-         * @description List invocation generation groups — composable infra architecture.
-         */
-        post: operations["generations_invocation_test_invocation_generations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/invocation/problem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Problem Invocation
-         * @description Report an invocation problem — composable infra architecture.
-         */
-        post: operations["problem_invocation_test_invocation_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8594,29 +7661,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/test/invocation/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Invocation Context
-         * @description Get page context for the invocation analytics.
-         *
-         *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
-         */
-        post: operations["get_invocation_context_test_invocation_context_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/test/invocation/decrypt": {
         parameters: {
             query?: never;
@@ -8637,7 +7681,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/session/get": {
+    "/system/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -8647,60 +7691,20 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Session
-         * @description Get session detail with groups and timeline.
-         */
-        post: operations["get_session_system_session_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/session/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Session Refresh
-         * @description Refresh session materialized views and invalidate caches.
-         */
-        post: operations["session_refresh_system_session_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/session/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Session Context
-         * @description Get page context for the session artifact.
+         * Get System Context
+         * @description Get page context for the system artifact.
          *
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_session_context_system_session_context_post"];
+        post: operations["get_system_context_system_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/system/session/export": {
+    "/system/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -8710,17 +7714,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Export Session
-         * @description Export session data as a clean, denormalized ZIP.
+         * Generate System
+         * @description Trigger system generation. Returns immediately; progress via events.
          */
-        post: operations["export_session_system_session_export_post"];
+        post: operations["generate_system_system_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/system/session/generate": {
+    "/system/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -8730,17 +7734,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Generate Session
-         * @description Trigger session generation. Returns immediately; progress via events.
+         * Generations System
+         * @description List system generation groups — composable infra architecture.
          */
-        post: operations["generate_session_system_session_generate_post"];
+        post: operations["generations_system_system_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/system/session/generations": {
+    "/system/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -8750,50 +7754,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Generations Session
-         * @description List session generation groups — composable infra architecture.
+         * Problem System
+         * @description Report a system problem — composable infra architecture.
          */
-        post: operations["generations_session_system_session_generations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/session/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Session
-         * @description Resolve or create a session group with optional naming.
-         */
-        post: operations["group_session_system_session_group_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/session/problem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Problem Session
-         * @description Report a session problem — composable infra architecture.
-         */
-        post: operations["problem_session_system_session_problem_post"];
+        post: operations["problem_system_system_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8860,29 +7824,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/group/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Group Context
-         * @description Get page context for the group analytics.
-         *
-         *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
-         */
-        post: operations["get_group_context_system_group_context_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/system/group/export": {
         parameters: {
             query?: never;
@@ -8897,66 +7838,6 @@ export interface paths {
          * @description Export group data as a clean, denormalized ZIP.
          */
         post: operations["export_group_system_group_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/group/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate
-         * @description Trigger artifact generation. Returns immediately; progress via events.
-         */
-        post: operations["generate_system_group_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/group/generations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generations Group
-         * @description List group generation groups — composable infra architecture.
-         */
-        post: operations["generations_group_system_group_generations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/group/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Group
-         * @description Resolve or create a group group with optional naming.
-         */
-        post: operations["group_group_system_group_group_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8983,7 +7864,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/group/problem": {
+    "/system/session/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -8993,17 +7874,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Problem Group
-         * @description Report a group problem — composable infra architecture.
+         * Get Session
+         * @description Get session detail with groups and timeline.
          */
-        post: operations["problem_group_system_group_problem_post"];
+        post: operations["get_session_system_session_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/system/group/image/download": {
+    "/system/session/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9013,17 +7894,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Download Image
-         * @description Download an image file by image resource ID.
+         * Session Refresh
+         * @description Refresh session materialized views and invalidate caches.
          */
-        post: operations["download_image_system_group_image_download_post"];
+        post: operations["session_refresh_system_session_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/system/group/video/download": {
+    "/system/session/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -9033,110 +7914,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Download Video
-         * @description Download a video file by video resource ID with range support for seeking.
+         * Export Session
+         * @description Export session data as a clean, denormalized ZIP.
          */
-        post: operations["download_video_system_group_video_download_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/group/text/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Download Text
-         * @description Download a text file by text resource ID.
-         */
-        post: operations["download_text_system_group_text_download_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/group/file/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Download File
-         * @description Download a file by file resource ID.
-         */
-        post: operations["download_file_system_group_file_download_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/group/file/preview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Preview File
-         * @description Return a PNG preview of the first page of a PDF upload.
-         */
-        post: operations["preview_file_system_group_file_preview_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/group/audio/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Download Audio
-         * @description Download an audio file by audio resource ID with range support for seeking.
-         */
-        post: operations["download_audio_system_group_audio_download_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/group/call/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Download Call
-         * @description Download a call file by call resource ID with range support.
-         */
-        post: operations["download_call_system_group_call_download_post"];
+        post: operations["export_session_system_session_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9157,26 +7938,6 @@ export interface paths {
          * @description Get health artifact data.
          */
         post: operations["get_health_system_health_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/health/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Health
-         * @description Resolve or create a health group with optional naming.
-         */
-        post: operations["group_health_system_health_group_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9217,89 +7978,6 @@ export interface paths {
          * @description Export all health data as a clean, denormalized ZIP.
          */
         post: operations["export_health_system_health_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/health/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Health Context
-         * @description Get page context for the health analytics.
-         *
-         *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
-         */
-        post: operations["get_health_context_system_health_context_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/health/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate Health
-         * @description Trigger health generation. Returns immediately; progress via events.
-         */
-        post: operations["generate_health_system_health_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/health/generations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generations Health
-         * @description List health generation groups — composable infra architecture.
-         */
-        post: operations["generations_health_system_health_generations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/health/problem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Problem Health
-         * @description Report a health problem — composable infra architecture.
-         */
-        post: operations["problem_health_system_health_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9403,109 +8081,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/activity/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate Activity
-         * @description Trigger activity generation. Returns immediately; progress via events.
-         */
-        post: operations["generate_activity_system_activity_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/activity/generations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generations Activity
-         * @description List activity generation groups — composable infra architecture.
-         */
-        post: operations["generations_activity_system_activity_generations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/activity/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Activity Context
-         * @description Get page context for the activity artifact.
-         *
-         *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
-         */
-        post: operations["get_activity_context_system_activity_context_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/activity/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Activity
-         * @description Resolve or create an activity group with optional naming.
-         */
-        post: operations["group_activity_system_activity_group_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/activity/problem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Problem
-         * @description Create new problem entry.
-         */
-        post: operations["create_problem_system_activity_problem_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/system/pricing/get": {
         parameters: {
             query?: never;
@@ -9586,7 +8161,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/pricing/context": {
+    "/system/audio/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -9596,20 +8171,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Pricing Context
-         * @description Get page context for the pricing artifact.
-         *
-         *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
+         * Download Audio
+         * @description Download an audio file by audio resource ID with range support for seeking.
          */
-        post: operations["get_pricing_context_system_pricing_context_post"];
+        post: operations["download_audio_system_audio_download_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/system/pricing/group": {
+    "/system/call/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -9619,17 +8191,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Group Pricing
-         * @description Resolve or create a pricing group with optional naming.
+         * Download Call
+         * @description Download a call file by call resource ID with range support.
          */
-        post: operations["group_pricing_system_pricing_group_post"];
+        post: operations["download_call_system_call_download_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/system/pricing/generate": {
+    "/system/file/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -9639,17 +8211,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Generate Pricing
-         * @description Trigger pricing generation. Returns immediately; progress via events.
+         * Download File
+         * @description Download a file by file resource ID.
          */
-        post: operations["generate_pricing_system_pricing_generate_post"];
+        post: operations["download_file_system_file_download_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/system/pricing/generations": {
+    "/system/file/preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -9659,17 +8231,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Generations Pricing
-         * @description List pricing generation groups — composable infra architecture.
+         * Preview File
+         * @description Return a PNG preview of the first page of a PDF upload.
          */
-        post: operations["generations_pricing_system_pricing_generations_post"];
+        post: operations["preview_file_system_file_preview_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/system/pricing/problem": {
+    "/system/image/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -9679,17 +8251,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Problem Pricing
-         * @description Report a pricing problem — composable infra architecture.
+         * Download Image
+         * @description Download an image file by image resource ID.
          */
-        post: operations["problem_pricing_system_pricing_problem_post"];
+        post: operations["download_image_system_image_download_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/connect": {
+    "/system/text/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -9699,17 +8271,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Connect
-         * @description Create a stream session for the authenticated profile.
+         * Download Text
+         * @description Download a text file by text resource ID.
          */
-        post: operations["connect_connect_post"];
+        post: operations["download_text_system_text_download_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/disconnect": {
+    "/system/video/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -9719,10 +8291,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Disconnect
-         * @description Destroy a stream session.
+         * Download Video
+         * @description Download a video file by video resource ID with range support for seeking.
          */
-        post: operations["disconnect_disconnect_post"];
+        post: operations["download_video_system_video_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13374,6 +11946,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/stream/GetInvocationApiRequest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Schema: GetInvocationApiRequest */
+        post: operations["GetInvocationApiRequest_schema_stream_GetInvocationApiRequest_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/stream/GetModelApiRequest": {
         parameters: {
             query?: never;
@@ -13895,23 +12484,6 @@ export interface paths {
         put?: never;
         /** Schema: GetSimulationDraftsApiResponse */
         post: operations["GetSimulationDraftsApiResponse_schema_stream_GetSimulationDraftsApiResponse_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/stream/GetSuiteRequest": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Schema: GetSuiteRequest */
-        post: operations["GetSuiteRequest_schema_stream_GetSuiteRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -16072,87 +14644,82 @@ export interface components {
             /** @description Inline analytics facets for SSR */
             analytics?: components["schemas"]["AnalyticsFacets-Output"] | null;
         };
-        /** AgentDepartmentSection */
-        AgentDepartmentSection: {
+        /** AgentDepartmentResource */
+        AgentDepartmentResource: {
             /**
-             * Current
-             * @description Currently selected departments
+             * Department Id
+             * @description Department identifier
              */
-            current?: unknown[] | null;
+            department_id?: string | null;
             /**
-             * Resources
-             * @description Available department resources
+             * Name
+             * @description Department name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Department description
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether the department was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** AgentDescriptionSection */
-        AgentDescriptionSection: {
+        /** AgentDescriptionResource */
+        AgentDescriptionResource: {
             /**
-             * Resource
-             * @description Currently selected description resource
+             * Id
+             * @description Description resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available description resources
+             * Description
+             * @description Agent description
              */
-            resources?: unknown[] | null;
-        };
-        /**
-         * AgentDraftFormState
-         * @description Server-authoritative form state returned after draft save.
-         */
-        AgentDraftFormState: {
+            description?: string | null;
             /**
-             * Name Id
-             * @description UUID of the selected name resource
+             * Generated
+             * @description Whether the description was AI-generated
              */
-            name_id?: string | null;
+            generated?: boolean | null;
             /**
-             * Description Id
-             * @description UUID of the selected description resource
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
              */
-            description_id?: string | null;
+            suggested: boolean;
             /**
-             * Flag Ids
-             * @description Selected flag UUIDs
+             * Selected
+             * @description Whether this item is selected
+             * @default false
              */
-            flag_ids: string[];
+            selected: boolean;
             /**
-             * Department Ids
-             * @description Selected department UUIDs
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
              */
-            department_ids: string[];
-            /**
-             * Model Id
-             * @description Selected model UUID
-             */
-            model_id?: string | null;
-            /**
-             * Tool Ids
-             * @description Selected tool UUIDs
-             */
-            tool_ids: string[];
-            /**
-             * Reasoning Level Ids
-             * @description Selected reasoning level UUIDs
-             */
-            reasoning_level_ids: string[];
-            /**
-             * Temperature Level Ids
-             * @description Selected temperature level UUIDs
-             */
-            temperature_level_ids: string[];
-            /**
-             * Voice Ids
-             * @description Selected voice UUIDs
-             */
-            voice_ids: string[];
-            /**
-             * Rubric Ids
-             * @description Selected rubric UUIDs
-             */
-            rubric_ids: string[];
+            pending: boolean;
         };
         /**
          * AgentFieldError
@@ -16217,97 +14784,295 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** AgentFlagSection */
-        AgentFlagSection: {
+        /** AgentInstructionResource */
+        AgentInstructionResource: {
             /**
-             * Current
-             * @description Currently selected flags
+             * Id
+             * @description Instruction resource identifier
              */
-            current?: components["schemas"]["AgentFlagConfig"][] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available flag configs
+             * Template
+             * @description Instruction template
              */
-            resources?: components["schemas"]["AgentFlagConfig"][] | null;
+            template?: string | null;
+            /**
+             * Generated
+             * @description Whether the instruction was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** AgentInstructionSection */
-        AgentInstructionSection: {
+        /** AgentModelResource */
+        AgentModelResource: {
             /**
-             * Resource
-             * @description Currently selected instruction resource
+             * Id
+             * @description Model resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available instruction resources
+             * Name
+             * @description Model name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Model description
+             */
+            description?: string | null;
+            /**
+             * Value
+             * @description Model value
+             */
+            value?: string | null;
+            /**
+             * Provider Id
+             * @description Provider identifier
+             */
+            provider_id?: string | null;
+            /**
+             * Department Ids
+             * @description Associated department identifiers
+             */
+            department_ids?: string[] | null;
+            /**
+             * Temperature Level Ids
+             * @description Associated temperature level identifiers
+             */
+            temperature_level_ids?: string[] | null;
+            /**
+             * Reasoning Level Ids
+             * @description Associated reasoning level identifiers
+             */
+            reasoning_level_ids?: string[] | null;
+            /**
+             * Quality Ids
+             * @description Associated quality identifiers
+             */
+            quality_ids?: string[] | null;
+            /**
+             * Voice Ids
+             * @description Associated voice identifiers
+             */
+            voice_ids?: string[] | null;
+            /**
+             * Modality Ids
+             * @description Associated modality identifiers
+             */
+            modality_ids?: string[] | null;
+            /**
+             * Generated
+             * @description Whether the model was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** AgentModelSection */
-        AgentModelSection: {
+        /** AgentNameResource */
+        AgentNameResource: {
             /**
-             * Resource
-             * @description Currently selected model resource
+             * Id
+             * @description Name resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available model resources
+             * Name
+             * @description Agent name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Generated
+             * @description Whether the name was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** AgentNameSection */
-        AgentNameSection: {
+        /** AgentPromptResource */
+        AgentPromptResource: {
             /**
-             * Resource
-             * @description Currently selected name resource
+             * Id
+             * @description Prompt resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available name resources
+             * System Prompt
+             * @description Prompt system text
              */
-            resources?: unknown[] | null;
+            system_prompt?: string | null;
+            /**
+             * Name
+             * @description Prompt name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Prompt description
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether the prompt was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** AgentPromptSection */
-        AgentPromptSection: {
+        /** AgentQualityResource */
+        AgentQualityResource: {
             /**
-             * Resource
-             * @description Currently selected prompt resource
+             * Id
+             * @description Quality resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available prompt resources
+             * Quality
+             * @description Quality value
              */
-            resources?: unknown[] | null;
+            quality?: string | null;
+            /**
+             * Generated
+             * @description Whether the quality was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** AgentQualitySection */
-        AgentQualitySection: {
+        /** AgentReasoningLevelResource */
+        AgentReasoningLevelResource: {
             /**
-             * Current
-             * @description Currently selected qualities
+             * Id
+             * @description Reasoning level resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available quality resources
+             * Reasoning Level
+             * @description Reasoning level value
              */
-            resources?: unknown[] | null;
-        };
-        /** AgentReasoningLevelSection */
-        AgentReasoningLevelSection: {
+            reasoning_level?: string | null;
             /**
-             * Resource
-             * @description Currently selected reasoning level
+             * Generated
+             * @description Whether the reasoning level was AI-generated
              */
-            resource?: unknown | null;
+            generated?: boolean | null;
             /**
-             * Resources
-             * @description Available reasoning levels
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
              */
-            resources?: unknown[] | null;
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * AgentResultItem
@@ -16335,57 +15100,219 @@ export interface components {
              */
             errors?: components["schemas"]["AgentFieldError"][] | null;
         };
-        /** AgentRubricSection */
-        AgentRubricSection: {
+        /** AgentRubricResource */
+        AgentRubricResource: {
             /**
-             * Current
-             * @description Currently selected rubrics
+             * Id
+             * @description Rubric resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available rubric resources
+             * Name
+             * @description Rubric name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Rubric description
+             */
+            description?: string | null;
+            /**
+             * Department Ids
+             * @description Associated department identifiers
+             */
+            department_ids?: string[] | null;
+            /**
+             * Total Points
+             * @description Total points
+             */
+            total_points?: number | null;
+            /**
+             * Pass Points
+             * @description Passing points
+             */
+            pass_points?: number | null;
+            /**
+             * Simulation Rubric
+             * @description Whether this rubric is for simulation
+             */
+            simulation_rubric?: boolean | null;
+            /**
+             * Video Rubric
+             * @description Whether this rubric is for video
+             */
+            video_rubric?: boolean | null;
+            /**
+             * Standard Group Ids
+             * @description Associated standard group identifiers
+             */
+            standard_group_ids?: string[] | null;
+            /**
+             * Generated
+             * @description Whether the rubric was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** AgentTemperatureLevelSection */
-        AgentTemperatureLevelSection: {
+        /** AgentTemperatureLevelResource */
+        AgentTemperatureLevelResource: {
             /**
-             * Resource
-             * @description Currently selected temperature level
+             * Id
+             * @description Temperature level resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available temperature levels
+             * Temperature
+             * @description Temperature value
              */
-            resources?: unknown[] | null;
+            temperature?: number | null;
+            /**
+             * Generated
+             * @description Whether the temperature level was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** AgentToolSection */
-        AgentToolSection: {
+        /** AgentToolResource */
+        AgentToolResource: {
             /**
-             * Current
-             * @description Currently selected tools
+             * Id
+             * @description Tool resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available tool resources
+             * Name
+             * @description Tool name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Tool description
+             */
+            description?: string | null;
+            /**
+             * Permission Ids
+             * @description Associated permission identifiers
+             */
+            permission_ids?: string[] | null;
+            /**
+             * Department Ids
+             * @description Associated department identifiers
+             */
+            department_ids?: string[] | null;
+            /**
+             * Args Ids
+             * @description Associated arg identifiers
+             */
+            args_ids?: string[] | null;
+            /**
+             * Args Output Ids
+             * @description Associated arg output identifiers
+             */
+            args_output_ids?: string[] | null;
+            /**
+             * Instruction Id
+             * @description Associated instruction identifier
+             */
+            instruction_id?: string | null;
+            /**
+             * Agent Id
+             * @description Associated denormalized agent identifier
+             */
+            agent_id?: string | null;
+            /**
+             * Generated
+             * @description Whether the tool was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** AgentVoiceSection */
-        AgentVoiceSection: {
+        /** AgentVoiceResource */
+        AgentVoiceResource: {
             /**
-             * Current
-             * @description Currently selected voices
+             * Id
+             * @description Voice resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available voice resources
+             * Voice
+             * @description Voice value
              */
-            resources?: unknown[] | null;
+            voice?: string | null;
+            /**
+             * Generated
+             * @description Whether the voice was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * AggregatedResults
@@ -16672,6 +15599,12 @@ export interface components {
             /** Instructions */
             instructions?: string[] | null;
             config?: components["schemas"]["GenerateConfig"] | null;
+            /** Modalities */
+            modalities?: string[] | null;
+            /** Audio Id */
+            audio_id?: string | null;
+            /** Conversation Id */
+            conversation_id?: string | null;
             /** Idempotency Key */
             idempotency_key?: string | null;
             /**
@@ -16687,6 +15620,8 @@ export interface components {
         ArtifactGenerateResponse: {
             /** Group Id */
             group_id: string;
+            /** Run Id */
+            run_id?: string | null;
             /** Idempotency Key */
             idempotency_key?: string | null;
         };
@@ -16969,6 +15904,28 @@ export interface components {
              */
             chat_id: string;
         };
+        /** AttemptCompleteRequest */
+        AttemptCompleteRequest: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+        };
+        /** AttemptCompleteResponse */
+        AttemptCompleteResponse: {
+            /** Success */
+            success: boolean;
+            /** Completion Id */
+            completion_id: string;
+            /** Attempt Id */
+            attempt_id: string;
+        };
         /**
          * AttemptData
          * @description Attempt-level data.
@@ -17003,6 +15960,11 @@ export interface components {
              * @description Display name of the user profile
              */
             profile_name?: string | null;
+            /**
+             * User Persona Id
+             * @description UUID of the user's persona entry for this attempt
+             */
+            user_persona_id?: string | null;
             /**
              * Department Id
              * @description UUID of the department
@@ -17348,18 +16310,18 @@ export interface components {
         };
         /** AttemptJoinRequest */
         AttemptJoinRequest: {
-            /** Sid */
-            sid: string;
             /**
-             * Chat Id
+             * Group Id
              * Format: uuid
              */
-            chat_id: string;
+            group_id: string;
         };
         /** AttemptJoinResponse */
         AttemptJoinResponse: {
             /** Success */
             success: boolean;
+            /** Group Id */
+            group_id: string;
         };
         /**
          * AttemptJoinedEvent
@@ -17391,13 +16353,11 @@ export interface components {
         };
         /** AttemptLeaveRequest */
         AttemptLeaveRequest: {
-            /** Sid */
-            sid: string;
             /**
-             * Chat Id
+             * Group Id
              * Format: uuid
              */
-            chat_id: string;
+            group_id: string;
         };
         /** AttemptLeaveResponse */
         AttemptLeaveResponse: {
@@ -17411,10 +16371,9 @@ export interface components {
         AttemptMessagePayload: {
             /**
              * Attempt Id
-             * Format: uuid
              * @description UUID of the attempt
              */
-            attempt_id: string;
+            attempt_id?: string | null;
             /**
              * Chat Id
              * Format: uuid
@@ -17425,7 +16384,12 @@ export interface components {
              * Message
              * @description Text message content
              */
-            message: string;
+            message?: string | null;
+            /**
+             * Text
+             * @description Text message content (alias for message)
+             */
+            text?: string | null;
             /**
              * Parent Message Id
              * @description UUID of the parent message for threading
@@ -17448,6 +16412,34 @@ export interface components {
              * @description UUID of the draft to use
              */
             draft_id?: string | null;
+        };
+        /**
+         * AttemptOptionValue
+         * @description Inline option value — nested under a question.
+         */
+        AttemptOptionValue: {
+            /** Option Text */
+            option_text: string;
+            /**
+             * Is Correct
+             * @default false
+             */
+            is_correct: boolean;
+        };
+        /**
+         * AttemptQuestionValue
+         * @description Inline question value with optional nested options.
+         */
+        AttemptQuestionValue: {
+            /** Question Text */
+            question_text: string;
+            /**
+             * Allow Multiple
+             * @default false
+             */
+            allow_multiple: boolean;
+            /** Options */
+            options?: components["schemas"]["AttemptOptionValue"][] | null;
         };
         /**
          * AttemptResources
@@ -17700,6 +16692,18 @@ export interface components {
              */
             infinite_mode: boolean;
         };
+        /** AttemptStartRequest */
+        AttemptStartRequest: {
+            /** Home Id */
+            home_id?: string | null;
+            /** Practice Id */
+            practice_id?: string | null;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+        };
         /** AttemptStartResponse */
         AttemptStartResponse: {
             /**
@@ -17712,6 +16716,8 @@ export interface components {
              * Format: uuid
              */
             chat_id: string;
+            /** Department Id */
+            department_id?: string | null;
         };
         /**
          * AttemptStartedEvent
@@ -17740,6 +16746,19 @@ export interface components {
              * @description UUID of the chat to stop generating
              */
             chat_id: string;
+        };
+        /** AttemptStopRequest */
+        AttemptStopRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+        };
+        /** AttemptStopResponse */
+        AttemptStopResponse: {
+            /** Success */
+            success: boolean;
         };
         /**
          * AttemptStoppedEvent
@@ -17913,12 +16932,12 @@ export interface components {
         AudioStartInternalResult: {
             /** Chat Id */
             chat_id: string;
-            /** Run Id */
-            run_id: string;
-            /** Group Id */
-            group_id: string;
             /** Attempt Id */
             attempt_id: string;
+            /** Conversation Id */
+            conversation_id: string;
+            /** Group Id */
+            group_id: string;
         };
         /**
          * AudioStopInternalResult
@@ -17951,59 +16970,88 @@ export interface components {
              */
             upload_id: string;
         };
-        /** AuthDescriptionSection */
-        AuthDescriptionSection: {
+        /**
+         * AuthDepartmentResource
+         * @description Department resource for auth.
+         */
+        AuthDepartmentResource: {
             /**
-             * Resource
-             * @description Currently selected description resource
+             * Department Id
+             * @description Department identifier
              */
-            resource?: unknown | null;
+            department_id?: string | null;
             /**
-             * Resources
-             * @description Available description resources
+             * Name
+             * @description Department name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Department description
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
-         * AuthDraftFormState
-         * @description Server-authoritative form state returned after draft save.
+         * AuthDescriptionResource
+         * @description Description resource for auth.
          */
-        AuthDraftFormState: {
+        AuthDescriptionResource: {
             /**
-             * Name Id
-             * @description Resolved name resource UUID
+             * Id
+             * @description Unique identifier
              */
-            name_id?: string | null;
+            id?: string | null;
             /**
-             * Description Id
-             * @description Resolved description resource UUID
+             * Description
+             * @description Description text
              */
-            description_id?: string | null;
+            description?: string | null;
             /**
-             * Flag Id
-             * @description Resolved flag option UUID
+             * Generated
+             * @description Whether this was AI-generated
              */
-            flag_id?: string | null;
+            generated?: boolean | null;
             /**
-             * Department Ids
-             * @description Assigned department UUIDs
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            department_ids: string[];
+            suggested: boolean;
             /**
-             * Protocol Ids
-             * @description Assigned protocol UUIDs
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            protocol_ids: string[];
+            selected: boolean;
             /**
-             * Slug Ids
-             * @description Assigned slug UUIDs
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
              */
-            slug_ids: string[];
-            /**
-             * Item Ids
-             * @description Assigned auth item UUIDs
-             */
-            item_ids: string[];
+            pending: boolean;
         };
         /**
          * AuthFieldError
@@ -18068,19 +17116,24 @@ export interface components {
              * @description Whether the flag was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** AuthFlagSection */
-        AuthFlagSection: {
             /**
-             * Current
-             * @description Currently assigned flag configs
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["AuthFlagConfig"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available flag configs
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["AuthFlagConfig"][] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * AuthItemResource
@@ -18088,10 +17141,10 @@ export interface components {
          */
         AuthItemResource: {
             /**
-             * Auth Item Id
+             * Id
              * @description Unique auth item identifier
              */
-            auth_item_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Auth item display name
@@ -18108,21 +17161,6 @@ export interface components {
              */
             position?: number | null;
             /**
-             * Active
-             * @description Whether the auth item is active
-             */
-            active?: boolean | null;
-            /**
-             * Value Masked
-             * @description Masked value for display
-             */
-            value_masked?: string | null;
-            /**
-             * Key Id
-             * @description UUID of the associated key
-             */
-            key_id?: string | null;
-            /**
              * Encrypted
              * @description Whether the value is encrypted
              */
@@ -18132,45 +17170,102 @@ export interface components {
              * @description Whether the item was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** AuthItemSection */
-        AuthItemSection: {
+        /**
+         * AuthNameResource
+         * @description Name resource for auth.
+         */
+        AuthNameResource: {
             /**
-             * Current
-             * @description Currently assigned auth items
+             * Id
+             * @description Unique identifier
              */
-            current?: components["schemas"]["AuthItemResource"][] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available auth item resources
+             * Name
+             * @description Display name
              */
-            resources?: components["schemas"]["AuthItemResource"][] | null;
+            name?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** AuthNameSection */
-        AuthNameSection: {
+        /**
+         * AuthProtocolResource
+         * @description Protocol resource for auth.
+         */
+        AuthProtocolResource: {
             /**
-             * Resource
-             * @description Currently selected name resource
+             * Id
+             * @description Protocol identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available name resources
+             * Value
+             * @description Protocol value
              */
-            resources?: unknown[] | null;
-        };
-        /** AuthProtocolSection */
-        AuthProtocolSection: {
+            value?: string | null;
             /**
-             * Current
-             * @description Currently assigned protocols
+             * Generated
+             * @description Whether this was AI-generated
              */
-            current?: unknown[] | null;
+            generated?: boolean | null;
             /**
-             * Resources
-             * @description Available protocol resources
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            resources?: unknown[] | null;
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * AuthResultItem
@@ -18198,18 +17293,44 @@ export interface components {
              */
             errors?: components["schemas"]["AuthFieldError"][] | null;
         };
-        /** AuthSlugSection */
-        AuthSlugSection: {
+        /**
+         * AuthSlugResource
+         * @description Slug resource for auth.
+         */
+        AuthSlugResource: {
             /**
-             * Current
-             * @description Currently assigned slugs
+             * Id
+             * @description Slug identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available slug resources
+             * Value
+             * @description Slug value
              */
-            resources?: unknown[] | null;
+            value?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * AvailableContinuationOptions
@@ -18832,6 +17953,28 @@ export interface components {
             /** Content */
             content: string;
         };
+        /** ChatCompleteRequest */
+        ChatCompleteRequest: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+        };
+        /** ChatCompleteResponse */
+        ChatCompleteResponse: {
+            /** Success */
+            success: boolean;
+            /** Completion Id */
+            completion_id: string;
+            /** Chat Id */
+            chat_id: string;
+        };
         /**
          * ChatData
          * @description Chat view data with IDs for related resources.
@@ -19118,199 +18261,137 @@ export interface components {
              */
             standard_ids?: string[] | null;
         };
-        /** ChatDepartmentSection */
-        ChatDepartmentSection: {
+        /** ChatDepartmentResource */
+        ChatDepartmentResource: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected departments
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available department resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
-        /** ChatDescriptionSection */
-        ChatDescriptionSection: {
+        /** ChatDescriptionResource */
+        ChatDescriptionResource: {
+            /** Id */
+            id?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected descriptions
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available description resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
-        /** ChatDocumentSection */
-        ChatDocumentSection: {
+        /** ChatDocumentResource */
+        ChatDocumentResource: {
+            /** Document Id */
+            document_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** File Id */
+            file_id?: string | null;
+            /** Text Id */
+            text_id?: string | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Template */
+            template?: boolean | null;
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[] | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected documents
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available document resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
         /**
          * ChatDraftFormState
          * @description Server-authoritative form state returned after draft save.
          */
         ChatDraftFormState: {
-            /**
-             * Name Ids
-             * @description Selected name resource IDs
-             */
-            name_ids?: string[];
-            /**
-             * Description Ids
-             * @description Selected description resource IDs
-             */
-            description_ids?: string[];
-            /**
-             * Flag Ids
-             * @description Selected flag resource IDs
-             */
-            flag_ids?: string[];
-            /**
-             * Department Ids
-             * @description Selected department resource IDs
-             */
+            /** Name Id */
+            name_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
+            /** Problem Statement */
+            problem_statement?: string | null;
+            /** Department Ids */
             department_ids?: string[];
-            /**
-             * Persona Ids
-             * @description Selected persona resource IDs
-             */
-            persona_ids?: string[];
-            /**
-             * Document Ids
-             * @description Selected document resource IDs
-             */
+            /** Document Ids */
             document_ids?: string[];
-            /**
-             * Parameter Field Ids
-             * @description Selected parameter field resource IDs
-             */
-            parameter_field_ids?: string[];
-            /**
-             * Parameter Ids
-             * @description Selected parameter resource IDs
-             */
-            parameter_ids?: string[];
-            /**
-             * Scenario Ids
-             * @description Selected scenario resource IDs
-             */
-            scenario_ids?: string[];
-            /**
-             * Field Ids
-             * @description Selected field resource IDs
-             */
+            /** Field Ids */
             field_ids?: string[];
-            /**
-             * Question Ids
-             * @description Selected question resource IDs
-             */
-            question_ids?: string[];
-            /**
-             * Option Ids
-             * @description Selected option resource IDs
-             */
-            option_ids?: string[];
-            /**
-             * Video Ids
-             * @description Selected video resource IDs
-             */
-            video_ids?: string[];
-            /**
-             * Image Ids
-             * @description Selected image resource IDs
-             */
+            /** Flag Ids */
+            flag_ids?: string[];
+            /** Image Ids */
             image_ids?: string[];
-            /**
-             * Problem Statement Ids
-             * @description Selected problem statement resource IDs
-             */
-            problem_statement_ids?: string[];
-            /**
-             * Objective Ids
-             * @description Selected objective resource IDs
-             */
+            /** Objective Ids */
             objective_ids?: string[];
+            /** Option Ids */
+            option_ids?: string[];
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[];
+            /** Parameter Ids */
+            parameter_ids?: string[];
+            /** Persona Ids */
+            persona_ids?: string[];
+            /** Question Ids */
+            question_ids?: string[];
+            /** Scenario Ids */
+            scenario_ids?: string[];
+            /** Video Ids */
+            video_ids?: string[];
+            /** Pending Ids */
+            pending_ids?: string[];
         };
         /** ChatFeedbackItem */
         ChatFeedbackItem: {
@@ -19345,77 +18426,67 @@ export interface components {
             /** Idempotency Key */
             idempotency_key?: string | null;
         };
-        /** ChatFieldSection */
-        ChatFieldSection: {
+        /** ChatFieldResource */
+        ChatFieldResource: {
+            /** Field Id */
+            field_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Value */
+            value?: string | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected fields
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available field resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
-        /** ChatFlagSection */
-        ChatFlagSection: {
+        /** ChatFlagResource */
+        ChatFlagResource: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Icon */
+            icon?: string | null;
+            /** Value */
+            value?: boolean | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected flags
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available flag resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
         /** ChatHighlightItem */
         ChatHighlightItem: {
@@ -19459,41 +18530,31 @@ export interface components {
             /** Idempotency Key */
             idempotency_key?: string | null;
         };
-        /** ChatImageSection */
-        ChatImageSection: {
+        /** ChatImageResource */
+        ChatImageResource: {
+            /** Image Id */
+            image_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected images
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available image resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
         /** ChatImprovementItem */
         ChatImprovementItem: {
@@ -19532,275 +18593,220 @@ export interface components {
             /** Idempotency Key */
             idempotency_key?: string | null;
         };
-        /** ChatMuteRequest */
-        ChatMuteRequest: {
+        /** ChatMessageRequest */
+        ChatMessageRequest: {
             /**
              * Chat Id
              * Format: uuid
              */
             chat_id: string;
-            /**
-             * Muted
-             * @default false
-             */
-            muted: boolean;
+            /** Text */
+            text: string;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Audio Id */
+            audio_id?: string | null;
+            /** Parent Message Id */
+            parent_message_id?: string | null;
         };
-        /** ChatMuteResponse */
-        ChatMuteResponse: {
-            /** Accepted */
-            accepted: boolean;
+        /** ChatMessageResponse */
+        ChatMessageResponse: {
+            /** Success */
+            success: boolean;
+            /** Message Id */
+            message_id: string;
+            /** Content Ids */
+            content_ids: string[];
         };
-        /** ChatNameSection */
-        ChatNameSection: {
+        /** ChatNameResource */
+        ChatNameResource: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected names
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available name resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
-        /** ChatObjectiveSection */
-        ChatObjectiveSection: {
+        /** ChatObjectiveResource */
+        ChatObjectiveResource: {
+            /** Id */
+            id?: string | null;
+            /** Objective */
+            objective?: string | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected objectives
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available objective resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
-        /** ChatOptionSection */
-        ChatOptionSection: {
+        /** ChatOptionResource */
+        ChatOptionResource: {
+            /** Option Id */
+            option_id?: string | null;
+            /** Option Text */
+            option_text?: string | null;
+            /** Question Id */
+            question_id?: string | null;
+            /** Is Correct */
+            is_correct?: boolean | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected options
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available option resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
-        /** ChatParameterFieldSection */
-        ChatParameterFieldSection: {
+        /** ChatParameterFieldResource */
+        ChatParameterFieldResource: {
+            /** Id */
+            id?: string | null;
+            /** Field Id */
+            field_id?: string | null;
+            /** Parameter Id */
+            parameter_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Parameter Name */
+            parameter_name?: string | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected parameter fields
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available parameter field resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
-        /** ChatPersonaSection */
-        ChatPersonaSection: {
+        /** ChatPersonaResource */
+        ChatPersonaResource: {
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Icon */
+            icon?: string | null;
+            /** Color */
+            color?: string | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected personas
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available persona resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
-        /** ChatProblemStatementSection */
-        ChatProblemStatementSection: {
+        /** ChatProblemStatementResource */
+        ChatProblemStatementResource: {
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Problem Statement */
+            problem_statement?: string | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected problem statements
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available problem statement resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
-        /** ChatQuestionSection */
-        ChatQuestionSection: {
+        /** ChatQuestionResource */
+        ChatQuestionResource: {
+            /** Question Id */
+            question_id?: string | null;
+            /** Question Text */
+            question_text?: string | null;
+            /** Allow Multiple */
+            allow_multiple?: boolean | null;
+            /** Time */
+            time?: number | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected questions
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available question resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
         /** ChatReplacementItem */
         ChatReplacementItem: {
@@ -19811,65 +18817,31 @@ export interface components {
             /** Idx */
             idx?: number | null;
         };
-        /** ChatScenarioSection */
-        ChatScenarioSection: {
+        /** ChatScenarioResource */
+        ChatScenarioResource: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected scenarios
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available scenario resources
-             */
-            resources?: unknown[] | null;
-        };
-        /** ChatSendRequest */
-        ChatSendRequest: {
-            /**
-             * Chat Id
-             * Format: uuid
-             */
-            chat_id: string;
-            /** Text */
-            text?: string | null;
-            /** Audio Id */
-            audio_id?: string | null;
-            /** Parent Message Id */
-            parent_message_id?: string | null;
-        };
-        /** ChatSendResponse */
-        ChatSendResponse: {
-            /** Accepted */
-            accepted: boolean;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
+            pending: boolean;
         };
         /** ChatSilenceRequest */
         ChatSilenceRequest: {
@@ -20009,6 +18981,20 @@ export interface components {
              */
             not_started_count?: number | null;
         };
+        /** ChatSpeakRequest */
+        ChatSpeakRequest: {
+            /** Conversation Id */
+            conversation_id?: string | null;
+            /** Chat Id */
+            chat_id?: string | null;
+            /** Audio */
+            audio: string;
+        };
+        /** ChatSpeakResponse */
+        ChatSpeakResponse: {
+            /** Accepted */
+            accepted: boolean;
+        };
         /** ChatStrengthItem */
         ChatStrengthItem: {
             /** Name */
@@ -20046,41 +19032,31 @@ export interface components {
             /** Idempotency Key */
             idempotency_key?: string | null;
         };
-        /** ChatVideoSection */
-        ChatVideoSection: {
+        /** ChatVideoResource */
+        ChatVideoResource: {
+            /** Video Id */
+            video_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
             /**
-             * Show
-             * @description Whether to show this section
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section is required
+             * Selected
              * @default false
              */
-            required: boolean;
+            selected: boolean;
             /**
-             * Suggestions
-             * @description Suggested resource IDs
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate option
+             * Pending
              * @default false
              */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected videos
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available video resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
         /** ChatVoiceRequest */
         ChatVoiceRequest: {
@@ -20719,11 +19695,6 @@ export interface components {
             /** @description Evaluated permissions for this caller */
             caller_permissions: components["schemas"]["CallerPermissions"];
         };
-        /** ConnectResponse */
-        ConnectResponse: {
-            /** Sid */
-            sid: string;
-        };
         /**
          * ConnectionConfirmedPayload
          * @description Server-to-client: connection confirmed.
@@ -20821,6 +19792,17 @@ export interface components {
              * @description List of agents to create
              */
             agents: components["schemas"]["CreateAgentItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateAgentApiResponse
@@ -20832,6 +19814,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["AgentResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateAgentApiResponse
@@ -20843,6 +19830,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["AgentResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateAgentItem
@@ -20953,8 +19945,89 @@ export interface components {
             instruction_ids?: string[] | null;
         };
         /**
+         * CreateArgInput
+         * @description Inline arg creation input.
+         */
+        CreateArgInput: {
+            /**
+             * Name
+             * @description Argument name
+             */
+            name: string;
+            /**
+             * Field Type
+             * @description Argument type (string, number, boolean, array)
+             */
+            field_type: string;
+            /**
+             * Description
+             * @description Argument description
+             * @default
+             */
+            description: string;
+            /**
+             * Required
+             * @description Whether the argument is required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Default Value
+             * @description Default value
+             * @default
+             */
+            default_value: string;
+        };
+        /**
+         * CreateArgPositionInput
+         * @description Inline arg position creation input.
+         */
+        CreateArgPositionInput: {
+            /**
+             * Args Id
+             * Format: uuid
+             * @description Argument resource ID this position belongs to
+             */
+            args_id: string;
+            /**
+             * Value
+             * @description Position value
+             */
+            value: number;
+        };
+        /**
+         * CreateArgsOutputInput
+         * @description Inline args output creation input.
+         */
+        CreateArgsOutputInput: {
+            /**
+             * Args Id
+             * Format: uuid
+             * @description Argument resource ID this output belongs to
+             */
+            args_id: string;
+            /**
+             * Name
+             * @description Output name
+             */
+            name: string;
+            /**
+             * Template
+             * @description Output template
+             * @default
+             */
+            template: string;
+        };
+        /**
          * CreateAttemptChatApiRequest
-         * @description Create an attempt_chat from a chat template + resource IDs.
+         * @description Create an attempt_chat from a chat template + resource selections.
+         *
+         *     Follows the persona pattern: singular fields enforce single-select,
+         *     plural fields enforce multi-select. Each field supports either an ID
+         *     (lookup by UUID) or a value (lookup by text / create if not found).
+         *
+         *     Config flags, rubrics, standards, departments, and scenarios are all
+         *     derived from the chat template — never passed by the model.
          */
         CreateAttemptChatApiRequest: {
             /**
@@ -20967,147 +20040,46 @@ export interface components {
              * Format: uuid
              */
             chat_id: string;
-            /**
-             * Title
-             * @default
-             */
-            title: string;
-            /**
-             * Position
-             * @default 0
-             */
-            position: number;
-            /** Time Limit */
-            time_limit?: number | null;
-            /**
-             * Negative Time
-             * @default false
-             */
-            negative_time: boolean;
-            /**
-             * Audio Enabled
-             * @default false
-             */
-            audio_enabled: boolean;
-            /**
-             * Text Enabled
-             * @default true
-             */
-            text_enabled: boolean;
-            /**
-             * Hints Enabled
-             * @default false
-             */
-            hints_enabled: boolean;
-            /**
-             * Copy Paste Allowed
-             * @default true
-             */
-            copy_paste_allowed: boolean;
-            /**
-             * Show Images
-             * @default false
-             */
-            show_images: boolean;
-            /**
-             * Show Objectives
-             * @default false
-             */
-            show_objectives: boolean;
-            /**
-             * Show Problem Statement
-             * @default false
-             */
-            show_problem_statement: boolean;
-            /**
-             * Analyses Enabled
-             * @default false
-             */
-            analyses_enabled: boolean;
-            /**
-             * Improvements Enabled
-             * @default false
-             */
-            improvements_enabled: boolean;
-            /**
-             * Replacements Enabled
-             * @default false
-             */
-            replacements_enabled: boolean;
-            /**
-             * Strengths Enabled
-             * @default false
-             */
-            strengths_enabled: boolean;
-            /**
-             * Use Custom
-             * @default false
-             */
-            use_custom: boolean;
-            /**
-             * Use Previous
-             * @default false
-             */
-            use_previous: boolean;
-            /**
-             * Problem Statement Enabled
-             * @default false
-             */
-            problem_statement_enabled: boolean;
-            /**
-             * Objectives Enabled
-             * @default false
-             */
-            objectives_enabled: boolean;
-            /**
-             * Video Enabled
-             * @default false
-             */
-            video_enabled: boolean;
-            /**
-             * Images Enabled
-             * @default false
-             */
-            images_enabled: boolean;
-            /**
-             * Questions Enabled
-             * @default false
-             */
-            questions_enabled: boolean;
-            /** Assistant Persona Ids */
-            assistant_persona_ids?: string[] | null;
-            /** Rubrics Ids */
-            rubrics_ids?: string[] | null;
-            /** Standards Ids */
-            standards_ids?: string[] | null;
-            /** Standard Groups Ids */
-            standard_groups_ids?: string[] | null;
-            /** Departments Ids */
-            departments_ids?: string[] | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
+            /** Problem Statement */
+            problem_statement?: string | null;
+            /** Video Id */
+            video_id?: string | null;
+            /** Image Id */
+            image_id?: string | null;
             /** Personas Ids */
             personas_ids?: string[] | null;
-            /** Problem Statements Ids */
-            problem_statements_ids?: string[] | null;
-            /** Objectives Ids */
-            objectives_ids?: string[] | null;
-            /** Questions Ids */
-            questions_ids?: string[] | null;
-            /** Options Ids */
-            options_ids?: string[] | null;
-            /** Videos Ids */
-            videos_ids?: string[] | null;
-            /** Images Ids */
-            images_ids?: string[] | null;
+            /** Personas */
+            personas?: string[] | null;
             /** Documents Ids */
             documents_ids?: string[] | null;
+            /** Documents */
+            documents?: string[] | null;
             /** Parameter Fields Ids */
             parameter_fields_ids?: string[] | null;
-            /** Names Ids */
-            names_ids?: string[] | null;
-            /** Descriptions Ids */
-            descriptions_ids?: string[] | null;
-            /** Parameters Ids */
-            parameters_ids?: string[] | null;
+            /** Parameter Fields */
+            parameter_fields?: string[] | null;
+            /** Objectives Ids */
+            objectives_ids?: string[] | null;
+            /** Objectives */
+            objectives?: string[] | null;
+            /** Questions Ids */
+            questions_ids?: string[] | null;
+            /** Questions */
+            questions?: components["schemas"]["AttemptQuestionValue"][] | null;
+            /** Options Ids */
+            options_ids?: string[] | null;
+            /** Previous Attempt Chat Id */
+            previous_attempt_chat_id?: string | null;
             /** Idempotency Key */
             idempotency_key?: string | null;
             /**
@@ -21136,6 +20108,17 @@ export interface components {
              * @description List of auth providers to create
              */
             auths: components["schemas"]["CreateAuthItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateAuthApiResponse
@@ -21147,6 +20130,11 @@ export interface components {
              * @description Per-item creation results
              */
             results: components["schemas"]["AuthResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateAuthApiResponse
@@ -21158,6 +20146,11 @@ export interface components {
              * @description Per-item creation results
              */
             results: components["schemas"]["AuthResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateAuthItem
@@ -21409,6 +20402,17 @@ export interface components {
              * @description List of departments to create
              */
             departments: components["schemas"]["CreateDepartmentItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateDepartmentApiResponse
@@ -21420,6 +20424,11 @@ export interface components {
              * @description Per-item creation results
              */
             results: components["schemas"]["DepartmentResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateDepartmentApiResponse
@@ -21431,6 +20440,11 @@ export interface components {
              * @description Per-item creation results
              */
             results: components["schemas"]["DepartmentResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateDepartmentItem
@@ -21642,6 +20656,16 @@ export interface components {
              * @description Text resource UUIDs
              */
             text_ids?: string[] | null;
+            /**
+             * File Id
+             * @description Files resource UUID for document file
+             */
+            file_id?: string | null;
+            /**
+             * Text Id
+             * @description Texts resource UUID for document text
+             */
+            text_id?: string | null;
         };
         /**
          * CreateEvalApiRequest
@@ -21653,6 +20677,17 @@ export interface components {
              * @description List of evals to create
              */
             evals: components["schemas"]["CreateEvalItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateEvalApiResponse
@@ -21664,6 +20699,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["EvalResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateEvalApiResponse
@@ -21675,6 +20715,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["EvalResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateEvalItem
@@ -21954,6 +20999,17 @@ export interface components {
              * @description List of models to create
              */
             models: components["schemas"]["CreateModelItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateModelApiResponse
@@ -21965,6 +21021,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ModelResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateModelApiResponse
@@ -21976,6 +21037,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ModelResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateModelItem
@@ -22393,44 +21459,6 @@ export interface components {
             voices?: string[] | null;
         };
         /**
-         * CreateProblemApiRequest
-         * @description Request for creating a problem entry.
-         */
-        CreateProblemApiRequest: {
-            /**
-             * Type
-             * @description Problem type: feature, bug, question, or other
-             */
-            type: string;
-            /**
-             * Message
-             * @description Problem description message
-             */
-            message: string;
-        };
-        /**
-         * CreateProblemApiResponse
-         * @description Response for creating a problem entry.
-         */
-        CreateProblemApiResponse: {
-            /**
-             * Problem Id
-             * Format: uuid
-             * @description ID of the created problem
-             */
-            problem_id: string;
-            /**
-             * Success
-             * @description Whether the problem was created successfully
-             */
-            success: boolean;
-            /**
-             * Message
-             * @description Status message
-             */
-            message: string;
-        };
-        /**
          * CreateProfileApiRequest
          * @description Request model for bulk create profile endpoint.
          */
@@ -22440,6 +21468,17 @@ export interface components {
              * @description List of profiles to create
              */
             profiles: components["schemas"]["CreateProfileItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateProfileApiResponse
@@ -22451,6 +21490,11 @@ export interface components {
              * @description Per-item creation results
              */
             results: components["schemas"]["ProfileResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateProfileApiResponse
@@ -22462,6 +21506,11 @@ export interface components {
              * @description Per-item creation results
              */
             results: components["schemas"]["ProfileResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateProfileItem
@@ -22515,6 +21564,29 @@ export interface components {
             role_id?: string | null;
         };
         /**
+         * CreatePromptInput
+         * @description Inline prompt creation input.
+         */
+        CreatePromptInput: {
+            /**
+             * System Prompt
+             * @description System prompt text
+             */
+            system_prompt: string;
+            /**
+             * Name
+             * @description Prompt name
+             * @default
+             */
+            name: string;
+            /**
+             * Description
+             * @description Prompt description
+             * @default
+             */
+            description: string;
+        };
+        /**
          * CreateProviderApiRequest
          * @description Request model for bulk create provider endpoint.
          */
@@ -22524,6 +21596,17 @@ export interface components {
              * @description List of providers to create
              */
             providers: components["schemas"]["CreateProviderItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateProviderApiResponse
@@ -22535,6 +21618,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ProviderResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateProviderApiResponse
@@ -22546,6 +21634,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ProviderResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateProviderItem
@@ -22643,6 +21736,17 @@ export interface components {
              * @description List of rubrics to create
              */
             rubrics: components["schemas"]["CreateRubricItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateRubricApiResponse
@@ -22654,6 +21758,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["RubricResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateRubricApiResponse
@@ -22665,6 +21774,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["RubricResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateRubricItem
@@ -23034,6 +22148,17 @@ export interface components {
              * @description List of settings to create
              */
             settings: components["schemas"]["CreateSettingItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateSettingApiResponse
@@ -23045,6 +22170,11 @@ export interface components {
              * @description Per-item creation results
              */
             results: components["schemas"]["SettingResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateSettingApiResponse
@@ -23056,6 +22186,11 @@ export interface components {
              * @description Per-item creation results
              */
             results: components["schemas"]["SettingResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateSettingItem
@@ -23149,6 +22284,16 @@ export interface components {
              * @description System UUIDs to assign
              */
             system_ids?: string[] | null;
+            /**
+             * Mcp Ids
+             * @description MCP resource UUIDs to assign
+             */
+            mcp_ids?: string[] | null;
+            /**
+             * Logins Ids
+             * @description Logins resource UUIDs to assign
+             */
+            logins_ids?: string[] | null;
             /**
              * Threshold Ids
              * @description Threshold UUIDs to assign
@@ -23322,6 +22467,17 @@ export interface components {
              * @description List of tools to create
              */
             tools: components["schemas"]["CreateToolItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateToolApiResponse
@@ -23333,6 +22489,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ToolResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateToolApiResponse
@@ -23344,6 +22505,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ToolResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateToolItem
@@ -23417,11 +22583,6 @@ export interface components {
              * @description Response template instruction resource UUID
              */
             instruction_id?: string | null;
-            /**
-             * Agent Id
-             * @description Delegate agent for tool execution
-             */
-            agent_id?: string | null;
             /**
              * Tool Ids
              * @description Related tool identifiers
@@ -24236,6 +23397,17 @@ export interface components {
              * @description UUIDs of agents to delete
              */
             agent_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteAgentApiResponse
@@ -24247,6 +23419,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["DeleteAgentResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteAgentResult
@@ -24280,6 +23457,17 @@ export interface components {
              * @description UUIDs of auth providers to delete
              */
             auth_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteAuthApiResponse
@@ -24291,6 +23479,11 @@ export interface components {
              * @description Per-item deletion results
              */
             results: components["schemas"]["DeleteAuthResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteAuthResult
@@ -24384,6 +23577,17 @@ export interface components {
              * @description UUIDs of departments to delete
              */
             department_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteDepartmentApiResponse
@@ -24395,6 +23599,11 @@ export interface components {
              * @description Per-item deletion results
              */
             results: components["schemas"]["DeleteDepartmentResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteDepartmentResult
@@ -24488,6 +23697,17 @@ export interface components {
              * @description Eval UUIDs to delete
              */
             eval_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteEvalApiResponse
@@ -24499,6 +23719,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["DeleteEvalResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteEvalResult
@@ -24592,6 +23817,17 @@ export interface components {
              * @description List of model IDs to delete
              */
             model_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteModelApiResponse
@@ -24603,6 +23839,11 @@ export interface components {
              * @description List of deletion results
              */
             results: components["schemas"]["DeleteModelResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteModelResult
@@ -24756,6 +23997,17 @@ export interface components {
              * @description UUIDs of profiles to delete
              */
             profile_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteProfileApiResponse
@@ -24767,6 +24019,11 @@ export interface components {
              * @description Per-item deletion results
              */
             results: components["schemas"]["DeleteProfileResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteProfileResult
@@ -24800,6 +24057,17 @@ export interface components {
              * @description List of provider IDs to delete
              */
             provider_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteProviderApiResponse
@@ -24811,6 +24079,11 @@ export interface components {
              * @description List of deletion results
              */
             results: components["schemas"]["DeleteProviderResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteProviderResult
@@ -24844,6 +24117,17 @@ export interface components {
              * @description Rubric UUIDs to delete
              */
             rubric_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteRubricApiResponse
@@ -24855,6 +24139,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["DeleteRubricResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteRubricResult
@@ -24948,6 +24237,17 @@ export interface components {
              * @description UUIDs of settings to delete
              */
             setting_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteSettingApiResponse
@@ -24959,6 +24259,11 @@ export interface components {
              * @description Per-item deletion results
              */
             results: components["schemas"]["DeleteSettingResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteSettingResult
@@ -25052,6 +24357,17 @@ export interface components {
              * @description List of tool IDs to delete
              */
             tool_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteToolApiResponse
@@ -25063,6 +24379,11 @@ export interface components {
              * @description List of deletion results
              */
             results: components["schemas"]["DeleteToolResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteToolResult
@@ -25086,44 +24407,44 @@ export interface components {
              */
             message: string;
         };
-        /** DepartmentDescriptionSection */
-        DepartmentDescriptionSection: {
-            /**
-             * Resource
-             * @description Currently selected description resource
-             */
-            resource?: unknown | null;
-            /**
-             * Resources
-             * @description Available description resources
-             */
-            resources?: unknown[] | null;
-        };
         /**
-         * DepartmentDraftFormState
-         * @description Server-authoritative form state returned after draft save.
+         * DepartmentDescriptionResource
+         * @description Description resource for department.
          */
-        DepartmentDraftFormState: {
+        DepartmentDescriptionResource: {
             /**
-             * Name Id
-             * @description Resolved name resource UUID
+             * Id
+             * @description Unique identifier
              */
-            name_id?: string | null;
+            id?: string | null;
             /**
-             * Description Id
-             * @description Resolved description resource UUID
+             * Description
+             * @description Description text
              */
-            description_id?: string | null;
+            description?: string | null;
             /**
-             * Flag Id
-             * @description Resolved flag option UUID
+             * Generated
+             * @description Whether this was AI-generated
              */
-            flag_id?: string | null;
+            generated?: boolean | null;
             /**
-             * Setting Ids
-             * @description Assigned setting UUIDs
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            setting_ids: string[];
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * DepartmentFieldError
@@ -25188,32 +24509,63 @@ export interface components {
              * @description Whether the flag was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** DepartmentFlagSection */
-        DepartmentFlagSection: {
+        /**
+         * DepartmentNameResource
+         * @description Name resource for department.
+         */
+        DepartmentNameResource: {
             /**
-             * Current
-             * @description Currently assigned flag configs
+             * Id
+             * @description Unique identifier
              */
-            current?: components["schemas"]["DepartmentFlagConfig"][] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available flag configs
+             * Name
+             * @description Display name
              */
-            resources?: components["schemas"]["DepartmentFlagConfig"][] | null;
-        };
-        /** DepartmentNameSection */
-        DepartmentNameSection: {
+            name?: string | null;
             /**
-             * Resource
-             * @description Currently selected name resource
+             * Generated
+             * @description Whether this was AI-generated
              */
-            resource?: unknown | null;
+            generated?: boolean | null;
             /**
-             * Resources
-             * @description Available name resources
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            resources?: unknown[] | null;
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * DepartmentResultItem
@@ -25241,28 +24593,79 @@ export interface components {
              */
             errors?: components["schemas"]["DepartmentFieldError"][] | null;
         };
-        /** DepartmentSettingSection */
-        DepartmentSettingSection: {
+        /**
+         * DepartmentSettingResource
+         * @description Setting resource for department.
+         */
+        DepartmentSettingResource: {
             /**
-             * Current
-             * @description Currently assigned settings
+             * Id
+             * @description Unique identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available setting resources
+             * Name
+             * @description Setting display name
              */
-            resources?: unknown[] | null;
-        };
-        /** DisconnectRequest */
-        DisconnectRequest: {
-            /** Sid */
-            sid: string;
-        };
-        /** DisconnectResponse */
-        DisconnectResponse: {
-            /** Success */
-            success: boolean;
+            name?: string | null;
+            /**
+             * Description
+             * @description Setting description
+             */
+            description?: string | null;
+            /**
+             * Department Ids
+             * @description Associated department identifiers
+             */
+            department_ids?: string[];
+            /**
+             * Provider Key Ids
+             * @description Associated provider key identifiers
+             */
+            provider_key_ids?: string[];
+            /**
+             * Auth Ids
+             * @description Associated auth identifiers
+             */
+            auth_ids?: string[];
+            /**
+             * System Ids
+             * @description Associated system identifiers
+             */
+            system_ids?: string[];
+            /**
+             * Active
+             * @description Whether this setting is active
+             */
+            active?: boolean | null;
+            /**
+             * Mcp
+             * @description Whether this setting used MCP
+             */
+            mcp?: boolean | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /** DocsApiRequest */
         DocsApiRequest: {
@@ -25401,10 +24804,15 @@ export interface components {
              */
             document_id?: string | null;
             /**
-             * Upload Id
-             * @description UUID of the uploaded file
+             * Text Id
+             * @description UUID of the text entry
              */
-            upload_id?: string | null;
+            text_id?: string | null;
+            /**
+             * File Id
+             * @description UUID of the file entry
+             */
+            file_id?: string | null;
             /**
              * Name
              * @description Name of the document
@@ -25439,7 +24847,7 @@ export interface components {
         };
         /**
          * DocumentFileResource
-         * @description File (upload) resource for document.
+         * @description File resource for document.
          */
         DocumentFileResource: {
             /**
@@ -25452,11 +24860,6 @@ export interface components {
              * @description File resource UUID
              */
             files_id?: string | null;
-            /**
-             * Upload Id
-             * @description Upload UUID
-             */
-            upload_id?: string | null;
             /**
              * File Path
              * @description Stored file path
@@ -25582,11 +24985,6 @@ export interface components {
              * @description Image description
              */
             description?: string | null;
-            /**
-             * Upload Id
-             * @description Upload UUID
-             */
-            upload_id?: string | null;
             /**
              * File Path
              * @description Stored file path
@@ -25845,11 +25243,6 @@ export interface components {
              */
             texts_id?: string | null;
             /**
-             * Upload Id
-             * @description Upload UUID
-             */
-            upload_id?: string | null;
-            /**
              * File Path
              * @description Stored file path
              */
@@ -26062,6 +25455,17 @@ export interface components {
              * @description UUID of the agent to duplicate
              */
             agent_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DuplicateAgentApiResponse
@@ -26084,6 +25488,11 @@ export interface components {
              * @description Human-readable result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DuplicateAuthApiRequest
@@ -26096,6 +25505,17 @@ export interface components {
              * @description UUID of the auth provider to duplicate
              */
             auth_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DuplicateAuthApiResponse
@@ -26118,6 +25538,11 @@ export interface components {
              * @description Result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DuplicateCohortApiRequest
@@ -26177,6 +25602,17 @@ export interface components {
              * @description UUID of the department to duplicate
              */
             department_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /** DuplicateDepartmentApiResponse */
         DuplicateDepartmentApiResponse: {
@@ -26196,6 +25632,11 @@ export interface components {
              * @description Result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DuplicateDocumentApiRequest
@@ -26258,6 +25699,17 @@ export interface components {
              * @description Eval UUID to duplicate
              */
             eval_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DuplicateEvalApiResponse
@@ -26280,6 +25732,11 @@ export interface components {
              * @description Human-readable result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /** DuplicateFieldApiRequest */
         DuplicateFieldApiRequest: {
@@ -26336,6 +25793,17 @@ export interface components {
              * @description Model identifier to duplicate
              */
             model_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DuplicateModelApiResponse
@@ -26358,6 +25826,11 @@ export interface components {
              * @description Result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /** DuplicateParameterApiRequest */
         DuplicateParameterApiRequest: {
@@ -26461,6 +25934,17 @@ export interface components {
              * @description UUID of the profile to duplicate
              */
             target_profile_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /** DuplicateProfileApiResponse */
         DuplicateProfileApiResponse: {
@@ -26480,6 +25964,11 @@ export interface components {
              * @description Result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /** DuplicateProviderApiRequest */
         DuplicateProviderApiRequest: {
@@ -26489,6 +25978,17 @@ export interface components {
              * @description Provider identifier to duplicate
              */
             provider_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /** DuplicateProviderApiResponse */
         DuplicateProviderApiResponse: {
@@ -26508,6 +26008,11 @@ export interface components {
              * @description Result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /** DuplicateRubricApiRequest */
         DuplicateRubricApiRequest: {
@@ -26517,6 +26022,17 @@ export interface components {
              * @description Rubric UUID to duplicate
              */
             rubric_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /** DuplicateRubricApiResponse */
         DuplicateRubricApiResponse: {
@@ -26536,6 +26052,11 @@ export interface components {
              * @description Human-readable result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DuplicateScenarioApiRequest
@@ -26598,6 +26119,17 @@ export interface components {
              * @description UUID of the setting to duplicate
              */
             setting_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DuplicateSettingApiResponse
@@ -26620,6 +26152,11 @@ export interface components {
              * @description Result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DuplicateSimulationApiRequest
@@ -26679,6 +26216,17 @@ export interface components {
              * @description Tool identifier to duplicate
              */
             tool_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /** DuplicateToolApiResponse */
         DuplicateToolApiResponse: {
@@ -26698,6 +26246,11 @@ export interface components {
              * @description Result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DynamicRubricData
@@ -26784,114 +26337,6 @@ export interface components {
              */
             expires_at?: string | null;
         };
-        /** EndAttemptApiResponse */
-        EndAttemptApiResponse: {
-            /** Attempt Id */
-            attempt_id: string;
-            /** Success */
-            success: boolean;
-            /**
-             * All Scenarios Complete
-             * @default false
-             */
-            all_scenarios_complete: boolean;
-            /** Message */
-            message?: string | null;
-        };
-        /** EndChatApiRequest */
-        EndChatApiRequest: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             * @description UUID of the attempt to end
-             */
-            attempt_id: string;
-            /**
-             * Chat Id
-             * Format: uuid
-             * @description UUID of the chat to end
-             */
-            chat_id: string;
-            /**
-             * Grade
-             * @description Whether to trigger grading after ending
-             * @default true
-             */
-            grade: boolean;
-            /**
-             * Score
-             * @description Pre-computed score from the agent
-             */
-            score?: number | null;
-            /**
-             * Passed
-             * @description Pre-computed pass/fail from the agent
-             */
-            passed?: boolean | null;
-            /**
-             * Time Taken
-             * @description Time taken in seconds
-             */
-            time_taken?: number | null;
-            /**
-             * Feedbacks
-             * @description Pre-computed feedback entries
-             */
-            feedbacks?: components["schemas"]["AttemptGradeFeedbackEntry"][] | null;
-            /**
-             * Strengths
-             * @description Pre-computed strength entries
-             */
-            strengths?: components["schemas"]["AttemptGradeStrengthEntry"][] | null;
-            /**
-             * Improvements
-             * @description Pre-computed improvement entries
-             */
-            improvements?: components["schemas"]["AttemptGradeImprovementEntry"][] | null;
-            /**
-             * Analyses
-             * @description Pre-computed analysis entries
-             */
-            analyses?: components["schemas"]["AttemptGradeAnalysisEntry"][] | null;
-            /**
-             * Highlights
-             * @description Pre-computed highlight entries
-             */
-            highlights?: components["schemas"]["AttemptGradeHighlightEntry"][] | null;
-            /**
-             * Replacements
-             * @description Pre-computed replacement entries
-             */
-            replacements?: components["schemas"]["AttemptGradeReplacementEntry"][] | null;
-        };
-        /** EndChatApiResponse */
-        EndChatApiResponse: {
-            /**
-             * Chat Id
-             * @description ID of the ended chat
-             */
-            chat_id: string;
-            /**
-             * Is Attempt Finished
-             * @description Whether the entire attempt is finished
-             */
-            is_attempt_finished?: boolean | null;
-            /**
-             * Grade Id
-             * @description ID of the generated grade
-             */
-            grade_id?: string | null;
-            /**
-             * Score
-             * @description Overall score
-             */
-            score?: number | null;
-            /**
-             * Passed
-             * @description Whether the attempt passed
-             */
-            passed?: boolean | null;
-        };
         /** EndTestApiRequest */
         EndTestApiRequest: {
             /**
@@ -26934,67 +26379,82 @@ export interface components {
             /** Feedback */
             feedback?: string | null;
         };
-        /** EvalDepartmentSection */
-        EvalDepartmentSection: {
+        /** EvalDepartmentResource */
+        EvalDepartmentResource: {
             /**
-             * Current
-             * @description Currently selected departments
+             * Department Id
+             * @description Department identifier
              */
-            current?: unknown[] | null;
+            department_id?: string | null;
             /**
-             * Resources
-             * @description Available departments
+             * Name
+             * @description Display name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Description text
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** EvalDescriptionSection */
-        EvalDescriptionSection: {
+        /** EvalDescriptionResource */
+        EvalDescriptionResource: {
             /**
-             * Resource
-             * @description Currently selected description resource
+             * Id
+             * @description Unique identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available description resources
+             * Description
+             * @description Description text
              */
-            resources?: unknown[] | null;
-        };
-        /**
-         * EvalDraftFormState
-         * @description Server-authoritative form state returned after draft save.
-         */
-        EvalDraftFormState: {
+            description?: string | null;
             /**
-             * Name Id
-             * @description Selected name resource UUID
+             * Generated
+             * @description Whether this was AI-generated
              */
-            name_id?: string | null;
+            generated?: boolean | null;
             /**
-             * Description Id
-             * @description Selected description resource UUID
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            description_id?: string | null;
+            suggested: boolean;
             /**
-             * Flag Ids
-             * @description Selected flag option UUIDs
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            flag_ids: string[];
+            selected: boolean;
             /**
-             * Department Ids
-             * @description Selected department UUIDs
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
              */
-            department_ids: string[];
-            /**
-             * Model Ids
-             * @description Selected model UUIDs
-             */
-            model_ids: string[];
-            /**
-             * Rubric Ids
-             * @description Selected rubric UUIDs
-             */
-            rubric_ids: string[];
+            pending: boolean;
         };
         /**
          * EvalFieldError
@@ -27012,10 +26472,7 @@ export interface components {
              */
             message: string;
         };
-        /**
-         * EvalFlagConfig
-         * @description Enriched flag config for direct client consumption.
-         */
+        /** EvalFlagConfig */
         EvalFlagConfig: {
             /**
              * Key
@@ -27039,7 +26496,7 @@ export interface components {
             icon_id?: string | null;
             /**
              * Flag Option Id
-             * @description Selected flag option UUID
+             * @description Flag resource UUID
              */
             flag_option_id?: string | null;
             /**
@@ -27059,81 +26516,244 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** EvalFlagSection */
-        EvalFlagSection: {
-            /** @description Currently selected flag config */
-            resource?: components["schemas"]["EvalFlagConfig"] | null;
+        /** EvalModelFlagResource */
+        EvalModelFlagResource: {
             /**
-             * Resources
-             * @description Available flag configs
+             * Id
+             * @description Model-flag resource identifier
              */
-            resources?: components["schemas"]["EvalFlagConfig"][] | null;
+            id?: string | null;
+            /**
+             * Model Id
+             * @description Associated model identifier
+             */
+            model_id?: string | null;
+            /**
+             * Flag Id
+             * @description Associated flag identifier
+             */
+            flag_id?: string | null;
+            /**
+             * Name
+             * @description Display name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Description text
+             */
+            description?: string | null;
+            /**
+             * Icon
+             * @description Icon identifier
+             */
+            icon?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** EvalModelFlagSection */
-        EvalModelFlagSection: {
+        /** EvalModelPositionResource */
+        EvalModelPositionResource: {
             /**
-             * Current
-             * @description Currently selected model flags
+             * Id
+             * @description Model-position resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available model flags
+             * Model Id
+             * @description Associated model identifier
              */
-            resources?: unknown[] | null;
+            model_id?: string | null;
+            /**
+             * Value
+             * @description Associated position value
+             */
+            value?: number | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** EvalModelPositionSection */
-        EvalModelPositionSection: {
+        /** EvalModelResource */
+        EvalModelResource: {
             /**
-             * Current
-             * @description Currently selected model positions
+             * Id
+             * @description Model resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available model positions
+             * Name
+             * @description Display name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Description text
+             */
+            description?: string | null;
+            /**
+             * Modality Ids
+             * @description Associated modality identifiers
+             */
+            modality_ids?: string[] | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** EvalModelRubricSection */
-        EvalModelRubricSection: {
+        /** EvalModelRubricResource */
+        EvalModelRubricResource: {
             /**
-             * Current
-             * @description Currently selected model rubrics
+             * Id
+             * @description Model-rubric resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available model rubrics
+             * Model Id
+             * @description Associated model identifier
              */
-            resources?: unknown[] | null;
+            model_id?: string | null;
+            /**
+             * Rubric Id
+             * @description Associated rubric identifier
+             */
+            rubric_id?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** EvalModelSection */
-        EvalModelSection: {
+        /** EvalNameResource */
+        EvalNameResource: {
             /**
-             * Current
-             * @description Currently selected models
+             * Id
+             * @description Unique identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available models
+             * Name
+             * @description Display name
              */
-            resources?: unknown[] | null;
-        };
-        /** EvalNameSection */
-        EvalNameSection: {
+            name?: string | null;
             /**
-             * Resource
-             * @description Currently selected name resource
+             * Generated
+             * @description Whether this was AI-generated
              */
-            resource?: unknown | null;
+            generated?: boolean | null;
             /**
-             * Resources
-             * @description Available name resources
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            resources?: unknown[] | null;
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * EvalResultItem
@@ -28738,12 +28358,6 @@ export interface components {
              * @description UUID of the created files_resource
              */
             file_id: string;
-            /**
-             * Upload Id
-             * Format: uuid
-             * @description UUID of the uploads_entry (file on disk)
-             */
-            upload_id: string;
         };
         /**
          * FilterOption
@@ -29074,11 +28688,6 @@ export interface components {
              */
             status: string;
         };
-        /** GenerateApiResponse */
-        GenerateApiResponse: {
-            /** Group Id */
-            group_id: string;
-        };
         /**
          * GenerateConfig
          * @description Developer configuration — all optional with sensible defaults.
@@ -29130,9 +28739,15 @@ export interface components {
             run_id?: string | null;
             /**
              * Modality
-             * @default call
+             * @default text
              */
             modality: string;
+            /** Modalities */
+            modalities?: string[] | null;
+            /** Audio Id */
+            audio_id?: string | null;
+            /** Conversation Id */
+            conversation_id?: string | null;
             /** Extra Messages */
             extra_messages?: {
                 [key: string]: string;
@@ -29397,88 +29012,6 @@ export interface components {
             artifact_id?: string | null;
         };
         /**
-         * GenerationsActivityApiRequest
-         * @description Request model for activity generations endpoint.
-         */
-        GenerationsActivityApiRequest: {
-            /**
-             * Search
-             * @description Name search (ILIKE)
-             */
-            search?: string | null;
-            /**
-             * Date From
-             * @description Filter by creation date (>=)
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description Filter by creation date (<=)
-             */
-            date_to?: string | null;
-            /**
-             * Page Limit
-             * @description Max items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Offset for pagination
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GenerationsActivityApiResponse
-         * @description Response model for activity generations endpoint.
-         */
-        GenerationsActivityApiResponse: {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Items
-             * @description Generation groups
-             */
-            items?: components["schemas"]["GenerationsActivityListItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching generations
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * GenerationsActivityListItem
-         * @description Single generation group in the activity generations response.
-         */
-        GenerationsActivityListItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the generation group
-             */
-            group_id: string;
-            /**
-             * Session Id
-             * @description Session that created this group
-             */
-            session_id?: string | null;
-            /**
-             * Group Name
-             * @description Optional human-readable group name
-             */
-            group_name?: string | null;
-            /**
-             * Created At
-             * @description Timestamp of the generation
-             */
-            created_at?: string | null;
-        };
-        /**
          * GenerationsAgentApiRequest
          * @description Request model for agent generations endpoint.
          */
@@ -29725,88 +29258,6 @@ export interface components {
             created_at?: string | null;
         };
         /**
-         * GenerationsBenchmarkApiRequest
-         * @description Request model for benchmark generations endpoint.
-         */
-        GenerationsBenchmarkApiRequest: {
-            /**
-             * Search
-             * @description Name search (ILIKE)
-             */
-            search?: string | null;
-            /**
-             * Date From
-             * @description Start date filter
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description End date filter
-             */
-            date_to?: string | null;
-            /**
-             * Page Limit
-             * @description Maximum items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Offset for pagination
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GenerationsBenchmarkApiResponse
-         * @description Response model for benchmark generations endpoint.
-         */
-        GenerationsBenchmarkApiResponse: {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Items
-             * @description Generation groups
-             */
-            items?: components["schemas"]["GenerationsBenchmarkListItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching generations
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * GenerationsBenchmarkListItem
-         * @description Single generation group in the benchmark generations response.
-         */
-        GenerationsBenchmarkListItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the generation group
-             */
-            group_id: string;
-            /**
-             * Session Id
-             * @description UUID of the parent session
-             */
-            session_id?: string | null;
-            /**
-             * Group Name
-             * @description Name of the generation group
-             */
-            group_name?: string | null;
-            /**
-             * Created At
-             * @description Timestamp of the generation
-             */
-            created_at?: string | null;
-        };
-        /**
          * GenerationsCohortApiRequest
          * @description Request model for cohort generations endpoint.
          */
@@ -29866,88 +29317,6 @@ export interface components {
          * @description Single generation group in the cohort generations response.
          */
         GenerationsCohortListItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the generation group
-             */
-            group_id: string;
-            /**
-             * Session Id
-             * @description UUID of the parent session
-             */
-            session_id?: string | null;
-            /**
-             * Group Name
-             * @description Name of the generation group
-             */
-            group_name?: string | null;
-            /**
-             * Created At
-             * @description Timestamp of the generation
-             */
-            created_at?: string | null;
-        };
-        /**
-         * GenerationsDashboardApiRequest
-         * @description Request model for dashboard generations endpoint.
-         */
-        GenerationsDashboardApiRequest: {
-            /**
-             * Search
-             * @description Name search (ILIKE)
-             */
-            search?: string | null;
-            /**
-             * Date From
-             * @description Start date filter
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description End date filter
-             */
-            date_to?: string | null;
-            /**
-             * Page Limit
-             * @description Maximum items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Offset for pagination
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GenerationsDashboardApiResponse
-         * @description Response model for dashboard generations endpoint.
-         */
-        GenerationsDashboardApiResponse: {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Items
-             * @description Generation groups
-             */
-            items?: components["schemas"]["GenerationsDashboardListItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching generations
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * GenerationsDashboardListItem
-         * @description Single generation group in the dashboard generations response.
-         */
-        GenerationsDashboardListItem: {
             /**
              * Group Id
              * Format: uuid
@@ -30299,421 +29668,6 @@ export interface components {
             created_at?: string | null;
         };
         /**
-         * GenerationsGroupApiRequest
-         * @description Request model for group generations endpoint.
-         */
-        GenerationsGroupApiRequest: {
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
-            /**
-             * Search
-             * @description Name search (ILIKE)
-             */
-            search?: string | null;
-            /**
-             * Date From
-             * @description Start date filter
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description End date filter
-             */
-            date_to?: string | null;
-            /**
-             * Page Limit
-             * @description Maximum items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Offset for pagination
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GenerationsGroupApiResponse
-         * @description Response model for group generations endpoint.
-         */
-        GenerationsGroupApiResponse: {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Items
-             * @description Generation groups
-             */
-            items?: components["schemas"]["GenerationsGroupListItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching generations
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * GenerationsGroupListItem
-         * @description Single generation group in the group generations response.
-         */
-        GenerationsGroupListItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the generation group
-             */
-            group_id: string;
-            /**
-             * Session Id
-             * @description UUID of the parent session
-             */
-            session_id?: string | null;
-            /**
-             * Group Name
-             * @description Name of the generation group
-             */
-            group_name?: string | null;
-            /**
-             * Created At
-             * @description Timestamp of the generation
-             */
-            created_at?: string | null;
-        };
-        /**
-         * GenerationsHealthApiRequest
-         * @description Request model for health generations endpoint.
-         */
-        GenerationsHealthApiRequest: {
-            /**
-             * Search
-             * @description Name search (ILIKE)
-             */
-            search?: string | null;
-            /**
-             * Date From
-             * @description Start date filter
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description End date filter
-             */
-            date_to?: string | null;
-            /**
-             * Page Limit
-             * @description Maximum items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Offset for pagination
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GenerationsHealthApiResponse
-         * @description Response model for health generations endpoint.
-         */
-        GenerationsHealthApiResponse: {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Items
-             * @description Generation groups
-             */
-            items?: components["schemas"]["GenerationsHealthListItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching generations
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * GenerationsHealthListItem
-         * @description Single generation group in the health generations response.
-         */
-        GenerationsHealthListItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the generation group
-             */
-            group_id: string;
-            /**
-             * Session Id
-             * @description UUID of the parent session
-             */
-            session_id?: string | null;
-            /**
-             * Group Name
-             * @description Name of the generation group
-             */
-            group_name?: string | null;
-            /**
-             * Created At
-             * @description Timestamp of the generation
-             */
-            created_at?: string | null;
-        };
-        /**
-         * GenerationsHomeApiRequest
-         * @description Request model for home generations endpoint.
-         */
-        GenerationsHomeApiRequest: {
-            /**
-             * Search
-             * @description Name search (ILIKE)
-             */
-            search?: string | null;
-            /**
-             * Date From
-             * @description Start date filter
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description End date filter
-             */
-            date_to?: string | null;
-            /**
-             * Page Limit
-             * @description Maximum items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Offset for pagination
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GenerationsHomeApiResponse
-         * @description Response model for home generations endpoint.
-         */
-        GenerationsHomeApiResponse: {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Items
-             * @description Generation groups
-             */
-            items?: components["schemas"]["GenerationsHomeListItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching generations
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * GenerationsHomeListItem
-         * @description Single generation group in the home generations response.
-         */
-        GenerationsHomeListItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the generation group
-             */
-            group_id: string;
-            /**
-             * Session Id
-             * @description UUID of the parent session
-             */
-            session_id?: string | null;
-            /**
-             * Group Name
-             * @description Name of the generation group
-             */
-            group_name?: string | null;
-            /**
-             * Created At
-             * @description Timestamp of the generation
-             */
-            created_at?: string | null;
-        };
-        /**
-         * GenerationsInvocationApiRequest
-         * @description Request model for invocation generations endpoint.
-         */
-        GenerationsInvocationApiRequest: {
-            /**
-             * Search
-             * @description Name search (ILIKE)
-             */
-            search?: string | null;
-            /**
-             * Date From
-             * @description Start date filter
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description End date filter
-             */
-            date_to?: string | null;
-            /**
-             * Page Limit
-             * @description Maximum items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Offset for pagination
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GenerationsInvocationApiResponse
-         * @description Response model for invocation generations endpoint.
-         */
-        GenerationsInvocationApiResponse: {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Items
-             * @description Generation groups
-             */
-            items?: components["schemas"]["GenerationsInvocationListItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching generations
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * GenerationsInvocationListItem
-         * @description Single generation group in the invocation generations response.
-         */
-        GenerationsInvocationListItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the generation group
-             */
-            group_id: string;
-            /**
-             * Session Id
-             * @description UUID of the parent session
-             */
-            session_id?: string | null;
-            /**
-             * Group Name
-             * @description Name of the generation group
-             */
-            group_name?: string | null;
-            /**
-             * Created At
-             * @description Timestamp of the generation
-             */
-            created_at?: string | null;
-        };
-        /**
-         * GenerationsLeaderboardApiRequest
-         * @description Request model for leaderboard generations endpoint.
-         */
-        GenerationsLeaderboardApiRequest: {
-            /**
-             * Search
-             * @description Name search (ILIKE)
-             */
-            search?: string | null;
-            /**
-             * Date From
-             * @description Start date filter
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description End date filter
-             */
-            date_to?: string | null;
-            /**
-             * Page Limit
-             * @description Maximum items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Offset for pagination
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GenerationsLeaderboardApiResponse
-         * @description Response model for leaderboard generations endpoint.
-         */
-        GenerationsLeaderboardApiResponse: {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Items
-             * @description Generation groups
-             */
-            items?: components["schemas"]["GenerationsLeaderboardListItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching generations
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * GenerationsLeaderboardListItem
-         * @description Single generation group in the leaderboard generations response.
-         */
-        GenerationsLeaderboardListItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the generation group
-             */
-            group_id: string;
-            /**
-             * Session Id
-             * @description UUID of the parent session
-             */
-            session_id?: string | null;
-            /**
-             * Group Name
-             * @description Name of the generation group
-             */
-            group_name?: string | null;
-            /**
-             * Created At
-             * @description Timestamp of the generation
-             */
-            created_at?: string | null;
-        };
-        /**
          * GenerationsModelApiRequest
          * @description Request model for model generations endpoint.
          */
@@ -30965,170 +29919,6 @@ export interface components {
             created_at?: string | null;
         };
         /**
-         * GenerationsPracticeApiRequest
-         * @description Request model for practice generations endpoint.
-         */
-        GenerationsPracticeApiRequest: {
-            /**
-             * Search
-             * @description Name search (ILIKE)
-             */
-            search?: string | null;
-            /**
-             * Date From
-             * @description Start date filter
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description End date filter
-             */
-            date_to?: string | null;
-            /**
-             * Page Limit
-             * @description Maximum items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Offset for pagination
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GenerationsPracticeApiResponse
-         * @description Response model for practice generations endpoint.
-         */
-        GenerationsPracticeApiResponse: {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Items
-             * @description Generation groups
-             */
-            items?: components["schemas"]["GenerationsPracticeListItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching generations
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * GenerationsPracticeListItem
-         * @description Single generation group in the practice generations response.
-         */
-        GenerationsPracticeListItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the generation group
-             */
-            group_id: string;
-            /**
-             * Session Id
-             * @description UUID of the parent session
-             */
-            session_id?: string | null;
-            /**
-             * Group Name
-             * @description Name of the generation group
-             */
-            group_name?: string | null;
-            /**
-             * Created At
-             * @description Timestamp of the generation
-             */
-            created_at?: string | null;
-        };
-        /**
-         * GenerationsPricingApiRequest
-         * @description Request model for pricing generations endpoint.
-         */
-        GenerationsPricingApiRequest: {
-            /**
-             * Search
-             * @description Name search (ILIKE)
-             */
-            search?: string | null;
-            /**
-             * Date From
-             * @description Start date filter
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description End date filter
-             */
-            date_to?: string | null;
-            /**
-             * Page Limit
-             * @description Maximum items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Offset for pagination
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GenerationsPricingApiResponse
-         * @description Response model for pricing generations endpoint.
-         */
-        GenerationsPricingApiResponse: {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Items
-             * @description Generation groups
-             */
-            items?: components["schemas"]["GenerationsPricingListItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching generations
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * GenerationsPricingListItem
-         * @description Single generation group in the pricing generations response.
-         */
-        GenerationsPricingListItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the generation group
-             */
-            group_id: string;
-            /**
-             * Session Id
-             * @description UUID of the parent session
-             */
-            session_id?: string | null;
-            /**
-             * Group Name
-             * @description Name of the generation group
-             */
-            group_name?: string | null;
-            /**
-             * Created At
-             * @description Timestamp of the generation
-             */
-            created_at?: string | null;
-        };
-        /**
          * GenerationsProfileApiRequest
          * @description Request model for profile generations endpoint.
          */
@@ -31270,170 +30060,6 @@ export interface components {
          * @description Single generation group in the provider generations response.
          */
         GenerationsProviderListItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the generation group
-             */
-            group_id: string;
-            /**
-             * Session Id
-             * @description UUID of the parent session
-             */
-            session_id?: string | null;
-            /**
-             * Group Name
-             * @description Name of the generation group
-             */
-            group_name?: string | null;
-            /**
-             * Created At
-             * @description Timestamp of the generation
-             */
-            created_at?: string | null;
-        };
-        /**
-         * GenerationsRecordApiRequest
-         * @description Request model for record generations endpoint.
-         */
-        GenerationsRecordApiRequest: {
-            /**
-             * Search
-             * @description Name search (ILIKE)
-             */
-            search?: string | null;
-            /**
-             * Date From
-             * @description Start date filter
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description End date filter
-             */
-            date_to?: string | null;
-            /**
-             * Page Limit
-             * @description Maximum items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Offset for pagination
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GenerationsRecordApiResponse
-         * @description Response model for record generations endpoint.
-         */
-        GenerationsRecordApiResponse: {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Items
-             * @description Generation groups
-             */
-            items?: components["schemas"]["GenerationsRecordListItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching generations
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * GenerationsRecordListItem
-         * @description Single generation group in the record generations response.
-         */
-        GenerationsRecordListItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the generation group
-             */
-            group_id: string;
-            /**
-             * Session Id
-             * @description UUID of the parent session
-             */
-            session_id?: string | null;
-            /**
-             * Group Name
-             * @description Name of the generation group
-             */
-            group_name?: string | null;
-            /**
-             * Created At
-             * @description Timestamp of the generation
-             */
-            created_at?: string | null;
-        };
-        /**
-         * GenerationsReportsApiRequest
-         * @description Request model for reports generations endpoint.
-         */
-        GenerationsReportsApiRequest: {
-            /**
-             * Search
-             * @description Name search (ILIKE)
-             */
-            search?: string | null;
-            /**
-             * Date From
-             * @description Start date filter
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description End date filter
-             */
-            date_to?: string | null;
-            /**
-             * Page Limit
-             * @description Maximum items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Offset for pagination
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GenerationsReportsApiResponse
-         * @description Response model for reports generations endpoint.
-         */
-        GenerationsReportsApiResponse: {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Items
-             * @description Generation groups
-             */
-            items?: components["schemas"]["GenerationsReportsListItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching generations
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * GenerationsReportsListItem
-         * @description Single generation group in the reports generations response.
-         */
-        GenerationsReportsListItem: {
             /**
              * Group Id
              * Format: uuid
@@ -31621,88 +30247,6 @@ export interface components {
             created_at?: string | null;
         };
         /**
-         * GenerationsSessionApiRequest
-         * @description Request model for session generations endpoint.
-         */
-        GenerationsSessionApiRequest: {
-            /**
-             * Search
-             * @description Name search (ILIKE)
-             */
-            search?: string | null;
-            /**
-             * Date From
-             * @description Start date filter
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description End date filter
-             */
-            date_to?: string | null;
-            /**
-             * Page Limit
-             * @description Maximum items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Offset for pagination
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GenerationsSessionApiResponse
-         * @description Response model for session generations endpoint.
-         */
-        GenerationsSessionApiResponse: {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Items
-             * @description Generation groups
-             */
-            items?: components["schemas"]["GenerationsSessionListItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching generations
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * GenerationsSessionListItem
-         * @description Single generation group in the session generations response.
-         */
-        GenerationsSessionListItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the generation group
-             */
-            group_id: string;
-            /**
-             * Session Id
-             * @description UUID of the parent session
-             */
-            session_id?: string | null;
-            /**
-             * Group Name
-             * @description Name of the generation group
-             */
-            group_name?: string | null;
-            /**
-             * Created At
-             * @description Timestamp of the generation
-             */
-            created_at?: string | null;
-        };
-        /**
          * GenerationsSettingApiRequest
          * @description Request model for setting generations endpoint.
          */
@@ -31844,6 +30388,88 @@ export interface components {
          * @description Single generation group in the simulation generations response.
          */
         GenerationsSimulationListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
+         * GenerationsSystemApiRequest
+         * @description Request model for system generations endpoint.
+         */
+        GenerationsSystemApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsSystemApiResponse
+         * @description Response model for system generations endpoint.
+         */
+        GenerationsSystemApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsSystemListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsSystemListItem
+         * @description Single generation group in the system generations response.
+         */
+        GenerationsSystemListItem: {
             /**
              * Group Id
              * Format: uuid
@@ -32036,8 +30662,13 @@ export interface components {
          */
         GetAgentApiRequest: {
             /**
-             * Agent Id
+             * Id
              * @description UUID of the agent to retrieve
+             */
+            id?: string | null;
+            /**
+             * Agent Id
+             * @description Legacy alias for the agent identifier
              */
             agent_id?: string | null;
             /**
@@ -32045,12 +30676,43 @@ export interface components {
              * @description UUID of the draft to retrieve
              */
             draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /** @description Filter options for names */
+            names?: components["schemas"]["app__infra__agent__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions */
+            descriptions?: components["schemas"]["app__infra__agent__types__SectionFilter"] | null;
+            /** @description Filter options for models */
+            models?: components["schemas"]["app__infra__agent__types__SectionFilter"] | null;
+            /** @description Filter options for prompts */
+            prompts?: components["schemas"]["app__infra__agent__types__SectionFilter"] | null;
+            /** @description Filter options for instructions */
+            instructions?: components["schemas"]["app__infra__agent__types__SectionFilter"] | null;
+            /** @description Filter options for flags */
+            flags?: components["schemas"]["app__infra__agent__types__SectionFilter"] | null;
+            /** @description Filter options for departments */
+            departments?: components["schemas"]["app__infra__agent__types__SectionFilter"] | null;
+            /** @description Filter options for tools */
+            tools?: components["schemas"]["app__infra__agent__types__SectionFilter"] | null;
+            /** @description Filter options for temperature levels */
+            temperature_levels?: components["schemas"]["app__infra__agent__types__SectionFilter"] | null;
+            /** @description Filter options for reasoning levels */
+            reasoning_levels?: components["schemas"]["app__infra__agent__types__SectionFilter"] | null;
+            /** @description Filter options for voices */
+            voices?: components["schemas"]["app__infra__agent__types__SectionFilter"] | null;
+            /** @description Filter options for qualities */
+            qualities?: components["schemas"]["app__infra__agent__types__SectionFilter"] | null;
+            /** @description Filter options for rubrics */
+            rubrics?: components["schemas"]["app__infra__agent__types__SectionFilter"] | null;
         };
         /**
          * GetAgentApiResponse
-         * @description Section-first response model for get agent endpoint.
+         * @description Canonical composed response model for get agent endpoint.
          */
-        "GetAgentApiResponse-Input": {
+        GetAgentApiResponse: {
             /**
              * Actor Name
              * @description Display name of the current actor
@@ -32077,72 +30739,15 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Basic Show Ai Generate
-             * @description Show AI generate for basic step
+             * Agent Id
+             * @description UUID of the selected agent
              */
-            basic_show_ai_generate?: boolean | null;
+            agent_id?: string | null;
             /**
-             * General Show Ai Generate
-             * @description Show AI generate for general step
+             * Show Ai Generate
+             * @description Whether any step should show AI generate
              */
-            general_show_ai_generate?: boolean | null;
-            /** @description Name section data */
-            names?: components["schemas"]["AgentNameSection"] | null;
-            /** @description Description section data */
-            descriptions?: components["schemas"]["AgentDescriptionSection"] | null;
-            /** @description Model section data */
-            models?: components["schemas"]["AgentModelSection"] | null;
-            /** @description Prompt section data */
-            prompts?: components["schemas"]["AgentPromptSection"] | null;
-            /** @description Instruction section data */
-            instructions?: components["schemas"]["AgentInstructionSection"] | null;
-            /** @description Flag section data */
-            flags?: components["schemas"]["AgentFlagSection"] | null;
-            /** @description Department section data */
-            departments?: components["schemas"]["AgentDepartmentSection"] | null;
-            /** @description Tool section data */
-            tools?: components["schemas"]["AgentToolSection"] | null;
-            /** @description Temperature level section data */
-            temperature_levels?: components["schemas"]["AgentTemperatureLevelSection"] | null;
-            /** @description Reasoning level section data */
-            reasoning_levels?: components["schemas"]["AgentReasoningLevelSection"] | null;
-            /** @description Voice section data */
-            voices?: components["schemas"]["AgentVoiceSection"] | null;
-            /** @description Quality section data */
-            qualities?: components["schemas"]["AgentQualitySection"] | null;
-            /** @description Rubric section data */
-            rubrics?: components["schemas"]["AgentRubricSection"] | null;
-        };
-        /**
-         * GetAgentApiResponse
-         * @description Section-first response model for get agent endpoint.
-         */
-        "GetAgentApiResponse-Output": {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Agent Exists
-             * @description Whether the agent exists
-             */
-            agent_exists?: boolean | null;
-            /**
-             * Can Edit
-             * @description Whether the current user can edit
-             */
-            can_edit?: boolean | null;
-            /**
-             * Disabled Reason
-             * @description Reason the agent is disabled
-             */
-            disabled_reason?: string | null;
-            /**
-             * Group Id
-             * @description UUID of the owning group
-             */
-            group_id?: string | null;
+            show_ai_generate?: boolean | null;
             /**
              * Basic Show Ai Generate
              * @description Show AI generate for basic step
@@ -32153,32 +30758,76 @@ export interface components {
              * @description Show AI generate for general step
              */
             general_show_ai_generate?: boolean | null;
-            /** @description Name section data */
-            names?: components["schemas"]["AgentNameSection"] | null;
-            /** @description Description section data */
-            descriptions?: components["schemas"]["AgentDescriptionSection"] | null;
-            /** @description Model section data */
-            models?: components["schemas"]["AgentModelSection"] | null;
-            /** @description Prompt section data */
-            prompts?: components["schemas"]["AgentPromptSection"] | null;
-            /** @description Instruction section data */
-            instructions?: components["schemas"]["AgentInstructionSection"] | null;
-            /** @description Flag section data */
-            flags?: components["schemas"]["AgentFlagSection"] | null;
-            /** @description Department section data */
-            departments?: components["schemas"]["AgentDepartmentSection"] | null;
-            /** @description Tool section data */
-            tools?: components["schemas"]["AgentToolSection"] | null;
-            /** @description Temperature level section data */
-            temperature_levels?: components["schemas"]["AgentTemperatureLevelSection"] | null;
-            /** @description Reasoning level section data */
-            reasoning_levels?: components["schemas"]["AgentReasoningLevelSection"] | null;
-            /** @description Voice section data */
-            voices?: components["schemas"]["AgentVoiceSection"] | null;
-            /** @description Quality section data */
-            qualities?: components["schemas"]["AgentQualitySection"] | null;
-            /** @description Rubric section data */
-            rubrics?: components["schemas"]["AgentRubricSection"] | null;
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers when available
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Names
+             * @description Name resources
+             */
+            names?: components["schemas"]["AgentNameResource"][] | null;
+            /**
+             * Descriptions
+             * @description Description resources
+             */
+            descriptions?: components["schemas"]["AgentDescriptionResource"][] | null;
+            /**
+             * Models
+             * @description Model resources
+             */
+            models?: components["schemas"]["AgentModelResource"][] | null;
+            /**
+             * Prompts
+             * @description Prompt resources
+             */
+            prompts?: components["schemas"]["AgentPromptResource"][] | null;
+            /**
+             * Instructions
+             * @description Instruction resources
+             */
+            instructions?: components["schemas"]["AgentInstructionResource"][] | null;
+            /**
+             * Flags
+             * @description Flag resources
+             */
+            flags?: components["schemas"]["AgentFlagConfig"][] | null;
+            /**
+             * Departments
+             * @description Department resources
+             */
+            departments?: components["schemas"]["AgentDepartmentResource"][] | null;
+            /**
+             * Tools
+             * @description Tool resources
+             */
+            tools?: components["schemas"]["AgentToolResource"][] | null;
+            /**
+             * Temperature Levels
+             * @description Temperature level resources
+             */
+            temperature_levels?: components["schemas"]["AgentTemperatureLevelResource"][] | null;
+            /**
+             * Reasoning Levels
+             * @description Reasoning level resources
+             */
+            reasoning_levels?: components["schemas"]["AgentReasoningLevelResource"][] | null;
+            /**
+             * Voices
+             * @description Voice resources
+             */
+            voices?: components["schemas"]["AgentVoiceResource"][] | null;
+            /**
+             * Qualities
+             * @description Quality resources
+             */
+            qualities?: components["schemas"]["AgentQualityResource"][] | null;
+            /**
+             * Rubrics
+             * @description Rubric resources
+             */
+            rubrics?: components["schemas"]["AgentRubricResource"][] | null;
         };
         /** GetAgentDraftResponse */
         GetAgentDraftResponse: {
@@ -32276,6 +30925,91 @@ export interface components {
              * @default []
              */
             rubric_ids: string[];
+            /**
+             * Prompt Ids
+             * @description Associated prompt UUIDs
+             */
+            prompt_ids?: string[];
+            /**
+             * Instruction Ids
+             * @description Associated instruction UUIDs
+             */
+            instruction_ids?: string[];
+            /**
+             * Agent Ids
+             * @description Associated agent snapshot UUIDs
+             */
+            agent_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Model Ids
+             * @description Pending model UUIDs
+             */
+            pending_model_ids?: string[];
+            /**
+             * Pending Tool Ids
+             * @description Pending tool UUIDs
+             */
+            pending_tool_ids?: string[];
+            /**
+             * Pending Reasoning Level Ids
+             * @description Pending reasoning level UUIDs
+             */
+            pending_reasoning_level_ids?: string[];
+            /**
+             * Pending Temperature Level Ids
+             * @description Pending temperature level UUIDs
+             */
+            pending_temperature_level_ids?: string[];
+            /**
+             * Pending Voice Ids
+             * @description Pending voice UUIDs
+             */
+            pending_voice_ids?: string[];
+            /**
+             * Pending Quality Ids
+             * @description Pending quality UUIDs
+             */
+            pending_quality_ids?: string[];
+            /**
+             * Pending Rubric Ids
+             * @description Pending rubric UUIDs
+             */
+            pending_rubric_ids?: string[];
+            /**
+             * Pending Prompt Ids
+             * @description Pending prompt UUIDs
+             */
+            pending_prompt_ids?: string[];
+            /**
+             * Pending Instruction Ids
+             * @description Pending instruction UUIDs
+             */
+            pending_instruction_ids?: string[];
+            /**
+             * Pending Agent Ids
+             * @description Pending agent snapshot UUIDs
+             */
+            pending_agent_ids?: string[];
         };
         /**
          * GetAgentDraftsApiResponse
@@ -32391,6 +31125,11 @@ export interface components {
              * @description UUID of the chat entry
              */
             chat_entry_id?: string | null;
+            /**
+             * Next Chat Entry Id
+             * @description UUID of the next chat entry to set up, None when all chats are complete
+             */
+            next_chat_entry_id?: string | null;
             /** @description Resource maps keyed by ID */
             resources?: components["schemas"]["AttemptResources-Input"] | null;
             /** @description Entry payloads by type */
@@ -32484,6 +31223,11 @@ export interface components {
              * @description UUID of the chat entry
              */
             chat_entry_id?: string | null;
+            /**
+             * Next Chat Entry Id
+             * @description UUID of the next chat entry to set up, None when all chats are complete
+             */
+            next_chat_entry_id?: string | null;
             /** @description Resource maps keyed by ID */
             resources?: components["schemas"]["AttemptResources-Output"] | null;
             /** @description Entry payloads by type */
@@ -32519,8 +31263,16 @@ export interface components {
             infinite_mode: boolean;
             /** Num Chats */
             num_chats: number;
-            /** Is Archived */
+            /**
+             * Is Archived
+             * @default false
+             */
             is_archived: boolean;
+            /**
+             * Is Completed
+             * @default false
+             */
+            is_completed: boolean;
             /** Scenario Ids */
             scenario_ids: string[];
             /** Chat Entry Id */
@@ -32534,8 +31286,13 @@ export interface components {
          */
         GetAuthApiRequest: {
             /**
+             * Id
+             * @description Auth identifier
+             */
+            id?: string | null;
+            /**
              * Auth Id
-             * @description UUID of the auth provider to retrieve
+             * @description Legacy alias for auth identifier
              */
             auth_id?: string | null;
             /**
@@ -32543,12 +31300,31 @@ export interface components {
              * @description UUID of the draft to load
              */
             draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /** @description Filter options for names section */
+            names?: components["schemas"]["app__infra__auth__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions section */
+            descriptions?: components["schemas"]["app__infra__auth__types__SectionFilter"] | null;
+            /** @description Filter options for flags section */
+            flags?: components["schemas"]["app__infra__auth__types__SectionFilter"] | null;
+            /** @description Filter options for departments section */
+            departments?: components["schemas"]["app__infra__auth__types__SectionFilter"] | null;
+            /** @description Filter options for protocols section */
+            protocols?: components["schemas"]["app__infra__auth__types__SectionFilter"] | null;
+            /** @description Filter options for slugs section */
+            slugs?: components["schemas"]["app__infra__auth__types__SectionFilter"] | null;
+            /** @description Filter options for items section */
+            items?: components["schemas"]["app__infra__auth__types__SectionFilter"] | null;
         };
         /**
          * GetAuthApiResponse
-         * @description Response model for get auth endpoint.
+         * @description Canonical flat composed response for the auth editor.
          */
-        "GetAuthApiResponse-Input": {
+        GetAuthApiResponse: {
             /**
              * Actor Name
              * @description Display name of the acting user
@@ -32575,70 +31351,55 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Basic Show Ai Generate
-             * @description Whether to show AI generate button
+             * Show Ai Generate
+             * @description Whether any auth resource supports AI generate
              */
-            basic_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["AuthNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["AuthDescriptionSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["AuthFlagSection"] | null;
-            /** @description Protocol section with resources */
-            protocols?: components["schemas"]["AuthProtocolSection"] | null;
-            /** @description Slug section with resources */
-            slugs?: components["schemas"]["AuthSlugSection"] | null;
-            /** @description Auth item section with resources */
-            items?: components["schemas"]["AuthItemSection"] | null;
-        };
-        /**
-         * GetAuthApiResponse
-         * @description Response model for get auth endpoint.
-         */
-        "GetAuthApiResponse-Output": {
-            /**
-             * Actor Name
-             * @description Display name of the acting user
-             */
-            actor_name?: string | null;
-            /**
-             * Auth Exists
-             * @description Whether the auth provider exists
-             */
-            auth_exists?: boolean | null;
-            /**
-             * Can Edit
-             * @description Whether the actor can edit this auth
-             */
-            can_edit?: boolean | null;
-            /**
-             * Disabled Reason
-             * @description Reason editing is disabled, if any
-             */
-            disabled_reason?: string | null;
-            /**
-             * Group Id
-             * @description Group UUID for draft collaboration
-             */
-            group_id?: string | null;
+            show_ai_generate?: boolean | null;
             /**
              * Basic Show Ai Generate
              * @description Whether to show AI generate button
              */
             basic_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["AuthNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["AuthDescriptionSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["AuthFlagSection"] | null;
-            /** @description Protocol section with resources */
-            protocols?: components["schemas"]["AuthProtocolSection"] | null;
-            /** @description Slug section with resources */
-            slugs?: components["schemas"]["AuthSlugSection"] | null;
-            /** @description Auth item section with resources */
-            items?: components["schemas"]["AuthItemSection"] | null;
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers when available
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Names
+             * @description Name resources
+             */
+            names?: components["schemas"]["AuthNameResource"][] | null;
+            /**
+             * Descriptions
+             * @description Description resources
+             */
+            descriptions?: components["schemas"]["AuthDescriptionResource"][] | null;
+            /**
+             * Flags
+             * @description Flag configs
+             */
+            flags?: components["schemas"]["AuthFlagConfig"][] | null;
+            /**
+             * Departments
+             * @description Department resources
+             */
+            departments?: components["schemas"]["AuthDepartmentResource"][] | null;
+            /**
+             * Protocols
+             * @description Protocol resources
+             */
+            protocols?: components["schemas"]["AuthProtocolResource"][] | null;
+            /**
+             * Slugs
+             * @description Slug resources
+             */
+            slugs?: components["schemas"]["AuthSlugResource"][] | null;
+            /**
+             * Items
+             * @description Auth item resources
+             */
+            items?: components["schemas"]["AuthItemResource"][] | null;
         };
         /** GetAuthDraftResponse */
         GetAuthDraftResponse: {
@@ -32715,6 +31476,41 @@ export interface components {
              * @description Associated slug UUIDs
              */
             slug_ids: string[];
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Item Ids
+             * @description Pending item UUIDs
+             */
+            pending_item_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Protocol Ids
+             * @description Pending protocol UUIDs
+             */
+            pending_protocol_ids?: string[];
+            /**
+             * Pending Slug Ids
+             * @description Pending slug UUIDs
+             */
+            pending_slug_ids?: string[];
         };
         /**
          * GetAuthDraftsApiResponse
@@ -32768,65 +31564,130 @@ export interface components {
              */
             department_ids: string[];
             /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
              * Description Ids
              * @description Associated description UUIDs
              */
             description_ids: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
             /**
              * Document Ids
              * @description Associated document UUIDs
              */
             document_ids: string[];
             /**
+             * Pending Document Ids
+             * @description Pending document UUIDs
+             */
+            pending_document_ids?: string[];
+            /**
              * Field Ids
              * @description Associated field UUIDs
              */
             field_ids: string[];
+            /**
+             * Pending Field Ids
+             * @description Pending field UUIDs
+             */
+            pending_field_ids?: string[];
             /**
              * Flag Ids
              * @description Associated flag UUIDs
              */
             flag_ids: string[];
             /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
              * Image Ids
              * @description Associated image UUIDs
              */
             image_ids: string[];
+            /**
+             * Pending Image Ids
+             * @description Pending image UUIDs
+             */
+            pending_image_ids?: string[];
             /**
              * Name Ids
              * @description Associated name UUIDs
              */
             name_ids: string[];
             /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
              * Objective Ids
              * @description Associated objective UUIDs
              */
             objective_ids: string[];
+            /**
+             * Pending Objective Ids
+             * @description Pending objective UUIDs
+             */
+            pending_objective_ids?: string[];
             /**
              * Option Ids
              * @description Associated option UUIDs
              */
             option_ids: string[];
             /**
+             * Pending Option Ids
+             * @description Pending option UUIDs
+             */
+            pending_option_ids?: string[];
+            /**
              * Parameter Field Ids
              * @description Associated parameter field UUIDs
              */
             parameter_field_ids: string[];
+            /**
+             * Pending Parameter Field Ids
+             * @description Pending parameter field UUIDs
+             */
+            pending_parameter_field_ids?: string[];
             /**
              * Parameter Ids
              * @description Associated parameter UUIDs
              */
             parameter_ids: string[];
             /**
+             * Pending Parameter Ids
+             * @description Pending parameter UUIDs
+             */
+            pending_parameter_ids?: string[];
+            /**
              * Persona Ids
              * @description Associated persona UUIDs
              */
             persona_ids: string[];
             /**
+             * Pending Persona Ids
+             * @description Pending persona UUIDs
+             */
+            pending_persona_ids?: string[];
+            /**
              * Problem Statement Ids
              * @description Associated problem statement UUIDs
              */
             problem_statement_ids: string[];
+            /**
+             * Pending Problem Statement Ids
+             * @description Pending problem statement UUIDs
+             */
+            pending_problem_statement_ids?: string[];
             /**
              * Profile Ids
              * @description Associated profile UUIDs
@@ -32838,15 +31699,30 @@ export interface components {
              */
             question_ids: string[];
             /**
+             * Pending Question Ids
+             * @description Pending question UUIDs
+             */
+            pending_question_ids?: string[];
+            /**
              * Scenario Ids
              * @description Associated scenario UUIDs
              */
             scenario_ids: string[];
             /**
+             * Pending Scenario Ids
+             * @description Pending scenario UUIDs
+             */
+            pending_scenario_ids?: string[];
+            /**
              * Video Ids
              * @description Associated video UUIDs
              */
             video_ids: string[];
+            /**
+             * Pending Video Ids
+             * @description Pending video UUIDs
+             */
+            pending_video_ids?: string[];
         };
         /**
          * GetChatDraftsApiResponse
@@ -32861,128 +31737,166 @@ export interface components {
         };
         /**
          * GetChatRequest
-         * @description Client API request for one chat bundle customization payload.
+         * @description Canonical chat customization request.
          */
         GetChatRequest: {
             /**
-             * Chat Entry Id
-             * Format: uuid
-             * @description UUID of the chat entry
+             * Id
+             * @description Chat entry ID
              */
-            chat_entry_id: string;
+            id?: string | null;
+            /**
+             * Chat Entry Id
+             * @description Legacy alias for the chat entry ID
+             */
+            chat_entry_id?: string | null;
             /**
              * Attempt Id
-             * @description UUID of the attempt
+             * @description Attempt ID
              */
             attempt_id?: string | null;
             /**
              * Draft Id
-             * @description UUID of the draft
+             * @description Draft ID
              */
             draft_id?: string | null;
             /**
-             * Description Search
-             * @description Search filter for descriptions
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads
              */
-            description_search?: string | null;
-            /**
-             * Persona Search
-             * @description Search filter for personas
-             */
-            persona_search?: string | null;
-            /**
-             * Document Search
-             * @description Search filter for documents
-             */
-            document_search?: string | null;
-            /**
-             * Problem Statement Search
-             * @description Search filter for problem statements
-             */
-            problem_statement_search?: string | null;
-            /**
-             * Image Search
-             * @description Search filter for images
-             */
-            image_search?: string | null;
-            /**
-             * Video Search
-             * @description Search filter for videos
-             */
-            video_search?: string | null;
-            /**
-             * Question Search
-             * @description Search filter for questions
-             */
-            question_search?: string | null;
-            /**
-             * Option Search
-             * @description Search filter for options
-             */
-            option_search?: string | null;
-            /**
-             * Persona Show Selected
-             * @description Whether to show only selected personas
-             */
-            persona_show_selected?: boolean | null;
-            /**
-             * Document Show Selected
-             * @description Whether to show only selected documents
-             */
-            document_show_selected?: boolean | null;
+            snapshot_key?: string | null;
+            names?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            descriptions?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            flags?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            departments?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            personas?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            documents?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            parameter_fields?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            scenarios?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            fields?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            questions?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            options?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            videos?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            images?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            problem_statements?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            objectives?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
         };
         /**
          * GetChatResponse
-         * @description Client-facing chat bundle response — section-first pattern.
+         * @description Canonical chat bundle response.
          */
         GetChatResponse: {
             /**
-             * Chat Entry Id
-             * Format: uuid
-             * @description UUID of the chat entry
+             * Actor Name
+             * @description Display name of the authenticated user
              */
-            chat_entry_id: string;
+            actor_name?: string | null;
             /**
-             * Attempt Id
-             * @description UUID of the attempt
+             * Chat Exists
+             * @description Whether the chat template exists
              */
-            attempt_id?: string | null;
+            chat_exists?: boolean | null;
+            /**
+             * Can Edit
+             * @description Whether the current user can edit this draft
+             */
+            can_edit?: boolean | null;
+            /**
+             * Disabled Reason
+             * @description Human-readable reason if editing is disabled
+             */
+            disabled_reason?: string | null;
             /**
              * Group Id
-             * Format: uuid
-             * @description UUID of the group
+             * @description Group ID for generation and draft correlation
              */
-            group_id: string;
-            /** @description Name section data */
-            names?: components["schemas"]["ChatNameSection"] | null;
-            /** @description Description section data */
-            descriptions?: components["schemas"]["ChatDescriptionSection"] | null;
-            /** @description Flag section data */
-            flags?: components["schemas"]["ChatFlagSection"] | null;
-            /** @description Department section data */
-            departments?: components["schemas"]["ChatDepartmentSection"] | null;
-            /** @description Persona section data */
-            personas?: components["schemas"]["ChatPersonaSection"] | null;
-            /** @description Document section data */
-            documents?: components["schemas"]["ChatDocumentSection"] | null;
-            /** @description Parameter field section data */
-            parameter_fields?: components["schemas"]["ChatParameterFieldSection"] | null;
-            /** @description Scenario section data */
-            scenarios?: components["schemas"]["ChatScenarioSection"] | null;
-            /** @description Field section data */
-            fields?: components["schemas"]["ChatFieldSection"] | null;
-            /** @description Question section data */
-            questions?: components["schemas"]["ChatQuestionSection"] | null;
-            /** @description Option section data */
-            options?: components["schemas"]["ChatOptionSection"] | null;
-            /** @description Video section data */
-            videos?: components["schemas"]["ChatVideoSection"] | null;
-            /** @description Image section data */
-            images?: components["schemas"]["ChatImageSection"] | null;
-            /** @description Problem statement section data */
-            problem_statements?: components["schemas"]["ChatProblemStatementSection"] | null;
-            /** @description Objective section data */
-            objectives?: components["schemas"]["ChatObjectiveSection"] | null;
+            group_id?: string | null;
+            /**
+             * Show Ai Generate
+             * @description Whether AI generation is available
+             */
+            show_ai_generate?: boolean | null;
+            /**
+             * Profile Has Access
+             * @description Compatibility flag for current chat pages
+             * @default true
+             */
+            profile_has_access: boolean | null;
+            /**
+             * Simulation Name
+             * @description Optional simulation name for UI display
+             */
+            simulation_name?: string | null;
+            /**
+             * Chat Entry Id
+             * @description Chat entry ID
+             */
+            chat_entry_id?: string | null;
+            /**
+             * Attempt Id
+             * @description Attempt ID
+             */
+            attempt_id?: string | null;
+            /** Names */
+            names?: components["schemas"]["ChatNameResource"][] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["ChatDescriptionResource"][] | null;
+            /** Flags */
+            flags?: components["schemas"]["ChatFlagResource"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["ChatDepartmentResource"][] | null;
+            /** Personas */
+            personas?: components["schemas"]["ChatPersonaResource"][] | null;
+            /** Documents */
+            documents?: components["schemas"]["ChatDocumentResource"][] | null;
+            /** Parameter Fields */
+            parameter_fields?: components["schemas"]["ChatParameterFieldResource"][] | null;
+            /** Scenarios */
+            scenarios?: components["schemas"]["ChatScenarioResource"][] | null;
+            /** Fields */
+            fields?: components["schemas"]["ChatFieldResource"][] | null;
+            /** Questions */
+            questions?: components["schemas"]["ChatQuestionResource"][] | null;
+            /** Options */
+            options?: components["schemas"]["ChatOptionResource"][] | null;
+            /** Videos */
+            videos?: components["schemas"]["ChatVideoResource"][] | null;
+            /** Images */
+            images?: components["schemas"]["ChatImageResource"][] | null;
+            /** Problem Statements */
+            problem_statements?: components["schemas"]["ChatProblemStatementResource"][] | null;
+            /** Objectives */
+            objectives?: components["schemas"]["ChatObjectiveResource"][] | null;
+            /** Name Ids */
+            name_ids?: string[] | null;
+            /** Description Ids */
+            description_ids?: string[] | null;
+            /** Flag Ids */
+            flag_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
+            /** Option Ids */
+            option_ids?: string[] | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Problem Statement Ids */
+            problem_statement_ids?: string[] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
         };
         /**
          * GetCohortApiRequest
@@ -33241,6 +32155,51 @@ export interface components {
              * @description Associated simulation UUIDs
              */
             simulation_ids: string[];
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Profile Persona Ids
+             * @description Pending profile persona UUIDs
+             */
+            pending_profile_persona_ids?: string[];
+            /**
+             * Pending Profile Ids
+             * @description Pending profile UUIDs
+             */
+            pending_profile_ids?: string[];
+            /**
+             * Pending Simulation Availability Ids
+             * @description Pending simulation availability UUIDs
+             */
+            pending_simulation_availability_ids?: string[];
+            /**
+             * Pending Simulation Position Ids
+             * @description Pending simulation position UUIDs
+             */
+            pending_simulation_position_ids?: string[];
+            /**
+             * Pending Simulation Ids
+             * @description Pending simulation UUIDs
+             */
+            pending_simulation_ids?: string[];
         };
         /**
          * GetCohortDraftsApiResponse
@@ -33253,11 +32212,19 @@ export interface components {
              */
             entries?: components["schemas"]["GetCohortDraftResponse"][] | null;
         };
-        /** GetDepartmentApiRequest */
+        /**
+         * GetDepartmentApiRequest
+         * @description Request model for get department endpoint.
+         */
         GetDepartmentApiRequest: {
             /**
+             * Id
+             * @description Department UUID to retrieve
+             */
+            id?: string | null;
+            /**
              * Department Id
-             * @description UUID of the department to retrieve
+             * @description Legacy department UUID to retrieve
              */
             department_id?: string | null;
             /**
@@ -33265,9 +32232,25 @@ export interface components {
              * @description UUID of the draft to load
              */
             draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /** @description Filter options for names section */
+            names?: components["schemas"]["app__infra__department__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions section */
+            descriptions?: components["schemas"]["app__infra__department__types__SectionFilter"] | null;
+            /** @description Filter options for flags section */
+            flags?: components["schemas"]["app__infra__department__types__SectionFilter"] | null;
+            /** @description Filter options for settings section */
+            settings?: components["schemas"]["app__infra__department__types__SectionFilter"] | null;
         };
-        /** GetDepartmentApiResponse */
-        "GetDepartmentApiResponse-Input": {
+        /**
+         * GetDepartmentApiResponse
+         * @description Canonical flat composed response for the department editor.
+         */
+        GetDepartmentApiResponse: {
             /**
              * Actor Name
              * @description Display name of the acting user
@@ -33294,61 +32277,45 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Basic Show Ai Generate
-             * @description Whether to show AI generate button
+             * Show Ai Generate
+             * @description Whether to show AI generate anywhere
              */
-            basic_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["DepartmentNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["DepartmentDescriptionSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["DepartmentFlagSection"] | null;
-            /** @description Setting section with resources */
-            settings?: components["schemas"]["DepartmentSettingSection"] | null;
-        };
-        /** GetDepartmentApiResponse */
-        "GetDepartmentApiResponse-Output": {
-            /**
-             * Actor Name
-             * @description Display name of the acting user
-             */
-            actor_name?: string | null;
-            /**
-             * Department Exists
-             * @description Whether the department exists
-             */
-            department_exists?: boolean | null;
-            /**
-             * Can Edit
-             * @description Whether the actor can edit this department
-             */
-            can_edit?: boolean | null;
-            /**
-             * Disabled Reason
-             * @description Reason editing is disabled, if any
-             */
-            disabled_reason?: string | null;
-            /**
-             * Group Id
-             * @description Group UUID for draft collaboration
-             */
-            group_id?: string | null;
+            show_ai_generate?: boolean | null;
             /**
              * Basic Show Ai Generate
-             * @description Whether to show AI generate button
+             * @description Whether to show AI generate for basic sections
              */
             basic_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["DepartmentNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["DepartmentDescriptionSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["DepartmentFlagSection"] | null;
-            /** @description Setting section with resources */
-            settings?: components["schemas"]["DepartmentSettingSection"] | null;
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers when available
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Names
+             * @description Name resources
+             */
+            names?: components["schemas"]["DepartmentNameResource"][] | null;
+            /**
+             * Descriptions
+             * @description Description resources
+             */
+            descriptions?: components["schemas"]["DepartmentDescriptionResource"][] | null;
+            /**
+             * Flags
+             * @description Flag configs
+             */
+            flags?: components["schemas"]["DepartmentFlagConfig"][] | null;
+            /**
+             * Settings
+             * @description Setting resources
+             */
+            settings?: components["schemas"]["DepartmentSettingResource"][] | null;
         };
-        /** GetDepartmentDraftResponse */
+        /**
+         * GetDepartmentDraftResponse
+         * @description Resolved department draft entry with selected and pending links.
+         */
         GetDepartmentDraftResponse: {
             /**
              * Id
@@ -33408,6 +32375,26 @@ export interface components {
              * @description Associated setting UUIDs
              */
             setting_ids: string[];
+            /**
+             * Pending Description Ids
+             * @description Inactive pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Inactive pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Inactive pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Setting Ids
+             * @description Inactive pending setting UUIDs
+             */
+            pending_setting_ids?: string[];
         };
         /**
          * GetDepartmentDraftsApiResponse
@@ -33649,6 +32636,51 @@ export interface components {
              * @description Associated text UUIDs
              */
             text_ids: string[];
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending File Ids
+             * @description Pending file UUIDs
+             */
+            pending_file_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Image Ids
+             * @description Pending image UUIDs
+             */
+            pending_image_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Parameter Field Ids
+             * @description Pending parameter field UUIDs
+             */
+            pending_parameter_field_ids?: string[];
+            /**
+             * Pending Parameter Ids
+             * @description Pending parameter UUIDs
+             */
+            pending_parameter_ids?: string[];
+            /**
+             * Pending Text Ids
+             * @description Pending text UUIDs
+             */
+            pending_text_ids?: string[];
         };
         /**
          * GetDocumentDraftsApiResponse
@@ -33667,8 +32699,13 @@ export interface components {
          */
         GetEvalApiRequest: {
             /**
-             * Eval Id
+             * Id
              * @description Eval UUID to retrieve
+             */
+            id?: string | null;
+            /**
+             * Eval Id
+             * @description Legacy eval UUID to retrieve
              */
             eval_id?: string | null;
             /**
@@ -33676,12 +32713,33 @@ export interface components {
              * @description Draft UUID to load from
              */
             draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /** @description Filter options for names section */
+            names?: components["schemas"]["app__infra__eval__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions section */
+            descriptions?: components["schemas"]["app__infra__eval__types__SectionFilter"] | null;
+            /** @description Filter options for flags section */
+            flags?: components["schemas"]["app__infra__eval__types__SectionFilter"] | null;
+            /** @description Filter options for departments section */
+            departments?: components["schemas"]["app__infra__eval__types__SectionFilter"] | null;
+            /** @description Filter options for models section */
+            models?: components["schemas"]["app__infra__eval__types__SectionFilter"] | null;
+            /** @description Filter options for model flags section */
+            model_flags?: components["schemas"]["app__infra__eval__types__SectionFilter"] | null;
+            /** @description Filter options for model rubrics section */
+            model_rubrics?: components["schemas"]["app__infra__eval__types__SectionFilter"] | null;
+            /** @description Filter options for model positions section */
+            model_positions?: components["schemas"]["app__infra__eval__types__SectionFilter"] | null;
         };
         /**
          * GetEvalApiResponse
-         * @description Response model for get eval endpoint.
+         * @description Canonical flat composed response for the eval editor.
          */
-        "GetEvalApiResponse-Input": {
+        GetEvalApiResponse: {
             /**
              * Actor Name
              * @description Display name of the current user
@@ -33709,95 +32767,64 @@ export interface components {
             group_id?: string | null;
             /**
              * Basic Show Ai Generate
-             * @description Whether to show AI generate for basic step
+             * @description Whether to show AI generate for the basic step
              */
             basic_show_ai_generate?: boolean | null;
             /**
              * Model Show Ai Generate
-             * @description Whether to show AI generate for model step
+             * @description Whether to show AI generate for the model step
              */
             model_show_ai_generate?: boolean | null;
-            /** @description Name section with resource and options */
-            names?: components["schemas"]["EvalNameSection"] | null;
-            /** @description Description section with resource and options */
-            descriptions?: components["schemas"]["EvalDescriptionSection"] | null;
-            /** @description Active flag section */
-            active_flags?: components["schemas"]["EvalFlagSection"] | null;
-            /** @description Dynamic flag section */
-            dynamic_flags?: components["schemas"]["EvalFlagSection"] | null;
-            /** @description Groups flag section */
-            groups_flags?: components["schemas"]["EvalFlagSection"] | null;
-            /** @description Department section with selections and options */
-            departments?: components["schemas"]["EvalDepartmentSection"] | null;
-            /** @description Model section with selections and options */
-            models?: components["schemas"]["EvalModelSection"] | null;
-            /** @description Model flag section */
-            model_flags?: components["schemas"]["EvalModelFlagSection"] | null;
-            /** @description Model rubric section */
-            model_rubrics?: components["schemas"]["EvalModelRubricSection"] | null;
-            /** @description Model position section */
-            model_positions?: components["schemas"]["EvalModelPositionSection"] | null;
-        };
-        /**
-         * GetEvalApiResponse
-         * @description Response model for get eval endpoint.
-         */
-        "GetEvalApiResponse-Output": {
             /**
-             * Actor Name
-             * @description Display name of the current user
+             * Show Ai Generate
+             * @description Whether any AI generate action should be shown
              */
-            actor_name?: string | null;
+            show_ai_generate?: boolean | null;
             /**
-             * Eval Exists
-             * @description Whether the eval exists
+             * Pending Ids
+             * @description Pending resource identifiers when available
              */
-            eval_exists?: boolean | null;
+            pending_ids?: string[] | null;
             /**
-             * Can Edit
-             * @description Whether the current user can edit
+             * Names
+             * @description Name resources
              */
-            can_edit?: boolean | null;
+            names?: components["schemas"]["EvalNameResource"][] | null;
             /**
-             * Disabled Reason
-             * @description Reason editing is disabled
+             * Descriptions
+             * @description Description resources
              */
-            disabled_reason?: string | null;
+            descriptions?: components["schemas"]["EvalDescriptionResource"][] | null;
             /**
-             * Group Id
-             * @description Associated group UUID
+             * Flags
+             * @description Flag configs
              */
-            group_id?: string | null;
+            flags?: components["schemas"]["EvalFlagConfig"][] | null;
             /**
-             * Basic Show Ai Generate
-             * @description Whether to show AI generate for basic step
+             * Departments
+             * @description Department resources
              */
-            basic_show_ai_generate?: boolean | null;
+            departments?: components["schemas"]["EvalDepartmentResource"][] | null;
             /**
-             * Model Show Ai Generate
-             * @description Whether to show AI generate for model step
+             * Models
+             * @description Model resources
              */
-            model_show_ai_generate?: boolean | null;
-            /** @description Name section with resource and options */
-            names?: components["schemas"]["EvalNameSection"] | null;
-            /** @description Description section with resource and options */
-            descriptions?: components["schemas"]["EvalDescriptionSection"] | null;
-            /** @description Active flag section */
-            active_flags?: components["schemas"]["EvalFlagSection"] | null;
-            /** @description Dynamic flag section */
-            dynamic_flags?: components["schemas"]["EvalFlagSection"] | null;
-            /** @description Groups flag section */
-            groups_flags?: components["schemas"]["EvalFlagSection"] | null;
-            /** @description Department section with selections and options */
-            departments?: components["schemas"]["EvalDepartmentSection"] | null;
-            /** @description Model section with selections and options */
-            models?: components["schemas"]["EvalModelSection"] | null;
-            /** @description Model flag section */
-            model_flags?: components["schemas"]["EvalModelFlagSection"] | null;
-            /** @description Model rubric section */
-            model_rubrics?: components["schemas"]["EvalModelRubricSection"] | null;
-            /** @description Model position section */
-            model_positions?: components["schemas"]["EvalModelPositionSection"] | null;
+            models?: components["schemas"]["EvalModelResource"][] | null;
+            /**
+             * Model Flags
+             * @description Model flag resources
+             */
+            model_flags?: components["schemas"]["EvalModelFlagResource"][] | null;
+            /**
+             * Model Rubrics
+             * @description Model rubric resources
+             */
+            model_rubrics?: components["schemas"]["EvalModelRubricResource"][] | null;
+            /**
+             * Model Positions
+             * @description Model position resources
+             */
+            model_positions?: components["schemas"]["EvalModelPositionResource"][] | null;
         };
         /** GetEvalDraftResponse */
         GetEvalDraftResponse: {
@@ -33869,6 +32896,66 @@ export interface components {
              * @description Associated rubric UUIDs
              */
             rubric_ids: string[];
+            /**
+             * Model Flag Ids
+             * @description Associated model flag UUIDs
+             */
+            model_flag_ids?: string[];
+            /**
+             * Model Position Ids
+             * @description Associated model position UUIDs
+             */
+            model_position_ids?: string[];
+            /**
+             * Model Rubric Ids
+             * @description Associated model rubric UUIDs
+             */
+            model_rubric_ids?: string[];
+            /**
+             * Pending Department Ids
+             * @description Associated department UUIDs stored as inactive pending links
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Associated description UUIDs stored as inactive pending links
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Associated flag UUIDs stored as inactive pending links
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Model Ids
+             * @description Associated model UUIDs stored as inactive pending links
+             */
+            pending_model_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Associated name UUIDs stored as inactive pending links
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Rubric Ids
+             * @description Associated rubric UUIDs stored as inactive pending links
+             */
+            pending_rubric_ids?: string[];
+            /**
+             * Pending Model Flag Ids
+             * @description Pending model flag UUIDs
+             */
+            pending_model_flag_ids?: string[];
+            /**
+             * Pending Model Position Ids
+             * @description Pending model position UUIDs
+             */
+            pending_model_position_ids?: string[];
+            /**
+             * Pending Model Rubric Ids
+             * @description Pending model rubric UUIDs
+             */
+            pending_model_rubric_ids?: string[];
         };
         /**
          * GetEvalDraftsApiResponse
@@ -34068,6 +33155,31 @@ export interface components {
              * @description Associated profile UUIDs
              */
             profile_ids: string[];
+            /**
+             * Pending Conditional Parameter Ids
+             * @description Pending conditional parameter UUIDs
+             */
+            pending_conditional_parameter_ids?: string[];
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
         };
         /**
          * GetFieldDraftsApiResponse
@@ -34435,6 +33547,73 @@ export interface components {
             /** @description Inline analytics facets for SSR */
             analytics?: components["schemas"]["AnalyticsFacets-Output"] | null;
         };
+        /**
+         * GetInvocationApiRequest
+         * @description Request model for invocation GET.
+         */
+        GetInvocationApiRequest: {
+            /**
+             * Id
+             * @description Invocation identifier
+             */
+            id?: string | null;
+            /**
+             * Invocation Id
+             * @description Invocation identifier
+             */
+            invocation_id?: string | null;
+            /**
+             * Benchmark Bundle Entry Id
+             * @description Legacy invocation identifier
+             */
+            benchmark_bundle_entry_id?: string | null;
+            /**
+             * Test Id
+             * @description Owning test identifier
+             */
+            test_id?: string | null;
+            /**
+             * Draft Id
+             * @description Optional draft identifier
+             */
+            draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /** @description Filter options for names section */
+            names?: components["schemas"]["app__infra__invocation__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions section */
+            descriptions?: components["schemas"]["app__infra__invocation__types__SectionFilter"] | null;
+            /** @description Filter options for values section */
+            values?: components["schemas"]["app__infra__invocation__types__SectionFilter"] | null;
+            /** @description Filter options for flags section */
+            flags?: components["schemas"]["app__infra__invocation__types__SectionFilter"] | null;
+            /** @description Filter options for departments section */
+            departments?: components["schemas"]["app__infra__invocation__types__SectionFilter"] | null;
+            /** @description Filter options for keys section */
+            keys?: components["schemas"]["app__infra__invocation__types__SectionFilter"] | null;
+            /** @description Filter options for endpoints section */
+            endpoints?: components["schemas"]["app__infra__invocation__types__SectionFilter"] | null;
+            /** @description Filter options for modalities section */
+            modalities?: components["schemas"]["app__infra__invocation__types__SectionFilter"] | null;
+            /** @description Filter options for temperature levels section */
+            temperature_levels?: components["schemas"]["app__infra__invocation__types__SectionFilter"] | null;
+            /** @description Filter options for pricing section */
+            pricing?: components["schemas"]["app__infra__invocation__types__SectionFilter"] | null;
+            /** @description Filter options for reasoning levels section */
+            reasoning_levels?: components["schemas"]["app__infra__invocation__types__SectionFilter"] | null;
+            /** @description Filter options for qualities section */
+            qualities?: components["schemas"]["app__infra__invocation__types__SectionFilter"] | null;
+            /** @description Filter options for voices section */
+            voices?: components["schemas"]["app__infra__invocation__types__SectionFilter"] | null;
+            /**
+             * Descriptions Search
+             * @description Legacy search string for descriptions
+             */
+            descriptions_search?: string | null;
+        };
         /** GetInvocationDraftResponse */
         GetInvocationDraftResponse: {
             /**
@@ -34491,6 +33670,16 @@ export interface components {
              */
             key_ids: string[];
             /**
+             * Modality Ids
+             * @description Associated modality UUIDs
+             */
+            modality_ids?: string[];
+            /**
+             * Quality Ids
+             * @description Associated quality UUIDs
+             */
+            quality_ids?: string[];
+            /**
              * Model Flag Ids
              * @description Associated model flag UUIDs
              */
@@ -34545,6 +33734,86 @@ export interface components {
              * @description Associated endpoint UUIDs
              */
             endpoint_ids: string[];
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Key Ids
+             * @description Pending key UUIDs
+             */
+            pending_key_ids?: string[];
+            /**
+             * Pending Modality Ids
+             * @description Pending modality UUIDs
+             */
+            pending_modality_ids?: string[];
+            /**
+             * Pending Quality Ids
+             * @description Pending quality UUIDs
+             */
+            pending_quality_ids?: string[];
+            /**
+             * Pending Model Flag Ids
+             * @description Pending model flag UUIDs
+             */
+            pending_model_flag_ids?: string[];
+            /**
+             * Pending Model Position Ids
+             * @description Pending model position UUIDs
+             */
+            pending_model_position_ids?: string[];
+            /**
+             * Pending Model Rubric Ids
+             * @description Pending model rubric UUIDs
+             */
+            pending_model_rubric_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Reasoning Level Ids
+             * @description Pending reasoning level UUIDs
+             */
+            pending_reasoning_level_ids?: string[];
+            /**
+             * Pending Temperature Level Ids
+             * @description Pending temperature level UUIDs
+             */
+            pending_temperature_level_ids?: string[];
+            /**
+             * Pending Voice Ids
+             * @description Pending voice UUIDs
+             */
+            pending_voice_ids?: string[];
+            /**
+             * Pending Value Ids
+             * @description Pending value UUIDs
+             */
+            pending_value_ids?: string[];
+            /**
+             * Pending Pricing Ids
+             * @description Pending pricing UUIDs
+             */
+            pending_pricing_ids?: string[];
+            /**
+             * Pending Endpoint Ids
+             * @description Pending endpoint UUIDs
+             */
+            pending_endpoint_ids?: string[];
         };
         /**
          * GetInvocationDraftsApiResponse
@@ -34589,14 +33858,16 @@ export interface components {
             /** Max Errors Total */
             max_errors_total: number;
         };
-        /**
-         * GetModelApiRequest
-         * @description Request model for get model endpoint.
-         */
+        /** GetModelApiRequest */
         GetModelApiRequest: {
             /**
-             * Model Id
+             * Id
              * @description Model unique identifier
+             */
+            id?: string | null;
+            /**
+             * Model Id
+             * @description Legacy alias for model unique identifier
              */
             model_id?: string | null;
             /**
@@ -34604,12 +33875,38 @@ export interface components {
              * @description Draft unique identifier
              */
             draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /** @description Filter options for names */
+            names?: components["schemas"]["app__infra__model__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions */
+            descriptions?: components["schemas"]["app__infra__model__types__SectionFilter"] | null;
+            /** @description Filter options for values */
+            values?: components["schemas"]["app__infra__model__types__SectionFilter"] | null;
+            /** @description Filter options for providers */
+            providers?: components["schemas"]["app__infra__model__types__SectionFilter"] | null;
+            /** @description Filter options for flags */
+            flags?: components["schemas"]["app__infra__model__types__SectionFilter"] | null;
+            /** @description Filter options for departments */
+            departments?: components["schemas"]["app__infra__model__types__SectionFilter"] | null;
+            /** @description Filter options for modalities */
+            modalities?: components["schemas"]["app__infra__model__types__SectionFilter"] | null;
+            /** @description Filter options for temperature levels */
+            temperature_levels?: components["schemas"]["app__infra__model__types__SectionFilter"] | null;
+            /** @description Filter options for pricing */
+            pricing?: components["schemas"]["app__infra__model__types__SectionFilter"] | null;
+            /** @description Filter options for reasoning levels */
+            reasoning_levels?: components["schemas"]["app__infra__model__types__SectionFilter"] | null;
+            /** @description Filter options for qualities */
+            qualities?: components["schemas"]["app__infra__model__types__SectionFilter"] | null;
+            /** @description Filter options for voices */
+            voices?: components["schemas"]["app__infra__model__types__SectionFilter"] | null;
         };
-        /**
-         * GetModelApiResponse
-         * @description Section-first response for model editor.
-         */
-        "GetModelApiResponse-Input": {
+        /** GetModelApiResponse */
+        GetModelApiResponse: {
             /**
              * Actor Name
              * @description Display name of the current actor
@@ -34636,75 +33933,15 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Basic Show Ai Generate
-             * @description Show AI generate for basic step
+             * Model Id
+             * @description Model identifier
              */
-            basic_show_ai_generate?: boolean | null;
+            model_id?: string | null;
             /**
-             * Provider Show Ai Generate
-             * @description Show AI generate for provider step
+             * Show Ai Generate
+             * @description Whether any step should show AI generate
              */
-            provider_show_ai_generate?: boolean | null;
-            /**
-             * Features Show Ai Generate
-             * @description Show AI generate for features step
-             */
-            features_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["ModelNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["ModelDescriptionSection"] | null;
-            /** @description Value section with resources */
-            values?: components["schemas"]["ModelValueSection"] | null;
-            /** @description Provider section with resources */
-            providers?: components["schemas"]["ModelProviderSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["ModelFlagSection"] | null;
-            /** @description Department section with resources */
-            departments?: components["schemas"]["ModelDepartmentSection"] | null;
-            /** @description Modality section with resources */
-            modalities?: components["schemas"]["ModelModalitySection"] | null;
-            /** @description Temperature level section */
-            temperature_levels?: components["schemas"]["ModelTemperatureLevelSection"] | null;
-            /** @description Pricing section with resources */
-            pricing?: components["schemas"]["ModelPricingSection"] | null;
-            /** @description Reasoning level section */
-            reasoning_levels?: components["schemas"]["ModelReasoningLevelSection"] | null;
-            /** @description Quality section with resources */
-            qualities?: components["schemas"]["ModelQualitySection"] | null;
-            /** @description Voice section with resources */
-            voices?: components["schemas"]["ModelVoiceSection"] | null;
-        };
-        /**
-         * GetModelApiResponse
-         * @description Section-first response for model editor.
-         */
-        "GetModelApiResponse-Output": {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Model Exists
-             * @description Whether the model exists
-             */
-            model_exists?: boolean | null;
-            /**
-             * Can Edit
-             * @description Whether the current user can edit
-             */
-            can_edit?: boolean | null;
-            /**
-             * Disabled Reason
-             * @description Reason editing is disabled
-             */
-            disabled_reason?: string | null;
-            /**
-             * Group Id
-             * @description Group identifier for the model
-             */
-            group_id?: string | null;
+            show_ai_generate?: boolean | null;
             /**
              * Basic Show Ai Generate
              * @description Show AI generate for basic step
@@ -34720,30 +33957,71 @@ export interface components {
              * @description Show AI generate for features step
              */
             features_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["ModelNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["ModelDescriptionSection"] | null;
-            /** @description Value section with resources */
-            values?: components["schemas"]["ModelValueSection"] | null;
-            /** @description Provider section with resources */
-            providers?: components["schemas"]["ModelProviderSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["ModelFlagSection"] | null;
-            /** @description Department section with resources */
-            departments?: components["schemas"]["ModelDepartmentSection"] | null;
-            /** @description Modality section with resources */
-            modalities?: components["schemas"]["ModelModalitySection"] | null;
-            /** @description Temperature level section */
-            temperature_levels?: components["schemas"]["ModelTemperatureLevelSection"] | null;
-            /** @description Pricing section with resources */
-            pricing?: components["schemas"]["ModelPricingSection"] | null;
-            /** @description Reasoning level section */
-            reasoning_levels?: components["schemas"]["ModelReasoningLevelSection"] | null;
-            /** @description Quality section with resources */
-            qualities?: components["schemas"]["ModelQualitySection"] | null;
-            /** @description Voice section with resources */
-            voices?: components["schemas"]["ModelVoiceSection"] | null;
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers when available
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Names
+             * @description Name resources
+             */
+            names?: components["schemas"]["ModelNameResource"][] | null;
+            /**
+             * Descriptions
+             * @description Description resources
+             */
+            descriptions?: components["schemas"]["ModelDescriptionResource"][] | null;
+            /**
+             * Values
+             * @description Value resources
+             */
+            values?: components["schemas"]["ModelValueResource"][] | null;
+            /**
+             * Providers
+             * @description Provider resources
+             */
+            providers?: components["schemas"]["ModelProviderResource"][] | null;
+            /**
+             * Flags
+             * @description Flag configs
+             */
+            flags?: components["schemas"]["ModelFlagConfig"][] | null;
+            /**
+             * Departments
+             * @description Department resources
+             */
+            departments?: components["schemas"]["ModelDepartmentResource"][] | null;
+            /**
+             * Modalities
+             * @description Modality resources
+             */
+            modalities?: components["schemas"]["ModelModalityResource"][] | null;
+            /**
+             * Temperature Levels
+             * @description Temperature level resources
+             */
+            temperature_levels?: components["schemas"]["ModelTemperatureLevelResource"][] | null;
+            /**
+             * Pricing
+             * @description Pricing resources
+             */
+            pricing?: components["schemas"]["ModelPricingResource"][] | null;
+            /**
+             * Reasoning Levels
+             * @description Reasoning level resources
+             */
+            reasoning_levels?: components["schemas"]["ModelReasoningLevelResource"][] | null;
+            /**
+             * Qualities
+             * @description Quality resources
+             */
+            qualities?: components["schemas"]["ModelQualityResource"][] | null;
+            /**
+             * Voices
+             * @description Voice resources
+             */
+            voices?: components["schemas"]["ModelVoiceResource"][] | null;
         };
         /** GetModelDraftResponse */
         GetModelDraftResponse: {
@@ -34845,6 +34123,66 @@ export interface components {
              * @description Associated voice UUIDs
              */
             voice_ids: string[];
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Modality Ids
+             * @description Pending modality UUIDs
+             */
+            pending_modality_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Pricing Ids
+             * @description Pending pricing UUIDs
+             */
+            pending_pricing_ids?: string[];
+            /**
+             * Pending Provider Ids
+             * @description Pending provider UUIDs
+             */
+            pending_provider_ids?: string[];
+            /**
+             * Pending Quality Ids
+             * @description Pending quality UUIDs
+             */
+            pending_quality_ids?: string[];
+            /**
+             * Pending Reasoning Level Ids
+             * @description Pending reasoning level UUIDs
+             */
+            pending_reasoning_level_ids?: string[];
+            /**
+             * Pending Temperature Level Ids
+             * @description Pending temperature level UUIDs
+             */
+            pending_temperature_level_ids?: string[];
+            /**
+             * Pending Value Ids
+             * @description Pending value UUIDs
+             */
+            pending_value_ids?: string[];
+            /**
+             * Pending Voice Ids
+             * @description Pending voice UUIDs
+             */
+            pending_voice_ids?: string[];
         };
         /**
          * GetModelDraftsApiResponse
@@ -35036,6 +34374,31 @@ export interface components {
              * @description Associated profile UUIDs
              */
             profile_ids: string[];
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Field Ids
+             * @description Pending field UUIDs
+             */
+            pending_field_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
         };
         /**
          * GetParameterDraftsApiResponse
@@ -35593,6 +34956,31 @@ export interface components {
              * @description Associated role UUIDs
              */
             role_ids: string[];
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Email Ids
+             * @description Pending email UUIDs
+             */
+            pending_email_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Role Ids
+             * @description Pending role UUIDs
+             */
+            pending_role_ids?: string[];
         };
         /**
          * GetProfileDraftsApiResponse
@@ -35611,8 +34999,13 @@ export interface components {
          */
         GetProviderApiRequest: {
             /**
-             * Provider Id
+             * Id
              * @description Provider unique identifier
+             */
+            id?: string | null;
+            /**
+             * Provider Id
+             * @description Legacy alias for provider unique identifier
              */
             provider_id?: string | null;
             /**
@@ -35620,12 +35013,31 @@ export interface components {
              * @description Draft unique identifier
              */
             draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /** @description Filter options for names */
+            names?: components["schemas"]["app__infra__provider__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions */
+            descriptions?: components["schemas"]["app__infra__provider__types__SectionFilter"] | null;
+            /** @description Filter options for flags */
+            flags?: components["schemas"]["app__infra__provider__types__SectionFilter"] | null;
+            /** @description Filter options for departments */
+            departments?: components["schemas"]["app__infra__provider__types__SectionFilter"] | null;
+            /** @description Filter options for values */
+            values?: components["schemas"]["app__infra__provider__types__SectionFilter"] | null;
+            /** @description Filter options for endpoints */
+            endpoints?: components["schemas"]["app__infra__provider__types__SectionFilter"] | null;
+            /** @description Filter options for keys */
+            keys?: components["schemas"]["app__infra__provider__types__SectionFilter"] | null;
         };
         /**
          * GetProviderApiResponse
-         * @description Section-first response for provider editor.
+         * @description Canonical composed response for provider editor.
          */
-        "GetProviderApiResponse-Input": {
+        GetProviderApiResponse: {
             /**
              * Actor Name
              * @description Display name of the current actor
@@ -35652,60 +35064,15 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Basic Show Ai Generate
-             * @description Show AI generate for basic step
+             * Provider Id
+             * @description Provider identifier
              */
-            basic_show_ai_generate?: boolean | null;
+            provider_id?: string | null;
             /**
-             * Integrations Show Ai Generate
-             * @description Show AI generate for integrations step
+             * Show Ai Generate
+             * @description Whether any step should show AI generate
              */
-            integrations_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["ProviderNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["ProviderDescriptionSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["ProviderFlagSection"] | null;
-            /** @description Department section with resources */
-            departments?: components["schemas"]["ProviderDepartmentSection"] | null;
-            /** @description Value section with resources */
-            values?: components["schemas"]["ProviderValueSection"] | null;
-            /** @description Endpoint section with resources */
-            endpoints?: components["schemas"]["ProviderEndpointSection"] | null;
-            /** @description Key section with resources */
-            keys?: components["schemas"]["ProviderKeySection"] | null;
-        };
-        /**
-         * GetProviderApiResponse
-         * @description Section-first response for provider editor.
-         */
-        "GetProviderApiResponse-Output": {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Provider Exists
-             * @description Whether the provider exists
-             */
-            provider_exists?: boolean | null;
-            /**
-             * Can Edit
-             * @description Whether the current user can edit
-             */
-            can_edit?: boolean | null;
-            /**
-             * Disabled Reason
-             * @description Reason editing is disabled
-             */
-            disabled_reason?: string | null;
-            /**
-             * Group Id
-             * @description Group identifier for the provider
-             */
-            group_id?: string | null;
+            show_ai_generate?: boolean | null;
             /**
              * Basic Show Ai Generate
              * @description Show AI generate for basic step
@@ -35716,20 +35083,46 @@ export interface components {
              * @description Show AI generate for integrations step
              */
             integrations_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["ProviderNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["ProviderDescriptionSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["ProviderFlagSection"] | null;
-            /** @description Department section with resources */
-            departments?: components["schemas"]["ProviderDepartmentSection"] | null;
-            /** @description Value section with resources */
-            values?: components["schemas"]["ProviderValueSection"] | null;
-            /** @description Endpoint section with resources */
-            endpoints?: components["schemas"]["ProviderEndpointSection"] | null;
-            /** @description Key section with resources */
-            keys?: components["schemas"]["ProviderKeySection"] | null;
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers when available
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Names
+             * @description Name resources
+             */
+            names?: components["schemas"]["ProviderNameResource"][] | null;
+            /**
+             * Descriptions
+             * @description Description resources
+             */
+            descriptions?: components["schemas"]["ProviderDescriptionResource"][] | null;
+            /**
+             * Flags
+             * @description Flag configs
+             */
+            flags?: components["schemas"]["ProviderFlagConfig"][] | null;
+            /**
+             * Departments
+             * @description Department resources
+             */
+            departments?: components["schemas"]["ProviderDepartmentResource"][] | null;
+            /**
+             * Values
+             * @description Value resources
+             */
+            values?: components["schemas"]["ProviderValueResource"][] | null;
+            /**
+             * Endpoints
+             * @description Endpoint resources
+             */
+            endpoints?: components["schemas"]["ProviderEndpointResource"][] | null;
+            /**
+             * Keys
+             * @description Key resources
+             */
+            keys?: components["schemas"]["ProviderKeyResource"][] | null;
         };
         /** GetProviderDraftResponse */
         GetProviderDraftResponse: {
@@ -35806,6 +35199,41 @@ export interface components {
              * @description Associated value UUID
              */
             value_id?: string | null;
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Endpoint Ids
+             * @description Pending endpoint UUIDs
+             */
+            pending_endpoint_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Key Ids
+             * @description Pending key UUIDs
+             */
+            pending_key_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Value Ids
+             * @description Pending value UUIDs
+             */
+            pending_value_ids?: string[];
         };
         /**
          * GetProviderDraftsApiResponse
@@ -35818,11 +35246,19 @@ export interface components {
              */
             entries?: components["schemas"]["GetProviderDraftResponse"][] | null;
         };
-        /** GetRubricApiRequest */
+        /**
+         * GetRubricApiRequest
+         * @description Request model for get rubric endpoint.
+         */
         GetRubricApiRequest: {
             /**
-             * Rubric Id
+             * Id
              * @description Rubric UUID to retrieve
+             */
+            id?: string | null;
+            /**
+             * Rubric Id
+             * @description Legacy rubric UUID to retrieve
              */
             rubric_id?: string | null;
             /**
@@ -35830,9 +35266,31 @@ export interface components {
              * @description Draft UUID to load from
              */
             draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /** @description Filter options for names section */
+            names?: components["schemas"]["app__infra__rubric__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions section */
+            descriptions?: components["schemas"]["app__infra__rubric__types__SectionFilter"] | null;
+            /** @description Filter options for flags section */
+            flags?: components["schemas"]["app__infra__rubric__types__SectionFilter"] | null;
+            /** @description Filter options for departments section */
+            departments?: components["schemas"]["app__infra__rubric__types__SectionFilter"] | null;
+            /** @description Filter options for points section */
+            points?: components["schemas"]["app__infra__rubric__types__SectionFilter"] | null;
+            /** @description Filter options for standard groups section */
+            standard_groups?: components["schemas"]["app__infra__rubric__types__SectionFilter"] | null;
+            /** @description Filter options for standards section */
+            standards?: components["schemas"]["app__infra__rubric__types__SectionFilter"] | null;
         };
-        /** GetRubricApiResponse */
-        "GetRubricApiResponse-Input": {
+        /**
+         * GetRubricApiResponse
+         * @description Canonical flat composed response for the rubric editor.
+         */
+        GetRubricApiResponse: {
             /**
              * Actor Name
              * @description Display name of the current user
@@ -35859,81 +35317,60 @@ export interface components {
              */
             group_id?: string | null;
             /**
+             * Show Ai Generate
+             * @description Whether any section supports AI generation
+             */
+            show_ai_generate?: boolean | null;
+            /**
              * Basic Show Ai Generate
-             * @description Whether to show AI generate for basic step
+             * @description Whether to show AI generate for the basic step
              */
             basic_show_ai_generate?: boolean | null;
             /**
              * Content Show Ai Generate
-             * @description Whether to show AI generate for content step
+             * @description Whether to show AI generate for the content step
              */
             content_show_ai_generate?: boolean | null;
-            /** @description Name section with resource and options */
-            names?: components["schemas"]["RubricNameSection"] | null;
-            /** @description Description section with resource and options */
-            descriptions?: components["schemas"]["RubricDescriptionSection"] | null;
-            /** @description Flag section with selections and options */
-            flags?: components["schemas"]["RubricFlagSection"] | null;
-            /** @description Department section with selections and options */
-            departments?: components["schemas"]["RubricDepartmentSection"] | null;
-            /** @description Points section with resource and options */
-            points?: components["schemas"]["RubricPointsSection"] | null;
-            /** @description Standard groups section */
-            standard_groups?: components["schemas"]["RubricStandardGroupsSection"] | null;
-            /** @description Standards section */
-            standards?: components["schemas"]["RubricStandardsSection"] | null;
-        };
-        /** GetRubricApiResponse */
-        "GetRubricApiResponse-Output": {
             /**
-             * Actor Name
-             * @description Display name of the current user
+             * Pending Ids
+             * @description Pending resource identifiers when available
              */
-            actor_name?: string | null;
+            pending_ids?: string[] | null;
             /**
-             * Rubric Exists
-             * @description Whether the rubric exists
+             * Names
+             * @description Name resources
              */
-            rubric_exists?: boolean | null;
+            names?: components["schemas"]["RubricNameResource"][] | null;
             /**
-             * Can Edit
-             * @description Whether the current user can edit
+             * Descriptions
+             * @description Description resources
              */
-            can_edit?: boolean | null;
+            descriptions?: components["schemas"]["RubricDescriptionResource"][] | null;
             /**
-             * Disabled Reason
-             * @description Reason editing is disabled
+             * Flags
+             * @description Flag configs
              */
-            disabled_reason?: string | null;
+            flags?: components["schemas"]["RubricFlagConfig"][] | null;
             /**
-             * Group Id
-             * @description Associated group UUID
+             * Departments
+             * @description Department resources
              */
-            group_id?: string | null;
+            departments?: components["schemas"]["RubricDepartmentResource"][] | null;
             /**
-             * Basic Show Ai Generate
-             * @description Whether to show AI generate for basic step
+             * Points
+             * @description Point resources
              */
-            basic_show_ai_generate?: boolean | null;
+            points?: components["schemas"]["RubricPointResource"][] | null;
             /**
-             * Content Show Ai Generate
-             * @description Whether to show AI generate for content step
+             * Standard Groups
+             * @description Standard group resources
              */
-            content_show_ai_generate?: boolean | null;
-            /** @description Name section with resource and options */
-            names?: components["schemas"]["RubricNameSection"] | null;
-            /** @description Description section with resource and options */
-            descriptions?: components["schemas"]["RubricDescriptionSection"] | null;
-            /** @description Flag section with selections and options */
-            flags?: components["schemas"]["RubricFlagSection"] | null;
-            /** @description Department section with selections and options */
-            departments?: components["schemas"]["RubricDepartmentSection"] | null;
-            /** @description Points section with resource and options */
-            points?: components["schemas"]["RubricPointsSection"] | null;
-            /** @description Standard groups section */
-            standard_groups?: components["schemas"]["RubricStandardGroupsSection"] | null;
-            /** @description Standards section */
-            standards?: components["schemas"]["RubricStandardsSection"] | null;
+            standard_groups?: components["schemas"]["RubricStandardGroupResource"][] | null;
+            /**
+             * Standards
+             * @description Standard resources
+             */
+            standards?: components["schemas"]["RubricStandardResource"][] | null;
         };
         /** GetRubricDraftResponse */
         GetRubricDraftResponse: {
@@ -36010,6 +35447,41 @@ export interface components {
              * @description Associated standard UUIDs
              */
             standard_ids: string[];
+            /**
+             * Pending Department Ids
+             * @description Associated pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Associated pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Associated pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Associated pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Point Ids
+             * @description Associated pending point UUIDs
+             */
+            pending_point_ids?: string[];
+            /**
+             * Pending Standard Group Ids
+             * @description Associated pending standard group UUIDs
+             */
+            pending_standard_group_ids?: string[];
+            /**
+             * Pending Standard Ids
+             * @description Associated pending standard UUIDs
+             */
+            pending_standard_ids?: string[];
         };
         /**
          * GetRubricDraftsApiResponse
@@ -36503,32 +35975,56 @@ export interface components {
          */
         GetSettingApiRequest: {
             /**
-             * Settings Id
+             * Id
              * @description UUID of the setting to retrieve
              */
-            settings_id?: string | null;
+            id?: string | null;
             /**
-             * Color Search
-             * @description Search query for color resources
+             * Setting Id
+             * @description Legacy setting identifier
              */
-            color_search?: string | null;
+            setting_id?: string | null;
+            /**
+             * Settings Id
+             * @description Legacy alias for setting identifier
+             */
+            settings_id?: string | null;
             /**
              * Draft Id
              * @description UUID of the draft to load
              */
             draft_id?: string | null;
             /**
-             * Mcp
-             * @description Whether request is from MCP client
-             * @default false
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
              */
-            mcp: boolean | null;
+            snapshot_key?: string | null;
+            /** @description Filter options for names */
+            names?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions */
+            descriptions?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
+            /** @description Filter options for colors */
+            colors?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
+            /** @description Filter options for flags */
+            flags?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
+            /** @description Filter options for departments */
+            departments?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
+            /** @description Filter options for profiles */
+            profiles?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
+            /** @description Filter options for auths */
+            auths?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
+            /** @description Filter options for provider keys */
+            provider_keys?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
+            /** @description Filter options for auth item keys */
+            auth_item_keys?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
+            /** @description Filter options for systems */
+            systems?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
         };
         /**
          * GetSettingApiResponse
-         * @description Section-first response model for get setting endpoint.
+         * @description Canonical composed setting response.
          */
-        "GetSettingApiResponse-Input": {
+        GetSettingApiResponse: {
             /**
              * Actor Name
              * @description Display name of the acting user
@@ -36554,77 +36050,81 @@ export interface components {
              * @description Group UUID for draft collaboration
              */
             group_id?: string | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["SettingNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["SettingDescriptionSection"] | null;
-            /** @description Color section with resources */
-            colors?: components["schemas"]["SettingColorSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["SettingFlagSection"] | null;
-            /** @description Department section with resources */
-            departments?: components["schemas"]["SettingDepartmentSection"] | null;
-            /** @description Profile section with resources */
-            profiles?: components["schemas"]["SettingProfileSection"] | null;
-            /** @description Auth section with resources */
-            auths?: components["schemas"]["SettingAuthSection"] | null;
-            /** @description Provider key section with resources */
-            provider_keys?: components["schemas"]["SettingProviderKeySection"] | null;
-            /** @description Auth item key section with resources */
-            auth_item_keys?: components["schemas"]["SettingAuthItemKeySection"] | null;
-            /** @description System section with resources */
-            systems?: components["schemas"]["SettingSystemSection"] | null;
-        };
-        /**
-         * GetSettingApiResponse
-         * @description Section-first response model for get setting endpoint.
-         */
-        "GetSettingApiResponse-Output": {
             /**
-             * Actor Name
-             * @description Display name of the acting user
+             * Show Ai Generate
+             * @description Whether any section should show AI generate
              */
-            actor_name?: string | null;
+            show_ai_generate?: boolean | null;
             /**
-             * Setting Exists
-             * @description Whether the setting exists
+             * Basic Show Ai Generate
+             * @description Whether the basic section should show AI generate
              */
-            setting_exists?: boolean | null;
+            basic_show_ai_generate?: boolean | null;
             /**
-             * Can Edit
-             * @description Whether the actor can edit this setting
+             * Pending Ids
+             * @description Pending resource identifiers when available
              */
-            can_edit?: boolean | null;
+            pending_ids?: string[] | null;
             /**
-             * Disabled Reason
-             * @description Reason editing is disabled, if any
+             * Names
+             * @description Name resources
              */
-            disabled_reason?: string | null;
+            names?: components["schemas"]["SettingNameResource"][] | null;
             /**
-             * Group Id
-             * @description Group UUID for draft collaboration
+             * Descriptions
+             * @description Description resources
              */
-            group_id?: string | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["SettingNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["SettingDescriptionSection"] | null;
-            /** @description Color section with resources */
-            colors?: components["schemas"]["SettingColorSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["SettingFlagSection"] | null;
-            /** @description Department section with resources */
-            departments?: components["schemas"]["SettingDepartmentSection"] | null;
-            /** @description Profile section with resources */
-            profiles?: components["schemas"]["SettingProfileSection"] | null;
-            /** @description Auth section with resources */
-            auths?: components["schemas"]["SettingAuthSection"] | null;
-            /** @description Provider key section with resources */
-            provider_keys?: components["schemas"]["SettingProviderKeySection"] | null;
-            /** @description Auth item key section with resources */
-            auth_item_keys?: components["schemas"]["SettingAuthItemKeySection"] | null;
-            /** @description System section with resources */
-            systems?: components["schemas"]["SettingSystemSection"] | null;
+            descriptions?: components["schemas"]["SettingDescriptionResource"][] | null;
+            /**
+             * Colors
+             * @description Color resources
+             */
+            colors?: components["schemas"]["SettingColorResource"][] | null;
+            /**
+             * Flags
+             * @description Flag configs
+             */
+            flags?: components["schemas"]["SettingFlagConfig"][] | null;
+            /**
+             * Departments
+             * @description Department resources
+             */
+            departments?: components["schemas"]["SettingDepartmentResource"][] | null;
+            /**
+             * Profiles
+             * @description Profile resources
+             */
+            profiles?: components["schemas"]["SettingProfileResource"][] | null;
+            /**
+             * Auths
+             * @description Auth resources
+             */
+            auths?: components["schemas"]["SettingAuthResource"][] | null;
+            /**
+             * Provider Keys
+             * @description Provider key resources
+             */
+            provider_keys?: components["schemas"]["SettingProviderKeyResource"][] | null;
+            /**
+             * Auth Item Keys
+             * @description Auth item key resources
+             */
+            auth_item_keys?: components["schemas"]["SettingAuthItemKeyResource"][] | null;
+            /**
+             * Systems
+             * @description System resources
+             */
+            systems?: components["schemas"]["SettingSystemResource"][] | null;
+            /**
+             * Providers
+             * @description Provider catalog used by provider key editing
+             */
+            providers?: components["schemas"]["SettingProviderCatalogResource"][] | null;
+            /**
+             * Keys
+             * @description Key catalog used by provider key and auth item key editing
+             */
+            keys?: components["schemas"]["SettingKeyCatalogResource"][] | null;
         };
         /** GetSettingDraftResponse */
         GetSettingDraftResponse: {
@@ -36721,6 +36221,74 @@ export interface components {
              * @description Associated threshold UUIDs
              */
             threshold_ids: string[];
+            /** Mcp Ids */
+            mcp_ids?: string[] | null;
+            /** Logins Ids */
+            logins_ids?: string[] | null;
+            /**
+             * Pending Agent Ids
+             * @description Pending agent UUIDs
+             */
+            pending_agent_ids?: string[];
+            /**
+             * Pending Auth Item Key Ids
+             * @description Pending auth item key UUIDs
+             */
+            pending_auth_item_key_ids?: string[];
+            /**
+             * Pending Auth Ids
+             * @description Pending auth UUIDs
+             */
+            pending_auth_ids?: string[];
+            /**
+             * Pending Color Ids
+             * @description Pending color UUIDs
+             */
+            pending_color_ids?: string[];
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Item Ids
+             * @description Pending item UUIDs
+             */
+            pending_item_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Profile Ids
+             * @description Pending profile UUIDs
+             */
+            pending_profile_ids?: string[];
+            /**
+             * Pending Provider Key Ids
+             * @description Pending provider key UUIDs
+             */
+            pending_provider_key_ids?: string[];
+            /**
+             * Pending Threshold Ids
+             * @description Pending threshold UUIDs
+             */
+            pending_threshold_ids?: string[];
+            /** Pending Mcp Ids */
+            pending_mcp_ids?: string[] | null;
+            /** Pending Logins Ids */
+            pending_logins_ids?: string[] | null;
         };
         /**
          * GetSettingDraftsApiResponse
@@ -36968,6 +36536,51 @@ export interface components {
              * @description Associated scenario UUIDs
              */
             scenario_ids: string[];
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Scenario Flag Ids
+             * @description Pending scenario flag UUIDs
+             */
+            pending_scenario_flag_ids?: string[];
+            /**
+             * Pending Scenario Position Ids
+             * @description Pending scenario position UUIDs
+             */
+            pending_scenario_position_ids?: string[];
+            /**
+             * Pending Scenario Rubric Ids
+             * @description Pending scenario rubric UUIDs
+             */
+            pending_scenario_rubric_ids?: string[];
+            /**
+             * Pending Scenario Time Limit Ids
+             * @description Pending scenario time limit UUIDs
+             */
+            pending_scenario_time_limit_ids?: string[];
+            /**
+             * Pending Scenario Ids
+             * @description Pending scenario UUIDs
+             */
+            pending_scenario_ids?: string[];
         };
         /**
          * GetSimulationDraftsApiResponse
@@ -36981,38 +36594,25 @@ export interface components {
             entries?: components["schemas"]["GetSimulationDraftResponse"][] | null;
         };
         /**
-         * GetSuiteRequest
-         * @description Client API request for one benchmark bundle customization payload.
-         */
-        GetSuiteRequest: {
-            /**
-             * Test Id
-             * Format: uuid
-             * @description Test identifier
-             */
-            test_id: string;
-            /**
-             * Draft Id
-             * @description Optional draft identifier
-             */
-            draft_id?: string | null;
-            /**
-             * Descriptions Search
-             * @description Search string for descriptions
-             */
-            descriptions_search?: string | null;
-        };
-        /**
          * GetSuiteResponse
-         * @description Client-facing bundle response — section-first pattern.
+         * @description Client-facing invocation bundle response using the canonical flat shape.
          */
         GetSuiteResponse: {
             /**
-             * Test Id
-             * Format: uuid
-             * @description Test identifier
+             * Actor Name
+             * @description Display name of the acting user
              */
-            test_id: string;
+            actor_name?: string | null;
+            /**
+             * Test Id
+             * @description Owning test identifier
+             */
+            test_id?: string | null;
+            /**
+             * Invocation Id
+             * @description Invocation identifier
+             */
+            invocation_id?: string | null;
             /**
              * Profile Has Access
              * @description Whether profile has access
@@ -37020,36 +36620,95 @@ export interface components {
              */
             profile_has_access: boolean;
             /**
+             * Can Edit
+             * @description Whether the actor can edit this invocation draft
+             */
+            can_edit?: boolean | null;
+            /**
+             * Disabled Reason
+             * @description Reason editing is disabled, if any
+             */
+            disabled_reason?: string | null;
+            /**
              * Group Id
              * @description Associated group ID
              */
             group_id?: string | null;
-            /** @description Name section data */
-            names?: components["schemas"]["SuiteNameSection"] | null;
-            /** @description Description section data */
-            descriptions?: components["schemas"]["SuiteDescriptionSection"] | null;
-            /** @description Value section data */
-            values?: components["schemas"]["SuiteValueSection"] | null;
-            /** @description Flag section data */
-            flags?: components["schemas"]["SuiteFlagSection"] | null;
-            /** @description Department section data */
-            departments?: components["schemas"]["SuiteDepartmentSection"] | null;
-            /** @description Key section data */
-            keys?: components["schemas"]["SuiteKeySection"] | null;
-            /** @description Endpoint section data */
-            endpoints?: components["schemas"]["SuiteEndpointSection"] | null;
-            /** @description Modality section data */
-            modalities?: components["schemas"]["SuiteModalitySection"] | null;
-            /** @description Temperature level section data */
-            temperature_levels?: components["schemas"]["SuiteTemperatureLevelSection"] | null;
-            /** @description Pricing section data */
-            pricing?: components["schemas"]["SuitePricingSection"] | null;
-            /** @description Reasoning level section data */
-            reasoning_levels?: components["schemas"]["SuiteReasoningLevelSection"] | null;
-            /** @description Quality section data */
-            qualities?: components["schemas"]["SuiteQualitySection"] | null;
-            /** @description Voice section data */
-            voices?: components["schemas"]["SuiteVoiceSection"] | null;
+            /**
+             * Show Ai Generate
+             * @description Whether to show AI generate anywhere
+             */
+            show_ai_generate?: boolean | null;
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers when available
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Names
+             * @description Name resources
+             */
+            names?: components["schemas"]["InvocationNameResource"][] | null;
+            /**
+             * Descriptions
+             * @description Description resources
+             */
+            descriptions?: components["schemas"]["InvocationDescriptionResource"][] | null;
+            /**
+             * Values
+             * @description Value resources
+             */
+            values?: components["schemas"]["InvocationValueResource"][] | null;
+            /**
+             * Flags
+             * @description Flag resources
+             */
+            flags?: components["schemas"]["InvocationFlagResource"][] | null;
+            /**
+             * Departments
+             * @description Department resources
+             */
+            departments?: components["schemas"]["InvocationDepartmentResource"][] | null;
+            /**
+             * Keys
+             * @description Key resources
+             */
+            keys?: components["schemas"]["InvocationKeyResource"][] | null;
+            /**
+             * Endpoints
+             * @description Endpoint resources
+             */
+            endpoints?: components["schemas"]["InvocationEndpointResource"][] | null;
+            /**
+             * Modalities
+             * @description Modality resources
+             */
+            modalities?: components["schemas"]["InvocationModalityResource"][] | null;
+            /**
+             * Temperature Levels
+             * @description Temperature level resources
+             */
+            temperature_levels?: components["schemas"]["InvocationTemperatureLevelResource"][] | null;
+            /**
+             * Pricing
+             * @description Pricing resources
+             */
+            pricing?: components["schemas"]["InvocationPricingResource"][] | null;
+            /**
+             * Reasoning Levels
+             * @description Reasoning level resources
+             */
+            reasoning_levels?: components["schemas"]["InvocationReasoningLevelResource"][] | null;
+            /**
+             * Qualities
+             * @description Quality resources
+             */
+            qualities?: components["schemas"]["InvocationQualityResource"][] | null;
+            /**
+             * Voices
+             * @description Voice resources
+             */
+            voices?: components["schemas"]["InvocationVoiceResource"][] | null;
         };
         /**
          * GetTestArtifactRequest
@@ -37524,8 +37183,13 @@ export interface components {
         /** GetToolApiRequest */
         GetToolApiRequest: {
             /**
-             * Tool Id
+             * Id
              * @description Tool unique identifier
+             */
+            id?: string | null;
+            /**
+             * Tool Id
+             * @description Legacy alias for tool unique identifier
              */
             tool_id?: string | null;
             /**
@@ -37533,9 +37197,28 @@ export interface components {
              * @description Draft unique identifier
              */
             draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /** @description Filter options for names */
+            names?: components["schemas"]["app__infra__tool__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions */
+            descriptions?: components["schemas"]["app__infra__tool__types__SectionFilter"] | null;
+            /** @description Filter options for flags */
+            flags?: components["schemas"]["app__infra__tool__types__SectionFilter"] | null;
+            /** @description Filter options for args */
+            args?: components["schemas"]["app__infra__tool__types__SectionFilter"] | null;
+            /** @description Filter options for arg positions */
+            arg_positions?: components["schemas"]["app__infra__tool__types__SectionFilter"] | null;
+            /** @description Filter options for arg outputs */
+            args_outputs?: components["schemas"]["app__infra__tool__types__SectionFilter"] | null;
+            /** @description Filter options for permissions */
+            permissions?: components["schemas"]["app__infra__tool__types__SectionFilter"] | null;
         };
         /** GetToolApiResponse */
-        "GetToolApiResponse-Input": {
+        GetToolApiResponse: {
             /**
              * Actor Name
              * @description Display name of the current actor
@@ -37562,67 +37245,15 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Basic Show Ai Generate
-             * @description Show AI generate for basic step
+             * Tool Id
+             * @description Tool identifier
              */
-            basic_show_ai_generate?: boolean | null;
+            tool_id?: string | null;
             /**
-             * Args Show Ai Generate
-             * @description Show AI generate for args step
+             * Show Ai Generate
+             * @description Whether AI generation is available
              */
-            args_show_ai_generate?: boolean | null;
-            /**
-             * Arg Positions Show Ai Generate
-             * @description Show AI generate for arg positions step
-             */
-            arg_positions_show_ai_generate?: boolean | null;
-            /**
-             * Args Outputs Show Ai Generate
-             * @description Show AI generate for args outputs step
-             */
-            args_outputs_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["ToolNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["ToolDescriptionSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["ToolFlagSection"] | null;
-            /** @description Argument section with resources */
-            args?: components["schemas"]["ToolArgSection"] | null;
-            /** @description Argument position section */
-            arg_positions?: components["schemas"]["ToolArgPositionSection"] | null;
-            /** @description Argument output section */
-            args_outputs?: components["schemas"]["ToolArgOutputSection"] | null;
-            /** @description Permission section with resources */
-            permissions?: components["schemas"]["ToolPermissionSection"] | null;
-        };
-        /** GetToolApiResponse */
-        "GetToolApiResponse-Output": {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Tool Exists
-             * @description Whether the tool exists
-             */
-            tool_exists?: boolean | null;
-            /**
-             * Can Edit
-             * @description Whether the current user can edit
-             */
-            can_edit?: boolean | null;
-            /**
-             * Disabled Reason
-             * @description Reason editing is disabled
-             */
-            disabled_reason?: string | null;
-            /**
-             * Group Id
-             * @description Group identifier for the tool
-             */
-            group_id?: string | null;
+            show_ai_generate?: boolean | null;
             /**
              * Basic Show Ai Generate
              * @description Show AI generate for basic step
@@ -37634,29 +37265,50 @@ export interface components {
              */
             args_show_ai_generate?: boolean | null;
             /**
-             * Arg Positions Show Ai Generate
-             * @description Show AI generate for arg positions step
+             * Permissions Show Ai Generate
+             * @description Show AI generate for permissions step
              */
-            arg_positions_show_ai_generate?: boolean | null;
+            permissions_show_ai_generate?: boolean | null;
             /**
-             * Args Outputs Show Ai Generate
-             * @description Show AI generate for args outputs step
+             * Pending Ids
+             * @description Pending resource identifiers when available
              */
-            args_outputs_show_ai_generate?: boolean | null;
-            /** @description Name section with resources */
-            names?: components["schemas"]["ToolNameSection"] | null;
-            /** @description Description section with resources */
-            descriptions?: components["schemas"]["ToolDescriptionSection"] | null;
-            /** @description Flag section with configs */
-            flags?: components["schemas"]["ToolFlagSection"] | null;
-            /** @description Argument section with resources */
-            args?: components["schemas"]["ToolArgSection"] | null;
-            /** @description Argument position section */
-            arg_positions?: components["schemas"]["ToolArgPositionSection"] | null;
-            /** @description Argument output section */
-            args_outputs?: components["schemas"]["ToolArgOutputSection"] | null;
-            /** @description Permission section with resources */
-            permissions?: components["schemas"]["ToolPermissionSection"] | null;
+            pending_ids?: string[] | null;
+            /**
+             * Names
+             * @description Name resources
+             */
+            names?: components["schemas"]["ToolNameResource"][] | null;
+            /**
+             * Descriptions
+             * @description Description resources
+             */
+            descriptions?: components["schemas"]["ToolDescriptionResource"][] | null;
+            /**
+             * Flags
+             * @description Flag configs
+             */
+            flags?: components["schemas"]["ToolFlagConfig"][] | null;
+            /**
+             * Args
+             * @description Argument resources
+             */
+            args?: components["schemas"]["ToolArgResource"][] | null;
+            /**
+             * Arg Positions
+             * @description Argument position resources
+             */
+            arg_positions?: components["schemas"]["ToolArgPositionResource"][] | null;
+            /**
+             * Args Outputs
+             * @description Argument output resources
+             */
+            args_outputs?: components["schemas"]["ToolArgOutputResource"][] | null;
+            /**
+             * Permissions
+             * @description Permission resources
+             */
+            permissions?: components["schemas"]["ToolPermissionResource"][] | null;
         };
         /** GetToolDraftResponse */
         GetToolDraftResponse: {
@@ -37729,6 +37381,11 @@ export interface components {
              */
             name_ids: string[];
             /**
+             * Instruction Ids
+             * @description Associated instruction UUIDs
+             */
+            instruction_ids?: string[];
+            /**
              * Permission Ids
              * @description Associated permission UUIDs
              */
@@ -37743,6 +37400,56 @@ export interface components {
              * @description Associated agent UUIDs
              */
             agent_ids?: string[];
+            /**
+             * Pending Arg Position Ids
+             * @description Pending arg position UUIDs
+             */
+            pending_arg_position_ids?: string[];
+            /**
+             * Pending Arg Ids
+             * @description Pending arg UUIDs
+             */
+            pending_arg_ids?: string[];
+            /**
+             * Pending Args Output Ids
+             * @description Pending args output UUIDs
+             */
+            pending_args_output_ids?: string[];
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Instruction Ids
+             * @description Pending instruction UUIDs
+             */
+            pending_instruction_ids?: string[];
+            /**
+             * Pending Permission Ids
+             * @description Pending permission UUIDs
+             */
+            pending_permission_ids?: string[];
+            /**
+             * Pending Agent Ids
+             * @description Pending agent UUIDs
+             */
+            pending_agent_ids?: string[];
         };
         /**
          * GetToolDraftsApiResponse
@@ -37902,44 +37609,6 @@ export interface components {
             } | null;
         };
         /**
-         * GroupActivityApiRequest
-         * @description Request model for activity group endpoint.
-         */
-        GroupActivityApiRequest: {
-            /**
-             * Group Id
-             * @description Existing group UUID (omit to create or reuse via time window)
-             */
-            group_id?: string | null;
-            /**
-             * Name
-             * @description Optional name for the group
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupActivityApiResponse
-         * @description Response model for activity group endpoint.
-         */
-        GroupActivityApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Resolved or newly created group UUID
-             */
-            group_id: string;
-            /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
-             * Name
-             * @description The name that was set (if provided)
-             */
-            name?: string | null;
-        };
-        /**
          * GroupAgentApiRequest
          * @description Request model for agent group endpoint.
          */
@@ -37954,6 +37623,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupAgentApiResponse
@@ -37976,6 +37656,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * GroupAttemptApiRequest
@@ -38030,6 +37715,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupAuthApiResponse
@@ -38052,44 +37748,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
-        };
-        /**
-         * GroupBenchmarkApiRequest
-         * @description Request model for benchmark group endpoint.
-         */
-        GroupBenchmarkApiRequest: {
             /**
-             * Group Id
-             * @description Existing group UUID (omit to create or reuse via time window)
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
              */
-            group_id?: string | null;
-            /**
-             * Name
-             * @description Optional name for the group
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupBenchmarkApiResponse
-         * @description Response model for benchmark group endpoint.
-         */
-        GroupBenchmarkApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Resolved or newly created group UUID
-             */
-            group_id: string;
-            /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
-             * Name
-             * @description The name that was set (if provided)
-             */
-            name?: string | null;
+            idempotency_key?: string | null;
         };
         /**
          * GroupCall
@@ -38103,44 +37766,6 @@ export interface components {
             id: string;
             /** Tool Name */
             tool_name?: string | null;
-        };
-        /**
-         * GroupChatApiRequest
-         * @description Request model for chat group endpoint.
-         */
-        GroupChatApiRequest: {
-            /**
-             * Group Id
-             * @description Existing group UUID (omit to create or reuse via time window)
-             */
-            group_id?: string | null;
-            /**
-             * Name
-             * @description Optional name for the group
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupChatApiResponse
-         * @description Response model for chat group endpoint.
-         */
-        GroupChatApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Resolved or newly created group UUID
-             */
-            group_id: string;
-            /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
-             * Name
-             * @description The name that was set (if provided)
-             */
-            name?: string | null;
         };
         /**
          * GroupCohortApiRequest
@@ -38197,44 +37822,6 @@ export interface components {
             idempotency_key?: string | null;
         };
         /**
-         * GroupDashboardApiRequest
-         * @description Request model for dashboard group endpoint.
-         */
-        GroupDashboardApiRequest: {
-            /**
-             * Group Id
-             * @description Existing group UUID (omit to create or reuse via time window)
-             */
-            group_id?: string | null;
-            /**
-             * Name
-             * @description Optional name for the group
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupDashboardApiResponse
-         * @description Response model for dashboard group endpoint.
-         */
-        GroupDashboardApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Resolved or newly created group UUID
-             */
-            group_id: string;
-            /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
-             * Name
-             * @description The name that was set (if provided)
-             */
-            name?: string | null;
-        };
-        /**
          * GroupDepartmentApiRequest
          * @description Request model for department group endpoint.
          */
@@ -38249,6 +37836,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupDepartmentApiResponse
@@ -38271,6 +37869,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * GroupDetailCallItem
@@ -38539,6 +38142,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupEvalApiResponse
@@ -38561,6 +38175,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * GroupFieldApiRequest
@@ -38615,196 +38234,6 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
-        };
-        /**
-         * GroupGroupApiRequest
-         * @description Request model for group group endpoint.
-         */
-        GroupGroupApiRequest: {
-            /**
-             * Group Id
-             * @description Existing group UUID (omit to create or reuse via time window)
-             */
-            group_id?: string | null;
-            /**
-             * Name
-             * @description Optional name for the group
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupGroupApiResponse
-         * @description Response model for group group endpoint.
-         */
-        GroupGroupApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Resolved or newly created group UUID
-             */
-            group_id: string;
-            /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
-             * Name
-             * @description The name that was set (if provided)
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupHealthApiRequest
-         * @description Request model for health group endpoint.
-         */
-        GroupHealthApiRequest: {
-            /**
-             * Group Id
-             * @description Existing group UUID (omit to create or reuse via time window)
-             */
-            group_id?: string | null;
-            /**
-             * Name
-             * @description Optional name for the group
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupHealthApiResponse
-         * @description Response model for health group endpoint.
-         */
-        GroupHealthApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Resolved or newly created group UUID
-             */
-            group_id: string;
-            /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
-             * Name
-             * @description The name that was set (if provided)
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupHomeApiRequest
-         * @description Request model for home group endpoint.
-         */
-        GroupHomeApiRequest: {
-            /**
-             * Group Id
-             * @description Existing group UUID (omit to create or reuse via time window)
-             */
-            group_id?: string | null;
-            /**
-             * Name
-             * @description Optional name for the group
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupHomeApiResponse
-         * @description Response model for home group endpoint.
-         */
-        GroupHomeApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Resolved or newly created group UUID
-             */
-            group_id: string;
-            /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
-             * Name
-             * @description The name that was set (if provided)
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupInvocationApiRequest
-         * @description Request model for invocation group endpoint.
-         */
-        GroupInvocationApiRequest: {
-            /**
-             * Group Id
-             * @description Existing group UUID (omit to create or reuse via time window)
-             */
-            group_id?: string | null;
-            /**
-             * Name
-             * @description Optional name for the group
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupInvocationApiResponse
-         * @description Response model for invocation group endpoint.
-         */
-        GroupInvocationApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Resolved or newly created group UUID
-             */
-            group_id: string;
-            /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
-             * Name
-             * @description The name that was set (if provided)
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupLeaderboardApiRequest
-         * @description Request model for leaderboard group endpoint.
-         */
-        GroupLeaderboardApiRequest: {
-            /**
-             * Group Id
-             * @description Existing group UUID (omit to create or reuse via time window)
-             */
-            group_id?: string | null;
-            /**
-             * Name
-             * @description Optional name for the group
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupLeaderboardApiResponse
-         * @description Response model for leaderboard group endpoint.
-         */
-        GroupLeaderboardApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Resolved or newly created group UUID
-             */
-            group_id: string;
-            /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
-             * Name
-             * @description The name that was set (if provided)
-             */
-            name?: string | null;
         };
         /**
          * GroupListItem
@@ -38946,6 +38375,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupModelApiResponse
@@ -38968,6 +38408,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * GroupParameterApiRequest
@@ -39083,82 +38528,6 @@ export interface components {
             runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
-         * GroupPracticeApiRequest
-         * @description Request model for practice group endpoint.
-         */
-        GroupPracticeApiRequest: {
-            /**
-             * Group Id
-             * @description Existing group UUID (omit to create or reuse via time window)
-             */
-            group_id?: string | null;
-            /**
-             * Name
-             * @description Optional name for the group
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupPracticeApiResponse
-         * @description Response model for practice group endpoint.
-         */
-        GroupPracticeApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Resolved or newly created group UUID
-             */
-            group_id: string;
-            /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
-             * Name
-             * @description The name that was set (if provided)
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupPricingApiRequest
-         * @description Request model for pricing group endpoint.
-         */
-        GroupPricingApiRequest: {
-            /**
-             * Group Id
-             * @description Existing group UUID (omit to create or reuse via time window)
-             */
-            group_id?: string | null;
-            /**
-             * Name
-             * @description Optional name for the group
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupPricingApiResponse
-         * @description Response model for pricing group endpoint.
-         */
-        GroupPricingApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Resolved or newly created group UUID
-             */
-            group_id: string;
-            /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
-             * Name
-             * @description The name that was set (if provided)
-             */
-            name?: string | null;
-        };
-        /**
          * GroupProfileApiRequest
          * @description Request model for profile group endpoint.
          */
@@ -39173,6 +38542,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupProfileApiResponse
@@ -39195,6 +38575,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * GroupProviderApiRequest
@@ -39211,6 +38596,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupProviderApiResponse
@@ -39233,82 +38629,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
-        };
-        /**
-         * GroupRecordApiRequest
-         * @description Request model for record group endpoint.
-         */
-        GroupRecordApiRequest: {
             /**
-             * Group Id
-             * @description Existing group UUID (omit to create or reuse via time window)
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
              */
-            group_id?: string | null;
-            /**
-             * Name
-             * @description Optional name for the group
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupRecordApiResponse
-         * @description Response model for record group endpoint.
-         */
-        GroupRecordApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Resolved or newly created group UUID
-             */
-            group_id: string;
-            /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
-             * Name
-             * @description The name that was set (if provided)
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupReportsApiRequest
-         * @description Request model for reports group endpoint.
-         */
-        GroupReportsApiRequest: {
-            /**
-             * Group Id
-             * @description Existing group UUID (omit to create or reuse via time window)
-             */
-            group_id?: string | null;
-            /**
-             * Name
-             * @description Optional name for the group
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupReportsApiResponse
-         * @description Response model for reports group endpoint.
-         */
-        GroupReportsApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Resolved or newly created group UUID
-             */
-            group_id: string;
-            /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
-             * Name
-             * @description The name that was set (if provided)
-             */
-            name?: string | null;
+            idempotency_key?: string | null;
         };
         /**
          * GroupRubricApiRequest
@@ -39325,6 +38650,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupRubricApiResponse
@@ -39347,6 +38683,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * GroupRun
@@ -39418,44 +38759,6 @@ export interface components {
             idempotency_key?: string | null;
         };
         /**
-         * GroupSessionApiRequest
-         * @description Request model for session group endpoint.
-         */
-        GroupSessionApiRequest: {
-            /**
-             * Group Id
-             * @description Existing group UUID (omit to create or reuse via time window)
-             */
-            group_id?: string | null;
-            /**
-             * Name
-             * @description Optional name for the group
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupSessionApiResponse
-         * @description Response model for session group endpoint.
-         */
-        GroupSessionApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Resolved or newly created group UUID
-             */
-            group_id: string;
-            /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
-             * Name
-             * @description The name that was set (if provided)
-             */
-            name?: string | null;
-        };
-        /**
          * GroupSettingApiRequest
          * @description Request model for setting group endpoint.
          */
@@ -39470,6 +38773,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupSettingApiResponse
@@ -39492,6 +38806,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * GroupSimulationApiRequest
@@ -39600,6 +38919,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupToolApiResponse
@@ -39622,6 +38952,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -39917,14 +39252,6 @@ export interface components {
              */
             profile_options?: components["schemas"]["FilterOption"][] | null;
         };
-        /** HomeStartRequest */
-        HomeStartRequest: {
-            /**
-             * Home Id
-             * Format: uuid
-             */
-            home_id: string;
-        };
         /**
          * ImageDownloadAttemptApiRequest
          * @description Request model for attempt image download endpoint.
@@ -39972,11 +39299,6 @@ export interface components {
              */
             image_id?: string | null;
             /**
-             * Upload Id
-             * @description UUID of the uploaded file
-             */
-            upload_id?: string | null;
-            /**
              * Name
              * @description Name of the image
              */
@@ -40005,66 +39327,600 @@ export interface components {
              */
             upload_id: string;
         };
-        /**
-         * InvocationDraftFormState
-         * @description Server-authoritative form state returned after draft save.
-         */
-        InvocationDraftFormState: {
+        /** InvocationDepartmentResource */
+        InvocationDepartmentResource: {
             /**
-             * Name Ids
-             * @description Saved name IDs
+             * Department Id
+             * @description Unique identifier
              */
-            name_ids: string[];
+            department_id?: string | null;
             /**
-             * Description Ids
-             * @description Saved description IDs
+             * Name
+             * @description Display name
              */
-            description_ids: string[];
+            name?: string | null;
             /**
-             * Value Id
-             * @description Saved value ID
+             * Description
+             * @description Description text
              */
-            value_id?: string | null;
+            description?: string | null;
             /**
-             * Flag Ids
-             * @description Saved flag IDs
+             * Generated
+             * @description Whether this was AI-generated
              */
-            flag_ids: string[];
+            generated?: boolean | null;
             /**
-             * Department Ids
-             * @description Saved department IDs
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            department_ids: string[];
+            suggested: boolean;
             /**
-             * Key Ids
-             * @description Saved key IDs
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            key_ids: string[];
+            selected: boolean;
             /**
-             * Endpoint Ids
-             * @description Saved endpoint IDs
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
              */
-            endpoint_ids: string[];
+            pending: boolean;
+        };
+        /** InvocationDescriptionResource */
+        InvocationDescriptionResource: {
             /**
-             * Temperature Level Ids
-             * @description Saved temperature level IDs
+             * Id
+             * @description Unique identifier
              */
-            temperature_level_ids: string[];
+            id?: string | null;
             /**
-             * Pricing Ids
-             * @description Saved pricing IDs
+             * Description
+             * @description Description text
              */
-            pricing_ids: string[];
+            description?: string | null;
             /**
-             * Reasoning Level Ids
-             * @description Saved reasoning level IDs
+             * Generated
+             * @description Whether this was AI-generated
              */
-            reasoning_level_ids: string[];
+            generated?: boolean | null;
             /**
-             * Voice Ids
-             * @description Saved voice IDs
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            voice_ids: string[];
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** InvocationEndpointResource */
+        InvocationEndpointResource: {
+            /**
+             * Id
+             * @description Unique identifier
+             */
+            id?: string | null;
+            /**
+             * Base Url
+             * @description Endpoint base URL
+             */
+            base_url?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** InvocationFlagResource */
+        InvocationFlagResource: {
+            /**
+             * Id
+             * @description Unique identifier
+             */
+            id?: string | null;
+            /**
+             * Key
+             * @description Flag key identifier
+             */
+            key: string;
+            /**
+             * Label
+             * @description Human-readable flag label
+             */
+            label: string;
+            /**
+             * Description
+             * @description Flag description text
+             */
+            description?: string | null;
+            /**
+             * Icon Id
+             * @description Icon identifier for the flag
+             */
+            icon_id?: string | null;
+            /**
+             * Flag Option Id
+             * @description UUID of the selected flag option
+             */
+            flag_option_id?: string | null;
+            /**
+             * Show
+             * @description Whether the flag is visible to the client
+             * @default true
+             */
+            show: boolean;
+            /**
+             * Required
+             * @description Whether the flag is required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Generated
+             * @description Whether the flag was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** InvocationKeyResource */
+        InvocationKeyResource: {
+            /**
+             * Id
+             * @description Unique identifier
+             */
+            id?: string | null;
+            /**
+             * Key Id
+             * @description Resource identifier alias for picker compatibility
+             */
+            key_id?: string | null;
+            /**
+             * Name
+             * @description Display name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Description text
+             */
+            description?: string | null;
+            /**
+             * Key Masked
+             * @description Masked key preview
+             */
+            key_masked?: string | null;
+            /**
+             * Masked Key
+             * @description Masked key preview alias
+             */
+            masked_key?: string | null;
+            /**
+             * Active
+             * @description Whether this key is active
+             */
+            active?: boolean | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** InvocationModalityResource */
+        InvocationModalityResource: {
+            /**
+             * Id
+             * @description Unique identifier
+             */
+            id?: string | null;
+            /**
+             * Modality Id
+             * @description Resource identifier alias for picker compatibility
+             */
+            modality_id?: string | null;
+            /**
+             * Modality
+             * @description Modality code
+             */
+            modality?: string | null;
+            /**
+             * Name
+             * @description Human-readable modality name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Description text
+             */
+            description?: string | null;
+            /**
+             * Is Input
+             * @description Whether this modality is input-facing
+             */
+            is_input?: boolean | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** InvocationNameResource */
+        InvocationNameResource: {
+            /**
+             * Id
+             * @description Unique identifier
+             */
+            id?: string | null;
+            /**
+             * Name
+             * @description Display name
+             */
+            name?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** InvocationPricingResource */
+        InvocationPricingResource: {
+            /**
+             * Id
+             * @description Unique identifier
+             */
+            id?: string | null;
+            /**
+             * Pricing Id
+             * @description Resource identifier alias for picker compatibility
+             */
+            pricing_id?: string | null;
+            /**
+             * Pricing Type
+             * @description Pricing type
+             */
+            pricing_type?: string | null;
+            /**
+             * Price
+             * @description Price amount
+             */
+            price?: number | null;
+            /**
+             * Unit Name
+             * @description Unit name
+             */
+            unit_name?: string | null;
+            /**
+             * Unit Category
+             * @description Unit category
+             */
+            unit_category?: string | null;
+            /**
+             * Unit Value
+             * @description Unit value
+             */
+            unit_value?: number | null;
+            /**
+             * Name
+             * @description Display label
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Description text
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** InvocationQualityResource */
+        InvocationQualityResource: {
+            /**
+             * Id
+             * @description Unique identifier
+             */
+            id?: string | null;
+            /**
+             * Quality Id
+             * @description Resource identifier alias for picker compatibility
+             */
+            quality_id?: string | null;
+            /**
+             * Quality
+             * @description Quality label
+             */
+            quality?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** InvocationReasoningLevelResource */
+        InvocationReasoningLevelResource: {
+            /**
+             * Id
+             * @description Unique identifier
+             */
+            id?: string | null;
+            /**
+             * Reasoning Level
+             * @description Reasoning level label
+             */
+            reasoning_level?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** InvocationTemperatureLevelResource */
+        InvocationTemperatureLevelResource: {
+            /**
+             * Id
+             * @description Unique identifier
+             */
+            id?: string | null;
+            /**
+             * Temperature
+             * @description Temperature numeric value
+             */
+            temperature?: number | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** InvocationValueResource */
+        InvocationValueResource: {
+            /**
+             * Id
+             * @description Unique identifier
+             */
+            id?: string | null;
+            /**
+             * Value
+             * @description Value text
+             */
+            value?: string | null;
+            /**
+             * Type
+             * @description Value type
+             */
+            type?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** InvocationVoiceResource */
+        InvocationVoiceResource: {
+            /**
+             * Id
+             * @description Unique identifier
+             */
+            id?: string | null;
+            /**
+             * Voice
+             * @description Voice label
+             */
+            voice?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * LeaderboardAccoladeWinner
@@ -41106,10 +40962,10 @@ export interface components {
              */
             active_scenario_count?: number | null;
             /**
-             * Upload Id
-             * @description Associated upload UUID
+             * File Id
+             * @description Associated file resource UUID
              */
-            upload_id?: string | null;
+            file_id?: string | null;
             /**
              * Can Edit
              * @description Whether the current user can edit
@@ -43141,8 +42997,6 @@ export interface components {
             tools?: components["schemas"]["ListToolApiTool"][] | null;
             /** @description Department filter options */
             department_filter?: components["schemas"]["ListFilterSection"] | null;
-            /** @description Agent filter options */
-            agent_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Creatable filter options */
             creatable_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
@@ -43366,97 +43220,82 @@ export interface components {
              */
             replaces?: components["schemas"]["ReplacementEntry"][] | null;
         };
-        /** ModelDepartmentSection */
-        ModelDepartmentSection: {
+        /** ModelDepartmentResource */
+        ModelDepartmentResource: {
             /**
-             * Current
-             * @description Currently assigned departments
+             * Department Id
+             * @description Department identifier
              */
-            current?: unknown[] | null;
+            department_id?: string | null;
             /**
-             * Resources
-             * @description Available departments
+             * Name
+             * @description Department name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Department description
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether the department was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ModelDescriptionSection */
-        ModelDescriptionSection: {
+        /** ModelDescriptionResource */
+        ModelDescriptionResource: {
             /**
-             * Resource
-             * @description Currently selected description resource
+             * Id
+             * @description Description resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available description resources
+             * Description
+             * @description Model description
              */
-            resources?: unknown[] | null;
-        };
-        /**
-         * ModelDraftFormState
-         * @description Server-authoritative form state returned after draft save.
-         */
-        ModelDraftFormState: {
+            description?: string | null;
             /**
-             * Name Id
-             * @description Resolved name resource identifier
+             * Generated
+             * @description Whether the description was AI-generated
              */
-            name_id?: string | null;
+            generated?: boolean | null;
             /**
-             * Description Id
-             * @description Resolved description resource identifier
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
              */
-            description_id?: string | null;
+            suggested: boolean;
             /**
-             * Flag Ids
-             * @description Flag option identifiers
+             * Selected
+             * @description Whether this item is selected
+             * @default false
              */
-            flag_ids: string[];
+            selected: boolean;
             /**
-             * Department Ids
-             * @description Department identifiers
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
              */
-            department_ids: string[];
-            /**
-             * Modality Ids
-             * @description Modality identifiers
-             */
-            modality_ids: string[];
-            /**
-             * Pricing Ids
-             * @description Pricing tier identifiers
-             */
-            pricing_ids: string[];
-            /**
-             * Provider Id
-             * @description Provider identifier
-             */
-            provider_id?: string | null;
-            /**
-             * Quality Ids
-             * @description Quality level identifiers
-             */
-            quality_ids: string[];
-            /**
-             * Reasoning Level Ids
-             * @description Reasoning level identifiers
-             */
-            reasoning_level_ids: string[];
-            /**
-             * Temperature Level Ids
-             * @description Temperature level identifiers
-             */
-            temperature_level_ids: string[];
-            /**
-             * Value Id
-             * @description Value resource identifier
-             */
-            value_id?: string | null;
-            /**
-             * Voice Ids
-             * @description Voice identifiers
-             */
-            voice_ids: string[];
+            pending: boolean;
         };
         /**
          * ModelFieldError
@@ -43522,96 +43361,261 @@ export interface components {
              */
             generated?: boolean | null;
         };
-        /** ModelFlagSection */
-        ModelFlagSection: {
+        /** ModelModalityResource */
+        ModelModalityResource: {
             /**
-             * Current
-             * @description Currently active flag configs
+             * Id
+             * @description Modality resource identifier
              */
-            current?: components["schemas"]["ModelFlagConfig"][] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available flag configs
+             * Modality
+             * @description Modality name
              */
-            resources?: components["schemas"]["ModelFlagConfig"][] | null;
+            modality?: string | null;
+            /**
+             * Is Input
+             * @description Whether this is an input modality
+             */
+            is_input?: boolean | null;
+            /**
+             * Generated
+             * @description Whether the modality was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ModelModalitySection */
-        ModelModalitySection: {
+        /** ModelNameResource */
+        ModelNameResource: {
             /**
-             * Current
-             * @description Currently assigned modalities
+             * Id
+             * @description Name resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available modalities
+             * Name
+             * @description Model display name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Generated
+             * @description Whether the name was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ModelNameSection */
-        ModelNameSection: {
+        /** ModelPricingResource */
+        ModelPricingResource: {
             /**
-             * Resource
-             * @description Currently selected name resource
+             * Id
+             * @description Pricing resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available name resources
+             * Pricing Type
+             * @description Pricing type
              */
-            resources?: unknown[] | null;
+            pricing_type?: string | null;
+            /**
+             * Price
+             * @description Pricing amount
+             */
+            price?: number | null;
+            /**
+             * Unit Name
+             * @description Pricing unit name
+             */
+            unit_name?: string | null;
+            /**
+             * Unit Category
+             * @description Pricing unit category
+             */
+            unit_category?: string | null;
+            /**
+             * Unit Value
+             * @description Pricing unit value
+             */
+            unit_value?: number | null;
+            /**
+             * Generated
+             * @description Whether the pricing resource was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ModelPricingSection */
-        ModelPricingSection: {
+        /** ModelProviderResource */
+        ModelProviderResource: {
             /**
-             * Current
-             * @description Currently assigned pricing tiers
+             * Id
+             * @description Provider resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available pricing tiers
+             * Name
+             * @description Provider display name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Provider description
+             */
+            description?: string | null;
+            /**
+             * Value
+             * @description Provider value
+             */
+            value?: string | null;
+            /**
+             * Base Url
+             * @description Provider endpoint
+             */
+            base_url?: string | null;
+            /**
+             * Generated
+             * @description Whether the provider was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ModelProviderSection */
-        ModelProviderSection: {
+        /** ModelQualityResource */
+        ModelQualityResource: {
             /**
-             * Resource
-             * @description Currently selected provider resource
+             * Id
+             * @description Quality resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available provider resources
+             * Quality
+             * @description Quality label
              */
-            resources?: unknown[] | null;
+            quality?: string | null;
+            /**
+             * Generated
+             * @description Whether the quality was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ModelQualitySection */
-        ModelQualitySection: {
+        /** ModelReasoningLevelResource */
+        ModelReasoningLevelResource: {
             /**
-             * Current
-             * @description Currently assigned quality levels
+             * Id
+             * @description Reasoning level resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available quality levels
+             * Reasoning Level
+             * @description Reasoning level label
              */
-            resources?: unknown[] | null;
-        };
-        /** ModelReasoningLevelSection */
-        ModelReasoningLevelSection: {
+            reasoning_level?: string | null;
             /**
-             * Current
-             * @description Currently assigned reasoning levels
+             * Generated
+             * @description Whether the reasoning level was AI-generated
              */
-            current?: unknown[] | null;
+            generated?: boolean | null;
             /**
-             * Resources
-             * @description Available reasoning levels
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
              */
-            resources?: unknown[] | null;
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ModelResultItem
@@ -43639,44 +43643,118 @@ export interface components {
              */
             errors?: components["schemas"]["ModelFieldError"][] | null;
         };
-        /** ModelTemperatureLevelSection */
-        ModelTemperatureLevelSection: {
+        /** ModelTemperatureLevelResource */
+        ModelTemperatureLevelResource: {
             /**
-             * Current
-             * @description Currently assigned temperature levels
+             * Id
+             * @description Temperature level resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available temperature levels
+             * Temperature
+             * @description Temperature level label
              */
-            resources?: unknown[] | null;
+            temperature?: string | null;
+            /**
+             * Generated
+             * @description Whether the temperature level was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ModelValueSection */
-        ModelValueSection: {
+        /** ModelValueResource */
+        ModelValueResource: {
             /**
-             * Resource
-             * @description Currently selected value resource
+             * Id
+             * @description Value resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available value resources
+             * Value
+             * @description Model value
              */
-            resources?: unknown[] | null;
+            value?: string | null;
+            /**
+             * Value Type
+             * @description Stored value type
+             */
+            value_type?: string | null;
+            /**
+             * Generated
+             * @description Whether the value was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ModelVoiceSection */
-        ModelVoiceSection: {
+        /** ModelVoiceResource */
+        ModelVoiceResource: {
             /**
-             * Current
-             * @description Currently assigned voices
+             * Id
+             * @description Voice resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available voices
+             * Voice
+             * @description Voice label
              */
-            resources?: unknown[] | null;
+            voice?: string | null;
+            /**
+             * Generated
+             * @description Whether the voice was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /** MvInfo */
         MvInfo: {
@@ -43734,13 +43812,6 @@ export interface components {
              * @description The name that was set
              */
             name: string;
-        };
-        /** NextAttemptApiResponse */
-        NextAttemptApiResponse: {
-            /** Attempt Id */
-            attempt_id: string;
-            /** Chat Id */
-            chat_id: string;
         };
         /** NextTestApiResponse */
         NextTestApiResponse: {
@@ -44460,6 +44531,11 @@ export interface components {
          */
         PatchAgentDraftApiRequest: {
             /**
+             * Draft Id
+             * @description UUID of the draft to update
+             */
+            draft_id?: string | null;
+            /**
              * Group Id
              * @description UUID of the owning group
              */
@@ -44469,6 +44545,17 @@ export interface components {
              * @description UUID of the input draft
              */
             input_draft_id?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key for accept/reject acknowledgement
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Whether pending changes should be accepted
+             * @default true
+             */
+            accept: boolean;
             /**
              * Name
              * @description Display name value
@@ -44490,10 +44577,25 @@ export interface components {
              */
             description_id?: string | null;
             /**
+             * Active Flag
+             * @description Whether the agent is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description Active flag resource UUID
+             */
+            active_flag_id?: string | null;
+            /**
              * Flag Ids
              * @description Associated flag UUIDs
              */
             flag_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names for matching
+             */
+            departments?: string[] | null;
             /**
              * Department Ids
              * @description Associated department UUIDs
@@ -44510,25 +44612,72 @@ export interface components {
              */
             tool_ids?: string[] | null;
             /**
-             * Reasoning Level Ids
-             * @description Associated reasoning level UUIDs
+             * Reasoning Level
+             * @description Reasoning level label to match
              */
-            reasoning_level_ids?: string[] | null;
+            reasoning_level?: string | null;
             /**
-             * Temperature Level Ids
-             * @description Associated temperature level UUIDs
+             * Reasoning Level Id
+             * @description Associated reasoning level UUID
              */
-            temperature_level_ids?: string[] | null;
+            reasoning_level_id?: string | null;
+            /**
+             * Temperature Level
+             * @description Temperature level label to match
+             */
+            temperature_level?: string | null;
+            /**
+             * Temperature Level Id
+             * @description Associated temperature level UUID
+             */
+            temperature_level_id?: string | null;
+            /**
+             * Voices
+             * @description Voice names for matching or creation
+             */
+            voices?: string[] | null;
             /**
              * Voice Ids
              * @description Associated voice UUIDs
              */
             voice_ids?: string[] | null;
             /**
+             * Qualities
+             * @description Quality labels for matching
+             */
+            qualities?: string[] | null;
+            /**
+             * Quality Ids
+             * @description Associated quality UUIDs
+             */
+            quality_ids?: string[] | null;
+            /**
+             * Prompt Id
+             * @description Associated prompt UUID
+             */
+            prompt_id?: string | null;
+            /** @description Prompt to create inline */
+            prompt?: components["schemas"]["CreatePromptInput"] | null;
+            /**
+             * Instruction Id
+             * @description Associated instruction UUID
+             */
+            instruction_id?: string | null;
+            /**
+             * Instructions Id
+             * @description Legacy alias for associated instruction UUID
+             */
+            instructions_id?: string | null;
+            /**
              * Rubric Ids
              * @description Associated rubric UUIDs
              */
             rubric_ids?: string[] | null;
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers
+             */
+            pending_ids?: string[] | null;
         };
         /**
          * PatchAgentDraftApiResponse
@@ -44547,12 +44696,17 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * @description Idempotency key for accept/reject acknowledgement
+             */
+            idempotency_key?: string | null;
+            /**
              * Message
              * @description Human-readable result message
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["AgentDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__agent__types__DraftFormState"] | null;
         };
         /**
          * PatchAuthDraftApiRequest
@@ -44567,10 +44721,26 @@ export interface components {
          */
         PatchAuthDraftApiRequest: {
             /**
+             * Draft Id
+             * @description Existing draft UUID to update
+             */
+            draft_id?: string | null;
+            /**
              * Input Draft Id
              * @description Existing draft UUID to update
              */
             input_draft_id?: string | null;
+            /**
+             * Idempotency Key
+             * @description Stable idempotency key for ack/promote flows
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Whether to accept a pending draft when acknowledging
+             * @default true
+             */
+            accept: boolean;
             /**
              * Name
              * @description Name value to resolve or create
@@ -44592,20 +44762,40 @@ export interface components {
              */
             description_id?: string | null;
             /**
+             * Active Flag
+             * @description Whether the auth provider is active
+             */
+            active_flag?: boolean | null;
+            /**
              * Flag Id
              * @description UUID of the flag option
              */
             flag_id?: string | null;
+            /**
+             * Departments
+             * @description Department names to resolve
+             */
+            departments?: string[] | null;
             /**
              * Department Ids
              * @description Department UUIDs to assign
              */
             department_ids?: string[] | null;
             /**
+             * Protocols
+             * @description Protocol values to resolve
+             */
+            protocols?: string[] | null;
+            /**
              * Protocol Ids
              * @description Protocol resource UUIDs
              */
             protocol_ids?: string[] | null;
+            /**
+             * Slugs
+             * @description Slug values to resolve
+             */
+            slugs?: string[] | null;
             /**
              * Slug Ids
              * @description Slug resource UUIDs
@@ -44616,6 +44806,11 @@ export interface components {
              * @description Auth item UUIDs
              */
             item_ids?: string[] | null;
+            /**
+             * Pending Ids
+             * @description Resource IDs to keep pending where supported
+             */
+            pending_ids?: string[] | null;
         };
         /**
          * PatchAuthDraftApiResponse
@@ -44634,151 +44829,97 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * @description Stable idempotency key for ack/promote flows
+             */
+            idempotency_key?: string | null;
+            /**
              * Message
              * @description Result message
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["AuthDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__auth__types__DraftFormState"] | null;
         };
         /**
          * PatchChatDraftApiRequest
-         * @description Request model for new-style chat draft endpoint.
-         *
-         *     Single-select creatables: name, description, problem_statement
-         *       → value creates resource, ID replaces value (mutually exclusive).
-         *
-         *     Multi-select creatables: objectives, images, videos, questions, options
-         *       → values create resources, created IDs are merged with existing IDs.
-         *
-         *     Client always sends full state (append-only — each write is a new snapshot).
+         * @description Canonical chat draft request.
          */
         PatchChatDraftApiRequest: {
             /**
+             * Draft Id
+             * @description Existing draft ID to update
+             */
+            draft_id?: string | null;
+            /**
              * Input Draft Id
-             * @description UUID of the input draft
+             * @description Legacy alias for draft_id
              */
             input_draft_id?: string | null;
-            /**
-             * Name
-             * @description Name value to create
-             */
+            /** Name */
             name?: string | null;
-            /**
-             * Description
-             * @description Description value to create
-             */
+            /** Name Id */
+            name_id?: string | null;
+            /** Description */
             description?: string | null;
-            /**
-             * Problem Statement
-             * @description Problem statement value to create
-             */
+            /** Description Id */
+            description_id?: string | null;
+            /** Problem Statement */
             problem_statement?: string | null;
-            /**
-             * Objectives
-             * @description Objective texts to create
-             */
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
+            /** Objectives */
             objectives?: string[] | null;
-            /**
-             * Images
-             * @description Image values to create
-             */
-            images?: components["schemas"]["app__infra__chat__types__DraftImageValue"][] | null;
-            /**
-             * Videos
-             * @description Video values to create
-             */
-            videos?: components["schemas"]["app__infra__chat__types__DraftVideoValue"][] | null;
-            /**
-             * Questions
-             * @description Question values to create
-             */
-            questions?: components["schemas"]["app__infra__chat__types__DraftQuestionValue"][] | null;
-            /**
-             * Options
-             * @description Option values to create
-             */
-            options?: components["schemas"]["app__infra__chat__types__DraftOptionValue"][] | null;
-            /**
-             * Name Ids
-             * @description Selected name resource IDs
-             */
-            name_ids?: string[] | null;
-            /**
-             * Description Ids
-             * @description Selected description resource IDs
-             */
-            description_ids?: string[] | null;
-            /**
-             * Document Ids
-             * @description Selected document resource IDs
-             */
-            document_ids?: string[] | null;
-            /**
-             * Field Ids
-             * @description Selected field resource IDs
-             */
-            field_ids?: string[] | null;
-            /**
-             * Flag Ids
-             * @description Selected flag resource IDs
-             */
-            flag_ids?: string[] | null;
-            /**
-             * Image Ids
-             * @description Selected image resource IDs
-             */
-            image_ids?: string[] | null;
-            /**
-             * Objective Ids
-             * @description Selected objective resource IDs
-             */
+            /** Objective Ids */
             objective_ids?: string[] | null;
-            /**
-             * Option Ids
-             * @description Selected option resource IDs
-             */
-            option_ids?: string[] | null;
-            /**
-             * Parameter Field Ids
-             * @description Selected parameter field resource IDs
-             */
-            parameter_field_ids?: string[] | null;
-            /**
-             * Parameter Ids
-             * @description Selected parameter resource IDs
-             */
-            parameter_ids?: string[] | null;
-            /**
-             * Persona Ids
-             * @description Selected persona resource IDs
-             */
-            persona_ids?: string[] | null;
-            /**
-             * Problem Statement Ids
-             * @description Selected problem statement resource IDs
-             */
-            problem_statement_ids?: string[] | null;
-            /**
-             * Question Ids
-             * @description Selected question resource IDs
-             */
+            /** Images */
+            images?: components["schemas"]["app__infra__chat__types__DraftImageValue"][] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Videos */
+            videos?: components["schemas"]["app__infra__chat__types__DraftVideoValue"][] | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Questions */
+            questions?: components["schemas"]["app__infra__chat__types__DraftQuestionValue"][] | null;
+            /** Question Ids */
             question_ids?: string[] | null;
-            /**
-             * Scenario Ids
-             * @description Selected scenario resource IDs
-             */
+            /** Options */
+            options?: components["schemas"]["app__infra__chat__types__DraftOptionValue"][] | null;
+            /** Option Ids */
+            option_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Flag Ids */
+            flag_ids?: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Scenario Ids */
             scenario_ids?: string[] | null;
             /**
-             * Video Ids
-             * @description Selected video resource IDs
+             * Pending Ids
+             * @description Resource IDs to keep pending/inactive on the draft
              */
-            video_ids?: string[] | null;
+            pending_ids?: string[] | null;
             /**
-             * Department Ids
-             * @description Selected department resource IDs
+             * Idempotency Key
+             * @description Ack key for generation/correlation flows
              */
-            department_ids?: string[] | null;
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject pending state
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * PatchChatDraftApiResponse
@@ -44796,6 +44937,11 @@ export interface components {
              * @description UUID of the saved draft
              */
             draft_id: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key for client correlation
+             */
+            idempotency_key?: string | null;
             /**
              * Message
              * @description Response message
@@ -44998,16 +45144,14 @@ export interface components {
         };
         /**
          * PatchDepartmentDraftApiRequest
-         * @description Request model for new-style department draft endpoint.
-         *
-         *     Dual-mode for creatable resources only:
-         *       - name/name_id, description/description_id
-         *     ID-only for non-creatable resources:
-         *       - flag_id, setting_ids
-         *
-         *     Client always sends full state (append-only — each write is a new snapshot).
+         * @description Request model for canonical department draft endpoint.
          */
         PatchDepartmentDraftApiRequest: {
+            /**
+             * Draft Id
+             * @description Existing draft UUID to update
+             */
+            draft_id?: string | null;
             /**
              * Input Draft Id
              * @description Existing draft UUID to update
@@ -45034,15 +45178,46 @@ export interface components {
              */
             description_id?: string | null;
             /**
+             * Active Flag
+             * @description Whether the department is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description UUID of the active flag resource
+             */
+            active_flag_id?: string | null;
+            /**
              * Flag Id
              * @description UUID of the flag option
              */
             flag_id?: string | null;
             /**
+             * Settings
+             * @description Setting names to resolve
+             */
+            settings?: string[] | null;
+            /**
              * Setting Ids
              * @description Setting UUIDs to assign
              */
             setting_ids?: string[] | null;
+            /**
+             * Pending Ids
+             * @description Resource IDs to keep pending where supported
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack or retry
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject dormant state
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * PatchDepartmentDraftApiResponse
@@ -45061,12 +45236,17 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * @description Idempotency key for this draft operation
+             */
+            idempotency_key?: string | null;
+            /**
              * Message
              * @description Result message
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["DepartmentDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__department__types__DraftFormState"] | null;
         };
         /**
          * PatchDocumentDraftApiRequest
@@ -45213,6 +45393,11 @@ export interface components {
          */
         PatchEvalDraftApiRequest: {
             /**
+             * Draft Id
+             * @description Existing draft UUID to patch
+             */
+            draft_id?: string | null;
+            /**
              * Input Draft Id
              * @description Existing draft UUID to patch
              */
@@ -45243,6 +45428,11 @@ export interface components {
              */
             flag_ids?: string[] | null;
             /**
+             * Departments
+             * @description Department names to resolve
+             */
+            departments?: string[] | null;
+            /**
              * Department Ids
              * @description Department UUIDs
              */
@@ -45253,10 +45443,36 @@ export interface components {
              */
             model_ids?: string[] | null;
             /**
-             * Rubric Ids
-             * @description Rubric UUIDs
+             * Model Flag Ids
+             * @description Model flag UUIDs
              */
-            rubric_ids?: string[] | null;
+            model_flag_ids?: string[] | null;
+            /**
+             * Model Position Ids
+             * @description Model position UUIDs
+             */
+            model_position_ids?: string[] | null;
+            /**
+             * Model Rubric Ids
+             * @description Model rubric UUIDs
+             */
+            model_rubric_ids?: string[] | null;
+            /**
+             * Pending Ids
+             * @description Resource IDs to keep inactive on the draft
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant draft
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * PatchEvalDraftApiResponse
@@ -45275,12 +45491,17 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * @description Operation key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
+            /**
              * Message
              * @description Human-readable result message
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["EvalDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__eval__types__DraftFormState"] | null;
         };
         /**
          * PatchFieldDraftApiRequest
@@ -45408,14 +45629,17 @@ export interface components {
         };
         /**
          * PatchInvocationDraftApiRequest
-         * @description Request model for new-style invocation draft endpoint.
-         *
-         *     Client always sends full state (append-only — each write is a new snapshot).
+         * @description Request model for canonical invocation draft updates.
          */
         PatchInvocationDraftApiRequest: {
             /**
+             * Draft Id
+             * @description Existing draft identifier to update
+             */
+            draft_id?: string | null;
+            /**
              * Input Draft Id
-             * @description Input draft ID to update
+             * @description Legacy alias for draft_id
              */
             input_draft_id?: string | null;
             /**
@@ -45424,69 +45648,110 @@ export interface components {
              */
             name?: string | null;
             /**
+             * Name Id
+             * @description Selected name identifier
+             */
+            name_id?: string | null;
+            /**
              * Description
              * @description Description value to create
              */
             description?: string | null;
             /**
-             * Name Ids
-             * @description Selected name IDs
+             * Description Id
+             * @description Selected description identifier
              */
-            name_ids?: string[] | null;
-            /**
-             * Description Ids
-             * @description Selected description IDs
-             */
-            description_ids?: string[] | null;
+            description_id?: string | null;
             /**
              * Value Id
-             * @description Selected value ID
+             * @description Selected value identifier
              */
             value_id?: string | null;
             /**
              * Flag Ids
-             * @description Selected flag IDs
+             * @description Selected flag identifiers
              */
             flag_ids?: string[] | null;
             /**
              * Department Ids
-             * @description Selected department IDs
+             * @description Selected department identifiers
              */
             department_ids?: string[] | null;
             /**
-             * Key Ids
-             * @description Selected key IDs
+             * Key Id
+             * @description Selected key identifier
              */
-            key_ids?: string[] | null;
+            key_id?: string | null;
             /**
-             * Endpoint Ids
-             * @description Selected endpoint IDs
+             * Endpoint Id
+             * @description Selected endpoint identifier
              */
-            endpoint_ids?: string[] | null;
+            endpoint_id?: string | null;
             /**
-             * Temperature Level Ids
-             * @description Selected temperature level IDs
+             * Modality Ids
+             * @description Selected modality identifiers
              */
-            temperature_level_ids?: string[] | null;
+            modality_ids?: string[] | null;
             /**
-             * Pricing Ids
-             * @description Selected pricing IDs
+             * Temperature Level Id
+             * @description Selected temperature level identifier
              */
-            pricing_ids?: string[] | null;
+            temperature_level_id?: string | null;
             /**
-             * Reasoning Level Ids
-             * @description Selected reasoning level IDs
+             * Pricing Id
+             * @description Selected pricing identifier
              */
-            reasoning_level_ids?: string[] | null;
+            pricing_id?: string | null;
+            /**
+             * Reasoning Level Id
+             * @description Selected reasoning level identifier
+             */
+            reasoning_level_id?: string | null;
+            /**
+             * Quality Ids
+             * @description Selected quality identifiers
+             */
+            quality_ids?: string[] | null;
             /**
              * Voice Ids
-             * @description Selected voice IDs
+             * @description Selected voice identifiers
              */
             voice_ids?: string[] | null;
+            /**
+             * Model Flag Ids
+             * @description Selected model flag identifiers
+             */
+            model_flag_ids?: string[] | null;
+            /**
+             * Model Position Ids
+             * @description Selected model position identifiers
+             */
+            model_position_ids?: string[] | null;
+            /**
+             * Model Rubric Ids
+             * @description Selected model rubric identifiers
+             */
+            model_rubric_ids?: string[] | null;
+            /**
+             * Pending Ids
+             * @description Resource IDs to keep pending where supported
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack-style replay
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject a dormant change when used with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * PatchInvocationDraftApiResponse
-         * @description Response model for new-style invocation draft endpoint.
+         * @description Response model for canonical invocation draft endpoint.
          */
         PatchInvocationDraftApiResponse: {
             /**
@@ -45501,31 +45766,44 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * @description Operation key echoed back when present
+             */
+            idempotency_key?: string | null;
+            /**
              * Message
              * @description Status message
              */
             message: string;
             /** @description Authoritative form state after save */
-            form_state?: components["schemas"]["InvocationDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__invocation__types__DraftFormState"] | null;
         };
         /**
          * PatchModelDraftApiRequest
-         * @description Request model for new-style model draft endpoint.
-         *
-         *     Dual-mode for creatable resources only:
-         *       - name/name_id, description/description_id
-         *     ID-only for non-creatable resources:
-         *       - flag_ids, department_ids, modality_ids, pricing_ids, provider_id,
-         *         quality_ids, reasoning_level_ids, temperature_level_ids, value_id, voice_ids
-         *
-         *     Client always sends full state (append-only — each write is a new snapshot).
+         * @description Request model for canonical model draft endpoint.
          */
         PatchModelDraftApiRequest: {
+            /**
+             * Draft Id
+             * @description Existing draft ID to update
+             */
+            draft_id?: string | null;
             /**
              * Input Draft Id
              * @description Existing draft ID to update
              */
             input_draft_id?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for accept/reject style ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject when idempotency_key is supplied
+             * @default true
+             */
+            accept: boolean;
             /**
              * Name
              * @description Display name value
@@ -45547,55 +45825,145 @@ export interface components {
              */
             description_id?: string | null;
             /**
-             * Flag Ids
-             * @description Flag option identifiers
+             * Value
+             * @description Direct model value
              */
-            flag_ids?: string[] | null;
-            /**
-             * Department Ids
-             * @description Department identifiers
-             */
-            department_ids?: string[] | null;
-            /**
-             * Modality Ids
-             * @description Modality identifiers
-             */
-            modality_ids?: string[] | null;
-            /**
-             * Pricing Ids
-             * @description Pricing tier identifiers
-             */
-            pricing_ids?: string[] | null;
-            /**
-             * Provider Id
-             * @description Provider identifier
-             */
-            provider_id?: string | null;
-            /**
-             * Quality Ids
-             * @description Quality level identifiers
-             */
-            quality_ids?: string[] | null;
-            /**
-             * Reasoning Level Ids
-             * @description Reasoning level identifiers
-             */
-            reasoning_level_ids?: string[] | null;
-            /**
-             * Temperature Level Ids
-             * @description Temperature level identifiers
-             */
-            temperature_level_ids?: string[] | null;
+            value?: string | null;
             /**
              * Value Id
              * @description Value resource identifier
              */
             value_id?: string | null;
             /**
+             * Provider
+             * @description Provider name to match
+             */
+            provider?: string | null;
+            /**
+             * Provider Id
+             * @description Provider identifier
+             */
+            provider_id?: string | null;
+            /**
+             * Flag Ids
+             * @description Flag option identifiers
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Active Flag
+             * @description Whether the model is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description Active flag resource identifier
+             */
+            active_flag_id?: string | null;
+            /**
+             * Modalities Enabled Flag Id
+             * @description Modalities enabled flag resource identifier
+             */
+            modalities_enabled_flag_id?: string | null;
+            /**
+             * Temperature Enabled Flag Id
+             * @description Temperature enabled flag resource identifier
+             */
+            temperature_enabled_flag_id?: string | null;
+            /**
+             * Pricing Enabled Flag Id
+             * @description Pricing enabled flag resource identifier
+             */
+            pricing_enabled_flag_id?: string | null;
+            /**
+             * Voices Enabled Flag Id
+             * @description Voices enabled flag resource identifier
+             */
+            voices_enabled_flag_id?: string | null;
+            /**
+             * Reasoning Levels Enabled Flag Id
+             * @description Reasoning levels enabled flag resource identifier
+             */
+            reasoning_levels_enabled_flag_id?: string | null;
+            /**
+             * Qualities Enabled Flag Id
+             * @description Qualities enabled flag resource identifier
+             */
+            qualities_enabled_flag_id?: string | null;
+            /**
+             * Departments
+             * @description Department names to match
+             */
+            departments?: string[] | null;
+            /**
+             * Department Ids
+             * @description Department identifiers
+             */
+            department_ids?: string[] | null;
+            /**
+             * Modalities
+             * @description Modality labels to match
+             */
+            modalities?: string[] | null;
+            /**
+             * Modality Ids
+             * @description Modality identifiers
+             */
+            modality_ids?: string[] | null;
+            /**
+             * Pricing
+             * @description Pricing types to match
+             */
+            pricing?: string[] | null;
+            /**
+             * Pricing Ids
+             * @description Pricing tier identifiers
+             */
+            pricing_ids?: string[] | null;
+            /**
+             * Qualities
+             * @description Quality labels to match
+             */
+            qualities?: string[] | null;
+            /**
+             * Quality Ids
+             * @description Quality level identifiers
+             */
+            quality_ids?: string[] | null;
+            /**
+             * Reasoning Levels
+             * @description Reasoning level labels to match
+             */
+            reasoning_levels?: string[] | null;
+            /**
+             * Reasoning Level Ids
+             * @description Reasoning level identifiers
+             */
+            reasoning_level_ids?: string[] | null;
+            /**
+             * Temperature Levels
+             * @description Temperature level labels to match
+             */
+            temperature_levels?: string[] | null;
+            /**
+             * Temperature Level Ids
+             * @description Temperature level identifiers
+             */
+            temperature_level_ids?: string[] | null;
+            /**
+             * Voices
+             * @description Voice labels to create or match
+             */
+            voices?: string[] | null;
+            /**
              * Voice Ids
              * @description Voice identifiers
              */
             voice_ids?: string[] | null;
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers
+             */
+            pending_ids?: string[] | null;
         };
         /**
          * PatchModelDraftApiResponse
@@ -45614,12 +45982,17 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
+            /**
              * Message
              * @description Result message
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["ModelDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__model__types__DraftFormState"] | null;
         };
         /**
          * PatchParameterDraftApiRequest
@@ -46026,8 +46399,13 @@ export interface components {
          */
         PatchProviderDraftApiRequest: {
             /**
-             * Input Draft Id
+             * Draft Id
              * @description Existing draft ID to update
+             */
+            draft_id?: string | null;
+            /**
+             * Input Draft Id
+             * @description Legacy alias for existing draft ID to update
              */
             input_draft_id?: string | null;
             /**
@@ -46051,30 +46429,96 @@ export interface components {
              */
             description_id?: string | null;
             /**
-             * Flag Id
+             * Active Flag
+             * @description Whether the provider is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
              * @description Flag option identifier
              */
+            active_flag_id?: string | null;
+            /**
+             * Flag Id
+             * @description Legacy alias for flag option identifier
+             */
             flag_id?: string | null;
+            /**
+             * Departments
+             * @description Department names to match
+             */
+            departments?: string[] | null;
             /**
              * Department Ids
              * @description Department identifiers
              */
             department_ids?: string[] | null;
             /**
+             * Endpoint
+             * @description Provider endpoint URL
+             */
+            endpoint?: string | null;
+            /**
+             * Endpoint Id
+             * @description Endpoint resource identifier
+             */
+            endpoint_id?: string | null;
+            /**
              * Endpoint Ids
              * @description Endpoint resource identifiers
              */
             endpoint_ids?: string[] | null;
+            /**
+             * Key
+             * @description Provider key value
+             */
+            key?: string | null;
+            /**
+             * Key Name
+             * @description Provider key display name
+             */
+            key_name?: string | null;
+            /**
+             * Key Description
+             * @description Provider key description
+             */
+            key_description?: string | null;
+            /**
+             * Key Id
+             * @description Key resource identifier
+             */
+            key_id?: string | null;
             /**
              * Key Ids
              * @description API key resource identifiers
              */
             key_ids?: string[] | null;
             /**
+             * Value
+             * @description Provider identifier value
+             */
+            value?: string | null;
+            /**
              * Value Id
              * @description Value resource identifier
              */
             value_id?: string | null;
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers to preserve
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack semantics
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject acknowledgement when idempotency_key is supplied
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * PatchProviderDraftApiResponse
@@ -46093,12 +46537,17 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * @description Operation key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
+            /**
              * Message
              * @description Result message
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["ProviderDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__provider__types__DraftFormState"] | null;
         };
         /**
          * PatchRubricDraftApiRequest
@@ -46112,6 +46561,11 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchRubricDraftApiRequest: {
+            /**
+             * Draft Id
+             * @description Existing draft UUID to update
+             */
+            draft_id?: string | null;
             /**
              * Input Draft Id
              * @description Existing draft UUID to patch
@@ -46138,10 +46592,25 @@ export interface components {
              */
             description_id?: string | null;
             /**
+             * Active Flag
+             * @description Whether the rubric is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description Active flag option UUID
+             */
+            active_flag_id?: string | null;
+            /**
              * Flag Id
              * @description Flag option UUID
              */
             flag_id?: string | null;
+            /**
+             * Departments
+             * @description Department names to resolve
+             */
+            departments?: string[] | null;
             /**
              * Department Ids
              * @description Department UUIDs
@@ -46162,6 +46631,22 @@ export interface components {
              * @description Standard UUIDs
              */
             standard_ids?: string[] | null;
+            /**
+             * Pending Ids
+             * @description Resource IDs to keep pending where supported
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack or retry
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject dormant state
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * PatchRubricDraftApiResponse
@@ -46180,12 +46665,17 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * @description Idempotency key for this draft operation
+             */
+            idempotency_key?: string | null;
+            /**
              * Message
              * @description Human-readable result message
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["RubricDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__rubric__types__DraftFormState"] | null;
         };
         /**
          * PatchScenarioDraftApiRequest
@@ -46363,22 +46853,30 @@ export interface components {
         };
         /**
          * PatchSettingDraftApiRequest
-         * @description Request model for new-style setting draft endpoint.
-         *
-         *     Dual-mode for creatable resources only:
-         *       - name/name_id, description/description_id
-         *     ID-only for non-creatable resources:
-         *       - flag_id, department_ids, color_ids, profile_ids, auth_ids,
-         *         provider_key_ids, auth_item_key_ids, threshold_ids
-         *
-         *     Client always sends full state (append-only — each write is a new snapshot).
+         * @description Canonical setting draft request.
          */
         PatchSettingDraftApiRequest: {
             /**
-             * Input Draft Id
+             * Draft Id
              * @description Existing draft UUID to update
              */
+            draft_id?: string | null;
+            /**
+             * Input Draft Id
+             * @description Legacy draft UUID alias
+             */
             input_draft_id?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for accept/reject acknowledgement
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject pending draft state when used with idempotency_key
+             * @default true
+             */
+            accept: boolean;
             /**
              * Name
              * @description Name value to resolve or create
@@ -46400,10 +46898,25 @@ export interface components {
              */
             description_id?: string | null;
             /**
+             * Active Flag
+             * @description Whether the setting is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description UUID of the active flag option
+             */
+            active_flag_id?: string | null;
+            /**
              * Flag Id
-             * @description UUID of the flag option
+             * @description Legacy alias for the active flag option
              */
             flag_id?: string | null;
+            /**
+             * Departments
+             * @description Department names to resolve
+             */
+            departments?: string[] | null;
             /**
              * Department Ids
              * @description Department UUIDs to assign
@@ -46435,10 +46948,15 @@ export interface components {
              */
             auth_item_key_ids?: string[] | null;
             /**
-             * Threshold Ids
-             * @description Threshold UUIDs to assign
+             * System Ids
+             * @description System UUIDs to assign
              */
-            threshold_ids?: string[] | null;
+            system_ids?: string[] | null;
+            /**
+             * Pending Ids
+             * @description Resource IDs to retain as pending inactive connections
+             */
+            pending_ids?: string[] | null;
         };
         /**
          * PatchSettingDraftApiResponse
@@ -46457,12 +46975,17 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
+            /**
              * Message
              * @description Result message
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["SettingDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__setting__types__DraftFormState"] | null;
         };
         /**
          * PatchSimulationDraftApiRequest
@@ -46613,16 +47136,14 @@ export interface components {
         };
         /**
          * PatchToolDraftApiRequest
-         * @description Request model for new-style tool draft endpoint.
-         *
-         *     Dual-mode for creatable resources only:
-         *       - name/name_id, description/description_id
-         *     ID-only for non-creatable resources:
-         *       - flag_ids, department_ids, arg_ids, arg_position_ids, args_output_ids
-         *
-         *     Client always sends full state (append-only — each write is a new snapshot).
+         * @description Request model for canonical tool draft endpoint.
          */
         PatchToolDraftApiRequest: {
+            /**
+             * Draft Id
+             * @description Existing draft ID to update
+             */
+            draft_id?: string | null;
             /**
              * Input Draft Id
              * @description Existing draft ID to update
@@ -46649,6 +47170,16 @@ export interface components {
              */
             description_id?: string | null;
             /**
+             * Active Flag
+             * @description Whether the tool is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description Tool active flag identifier
+             */
+            active_flag_id?: string | null;
+            /**
              * Flag Ids
              * @description Flag option identifiers
              */
@@ -46664,25 +47195,66 @@ export interface components {
              */
             arg_ids?: string[] | null;
             /**
+             * Args
+             * @description Arguments to create inline
+             */
+            args?: components["schemas"]["CreateArgInput"][] | null;
+            /**
              * Arg Position Ids
              * @description Argument position identifiers
              */
             arg_position_ids?: string[] | null;
+            /**
+             * Arg Positions
+             * @description Argument positions to create inline
+             */
+            arg_positions?: components["schemas"]["CreateArgPositionInput"][] | null;
             /**
              * Args Output Ids
              * @description Argument output identifiers
              */
             args_output_ids?: string[] | null;
             /**
+             * Args Outputs Ids
+             * @description Legacy alias for argument output identifiers
+             */
+            args_outputs_ids?: string[] | null;
+            /**
+             * Args Outputs
+             * @description Argument outputs to create inline
+             */
+            args_outputs?: components["schemas"]["CreateArgsOutputInput"][] | null;
+            /**
+             * Instruction Id
+             * @description Instruction resource identifier
+             */
+            instruction_id?: string | null;
+            /**
+             * Instruction Ids
+             * @description Instruction resource identifiers
+             */
+            instruction_ids?: string[] | null;
+            /**
              * Permission Ids
              * @description Permission identifiers
              */
             permission_ids?: string[] | null;
             /**
-             * Agent Id
-             * @description Delegate agent for tool execution
+             * Pending Ids
+             * @description Pending resource identifiers to preserve
              */
-            agent_id?: string | null;
+            pending_ids?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack semantics
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject acknowledgement when idempotency_key is supplied
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * PatchToolDraftApiResponse
@@ -46701,12 +47273,17 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * @description Operation key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
+            /**
              * Message
              * @description Result message
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["ToolDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__tool__types__DraftFormState"] | null;
         };
         /** PersonaChartRow */
         PersonaChartRow: {
@@ -46854,9 +47431,14 @@ export interface components {
         PersonaEntry: {
             /**
              * Id
-             * @description UUID of the persona
+             * @description UUID of the persona resource
              */
             id?: string | null;
+            /**
+             * Entry Id
+             * @description UUID of the personas_entry (pass as persona_id)
+             */
+            entry_id?: string | null;
             /**
              * Name
              * @description Name of the persona
@@ -47233,26 +47815,6 @@ export interface components {
              * @default false
              */
             pending: boolean;
-        };
-        /** PracticeStartRequest */
-        PracticeStartRequest: {
-            /**
-             * Practice Id
-             * Format: uuid
-             */
-            practice_id: string;
-            /**
-             * Infinite Mode
-             * @default false
-             */
-            infinite_mode: boolean;
-        };
-        /** PreviousAttemptApiResponse */
-        PreviousAttemptApiResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message?: string | null;
         };
         /**
          * PreviousChatOption
@@ -47688,6 +48250,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemAgentApiResponse
@@ -47712,6 +48285,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProblemAttemptApiRequest
@@ -47768,6 +48346,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemAuthApiResponse
@@ -47792,46 +48381,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
-        };
-        /**
-         * ProblemBenchmarkApiRequest
-         * @description Request model for benchmark problem endpoint.
-         */
-        ProblemBenchmarkApiRequest: {
             /**
-             * Type
-             * @description Problem type: feature, bug, question, other
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
              */
-            type: string;
-            /**
-             * Message
-             * @description Problem description (max 1000 chars)
-             */
-            message: string;
-        };
-        /**
-         * ProblemBenchmarkApiResponse
-         * @description Response model for benchmark problem endpoint.
-         */
-        ProblemBenchmarkApiResponse: {
-            /**
-             * Problem Id
-             * Format: uuid
-             * @description UUID of the created problem
-             */
-            problem_id: string;
-            /**
-             * Success
-             * @description Whether the problem was created
-             * @default true
-             */
-            success: boolean;
-            /**
-             * Message
-             * @description Status message
-             * @default Problem created successfully
-             */
-            message: string;
+            idempotency_key?: string | null;
         };
         /**
          * ProblemCohortApiRequest
@@ -47890,46 +48444,6 @@ export interface components {
             idempotency_key?: string | null;
         };
         /**
-         * ProblemDashboardApiRequest
-         * @description Request model for dashboard problem endpoint.
-         */
-        ProblemDashboardApiRequest: {
-            /**
-             * Type
-             * @description Problem type: feature, bug, question, other
-             */
-            type: string;
-            /**
-             * Message
-             * @description Problem description (max 1000 chars)
-             */
-            message: string;
-        };
-        /**
-         * ProblemDashboardApiResponse
-         * @description Response model for dashboard problem endpoint.
-         */
-        ProblemDashboardApiResponse: {
-            /**
-             * Problem Id
-             * Format: uuid
-             * @description UUID of the created problem
-             */
-            problem_id: string;
-            /**
-             * Success
-             * @description Whether the problem was created
-             * @default true
-             */
-            success: boolean;
-            /**
-             * Message
-             * @description Status message
-             * @default Problem created successfully
-             */
-            message: string;
-        };
-        /**
          * ProblemDepartmentApiRequest
          * @description Request model for department problem endpoint.
          */
@@ -47944,6 +48458,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemDepartmentApiResponse
@@ -47968,6 +48493,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProblemDocumentApiRequest
@@ -48040,6 +48570,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemEvalApiResponse
@@ -48064,6 +48605,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProblemFieldApiRequest
@@ -48122,10 +48668,10 @@ export interface components {
             idempotency_key?: string | null;
         };
         /**
-         * ProblemGroupApiRequest
-         * @description Request model for group problem endpoint.
+         * ProblemModelApiRequest
+         * @description Request model for model problem endpoint.
          */
-        ProblemGroupApiRequest: {
+        ProblemModelApiRequest: {
             /**
              * Type
              * @description Problem type: feature, bug, question, other
@@ -48147,211 +48693,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-        };
-        /**
-         * ProblemGroupApiResponse
-         * @description Response model for group problem endpoint.
-         */
-        ProblemGroupApiResponse: {
-            /**
-             * Problem Id
-             * Format: uuid
-             * @description UUID of the created problem
-             */
-            problem_id: string;
-            /**
-             * Success
-             * @description Whether the problem was created
-             * @default true
-             */
-            success: boolean;
-            /**
-             * Message
-             * @description Status message
-             * @default Problem created successfully
-             */
-            message: string;
-            /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
-             */
-            idempotency_key?: string | null;
-        };
-        /**
-         * ProblemHealthApiRequest
-         * @description Request model for health problem endpoint.
-         */
-        ProblemHealthApiRequest: {
-            /**
-             * Type
-             * @description Problem type: feature, bug, question, other
-             */
-            type: string;
-            /**
-             * Message
-             * @description Problem description (max 1000 chars)
-             */
-            message: string;
-        };
-        /**
-         * ProblemHealthApiResponse
-         * @description Response model for health problem endpoint.
-         */
-        ProblemHealthApiResponse: {
-            /**
-             * Problem Id
-             * Format: uuid
-             * @description UUID of the created problem
-             */
-            problem_id: string;
-            /**
-             * Success
-             * @description Whether the problem was created
-             * @default true
-             */
-            success: boolean;
-            /**
-             * Message
-             * @description Status message
-             * @default Problem created successfully
-             */
-            message: string;
-        };
-        /**
-         * ProblemHomeApiRequest
-         * @description Request model for home problem endpoint.
-         */
-        ProblemHomeApiRequest: {
-            /**
-             * Type
-             * @description Problem type: feature, bug, question, other
-             */
-            type: string;
-            /**
-             * Message
-             * @description Problem description (max 1000 chars)
-             */
-            message: string;
-        };
-        /**
-         * ProblemHomeApiResponse
-         * @description Response model for home problem endpoint.
-         */
-        ProblemHomeApiResponse: {
-            /**
-             * Problem Id
-             * Format: uuid
-             * @description UUID of the created problem
-             */
-            problem_id: string;
-            /**
-             * Success
-             * @description Whether the problem was created
-             * @default true
-             */
-            success: boolean;
-            /**
-             * Message
-             * @description Status message
-             * @default Problem created successfully
-             */
-            message: string;
-        };
-        /**
-         * ProblemInvocationApiRequest
-         * @description Request model for invocation problem endpoint.
-         */
-        ProblemInvocationApiRequest: {
-            /**
-             * Type
-             * @description Problem type: feature, bug, question, other
-             */
-            type: string;
-            /**
-             * Message
-             * @description Problem description (max 1000 chars)
-             */
-            message: string;
-        };
-        /**
-         * ProblemInvocationApiResponse
-         * @description Response model for invocation problem endpoint.
-         */
-        ProblemInvocationApiResponse: {
-            /**
-             * Problem Id
-             * Format: uuid
-             * @description UUID of the created problem
-             */
-            problem_id: string;
-            /**
-             * Success
-             * @description Whether the problem was created
-             * @default true
-             */
-            success: boolean;
-            /**
-             * Message
-             * @description Status message
-             * @default Problem created successfully
-             */
-            message: string;
-        };
-        /**
-         * ProblemLeaderboardApiRequest
-         * @description Request model for leaderboard problem endpoint.
-         */
-        ProblemLeaderboardApiRequest: {
-            /**
-             * Type
-             * @description Problem type: feature, bug, question, other
-             */
-            type: string;
-            /**
-             * Message
-             * @description Problem description (max 1000 chars)
-             */
-            message: string;
-        };
-        /**
-         * ProblemLeaderboardApiResponse
-         * @description Response model for leaderboard problem endpoint.
-         */
-        ProblemLeaderboardApiResponse: {
-            /**
-             * Problem Id
-             * Format: uuid
-             * @description UUID of the created problem
-             */
-            problem_id: string;
-            /**
-             * Success
-             * @description Whether the problem was created
-             * @default true
-             */
-            success: boolean;
-            /**
-             * Message
-             * @description Status message
-             * @default Problem created successfully
-             */
-            message: string;
-        };
-        /**
-         * ProblemModelApiRequest
-         * @description Request model for model problem endpoint.
-         */
-        ProblemModelApiRequest: {
-            /**
-             * Type
-             * @description Problem type: feature, bug, question, other
-             */
-            type: string;
-            /**
-             * Message
-             * @description Problem description (max 1000 chars)
-             */
-            message: string;
         };
         /**
          * ProblemModelApiResponse
@@ -48376,6 +48717,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProblemParameterApiRequest
@@ -48490,86 +48836,6 @@ export interface components {
             idempotency_key?: string | null;
         };
         /**
-         * ProblemPracticeApiRequest
-         * @description Request model for practice problem endpoint.
-         */
-        ProblemPracticeApiRequest: {
-            /**
-             * Type
-             * @description Problem type: feature, bug, question, other
-             */
-            type: string;
-            /**
-             * Message
-             * @description Problem description (max 1000 chars)
-             */
-            message: string;
-        };
-        /**
-         * ProblemPracticeApiResponse
-         * @description Response model for practice problem endpoint.
-         */
-        ProblemPracticeApiResponse: {
-            /**
-             * Problem Id
-             * Format: uuid
-             * @description UUID of the created problem
-             */
-            problem_id: string;
-            /**
-             * Success
-             * @description Whether the problem was created
-             * @default true
-             */
-            success: boolean;
-            /**
-             * Message
-             * @description Status message
-             * @default Problem created successfully
-             */
-            message: string;
-        };
-        /**
-         * ProblemPricingApiRequest
-         * @description Request model for pricing problem endpoint.
-         */
-        ProblemPricingApiRequest: {
-            /**
-             * Type
-             * @description Problem type: feature, bug, question, other
-             */
-            type: string;
-            /**
-             * Message
-             * @description Problem description (max 1000 chars)
-             */
-            message: string;
-        };
-        /**
-         * ProblemPricingApiResponse
-         * @description Response model for pricing problem endpoint.
-         */
-        ProblemPricingApiResponse: {
-            /**
-             * Problem Id
-             * Format: uuid
-             * @description UUID of the created problem
-             */
-            problem_id: string;
-            /**
-             * Success
-             * @description Whether the problem was created
-             * @default true
-             */
-            success: boolean;
-            /**
-             * Message
-             * @description Status message
-             * @default Problem created successfully
-             */
-            message: string;
-        };
-        /**
          * ProblemProfileApiRequest
          * @description Request model for profile problem endpoint.
          */
@@ -48584,6 +48850,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemProfileApiResponse
@@ -48608,6 +48885,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProblemProviderApiRequest
@@ -48624,6 +48906,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemProviderApiResponse
@@ -48648,86 +48941,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
-        };
-        /**
-         * ProblemRecordApiRequest
-         * @description Request model for record problem endpoint.
-         */
-        ProblemRecordApiRequest: {
             /**
-             * Type
-             * @description Problem type: feature, bug, question, other
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
              */
-            type: string;
-            /**
-             * Message
-             * @description Problem description (max 1000 chars)
-             */
-            message: string;
-        };
-        /**
-         * ProblemRecordApiResponse
-         * @description Response model for record problem endpoint.
-         */
-        ProblemRecordApiResponse: {
-            /**
-             * Problem Id
-             * Format: uuid
-             * @description UUID of the created problem
-             */
-            problem_id: string;
-            /**
-             * Success
-             * @description Whether the problem was created
-             * @default true
-             */
-            success: boolean;
-            /**
-             * Message
-             * @description Status message
-             * @default Problem created successfully
-             */
-            message: string;
-        };
-        /**
-         * ProblemReportsApiRequest
-         * @description Request model for reports problem endpoint.
-         */
-        ProblemReportsApiRequest: {
-            /**
-             * Type
-             * @description Problem type: feature, bug, question, other
-             */
-            type: string;
-            /**
-             * Message
-             * @description Problem description (max 1000 chars)
-             */
-            message: string;
-        };
-        /**
-         * ProblemReportsApiResponse
-         * @description Response model for reports problem endpoint.
-         */
-        ProblemReportsApiResponse: {
-            /**
-             * Problem Id
-             * Format: uuid
-             * @description UUID of the created problem
-             */
-            problem_id: string;
-            /**
-             * Success
-             * @description Whether the problem was created
-             * @default true
-             */
-            success: boolean;
-            /**
-             * Message
-             * @description Status message
-             * @default Problem created successfully
-             */
-            message: string;
+            idempotency_key?: string | null;
         };
         /**
          * ProblemRubricApiRequest
@@ -48744,6 +48962,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemRubricApiResponse
@@ -48768,6 +48997,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProblemScenarioApiRequest
@@ -48826,46 +49060,6 @@ export interface components {
             idempotency_key?: string | null;
         };
         /**
-         * ProblemSessionApiRequest
-         * @description Request model for session problem endpoint.
-         */
-        ProblemSessionApiRequest: {
-            /**
-             * Type
-             * @description Problem type: feature, bug, question, other
-             */
-            type: string;
-            /**
-             * Message
-             * @description Problem description (max 1000 chars)
-             */
-            message: string;
-        };
-        /**
-         * ProblemSessionApiResponse
-         * @description Response model for session problem endpoint.
-         */
-        ProblemSessionApiResponse: {
-            /**
-             * Problem Id
-             * Format: uuid
-             * @description UUID of the created problem
-             */
-            problem_id: string;
-            /**
-             * Success
-             * @description Whether the problem was created
-             * @default true
-             */
-            success: boolean;
-            /**
-             * Message
-             * @description Status message
-             * @default Problem created successfully
-             */
-            message: string;
-        };
-        /**
          * ProblemSettingApiRequest
          * @description Request model for setting problem endpoint.
          */
@@ -48880,6 +49074,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemSettingApiResponse
@@ -48904,6 +49109,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProblemSimulationApiRequest
@@ -48978,6 +49188,46 @@ export interface components {
             problem_statement?: string | null;
         };
         /**
+         * ProblemSystemApiRequest
+         * @description Request model for system problem endpoint.
+         */
+        ProblemSystemApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+        };
+        /**
+         * ProblemSystemApiResponse
+         * @description Response model for system problem endpoint.
+         */
+        ProblemSystemApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
+        };
+        /**
          * ProblemTestApiRequest
          * @description Request model for test problem endpoint.
          */
@@ -49032,6 +49282,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemToolApiResponse
@@ -49056,6 +49317,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProfileContextApiResponse
@@ -49466,6 +49732,14 @@ export interface components {
              */
             artifact_access: string[];
             /**
+             * Role Permissions
+             * @description Full (artifact, operation) permission tuples for granular page gating
+             */
+            role_permissions: [
+                string,
+                string
+            ][];
+            /**
              * Is Active
              * @description Whether the user's profile is active
              */
@@ -49557,85 +49831,118 @@ export interface components {
              */
             activity_count: number;
         };
-        /** ProviderDepartmentSection */
-        ProviderDepartmentSection: {
+        /** ProviderDepartmentResource */
+        ProviderDepartmentResource: {
             /**
-             * Current
-             * @description Currently assigned departments
+             * Department Id
+             * @description Department identifier
              */
-            current?: unknown[] | null;
+            department_id?: string | null;
             /**
-             * Resources
-             * @description Available departments
+             * Name
+             * @description Department name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Department description
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether the department was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ProviderDescriptionSection */
-        ProviderDescriptionSection: {
+        /** ProviderDescriptionResource */
+        ProviderDescriptionResource: {
             /**
-             * Resource
-             * @description Currently selected description resource
+             * Id
+             * @description Description resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available description resources
+             * Description
+             * @description Provider description
              */
-            resources?: unknown[] | null;
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether the description was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /**
-         * ProviderDraftFormState
-         * @description Server-authoritative form state returned after draft save.
-         */
-        ProviderDraftFormState: {
+        /** ProviderEndpointResource */
+        ProviderEndpointResource: {
             /**
-             * Name Id
-             * @description Resolved name resource identifier
+             * Id
+             * @description Endpoint resource identifier
              */
-            name_id?: string | null;
+            id?: string | null;
             /**
-             * Description Id
-             * @description Resolved description resource identifier
+             * Base Url
+             * @description Endpoint base URL
              */
-            description_id?: string | null;
+            base_url?: string | null;
             /**
-             * Flag Id
-             * @description Flag option identifier
+             * Generated
+             * @description Whether the endpoint was AI-generated
              */
-            flag_id?: string | null;
+            generated?: boolean | null;
             /**
-             * Department Ids
-             * @description Department identifiers
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
              */
-            department_ids: string[];
+            suggested: boolean;
             /**
-             * Endpoint Ids
-             * @description Endpoint resource identifiers
+             * Selected
+             * @description Whether this item is selected
+             * @default false
              */
-            endpoint_ids: string[];
+            selected: boolean;
             /**
-             * Key Ids
-             * @description API key resource identifiers
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
              */
-            key_ids: string[];
-            /**
-             * Value Id
-             * @description Value resource identifier
-             */
-            value_id?: string | null;
-        };
-        /** ProviderEndpointSection */
-        ProviderEndpointSection: {
-            /**
-             * Resource
-             * @description Currently selected endpoint resource
-             */
-            resource?: unknown | null;
-            /**
-             * Resources
-             * @description Available endpoint resources
-             */
-            resources?: unknown[] | null;
+            pending: boolean;
         };
         /**
          * ProviderFieldError
@@ -49700,45 +50007,106 @@ export interface components {
              * @description Whether this flag was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ProviderFlagSection */
-        ProviderFlagSection: {
+        /** ProviderKeyResource */
+        ProviderKeyResource: {
             /**
-             * Current
-             * @description Currently active flag configs
+             * Id
+             * @description Key resource identifier
              */
-            current?: components["schemas"]["ProviderFlagConfig"][] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available flag configs
+             * Key
+             * @description Provider key value
              */
-            resources?: components["schemas"]["ProviderFlagConfig"][] | null;
+            key?: string | null;
+            /**
+             * Name
+             * @description Key display name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Key description
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether the key was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ProviderKeySection */
-        ProviderKeySection: {
+        /** ProviderNameResource */
+        ProviderNameResource: {
             /**
-             * Resource
-             * @description Currently selected key resource
+             * Id
+             * @description Name resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available key resources
+             * Name
+             * @description Provider display name
              */
-            resources?: unknown[] | null;
-        };
-        /** ProviderNameSection */
-        ProviderNameSection: {
+            name?: string | null;
             /**
-             * Resource
-             * @description Currently selected name resource
+             * Generated
+             * @description Whether the name was AI-generated
              */
-            resource?: unknown | null;
+            generated?: boolean | null;
             /**
-             * Resources
-             * @description Available name resources
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
              */
-            resources?: unknown[] | null;
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ProviderResultItem
@@ -49766,18 +50134,46 @@ export interface components {
              */
             errors?: components["schemas"]["ProviderFieldError"][] | null;
         };
-        /** ProviderValueSection */
-        ProviderValueSection: {
+        /** ProviderValueResource */
+        ProviderValueResource: {
             /**
-             * Resource
-             * @description Currently selected value resource
+             * Id
+             * @description Value resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available value resources
+             * Value
+             * @description Provider value
              */
-            resources?: unknown[] | null;
+            value?: string | null;
+            /**
+             * Value Type
+             * @description Stored value type
+             */
+            value_type?: string | null;
+            /**
+             * Generated
+             * @description Whether the value was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /** QGetProfileContextV4RoleResource */
         QGetProfileContextV4RoleResource: {
@@ -50001,6 +50397,72 @@ export interface components {
             history_profile_search?: string | null;
         };
         /**
+         * RefreshAgentApiRequest
+         * @description Request model for agent refresh endpoint.
+         */
+        RefreshAgentApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: agent_drafts_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * RefreshAuthApiRequest
+         * @description Request model for auth refresh endpoint.
+         */
+        RefreshAuthApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: auth_drafts_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * RefreshChatApiRequest
+         * @description Request model for chat refresh endpoint.
+         */
+        RefreshChatApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: chat_mv, chat_drafts_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
          * RefreshCohortApiRequest
          * @description Request model for cohort refresh endpoint.
          */
@@ -50008,6 +50470,28 @@ export interface components {
             /**
              * Targets
              * @description MV targets to refresh (omit for all). Options: cohort_drafts_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * RefreshDepartmentApiRequest
+         * @description Request model for department refresh endpoint.
+         */
+        RefreshDepartmentApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: department_drafts_mv
              */
             targets?: string[] | null;
             /**
@@ -50045,6 +50529,28 @@ export interface components {
             accept: boolean;
         };
         /**
+         * RefreshEvalApiRequest
+         * @description Request model for eval refresh endpoint.
+         */
+        RefreshEvalApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: eval_drafts_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
          * RefreshFieldApiRequest
          * @description Request model for field refresh endpoint.
          */
@@ -50052,6 +50558,50 @@ export interface components {
             /**
              * Targets
              * @description MV targets to refresh (omit for all). Options: field_drafts_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * RefreshInvocationApiRequest
+         * @description Request model for invocation refresh endpoint.
+         */
+        RefreshInvocationApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: invocation_mv, invocation_drafts_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * RefreshModelApiRequest
+         * @description Request model for model refresh endpoint.
+         */
+        RefreshModelApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: model_drafts_mv
              */
             targets?: string[] | null;
             /**
@@ -50089,6 +50639,50 @@ export interface components {
             accept: boolean;
         };
         /**
+         * RefreshProfileApiRequest
+         * @description Request model for profile refresh endpoint.
+         */
+        RefreshProfileApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: profile_drafts_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * RefreshProviderApiRequest
+         * @description Request model for provider refresh endpoint.
+         */
+        RefreshProviderApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: provider_drafts_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
          * RefreshResponse
          * @description Standard response for composable refresh endpoints.
          *
@@ -50106,6 +50700,28 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+        };
+        /**
+         * RefreshRubricApiRequest
+         * @description Request model for rubric refresh endpoint.
+         */
+        RefreshRubricApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: rubric_drafts_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * RefreshScenarioApiRequest
@@ -50130,6 +50746,28 @@ export interface components {
             accept: boolean;
         };
         /**
+         * RefreshSettingApiRequest
+         * @description Request model for setting refresh endpoint.
+         */
+        RefreshSettingApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: setting_drafts_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
          * RefreshSimulationApiRequest
          * @description Request model for simulation refresh endpoint.
          */
@@ -50137,6 +50775,28 @@ export interface components {
             /**
              * Targets
              * @description MV targets to refresh (omit for all). Options: simulation_drafts_mv, runs_mv, messages_mv, calls_mv, groups_mv, group_names_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * RefreshToolApiRequest
+         * @description Request model for tool refresh endpoint.
+         */
+        RefreshToolApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: tool_drafts_mv
              */
             targets?: string[] | null;
             /**
@@ -51104,72 +51764,108 @@ export interface components {
             /** Response Id */
             response_id?: string | null;
         };
-        /** RubricDepartmentSection */
-        RubricDepartmentSection: {
-            /**
-             * Current
-             * @description Currently selected departments
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available departments
-             */
-            resources?: unknown[] | null;
-        };
-        /** RubricDescriptionSection */
-        RubricDescriptionSection: {
-            /**
-             * Resource
-             * @description Currently selected description resource
-             */
-            resource?: unknown | null;
-            /**
-             * Resources
-             * @description Available description resources
-             */
-            resources?: unknown[] | null;
-        };
         /**
-         * RubricDraftFormState
-         * @description Server-authoritative form state returned after draft save.
+         * RubricDepartmentResource
+         * @description Department resource for rubric.
          */
-        RubricDraftFormState: {
+        RubricDepartmentResource: {
             /**
-             * Name Id
-             * @description Selected name resource UUID
+             * Department Id
+             * @description Department identifier
              */
-            name_id?: string | null;
+            department_id?: string | null;
             /**
-             * Description Id
-             * @description Selected description resource UUID
+             * Id
+             * @description Department identifier
              */
-            description_id?: string | null;
+            id?: string | null;
             /**
-             * Flag Id
-             * @description Selected flag option UUID
+             * Name
+             * @description Department name
              */
-            flag_id?: string | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Department description
+             */
+            description?: string | null;
             /**
              * Department Ids
-             * @description Selected department UUIDs
+             * @description Associated department identifiers
              */
-            department_ids: string[];
+            department_ids?: string[];
             /**
-             * Point Ids
-             * @description Selected point UUIDs
+             * Setting Ids
+             * @description Associated setting identifiers
              */
-            point_ids: string[];
+            setting_ids?: string[];
             /**
-             * Standard Group Ids
-             * @description Selected standard group UUIDs
+             * Is Primary
+             * @description Whether this is the primary department
              */
-            standard_group_ids: string[];
+            is_primary?: boolean | null;
             /**
-             * Standard Ids
-             * @description Selected standard UUIDs
+             * Generated
+             * @description Whether this was AI-generated
              */
-            standard_ids: string[];
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /**
+         * RubricDescriptionResource
+         * @description Description resource for rubric.
+         */
+        RubricDescriptionResource: {
+            /**
+             * Id
+             * @description Unique identifier
+             */
+            id?: string | null;
+            /**
+             * Description
+             * @description Description text
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * RubricEntry
@@ -51265,19 +51961,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** RubricFlagSection */
-        RubricFlagSection: {
             /**
-             * Current
-             * @description Currently selected flag configs
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["RubricFlagConfig"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available flag configs
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["RubricFlagConfig"][] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /** RubricHeatmapCell */
         RubricHeatmapCell: {
@@ -51423,31 +52124,88 @@ export interface components {
              */
             standard_group_ids?: string[] | null;
         };
-        /** RubricNameSection */
-        RubricNameSection: {
+        /**
+         * RubricNameResource
+         * @description Name resource for rubric.
+         */
+        RubricNameResource: {
             /**
-             * Resource
-             * @description Currently selected name resource
+             * Id
+             * @description Unique identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available name resources
+             * Name
+             * @description Display name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** RubricPointsSection */
-        RubricPointsSection: {
+        /**
+         * RubricPointResource
+         * @description Point resource for rubric.
+         */
+        RubricPointResource: {
             /**
-             * Resource
-             * @description Currently selected points resource
+             * Id
+             * @description Unique identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available points resources
+             * Value
+             * @description Point value
              */
-            resources?: unknown[] | null;
+            value?: number | null;
+            /**
+             * Type
+             * @description Point type
+             */
+            type?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * RubricResultItem
@@ -51475,31 +52233,128 @@ export interface components {
              */
             errors?: components["schemas"]["RubricFieldError"][] | null;
         };
-        /** RubricStandardGroupsSection */
-        RubricStandardGroupsSection: {
+        /**
+         * RubricStandardGroupResource
+         * @description Standard group resource for rubric.
+         */
+        RubricStandardGroupResource: {
             /**
-             * Current
-             * @description Currently selected standard groups
+             * Id
+             * @description Unique identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available standard groups
+             * Standard Group Id
+             * @description Standard group identifier
              */
-            resources?: unknown[] | null;
+            standard_group_id?: string | null;
+            /**
+             * Name
+             * @description Standard group name
+             */
+            name?: string | null;
+            /**
+             * Short Name
+             * @description Standard group short name
+             */
+            short_name?: string | null;
+            /**
+             * Description
+             * @description Standard group description
+             */
+            description?: string | null;
+            /**
+             * Points
+             * @description Total points for this group
+             */
+            points?: number | null;
+            /**
+             * Pass Points
+             * @description Pass points for this group
+             */
+            pass_points?: number | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** RubricStandardsSection */
-        RubricStandardsSection: {
+        /**
+         * RubricStandardResource
+         * @description Standard resource for rubric.
+         */
+        RubricStandardResource: {
             /**
-             * Current
-             * @description Currently selected standards
+             * Id
+             * @description Unique identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available standards
+             * Standard Id
+             * @description Standard identifier
              */
-            resources?: unknown[] | null;
+            standard_id?: string | null;
+            /**
+             * Standard Group Id
+             * @description Parent standard group identifier
+             */
+            standard_group_id?: string | null;
+            /**
+             * Name
+             * @description Standard name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Standard description
+             */
+            description?: string | null;
+            /**
+             * Points
+             * @description Points for this standard
+             */
+            points?: number | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * RubricStructureData
@@ -53238,14 +54093,10 @@ export interface components {
             search?: string | null;
             /** Filter Department Ids */
             filter_department_ids?: string[] | null;
-            /** Filter Agent Ids */
-            filter_agent_ids?: string[] | null;
             /** Filter Creatable */
             filter_creatable?: string[] | null;
             /** Department Search */
             department_search?: string | null;
-            /** Agent Search */
-            agent_search?: string | null;
             /**
              * Page Size
              * @default 12
@@ -53738,128 +54589,225 @@ export interface components {
              */
             extra_2?: string | null;
         };
-        /** SettingAuthItemKeySection */
-        SettingAuthItemKeySection: {
+        /** SettingAuthItemKeyResource */
+        SettingAuthItemKeyResource: {
             /**
-             * Current
-             * @description Currently assigned auth item keys
+             * Id
+             * @description Auth item key identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available auth item key resources
+             * Auth Id
+             * @description Auth identifier
              */
-            resources?: unknown[] | null;
+            auth_id?: string | null;
+            /**
+             * Item Id
+             * @description Item identifier
+             */
+            item_id?: string | null;
+            /**
+             * Key Id
+             * @description Key identifier
+             */
+            key_id?: string | null;
+            /**
+             * Generated
+             * @description Whether the auth-item-key pair was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** SettingAuthSection */
-        SettingAuthSection: {
+        /** SettingAuthResource */
+        SettingAuthResource: {
             /**
-             * Current
-             * @description Currently assigned auth providers
+             * Auth Id
+             * @description Auth identifier
              */
-            current?: unknown[] | null;
+            auth_id?: string | null;
             /**
-             * Resources
-             * @description Available auth resources
+             * Name
+             * @description Auth display name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Auth description
+             */
+            description?: string | null;
+            /**
+             * Slug
+             * @description Auth slug
+             */
+            slug?: string | null;
+            /**
+             * Protocol
+             * @description Auth protocol
+             */
+            protocol?: string | null;
+            /**
+             * Generated
+             * @description Whether the auth was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** SettingColorSection */
-        SettingColorSection: {
+        /** SettingColorResource */
+        SettingColorResource: {
             /**
-             * Current
-             * @description Currently assigned colors
+             * Id
+             * @description Color resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available color resources
+             * Name
+             * @description Color display name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Color description
+             */
+            description?: string | null;
+            /**
+             * Hex Code
+             * @description Hex color value
+             */
+            hex_code?: string | null;
+            /**
+             * Generated
+             * @description Whether the color was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** SettingDepartmentSection */
-        SettingDepartmentSection: {
+        /** SettingDepartmentResource */
+        SettingDepartmentResource: {
             /**
-             * Current
-             * @description Currently assigned departments
+             * Department Id
+             * @description Department identifier
              */
-            current?: unknown[] | null;
+            department_id?: string | null;
             /**
-             * Resources
-             * @description Available department resources
+             * Name
+             * @description Department name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Department description
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether the department was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** SettingDescriptionSection */
-        SettingDescriptionSection: {
+        /** SettingDescriptionResource */
+        SettingDescriptionResource: {
             /**
-             * Resource
-             * @description Currently selected description resource
+             * Id
+             * @description Description resource identifier
              */
-            resource?: {
-                [key: string]: unknown;
-            } | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available description resources
+             * Description
+             * @description Setting description
              */
-            resources?: unknown[] | null;
-        };
-        /**
-         * SettingDraftFormState
-         * @description Server-authoritative form state returned after draft save.
-         */
-        SettingDraftFormState: {
+            description?: string | null;
             /**
-             * Name Id
-             * @description Resolved name resource UUID
+             * Generated
+             * @description Whether the description was AI-generated
              */
-            name_id?: string | null;
+            generated?: boolean | null;
             /**
-             * Description Id
-             * @description Resolved description resource UUID
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
              */
-            description_id?: string | null;
+            suggested: boolean;
             /**
-             * Flag Id
-             * @description Resolved flag option UUID
+             * Selected
+             * @description Whether this item is selected
+             * @default false
              */
-            flag_id?: string | null;
+            selected: boolean;
             /**
-             * Department Ids
-             * @description Assigned department UUIDs
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
              */
-            department_ids: string[];
-            /**
-             * Color Ids
-             * @description Assigned color UUIDs
-             */
-            color_ids: string[];
-            /**
-             * Profile Ids
-             * @description Assigned profile UUIDs
-             */
-            profile_ids: string[];
-            /**
-             * Auth Ids
-             * @description Assigned auth provider UUIDs
-             */
-            auth_ids: string[];
-            /**
-             * Provider Key Ids
-             * @description Assigned provider key UUIDs
-             */
-            provider_key_ids: string[];
-            /**
-             * Auth Item Key Ids
-             * @description Assigned auth item key UUIDs
-             */
-            auth_item_key_ids: string[];
-            /**
-             * Threshold Ids
-             * @description Assigned threshold UUIDs
-             */
-            threshold_ids: string[];
+            pending: boolean;
         };
         /**
          * SettingFieldError
@@ -53877,19 +54825,16 @@ export interface components {
              */
             message: string;
         };
-        /**
-         * SettingFlagConfig
-         * @description Enriched flag config for direct client consumption.
-         */
+        /** SettingFlagConfig */
         SettingFlagConfig: {
             /**
              * Key
-             * @description Flag key identifier (e.g. 'active')
+             * @description Flag key identifier
              */
             key: string;
             /**
              * Label
-             * @description Human-readable flag label (e.g. 'Active')
+             * @description Human-readable flag label
              */
             label: string;
             /**
@@ -53924,57 +54869,198 @@ export interface components {
              * @description Whether the flag was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** SettingFlagSection */
-        SettingFlagSection: {
-            /** @description Currently selected flag config */
-            current?: components["schemas"]["SettingFlagConfig"] | null;
+        /** SettingKeyCatalogResource */
+        SettingKeyCatalogResource: {
             /**
-             * Resources
-             * @description Available flag configs
+             * Key Id
+             * @description Key identifier
              */
-            resources?: components["schemas"]["SettingFlagConfig"][] | null;
+            key_id?: string | null;
+            /**
+             * Name
+             * @description Key display name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Key description
+             */
+            description?: string | null;
+            /**
+             * Masked Key
+             * @description Masked key value for display
+             */
+            masked_key?: string | null;
         };
-        /** SettingNameSection */
-        SettingNameSection: {
+        /** SettingNameResource */
+        SettingNameResource: {
             /**
-             * Resource
-             * @description Currently selected name resource
+             * Id
+             * @description Name resource identifier
              */
-            resource?: {
-                [key: string]: unknown;
-            } | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available name resources
+             * Name
+             * @description Setting display name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Generated
+             * @description Whether the name was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** SettingProfileSection */
-        SettingProfileSection: {
+        /** SettingProfileResource */
+        SettingProfileResource: {
             /**
-             * Current
-             * @description Currently assigned profiles
+             * Profile Id
+             * @description Profile identifier
              */
-            current?: unknown[] | null;
+            profile_id?: string | null;
             /**
-             * Resources
-             * @description Available profile resources
+             * Name
+             * @description Profile display name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Profile description
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether the profile was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** SettingProviderKeySection */
-        SettingProviderKeySection: {
+        /** SettingProviderCatalogResource */
+        SettingProviderCatalogResource: {
             /**
-             * Current
-             * @description Currently assigned provider keys
+             * Provider Id
+             * @description Provider identifier
              */
-            current?: unknown[] | null;
+            provider_id?: string | null;
             /**
-             * Resources
-             * @description Available provider key resources
+             * Name
+             * @description Provider display name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Provider description
+             */
+            description?: string | null;
+        };
+        /** SettingProviderKeyResource */
+        SettingProviderKeyResource: {
+            /**
+             * Id
+             * @description Provider key identifier
+             */
+            id?: string | null;
+            /**
+             * Provider Id
+             * @description Provider identifier
+             */
+            provider_id?: string | null;
+            /**
+             * Key Id
+             * @description Key identifier
+             */
+            key_id?: string | null;
+            /**
+             * Key
+             * @description Key value
+             */
+            key?: string | null;
+            /**
+             * Name
+             * @description Key display name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Key description
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether the provider-key pair was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * SettingResultItem
@@ -54002,18 +55088,61 @@ export interface components {
              */
             errors?: components["schemas"]["SettingFieldError"][] | null;
         };
-        /** SettingSystemSection */
-        SettingSystemSection: {
+        /** SettingSystemResource */
+        SettingSystemResource: {
             /**
-             * Current
-             * @description Currently assigned systems
+             * System Id
+             * @description System identifier
              */
-            current?: unknown[] | null;
+            system_id?: string | null;
             /**
-             * Resources
-             * @description Available system resources
+             * Name
+             * @description System display name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description System description
+             */
+            description?: string | null;
+            /**
+             * Agent Ids
+             * @description Linked agent identifiers
+             */
+            agent_ids?: string[];
+            /**
+             * Resolution Strategy
+             * @description Resolution strategy
+             */
+            resolution_strategy?: string | null;
+            /**
+             * Resolution Threshold
+             * @description Resolution threshold
+             */
+            resolution_threshold?: number | null;
+            /**
+             * Generated
+             * @description Whether the system was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * SimulationData
@@ -54812,15 +55941,6 @@ export interface components {
              */
             points?: number | null;
         };
-        /** StartAttemptApiResponse */
-        StartAttemptApiResponse: {
-            /** Attempt Id */
-            attempt_id: string;
-            /** Chat Entry Id */
-            chat_entry_id?: string | null;
-            /** Attempt Chat Id */
-            attempt_chat_id?: string | null;
-        };
         /** StartTestApiResponse */
         StartTestApiResponse: {
             /** Test Id */
@@ -54842,15 +55962,6 @@ export interface components {
              */
             content: string;
         };
-        /** StopChatApiResponse */
-        StopChatApiResponse: {
-            /** Chat Id */
-            chat_id: string;
-            /** Success */
-            success: boolean;
-            /** Message */
-            message?: string | null;
-        };
         /** StopTestApiResponse */
         StopTestApiResponse: {
             /** Invocation Id */
@@ -54859,409 +55970,6 @@ export interface components {
             success: boolean;
             /** Message */
             message?: string | null;
-        };
-        /** SuiteDepartmentSection */
-        SuiteDepartmentSection: {
-            /**
-             * Show
-             * @description Whether section is visible
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether section is required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate button
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected department items
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available department resources
-             */
-            resources?: unknown[] | null;
-        };
-        /** SuiteDescriptionSection */
-        SuiteDescriptionSection: {
-            /**
-             * Show
-             * @description Whether section is visible
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether section is required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate button
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected description items
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available description resources
-             */
-            resources?: unknown[] | null;
-        };
-        /** SuiteEndpointSection */
-        SuiteEndpointSection: {
-            /**
-             * Show
-             * @description Whether section is visible
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether section is required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate button
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected endpoint items
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available endpoint resources
-             */
-            resources?: unknown[] | null;
-        };
-        /** SuiteFlagSection */
-        SuiteFlagSection: {
-            /**
-             * Show
-             * @description Whether section is visible
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether section is required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate button
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected flag items
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available flag resources
-             */
-            resources?: unknown[] | null;
-        };
-        /** SuiteKeySection */
-        SuiteKeySection: {
-            /**
-             * Show
-             * @description Whether section is visible
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether section is required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate button
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected key items
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available key resources
-             */
-            resources?: unknown[] | null;
-        };
-        /** SuiteModalitySection */
-        SuiteModalitySection: {
-            /**
-             * Show
-             * @description Whether section is visible
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether section is required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate button
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected modality items
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available modality resources
-             */
-            resources?: unknown[] | null;
-        };
-        /** SuiteNameSection */
-        SuiteNameSection: {
-            /**
-             * Show
-             * @description Whether section is visible
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether section is required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate button
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected name items
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available name resources
-             */
-            resources?: unknown[] | null;
-        };
-        /** SuitePricingSection */
-        SuitePricingSection: {
-            /**
-             * Show
-             * @description Whether section is visible
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether section is required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate button
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected pricing items
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available pricing resources
-             */
-            resources?: unknown[] | null;
-        };
-        /** SuiteQualitySection */
-        SuiteQualitySection: {
-            /**
-             * Show
-             * @description Whether section is visible
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether section is required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate button
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected quality items
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available quality resources
-             */
-            resources?: unknown[] | null;
-        };
-        /** SuiteReasoningLevelSection */
-        SuiteReasoningLevelSection: {
-            /**
-             * Show
-             * @description Whether section is visible
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether section is required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate button
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected reasoning levels
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available reasoning level resources
-             */
-            resources?: unknown[] | null;
-        };
-        /** SuiteTemperatureLevelSection */
-        SuiteTemperatureLevelSection: {
-            /**
-             * Show
-             * @description Whether section is visible
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether section is required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate button
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected temperature levels
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available temperature level resources
-             */
-            resources?: unknown[] | null;
-        };
-        /** SuiteValueSection */
-        SuiteValueSection: {
-            /**
-             * Show
-             * @description Whether section is visible
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether section is required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate button
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected value items
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available value resources
-             */
-            resources?: unknown[] | null;
-        };
-        /** SuiteVoiceSection */
-        SuiteVoiceSection: {
-            /**
-             * Show
-             * @description Whether section is visible
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether section is required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Show Ai Generate
-             * @description Whether to show AI generate button
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Current
-             * @description Currently selected voice items
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available voice resources
-             */
-            resources?: unknown[] | null;
         };
         /** TableInfo */
         TableInfo: {
@@ -56097,108 +56805,184 @@ export interface components {
              */
             negative?: boolean | null;
         };
-        /** ToolArgOutputSection */
-        ToolArgOutputSection: {
+        /** ToolArgOutputResource */
+        ToolArgOutputResource: {
             /**
-             * Current
-             * @description Currently assigned argument outputs
+             * Id
+             * @description Argument output resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available argument outputs
+             * Args Id
+             * @description Associated argument identifier
              */
-            resources?: unknown[] | null;
+            args_id?: string | null;
+            /**
+             * Name
+             * @description Output template name
+             */
+            name?: string | null;
+            /**
+             * Template
+             * @description Output template body
+             */
+            template?: string | null;
+            /**
+             * Generated
+             * @description Whether the output template was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ToolArgPositionSection */
-        ToolArgPositionSection: {
+        /** ToolArgPositionResource */
+        ToolArgPositionResource: {
             /**
-             * Current
-             * @description Currently assigned argument positions
+             * Id
+             * @description Argument position resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available argument positions
+             * Args Id
+             * @description Associated argument identifier
              */
-            resources?: unknown[] | null;
+            args_id?: string | null;
+            /**
+             * Value
+             * @description Position value
+             */
+            value?: number | null;
+            /**
+             * Generated
+             * @description Whether the argument position was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ToolArgSection */
-        ToolArgSection: {
+        /** ToolArgResource */
+        ToolArgResource: {
             /**
-             * Current
-             * @description Currently assigned arguments
+             * Id
+             * @description Argument resource identifier
              */
-            current?: unknown[] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available arguments
+             * Name
+             * @description Argument name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Argument description
+             */
+            description?: string | null;
+            /**
+             * Field Type
+             * @description Argument field type
+             */
+            field_type?: string | null;
+            /**
+             * Required
+             * @description Whether the argument is required
+             */
+            required?: boolean | null;
+            /**
+             * Default Value
+             * @description Argument default value
+             */
+            default_value?: string | null;
+            /**
+             * Generated
+             * @description Whether the argument was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ToolDescriptionSection */
-        ToolDescriptionSection: {
+        /** ToolDescriptionResource */
+        ToolDescriptionResource: {
             /**
-             * Resource
-             * @description Currently selected description resource
+             * Id
+             * @description Description resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available description resources
+             * Description
+             * @description Tool description
              */
-            resources?: unknown[] | null;
-        };
-        /**
-         * ToolDraftFormState
-         * @description Server-authoritative form state returned after draft save.
-         */
-        ToolDraftFormState: {
+            description?: string | null;
             /**
-             * Name Id
-             * @description Resolved name resource identifier
+             * Generated
+             * @description Whether the description was AI-generated
              */
-            name_id?: string | null;
+            generated?: boolean | null;
             /**
-             * Description Id
-             * @description Resolved description resource identifier
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
              */
-            description_id?: string | null;
+            suggested: boolean;
             /**
-             * Flag Ids
-             * @description Flag option identifiers
+             * Selected
+             * @description Whether this item is selected
+             * @default false
              */
-            flag_ids: string[];
+            selected: boolean;
             /**
-             * Department Ids
-             * @description Department identifiers
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
              */
-            department_ids: string[];
-            /**
-             * Arg Ids
-             * @description Argument identifiers
-             */
-            arg_ids: string[];
-            /**
-             * Arg Position Ids
-             * @description Argument position identifiers
-             */
-            arg_position_ids: string[];
-            /**
-             * Args Output Ids
-             * @description Argument output identifiers
-             */
-            args_output_ids: string[];
-            /**
-             * Permission Ids
-             * @description Permission identifiers
-             */
-            permission_ids: string[];
-            /**
-             * Agent Id
-             * @description Delegate agent identifier
-             */
-            agent_id?: string | null;
+            pending: boolean;
         };
         /**
          * ToolFieldError
@@ -56263,42 +57047,111 @@ export interface components {
              * @description Whether this flag was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ToolFlagSection */
-        ToolFlagSection: {
-            /** @description Currently active flag config */
-            current?: components["schemas"]["ToolFlagConfig"] | null;
+        /** ToolNameResource */
+        ToolNameResource: {
             /**
-             * Resources
-             * @description Available flag configs
+             * Id
+             * @description Name resource identifier
              */
-            resources?: components["schemas"]["ToolFlagConfig"][] | null;
+            id?: string | null;
+            /**
+             * Name
+             * @description Tool display name
+             */
+            name?: string | null;
+            /**
+             * Generated
+             * @description Whether the name was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** ToolNameSection */
-        ToolNameSection: {
+        /** ToolPermissionResource */
+        ToolPermissionResource: {
             /**
-             * Resource
-             * @description Currently selected name resource
+             * Id
+             * @description Permission resource identifier
              */
-            resource?: unknown | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available name resources
+             * Artifact
+             * @description Permission artifact type
              */
-            resources?: unknown[] | null;
-        };
-        /** ToolPermissionSection */
-        ToolPermissionSection: {
+            artifact?: string | null;
             /**
-             * Current
-             * @description Currently assigned permissions
+             * Operation
+             * @description Permission operation
              */
-            current?: unknown[] | null;
+            operation?: string | null;
             /**
-             * Resources
-             * @description Available permissions
+             * Name
+             * @description Permission display name
              */
-            resources?: unknown[] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Permission description
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether the permission was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ToolResultItem
@@ -56363,6 +57216,17 @@ export interface components {
              * @description List of agents to update
              */
             agents: components["schemas"]["UpdateAgentItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateAgentApiResponse
@@ -56374,6 +57238,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["AgentResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateAgentApiResponse
@@ -56385,6 +57254,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["AgentResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateAgentItem
@@ -56483,6 +57357,17 @@ export interface components {
              * @description List of auth providers to update
              */
             auths: components["schemas"]["UpdateAuthItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateAuthApiResponse
@@ -56494,6 +57379,11 @@ export interface components {
              * @description Per-item update results
              */
             results: components["schemas"]["AuthResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateAuthApiResponse
@@ -56505,6 +57395,11 @@ export interface components {
              * @description Per-item update results
              */
             results: components["schemas"]["AuthResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateAuthItem
@@ -56744,6 +57639,17 @@ export interface components {
              * @description List of departments to update
              */
             departments: components["schemas"]["UpdateDepartmentItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateDepartmentApiResponse
@@ -56755,6 +57661,11 @@ export interface components {
              * @description Per-item update results
              */
             results: components["schemas"]["DepartmentResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateDepartmentApiResponse
@@ -56766,6 +57677,11 @@ export interface components {
              * @description Per-item update results
              */
             results: components["schemas"]["DepartmentResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateDepartmentItem
@@ -56972,6 +57888,17 @@ export interface components {
              * @description List of evals to update
              */
             evals: components["schemas"]["UpdateEvalItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateEvalApiResponse
@@ -56983,6 +57910,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["EvalResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateEvalApiResponse
@@ -56994,6 +57926,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["EvalResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateEvalItem
@@ -57207,6 +58144,17 @@ export interface components {
              * @description List of models to update
              */
             models: components["schemas"]["UpdateModelItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateModelApiResponse
@@ -57218,6 +58166,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ModelResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateModelApiResponse
@@ -57229,6 +58182,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ModelResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateModelItem
@@ -57618,6 +58576,17 @@ export interface components {
              * @description List of profiles to update
              */
             profiles: components["schemas"]["UpdateProfileItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateProfileApiResponse
@@ -57629,6 +58598,11 @@ export interface components {
              * @description Per-item update results
              */
             results: components["schemas"]["ProfileResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateProfileApiResponse
@@ -57640,6 +58614,11 @@ export interface components {
              * @description Per-item update results
              */
             results: components["schemas"]["ProfileResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateProfileItem
@@ -57698,6 +58677,17 @@ export interface components {
              * @description List of providers to update
              */
             providers: components["schemas"]["UpdateProviderItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateProviderApiResponse
@@ -57709,6 +58699,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ProviderResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateProviderApiResponse
@@ -57720,6 +58715,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ProviderResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateProviderItem
@@ -57798,6 +58798,17 @@ export interface components {
              * @description List of rubrics to update
              */
             rubrics: components["schemas"]["UpdateRubricItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateRubricApiResponse
@@ -57809,6 +58820,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["RubricResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateRubricApiResponse
@@ -57820,6 +58836,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["RubricResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateRubricItem
@@ -58171,6 +59192,17 @@ export interface components {
              * @description List of settings to update
              */
             settings: components["schemas"]["UpdateSettingItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateSettingApiResponse
@@ -58182,6 +59214,11 @@ export interface components {
              * @description Per-item update results
              */
             results: components["schemas"]["SettingResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateSettingApiResponse
@@ -58193,6 +59230,11 @@ export interface components {
              * @description Per-item update results
              */
             results: components["schemas"]["SettingResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateSettingItem
@@ -58451,6 +59493,17 @@ export interface components {
              * @description List of tools to update
              */
             tools: components["schemas"]["UpdateToolItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateToolApiResponse
@@ -58462,6 +59515,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ToolResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateToolApiResponse
@@ -58473,6 +59531,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ToolResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateToolItem
@@ -58609,11 +59672,6 @@ export interface components {
              */
             video_id?: string | null;
             /**
-             * Upload Id
-             * @description UUID of the uploaded file
-             */
-            upload_id?: string | null;
-            /**
              * Name
              * @description Name of the video
              */
@@ -58641,6 +59699,217 @@ export interface components {
              * @description UUID of the uploads_entry (file on disk)
              */
             upload_id: string;
+        };
+        /**
+         * DraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        app__infra__agent__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description UUID of the selected name resource
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Resolved name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description UUID of the selected description resource
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Resolved description value
+             */
+            description?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag UUIDs
+             */
+            flag_ids: string[];
+            /**
+             * Active Flag Id
+             * @description Selected active flag UUID
+             */
+            active_flag_id?: string | null;
+            /**
+             * Department Ids
+             * @description Selected department UUIDs
+             */
+            department_ids: string[];
+            /**
+             * Model Id
+             * @description Selected model UUID
+             */
+            model_id?: string | null;
+            /**
+             * Tool Ids
+             * @description Selected tool UUIDs
+             */
+            tool_ids: string[];
+            /**
+             * Reasoning Level Id
+             * @description Selected reasoning level UUID
+             */
+            reasoning_level_id?: string | null;
+            /**
+             * Temperature Level Id
+             * @description Selected temperature level UUID
+             */
+            temperature_level_id?: string | null;
+            /**
+             * Voice Ids
+             * @description Selected voice UUIDs
+             */
+            voice_ids: string[];
+            /**
+             * Quality Ids
+             * @description Selected quality UUIDs
+             */
+            quality_ids: string[];
+            /**
+             * Rubric Ids
+             * @description Selected rubric UUIDs
+             */
+            rubric_ids: string[];
+            /**
+             * Prompt Id
+             * @description Selected prompt UUID when provided
+             */
+            prompt_id?: string | null;
+            /**
+             * Instruction Id
+             * @description Selected instruction UUID when provided
+             */
+            instruction_id?: string | null;
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers
+             */
+            pending_ids?: string[];
+        };
+        /** SectionFilter */
+        app__infra__agent__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+        };
+        /**
+         * DraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        app__infra__auth__types__DraftFormState: {
+            /**
+             * Name
+             * @description Echoed name value
+             */
+            name?: string | null;
+            /**
+             * Name Id
+             * @description Resolved name resource UUID
+             */
+            name_id?: string | null;
+            /**
+             * Description
+             * @description Echoed description value
+             */
+            description?: string | null;
+            /**
+             * Description Id
+             * @description Resolved description resource UUID
+             */
+            description_id?: string | null;
+            /**
+             * Flag Id
+             * @description Resolved flag option UUID
+             */
+            flag_id?: string | null;
+            /**
+             * Department Ids
+             * @description Assigned department UUIDs
+             */
+            department_ids?: string[];
+            /**
+             * Protocol Ids
+             * @description Assigned protocol UUIDs
+             */
+            protocol_ids?: string[];
+            /**
+             * Slug Ids
+             * @description Assigned slug UUIDs
+             */
+            slug_ids?: string[];
+            /**
+             * Item Ids
+             * @description Assigned auth item UUIDs
+             */
+            item_ids?: string[];
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers
+             */
+            pending_ids?: string[];
+        };
+        /**
+         * SectionFilter
+         * @description Per-section filter options for GET requests.
+         */
+        app__infra__auth__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Unused for auth; present for shared request compatibility
+             */
+            parameter_ids?: string[] | null;
         };
         /**
          * DraftImageValue
@@ -58722,6 +59991,42 @@ export interface components {
              * @description UUID of the uploaded file
              */
             upload_id?: string | null;
+        };
+        /**
+         * SectionFilter
+         * @description Per-section filter options for chat GET requests.
+         */
+        app__infra__chat__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in the response
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Parameter IDs to filter parameter_fields by
+             */
+            parameter_ids?: string[] | null;
         };
         /**
          * DraftFormState
@@ -58902,6 +60207,88 @@ export interface components {
          * DraftFormState
          * @description Server-authoritative form state returned after draft save.
          */
+        app__infra__department__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description Resolved name resource UUID
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Echoed name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Resolved description resource UUID
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Echoed description value
+             */
+            description?: string | null;
+            /**
+             * Flag Id
+             * @description Resolved flag option UUID
+             */
+            flag_id?: string | null;
+            /**
+             * Active Flag Id
+             * @description Resolved active flag option UUID
+             */
+            active_flag_id?: string | null;
+            /**
+             * Setting Ids
+             * @description Assigned setting UUIDs
+             */
+            setting_ids?: string[];
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers
+             */
+            pending_ids?: string[];
+        };
+        /**
+         * SectionFilter
+         * @description Per-section filter options for GET requests.
+         */
+        app__infra__department__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Reserved for compatibility with shared filter parsing
+             */
+            parameter_ids?: string[] | null;
+        };
+        /**
+         * DraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
         app__infra__document__types__DraftFormState: {
             /**
              * Name
@@ -59025,6 +60412,100 @@ export interface components {
          * DraftFormState
          * @description Server-authoritative form state returned after draft save.
          */
+        app__infra__eval__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description Selected name resource UUID
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Echoed selected name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Selected description resource UUID
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Echoed selected description value
+             */
+            description?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs
+             */
+            flag_ids?: string[];
+            /**
+             * Department Ids
+             * @description Selected department UUIDs
+             */
+            department_ids?: string[];
+            /**
+             * Model Ids
+             * @description Selected model UUIDs
+             */
+            model_ids?: string[];
+            /**
+             * Model Flag Ids
+             * @description Selected model flag UUIDs
+             */
+            model_flag_ids?: string[];
+            /**
+             * Model Position Ids
+             * @description Selected model position UUIDs
+             */
+            model_position_ids?: string[];
+            /**
+             * Model Rubric Ids
+             * @description Selected model rubric UUIDs
+             */
+            model_rubric_ids?: string[];
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers
+             */
+            pending_ids?: string[];
+        };
+        /** SectionFilter */
+        app__infra__eval__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Reserved for compatibility with shared filter parsing
+             */
+            parameter_ids?: string[] | null;
+        };
+        /**
+         * DraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
         app__infra__field__types__DraftFormState: {
             /**
              * Name Id
@@ -59107,6 +60588,294 @@ export interface components {
              * @description Parameter group IDs to filter by where relevant
              */
             parameter_ids?: string[] | null;
+        };
+        /**
+         * DraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        app__infra__invocation__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description Saved name identifier
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Saved name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Saved description identifier
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Saved description value
+             */
+            description?: string | null;
+            /**
+             * Value Id
+             * @description Saved value identifier
+             */
+            value_id?: string | null;
+            /**
+             * Flag Ids
+             * @description Saved flag identifiers
+             */
+            flag_ids?: string[];
+            /**
+             * Department Ids
+             * @description Saved department identifiers
+             */
+            department_ids?: string[];
+            /**
+             * Key Id
+             * @description Saved key identifier
+             */
+            key_id?: string | null;
+            /**
+             * Endpoint Id
+             * @description Saved endpoint identifier
+             */
+            endpoint_id?: string | null;
+            /**
+             * Modality Ids
+             * @description Saved modality identifiers
+             */
+            modality_ids?: string[];
+            /**
+             * Temperature Level Id
+             * @description Saved temperature level identifier
+             */
+            temperature_level_id?: string | null;
+            /**
+             * Pricing Id
+             * @description Saved pricing identifier
+             */
+            pricing_id?: string | null;
+            /**
+             * Reasoning Level Id
+             * @description Saved reasoning level identifier
+             */
+            reasoning_level_id?: string | null;
+            /**
+             * Quality Ids
+             * @description Saved quality identifiers
+             */
+            quality_ids?: string[];
+            /**
+             * Voice Ids
+             * @description Saved voice identifiers
+             */
+            voice_ids?: string[];
+            /**
+             * Model Flag Ids
+             * @description Saved model flag identifiers
+             */
+            model_flag_ids?: string[];
+            /**
+             * Model Position Ids
+             * @description Saved model position identifiers
+             */
+            model_position_ids?: string[];
+            /**
+             * Model Rubric Ids
+             * @description Saved model rubric identifiers
+             */
+            model_rubric_ids?: string[];
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers
+             */
+            pending_ids?: string[];
+        };
+        /**
+         * SectionFilter
+         * @description Per-section filter options for GET requests.
+         */
+        app__infra__invocation__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Reserved for compatibility with shared filter parsing
+             */
+            parameter_ids?: string[] | null;
+        };
+        /** DraftFormState */
+        app__infra__model__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description Resolved name resource identifier
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Resolved name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Resolved description resource identifier
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Resolved description value
+             */
+            description?: string | null;
+            /**
+             * Value Id
+             * @description Resolved value resource identifier
+             */
+            value_id?: string | null;
+            /**
+             * Value
+             * @description Resolved model value
+             */
+            value?: string | null;
+            /**
+             * Provider Id
+             * @description Resolved provider identifier
+             */
+            provider_id?: string | null;
+            /**
+             * Provider
+             * @description Resolved provider name
+             */
+            provider?: string | null;
+            /**
+             * Flag Ids
+             * @description Flag option identifiers
+             */
+            flag_ids: string[];
+            /**
+             * Active Flag Id
+             * @description Resolved active flag identifier
+             */
+            active_flag_id?: string | null;
+            /**
+             * Modalities Enabled Flag Id
+             * @description Resolved modalities enabled flag identifier
+             */
+            modalities_enabled_flag_id?: string | null;
+            /**
+             * Temperature Enabled Flag Id
+             * @description Resolved temperature enabled flag identifier
+             */
+            temperature_enabled_flag_id?: string | null;
+            /**
+             * Pricing Enabled Flag Id
+             * @description Resolved pricing enabled flag identifier
+             */
+            pricing_enabled_flag_id?: string | null;
+            /**
+             * Voices Enabled Flag Id
+             * @description Resolved voices enabled flag identifier
+             */
+            voices_enabled_flag_id?: string | null;
+            /**
+             * Reasoning Levels Enabled Flag Id
+             * @description Resolved reasoning levels enabled flag identifier
+             */
+            reasoning_levels_enabled_flag_id?: string | null;
+            /**
+             * Qualities Enabled Flag Id
+             * @description Resolved qualities enabled flag identifier
+             */
+            qualities_enabled_flag_id?: string | null;
+            /**
+             * Department Ids
+             * @description Department identifiers
+             */
+            department_ids: string[];
+            /**
+             * Modality Ids
+             * @description Modality identifiers
+             */
+            modality_ids: string[];
+            /**
+             * Pricing Ids
+             * @description Pricing tier identifiers
+             */
+            pricing_ids: string[];
+            /**
+             * Quality Ids
+             * @description Quality level identifiers
+             */
+            quality_ids: string[];
+            /**
+             * Reasoning Level Ids
+             * @description Reasoning level identifiers
+             */
+            reasoning_level_ids: string[];
+            /**
+             * Temperature Level Ids
+             * @description Temperature level identifiers
+             */
+            temperature_level_ids: string[];
+            /**
+             * Voice Ids
+             * @description Voice identifiers
+             */
+            voice_ids: string[];
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers
+             */
+            pending_ids?: string[];
+        };
+        /** SectionFilter */
+        app__infra__model__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
         };
         /**
          * DraftFormState
@@ -59403,6 +61172,232 @@ export interface components {
             include?: boolean | null;
         };
         /**
+         * DraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        app__infra__provider__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description Resolved name resource identifier
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Resolved name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Resolved description resource identifier
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Resolved description value
+             */
+            description?: string | null;
+            /**
+             * Flag Id
+             * @description Legacy flag option identifier
+             */
+            flag_id?: string | null;
+            /**
+             * Active Flag Id
+             * @description Flag option identifier
+             */
+            active_flag_id?: string | null;
+            /**
+             * Departments
+             * @description Resolved department names
+             */
+            departments?: string[];
+            /**
+             * Department Ids
+             * @description Department identifiers
+             */
+            department_ids: string[];
+            /**
+             * Endpoint
+             * @description Resolved endpoint value
+             */
+            endpoint?: string | null;
+            /**
+             * Endpoint Id
+             * @description Resolved endpoint resource identifier
+             */
+            endpoint_id?: string | null;
+            /**
+             * Endpoint Ids
+             * @description Endpoint resource identifiers
+             */
+            endpoint_ids: string[];
+            /**
+             * Key
+             * @description Resolved key value
+             */
+            key?: string | null;
+            /**
+             * Key Name
+             * @description Resolved key display name
+             */
+            key_name?: string | null;
+            /**
+             * Key Description
+             * @description Resolved key description
+             */
+            key_description?: string | null;
+            /**
+             * Key Id
+             * @description Resolved key resource identifier
+             */
+            key_id?: string | null;
+            /**
+             * Key Ids
+             * @description API key resource identifiers
+             */
+            key_ids: string[];
+            /**
+             * Value
+             * @description Resolved value
+             */
+            value?: string | null;
+            /**
+             * Value Id
+             * @description Value resource identifier
+             */
+            value_id?: string | null;
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers
+             */
+            pending_ids?: string[];
+        };
+        /** SectionFilter */
+        app__infra__provider__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+        };
+        /**
+         * DraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        app__infra__rubric__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description Selected name resource UUID
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Echoed name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Selected description resource UUID
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Echoed description value
+             */
+            description?: string | null;
+            /**
+             * Flag Id
+             * @description Selected flag option UUID
+             */
+            flag_id?: string | null;
+            /**
+             * Active Flag Id
+             * @description Selected active flag option UUID
+             */
+            active_flag_id?: string | null;
+            /**
+             * Department Ids
+             * @description Selected department UUIDs
+             */
+            department_ids?: string[];
+            /**
+             * Point Ids
+             * @description Selected point UUIDs
+             */
+            point_ids?: string[];
+            /**
+             * Standard Group Ids
+             * @description Selected standard group UUIDs
+             */
+            standard_group_ids?: string[];
+            /**
+             * Standard Ids
+             * @description Selected standard UUIDs
+             */
+            standard_ids?: string[];
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers
+             */
+            pending_ids?: string[];
+        };
+        /**
+         * SectionFilter
+         * @description Per-section filter options for GET requests.
+         */
+        app__infra__rubric__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Reserved for compatibility with shared filter parsing
+             */
+            parameter_ids?: string[] | null;
+        };
+        /**
          * DraftImageValue
          * @description Value for creating an image via the draft endpoint.
          */
@@ -59488,6 +61483,112 @@ export interface components {
              * @default 0
              */
             length_seconds: number;
+        };
+        /** DraftFormState */
+        app__infra__setting__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description Resolved name resource UUID
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Echoed name value when available
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Resolved description resource UUID
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Echoed description value when available
+             */
+            description?: string | null;
+            /**
+             * Active Flag Id
+             * @description Resolved active flag option UUID
+             */
+            active_flag_id?: string | null;
+            /**
+             * Flag Id
+             * @description Legacy alias for the active flag option UUID
+             */
+            flag_id?: string | null;
+            /**
+             * Department Ids
+             * @description Assigned department UUIDs
+             */
+            department_ids?: string[];
+            /**
+             * Color Ids
+             * @description Assigned color UUIDs
+             */
+            color_ids?: string[];
+            /**
+             * Profile Ids
+             * @description Assigned profile UUIDs
+             */
+            profile_ids?: string[];
+            /**
+             * Auth Ids
+             * @description Assigned auth provider UUIDs
+             */
+            auth_ids?: string[];
+            /**
+             * Provider Key Ids
+             * @description Assigned provider key UUIDs
+             */
+            provider_key_ids?: string[];
+            /**
+             * Auth Item Key Ids
+             * @description Assigned auth item key UUIDs
+             */
+            auth_item_key_ids?: string[];
+            /**
+             * System Ids
+             * @description Assigned system UUIDs
+             */
+            system_ids?: string[];
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers
+             */
+            pending_ids?: string[];
+        };
+        /** SectionFilter */
+        app__infra__setting__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Reserved for compatibility with shared filter parsing
+             */
+            parameter_ids?: string[] | null;
         };
         /**
          * DraftFormState
@@ -59600,6 +61701,115 @@ export interface components {
              * @description Reserved for parity with persona pattern
              */
             parameter_ids?: string[] | null;
+        };
+        /**
+         * DraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        app__infra__tool__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description Resolved name resource identifier
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Resolved name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Resolved description resource identifier
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Resolved description value
+             */
+            description?: string | null;
+            /**
+             * Active Flag Id
+             * @description Flag option identifier
+             */
+            active_flag_id?: string | null;
+            /**
+             * Flag Ids
+             * @description Flag option identifiers
+             */
+            flag_ids: string[];
+            /**
+             * Department Ids
+             * @description Department identifiers
+             */
+            department_ids: string[];
+            /**
+             * Arg Ids
+             * @description Argument identifiers
+             */
+            arg_ids: string[];
+            /**
+             * Arg Position Ids
+             * @description Argument position identifiers
+             */
+            arg_position_ids: string[];
+            /**
+             * Args Output Ids
+             * @description Argument output identifiers
+             */
+            args_output_ids: string[];
+            /**
+             * Args Outputs Ids
+             * @description Legacy alias for argument output identifiers
+             */
+            args_outputs_ids: string[];
+            /**
+             * Instruction Id
+             * @description Instruction resource identifier
+             */
+            instruction_id?: string | null;
+            /**
+             * Instruction Ids
+             * @description Instruction resource identifiers
+             */
+            instruction_ids?: string[];
+            /**
+             * Permission Ids
+             * @description Permission identifiers
+             */
+            permission_ids: string[];
+            /**
+             * Pending Ids
+             * @description Pending resource identifiers
+             */
+            pending_ids?: string[];
+        };
+        /** SectionFilter */
+        app__infra__tool__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
         };
         /**
          * ExportCohortApiRequest
@@ -62086,7 +64296,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetDepartmentApiResponse-Output"];
+                    "application/json": components["schemas"]["GetDepartmentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62556,7 +64766,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshDepartmentApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -62565,6 +64779,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -63136,7 +65359,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetEvalApiResponse-Output"];
+                    "application/json": components["schemas"]["GetEvalApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63573,7 +65796,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshEvalApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -63582,6 +65809,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -63605,7 +65841,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetRubricApiResponse-Output"];
+                    "application/json": components["schemas"]["GetRubricApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64075,7 +66311,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshRubricApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -64084,6 +66324,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -64140,7 +66389,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetSettingApiResponse-Output"];
+                    "application/json": components["schemas"]["GetSettingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64577,7 +66826,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshSettingApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -64586,6 +66839,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -64675,7 +66937,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetAgentApiResponse-Output"];
+                    "application/json": components["schemas"]["GetAgentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -65112,7 +67374,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshAgentApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -65121,6 +67387,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -65144,7 +67419,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetModelApiResponse-Output"];
+                    "application/json": components["schemas"]["GetModelApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -65614,7 +67889,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshModelApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -65623,6 +67902,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -65679,7 +67967,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetProviderApiResponse-Output"];
+                    "application/json": components["schemas"]["GetProviderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -65984,7 +68272,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshProviderApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -65993,6 +68285,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -67615,7 +69916,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshProfileApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -67624,6 +69929,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -67779,7 +70093,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetAuthApiResponse-Output"];
+                    "application/json": components["schemas"]["GetAuthApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68183,7 +70497,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshAuthApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -68192,6 +70510,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -68248,7 +70575,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetToolApiResponse-Output"];
+                    "application/json": components["schemas"]["GetToolApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68685,7 +71012,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshToolApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -68694,6 +71025,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -69024,7 +71364,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AttemptStartPayload"];
+                "application/json": components["schemas"]["AttemptStartRequest"];
             };
         };
         responses: {
@@ -69034,7 +71374,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StartAttemptApiResponse"];
+                    "application/json": components["schemas"]["AttemptStartResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69048,7 +71388,7 @@ export interface operations {
             };
         };
     };
-    next_attempt_attempt_next_post: {
+    attempt_complete_attempt_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69057,7 +71397,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AttemptNextPayload"];
+                "application/json": components["schemas"]["AttemptCompleteRequest"];
             };
         };
         responses: {
@@ -69067,7 +71407,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NextAttemptApiResponse"];
+                    "application/json": components["schemas"]["AttemptCompleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69081,7 +71421,7 @@ export interface operations {
             };
         };
     };
-    end_attempt_attempt_end_post: {
+    attempt_stop_attempt_stop_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69090,7 +71430,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AttemptEndAllPayload"];
+                "application/json": components["schemas"]["AttemptStopRequest"];
             };
         };
         responses: {
@@ -69100,7 +71440,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EndAttemptApiResponse"];
+                    "application/json": components["schemas"]["AttemptStopResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69114,7 +71454,7 @@ export interface operations {
             };
         };
     };
-    expire_attempt_expire_post: {
+    attempt_stream_attempt_stream_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -69130,39 +71470,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-        };
-    };
-    attempt_previous_attempt_previous_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptUsePreviousPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PreviousAttemptApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -69266,7 +71573,7 @@ export interface operations {
             };
         };
     };
-    chat_send_attempt_chat_send_post: {
+    chat_message_attempt_chat_message_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69275,7 +71582,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ChatSendRequest"];
+                "application/json": components["schemas"]["ChatMessageRequest"];
             };
         };
         responses: {
@@ -69285,73 +71592,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ChatSendResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    chat_stop_attempt_chat_stop_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptStopPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StopChatApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    chat_end_attempt_chat_end_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EndChatApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EndChatApiResponse"];
+                    "application/json": components["schemas"]["ChatMessageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69464,7 +71705,7 @@ export interface operations {
             };
         };
     };
-    chat_mute_attempt_chat_mute_post: {
+    chat_speak_attempt_chat_speak_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69473,7 +71714,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ChatMuteRequest"];
+                "application/json": components["schemas"]["ChatSpeakRequest"];
             };
         };
         responses: {
@@ -69483,7 +71724,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ChatMuteResponse"];
+                    "application/json": components["schemas"]["ChatSpeakResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69517,6 +71758,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AudioStopInternalResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_complete_attempt_chat_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatCompleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69728,7 +72002,7 @@ export interface operations {
             };
         };
     };
-    group_chat_attempt_chat_group_post: {
+    chat_refresh_attempt_chat_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69737,7 +72011,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GroupChatApiRequest"];
+                "application/json": components["schemas"]["RefreshChatApiRequest"];
             };
         };
         responses: {
@@ -69747,7 +72021,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GroupChatApiResponse"];
+                    "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69757,26 +72031,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    chat_refresh_attempt_chat_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
         };
@@ -69801,39 +72055,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportChatApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_chat_context_attempt_chat_context_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ComposedContextResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69896,39 +72117,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetChatDraftsApiResponse"];
-                };
-            };
-        };
-    };
-    start_home_attempt_attempt_home_start_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["HomeStartRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttemptStartResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -70039,204 +72227,6 @@ export interface operations {
             };
         };
     };
-    get_home_context_attempt_home_context_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ComposedContextResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_home_attempt_home_generate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ArtifactGenerateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generations_home_attempt_home_generations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerationsHomeApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerationsHomeApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    group_home_attempt_home_group_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GroupHomeApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GroupHomeApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    problem_home_attempt_home_problem_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProblemHomeApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemHomeApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    start_practice_attempt_attempt_practice_start_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PracticeStartRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttemptStartResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     practice_get_attempt_practice_get_post: {
         parameters: {
             query?: never;
@@ -70343,171 +72333,6 @@ export interface operations {
             };
         };
     };
-    get_practice_context_attempt_practice_context_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ComposedContextResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_practice_attempt_practice_generate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ArtifactGenerateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generations_practice_attempt_practice_generations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerationsPracticeApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerationsPracticeApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    group_practice_attempt_practice_group_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GroupPracticeApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GroupPracticeApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    problem_practice_attempt_practice_problem_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProblemPracticeApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemPracticeApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_dashboard_attempt_dashboard_get_post: {
         parameters: {
             query?: never;
@@ -70597,171 +72422,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportDashboardApiResponse"];
-                };
-            };
-        };
-    };
-    get_dashboard_context_attempt_dashboard_context_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ComposedContextResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    group_dashboard_attempt_dashboard_group_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GroupDashboardApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GroupDashboardApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_dashboard_attempt_dashboard_generate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ArtifactGenerateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generations_dashboard_attempt_dashboard_generations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerationsDashboardApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerationsDashboardApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    problem_dashboard_attempt_dashboard_problem_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProblemDashboardApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemDashboardApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -70868,171 +72528,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportLeaderboardApiResponse"];
-                };
-            };
-        };
-    };
-    generate_leaderboard_attempt_leaderboard_generate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ArtifactGenerateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generations_leaderboard_attempt_leaderboard_generations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerationsLeaderboardApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerationsLeaderboardApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_leaderboard_context_attempt_leaderboard_context_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ComposedContextResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    group_leaderboard_attempt_leaderboard_group_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GroupLeaderboardApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GroupLeaderboardApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    problem_leaderboard_attempt_leaderboard_problem_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProblemLeaderboardApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemLeaderboardApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -71156,171 +72651,6 @@ export interface operations {
             };
         };
     };
-    get_record_context_attempt_record_context_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ComposedContextResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_record_attempt_record_generate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ArtifactGenerateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generations_record_attempt_record_generations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerationsRecordApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerationsRecordApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    group_record_attempt_record_group_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GroupRecordApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GroupRecordApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    problem_record_attempt_record_problem_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProblemRecordApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemRecordApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     export_reports_attempt_report_export_post: {
         parameters: {
             query?: never;
@@ -71337,138 +72667,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportReportsApiResponse"];
-                };
-            };
-        };
-    };
-    generate_reports_attempt_report_generate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ArtifactGenerateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generations_reports_attempt_report_generations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerationsReportsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerationsReportsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    group_reports_attempt_report_group_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GroupReportsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GroupReportsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    problem_reports_attempt_report_problem_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProblemReportsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemReportsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -71522,39 +72720,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-        };
-    };
-    get_reports_context_attempt_report_context_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ComposedContextResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -72582,171 +73747,6 @@ export interface operations {
             };
         };
     };
-    get_benchmark_context_test_benchmark_context_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ComposedContextResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    group_benchmark_test_benchmark_group_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GroupBenchmarkApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GroupBenchmarkApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_benchmark_test_benchmark_generate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ArtifactGenerateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generations_benchmark_test_benchmark_generations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerationsBenchmarkApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerationsBenchmarkApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    problem_benchmark_test_benchmark_problem_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProblemBenchmarkApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemBenchmarkApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     invocation_get_test_invocation_get_post: {
         parameters: {
             query?: never;
@@ -72756,7 +73756,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetSuiteRequest"];
+                "application/json": components["schemas"]["GetInvocationApiRequest"];
             };
         };
         responses: {
@@ -72767,138 +73767,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetSuiteResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    group_invocation_test_invocation_group_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GroupInvocationApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GroupInvocationApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_invocation_test_invocation_generate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ArtifactGenerateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generations_invocation_test_invocation_generations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerationsInvocationApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerationsInvocationApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    problem_invocation_test_invocation_problem_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProblemInvocationApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemInvocationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72972,7 +73840,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshInvocationApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -72981,6 +73853,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -73005,39 +73886,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportInvocationApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_invocation_context_test_invocation_context_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ComposedContextResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73084,60 +73932,7 @@ export interface operations {
             };
         };
     };
-    get_session_system_session_get_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetSessionDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetSessionDetailResponse-Output"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    session_refresh_system_session_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-        };
-    };
-    get_session_context_system_session_context_post: {
+    get_system_context_system_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73170,40 +73965,7 @@ export interface operations {
             };
         };
     };
-    export_session_system_session_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExportSessionApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExportSessionApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_session_system_session_generate_post: {
+    generate_system_system_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73236,7 +73998,7 @@ export interface operations {
             };
         };
     };
-    generations_session_system_session_generations_post: {
+    generations_system_system_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73245,7 +74007,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GenerationsSessionApiRequest"];
+                "application/json": components["schemas"]["GenerationsSystemApiRequest"];
             };
         };
         responses: {
@@ -73255,7 +74017,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GenerationsSessionApiResponse"];
+                    "application/json": components["schemas"]["GenerationsSystemApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73269,7 +74031,7 @@ export interface operations {
             };
         };
     };
-    group_session_system_session_group_post: {
+    problem_system_system_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73278,7 +74040,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GroupSessionApiRequest"];
+                "application/json": components["schemas"]["ProblemSystemApiRequest"];
             };
         };
         responses: {
@@ -73288,40 +74050,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GroupSessionApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    problem_session_system_session_problem_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProblemSessionApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemSessionApiResponse"];
+                    "application/json": components["schemas"]["ProblemSystemApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73421,39 +74150,6 @@ export interface operations {
             };
         };
     };
-    get_group_context_system_group_context_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ComposedContextResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     export_group_system_group_export_post: {
         parameters: {
             query?: never;
@@ -73474,105 +74170,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportGroupApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_system_group_generate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GeneratePayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerateApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generations_group_system_group_generations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerationsGroupApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerationsGroupApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    group_group_system_group_group_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GroupGroupApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GroupGroupApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73619,7 +74216,7 @@ export interface operations {
             };
         };
     };
-    problem_group_system_group_problem_post: {
+    get_session_system_session_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73628,7 +74225,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProblemGroupApiRequest"];
+                "application/json": components["schemas"]["GetSessionDetailRequest"];
             };
         };
         responses: {
@@ -73638,7 +74235,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProblemGroupApiResponse"];
+                    "application/json": components["schemas"]["GetSessionDetailResponse-Output"];
                 };
             };
             /** @description Validation Error */
@@ -73652,18 +74249,14 @@ export interface operations {
             };
         };
     };
-    download_image_system_group_image_download_post: {
+    session_refresh_system_session_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ImageDownloadGroupApiRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -73671,21 +74264,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
         };
     };
-    download_video_system_group_video_download_post: {
+    export_session_system_session_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73694,7 +74278,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["VideoDownloadGroupApiRequest"];
+                "application/json": components["schemas"]["ExportSessionApiRequest"];
             };
         };
         responses: {
@@ -73704,172 +74288,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_text_system_group_text_download_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TextDownloadGroupApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_file_system_group_file_download_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FileDownloadGroupApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    preview_file_system_group_file_preview_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FilePreviewGroupApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_audio_system_group_audio_download_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AudioDownloadGroupApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_call_system_group_call_download_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CallDownloadGroupApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ExportSessionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73903,39 +74322,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse-Output"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    group_health_system_health_group_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GroupHealthApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GroupHealthApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73985,138 +74371,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportHealthApiResponse"];
-                };
-            };
-        };
-    };
-    get_health_context_system_health_context_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ComposedContextResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_health_system_health_generate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ArtifactGenerateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generations_health_system_health_generations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerationsHealthApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerationsHealthApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    problem_health_system_health_problem_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProblemHealthApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemHealthApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -74260,171 +74514,6 @@ export interface operations {
             };
         };
     };
-    generate_activity_system_activity_generate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ArtifactGenerateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generations_activity_system_activity_generations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerationsActivityApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerationsActivityApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_activity_context_system_activity_context_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ComposedContextResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    group_activity_system_activity_group_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GroupActivityApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GroupActivityApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_problem_system_activity_problem_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateProblemApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateProblemApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_pricing_system_pricing_get_post: {
         parameters: {
             query?: never;
@@ -74531,7 +74620,7 @@ export interface operations {
             };
         };
     };
-    get_pricing_context_system_pricing_context_post: {
+    download_audio_system_audio_download_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -74540,7 +74629,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DocsApiRequest"];
+                "application/json": components["schemas"]["AudioDownloadGroupApiRequest"];
             };
         };
         responses: {
@@ -74550,7 +74639,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ComposedContextResponse"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74564,7 +74653,7 @@ export interface operations {
             };
         };
     };
-    group_pricing_system_pricing_group_post: {
+    download_call_system_call_download_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -74573,7 +74662,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GroupPricingApiRequest"];
+                "application/json": components["schemas"]["CallDownloadGroupApiRequest"];
             };
         };
         responses: {
@@ -74583,7 +74672,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GroupPricingApiResponse"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74597,7 +74686,7 @@ export interface operations {
             };
         };
     };
-    generate_pricing_system_pricing_generate_post: {
+    download_file_system_file_download_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -74606,7 +74695,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+                "application/json": components["schemas"]["FileDownloadGroupApiRequest"];
             };
         };
         responses: {
@@ -74616,7 +74705,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74630,7 +74719,7 @@ export interface operations {
             };
         };
     };
-    generations_pricing_system_pricing_generations_post: {
+    preview_file_system_file_preview_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -74639,7 +74728,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GenerationsPricingApiRequest"];
+                "application/json": components["schemas"]["FilePreviewGroupApiRequest"];
             };
         };
         responses: {
@@ -74649,7 +74738,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GenerationsPricingApiResponse"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74663,7 +74752,7 @@ export interface operations {
             };
         };
     };
-    problem_pricing_system_pricing_problem_post: {
+    download_image_system_image_download_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -74672,7 +74761,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProblemPricingApiRequest"];
+                "application/json": components["schemas"]["ImageDownloadGroupApiRequest"];
             };
         };
         responses: {
@@ -74682,7 +74771,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProblemPricingApiResponse"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74696,27 +74785,7 @@ export interface operations {
             };
         };
     };
-    connect_connect_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConnectResponse"];
-                };
-            };
-        };
-    };
-    disconnect_disconnect_post: {
+    download_text_system_text_download_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -74725,7 +74794,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DisconnectRequest"];
+                "application/json": components["schemas"]["TextDownloadGroupApiRequest"];
             };
         };
         responses: {
@@ -74735,7 +74804,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DisconnectResponse"];
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_video_system_video_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VideoDownloadGroupApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81270,7 +81372,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetAgentApiResponse-Input"];
+                "application/json": components["schemas"]["GetAgentApiResponse"];
             };
         };
         responses: {
@@ -81445,7 +81547,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetAuthApiResponse-Input"];
+                "application/json": components["schemas"]["GetAuthApiResponse"];
             };
         };
         responses: {
@@ -81725,7 +81827,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetDepartmentApiResponse-Input"];
+                "application/json": components["schemas"]["GetDepartmentApiResponse"];
             };
         };
         responses: {
@@ -81935,7 +82037,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetEvalApiResponse-Input"];
+                "application/json": components["schemas"]["GetEvalApiResponse"];
             };
         };
         responses: {
@@ -82241,6 +82343,41 @@ export interface operations {
             };
         };
     };
+    GetInvocationApiRequest_schema_stream_GetInvocationApiRequest_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetInvocationApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     GetModelApiRequest_schema_stream_GetModelApiRequest_post: {
         parameters: {
             query?: never;
@@ -82285,7 +82422,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetModelApiResponse-Input"];
+                "application/json": components["schemas"]["GetModelApiResponse"];
             };
         };
         responses: {
@@ -82775,7 +82912,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetProviderApiResponse-Input"];
+                "application/json": components["schemas"]["GetProviderApiResponse"];
             };
         };
         responses: {
@@ -82880,7 +83017,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetRubricApiResponse-Input"];
+                "application/json": components["schemas"]["GetRubricApiResponse"];
             };
         };
         responses: {
@@ -83160,7 +83297,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetSettingApiResponse-Input"];
+                "application/json": components["schemas"]["GetSettingApiResponse"];
             };
         };
         responses: {
@@ -83301,41 +83438,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["GetSimulationDraftsApiResponse"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    GetSuiteRequest_schema_stream_GetSuiteRequest_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetSuiteRequest"];
             };
         };
         responses: {
@@ -83510,7 +83612,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetToolApiResponse-Input"];
+                "application/json": components["schemas"]["GetToolApiResponse"];
             };
         };
         responses: {

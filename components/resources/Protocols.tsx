@@ -16,19 +16,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-
-type CreateDraftProtocolsIn = InputOf<"/api/v5/resources/protocols", "post">;
-type CreateDraftProtocolsOut = OutputOf<"/api/v5/resources/protocols", "post">;
+import { Check, X } from "lucide-react";
+import { useCallback, useMemo } from "react";
 
 export interface ProtocolResourceItem {
   id?: string | null;
   value?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface ProtocolItem {
@@ -40,8 +37,7 @@ export interface ProtocolsProps {
   protocol_ids?: string[]; // Current protocol resource IDs (standardized prop name)
   protocol_resources?: ProtocolResourceItem[]; // Selected protocol resources (each includes generated field)
   show_protocols?: boolean; // Whether to show this resource picker
-  protocol_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  protocols?: ProtocolResourceItem[]; // All available protocols from API (each includes generated field)
+  protocols?: ProtocolResourceItem[]; // All available protocols from API (each includes generated and suggested fields)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update protocol_ids in form state
   label?: string;
@@ -49,25 +45,13 @@ export interface ProtocolsProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createProtocolsAction?:
-    | ((input: CreateDraftProtocolsIn) => Promise<CreateDraftProtocolsOut>)
-    | undefined;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   aiProtocolResources?: Array<{ id?: string | null; value?: string | null }> | null;
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created ID */
-  registerFlush?: (flush: () => Promise<{ protocol_ids: string[] | null } | void>) => void;
 }
 
 export function Protocols({
   protocol_ids,
-  protocol_resources,
+  protocol_resources: _protocol_resources,
   show_protocols = false,
-  protocol_suggestions,
   protocols,
   disabled = false,
   onChange,
@@ -76,80 +60,21 @@ export function Protocols({
   required = false,
   placeholder = "Select protocols...",
   description,
-  group_id,
-  create_tool_id,
-  createProtocolsAction,
-  onGenerate,
-  showAiGenerate = false,
   aiProtocolResources: _aiProtocolResources,
-  isAutosaveEnabled = true,
-  registerFlush,
 }: ProtocolsProps) {
   const ids = useMemo(() => protocol_ids ?? [], [protocol_ids]);
   const show = show_protocols ?? false;
   const allProtocols = useMemo(() => protocols ?? [], [protocols]);
-  const suggestionsList = useMemo(
-    () => protocol_suggestions ?? [],
-    [protocol_suggestions]
+
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allProtocols.filter((p) => p.pending && p.id);
+  }, [allProtocols]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((p) => p.id).filter(Boolean) as string[]),
+    [pendingItems]
   );
-
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "protocols",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // Track which protocol IDs have already had resources created
-  const createdProtocolIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdProtocolIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdProtocolIdsRef.current.add(id));
-  }, [ids]);
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ protocol_ids: string[] | null } | void>) | undefined>(undefined);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ protocol_ids: string[] | null } | void> => {
-    // Skip if no action available
-    if (!createProtocolsAction || !group_id) {
-      return;
-    }
-
-    // Find IDs that haven't been created yet
-    const uncreatedIds = ids.filter((id) => !createdProtocolIdsRef.current.has(id));
-
-    if (uncreatedIds.length === 0) {
-      return { protocol_ids: ids };
-    }
-
-    try {
-      for (const protocolId of uncreatedIds) {
-        await createProtocolsAction({
-          body: {
-            protocol_id: protocolId,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        createdProtocolIdsRef.current.add(protocolId);
-      }
-      return { protocol_ids: ids };
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to create protocol resources:", error);
-      throw error;
-    }
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Convert protocols array to ProtocolItem format for GenericPicker
   const protocolItems = useMemo(() => {
@@ -161,78 +86,34 @@ export function Protocols({
       }));
   }, [allProtocols]);
 
-  // Check if a protocol is suggested
+  // Check if a protocol is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
-    (protocolId: string) => suggestionsList.includes(protocolId),
-    [suggestionsList]
+    (protocolId: string) => {
+      const protocol = allProtocols.find((p) => p.id === protocolId);
+      return protocol?.suggested === true;
+    },
+    [allProtocols]
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdProtocolIdsRef.current.has(id)
-      );
-
-      // Create resources for newly selected protocols - only when autosave is enabled
-      if (
-        isAutosaveEnabled &&
-        newlySelected.length > 0 &&
-        createProtocolsAction &&
-        create_tool_id &&
-        group_id
-      ) {
-        for (const protocolId of newlySelected) {
-          try {
-            await createProtocolsAction({
-              body: {
-                protocol_id: protocolId,
-                mcp: false,
-                tool_id: create_tool_id ?? undefined,
-              },
-            });
-            createdProtocolIdsRef.current.add(protocolId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create protocol resource for ${protocolId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
-
-      // Update parent state
+    (selectedIds: string[]) => {
       onChange(selectedIds);
     },
-    [ids, onChange, createProtocolsAction, create_tool_id, group_id, isAutosaveEnabled]
+    [onChange]
   );
 
-  // Check if any protocol resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return protocol_resources?.some((p) => p.generated) ?? false;
-  }, [protocol_resources]);
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-
-  // Accept AI suggestion - add AI-suggested protocols to selection
+  // Accept pending — keep pending protocols in selection
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((p) => p.id)
-      .filter((id): id is string => !!id);
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending protocols from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    const newIds = ids.filter((id) => !pendingIds.has(id));
+    onChange(newIds);
+  }, [ids, pendingIds, onChange]);
 
   // Don't render if show_protocols is false (AFTER all hooks)
   if (!show) {
@@ -252,31 +133,6 @@ export function Protocols({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -315,25 +171,6 @@ export function Protocols({
           )}
         </div>
       )}
-      {/* AI-suggested protocols preview */}
-      {showDiff && aiSuggestions.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Protocols</p>
-          <div className="space-y-2">
-            {aiSuggestions.map((item, idx) => (
-              <div
-                key={item.id || idx}
-                className={cn(
-                  "p-3 rounded-lg border-2 border-success bg-success/10",
-                  "text-sm"
-                )}
-              >
-                {item.value || ""}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
       <GenericPicker<ProtocolItem>
         items={protocolItems}
         itemIds={allProtocols
@@ -344,31 +181,43 @@ export function Protocols({
         multiSelect={true}
         getId={(item) => item.id}
         getLabel={(item) => item.value}
-        renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                    </TooltipTrigger>
-                    <TooltipContent side="top">Suggested</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.value}</div>
+        renderItem={(item, isSelected) => {
+          const isPending = pendingIds.has(item.id);
+
+          return (
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {/* Suggested dot indicator */}
+                {isSuggested(item.id) && !isSelected && !isPending && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Suggested</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="truncate">{item.value}</div>
+                </div>
               </div>
-            </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
+              {/* Pending badge takes priority over check icon */}
+              {isPending ? (
+                <span className="ml-auto flex-shrink-0 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </span>
+              ) : (
+                <Check
+                  className={cn(
+                    "ml-auto flex-shrink-0 h-4 w-4",
+                    isSelected ? "opacity-100" : "opacity-0"
+                  )}
+                />
               )}
-            />
-          </div>
-        )}
+            </div>
+          );
+        }}
         placeholder={placeholder}
         disabled={disabled}
         showLabel={false}

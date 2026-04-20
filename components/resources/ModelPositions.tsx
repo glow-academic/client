@@ -16,35 +16,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import {
   ArrowDown,
   ArrowUp,
   Check,
   GripVertical,
-  Loader2,
-  Sparkles,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-type CreateDraftModelPositionsIn = {
-  body: {
-    simulation_id: string;
-    model_id: string;
-    value: number;
-    mcp: boolean;
-    tool_id?: string;
-  };
-};
-type CreateDraftModelPositionsOut = {
-  id?: string | null;
-};
 
 export interface ModelPositionResourceItem {
   id?: string | null;
   model_id?: string | null;
   value?: number | null;
+  pending?: boolean | null;
 }
 
 export interface ModelPositionItem {
@@ -58,7 +43,6 @@ export interface ModelPositionsProps {
   model_position_ids?: string[]; // Current model position resource IDs (composite keys represented as UUIDs)
   model_position_resources?: ModelPositionResourceItem[]; // Selected model position resources
   show_model_positions?: boolean; // Whether to show this resource picker
-  model_position_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   model_positions?: ModelPositionResourceItem[]; // All available model positions from API
   models?: Array<{
     id?: string | null;
@@ -83,25 +67,7 @@ export interface ModelPositionsProps {
   id?: string;
   required?: boolean;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createModelPositionsAction?:
-    | ((
-        input: CreateDraftModelPositionsIn,
-      ) => Promise<CreateDraftModelPositionsOut>)
-    | undefined;
   onPositionIdsChange?: (ids: string[]) => void;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (
-    flush: () => Promise<{ model_position_ids: string[] } | void>,
-  ) => void;
-  aiModelPositionResources?:
-    | Pick<ModelPositionResourceItem, "id" | "model_id" | "value">[]
-    | null;
   /** Value callback for unified draft — reports all model+position pairs */
   onModelPositionValues?: (positions: Array<{ model_id: string; value: number }>) => void;
 }
@@ -119,15 +85,7 @@ export function ModelPositions({
   id = "model_positions",
   required = false,
   description,
-  group_id,
-  create_tool_id,
-  createModelPositionsAction,
   onPositionIdsChange,
-  onGenerate,
-  showAiGenerate = false,
-  isAutosaveEnabled = true,
-  registerFlush,
-  aiModelPositionResources,
   onModelPositionValues,
 }: ModelPositionsProps) {
   const show = show_model_positions ?? false;
@@ -161,52 +119,19 @@ export function ModelPositions({
     return map;
   }, [models, model_resources]);
 
-  // Socket-based AI suggestion handling via shared hook
-  type _AiPositionSuggestion = Pick<ModelPositionResourceItem, "id" | "model_id" | "value">;
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestion,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "model_positions",
-    groupId: group_id,
-  });
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return currentPositions.filter((p) => p.pending && p.model_id);
+  }, [currentPositions]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((p) => p.model_id).filter(Boolean) as string[]),
+    [pendingItems]
+  );
 
-  // Effective AI resources: hook suggestion takes priority, then prop fallback
-  const effectiveAiModelPositionResources =
-    aiSuggestion ?? aiModelPositionResources ?? null;
-
-  // Map resource ID → artifact ID for API calls (API expects model_artifact.id)
-  // From get_simulation SQL: s.id = models_resource.id, s.model_id = model_artifact.id (via junction)
-  const artifactIdMap = useMemo(() => {
-    const map = new Map<string, string>();
-    (models ?? []).forEach((s) => {
-      // s.id = models_resource.id (denormalized), s.model_id = model_artifact.id (canonical)
-      if (s.id && s.model_id) {
-        map.set(s.id, s.model_id);
-      } else if (s.model_id) {
-        map.set(s.model_id, s.model_id);
-      }
-    });
-    (model_resources ?? []).forEach((s) => {
-      if (s.id && s.model_id) {
-        map.set(s.id, s.model_id);
-      } else if (s.model_id) {
-        map.set(s.model_id, s.model_id);
-      }
-    });
-    return map;
-  }, [models, model_resources]);
   const [positionIdsByModel, setPositionIdsByModel] = useState<
     Map<string, string>
   >(new Map());
-  const positionIdsByModelRef = useRef<Map<string, string>>(new Map());
-  // Keep ref in sync with state for use in useEffect without causing loops
-  positionIdsByModelRef.current = positionIdsByModel;
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<
-    (() => Promise<{ model_position_ids: string[] } | void>) | null
-  >(null);
 
   // Initialize positionIdsByModel from server resources
   // Use the resource's own id field, NOT index-based correlation with modelPositionIds
@@ -245,23 +170,6 @@ export function ModelPositions({
       onPositionIdsChangeRef.current(ids);
     }
   }, [positionIdsByModel, model_ids]);
-
-  // Update flush function - returns current IDs from local state
-  flushRef.current = async (): Promise<{
-    model_position_ids: string[];
-  } | void> => {
-    const ids = model_ids
-      .map((modelId) => positionIdsByModel.get(modelId))
-      .filter((value): value is string => Boolean(value));
-    return { model_position_ids: ids };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Build position map from current positions
   const positionMap = useMemo(() => {
@@ -315,9 +223,6 @@ export function ModelPositions({
     onModelPositionValuesRef.current(values);
   }, [localPositions]);
 
-  // Auto-creation of positions is now handled only on explicit user action (handlePositionChange)
-  // to prevent infinite loops and unwanted API calls on component mount
-
   const handlePositionChange = useCallback(
     (modelId: string, newValue: number) => {
       const updated = new Map(localPositions);
@@ -335,59 +240,8 @@ export function ModelPositions({
       }));
 
       onChange(positionsArray);
-
-      const shouldCreateResource =
-        isAutosaveEnabled &&
-        createModelPositionsAction &&
-        create_tool_id &&
-        group_id &&
-        simulation_id;
-      if (!shouldCreateResource) {
-        return;
-      }
-
-      // Resolve resource ID to artifact ID for the API
-      const artifactModelId = artifactIdMap.get(modelId) ?? modelId;
-
-      void (async () => {
-        try {
-          const result = await createModelPositionsAction({
-            body: {
-              simulation_id: simulation_id,
-              model_id: artifactModelId,
-              value: newValue,
-              mcp: false,
-              tool_id: create_tool_id ?? undefined,
-            },
-          });
-
-          if (!result?.id) {
-            return;
-          }
-
-          setPositionIdsByModel((prev) => {
-            const next = new Map(prev);
-            next.set(modelId, result.id as string);
-            return next;
-          });
-        } catch {
-          // Resource creation errors are handled by API; keep UI state intact.
-        }
-      })();
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      localPositions,
-      simulation_id,
-      onChange,
-      isAutosaveEnabled,
-      createModelPositionsAction,
-      create_tool_id,
-      group_id,
-      onPositionIdsChange,
-      model_ids,
-      artifactIdMap,
-    ],
+    [localPositions, simulation_id, onChange],
   );
 
   const handleMoveUp = useCallback(
@@ -430,28 +284,18 @@ export function ModelPositions({
       .map(([modelId]) => modelId);
   }, [localPositions]);
 
-  // AI suggestion state
-  const showDiff = !!effectiveAiModelPositionResources?.length;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        effectiveAiModelPositionResources
-          ?.map((r) => r.model_id)
-          .filter(Boolean) as string[],
-      ),
-    [effectiveAiModelPositionResources],
-  );
-
-  // Accept AI suggestion - apply AI-suggested positions
+  // Accept pending — keep pending positions in state (no-op, they're already included)
   const handleAccept = useCallback(() => {
-    if (!effectiveAiModelPositionResources?.length) return;
-    // Apply AI positions to local state
+    // Pending items are already in localPositions (selected), just confirm
+    // The next draft save will persist them as active
+  }, []);
+
+  // Reject pending — remove pending positions from local state
+  const handleReject = useCallback(() => {
     const newPositions = new Map(localPositions);
-    effectiveAiModelPositionResources.forEach((pos) => {
-      if (pos.model_id && pos.value !== null && pos.value !== undefined) {
-        newPositions.set(pos.model_id, pos.value);
-      }
-    });
+    for (const pid of pendingIds) {
+      newPositions.delete(pid);
+    }
     setLocalPositions(newPositions);
     // Emit changes
     const positionsArray: ModelPositionItem[] = Array.from(
@@ -463,19 +307,7 @@ export function ModelPositions({
       generated: false,
     }));
     onChange(positionsArray);
-    clearAi();
-  }, [
-    effectiveAiModelPositionResources,
-    localPositions,
-    simulation_id,
-    onChange,
-    clearAi,
-  ]);
-
-  // Reject AI suggestion - just clear the pending state
-  const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+  }, [localPositions, pendingIds, simulation_id, onChange]);
 
   // Don't render if show_model_positions is false or no models (AFTER all hooks)
   if (!show || model_ids.length === 0) {
@@ -495,29 +327,6 @@ export function ModelPositions({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Generate Positions</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -556,54 +365,27 @@ export function ModelPositions({
           )}
         </div>
       )}
-      {/* AI-suggested positions preview */}
-      {showDiff &&
-        effectiveAiModelPositionResources &&
-        effectiveAiModelPositionResources.length > 0 && (
-          <div className="mb-4 space-y-2">
-            <p className="text-sm font-medium text-success">
-              AI Suggested Positions
-            </p>
-            <div className="space-y-2">
-              {effectiveAiModelPositionResources.map((item, idx) => {
-                const labelText = item.model_id
-                  ? (modelLabelMap.get(item.model_id) ??
-                    "Untitled model")
-                  : "Untitled model";
-                return (
-                  <div
-                    key={item.id || item.model_id || idx}
-                    className="flex items-center gap-2 p-2 rounded-lg border-2 border-success bg-success/10"
-                  >
-                    <GripVertical className="h-4 w-4 text-muted-foreground" />
-                    <Label className="text-sm w-56 truncate">
-                      {labelText}
-                    </Label>
-                    <Label className="text-sm w-20">Position:</Label>
-                    <span className="text-sm font-medium">
-                      {item.value ?? "-"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       <div className="space-y-2">
         {sortedModels.map((modelId) => {
           const position = localPositions.get(modelId) || 1;
           const maxPos = Math.max(...Array.from(localPositions.values()));
           const labelText =
             modelLabelMap.get(modelId) ?? "Untitled model";
-          const isAiSuggested = showDiff && aiSuggestedIds.has(modelId);
+          const isPending = pendingIds.has(modelId);
           return (
             <div
               key={modelId}
               className={cn(
-                "flex items-center gap-2 p-2 border rounded-md",
-                isAiSuggested && "ring-2 ring-success bg-success/5",
+                "relative flex items-center gap-2 p-2 border rounded-md",
+                isPending && "ring-2 ring-success bg-success/10",
               )}
             >
+              {/* Pending badge */}
+              {isPending && (
+                <div className="absolute top-1 right-1 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </div>
+              )}
               <GripVertical className="h-4 w-4 text-muted-foreground" />
               <Label className="text-sm w-56 truncate" title={labelText}>
                 {labelText}

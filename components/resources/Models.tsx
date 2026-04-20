@@ -16,7 +16,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo } from "react";
@@ -26,13 +25,14 @@ export interface ModelResourceItem {
   name?: string | null;
   description?: string | null;
   modality_ids?: string[] | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface ModelsProps {
   model_id?: string | null;
   model_resource?: ModelResourceItem | null;
   show_models?: boolean;
-  model_suggestions?: string[];
   models?: ModelResourceItem[];
   disabled?: boolean;
   onModelIdChange: (modelId: string | null) => void;
@@ -44,17 +44,12 @@ export interface ModelsProps {
   onSearchChange?: (term: string) => void;
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
-  group_id?: string | null;
-  aiModelResources?: Array<Pick<ModelResourceItem, "id" | "name">> | null;
-  showAiGenerate?: boolean;
-  onGenerate?: () => void | Promise<void>;
 }
 
 export function Models({
   model_id,
   model_resource: _model_resource,
   show_models = true,
-  model_suggestions,
   models,
   disabled = false,
   onModelIdChange,
@@ -66,30 +61,19 @@ export function Models({
   onSearchChange,
   showSelectedFilter = false,
   onShowSelectedChange,
-  group_id,
-  aiModelResources: _aiModelResources,
-  showAiGenerate: _showAiGenerate = false,
-  onGenerate: _onGenerate,
 }: ModelsProps) {
   const resourceId = model_id ?? null;
   const show = show_models ?? true;
-  const suggestionsList = useMemo(
-    () => model_suggestions ?? [],
-    [model_suggestions]
-  );
+  const allModels = useMemo(() => models ?? [], [models]);
 
-  // AI suggestion via shared hook
-  const { aiSuggestion, clear: clearAi } = useResourceAi({
-    resourceType: "models",
-    groupId: group_id,
-  });
-
-  // AI suggestion state
-  const showDiff = !!aiSuggestion?.id;
-  const aiSuggestedIds = useMemo(
-    () =>
-      aiSuggestion?.id ? new Set([aiSuggestion.id]) : new Set<string>(),
-    [aiSuggestion]
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allModels.filter((m) => m.pending && m.id);
+  }, [allModels]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((m) => m.id).filter(Boolean) as string[]),
+    [pendingItems]
   );
 
   // Handle search term changes
@@ -108,10 +92,10 @@ export function Models({
 
   // Convert models array to items format for SelectableGrid
   const modelsItems = useMemo(() => {
-    if (!models || models.length === 0) {
+    if (allModels.length === 0) {
       return [];
     }
-    return models
+    return allModels
       .filter((m) => m.id && m.name) // Filter out nulls
       .map((m) => ({
         id: m.id!,
@@ -119,7 +103,7 @@ export function Models({
         description: m.description || null,
         modality_ids: m.modality_ids || null,
       }));
-  }, [models]);
+  }, [allModels]);
 
   // Filter models by search term
   const filteredModels = useMemo(() => {
@@ -143,10 +127,13 @@ export function Models({
     return filteredModels.filter((model) => model.id === resourceId);
   }, [filteredModels, showSelectedFilter, resourceId]);
 
-  // Check if a model is suggested
+  // Check if a model is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
-    (modelId: string) => suggestionsList.includes(modelId),
-    [suggestionsList]
+    (modelId: string) => {
+      const model = allModels.find((m) => m.id === modelId);
+      return model?.suggested === true;
+    },
+    [allModels]
   );
 
   const handleSelect = useCallback(
@@ -161,19 +148,18 @@ export function Models({
     [resourceId, onModelIdChange]
   );
 
-  // Accept AI suggestion - set the AI-suggested model and clear state
+  // Accept pending — keep pending model in selection (no-op, next save persists)
   const handleAccept = useCallback(() => {
-    if (!aiSuggestion?.id) return;
-    if (aiSuggestion.id !== resourceId) {
-      onModelIdChange(aiSuggestion.id);
-    }
-    clearAi();
-  }, [aiSuggestion, resourceId, onModelIdChange, clearAi]);
+    // Pending items are already reflected in the models list
+    // The next draft save will persist them as active
+  }, []);
 
-  // Reject AI suggestion - clear state
+  // Reject pending — if selected model is pending, deselect it
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    if (resourceId && pendingIds.has(resourceId)) {
+      onModelIdChange(null);
+    }
+  }, [resourceId, pendingIds, onModelIdChange]);
 
   // Don't render if show_models is false (AFTER all hooks)
   if (!show) {
@@ -232,7 +218,7 @@ export function Models({
         onSelect={handleSelect}
         getId={(item) => item.id}
         renderItem={(model, isSelected) => {
-          const isAiSuggested = showDiff && aiSuggestedIds.has(model.id);
+          const isPending = pendingIds.has(model.id);
 
           return (
             <div
@@ -240,26 +226,26 @@ export function Models({
                 "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isSelected && !isPending && "ring-2 ring-primary bg-accent",
+                isPending && "ring-2 ring-success bg-success/10",
               )}
             >
               {/* Check icon - top right */}
-              {isSelected && (
+              {isSelected && !isPending && (
                 <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
                   <Check className="h-3.5 w-3.5 text-primary-foreground" />
                 </div>
               )}
 
-              {/* AI Suggested badge - top right */}
-              {isAiSuggested && !isSelected && (
+              {/* Pending badge - top right */}
+              {isPending && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  AI Suggested
+                  Pending
                 </div>
               )}
 
               {/* Suggested dot indicator - top right */}
-              {isSuggested(model.id) && !isSelected && !isAiSuggested && (
+              {isSuggested(model.id) && !isSelected && !isPending && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

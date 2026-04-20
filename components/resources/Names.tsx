@@ -76,6 +76,9 @@ export function Names({
   const lastSavedValueRef = useRef<string>(initialValue);
   const isInitialMountRef = useRef(true);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Dirty flag: once the user interacts, stop syncing from server data so we don't
+  // clobber their input (same pattern as Descriptions.tsx).
+  const isDirtyRef = useRef(false);
 
   // Convert suggested names to name strings for autocomplete
   const suggestionNames = useMemo(() => {
@@ -100,24 +103,21 @@ export function Names({
 
   const ghostSuffix = ghostMatch ? ghostMatch.slice(internalValue.length) : "";
 
-  // Update internal value when name_resource changes
+  // Update internal value when name_resource changes. Skip while the user is
+  // actively editing (isDirtyRef=true) so we don't clobber their input.
   useEffect(() => {
+    if (isDirtyRef.current) return;
     if (resourceName) {
-      // Only update if value actually changed to prevent unnecessary re-renders
       if (internalValue !== resourceName) {
         setInternalValue(resourceName);
       }
       lastSavedValueRef.current = resourceName;
     } else if (defaultName && !resourceName) {
-      // If no resource name but defaultName exists, use defaultName
-      // Only update if value actually changed
       if (internalValue !== defaultName) {
         setInternalValue(defaultName);
       }
       lastSavedValueRef.current = defaultName;
     }
-    // Note: internalValue is intentionally NOT in deps - we only want to sync
-    // when external resourceName/defaultName changes, not when user types
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resourceName, defaultName]);
 
@@ -146,6 +146,7 @@ export function Names({
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
+    isDirtyRef.current = newValue !== lastSavedValueRef.current;
     onNameChange?.(newValue);
   }, [onNameChange]);
 
@@ -174,14 +175,13 @@ export function Names({
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Tab" && ghostSuffix && ghostMatch) {
         e.preventDefault();
-        // Cancel any pending create debounce
         if (debounceTimerRef.current) {
           clearTimeout(debounceTimerRef.current);
         }
         setInternalValue(ghostMatch);
         lastSavedValueRef.current = ghostMatch;
+        isDirtyRef.current = false;
 
-        // Look up the existing resource ID from the suggestion
         const matchedName = namesArray.find(
           (n) => n.name?.toLowerCase() === ghostMatch.toLowerCase()
         );
@@ -200,6 +200,7 @@ export function Names({
     const text = resource.name || "";
     setInternalValue(text);
     lastSavedValueRef.current = text;
+    isDirtyRef.current = false;
     onNameIdChange(resource.id);
   }, [resource, onNameIdChange]);
 

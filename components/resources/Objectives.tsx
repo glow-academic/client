@@ -2,7 +2,7 @@
  * Objectives.tsx
  * Resource component for objective messages
  * Redesigned to match ContentSection autocomplete dropdown pattern
- * Creates objective resources, reports IDs to parent
+ * Pure UI: data in, IDs out via onChange. Parent owns creation.
  */
 
 "use client";
@@ -20,17 +20,6 @@ import { cn } from "@/lib/utils";
 import { Check, GripVertical, PlusCircle, Target, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-
-type CreateDraftObjectivesIn = {
-  body: {
-    objective: string;
-    mcp: boolean;
-    tool_id?: string;
-  };
-};
-type CreateDraftObjectivesOut = {
-  objective_id?: string | null;
-};
 
 export interface ObjectiveResourceItem {
   objective_id?: string | null;
@@ -153,7 +142,6 @@ export interface ObjectivesProps {
   objective_resources?: ObjectiveResourceItem[]; // Selected objective resources (each includes generated field)
   show_objectives?: boolean; // Whether to show this resource picker
   objectives_required?: boolean; // Whether this resource is required
-  objective_suggestions?: string[]; // Array of suggested objective IDs (UUIDs) - consistent with other suggestions
   objectives?: ObjectiveResourceItem[]; // All available objectives from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update objective_ids in form state
@@ -163,18 +151,10 @@ export interface ObjectivesProps {
   maxItems?: number;
   addButtonLabel?: string;
   itemPlaceholder?: string;
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createObjectivesAction?:
-    | ((input: CreateDraftObjectivesIn) => Promise<CreateDraftObjectivesOut>)
-    | undefined;
   // Optional: mapping of objective_id -> objective text (for initial display)
   objectiveMapping?: Record<string, string>;
   /** Report value changes upward (unified draft pattern — parent owns creation) */
   onObjectivesChange?: (objectives: string[]) => void;
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ objective_ids: string[] } | void>) => void;
 }
 
 export function Objectives({
@@ -182,7 +162,6 @@ export function Objectives({
   objective_resources: _objective_resources,
   show_objectives = false,
   objectives_required,
-  objective_suggestions,
   objectives,
   disabled = false,
   onChange,
@@ -192,12 +171,8 @@ export function Objectives({
   maxItems = 3, // Default to 3 like ContentSection
   addButtonLabel = "Add objective",
   itemPlaceholder = "Learning objective",
-  create_tool_id,
-  createObjectivesAction,
   objectiveMapping = {},
   onObjectivesChange,
-  isAutosaveEnabled = true,
-  registerFlush,
 }: ObjectivesProps) {
   // Use standardized props
   const ids = useMemo(() => objective_ids ?? [], [objective_ids]);
@@ -221,22 +196,12 @@ export function Objectives({
     return mapping;
   }, [objectiveMapping, ids, allObjectives]);
 
-  // Convert objective_suggestions (UUIDs) to objective strings by looking them up
+  // Derive suggestion strings from objectives array for ghost tab autocomplete
   const suggestionsList = useMemo(() => {
-    if (objective_suggestions && objective_suggestions.length > 0) {
-      // Look up objective text from suggestion IDs using the mapping
-      return objective_suggestions
-        .map((id) => effectiveObjectiveMapping[id])
-        .filter(
-          (text): text is string =>
-            text !== null && text !== undefined && text.trim() !== ""
-        );
-    }
-    // Also use objectives array directly if available
     return allObjectives
       .map((obj) => obj.objective)
       .filter((text): text is string => text !== null && text !== undefined && text.trim() !== "");
-  }, [objective_suggestions, effectiveObjectiveMapping, allObjectives]);
+  }, [allObjectives]);
 
   // Internal state for display texts (synced with objective_ids via objectiveMapping)
   const [internalTexts, setInternalTexts] = useState<string[]>(() => {
@@ -249,26 +214,23 @@ export function Objectives({
     return [""];
   });
 
-  const debounceTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
-  const lastSavedTextsRef = useRef<string[]>(internalTexts);
-  const lastReportedIdsRef = useRef<string[]>(ids); // Track last IDs reported to parent
-  const isInitialMountRef = useRef(true);
   const objectiveIdMapRef = useRef<Map<string, string>>(new Map()); // Maps objective text -> objective_id
-  const onChangeRef = useRef(onChange); // Stable ref to avoid useEffect dependency
-  onChangeRef.current = onChange;
-  const flushRef = useRef<(() => Promise<{ objective_ids: string[] } | void>) | undefined>(undefined);
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
     number | null
   >(null);
+  // Dirty flag: once the user interacts, stop syncing from server data so we
+  // don't clobber their input (same pattern as Descriptions.tsx / Examples.tsx).
+  const isDirtyRef = useRef(false);
 
-  // Sync external objective_ids changes (when loading from server)
+  // Sync external objective_ids changes (when loading from server). Skip while
+  // the user is editing so their in-progress text isn't clobbered.
   useEffect(() => {
+    if (isDirtyRef.current) return;
     if (ids.length > 0 && Object.keys(effectiveObjectiveMapping).length > 0) {
       const texts = ids
         .map((id) => effectiveObjectiveMapping[id] || "")
         .filter((text) => text.trim() !== "");
       if (texts.length > 0) {
-        // Only update if texts actually changed to prevent infinite loops
         const newTexts = texts.length > 0 ? texts : [""];
         setInternalTexts((prev) => {
           const prevStr = JSON.stringify(prev);
@@ -276,126 +238,17 @@ export function Objectives({
           if (prevStr === newStr) return prev;
           return newTexts;
         });
-        // Update mapping
         ids.forEach((id, idx) => {
           if (texts[idx]) {
             objectiveIdMapRef.current.set(texts[idx], id);
           }
         });
-        // Keep lastReportedIdsRef in sync with external ids
-        lastReportedIdsRef.current = ids;
       }
     }
   }, [ids, effectiveObjectiveMapping]);
 
-  // Debounced resource creation for each objective text - only when autosave is enabled
-  useEffect(() => {
-    // Skip if autosave is disabled (manual save mode)
-    if (!isAutosaveEnabled) {
-      return;
-    }
-
-    // Skip on initial mount
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      lastSavedTextsRef.current = internalTexts;
-      return;
-    }
-
-    // Clear all existing timers
-    debounceTimersRef.current.forEach((timer) => clearTimeout(timer));
-    debounceTimersRef.current.clear();
-
-    // Check if there are any texts that need creation
-    const hasTextsToCreate = internalTexts.some(
-      (text) => text.trim() && !objectiveIdMapRef.current.has(text)
-    );
-
-    if (!hasTextsToCreate) {
-      // All texts already have IDs, update parent only if IDs changed (reorder/delete)
-      const allIds = internalTexts
-        .filter((t) => t.trim())
-        .map((t) => objectiveIdMapRef.current.get(t))
-        .filter((id): id is string => id !== undefined);
-      // Only call onChange if IDs actually changed to prevent infinite loops
-      const lastReportedStr = JSON.stringify(lastReportedIdsRef.current);
-      const newIdsStr = JSON.stringify(allIds);
-      if (lastReportedStr !== newIdsStr) {
-        lastReportedIdsRef.current = allIds;
-        onChangeRef.current(allIds);
-      }
-      return;
-    }
-
-    // Debounce the flush
-    const timer = setTimeout(() => {
-      flushRef.current?.();
-    }, 1000);
-
-    debounceTimersRef.current.set(0, timer);
-
-    lastSavedTextsRef.current = internalTexts;
-
-    // Capture ref value at effect start for cleanup
-    const timersAtStart = debounceTimersRef.current;
-
-    return () => {
-      // Use captured ref value for cleanup
-      timersAtStart.forEach((timer) => clearTimeout(timer));
-      timersAtStart.clear();
-    };
-  // Note: onChange is accessed via onChangeRef to avoid dependency issues
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [internalTexts, createObjectivesAction, isAutosaveEnabled]);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ objective_ids: string[] } | void> => {
-    if (!createObjectivesAction || !create_tool_id) return;
-
-    // Find texts that need creation (have text but no ID)
-    const textsToCreate = internalTexts.filter(
-      (text) => text.trim() && !objectiveIdMapRef.current.has(text)
-    );
-
-    // Create resources for each
-    for (const text of textsToCreate) {
-      try {
-        const result = await createObjectivesAction({
-          body: {
-            objective: text,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        if (result.objective_id) {
-          objectiveIdMapRef.current.set(text, result.objective_id);
-        }
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(`Failed to create objective: "${text}"`, error);
-        throw error;
-      }
-    }
-
-    // Update parent with all IDs
-    const allIds = internalTexts
-      .filter((t) => t.trim())
-      .map((t) => objectiveIdMapRef.current.get(t))
-      .filter((id): id is string => id !== undefined);
-
-    lastReportedIdsRef.current = allIds;
-    onChangeRef.current(allIds);
-    lastSavedTextsRef.current = internalTexts;
-
-    return { objective_ids: allIds };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
+  const onObjectivesChangeRef = useRef(onObjectivesChange);
+  onObjectivesChangeRef.current = onObjectivesChange;
 
   // Objective handlers (matching ContentSection pattern)
   const addObjective = useCallback(() => {
@@ -403,10 +256,12 @@ export function Objectives({
       toast.error(`Maximum ${maxItems} objectives allowed`);
       return;
     }
+    isDirtyRef.current = true;
     setInternalTexts((prev) => [...prev, ""]);
   }, [internalTexts.length, maxItems]);
 
   const removeObjective = useCallback((index: number) => {
+    isDirtyRef.current = true;
     setInternalTexts((prev) => {
       const next = [...prev];
       next.splice(index, 1);
@@ -415,14 +270,11 @@ export function Objectives({
     });
   }, []);
 
-  const onObjectivesChangeRef = useRef(onObjectivesChange);
-  onObjectivesChangeRef.current = onObjectivesChange;
-
   const updateObjective = useCallback((index: number, value: string) => {
+    isDirtyRef.current = true;
     setInternalTexts((prev) => {
       const next = [...prev];
       next[index] = value;
-      // Report value changes upward
       onObjectivesChangeRef.current?.(next.filter((t) => t.trim()));
       return next;
     });
@@ -537,7 +389,7 @@ export function Objectives({
           )}
         </div>
       )}
-      
+
       {/* Objectives List (matching ContentSection pattern) */}
       {internalTexts.length === 0 && (
         <div>

@@ -3,6 +3,7 @@
 
 import type { Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
+import { ThemeProvider } from "next-themes";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "sonner";
 
@@ -11,9 +12,11 @@ const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 export function Providers({
   children,
   session,
+  theme,
 }: {
   children: React.ReactNode;
   session?: Session | null;
+  theme?: string;
 }) {
   return (
     <NuqsAdapter>
@@ -24,8 +27,15 @@ export function Providers({
         refetchOnWindowFocus={false}
         refetchWhenOffline={false}
       >
-        {children}
-        <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme={theme || "system"}
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </SessionProvider>
     </NuqsAdapter>
   );

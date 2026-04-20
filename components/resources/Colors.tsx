@@ -116,6 +116,7 @@ export function Colors({
     if (resource.hex_code) {
       setInternalValue(resource.hex_code);
       lastSavedValueRef.current = resource.hex_code;
+      isDirtyRef.current = false;
     }
   }, [resource, onColorIdChange]);
 
@@ -158,9 +159,13 @@ export function Colors({
   const [internalValue, setInternalValue] = useState(resourceHexCode || "");
   const lastSavedValueRef = useRef<string>(resourceHexCode || "");
   const isInitialMountRef = useRef(true);
+  // Dirty flag: once the user interacts, stop syncing from server so we don't
+  // clobber their in-progress selection (same pattern as Descriptions.tsx).
+  const isDirtyRef = useRef(false);
 
-  // Update internal value when color_resource changes
+  // Update internal value when color_resource changes — skip while user is editing.
   useEffect(() => {
+    if (isDirtyRef.current) return;
     if (resourceHexCode) {
       setInternalValue(resourceHexCode);
       lastSavedValueRef.current = resourceHexCode;
@@ -199,6 +204,7 @@ export function Colors({
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
+    isDirtyRef.current = newValue !== lastSavedValueRef.current;
 
     // Look up the color's existing ID from the colors array and update formState immediately
     // Pre-defined colors have IDs, so we just need to find the matching one
@@ -209,7 +215,8 @@ export function Colors({
       const selectedColor = colors.find((c) => c.hex_code?.toLowerCase() === normalizedValue);
       if (selectedColor?.id && onColorIdChange) {
         onColorIdChange(selectedColor.id);
-        lastSavedValueRef.current = newValue; // Mark as saved so flush knows no creation needed
+        lastSavedValueRef.current = newValue;
+        isDirtyRef.current = false;
         return;
       }
     }
@@ -217,6 +224,8 @@ export function Colors({
     // If no value, clear the selection
     if (!newValue && onColorIdChange) {
       onColorIdChange(null);
+      lastSavedValueRef.current = "";
+      isDirtyRef.current = false;
     }
   }, [colors, onColorIdChange]);
 

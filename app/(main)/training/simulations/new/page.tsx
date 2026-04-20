@@ -213,7 +213,6 @@ export default async function NewSimulationPage({
             aria-label="Create new simulation page"
           >
             <Simulation
-              key={q.draftId || "no-draft"}
               simulationData={simulationDataDefault}
               createSimulationAction={createSimulation}
               patchSimulationDraftAction={patchSimulationDraft}

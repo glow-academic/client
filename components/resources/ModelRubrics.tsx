@@ -1,7 +1,7 @@
 /**
  * ModelRubrics.tsx
  * Resource component for per-model rubric selection
- * Uses base rubrics list and creates model_rubrics_resource entries
+ * Pure UI: displays rubrics per model, reports selections via onChange/onModelRubricValues
  */
 
 "use client";
@@ -16,35 +16,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-type CreateDraftModelRubricsIn = {
-  body: {
-    model_id: string;
-    rubric_id: string;
-    mcp: boolean;
-    tool_id?: string;
-  };
-};
-type CreateDraftModelRubricsOut = {
-  id?: string | null;
-};
 
 export interface ModelRubricResourceItem {
   id?: string | null;
   model_id?: string | null;
   rubric_id?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface ModelRubricsProps {
-  model_rubric_ids?: string[];
   model_rubric_resources?: ModelRubricResourceItem[];
   show_model_rubrics?: boolean;
-  model_rubric_suggestions?: string[];
-  model_rubrics?: ModelRubricResourceItem[];
   rubrics?: Array<{
     id: string | null;
     name: string | null;
@@ -72,24 +57,6 @@ export interface ModelRubricsProps {
   id?: string;
   required?: boolean;
   description?: string;
-  group_id?: string | null;
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createModelRubricsAction?:
-    | ((
-        input: CreateDraftModelRubricsIn,
-      ) => Promise<CreateDraftModelRubricsOut>)
-    | undefined;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (
-    flush: () => Promise<{ model_rubric_ids: string[] } | void>,
-  ) => void;
-  aiModelRubricResources?:
-    | Pick<ModelRubricResourceItem, "id" | "model_id" | "rubric_id">[]
-    | null;
   /** Value callback for unified draft — reports all model+rubric pairs */
   onModelRubricValues?: (rubrics: Array<{ model_id: string; rubric_id: string }>) => void;
 }
@@ -104,11 +71,8 @@ type ModelRubricOption = {
 };
 
 export function ModelRubrics({
-  model_rubric_ids: _model_rubric_ids,
   model_rubric_resources,
   show_model_rubrics = false,
-  model_rubric_suggestions: _model_rubric_suggestions,
-  model_rubrics: _model_rubrics,
   rubrics,
   model_ids = [],
   models,
@@ -119,14 +83,6 @@ export function ModelRubrics({
   id = "model_rubrics",
   required = false,
   description,
-  group_id,
-  create_tool_id,
-  createModelRubricsAction,
-  onGenerate,
-  showAiGenerate = false,
-  isAutosaveEnabled = true,
-  registerFlush,
-  aiModelRubricResources,
   onModelRubricValues,
 }: ModelRubricsProps) {
   const show = show_model_rubrics ?? false;
@@ -136,21 +92,15 @@ export function ModelRubrics({
   );
   const allRubrics = useMemo(() => rubrics ?? [], [rubrics]);
 
-  // Socket-based AI suggestion handling via shared hook
-  type _AiSuggestionItem = Pick<ModelRubricResourceItem, "id" | "model_id" | "rubric_id">;
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestions,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "model_rubrics",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // Effective AI resources: hook (socket) takes priority, then prop fallback
-  const effectiveAiModelRubricResources =
-    aiSuggestions.length > 0 ? aiSuggestions : aiModelRubricResources ?? null;
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return currentResources.filter((r) => r.pending && r.model_id);
+  }, [currentResources]);
+  const showDiff = pendingItems.length > 0;
+  const pendingModelIds = useMemo(
+    () => new Set(pendingItems.map((r) => r.model_id).filter(Boolean) as string[]),
+    [pendingItems],
+  );
 
   const modelLabelMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -177,39 +127,11 @@ export function ModelRubrics({
     });
     return map;
   }, [models, model_resources]);
-  // Map resource ID -> artifact ID for API calls
-  const artifactIdMap = useMemo(() => {
-    const map = new Map<string, string>();
-    (models ?? []).forEach((m) => {
-      // m.id = models_resource.id, m.model_id = model_artifact.id (via junction)
-      if (m.id && m.model_id) {
-        map.set(m.id, m.model_id);
-      } else if (m.model_id) {
-        map.set(m.model_id, m.model_id);
-      }
-    });
-    (model_resources ?? []).forEach((m) => {
-      if (m.id && m.model_id) {
-        map.set(m.id, m.model_id);
-      } else if (m.model_id) {
-        map.set(m.model_id, m.model_id);
-      }
-    });
-    return map;
-  }, [models, model_resources]);
-
   const [rubricIdByModel, setRubricIdByModel] = useState<
     Map<string, string | null>
   >(new Map());
   const [modelRubricIdsByModel, setModelRubricIdsByModel] =
     useState<Map<string, string>>(new Map());
-  const createdRubricKeysRef = useRef<Set<string>>(new Set());
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<
-    (() => Promise<{ model_rubric_ids: string[] } | void>) | null
-  >(null);
-
   useEffect(() => {
     const nextRubrics = new Map<string, string | null>();
     const nextIds = new Map<string, string>();
@@ -274,70 +196,6 @@ export function ModelRubrics({
     onModelRubricValuesRef.current(values);
   }, [rubricIdByModel]);
 
-  // Update flush function - returns current IDs from local state
-  flushRef.current = async (): Promise<{
-    model_rubric_ids: string[];
-  } | void> => {
-    const ids = model_ids
-      .map((modelId) => modelRubricIdsByModel.get(modelId))
-      .filter((value): value is string => Boolean(value));
-    return { model_rubric_ids: ids };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
-  const createModelRubric = useCallback(
-    async (modelId: string, rubricId: string) => {
-      if (!isAutosaveEnabled || !createModelRubricsAction || !group_id) {
-        return;
-      }
-      const key = `${modelId}:${rubricId}`;
-      if (createdRubricKeysRef.current.has(key)) {
-        return;
-      }
-      createdRubricKeysRef.current.add(key);
-
-      // Resolve resource ID to artifact ID for the API (now optional since SQL accepts both)
-      const artifactModelId = artifactIdMap.get(modelId) ?? modelId;
-
-      try {
-        const result = await createModelRubricsAction({
-          body: {
-            model_id: artifactModelId,
-            rubric_id: rubricId,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-
-        if (!result?.id) {
-          return;
-        }
-
-        // Update state - useEffect will sync to parent via onChange
-        setModelRubricIdsByModel((prev) => {
-          const next = new Map(prev);
-          next.set(modelId, result.id as string);
-          return next;
-        });
-      } catch {
-        // Resource creation errors are handled by API; keep UI state intact.
-      }
-    },
-    [
-      isAutosaveEnabled,
-      createModelRubricsAction,
-      create_tool_id,
-      group_id,
-      artifactIdMap,
-    ],
-  );
-
   const handleSelect = useCallback(
     (modelId: string, value: string) => {
       const nextRubricId = value === NONE_OPTION ? null : value;
@@ -355,21 +213,9 @@ export function ModelRubrics({
           next.delete(modelId);
           return next;
         });
-        return;
       }
-
-      // Clear existing before creating new - useEffect will sync to parent via onChange
-      setModelRubricIdsByModel((prev) => {
-        const next = new Map(prev);
-        if (next.has(modelId)) {
-          next.delete(modelId);
-        }
-        return next;
-      });
-
-      void createModelRubric(modelId, nextRubricId);
     },
-    [createModelRubric],
+    [],
   );
 
   const rubricOptions = useMemo<ModelRubricOption[]>(() => {
@@ -397,39 +243,31 @@ export function ModelRubrics({
     ];
   }, [required, rubricOptions]);
 
-  const hasGenerated = useMemo(() => {
-    return currentResources.some((resource) => resource.generated);
-  }, [currentResources]);
-
-  // AI suggestion state
-  const showDiff = !!effectiveAiModelRubricResources?.length;
-
-  // Set of AI-suggested model IDs for styling
-  const aiSuggestedModelIds = useMemo(
-    () =>
-      new Set(
-        effectiveAiModelRubricResources
-          ?.map((r) => r.model_id)
-          .filter(Boolean) as string[],
-      ),
-    [effectiveAiModelRubricResources],
-  );
-
-  // Accept AI suggestion - apply AI-suggested rubric assignments
+  // Accept pending — pending items are already in selection, no-op
   const handleAccept = useCallback(() => {
-    if (!effectiveAiModelRubricResources?.length) return;
-    effectiveAiModelRubricResources.forEach((r) => {
-      if (r.model_id && r.rubric_id) {
-        handleSelect(r.model_id, r.rubric_id);
-      }
-    });
-    clearAi();
-  }, [effectiveAiModelRubricResources, handleSelect, clearAi]);
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending model rubric assignments
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    // Remove pending model IDs from rubricIdByModel and modelRubricIdsByModel
+    setRubricIdByModel((prev) => {
+      const next = new Map(prev);
+      pendingModelIds.forEach((modelId) => {
+        next.set(modelId, null);
+      });
+      return next;
+    });
+    setModelRubricIdsByModel((prev) => {
+      const next = new Map(prev);
+      pendingModelIds.forEach((modelId) => {
+        next.delete(modelId);
+      });
+      return next;
+    });
+  }, [pendingModelIds]);
 
   if (!show || model_ids.length === 0) {
     return null;
@@ -448,31 +286,6 @@ export function ModelRubrics({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -511,43 +324,9 @@ export function ModelRubrics({
           )}
         </div>
       )}
-      {/* AI-suggested model rubrics preview */}
-      {showDiff &&
-        effectiveAiModelRubricResources &&
-        effectiveAiModelRubricResources.length > 0 && (
-          <div className="mb-4 space-y-2">
-            <p className="text-sm font-medium text-success">
-              AI Suggested Model Rubrics
-            </p>
-            <div className="space-y-2">
-              {effectiveAiModelRubricResources.map((item, idx) => {
-                const modelLabel =
-                  modelLabelMap.get(item.model_id || "") ??
-                  "Unknown model";
-                const rubricLabel =
-                  rubricOptions.find((r) => r.id === item.rubric_id)?.name ??
-                  "Unknown rubric";
-                return (
-                  <div
-                    key={
-                      item.id || `${item.model_id}-${item.rubric_id}` || idx
-                    }
-                    className={cn(
-                      "flex items-center gap-2 p-3 rounded-lg border-2 border-success bg-success/10",
-                      "text-sm",
-                    )}
-                  >
-                    <span className="font-medium">{modelLabel}:</span>
-                    <span>{rubricLabel}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       <div className="space-y-4 pl-4">
         {model_ids.map((modelId) => {
-          const isAiSuggested = aiSuggestedModelIds.has(modelId);
+          const isPending = pendingModelIds.has(modelId);
           const labelText =
             modelLabelMap.get(modelId) ?? modelId.slice(0, 8);
           const selectedRubricId = rubricIdByModel.get(modelId) ?? null;
@@ -558,13 +337,20 @@ export function ModelRubrics({
               key={modelId}
               className={cn(
                 "space-y-2",
-                isAiSuggested &&
-                  "ring-2 ring-success bg-success/5 rounded-lg p-2",
+                isPending &&
+                  "ring-2 ring-success bg-success/10 rounded-lg p-2",
               )}
             >
-              <Label className="text-sm font-medium" title={labelText}>
-                {labelText}
-              </Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium" title={labelText}>
+                  {labelText}
+                </Label>
+                {isPending && (
+                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                    Pending
+                  </span>
+                )}
+              </div>
               <SelectableGrid<ModelRubricOption>
                 horizontal
                 items={gridOptions}

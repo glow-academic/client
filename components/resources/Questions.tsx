@@ -2,7 +2,7 @@
  * Questions.tsx
  * Resource component for question messages
  * Redesigned to match ContentSection expandable question pattern
- * Creates question resources, reports IDs to parent
+ * Pure UI: data in, IDs out via onChange. Parent owns creation.
  */
 
 "use client";
@@ -29,19 +29,6 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-type CreateDraftQuestionsIn = {
-  body: {
-    question_text: string;
-    allow_multiple: boolean;
-    time_value: number;
-    mcp: boolean;
-    tool_id?: string;
-  };
-};
-type CreateDraftQuestionsOut = {
-  question_id?: string | null;
-};
-
 export interface QuestionsResourceItem {
   question_id?: string | null;
   question_text?: string | null;
@@ -53,9 +40,7 @@ export interface QuestionsProps {
   question_ids?: string[]; // Current question resource IDs (standardized prop name)
   question_resources?: QuestionsResourceItem[]; // Selected question resources (each includes generated field)
   show_questions?: boolean; // Whether to show this resource picker
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
   questions_required?: boolean; // Whether this resource is required
-  question_suggestions?: string[]; // Array of suggested question IDs (UUIDs) - consistent with other suggestions
   questions?: QuestionsResourceItem[]; // All available questions from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update question_ids in form state
@@ -65,19 +50,12 @@ export interface QuestionsProps {
   maxItems?: number;
   addButtonLabel?: string;
   itemPlaceholder?: string;
-  createQuestionsAction?:
-    | ((input: CreateDraftQuestionsIn) => Promise<CreateDraftQuestionsOut>)
-    | undefined;
   // Optional: mapping of question_id -> question text (for initial display)
   questionMapping?: Record<string, string>;
   // Optional: video length for time slider (when questions are associated with videos)
   videoLength?: number | null;
   /** Report value changes upward (unified draft pattern — parent owns creation) */
   onQuestionsChange?: (questions: Array<{ question_text: string; time: number; allow_multiple: boolean }>) => void;
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ question_ids: string[] } | void>) => void;
   /** Called whenever internal questions change (including unflushed) — allows parent to show dependent UI immediately */
   onInternalQuestionsChange?: (questions: { id: string; question_text: string }[]) => void;
 }
@@ -94,9 +72,7 @@ export function Questions({
   question_ids,
   question_resources: _question_resources,
   show_questions = false,
-  create_tool_id,
   questions_required,
-  question_suggestions: _question_suggestions,
   questions,
   disabled = false,
   onChange,
@@ -106,12 +82,9 @@ export function Questions({
   maxItems = 4, // Default to 4 like ContentSection
   addButtonLabel = "Add question",
   itemPlaceholder = "Question",
-  createQuestionsAction,
   questionMapping = {},
   videoLength = null,
   onQuestionsChange,
-  isAutosaveEnabled = true,
-  registerFlush,
   onInternalQuestionsChange,
 }: QuestionsProps) {
   // Use standardized props
@@ -158,27 +131,26 @@ export function Questions({
     }
   );
 
-  const debounceTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
-  const lastSavedQuestionsRef = useRef<QuestionType[]>(internalQuestions);
-  const lastReportedIdsRef = useRef<string[]>(ids); // Track last IDs reported to parent
-  const isInitialMountRef = useRef(true);
   const questionIdMapRef = useRef<Map<string, string>>(new Map()); // Maps question text -> question_id
-  const onChangeRef = useRef(onChange); // Stable ref to avoid useEffect dependency
-  onChangeRef.current = onChange;
   const onInternalQuestionsChangeRef = useRef(onInternalQuestionsChange);
   onInternalQuestionsChangeRef.current = onInternalQuestionsChange;
   const onQuestionsChangeRef = useRef(onQuestionsChange);
   onQuestionsChangeRef.current = onQuestionsChange;
-  const flushRef = useRef<(() => Promise<{ question_ids: string[] } | void>) | undefined>(undefined);
   const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<
     number | null
   >(null);
   const questionInputRefs = useRef<Record<number, HTMLInputElement | null>>(
     {}
   );
+  // Dirty flag: once the user interacts, stop syncing from server and stop
+  // emitting on pure-UI state changes (same pattern as Examples.tsx).
+  const isDirtyRef = useRef(false);
+  const isInitialMountRef = useRef(true);
 
-  // Sync external question_ids changes (when loading from server)
+  // Sync external question_ids changes (when loading from server). Skip while
+  // the user is editing so their input isn't clobbered.
   useEffect(() => {
+    if (isDirtyRef.current) return;
     if (ids.length > 0 && Object.keys(effectiveQuestionMapping).length > 0) {
       const newQuestions = ids.map((id, idx) => ({
         id: id || `temp-${idx}`,
@@ -186,26 +158,27 @@ export function Questions({
         allow_multiple: false,
         times: [],
       }));
-      // Only update if questions actually changed to prevent infinite loops
       setInternalQuestions((prev) => {
         const prevTexts = prev.map((q) => q.question_text);
         const newTexts = newQuestions.map((q) => q.question_text);
         if (JSON.stringify(prevTexts) === JSON.stringify(newTexts)) return prev;
         return newQuestions;
       });
-      // Update mapping
       ids.forEach((id, idx) => {
         if (newQuestions[idx]?.question_text) {
           questionIdMapRef.current.set(newQuestions[idx].question_text, id);
         }
       });
-      // Keep lastReportedIdsRef in sync with external ids
-      lastReportedIdsRef.current = ids;
     }
   }, [ids, effectiveQuestionMapping]);
 
-  // Report internal questions to parent (including unflushed) for dependent UI like Options
+  // Report internal questions upward. Only emit draft values after the user
+  // has actually interacted — otherwise a pure re-render (e.g. parent state
+  // churn) would emit on every render and trigger spurious saves.
   useEffect(() => {
+    // onInternalQuestionsChange drives dependent UI (Options) and must always
+    // fire, even on initial mount, so the Options list can render against the
+    // current question set.
     const questionsWithText = internalQuestions
       .filter((q) => q.question_text.trim())
       .map((q) => ({
@@ -213,7 +186,12 @@ export function Questions({
         question_text: q.question_text,
       }));
     onInternalQuestionsChangeRef.current?.(questionsWithText);
-    // Report value changes upward (unified draft pattern)
+
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    if (!isDirtyRef.current) return;
     onQuestionsChangeRef.current?.(
       internalQuestions
         .filter((q) => q.question_text.trim())
@@ -224,117 +202,6 @@ export function Questions({
         }))
     );
   }, [internalQuestions]);
-
-  // Debounced resource creation for each question text - only when autosave is enabled
-  useEffect(() => {
-    // Skip if autosave is disabled (manual save mode)
-    if (!isAutosaveEnabled) {
-      return;
-    }
-
-    // Skip on initial mount
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      lastSavedQuestionsRef.current = internalQuestions;
-      return;
-    }
-
-    // Clear all existing timers
-    debounceTimersRef.current.forEach((timer) => clearTimeout(timer));
-    debounceTimersRef.current.clear();
-
-    // Check if there are any questions that need creation
-    const hasQuestionsToCreate = internalQuestions.some(
-      (q) => q.question_text.trim() && !questionIdMapRef.current.has(q.question_text)
-    );
-
-    if (!hasQuestionsToCreate) {
-      // All questions already have IDs, update parent only if IDs changed (reorder/delete)
-      const allIds = internalQuestions
-        .filter((q) => q.question_text.trim())
-        .map((q) => questionIdMapRef.current.get(q.question_text))
-        .filter((id): id is string => id !== undefined);
-      // Only call onChange if IDs actually changed to prevent infinite loops
-      const lastReportedStr = JSON.stringify(lastReportedIdsRef.current);
-      const newIdsStr = JSON.stringify(allIds);
-      if (lastReportedStr !== newIdsStr) {
-        lastReportedIdsRef.current = allIds;
-        onChangeRef.current(allIds);
-      }
-      return;
-    }
-
-    // Debounce the flush
-    const timer = setTimeout(() => {
-      flushRef.current?.();
-    }, 1000);
-
-    debounceTimersRef.current.set(0, timer);
-
-    lastSavedQuestionsRef.current = internalQuestions;
-
-    // Capture ref value at effect start for cleanup
-    const timersAtStart = debounceTimersRef.current;
-
-    return () => {
-      // Use captured ref value for cleanup
-      timersAtStart.forEach((timer) => clearTimeout(timer));
-      timersAtStart.clear();
-    };
-  // Note: onChange is accessed via onChangeRef to avoid dependency issues
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [internalQuestions, createQuestionsAction, isAutosaveEnabled]);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ question_ids: string[] } | void> => {
-    if (!createQuestionsAction || !create_tool_id) return;
-
-    // Find questions that need creation (have text but no ID)
-    const questionsToCreate = internalQuestions.filter(
-      (q) => q.question_text.trim() && !questionIdMapRef.current.has(q.question_text)
-    );
-
-    // Create resources for each
-    for (const question of questionsToCreate) {
-      try {
-        const result = await createQuestionsAction({
-          body: {
-            question_text: question.question_text,
-            allow_multiple: question.allow_multiple,
-            time_value: question.times?.[0] ?? 0,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        if (result.question_id) {
-          questionIdMapRef.current.set(question.question_text, result.question_id);
-        }
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(`Failed to create question: "${question.question_text}"`, error);
-        throw error;
-      }
-    }
-
-    // Update parent with all IDs
-    const allIds = internalQuestions
-      .filter((q) => q.question_text.trim())
-      .map((q) => questionIdMapRef.current.get(q.question_text))
-      .filter((id): id is string => id !== undefined);
-
-    lastReportedIdsRef.current = allIds;
-    onChangeRef.current(allIds);
-    lastSavedQuestionsRef.current = internalQuestions;
-
-    return { question_ids: allIds };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Question handlers (matching ContentSection pattern)
   const handleDragStartQuestion = useCallback(
@@ -354,6 +221,7 @@ export function Questions({
     (e: React.DragEvent, targetIndex: number) => {
       e.preventDefault();
       if (draggedQuestionIndex === null) return;
+      isDirtyRef.current = true;
       setInternalQuestions((prev) => {
         const next = [...prev];
         const removed = next[draggedQuestionIndex];
@@ -369,6 +237,7 @@ export function Questions({
 
   const handleQuestionTextChange = useCallback(
     (index: number, text: string) => {
+      isDirtyRef.current = true;
       setInternalQuestions((prev) => {
         const next = [...prev];
         const question = next[index];
@@ -390,6 +259,7 @@ export function Questions({
       if (isNaN(time) || time < 0 || time > estimatedVideoLength) {
         return;
       }
+      isDirtyRef.current = true;
       setInternalQuestions((prev) => {
         const next = [...prev];
         const question = next[index];
@@ -409,6 +279,7 @@ export function Questions({
       toast.error(`Maximum ${maxItems} questions allowed`);
       return;
     }
+    isDirtyRef.current = true;
     setInternalQuestions((prev) => [
       ...prev,
       {
@@ -421,6 +292,7 @@ export function Questions({
   }, [internalQuestions.length, maxItems]);
 
   const removeQuestion = useCallback((index: number) => {
+    isDirtyRef.current = true;
     setInternalQuestions((prev) => prev.filter((_, i) => i !== index));
   }, []);
 

@@ -17,8 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface QualitiesResourceItem {
@@ -26,6 +25,8 @@ export interface QualitiesResourceItem {
   quality?: string | null;
   quality_id?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface QualitiesItem {
@@ -38,8 +39,7 @@ export interface QualitiesProps {
   quality_ids?: string[]; // Current qualities resource IDs (standardized prop name)
   quality_resources?: QualitiesResourceItem[]; // Selected qualities resources (each includes generated field)
   show_qualities?: boolean; // Whether to show this resource picker
-  quality_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  qualities?: QualitiesResourceItem[]; // All available qualities from API (each includes generated field)
+  qualities?: QualitiesResourceItem[]; // All available qualities from API (each includes generated and suggested fields)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update quality_ids in form state
   label?: string;
@@ -49,17 +49,12 @@ export interface QualitiesProps {
   description?: string;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
-  group_id?: string | null; // Group ID for linking resources
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  aiQualityResources?: Pick<QualitiesResourceItem, "id" | "quality">[] | null;
 }
 
 export function Qualities({
   quality_ids,
-  quality_resources,
+  quality_resources: _quality_resources,
   show_qualities = false,
-  quality_suggestions,
   qualities,
   disabled = false,
   onChange,
@@ -70,35 +65,19 @@ export function Qualities({
   description,
   searchTerm,
   onSearchChange,
-  group_id,
-  onGenerate,
-  showAiGenerate = false,
 }: QualitiesProps) {
   const ids = useMemo(() => quality_ids ?? [], [quality_ids]);
   const show = show_qualities ?? false;
   const allQualities = useMemo(() => qualities ?? [], [qualities]);
-  const suggestionsList = useMemo(
-    () => quality_suggestions ?? [],
-    [quality_suggestions]
-  );
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "qualities",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestions
-          .map((q) => q.quality_id)
-          .filter(Boolean) as string[]
-      ),
-    [aiSuggestions]
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allQualities.filter((q) => q.pending && q.id);
+  }, [allQualities]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((q) => q.id).filter(Boolean) as string[]),
+    [pendingItems]
   );
 
   const filteredQualities = useMemo(() => {
@@ -122,42 +101,34 @@ export function Qualities({
       }));
   }, [filteredQualities]);
 
-  // Check if a qualities is suggested
+  // Check if a quality is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
-    (qualitiesId: string) => suggestionsList.includes(qualitiesId),
-    [suggestionsList]
+    (qualitiesId: string) => {
+      const qual = allQualities.find((q) => q.id === qualitiesId);
+      return qual?.suggested === true;
+    },
+    [allQualities]
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Qualities are generated, not selected from existing artifacts
-      // Update parent state
+    (selectedIds: string[]) => {
       onChange(selectedIds);
     },
     [onChange]
   );
 
-  // Check if any qualities resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return quality_resources?.some((m) => m.generated) ?? false;
-  }, [quality_resources]);
-
-  // Accept AI suggestion - add AI-suggested qualities to selection
+  // Accept pending — keep pending qualities in selection
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((q) => q.quality_id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending qualities from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    const newIds = ids.filter((id) => !pendingIds.has(id));
+    onChange(newIds);
+  }, [ids, pendingIds, onChange]);
 
   // Don't render if show_qualities is false (AFTER all hooks)
   if (!show) {
@@ -177,31 +148,6 @@ export function Qualities({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -251,20 +197,20 @@ export function Qualities({
         getId={(item) => item.id}
         getLabel={(item) => item.name}
         renderItem={(item, isSelected) => {
-          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const isPending = pendingIds.has(item.id);
 
           return (
             <div className={cn(
               "flex items-center justify-between w-full",
-              isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10 rounded px-2 py-1 -mx-2 -my-1"
+              isPending && "ring-2 ring-success bg-success/10 rounded px-2 py-1 -mx-2 -my-1"
             )}>
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                {isAiSuggested && !isSelected && (
+                {isPending && (
                   <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium shrink-0">
-                    AI Suggested
+                    Pending
                   </span>
                 )}
-                {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                {isSuggested(item.id) && !isSelected && !isPending && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -286,7 +232,7 @@ export function Qualities({
               <Check
                 className={cn(
                   "ml-auto flex-shrink-0 h-4 w-4",
-                  isSelected ? "opacity-100" : "opacity-0"
+                  isSelected && !isPending ? "opacity-100" : "opacity-0"
                 )}
               />
             </div>

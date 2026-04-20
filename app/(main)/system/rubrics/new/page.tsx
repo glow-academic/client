@@ -17,7 +17,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { createLoader, parseAsString } from "nuqs/server";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
@@ -28,26 +28,6 @@ type CreateRubricIn = InputOf<"/rubric/create", "post">;
 type CreateRubricOut = OutputOf<"/rubric/create", "post">;
 type PatchRubricDraftIn = InputOf<"/rubric/draft", "patch">;
 type PatchRubricDraftOut = OutputOf<"/rubric/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftPointsIn = InputOf<"/api/v5/resources/points", "post">;
-type CreateDraftPointsOut = OutputOf<"/api/v5/resources/points", "post">;
-type CreateDraftStandardGroupsIn = InputOf<
-  "/api/v5/resources/standard_groups",
-  "post"
->;
-type CreateDraftStandardGroupsOut = OutputOf<
-  "/api/v5/resources/standard_groups",
-  "post"
->;
 type GroupRubricIn = InputOf<"/rubric/group", "post">;
 type GroupRubricOut = OutputOf<"/rubric/group", "post">;
 type GenerateRubricIn = InputOf<"/rubric/generate", "post">;
@@ -64,15 +44,34 @@ const getRubric = async (
   draftId: string | null,
   descriptionSearch: string | null,
   standardGroupSearch: string | null,
+  pointsSearch: string | null,
+  pointsShowSelected: boolean | null,
+  standardGroupShowSelected: boolean | null,
 ): Promise<GetRubricOut> => {
   return api.post(
     "/rubric/get",
     ({
       body: {
-        rubric_id: null,
+        id: null,
         draft_id: draftId || null,
-        description_search: descriptionSearch || null,
-        standard_group_search: standardGroupSearch || null,
+        descriptions:
+          descriptionSearch
+            ? { search: descriptionSearch || undefined }
+            : undefined,
+        points:
+          pointsSearch || pointsShowSelected
+            ? {
+                search: pointsSearch || undefined,
+                selected: pointsShowSelected || undefined,
+              }
+            : undefined,
+        standard_groups:
+          standardGroupSearch || standardGroupShowSelected
+            ? {
+                search: standardGroupSearch || undefined,
+                selected: standardGroupShowSelected || undefined,
+              }
+            : undefined,
       },
     } as GetRubricIn),
     {
@@ -95,34 +94,6 @@ async function patchRubricDraft(
 ): Promise<PatchRubricDraftOut> {
   "use server";
   return api.patch("/rubric/draft", input);
-}
-
-async function createDraftNames(
-  input: CreateDraftNamesIn
-): Promise<CreateDraftNamesOut> {
-  "use server";
-  return api.post("/resources/names", input);
-}
-
-async function createDraftDescriptions(
-  input: CreateDraftDescriptionsIn
-): Promise<CreateDraftDescriptionsOut> {
-  "use server";
-  return api.post("/resources/descriptions", input);
-}
-
-async function createDraftPoints(
-  input: CreateDraftPointsIn
-): Promise<CreateDraftPointsOut> {
-  "use server";
-  return api.post("/resources/points", input);
-}
-
-async function createDraftStandardGroups(
-  input: CreateDraftStandardGroupsIn
-): Promise<CreateDraftStandardGroupsOut> {
-  "use server";
-  return api.post("/resources/standard_groups", input);
 }
 
 async function generateRubric(
@@ -201,6 +172,9 @@ export default async function NewRubricPage({
       draftId: parseAsString,
       descriptionSearch: parseAsString,
       standardGroupSearch: parseAsString,
+      pointsSearch: parseAsString,
+      pointsShowSelected: parseAsBoolean,
+      standardGroupShowSelected: parseAsBoolean,
     };
     const loadRubricSearchParams = createLoader(rubricSearchParams);
     const q = loadRubricSearchParams(searchParamsObj);
@@ -211,37 +185,48 @@ export default async function NewRubricPage({
         q.draftId ?? null,
         q.descriptionSearch ?? null,
         q.standardGroupSearch ?? null,
+        q.pointsSearch ?? null,
+        q.pointsShowSelected ?? null,
+        q.standardGroupShowSelected ?? null,
       ),
-      api.post("/rubric/drafts", {}),
+      api.post("/rubric/drafts", {} as InputOf<"/rubric/drafts", "post">),
       api.post("/rubric/group", { body: {} } as GroupRubricIn),
     ]);
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
         <FullPageLayout
-          profileData={context.profile}
-          sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
-          initialPanelOpen={initialPanelOpen}
-          sidebarProps={{
-            activeSection: "rubric",
-            createFeedback: createRubricProblem,
-          }}
-          breadcrumbs={[
-            { title: "System", section: "system", url: "/system" },
-            { title: "Rubrics", section: "rubrics", url: "/system/rubrics" },
-            { title: "New Rubric" },
-          ]}
-          toolbar={<SaveToolbar />}
-          panelProps={{
-            artifactType: "rubric",
-            groupId: (groupResult as GroupRubricOut & { group_id?: string })?.group_id ?? null,
-            generateAction: generateRubric,
-            operations: ["draft", "get", "group"],
-            getGroupHistory: getRubricGroupHistory,
-            searchGroups: searchRubricGroups,
-            prompts: context.prompts?.prompts,
-          }}
+          {...({
+            profileData: context.profile,
+            sessionSnapshot: snapshot,
+            initialSidebarOpen,
+            initialPanelOpen,
+            sidebarProps: {
+              activeSection: "rubric",
+              createFeedback: createRubricProblem as unknown as (
+                input: Record<string, unknown>,
+              ) => Promise<Record<string, unknown>>,
+            },
+            breadcrumbs: [
+              { title: "System", section: "system", url: "/system" },
+              { title: "Rubrics", section: "rubrics", url: "/system/rubrics" },
+              { title: "New Rubric" },
+            ],
+            toolbar: <SaveToolbar />,
+            panelProps: {
+              artifactType: "rubric",
+              groupId:
+                (groupResult as GroupRubricOut & { group_id?: string | null })
+                  ?.group_id ?? "",
+              generateAction: generateRubric,
+              operations: ["draft", "get", "group"],
+              getGroupHistory: getRubricGroupHistory,
+              searchGroups: searchRubricGroups,
+              ...(context.prompts?.prompts
+                ? { prompts: context.prompts.prompts }
+                : {}),
+            },
+          } as any)}
         >
           <div className="space-y-6 px-4" data-page="rubric-new">
             <Rubric
@@ -249,10 +234,6 @@ export default async function NewRubricPage({
               rubricData={rubricData}
               createRubricAction={createRubric}
               patchRubricDraftAction={patchRubricDraft}
-              createNamesAction={createDraftNames}
-              createDescriptionsAction={createDraftDescriptions}
-              createPointsAction={createDraftPoints}
-              createStandardGroupsAction={createDraftStandardGroups}
             />
           </div>
         </FullPageLayout>

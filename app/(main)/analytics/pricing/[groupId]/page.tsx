@@ -21,16 +21,16 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 /** ---- Strong types from OpenAPI ---- */
 type PricingGroupDetailIn = InputOf<"/system/group/get", "post">;
 type PricingGroupDetailOut = OutputOf<"/system/group/get", "post">;
-type ContextIn = InputOf<"/system/group/context", "post">;
-type ContextOut = OutputOf<"/system/group/context", "post">;
-type GenerateGroupIn = InputOf<"/system/group/generate", "post">;
-type GenerateGroupOut = OutputOf<"/system/group/generate", "post">;
-type GenerationsIn = InputOf<"/system/group/generations", "post">;
-type GenerationsOut = OutputOf<"/system/group/generations", "post">;
-type GroupGroupIn = InputOf<"/system/group/group", "post">;
-type GroupGroupOut = OutputOf<"/system/group/group", "post">;
-type ProblemGroupIn = InputOf<"/system/group/problem", "post">;
-type ProblemGroupOut = OutputOf<"/system/group/problem", "post">;
+type ContextIn = InputOf<"/system/context", "post">;
+type ContextOut = OutputOf<"/system/context", "post">;
+type GenerateGroupIn = InputOf<"/system/generate", "post">;
+type GenerateGroupOut = OutputOf<"/system/generate", "post">;
+type GenerationsIn = InputOf<"/system/generations", "post">;
+type GenerationsOut = OutputOf<"/system/generations", "post">;
+type GroupGroupIn = InputOf<"/system/group", "post">;
+type GroupGroupOut = OutputOf<"/system/group", "post">;
+type ProblemGroupIn = InputOf<"/system/problem", "post">;
+type ProblemGroupOut = OutputOf<"/system/problem", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getPricingGroupDetail = async (
@@ -53,22 +53,22 @@ async function generateGroup(
   input: GenerateGroupIn
 ): Promise<GenerateGroupOut> {
   "use server";
-  return api.post("/system/group/generate", input);
+  return api.post("/system/generate", input);
 }
 
 async function getGroupGroupHistory(groupId: string): Promise<GroupGroupOut> {
   "use server";
-  return api.post("/system/group/group", { body: { group_id: groupId } } as GroupGroupIn);
+  return api.post("/system/group", { body: { group_id: groupId } } as GroupGroupIn);
 }
 
 async function searchGroupGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/system/group/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/system/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createGroupProblem(input: ProblemGroupIn): Promise<ProblemGroupOut> {
   "use server";
-  return api.post("/system/group/problem", input);
+  return api.post("/system/problem", input);
 }
 
 /** ---- Page metadata ---- */
@@ -79,7 +79,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { groupId } = await params;
-    const context = await api.post("/system/group/context", { body: { entity_id: groupId } } as ContextIn) as ContextOut;
+    const context = await api.post("/system/context", { body: { entity_id: groupId } } as ContextIn) as ContextOut;
     return { title: context.page_metadata?.detail.title, description: context.page_metadata?.detail.description };
   } catch {
     return { title: "Pricing Group" };
@@ -111,7 +111,7 @@ export default async function PricingGroupPage({
 
   try {
     // Profile data for providers
-    const pageContext = await api.post("/system/group/context", { body: {} } as ContextIn) as ContextOut;
+    const pageContext = await api.post("/system/context", { body: {} } as ContextIn) as ContextOut;
     const snapshot = buildSnapshot(session, pageContext.profile);
 
     const [groupDetail, context, genGroupResult] = await Promise.all([
@@ -120,8 +120,8 @@ export default async function PricingGroupPage({
           group_id: groupId,
         },
       }),
-      api.post("/system/group/context", { body: { entity_id: groupId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/system/group/group", { body: {} } as GroupGroupIn),
+      api.post("/system/context", { body: { entity_id: groupId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/system/group", { body: {} } as GroupGroupIn),
     ]);
 
     const _entityName = context.page_metadata?.detail.title;

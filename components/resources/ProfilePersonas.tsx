@@ -25,19 +25,6 @@ import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftProfilePersonasIn = {
-  body: {
-    cohort_id: string;
-    profile_id: string;
-    persona_id: string;
-    mcp: boolean;
-    tool_id?: string;
-  };
-};
-type CreateDraftProfilePersonasOut = {
-  id?: string | null;
-};
-
 export interface ProfilePersonasResourceItem {
   id?: string | null;
   profile_id?: string | null;
@@ -91,22 +78,6 @@ export interface ProfilePersonasProps {
   id?: string;
   required?: boolean;
   description?: string;
-  group_id?: string | null;
-  create_tool_id?: string | null;
-  createProfilePersonasAction?:
-    | ((
-        input: CreateDraftProfilePersonasIn,
-      ) => Promise<CreateDraftProfilePersonasOut>)
-    | undefined;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean;
-  isAutosaveEnabled?: boolean;
-  registerFlush?: (
-    flush: () => Promise<{ profile_persona_ids: string[] } | void>,
-  ) => void;
-  aiProfilePersonaResources?:
-    | Pick<ProfilePersonasResourceItem, "id" | "profile_id" | "persona_id">[]
-    | null;
 }
 
 export function ProfilePersonas({
@@ -126,14 +97,6 @@ export function ProfilePersonas({
   id = "profile_personas",
   required = false,
   description,
-  group_id,
-  create_tool_id,
-  createProfilePersonasAction,
-  onGenerate: _onGenerate,
-  showAiGenerate: _showAiGenerate = false,
-  isAutosaveEnabled = true,
-  registerFlush,
-  aiProfilePersonaResources: _aiProfilePersonaResources,
 }: ProfilePersonasProps) {
   const show = show_profile_personas ?? false;
   const allPersonas = useMemo(
@@ -222,42 +185,26 @@ export function ProfilePersonas({
     return map;
   }, [allPersonas, availablePersonas]);
 
-  // Track persona resource ID by profile
-  const [personaIdsByProfile, setPersonaIdsByProfile] = useState<
-    Map<string, string>
-  >(new Map());
-  const personaIdsByProfileRef = useRef<Map<string, string>>(new Map());
-  personaIdsByProfileRef.current = personaIdsByProfile;
-
   // Track selected persona_id (artifact) by profile
   const [selectedPersonaByProfile, setSelectedPersonaByProfile] = useState<
     Map<string, string>
   >(new Map());
+  // Dirty flag: once the user interacts, stop syncing from server data and
+  // stop emitting on pure re-renders (same pattern as Examples.tsx).
+  const isDirtyRef = useRef(false);
+  const isInitialMountRef = useRef(true);
 
-  // Ref for flush function
-  const flushRef = useRef<
-    (() => Promise<{ profile_persona_ids: string[] } | void>) | null
-  >(null);
-
-  // Initialize from server resources
+  // Initialize from server resources — skip while the user is editing so
+  // in-progress assignments aren't clobbered.
   useEffect(() => {
-    const nextIds = new Map<string, string>();
+    if (isDirtyRef.current) return;
     const nextPersonas = new Map<string, string>();
     currentPersonas.forEach((p) => {
       const profileId = p.profile_id;
-      const resourceId = p.id;
       const personaId = p.persona_id;
-      if (profileId && resourceId) {
-        nextIds.set(profileId, resourceId);
-      }
       if (profileId && personaId) {
         nextPersonas.set(profileId, personaId);
       }
-    });
-    setPersonaIdsByProfile((prev) => {
-      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
-      const nextKey = JSON.stringify(Array.from(nextIds.entries()).sort());
-      return prevKey === nextKey ? prev : nextIds;
     });
     setSelectedPersonaByProfile((prev) => {
       const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
@@ -266,10 +213,17 @@ export function ProfilePersonas({
     });
   }, [currentPersonas]);
 
-  // Emit persona values for unified draft
+  // Emit persona values for unified draft. Only emit after the user has
+  // actually interacted — otherwise the initial sync effect and every
+  // server-driven re-render would emit and trigger spurious saves.
   const onProfilePersonaValuesRef = useRef(onProfilePersonaValues);
   onProfilePersonaValuesRef.current = onProfilePersonaValues;
   useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    if (!isDirtyRef.current) return;
     if (!onProfilePersonaValuesRef.current) return;
     const values: Array<{ profile_id: string; persona_id: string }> = [];
     selectedPersonaByProfile.forEach((personaId, profileId) => {
@@ -280,25 +234,9 @@ export function ProfilePersonas({
     onProfilePersonaValuesRef.current(values);
   }, [selectedPersonaByProfile]);
 
-  // Update flush function
-  flushRef.current = async (): Promise<{
-    profile_persona_ids: string[];
-  } | void> => {
-    const ids = profile_ids
-      .map((profileId) => personaIdsByProfile.get(profileId))
-      .filter((value): value is string => Boolean(value));
-    return { profile_persona_ids: ids };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
   const handlePersonaChange = useCallback(
     (profileId: string, personaId: string) => {
+      isDirtyRef.current = true;
       const updated = new Map(selectedPersonaByProfile);
       updated.set(profileId, personaId);
       setSelectedPersonaByProfile(updated);
@@ -321,53 +259,8 @@ export function ProfilePersonas({
       });
 
       onChange(personasArray);
-
-      const shouldCreateResource =
-        isAutosaveEnabled &&
-        createProfilePersonasAction &&
-        create_tool_id &&
-        group_id &&
-        cohort_id;
-      if (!shouldCreateResource) {
-        return;
-      }
-
-      void (async () => {
-        try {
-          const result = await createProfilePersonasAction({
-            body: {
-              cohort_id: cohort_id,
-              profile_id: profileId,
-              persona_id: personaId,
-              mcp: false,
-              tool_id: create_tool_id ?? undefined,
-            },
-          });
-
-          if (!result?.id) {
-            return;
-          }
-
-          setPersonaIdsByProfile((prev) => {
-            const next = new Map(prev);
-            next.set(profileId, result.id as string);
-            return next;
-          });
-        } catch {
-          // Resource creation errors are handled by API; keep UI state intact.
-        }
-      })();
     },
-    [
-      selectedPersonaByProfile,
-      cohort_id,
-      onChange,
-      isAutosaveEnabled,
-      createProfilePersonasAction,
-      create_tool_id,
-      group_id,
-      availablePersonas,
-    ],
+    [selectedPersonaByProfile, cohort_id, onChange, availablePersonas],
   );
 
   // Accept pending — keep pending persona assignments in selection (no-op)
@@ -379,6 +272,7 @@ export function ProfilePersonas({
 
   // Reject pending — remove pending persona assignments from selection
   const handleReject = useCallback(() => {
+    isDirtyRef.current = true;
     const updated = new Map(selectedPersonaByProfile);
     pendingProfileIds.forEach((profileId) => {
       updated.delete(profileId);

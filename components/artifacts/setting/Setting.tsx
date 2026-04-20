@@ -1,950 +1,601 @@
-/**
- * Setting.tsx
- * Implementation using modular resource components
- * Used to create and manage settings - supports both creation and editing
- * Adapted from Persona.tsx pattern
- */
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
-import { StepCard } from "@/components/common/forms/StepCard";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
+import { StepCard } from "@/components/common/forms/StepCard";
+import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { AuthItemKeys } from "@/components/resources/AuthItemKeys";
 import { Auths } from "@/components/resources/Auths";
 import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
-import { Flags, type FlagConfig } from "@/components/resources/Flags";
+import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { Profiles } from "@/components/resources/Profiles";
 import { ProviderKeys } from "@/components/resources/ProviderKeys";
-import { Roles } from "@/components/resources/Roles";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Systems } from "@/components/resources/Systems";
 import { useDrafts } from "@/contexts/draft-context";
-import { useProfile } from "@/contexts/profile-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import {
+  buildDraftPayload,
+  checkHasResourceIds,
+  type ResourceConfig,
+} from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
-import { Loader2, Sparkles } from "lucide-react";
-import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
+import { parseAsString, type Parser } from "nuqs";
 
-// Types defined inline using InputOf/OutputOf
 type CreateSettingIn = InputOf<"/setting/create", "post">;
 type CreateSettingOut = OutputOf<"/setting/create", "post">;
 type UpdateSettingIn = InputOf<"/setting/update", "post">;
 type UpdateSettingOut = OutputOf<"/setting/update", "post">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftColorsIn = InputOf<"/api/v5/resources/colors", "post">;
-type CreateDraftColorsOut = OutputOf<"/api/v5/resources/colors", "post">;
 type PatchSettingDraftIn = InputOf<"/setting/draft", "patch">;
 type PatchSettingDraftOut = OutputOf<"/setting/draft", "patch">;
-
 type SettingData = OutputOf<"/setting/get", "post">;
+
+type NameItem = {
+  id?: string | null;
+  name?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type DescriptionItem = {
+  id?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type ColorItem = {
+  id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  hex_code?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type FlagItem = {
+  key: string;
+  label: string;
+  description?: string | null;
+  icon_id?: string | null;
+  flag_option_id?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type DepartmentItem = {
+  department_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type ProfileItem = {
+  profile_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type AuthItem = {
+  auth_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  slug?: string | null;
+  protocol?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type ProviderKeyItem = {
+  id?: string | null;
+  provider_id?: string | null;
+  key_id?: string | null;
+  key?: string | null;
+  name?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type AuthItemKeyItem = {
+  id?: string | null;
+  auth_id?: string | null;
+  item_id?: string | null;
+  key_id?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type SystemItem = {
+  system_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
+  pending?: boolean | null;
+};
+
+type ProviderCatalogItem = {
+  provider_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+};
+
+type KeyCatalogItem = {
+  key_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  masked_key?: string | null;
+};
+
+type CanonicalSettingData = SettingData;
+
+type SettingFormState = {
+  name_id: string | null;
+  name: string | null;
+  description_id: string | null;
+  description: string | null;
+  active_flag_id: string | null;
+  color_ids: string[];
+  department_ids: string[];
+  profile_ids: string[];
+  auth_ids: string[];
+  provider_key_ids: string[];
+  auth_item_key_ids: string[];
+  system_ids: string[];
+  pending_ids: string[];
+};
+
+const SETTING_RESOURCES: ResourceConfig[] = [
+  { key: "names", formKey: "name_id", flushKey: null, type: "single" },
+  { key: "descriptions", formKey: "description_id", flushKey: null, type: "single" },
+  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  { key: "colors", formKey: "color_ids", flushKey: null, type: "multi" },
+  { key: "departments", formKey: "department_ids", flushKey: null, type: "multi" },
+  { key: "profiles", formKey: "profile_ids", flushKey: null, type: "multi" },
+  { key: "auths", formKey: "auth_ids", flushKey: null, type: "multi" },
+  { key: "provider_keys", formKey: "provider_key_ids", flushKey: null, type: "multi" },
+  { key: "auth_item_keys", formKey: "auth_item_key_ids", flushKey: null, type: "multi" },
+  { key: "systems", formKey: "system_ids", flushKey: null, type: "multi" },
+];
+
+const VALID_RESOURCE_TYPES: ResourceType[] = [
+  "names",
+  "descriptions",
+  "colors",
+  "flags",
+  "departments",
+];
 
 export interface SettingProps {
   settingId?: string;
-  // Server-provided data (for server-side rendering)
   settingData?: SettingData;
-  // Server actions (replaces useMutation)
   createSettingAction?: (input: CreateSettingIn) => Promise<CreateSettingOut>;
   updateSettingAction?: (input: UpdateSettingIn) => Promise<UpdateSettingOut>;
   patchSettingDraftAction?: (
     input: PatchSettingDraftIn
   ) => Promise<PatchSettingDraftOut>;
-  // Resource creation actions
-  createNamesAction?: (
-    input: CreateDraftNamesIn
-  ) => Promise<CreateDraftNamesOut>;
-  createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn
-  ) => Promise<CreateDraftDescriptionsOut>;
-  createColorsAction?: (
-    input: CreateDraftColorsIn
-  ) => Promise<CreateDraftColorsOut>;
-  createProviderKeysAction?: (input: {
-    provider_id: string;
-    key_id: string;
-  }) => Promise<{ provider_keys_id?: string | null }>;
-  getProviderKeysAction?: (ids: string[]) => Promise<
-    Array<{
-      id?: string | null;
-      provider_id?: string | null;
-      key_id?: string | null;
-      provider_name?: string | null;
-      key_name?: string | null;
-      key_description?: string | null;
-      generated?: boolean | null;
-    }>
-  >;
-  createAuthItemKeysAction?: (input: {
-    auth_id: string;
-    key_id: string;
-  }) => Promise<{ auth_item_keys_id?: string | null }>;
-  getAuthItemKeysAction?: (ids: string[]) => Promise<
-    Array<{
-      id?: string | null;
-      auth_id?: string | null;
-      item_id?: string | null;
-      key_id?: string | null;
-      auth_name?: string | null;
-      key_name?: string | null;
-      key_description?: string | null;
-      generated?: boolean | null;
-    }>
-  >;
 }
 
-function SettingComponent({
+function Setting({
   settingId,
   settingData,
   createSettingAction,
   updateSettingAction,
   patchSettingDraftAction,
-  createNamesAction,
-  createDescriptionsAction,
-  createColorsAction,
-  createProviderKeysAction,
-  getProviderKeysAction,
-  createAuthItemKeysAction,
-  getAuthItemKeysAction,
 }: SettingProps) {
   const router = useRouter();
   const isEditMode = !!settingId;
-  const { profile } = useProfile();
-  const { selectedDraftId, setSelectedDraftId } = useDrafts();
-  // Generation state for AI workflows
-  const VALID_SETTING_RESOURCE_TYPES: ResourceType[] = [
-    "names", "descriptions", "colors", "flags", "departments",
-  ];
-  const { isGenerating, _makeOnGenerationComplete, generate } =
-    useArtifactAi({
-      artifactType: "setting",
-      validResourceTypes: VALID_SETTING_RESOURCE_TYPES,
-    });
+  const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
+  const emptyFlushRegistryRef = useRef<
+    Map<string, () => Promise<Record<string, unknown> | void>>
+  >(new Map());
+  const s = settingData as unknown as CanonicalSettingData | undefined;
 
-  // nuqs parsers for URL-backed state (will be passed to GenericForm)
-  // Memoize to prevent new object reference on every render
-  const settingSearchParamsClient = useMemo(
-    () => ({
-      // Draft ID (URL-backed, updated when draft is created)
-      draftId: parseAsString,
-      // Search params (URL-backed, updated via debounced callback in StepCard)
-      colorSearch: parseAsString,
-      descriptionSearch: parseAsString,
-      // Filter params (URL-backed)
-      colorShowSelected: parseAsBoolean,
-    }),
-    []
-  );
-
-  // Local form state (not in URL) - stores only resource IDs
-  // Display values are managed inside resource components
-  // Use ref to store settingData to prevent callback recreation on every render
-  const settingDataRef = React.useRef(settingData);
-  React.useEffect(() => {
-    settingDataRef.current = settingData;
-  }, [settingData]);
-
-  // Memoize settingData fields used in renderStep to prevent callback recreation
-  // when only object reference changes (but content is same)
-  const stableSettingDataFields = React.useMemo(() => {
-    if (!settingData) return null;
+  const getInitialFormState = useCallback((): SettingFormState => {
     return {
-      group_id: settingData.group_id,
-      // Names (single-select section)
-      name_resource: settingData.names?.resource ?? null,
-      show_name: settingData.names?.show ?? true,
-      name_suggestions: settingData.names?.suggestions ?? [],
-      names: settingData.names?.resources ?? [],
-      name_required: settingData.names?.required ?? false,
-      name_agent_id: settingData.resource_agent_ids?.names ?? null,
-      // Descriptions (single-select section)
-      description_resource: settingData.descriptions?.resource ?? null,
-      show_description: settingData.descriptions?.show ?? true,
-      description_suggestions: settingData.descriptions?.suggestions ?? [],
-      description_required: settingData.descriptions?.required ?? false,
-      description_agent_id: settingData.resource_agent_ids?.descriptions ?? null,
-      descriptions: settingData.descriptions?.resources ?? [],
-      // Departments (multi-select section)
-      department_resources: settingData.departments?.current ?? [],
-      show_departments: settingData.departments?.show ?? false,
-      department_suggestions: settingData.departments?.suggestions ?? [],
-      departments_required: settingData.departments?.required ?? false,
-      departments_agent_id: settingData.resource_agent_ids?.departments ?? null,
-      departments: settingData.departments?.resources ?? [],
-      department_ids: (settingData.departments?.current ?? []).map((d: { id?: string | null }) => d.id).filter(Boolean),
-      // Profiles (multi-select section)
-      profile_resources: settingData.profiles?.current ?? [],
-      show_profiles: settingData.profiles?.show ?? false,
-      profile_suggestions: settingData.profiles?.suggestions ?? [],
-      profiles_required: settingData.profiles?.required ?? false,
-      profiles_agent_id: settingData.resource_agent_ids?.profiles ?? null,
-      profiles: settingData.profiles?.resources ?? [],
-      profile_ids: (settingData.profiles?.current ?? []).map((p: { id?: string | null }) => p.id).filter(Boolean),
-      // Flags (single-select section)
-      flag_resource: settingData.flags?.current ?? null,
-      show_flag: settingData.flags?.show ?? false,
-      flag_required: settingData.flags?.required ?? false,
-      flag_agent_id: settingData.resource_agent_ids?.flags ?? null,
-      // Colors (multi-select section)
-      color_resources: settingData.colors?.current ?? [],
-      show_colors: settingData.colors?.show ?? false,
-      color_suggestions: settingData.colors?.suggestions ?? [],
-      colors_required: settingData.colors?.required ?? false,
-      colors_agent_id: settingData.resource_agent_ids?.colors ?? null,
-      colors: settingData.colors?.resources ?? [],
-      color_ids: (settingData.colors?.current ?? []).map((c: { id?: string | null }) => c.id).filter(Boolean),
-      // Auths (multi-select section)
-      auth_resources: settingData.auths?.current ?? [],
-      show_auths: settingData.auths?.show ?? false,
-      auth_suggestions: settingData.auths?.suggestions ?? [],
-      auths_required: settingData.auths?.required ?? false,
-      auths_agent_id: settingData.resource_agent_ids?.auths ?? null,
-      auths: settingData.auths?.resources ?? [],
-      auth_ids: (settingData.auths?.current ?? []).map((a: { id?: string | null }) => a.id).filter(Boolean),
-      // Provider keys (multi-select section)
-      provider_key_ids: (settingData.provider_keys?.current ?? []).map((pk: { id?: string | null }) => pk.id).filter(Boolean),
-      providers:
-        ((settingData as Record<string, unknown>)["providers"] as
-          | Array<{
-              provider_id?: string | null;
-              name?: string | null;
-              description?: string | null;
-            }>
-          | null
-          | undefined) ?? [],
-      provider_key_resources: settingData.provider_keys?.current ?? [],
-      // Auth item keys (multi-select section)
-      auth_item_key_resources: settingData.auth_item_keys?.current ?? [],
-      // Keys - not a section in the API, check if it exists
-      key_resources: ((settingData as Record<string, unknown>)["key_resources"] as unknown[]) ?? [],
-      show_keys: ((settingData as Record<string, unknown>)["show_keys"] as boolean) ?? false,
-      key_suggestions: ((settingData as Record<string, unknown>)["key_suggestions"] as string[]) ?? [],
-      keys_required: ((settingData as Record<string, unknown>)["keys_required"] as boolean) ?? false,
-      keys_agent_id: settingData.resource_agent_ids?.keys ?? null,
-      keys: ((settingData as Record<string, unknown>)["keys"] as unknown[]) ?? [],
-      key_ids: ((settingData as Record<string, unknown>)["key_ids"] as string[]) ?? [],
-      // Roles (multi-select section)
-      role_ids: (settingData.roles?.current ?? []).map((r: { id?: string | null }) => r.id).filter(Boolean),
-      role_resources: settingData.roles?.current ?? [],
-      show_roles: settingData.roles?.show ?? false,
-      roles_required: settingData.roles?.required ?? false,
-      roles: settingData.roles?.resources ?? [],
+      name_id: s?.names?.find((item) => item.selected)?.id ?? null,
+      name: null,
+      description_id: s?.descriptions?.find((item) => item.selected)?.id ?? null,
+      description: null,
+      active_flag_id: s?.flags?.find((item) => item.selected)?.flag_option_id ?? null,
+      color_ids:
+        (s?.colors?.filter((item) => item.selected) ?? [])
+          .map((item) => item.id)
+          .filter((id): id is string => !!id),
+      department_ids:
+        (s?.departments?.filter((item) => item.selected) ?? [])
+          .map((item) => item.department_id)
+          .filter((id): id is string => !!id),
+      profile_ids:
+        (s?.profiles?.filter((item) => item.selected) ?? [])
+          .map((item) => item.profile_id)
+          .filter((id): id is string => !!id),
+      auth_ids:
+        (s?.auths?.filter((item) => item.selected) ?? [])
+          .map((item) => item.auth_id)
+          .filter((id): id is string => !!id),
+      provider_key_ids:
+        (s?.provider_keys?.filter((item) => item.selected) ?? [])
+          .map((item) => item.id)
+          .filter((id): id is string => !!id),
+      auth_item_key_ids:
+        (s?.auth_item_keys?.filter((item) => item.selected) ?? [])
+          .map((item) => item.id)
+          .filter((id): id is string => !!id),
+      system_ids:
+        (s?.systems?.filter((item) => item.selected) ?? [])
+          .map((item) => item.system_id)
+          .filter((id): id is string => !!id),
+      pending_ids: (s?.pending_ids ?? []).filter((id): id is string => !!id),
     };
-    // Intentionally depend on individual fields, not whole settingData object
-    // to prevent recreation when only object reference changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    settingData?.group_id,
-    // Names section
-    settingData?.names?.resource,
-    settingData?.names?.show,
-    settingData?.names?.suggestions,
-    settingData?.names?.resources,
-    settingData?.names?.required,
-    settingData?.resource_agent_ids?.names,
-    settingData?.descriptions?.resource,
-    settingData?.descriptions?.show,
-    settingData?.descriptions?.suggestions,
-    settingData?.descriptions?.required,
-    settingData?.resource_agent_ids?.descriptions,
-    settingData?.descriptions?.resources,
-    // Departments section
-    settingData?.departments?.current,
-    settingData?.departments?.show,
-    settingData?.departments?.suggestions,
-    settingData?.departments?.required,
-    settingData?.departments?.resources,
-    settingData?.resource_agent_ids?.departments,
-    // Profiles section
-    settingData?.profiles?.current,
-    settingData?.profiles?.show,
-    settingData?.profiles?.suggestions,
-    settingData?.profiles?.required,
-    settingData?.profiles?.resources,
-    settingData?.resource_agent_ids?.profiles,
-    // Flags section
-    settingData?.flags?.current,
-    settingData?.flags?.show,
-    settingData?.flags?.required,
-    settingData?.resource_agent_ids?.flags,
-    // Colors section
-    settingData?.colors?.current,
-    settingData?.colors?.show,
-    settingData?.colors?.suggestions,
-    settingData?.colors?.required,
-    settingData?.colors?.resources,
-    settingData?.resource_agent_ids?.colors,
-    // Auths section
-    settingData?.auths?.current,
-    settingData?.auths?.show,
-    settingData?.auths?.suggestions,
-    settingData?.auths?.required,
-    settingData?.auths?.resources,
-    settingData?.resource_agent_ids?.auths,
-    // Provider keys section
-    settingData?.provider_keys?.current,
-    // Auth item keys section
-    settingData?.auth_item_keys?.current,
-    // Roles section
-    settingData?.roles?.current,
-    settingData?.roles?.show,
-    settingData?.roles?.required,
-    settingData?.roles?.resources,
-  ]);
+  }, [s]);
 
-  // Helper to check if a resource type can be regenerated
-  // Use stableSettingDataFields to prevent callback recreation when settingData object reference changes
-  const canRegenerate = useCallback(
-    (resourceType: ResourceType): boolean => {
-      if (!stableSettingDataFields) return false;
-      switch (resourceType) {
-        case "names":
-          return stableSettingDataFields.name_resource?.generated ?? false;
-        case "descriptions":
-          return (
-            stableSettingDataFields.description_resource?.generated ?? false
-          );
-        case "colors":
-          return (
-            stableSettingDataFields.color_resources?.some((c) => c.generated) ??
-            false
-          );
-        case "flags":
-          return stableSettingDataFields.flag_resource?.generated ?? false;
-        case "departments":
-          return (
-            stableSettingDataFields.department_resources?.some(
-              (d) => d.generated
-            ) ?? false
-          );
-        default:
-          return false;
-      }
-    },
-    [stableSettingDataFields]
-  );
+  const [formState, setFormState] = useState<SettingFormState>(getInitialFormState);
+  const referenceStateRef = useRef<SettingFormState>(getInitialFormState());
+  const formStateRef = useRef(formState);
+  const serverSyncPendingRef = useRef(false);
 
-  const getInitialFormState = useCallback(() => {
-    const data = settingDataRef.current;
-    if (!data) {
-      return {
-        name: null as string | null,
-        name_id: null as string | null,
-        description: null as string | null,
-        description_id: null as string | null,
-        color_ids: [] as string[],
-        active_flag_id: null as string | null,
-        department_ids: [] as string[],
-        profile_ids: [] as string[],
-        auth_ids: [] as string[],
-        provider_key_ids: [] as string[],
-        key_ids: [] as string[],
-        role_ids: [] as string[],
-      };
-    }
-    // Extract resource IDs from server data
-    // Note: Server data may have display values, but we only store IDs here
-    return {
-      name: null as string | null,
-      name_id: data.name_id ?? null,
-      description: null as string | null,
-      description_id: data.description_id ?? null,
-      color_ids: data.color_ids ?? [],
-      active_flag_id: data.active_flag_id ?? null,
-      department_ids: data.department_ids ?? [],
-      profile_ids: data.profile_ids ?? [],
-      auth_ids: data.auth_ids ?? [],
-      provider_key_ids: data.provider_key_ids ?? [],
-      key_ids: data.key_ids ?? [],
-      role_ids: data.role_ids ?? [],
-    };
-    // Remove settingData from dependencies - use ref instead to prevent callback recreation
-  }, []);
-
-  const [formState, setFormState] = useState(getInitialFormState);
-  // Prevent autosave re-trigger when syncing form_state from server response
-  const serverSyncPendingRef = React.useRef(false);
-  // Use ref to access formState in renderStep without depending on it
-  const formStateRef = React.useRef(formState);
-  React.useEffect(() => {
+  useEffect(() => {
     formStateRef.current = formState;
   }, [formState]);
 
-  // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
-  const departmentIdsStr = React.useMemo(
-    () => JSON.stringify(settingData?.department_ids ?? []),
-    [settingData?.department_ids]
-  );
-  const colorIdsStr = React.useMemo(
-    () => JSON.stringify(settingData?.color_ids ?? []),
-    [settingData?.color_ids]
-  );
-  const authIdsStr = React.useMemo(
-    () => JSON.stringify(settingData?.auth_ids ?? []),
-    [settingData?.auth_ids]
-  );
-  const profileIdsStr = React.useMemo(
-    () => JSON.stringify(settingData?.profile_ids ?? []),
-    [settingData?.profile_ids]
-  );
-  const providerIdsStr = React.useMemo(
-    () => JSON.stringify(settingData?.provider_key_ids ?? []),
-    [settingData?.provider_key_ids]
-  );
-  const keyIdsStr = React.useMemo(
-    () => JSON.stringify(settingData?.key_ids ?? []),
-    [settingData?.key_ids]
-  );
-  const roleIdsStr = React.useMemo(
-    () => JSON.stringify(settingData?.role_ids ?? []),
-    [settingData?.role_ids]
-  );
-
-  // Memoize stringified formState arrays for draft listener effect dependencies
-  const formStateDepartmentIdsStr = React.useMemo(
-    () => JSON.stringify(formState.department_ids),
-    [formState.department_ids]
-  );
-  const formStateColorIdsStr = React.useMemo(
-    () => JSON.stringify(formState.color_ids),
-    [formState.color_ids]
-  );
-  const formStateAuthIdsStr = React.useMemo(
-    () => JSON.stringify(formState.auth_ids),
-    [formState.auth_ids]
-  );
-  const formStateProfileIdsStr = React.useMemo(
-    () => JSON.stringify(formState.profile_ids),
-    [formState.profile_ids]
-  );
-  const formStateProviderIdsStr = React.useMemo(
-    () => JSON.stringify(formState.provider_key_ids),
-    [formState.provider_key_ids]
-  );
-  const formStateKeyIdsStr = React.useMemo(
-    () => JSON.stringify(formState.key_ids),
-    [formState.key_ids]
-  );
-  const formStateRoleIdsStr = React.useMemo(
-    () => JSON.stringify(formState.role_ids),
-    [formState.role_ids]
-  );
-
-  // Update form state when server data changes
-  // Use settingData directly in dependency array, not getInitialFormState
   useEffect(() => {
-    const newState = getInitialFormState();
-    setFormState((prev) => {
-      // Only update if resource IDs actually changed
-      if (
-        prev.name_id !== newState.name_id ||
-        prev.description_id !== newState.description_id ||
-        JSON.stringify(prev.color_ids) !== JSON.stringify(newState.color_ids) ||
-        prev.active_flag_id !== newState.active_flag_id ||
-        JSON.stringify(prev.department_ids) !==
-          JSON.stringify(newState.department_ids) ||
-        JSON.stringify(prev.profile_ids) !==
-          JSON.stringify(newState.profile_ids) ||
-        JSON.stringify(prev.auth_ids) !== JSON.stringify(newState.auth_ids) ||
-        JSON.stringify(prev.provider_key_ids) !==
-          JSON.stringify(newState.provider_key_ids) ||
-        JSON.stringify(prev.key_ids) !== JSON.stringify(newState.key_ids) ||
-        JSON.stringify(prev.role_ids) !== JSON.stringify(newState.role_ids)
-      ) {
-        return newState;
-      }
-      return prev;
-    });
-    // Use stringified arrays in dependencies to prevent effect from running when array references change but content is same
-    // Intentionally exclude formState and getInitialFormState to prevent infinite loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    settingData?.name_id,
-    settingData?.description_id,
-    settingData?.active_flag_id,
-    colorIdsStr,
-    departmentIdsStr,
-    profileIdsStr,
-    authIdsStr,
-    providerIdsStr,
-    keyIdsStr,
-    roleIdsStr,
-  ]);
+    const initial = getInitialFormState();
+    setFormState(initial);
+    referenceStateRef.current = initial;
+  }, [getInitialFormState]);
 
-  // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
-  const [draftId, setDraftId] = useState<string | null>(null);
-  const setUrlFormDataRef = React.useRef<
-    null | ((updates: Record<string, unknown>) => void)
-  >(null);
+  const patchActionRef = useRef<
+    | ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>)
+    | undefined
+  >(undefined);
 
-  // Store formData from GenericForm to access search params
-  const formDataRef = React.useRef<Record<string, unknown>>({});
-
-  // Memoized callback to sync draftId from GenericForm - only update if value changed
-  const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
-    // Store formData for access in handleGenerateResources
-    formDataRef.current = fd;
-    const next = (fd["draftId"] as string | undefined) ?? null;
-    setDraftId((prev) => (prev === next ? prev : next));
-  }, []);
-
-  // Sync URL draftId to profile context
-  useEffect(() => {
-    if (draftId !== selectedDraftId) {
-      setSelectedDraftId(draftId);
-    }
-  }, [draftId, selectedDraftId, setSelectedDraftId]);
-
-  // Use ref to stabilize patchSettingDraftAction to prevent effect recreation when prop reference changes
-  const patchSettingDraftActionRef = React.useRef(patchSettingDraftAction);
-  React.useEffect(() => {
-    patchSettingDraftActionRef.current = patchSettingDraftAction;
-  }, [patchSettingDraftAction]);
-
-  // Build a stable key for "what would we patch" - only changes when form data actually changes
-  const draftPatchKey = React.useMemo(() => {
-    // Guard: prevent autosave re-trigger when syncing form_state from server
-    if (serverSyncPendingRef.current) return null;
-    return JSON.stringify({
-      draftId: draftId || null,
-      name: formState.name,
-      name_id: formState.name_id,
-      description: formState.description,
-      description_id: formState.description_id,
-      color_ids: formState.color_ids,
-      active_flag_id: formState.active_flag_id,
-      department_ids: formState.department_ids,
-      profile_ids: formState.profile_ids,
-      auth_ids: formState.auth_ids,
-      provider_key_ids: formState.provider_key_ids,
-      key_ids: formState.key_ids,
-      role_ids: formState.role_ids,
-    });
-    // Use stringified arrays to prevent recreation when array references change but content is same
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    draftId,
-    formState.name,
-    formState.name_id,
-    formState.description,
-    formState.description_id,
-    formState.active_flag_id,
-    formStateColorIdsStr,
-    formStateDepartmentIdsStr,
-    formStateProfileIdsStr,
-    formStateAuthIdsStr,
-    formStateProviderIdsStr,
-    formStateKeyIdsStr,
-    formStateRoleIdsStr,
-  ]);
-
-  // Track last patched payload so we don't repatch identical state
-  const lastPatchedKeyRef = React.useRef<string | null>(null);
-
-  // Draft change listener - watches resource IDs and patches draft
-  // Only triggers when the payload actually changes, not when version changes
-  useEffect(() => {
-    const hasResourceIds =
-      formState.name_id ||
-      formState.description_id ||
-      formState.color_ids.length > 0 ||
-      formState.active_flag_id ||
-      formState.department_ids.length > 0 ||
-      formState.profile_ids.length > 0 ||
-      formState.auth_ids.length > 0 ||
-      formState.provider_key_ids.length > 0 ||
-      formState.key_ids.length > 0 ||
-      formState.role_ids.length > 0;
-
-    if (!hasResourceIds || !patchSettingDraftActionRef.current) {
-      return;
-    }
-
-    // ✅ If nothing changed since the last successful patch, do nothing.
-    if (lastPatchedKeyRef.current === draftPatchKey) {
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      try {
-        if (!patchSettingDraftActionRef.current) return;
-
-        // Build payload with value field overlay
-        const payload: Record<string, unknown> = {
-          input_draft_id: draftId || null,
-          flag_id: formState.active_flag_id || null,
-          color_ids: formState.color_ids.length > 0 ? formState.color_ids : null,
-          department_ids: formState.department_ids.length > 0 ? formState.department_ids : null,
-          profile_ids: formState.profile_ids.length > 0 ? formState.profile_ids : null,
-          auth_ids: formState.auth_ids.length > 0 ? formState.auth_ids : null,
-          provider_key_ids: formState.provider_key_ids.length > 0 ? formState.provider_key_ids : null,
-          auth_item_key_ids: formState.key_ids.length > 0 ? formState.key_ids : null,
-          role_ids: formState.role_ids.length > 0 ? formState.role_ids : null,
-        };
-
-        // Value field overlay: send value instead of ID for creatable resources
-        if (formState.name) {
-          payload["name"] = formState.name;
-        } else {
-          payload["name_id"] = formState.name_id || null;
-        }
-        if (formState.description) {
-          payload["description"] = formState.description;
-        } else {
-          payload["description_id"] = formState.description_id || null;
-        }
-
-        const result = await patchSettingDraftActionRef.current({
-          body: payload,
-        } as PatchSettingDraftIn);
-
-        // Mark this payload as patched so we don't loop
-        lastPatchedKeyRef.current = draftPatchKey;
-
-        if (!draftId && result.draft_id) {
-          // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
-          setUrlFormDataRef.current?.({ draftId: result.draft_id });
-        }
-
-        // Sync form_state from server (server is source of truth for resolved IDs)
-        if (result.form_state) {
-          serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name: null,
-            name_id: (result.form_state!.name_id as string) ?? prev.name_id,
-            description: null,
-            description_id: (result.form_state!.description_id as string) ?? prev.description_id,
-          }));
-          requestAnimationFrame(() => {
-            serverSyncPendingRef.current = false;
-          });
-        }
-
-      } catch {
-        // Failed to save draft - error already logged by API
-        // Don't update lastPatchedKeyRef on failure so we retry on next change
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-    // ✅ Trigger only when payload changes, not when version changes
-    // patchSettingDraftAction and setDraftId are accessed via refs to prevent effect recreation
-    // when prop/function references change but functionality is the same
-    // We access formState fields and draftId inside the effect, but depend on draftPatchKey
-    // to prevent unnecessary effect recreation when individual fields change but payload is same
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    draftPatchKey, // ✅ trigger only when payload changes
-    // patchSettingDraftAction and setDraftId are accessed via refs
-  ]);
-
-  // Disabled logic based on can_edit flag - standardized for all resource components
-  // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
-  const disabled = useMemo(() => {
-    if (!settingData) return false;
-    return !settingData.can_edit;
-  }, [settingData]);
-
-  // Submit handler for GenericForm (uses formState, not formData parameter)
-  const handleSubmit = useCallback(
-    async (_formData: Record<string, unknown>) => {
-      // Validate required resource IDs using {resource}_required flags from settingData
-      if (settingData?.name_required && !formState.name_id) {
-        toast.error("Setting name is required");
-        throw new Error("Setting name is required");
-      }
-
-      if (settingData?.colors_required && formState.color_ids.length === 0) {
-        toast.error("At least one color is required");
-        throw new Error("At least one color is required");
-      }
-
-      if (
-        settingData?.departments_required &&
-        formState.department_ids.length === 0
-      ) {
-        toast.error("At least one department is required");
-        throw new Error("At least one department is required");
-      }
-
-      // Ensure profileId exists - required for API calls
-      if (!profile?.id) {
-        toast.error("Profile not loaded. Please refresh the page.");
-        throw new Error("Profile not loaded");
-      }
-
-      try {
-        if (isEditMode && settingId && updateSettingAction) {
-          await updateSettingAction({
-            body: {
-              settings: [{
-                setting_id: settingId,
-                name_id: formState.name_id || undefined,
-                description_id: formState.description_id || undefined,
-                active_flag_id: formState.active_flag_id || undefined,
-                color_ids: formState.color_ids.length > 0 ? formState.color_ids : undefined,
-                department_ids: formState.department_ids.length > 0 ? formState.department_ids : undefined,
-                profile_ids: formState.profile_ids.length > 0 ? formState.profile_ids : undefined,
-                auth_ids: formState.auth_ids.length > 0 ? formState.auth_ids : undefined,
-                provider_key_ids: formState.provider_key_ids.length > 0 ? formState.provider_key_ids : undefined,
-                auth_item_key_ids: formState.key_ids.length > 0 ? formState.key_ids : undefined,
-              }],
-            },
-          } as UpdateSettingIn);
-        } else if (createSettingAction) {
-          await createSettingAction({
-            body: {
-              settings: [{
-                name_id: formState.name_id || undefined,
-                description_id: formState.description_id || undefined,
-                active_flag_id: formState.active_flag_id || undefined,
-                color_ids: formState.color_ids.length > 0 ? formState.color_ids : undefined,
-                department_ids: formState.department_ids.length > 0 ? formState.department_ids : undefined,
-                profile_ids: formState.profile_ids.length > 0 ? formState.profile_ids : undefined,
-                auth_ids: formState.auth_ids.length > 0 ? formState.auth_ids : undefined,
-                provider_key_ids: formState.provider_key_ids.length > 0 ? formState.provider_key_ids : undefined,
-                auth_item_key_ids: formState.key_ids.length > 0 ? formState.key_ids : undefined,
-              }],
-            },
-          } as CreateSettingIn);
-        } else {
-          toast.error("Save action not available");
-          throw new Error("Save action not available");
-        }
-        toast.success(
-          `Setting ${isEditMode ? "updated" : "created"} successfully!`
-        );
-        router.push("/setting");
-      } catch (error) {
-        toast.error(
-          `Failed to ${isEditMode ? "update" : "create"} setting: ${error instanceof Error ? error.message : "Unknown error"}`
-        );
-        throw error;
-      }
-    },
-    [
-      formState,
-      isEditMode,
-      settingId,
-      profile?.id,
-      createSettingAction,
-      updateSettingAction,
-      router,
-      settingData?.name_required,
-      settingData?.colors_required,
-      settingData?.departments_required,
-    ]
-  );
-
-  // Step status logic (for GenericForm) - check resource IDs instead of display values
-  const getStepStatus = useCallback(
-    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      // Check resource IDs from formState (components manage their own display state)
-      const hasName = !!formState.name_id;
-      const hasDescription = !!formState.description_id;
-
-      switch (stepId) {
-        case "basic":
-          return hasName && hasDescription ? "completed" : "active";
-        case "colors":
-          if (!hasName || !hasDescription) return "pending";
-          return formState.color_ids.length > 0 ? "completed" : "active";
-        case "configuration":
-          if (!hasName || !hasDescription) return "pending";
-          return "active";
-        default:
-          return "pending";
-      }
-    },
-    [formState]
-  );
-
-  // Step-to-resources mapping for multi-generation
-  const stepResources: Record<string, ResourceType[]> = useMemo(
-    () => ({
-      basic: ["names", "descriptions", "departments", "flags"],
-      colors: ["colors"],
-      configuration: [], // No generation for auths/provider_keys/auth_item_keys yet
-      all: ["names", "descriptions", "colors", "flags", "departments"], // All resources for full-page generation
-    }),
+  const settingSearchParamsClient = useMemo(
+    () => ({ draftId: parseAsString }),
     []
   );
 
-  const handleGenerateResources = useCallback(
-    async (
-      resourceTypes: ResourceType[],
-      userInstructions?: string
-    ) => {
-      const formData = formDataRef.current;
-      const draftId = (formData["draftId"] as string | undefined) ?? null;
+  const { isGenerating, generate } = useArtifactAi({
+    artifactType: "setting",
+    validResourceTypes: VALID_RESOURCE_TYPES,
+  });
 
+  const pendingIdsBySection = useMemo(
+    () => ({
+      names: new Set((s?.names ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
+      descriptions: new Set((s?.descriptions ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
+      flags: new Set((s?.flags ?? []).filter((item) => item.pending && item.flag_option_id).map((item) => item.flag_option_id as string)),
+      colors: new Set((s?.colors ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
+      departments: new Set((s?.departments ?? []).filter((item) => item.pending && item.department_id).map((item) => item.department_id as string)),
+      profiles: new Set((s?.profiles ?? []).filter((item) => item.pending && item.profile_id).map((item) => item.profile_id as string)),
+      auths: new Set((s?.auths ?? []).filter((item) => item.pending && item.auth_id).map((item) => item.auth_id as string)),
+      provider_keys: new Set((s?.provider_keys ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
+      auth_item_keys: new Set((s?.auth_item_keys ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
+      systems: new Set((s?.systems ?? []).filter((item) => item.pending && item.system_id).map((item) => item.system_id as string)),
+    }),
+    [s]
+  );
+
+  const pruneSectionPending = useCallback(
+    (section: keyof typeof pendingIdsBySection, nextIds: string[]) => {
+      const pendingForSection = pendingIdsBySection[section];
+      return formStateRef.current.pending_ids.filter(
+        (id) => !pendingForSection.has(id) || nextIds.includes(id)
+      );
+    },
+    [pendingIdsBySection]
+  );
+
+  useEffect(() => {
+    if (!patchSettingDraftAction) {
+      patchActionRef.current = undefined;
+      return;
+    }
+
+    patchActionRef.current = async (payload: Record<string, unknown>) => {
+      const result = await patchSettingDraftAction({
+        body: payload as PatchSettingDraftIn["body"],
+      } as PatchSettingDraftIn);
+      const fs = (result as Record<string, unknown>)["form_state"] as
+        | Record<string, unknown>
+        | undefined;
+      if (fs) {
+        serverSyncPendingRef.current = true;
+        setFormState({
+          name_id: (fs["name_id"] as string | null) ?? null,
+          name: (fs["name"] as string | null) ?? null,
+          description_id: (fs["description_id"] as string | null) ?? null,
+          description: (fs["description"] as string | null) ?? null,
+          active_flag_id:
+            ((fs["active_flag_id"] as string | null) ??
+              (fs["flag_id"] as string | null)) ??
+            null,
+          color_ids: (fs["color_ids"] as string[] | null) ?? [],
+          department_ids: (fs["department_ids"] as string[] | null) ?? [],
+          profile_ids: (fs["profile_ids"] as string[] | null) ?? [],
+          auth_ids: (fs["auth_ids"] as string[] | null) ?? [],
+          provider_key_ids: (fs["provider_key_ids"] as string[] | null) ?? [],
+          auth_item_key_ids: (fs["auth_item_key_ids"] as string[] | null) ?? [],
+          system_ids: (fs["system_ids"] as string[] | null) ?? [],
+          pending_ids: (fs["pending_ids"] as string[] | null) ?? [],
+        });
+        referenceStateRef.current = {
+          name_id: (fs["name_id"] as string | null) ?? null,
+          name: (fs["name"] as string | null) ?? null,
+          description_id: (fs["description_id"] as string | null) ?? null,
+          description: (fs["description"] as string | null) ?? null,
+          active_flag_id:
+            ((fs["active_flag_id"] as string | null) ??
+              (fs["flag_id"] as string | null)) ??
+            null,
+          color_ids: (fs["color_ids"] as string[] | null) ?? [],
+          department_ids: (fs["department_ids"] as string[] | null) ?? [],
+          profile_ids: (fs["profile_ids"] as string[] | null) ?? [],
+          auth_ids: (fs["auth_ids"] as string[] | null) ?? [],
+          provider_key_ids: (fs["provider_key_ids"] as string[] | null) ?? [],
+          auth_item_key_ids: (fs["auth_item_key_ids"] as string[] | null) ?? [],
+          system_ids: (fs["system_ids"] as string[] | null) ?? [],
+          pending_ids: (fs["pending_ids"] as string[] | null) ?? [],
+        };
+        requestAnimationFrame(() => {
+          serverSyncPendingRef.current = false;
+        });
+      }
+      return result;
+    };
+  }, [patchSettingDraftAction]);
+
+  const buildPatchPayload = useCallback((draftId: string | null) => {
+    const currentFormState = formStateRef.current;
+    const payload: Record<string, unknown> = {
+      draft_id: draftId,
+      input_draft_id: draftId,
+      ...buildDraftPayload(SETTING_RESOURCES, {
+        formState: currentFormState as unknown as Record<string, unknown>,
+        referenceState: referenceStateRef.current as unknown as Record<string, unknown>,
+        flushResults: {},
+      }),
+      pending_ids: currentFormState.pending_ids,
+    };
+
+    if (currentFormState.name && !currentFormState.name_id) {
+      payload["name"] = currentFormState.name;
+      delete payload["name_id"];
+    }
+    if (currentFormState.description && !currentFormState.description_id) {
+      payload["description"] = currentFormState.description;
+      delete payload["description_id"];
+    }
+
+    return payload;
+  }, []);
+
+  const hasResourceIds =
+    checkHasResourceIds(
+      SETTING_RESOURCES,
+      formState as unknown as Record<string, unknown>
+    ) ||
+    !!formState.name ||
+    !!formState.description ||
+    formState.pending_ids.length > 0;
+
+  const {
+    setUrlFormDataRef,
+    onFormDataChange,
+    flushAllAndSave,
+    formDataRef,
+  } = useDraftLifecycle({
+    formStateKey: JSON.stringify(
+      serverSyncPendingRef.current ? referenceStateRef.current : formState
+    ),
+    patchActionRef,
+    isAutosaveEnabled,
+    buildPatchPayload,
+    setSelectedDraftId,
+    hasResourceIds,
+    flushRegistryRef: emptyFlushRegistryRef,
+    formStateRef: formStateRef as React.MutableRefObject<Record<string, unknown>>,
+  });
+
+  const disabled = !s?.can_edit;
+
+  const handleGenerateResources = useCallback(
+    async (resourceTypes: ResourceType[]) => {
+      let currentDraftId =
+        (formDataRef.current["draftId"] as string | undefined) ?? null;
+      if (!currentDraftId) {
+        currentDraftId = await flushAllAndSave();
+      }
+      if (!currentDraftId) {
+        toast.error("Please save a draft before generating");
+        return;
+      }
       generate(resourceTypes, {
-        user_instructions: userInstructions ? [userInstructions] : null,
-        draft_id: draftId || null,
-        artifact_id: settingId || null,
+        draft_id: currentDraftId,
+        artifact_id: settingId ?? null,
       });
     },
-    [settingId, generate]
+    [flushAllAndSave, formDataRef, generate, settingId]
   );
 
-  const handleDirectStepGenerate = useCallback(
-    (stepId: string, _mode: "generate" | "regenerate") => {
-      const resources = stepResources[stepId];
-      if (resources) {
-        handleGenerateResources(resources);
+  const canRegenerate = useCallback(
+    (resourceType: ResourceType) => {
+      if (!s) return false;
+      if (resourceType === "names") {
+        return s.names?.find((item) => item.selected)?.generated ?? false;
       }
+      if (resourceType === "descriptions") {
+        return s.descriptions?.find((item) => item.selected)?.generated ?? false;
+      }
+      if (resourceType === "colors") {
+        return s.colors?.some((item) => item.selected && item.generated) ?? false;
+      }
+      if (resourceType === "flags") {
+        return s.flags?.some((item) => item.selected && item.generated) ?? false;
+      }
+      if (resourceType === "departments") {
+        return s.departments?.some((item) => item.selected && item.generated) ?? false;
+      }
+      return false;
     },
-    [stepResources, handleGenerateResources],
+    [s]
   );
 
-  // Steps configuration for GenericForm
   const steps = useMemo(
     () => [
       {
         id: "basic",
-        title: "Basic Information",
-        description:
-          "Set the setting name, description, departments, and active status.",
-        resetFields: ["name", "description", "department_ids", "active"],
+        title: "Basic",
+        description: "Name, description, colors, status, and departments",
       },
       {
-        id: "colors",
-        title: "Theme Colors",
-        description: "Select theme colors for this setting.",
-        resetFields: ["color_ids", "colorSearch", "colorShowSelected"],
+        id: "access",
+        title: "Access",
+        description: "Profiles, auths, and systems",
       },
       {
-        id: "configuration",
-        title: "Configuration",
-        description: "Configure profiles, auths, provider keys, and auth keys.",
-        resetFields: ["profile_ids", "auth_ids", "provider_key_ids", "key_ids"],
-      },
-      {
-        id: "roles_routes",
-        title: "Roles & Routes",
-        description: "Configure available roles and role-route permissions for this setting.",
-        resetFields: ["role_ids"],
+        id: "integrations",
+        title: "Integrations",
+        description: "Provider-key and auth-key pairs",
       },
     ],
     []
   );
 
-  // Memoize formFieldKeys to prevent re-initialization loops
-  const formFieldKeys = useMemo(
-    () => [
-      "name",
-      "description",
-      "color_ids",
-      "active",
-      "department_ids",
-      "profile_ids",
-      "auth_ids",
-      "provider_key_ids",
-      "key_ids",
-      "role_ids",
-    ],
-    []
-  );
-
-  // Memoize resetSuccessMessage to prevent GenericForm re-renders
-  const resetSuccessMessage = useCallback((stepId: string) => {
-    switch (stepId) {
-      case "basic":
-        return "Basic information reset";
-      case "colors":
-        return "Colors reset";
-      case "configuration":
-        return "Configuration reset";
-      case "roles_routes":
-        return "Roles & Routes reset";
-      default:
-        return "Reset";
-    }
-  }, []);
-
-  const handleReset = useCallback((stepId: string) => {
-    setFormState((prev) => {
-      switch (stepId) {
-        case "basic":
-          return {
-            ...prev,
-            name: null,
-            name_id: null,
-            description: null,
-            description_id: null,
-            active_flag_id: null,
-            department_ids: [],
-          };
-        case "colors":
-          return {
-            ...prev,
-            color_ids: [],
-          };
-        case "configuration":
-          return {
-            ...prev,
-            profile_ids: [],
-            auth_ids: [],
-            provider_key_ids: [],
-            key_ids: [],
-          };
-        case "roles_routes":
-          return {
-            ...prev,
-            role_ids: [],
-          };
-        default:
-          return prev;
+  const getStepStatus = useCallback(
+    (stepId: string): StepStatus => {
+      if (stepId === "basic") {
+        return formState.name_id || formState.name ? "completed" : "active";
       }
-    });
-  }, []);
-
-  // Memoize submitButton to prevent GenericForm re-renders
-  const submitButton = useMemo(
-    () => ({
-      backUrl: "/setting",
-      backLabel: "Back",
-      createLabel: "Create Setting",
-      updateLabel: "Update Setting",
-    }),
-    []
+      if (stepId === "access") {
+        return formState.profile_ids.length > 0 ||
+          formState.auth_ids.length > 0 ||
+          formState.system_ids.length > 0
+          ? "completed"
+          : "pending";
+      }
+      if (stepId === "integrations") {
+        return formState.provider_key_ids.length > 0 ||
+          formState.auth_item_key_ids.length > 0
+          ? "completed"
+          : "pending";
+      }
+      return "pending";
+    },
+    [formState]
   );
 
-  // Memoize renderStep to prevent GenericForm re-renders
+  const handleSubmit = useCallback(async () => {
+    if (formStateRef.current.name || formStateRef.current.description) {
+      await flushAllAndSave();
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+    }
+
+    const effectiveState = formStateRef.current;
+    if (!effectiveState.name_id) {
+      throw new Error("Name is required");
+    }
+    if ((s?.colors?.length ?? 0) > 0 && effectiveState.color_ids.length === 0) {
+      throw new Error("At least one color is required");
+    }
+
+    if (isEditMode && settingId && updateSettingAction) {
+      await updateSettingAction({
+        body: {
+          settings: [
+            {
+              setting_id: settingId,
+              name_id: effectiveState.name_id,
+              description_id: effectiveState.description_id,
+              active_flag_id: effectiveState.active_flag_id,
+              color_ids: effectiveState.color_ids.length > 0 ? effectiveState.color_ids : null,
+              department_ids: effectiveState.department_ids.length > 0 ? effectiveState.department_ids : null,
+              profile_ids: effectiveState.profile_ids.length > 0 ? effectiveState.profile_ids : null,
+              auth_ids: effectiveState.auth_ids.length > 0 ? effectiveState.auth_ids : null,
+              provider_key_ids: effectiveState.provider_key_ids.length > 0 ? effectiveState.provider_key_ids : null,
+              auth_item_key_ids: effectiveState.auth_item_key_ids.length > 0 ? effectiveState.auth_item_key_ids : null,
+              system_ids: effectiveState.system_ids.length > 0 ? effectiveState.system_ids : null,
+            },
+          ],
+        },
+      } as UpdateSettingIn);
+    } else if (createSettingAction) {
+      await createSettingAction({
+        body: {
+          settings: [
+            {
+              name_id: effectiveState.name_id,
+              description_id: effectiveState.description_id,
+              active_flag_id: effectiveState.active_flag_id,
+              color_ids: effectiveState.color_ids.length > 0 ? effectiveState.color_ids : null,
+              department_ids: effectiveState.department_ids.length > 0 ? effectiveState.department_ids : null,
+              profile_ids: effectiveState.profile_ids.length > 0 ? effectiveState.profile_ids : null,
+              auth_ids: effectiveState.auth_ids.length > 0 ? effectiveState.auth_ids : null,
+              provider_key_ids: effectiveState.provider_key_ids.length > 0 ? effectiveState.provider_key_ids : null,
+              auth_item_key_ids: effectiveState.auth_item_key_ids.length > 0 ? effectiveState.auth_item_key_ids : null,
+              system_ids: effectiveState.system_ids.length > 0 ? effectiveState.system_ids : null,
+            },
+          ],
+        },
+      } as CreateSettingIn);
+    } else {
+      throw new Error("Save action not available");
+    }
+
+    toast.success(isEditMode ? "Setting updated" : "Setting created");
+    router.push("/settings");
+    router.refresh();
+  }, [
+    createSettingAction,
+    flushAllAndSave,
+    isEditMode,
+    router,
+    s?.colors?.length,
+    settingId,
+    updateSettingAction,
+  ]);
+
   const renderStep = useCallback(
     ({
       stepId,
-      stepStatus,
       stepTitle,
       stepDescription,
       stepNumber,
-      formData: stepFormData,
-      setFormData: setStepFormData,
-      onReset,
+      stepStatus,
     }: {
       stepId: string;
       stepTitle: string;
@@ -952,544 +603,285 @@ function SettingComponent({
       stepNumber: number;
       stepStatus: StepStatus;
       isOptional: boolean;
-      formData: Record<string, unknown>;
-      setFormData: (updates: Partial<Record<string, unknown>>) => void;
-      filters?: Array<{
-        key: string;
-        label: string;
-        value: boolean;
-        onChange: (value: boolean) => void;
-      }>;
-      onReset?: () => void;
     }) => {
-      // Use memoized fields to avoid dependency on settingData object reference
-      const currentSettingData = stableSettingDataFields;
-      switch (stepId) {
-        case "basic":
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              customHeader={
-                <Names
-                  name_id={formState.name_id ?? null}
-                  name_resource={currentSettingData?.name_resource ?? null}
-                  show_name={currentSettingData?.show_name ?? true}
-                  name_suggestions={currentSettingData?.name_suggestions ?? []}
-                  names={currentSettingData?.names ?? []}
-                  disabled={disabled}
-                  onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
-                  }
-                  onNameChange={(name) =>
-                    setFormState((prev) => ({ ...prev, name }))
-                  }
-                  placeholder="e.g., Production Settings"
-                  defaultName="New Setting"
-                  required={currentSettingData?.name_required ?? false}
-                  hideDescription={true}
-
-                  createNamesAction={
-                    createNamesAction as
-                      | ((
-                          input: CreateDraftNamesIn
-                        ) => Promise<CreateDraftNamesOut>)
-                      | undefined
-                  }
-                />
-              }
-              resetFields={["name", "description", "department_ids", "active"]}
-              actions={
-                stepResources["basic"] &&
-                stepResources["basic"].length > 0 &&
-                (currentSettingData?.name_agent_id ||
-                  currentSettingData?.description_agent_id ||
-                  currentSettingData?.departments_agent_id ||
-                  currentSettingData?.flag_agent_id) ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "basic"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleDirectStepGenerate(
-                              "basic",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["basic"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
-                        >
-                          {stepResources["basic"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["basic"]!.some((rt) => canRegenerate(rt))
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : undefined
-              }
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-            >
-              <div className="space-y-4">
-                {/* Description field - using Descriptions resource component */}
-                <Descriptions
-                  description_id={formState.description_id ?? null}
-                  description_resource={
-                    currentSettingData?.description_resource ?? null
-                  }
-                  show_description={
-                    currentSettingData?.show_description ?? true
-                  }
-                  description_suggestions={
-                    currentSettingData?.description_suggestions ?? []
-                  }
-                  descriptions={currentSettingData?.descriptions ?? []}
-                  disabled={disabled}
-                  onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description_id: descriptionId,
-                      description: null,
-                    }))
-                  }
-                  onDescriptionChange={(description) =>
-                    setFormState((prev) => ({ ...prev, description }))
-                  }
-                  searchTerm={
-                    (stepFormData["descriptionSearch"] as
-                      | string
-                      | null
-                      | undefined) || ""
-                  }
-                  onSearchChange={(term: string) =>
-                    setStepFormData({ descriptionSearch: term || null })
-                  }
-                  label="Description"
-                  placeholder="Detailed description of this setting"
-                  required={currentSettingData?.description_required ?? false}
-                  rows={4}
-                  data-testid="input-setting-description"
-
-                  createDescriptionsAction={createDescriptionsAction}
-                />
-
-                {/* Department Selection */}
-                <Departments
-                  department_ids={formState.department_ids ?? []}
-                  department_resources={
-                    currentSettingData?.department_resources ?? []
-                  }
-                  show_departments={
-                    currentSettingData?.show_departments ?? false
-                  }
-                  department_suggestions={
-                    currentSettingData?.department_suggestions ?? []
-                  }
-                  departments={currentSettingData?.departments ?? []}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, department_ids: ids }))
-                  }
-                  required={currentSettingData?.departments_required ?? false}
-
-                />
-
-                {/* Active Switch - using Flags resource component */}
-                <Flags
-                  flags={currentSettingData?.flag_resource ? [currentSettingData.flag_resource as unknown as FlagConfig] : []}
-                  flag_id={formState.active_flag_id ?? null}
-                  show_flags={currentSettingData?.show_flag ?? false}
-                  columns={1}
-                  label="Active"
-                  disabled={disabled}
-                  onChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      active_flag_id: flagId,
-                    }))
-                  }
-
-                />
-              </div>
-            </StepCard>
-          );
-
-        case "colors": {
-          const colorShowSelected =
-            (stepFormData["colorShowSelected"] as boolean | null | undefined) ??
-            false;
-
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              searchTerm={
-                (stepFormData["colorSearch"] as string | null | undefined) || ""
-              }
-              onSearchChange={(term: string) =>
-                setStepFormData({ colorSearch: term || null })
-              }
-              searchPlaceholder="Search colors..."
-              debounceMs={300}
-              filters={[
-                {
-                  key: "showSelected",
-                  label: "Show selected",
-                  value: colorShowSelected,
-                  onChange: (value: boolean) =>
-                    setStepFormData({ colorShowSelected: value || null }),
-                },
-              ]}
-              resetFields={["color_ids", "colorSearch", "colorShowSelected"]}
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-              actions={
-                stepResources["colors"] &&
-                stepResources["colors"].length > 0 ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "colors"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleDirectStepGenerate(
-                              "colors",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["colors"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
-                        >
-                          {stepResources["colors"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["colors"]!.some((rt) =>
-                          canRegenerate(rt)
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : undefined
-              }
-            >
-              {/* Multi-select Colors component */}
-              <Colors
-                color_ids={formState.color_ids ?? []}
-                color_resources={currentSettingData?.color_resources ?? []}
-                show_color={currentSettingData?.show_colors ?? false}
-                color_suggestions={currentSettingData?.color_suggestions ?? []}
-                colors={currentSettingData?.colors ?? []}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, color_ids: ids }))
-                }
-                multiSelect={true}
-                searchTerm={
-                  (stepFormData["colorSearch"] as string | null | undefined) ||
-                  ""
-                }
-                onSearchChange={(term) =>
-                  setStepFormData({ colorSearch: term || null })
-                }
-                showSelectedFilter={colorShowSelected}
-                onShowSelectedChange={(value) =>
-                  setStepFormData({ colorShowSelected: value || null })
-                }
-                required={currentSettingData?.colors_required ?? false}
-
-                createColorsAction={createColorsAction}
+      if (stepId === "basic") {
+        return (
+          <StepCard
+            stepTitle={stepTitle}
+            stepDescription={stepDescription}
+            stepNumber={stepNumber}
+            stepStatus={stepStatus}
+            isReadonly={disabled}
+            actions={
+              <StepCardAiButton
+                stepId="basic"
+                resourceTypes={VALID_RESOURCE_TYPES}
+                canRegenerate={canRegenerate as (rt: string) => boolean}
+                isGenerating={isGenerating as (rt: string) => boolean}
+                onOpenModal={() => {
+                  void handleGenerateResources(VALID_RESOURCE_TYPES);
+                }}
+                disabled={disabled || !s?.basic_show_ai_generate}
               />
-            </StepCard>
-          );
-        }
-
-        case "roles_routes":
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              resetFields={["role_ids"]}
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-            >
-              <div className="space-y-4">
-                <Roles
-                  roles={currentSettingData?.roles ?? []}
-                  show_roles={currentSettingData?.show_roles ?? true}
-                  disabled={disabled}
-                  editable={true}
-                  multiSelect={true}
-                  role_ids={formState.role_ids ?? []}
-                  onRoleChange={() => {}}
-                  onRolesChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, role_ids: ids }))
-                  }
-                  label="Roles"
-                />
-
-              </div>
-            </StepCard>
-          );
-
-        case "configuration":
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              resetFields={["profile_ids", "auth_ids", "provider_key_ids", "key_ids"]}
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-            >
-              {/* Multi-select Auths, Providers, Keys components */}
-              <div className="space-y-4">
-                <Profiles
-                  profile_ids={formState.profile_ids ?? []}
-                  profile_resources={currentSettingData?.profile_resources ?? []}
-                  show_profiles={currentSettingData?.show_profiles ?? false}
-                  profile_suggestions={
-                    currentSettingData?.profile_suggestions ?? []
-                  }
-                  profiles={currentSettingData?.profiles ?? []}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, profile_ids: ids }))
-                  }
-                  label="Profiles"
-                  description="Profiles enabled for identity provider login."
-                />
-
-                <Auths
-                  auth_ids={formState.auth_ids ?? []}
-                  auth_resources={currentSettingData?.auth_resources ?? []}
-                  show_auths={currentSettingData?.show_auths ?? false}
-                  auth_suggestions={currentSettingData?.auth_suggestions ?? []}
-                  auths={currentSettingData?.auths ?? []}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, auth_ids: ids }))
-                  }
-                  required={currentSettingData?.auths_required ?? false}
-
-                />
-
-                <ProviderKeys
-                  provider_key_ids={formState.provider_key_ids ?? []}
-                  provider_key_resources={
-                    currentSettingData?.provider_key_resources ?? []
-                  }
-                  providers={currentSettingData?.providers ?? []}
-                  keys={currentSettingData?.keys ?? []}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, provider_key_ids: ids }))
-                  }
-                  show_provider_keys={currentSettingData?.show_keys ?? false}
-                  createProviderKeysAction={createProviderKeysAction}
-                  getProviderKeysAction={getProviderKeysAction}
-                />
-
-                <AuthItemKeys
-                  auth_item_key_ids={formState.key_ids ?? []}
-                  auth_item_key_resources={currentSettingData?.auth_item_key_resources ?? []}
-                  auths={currentSettingData?.auths ?? []}
-                  keys={currentSettingData?.keys ?? []}
-                  selected_auth_ids={formState.auth_ids ?? []}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, key_ids: ids }))
-                  }
-                  show_auth_item_keys={currentSettingData?.show_auths ?? false}
-                  createAuthItemKeysAction={createAuthItemKeysAction}
-                  getAuthItemKeysAction={getAuthItemKeysAction}
-                />
-              </div>
-            </StepCard>
-          );
-
-        default:
-          return null;
+            }
+          >
+            <Names
+              name_id={formState.name_id}
+              name_resource={s?.names?.find((item) => item.selected) ?? null}
+              show_name={true}
+              names={s?.names ?? []}
+              disabled={disabled}
+              onNameIdChange={(id) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  name_id: id,
+                  name: null,
+                  pending_ids: pruneSectionPending("names", id ? [id] : []),
+                }))
+              }
+              onNameChange={(name) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  name_id: null,
+                  name,
+                  pending_ids: pruneSectionPending("names", []),
+                }))
+              }
+              defaultName="New Setting"
+              hideDescription={true}
+              required={true}
+            />
+            <Descriptions
+              description_id={formState.description_id}
+              description_resource={s?.descriptions?.find((item) => item.selected) ?? null}
+              show_description={true}
+              descriptions={s?.descriptions ?? []}
+              disabled={disabled}
+              onDescriptionIdChange={(id) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  description_id: id,
+                  description: null,
+                  pending_ids: pruneSectionPending("descriptions", id ? [id] : []),
+                }))
+              }
+              onDescriptionChange={(description) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  description_id: null,
+                  description,
+                  pending_ids: pruneSectionPending("descriptions", []),
+                }))
+              }
+            />
+            <Colors
+              color_ids={formState.color_ids}
+              color_resources={(s?.colors ?? []).filter((item) => item.selected)}
+              colors={s?.colors ?? []}
+              multiSelect={true}
+              show_color={true}
+              disabled={disabled}
+              onChange={(ids) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  color_ids: ids,
+                  pending_ids: pruneSectionPending("colors", ids),
+                }))
+              }
+            />
+            <Flags
+              mode="single"
+              flag_id={formState.active_flag_id}
+              show_flags={true}
+              flags={s?.flags ?? []}
+              disabled={disabled}
+              onChange={(id) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  active_flag_id: id,
+                  pending_ids: pruneSectionPending("flags", id ? [id] : []),
+                }))
+              }
+            />
+            <Departments
+              department_ids={formState.department_ids}
+              department_resources={(s?.departments ?? []).filter((item) => item.selected)}
+              show_departments={true}
+              departments={s?.departments ?? []}
+              disabled={disabled}
+              onChange={(ids) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  department_ids: ids,
+                  pending_ids: pruneSectionPending("departments", ids),
+                }))
+              }
+            />
+          </StepCard>
+        );
       }
+
+      if (stepId === "access") {
+        return (
+          <StepCard
+            stepTitle={stepTitle}
+            stepDescription={stepDescription}
+            stepNumber={stepNumber}
+            stepStatus={stepStatus}
+            isReadonly={disabled}
+          >
+            <Profiles
+              profile_ids={formState.profile_ids}
+              profile_resources={(s?.profiles ?? []).filter((item) => item.selected)}
+              show_profiles={true}
+              profiles={s?.profiles ?? []}
+              disabled={disabled}
+              onChange={(ids) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  profile_ids: ids,
+                  pending_ids: pruneSectionPending("profiles", ids),
+                }))
+              }
+            />
+            <Auths
+              auth_ids={formState.auth_ids}
+              auth_resources={(s?.auths ?? [])
+                .filter((item) => item.selected)
+                .map((item) => ({
+                  id: item.auth_id ?? undefined,
+                  name: item.name ?? undefined,
+                  description: item.description ?? undefined,
+                  slug: item.slug ?? undefined,
+                  generated: item.generated ?? undefined,
+                })) as any}
+              show_auths={true}
+              auths={(s?.auths ?? []).map((item) => ({
+                id: item.auth_id ?? undefined,
+                name: item.name ?? undefined,
+                description: item.description ?? undefined,
+                slug: item.slug ?? undefined,
+                generated: item.generated ?? undefined,
+              })) as any}
+              disabled={disabled}
+              onChange={(ids) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  auth_ids: ids,
+                  pending_ids: pruneSectionPending("auths", ids),
+                }))
+              }
+            />
+            <Systems
+              system_ids={formState.system_ids}
+              system_resources={(s?.systems ?? []).filter((item) => item.selected)}
+              systems={s?.systems ?? []}
+              show_systems={true}
+              disabled={disabled}
+              onChange={(ids) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  system_ids: ids,
+                  pending_ids: pruneSectionPending("systems", ids),
+                }))
+              }
+            />
+          </StepCard>
+        );
+      }
+
+      return (
+        <StepCard
+          stepTitle={stepTitle}
+          stepDescription={stepDescription}
+          stepNumber={stepNumber}
+          stepStatus={stepStatus}
+          isReadonly={disabled}
+        >
+          <ProviderKeys
+            provider_key_ids={formState.provider_key_ids}
+            provider_key_resources={(s?.provider_keys ?? []).filter((item) => item.selected)}
+            providers={s?.providers ?? []}
+            keys={s?.keys ?? []}
+            disabled={disabled}
+            onChange={(ids) =>
+              setFormState((prev) => ({
+                ...prev,
+                provider_key_ids: ids,
+                pending_ids: pruneSectionPending("provider_keys", ids),
+              }))
+            }
+            show_provider_keys={true}
+          />
+          <AuthItemKeys
+            auth_item_key_ids={formState.auth_item_key_ids}
+            auth_item_key_resources={(s?.auth_item_keys ?? []).filter((item) => item.selected)}
+            auths={(s?.auths ?? []).map((item) => ({
+              auth_id: item.auth_id ?? undefined,
+              name: item.name ?? undefined,
+              description: item.description ?? undefined,
+            })) as any}
+            keys={s?.keys ?? []}
+            disabled={disabled}
+            onChange={(ids) =>
+              setFormState((prev) => ({
+                ...prev,
+                auth_item_key_ids: ids,
+                pending_ids: pruneSectionPending("auth_item_keys", ids),
+              }))
+            }
+            show_auth_item_keys={true}
+          />
+        </StepCard>
+      );
     },
     [
-      // Use stableSettingDataFields instead of settingData to prevent callback recreation
-      // when only object reference changes (but content is same)
-      stableSettingDataFields,
-      disabled,
-      isEditMode,
-      isGenerating,
-      stepResources,
-      // Depend on individual formState fields instead of whole object to prevent callback recreation
-      // when object reference changes but values are same
-      formState.name_id,
-      formState.description_id,
-      formState.active_flag_id,
-      // Include arrays - they're used in the callback, but the formState sync effect ensures
-      // they only change when content actually changes (not just reference)
-      formState.department_ids,
-      formState.profile_ids,
-      formState.color_ids,
-      formState.auth_ids,
-      formState.provider_key_ids,
-      formState.key_ids,
-      formState.role_ids,
-      createNamesAction,
-      createDescriptionsAction,
-      createColorsAction,
-      createProviderKeysAction,
-      getProviderKeysAction,
-      createAuthItemKeysAction,
-      getAuthItemKeysAction,
       canRegenerate,
-      handleDirectStepGenerate,
+      disabled,
+      formState.active_flag_id,
+      formState.auth_ids,
+      formState.auth_item_key_ids,
+      formState.color_ids,
+      formState.department_ids,
+      formState.description_id,
+      formState.name_id,
+      formState.profile_ids,
+      formState.provider_key_ids,
+      formState.system_ids,
+      handleGenerateResources,
+      isGenerating,
+      pruneSectionPending,
+      s,
     ]
   );
 
   return (
-    <TooltipProvider>
-      <div
-        className="w-full p-6 space-y-8"
-        data-page={`setting-${isEditMode ? "edit" : "new"}`}
-      >
-        <ReadOnlyBanner
-          disabled={disabled}
-          disabledReason={settingData?.disabled_reason ?? null}
-          entityType="setting"
-        />
-
-        <GenericForm
-          nuqsParsers={
-            settingSearchParamsClient as Record<string, Parser<unknown>>
-          }
+    <div className="w-full space-y-8 p-6">
+      <ReadOnlyBanner
+        disabled={disabled}
+        disabledReason={s?.disabled_reason ?? null}
+        entityType="setting"
+      />
+      <GenericForm
+        nuqsParsers={settingSearchParamsClient as Record<string, Parser<unknown>>}
         steps={steps}
         getStepStatus={getStepStatus}
-        serverData={settingData}
-        formFieldKeys={formFieldKeys}
-        onReset={(stepId) => handleReset(stepId)}
-        resetSuccessMessage={resetSuccessMessage}
         onSubmit={handleSubmit}
-        submitButton={submitButton}
+        submitButton={{
+          createLabel: "Create Setting",
+          updateLabel: "Save Setting",
+          backUrl: "/settings",
+        }}
         isReadonly={disabled}
-          isEditMode={isEditMode}
-          renderStep={renderStep}
-          onFormDataChange={onFormDataChange}
-          registerSetFormData={(setter) => {
-            setUrlFormDataRef.current = setter;
-          }}
-        />
-
-      </div>
-    </TooltipProvider>
+        isEditMode={isEditMode}
+        renderStep={renderStep}
+        onFormDataChange={onFormDataChange}
+        registerSetFormData={(setter) => {
+          setUrlFormDataRef.current = setter;
+        }}
+      />
+    </div>
   );
 }
 
-// Memoize component to prevent re-renders when only prop references change (content is same)
-export default React.memo(SettingComponent, (prevProps, nextProps) => {
-  // Compare settingData by resource IDs, not object reference
-  const prevIds = {
-    name_id: prevProps.settingData?.name_id,
-    description_id: prevProps.settingData?.description_id,
-    color_ids: prevProps.settingData?.color_ids,
-    active_flag_id: prevProps.settingData?.active_flag_id,
-    department_ids: prevProps.settingData?.department_ids,
-    auth_ids: prevProps.settingData?.auth_ids,
-    provider_key_ids:
-      prevProps.settingData?.provider_key_ids,
-    key_ids:
-      prevProps.settingData?.key_ids,
-    role_ids: prevProps.settingData?.role_ids,
-  };
-  const nextIds = {
-    name_id: nextProps.settingData?.name_id,
-    description_id: nextProps.settingData?.description_id,
-    color_ids: nextProps.settingData?.color_ids,
-    active_flag_id: nextProps.settingData?.active_flag_id,
-    department_ids: nextProps.settingData?.department_ids,
-    auth_ids: nextProps.settingData?.auth_ids,
-    provider_key_ids:
-      nextProps.settingData?.provider_key_ids,
-    key_ids:
-      nextProps.settingData?.key_ids,
-    role_ids: nextProps.settingData?.role_ids,
-  };
-
-  // Compare primitive props
-  if (
-    prevProps.settingId !== nextProps.settingId ||
-    JSON.stringify(prevIds) !== JSON.stringify(nextIds)
-  ) {
-    return false; // Props changed, re-render
-  }
-
-  // Compare function props by reference (should be stable from server actions)
-  if (
-    prevProps.createSettingAction !== nextProps.createSettingAction ||
-    prevProps.updateSettingAction !== nextProps.updateSettingAction ||
-    prevProps.patchSettingDraftAction !== nextProps.patchSettingDraftAction ||
-    prevProps.createNamesAction !== nextProps.createNamesAction ||
-    prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
-    prevProps.createColorsAction !== nextProps.createColorsAction ||
-    prevProps.createProviderKeysAction !== nextProps.createProviderKeysAction ||
-    prevProps.getProviderKeysAction !== nextProps.getProviderKeysAction ||
-    prevProps.createAuthItemKeysAction !== nextProps.createAuthItemKeysAction ||
-    prevProps.getAuthItemKeysAction !== nextProps.getAuthItemKeysAction
-  ) {
-    return false; // Function props changed, re-render
-  }
-
-  // All props are equivalent, skip re-render
-  return true;
-});
+export default Setting;

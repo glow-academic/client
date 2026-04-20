@@ -2,30 +2,23 @@
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import { ArrowDown, ArrowUp } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { ArrowDown, ArrowUp, Check, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export interface ArgPositionResourceItem {
   id?: string | null;
   args_id?: string | null;
   value?: number | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
-
-type CreateDraftArgPositionsIn = {
-  body: {
-    agent_id: string;
-    group_id: string;
-    tool_id: string;
-    args_id: string;
-    value: number;
-    mcp: boolean;
-  };
-};
-type CreateDraftArgPositionsOut = {
-  id?: string | null;
-};
 
 export interface ArgPositionItem {
   args_id: string;
@@ -41,43 +34,20 @@ interface ArgPositionsProps {
   }>;
   arg_position_ids?: string[];
   arg_position_resources?: ArgPositionResourceItem[];
-  group_id?: string | null;
   tool_id?: string | null;
-  create_tool_id?: string | null;
   disabled?: boolean;
   onPositionIdsChange?: (ids: string[]) => void;
   onOrderChange?: (orderedArgsIds: string[]) => void;
-  createArgPositionsAction?: (
-    input: CreateDraftArgPositionsIn
-  ) => Promise<CreateDraftArgPositionsOut>;
-  isAutosaveEnabled?: boolean;
-  registerFlush?: (flush: () => Promise<{ arg_position_ids: string[] } | void>) => void;
-  showAiGenerate?: boolean;
-  onGenerate?: () => void | Promise<void>;
 }
 
 export function ArgPositions({
   args_ids,
   args_resources,
   arg_position_resources,
-  group_id,
-  tool_id,
-  create_tool_id,
   disabled = false,
   onPositionIdsChange,
   onOrderChange,
-  createArgPositionsAction,
-  isAutosaveEnabled = true,
-  registerFlush,
-  showAiGenerate: _showAiGenerate = false,
-  onGenerate: _onGenerate,
 }: ArgPositionsProps) {
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: _aiIsGenerating } = useResourceAi({
-    resourceType: "arg_positions",
-    groupId: group_id,
-    accumulate: true,
-  });
 
   const [orderedArgs, setOrderedArgs] = useState<string[]>(args_ids);
   const [positionIdsByArg, setPositionIdsByArg] = useState<Map<string, string>>(
@@ -93,6 +63,35 @@ export function ArgPositions({
     });
     return map;
   }, [args_resources]);
+
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return (arg_position_resources ?? []).filter((item) => item.pending && item.args_id);
+  }, [arg_position_resources]);
+  const showDiff = pendingItems.length > 0;
+  const pendingArgsIds = useMemo(
+    () => new Set(pendingItems.map((item) => item.args_id).filter(Boolean) as string[]),
+    [pendingItems]
+  );
+
+  // Accept pending — positions are already reflected in ordering, just confirm
+  const handleAccept = useCallback(() => {
+    // Pending items are already in the ordered list, nothing to change
+    // The next draft save will persist them as active
+  }, []);
+
+  // Reject pending — remove pending items from the ordered list and position IDs
+  const handleReject = useCallback(() => {
+    const newOrdered = orderedArgs.filter((argId) => !pendingArgsIds.has(argId));
+    setOrderedArgs(newOrdered);
+    onOrderChange?.(newOrdered);
+    if (onPositionIdsChange) {
+      const ids = newOrdered
+        .map((argId) => positionIdsByArg.get(argId))
+        .filter((id): id is string => !!id);
+      onPositionIdsChange(ids);
+    }
+  }, [orderedArgs, pendingArgsIds, onOrderChange, onPositionIdsChange, positionIdsByArg]);
 
   useEffect(() => {
     const valueByArg = new Map<string, number>();
@@ -132,53 +131,7 @@ export function ArgPositions({
     onPositionIdsChange(ids);
   }, [onPositionIdsChange, orderedArgs, positionIdsByArg]);
 
-  const saveAllPositionsRef = useRef<
-    (() => Promise<{ arg_position_ids: string[] } | void>) | undefined
-  >(undefined);
-
-  saveAllPositionsRef.current = async () => {
-    if (!createArgPositionsAction || !group_id || !tool_id || !create_tool_id) {
-      const ids = orderedArgs
-        .map((argId) => positionIdsByArg.get(argId))
-        .filter((id): id is string => !!id);
-      return { arg_position_ids: ids };
-    }
-
-    const nextMap = new Map(positionIdsByArg);
-
-    for (const [index, argsId] of orderedArgs.entries()) {
-      const result = await createArgPositionsAction({
-        body: {
-          agent_id: create_tool_id,
-          tool_id,
-          args_id: argsId,
-          value: index,
-          mcp: false,
-          tool_id: create_tool_id ?? undefined,
-        },
-      });
-
-      if (result?.id) {
-        nextMap.set(argsId, result.id);
-      }
-    }
-
-    setPositionIdsByArg(nextMap);
-
-    const ids = orderedArgs
-      .map((argId) => nextMap.get(argId))
-      .filter((id): id is string => !!id);
-
-    return { arg_position_ids: ids };
-  };
-
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => saveAllPositionsRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
-  const move = async (index: number, direction: -1 | 1) => {
+  const move = (index: number, direction: -1 | 1) => {
     const target = index + direction;
     if (target < 0 || target >= orderedArgs.length) return;
 
@@ -187,10 +140,6 @@ export function ArgPositions({
     next[index] = next[target]!;
     next[target] = tmp!;
     setOrderedArgs(next);
-
-    if (isAutosaveEnabled) {
-      await saveAllPositionsRef.current?.();
-    }
   };
 
   if (!args_ids.length) {
@@ -199,39 +148,91 @@ export function ArgPositions({
 
   return (
     <div className="space-y-3" data-resource="arg_positions">
-      <Label>Argument Positions</Label>
+      <div className="flex items-center gap-2">
+        <Label>Argument Positions</Label>
+        {showDiff && (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-success hover:text-success"
+                    onClick={handleAccept}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Accept</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
+        )}
+      </div>
       <div className="space-y-2">
-        {orderedArgs.map((argId, index) => (
-          <div
-            key={argId}
-            className="flex items-center justify-between rounded-md border p-3"
-          >
-            <div>
-              <p className="text-sm font-medium">{index + 1}. {argNameMap.get(argId) ?? "Unnamed arg"}</p>
-              <p className="text-xs text-muted-foreground">Stored value: {index}</p>
+        {orderedArgs.map((argId, index) => {
+          const isPending = pendingArgsIds.has(argId);
+
+          return (
+            <div
+              key={argId}
+              className={cn(
+                "flex items-center justify-between rounded-md border p-3",
+                isPending && "ring-2 ring-success bg-success/10",
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <div>
+                  <p className="text-sm font-medium">{index + 1}. {argNameMap.get(argId) ?? "Unnamed arg"}</p>
+                  <p className="text-xs text-muted-foreground">Stored value: {index}</p>
+                </div>
+                {isPending && (
+                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                    Pending
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  disabled={disabled || index === 0}
+                  onClick={() => move(index, -1)}
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  disabled={disabled || index === orderedArgs.length - 1}
+                  onClick={() => move(index, 1)}
+                >
+                  <ArrowDown className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                disabled={disabled || index === 0}
-                onClick={() => void move(index, -1)}
-              >
-                <ArrowUp className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                disabled={disabled || index === orderedArgs.length - 1}
-                onClick={() => void move(index, 1)}
-              >
-                <ArrowDown className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

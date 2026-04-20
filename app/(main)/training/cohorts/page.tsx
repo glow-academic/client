@@ -19,6 +19,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
+import { guardPage } from "@/lib/permissions";
 import { loadCohortsListSearchParams } from "@/lib/search-params/cohorts";
 import type { ParseCsvResult } from "@/components/common/BulkImport";
 
@@ -162,6 +163,7 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
     // Profile data for providers
     const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
     const snapshot = buildSnapshot(session, context.profile);
+    guardPage("/training/cohorts", context.profile.role_permissions);
 
     // Parse search params using nuqs
     const params = await searchParams;

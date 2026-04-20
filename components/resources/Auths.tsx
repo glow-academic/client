@@ -16,9 +16,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface AuthsResourceItem {
@@ -27,6 +26,8 @@ export interface AuthsResourceItem {
   description?: string | null;
   slug?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface AuthItem {
@@ -41,8 +42,7 @@ export interface AuthsProps {
   auth_ids?: string[]; // Current auth resource IDs (standardized prop name)
   auth_resources?: AuthsResourceItem[]; // Selected auth resources
   show_auths?: boolean; // Whether to show this resource picker
-  auth_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  auths?: AuthsResourceItem[]; // All available auths from API
+  auths?: AuthsResourceItem[]; // All available auths from API (each includes generated and suggested fields)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update auth_ids in form state
   label?: string;
@@ -50,17 +50,13 @@ export interface AuthsProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   aiAuthResources?: Pick<AuthsResourceItem, "id" | "name">[] | null;
 }
 
 export function Auths({
   auth_ids,
-  auth_resources,
+  auth_resources: _auth_resources,
   show_auths = false,
-  auth_suggestions,
   auths,
   disabled = false,
   onChange,
@@ -69,53 +65,20 @@ export function Auths({
   required = false,
   placeholder = "Select auths...",
   description,
-  group_id,
-  onGenerate,
-  showAiGenerate = false,
+  aiAuthResources: _aiAuthResources,
 }: AuthsProps) {
   const ids = useMemo(() => auth_ids ?? [], [auth_ids]);
   const show = show_auths ?? false;
   const allAuths = useMemo(() => auths ?? [], [auths]);
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "auths",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestions
-          .map((a) => a.id)
-          .filter(Boolean) as string[]
-      ),
-    [aiSuggestions]
-  );
-
-  // Accept AI suggestion - add AI-suggested auths to selection
-  const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((a) => a.id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
-
-  // Reject AI suggestion - just clear the pending state
-  const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
-
-  const suggestionsList = useMemo(
-    () => auth_suggestions ?? [],
-    [auth_suggestions]
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allAuths.filter((a) => a.pending && a.id);
+  }, [allAuths]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((a) => a.id).filter(Boolean) as string[]),
+    [pendingItems]
   );
 
   // Convert auths array to AuthItem format for GenericPicker
@@ -130,24 +93,34 @@ export function Auths({
       }));
   }, [allAuths]);
 
-  // Check if an auth is suggested
+  // Check if an auth is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
-    (authId: string) => suggestionsList.includes(authId),
-    [suggestionsList]
+    (authId: string) => {
+      const auth = allAuths.find((a) => a.id === authId);
+      return auth?.suggested === true;
+    },
+    [allAuths]
   );
 
   const handleSelect = useCallback(
     (selectedIds: string[]) => {
-      // Update parent state
       onChange(selectedIds);
     },
     [onChange]
   );
 
-  // Check if any auth resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return auth_resources?.some((a) => a.generated) ?? false;
-  }, [auth_resources]);
+  // Accept pending — keep pending auths in selection
+  const handleAccept = useCallback(() => {
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
+  }, []);
+
+  // Reject pending — remove pending auths from selection
+  const handleReject = useCallback(() => {
+    const newIds = ids.filter((id) => !pendingIds.has(id));
+    onChange(newIds);
+  }, [ids, pendingIds, onChange]);
 
   // Don't render if show_auths is false (AFTER all hooks)
   if (!show) {
@@ -167,31 +140,6 @@ export function Auths({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -241,20 +189,20 @@ export function Auths({
         getId={(item) => item.id}
         getLabel={(item) => item.name}
         renderItem={(item, isSelected) => {
-          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const isPending = pendingIds.has(item.id);
 
           return (
             <div className={cn(
               "flex items-center justify-between w-full",
-              isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10 rounded"
+              isPending && "ring-2 ring-success bg-success/10 rounded"
             )}>
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                {isAiSuggested && !isSelected && (
-                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-xs rounded shrink-0">
-                    AI Suggested
+                {isPending && (
+                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium shrink-0">
+                    Pending
                   </span>
                 )}
-                {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                {isSuggested(item.id) && !isSelected && !isPending && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -281,7 +229,7 @@ export function Auths({
               <Check
                 className={cn(
                   "ml-auto flex-shrink-0 h-4 w-4",
-                  isSelected ? "opacity-100" : "opacity-0"
+                  isSelected && !isPending ? "opacity-100" : "opacity-0"
                 )}
               />
             </div>

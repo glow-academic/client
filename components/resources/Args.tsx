@@ -1,7 +1,7 @@
 /**
  * Args.tsx
  * Component for editing argument fields
- * Follows SchemaInput.tsx pattern - manages own state, calls save actions directly
+ * Pure UI: receives data arrays + selected IDs, reports changes via onChange
  */
 
 "use client";
@@ -26,16 +26,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-type CreateDraftArgsIn = InputOf<"/api/v5/resources/args", "post">;
-type CreateDraftArgsOut = OutputOf<"/api/v5/resources/args", "post">;
 
 export interface ArgsResourceItem {
   id?: string | null;
   name?: string | null;
+  pending?: boolean | null;
 }
 
 export interface ArgsFieldDetail {
@@ -46,56 +42,45 @@ export interface ArgsFieldDetail {
   required: boolean;
   default_value: string;
   generated: boolean;
+  pending?: boolean | null;
 }
 
 export interface ArgsProps {
   args_ids: string[]; // From Tool.tsx formState - which args are selected
   input_args_fields: ArgsFieldDetail[]; // From API - detailed field data for selected args_ids
   disabled: boolean; // Based on can_edit flag from Tool.tsx
-  // Note: args_ids selection is managed by Tool.tsx in separate "args" step
-  // This component only edits fields within selected args
-  createArgsAction?:
-    | ((input: CreateDraftArgsIn) => Promise<CreateDraftArgsOut>)
-    | undefined;
-  group_id?: string | null; // Group ID for resource creation
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  // Component handles field changes internally and calls createArgsAction
-  // No onChange callback needed - component manages its own state like SchemaInput
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created ID */
-  registerFlush?: (flush: () => Promise<{ args_id: string | null } | void>) => void;
-  aiArgsResources?: Pick<ArgsResourceItem, "id" | "name">[] | null;
-  showAiGenerate?: boolean;
-  onGenerate?: () => void | Promise<void>;
+  /** Callback to update args_ids selection (used for reject pending) */
+  onChange?: (ids: string[]) => void;
 }
 
 export function Args({
   args_ids,
   input_args_fields,
   disabled = false,
-  createArgsAction,
-  group_id,
-  create_tool_id,
-  isAutosaveEnabled = true,
-  registerFlush,
+  onChange,
 }: ArgsProps) {
   const sortedFields = useMemo(() => {
     return [...input_args_fields].sort((a, b) => a.name.localeCompare(b.name));
   }, [input_args_fields]);
 
-  // Internal state for field values (like SchemaInput.tsx)
+  // Internal state for field values
   const [fieldValues, setFieldValues] = useState<
     Record<string, Partial<ArgsFieldDetail>>
   >({});
-  const debounceTimerRef = useRef<Record<string, NodeJS.Timeout>>({});
   const lastSavedValuesRef = useRef<Record<string, Partial<ArgsFieldDetail>>>(
     {}
   );
   const isInitialMountRef = useRef(true);
 
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ args_id: string | null } | void>) | undefined>(undefined);
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return input_args_fields.filter((f) => f.pending && f.args_id);
+  }, [input_args_fields]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((f) => f.args_id).filter(Boolean)),
+    [pendingItems]
+  );
 
   // Initialize field values from props
   useEffect(() => {
@@ -116,7 +101,7 @@ export function Args({
     }
   }, [input_args_fields]);
 
-  // Sync field values when props change (like SchemaInput.tsx syncs with props)
+  // Sync field values when props change
   useEffect(() => {
     const newValues: Record<string, Partial<ArgsFieldDetail>> = {};
     let hasChanges = false;
@@ -149,75 +134,7 @@ export function Args({
     }
   }, [input_args_fields]);
 
-  // Debounced save function (creates new args resource with updated values - write-only pattern)
-  const saveField = useCallback(
-    async (fieldId: string, updates: Partial<ArgsFieldDetail>) => {
-      if (!createArgsAction || !create_tool_id || !group_id) return;
-
-      const field = input_args_fields.find((f) => f.args_id === fieldId);
-      if (!field) return;
-
-      try {
-        // Create new args resource with updated values (write-only pattern)
-        await createArgsAction({
-          body: {
-            name: updates.name ?? field.name,
-            description: updates.description ?? field.description,
-            field_type: (updates.field_type ?? field.field_type) as
-              | "string"
-              | "number"
-              | "boolean"
-              | "array",
-            required: updates.required ?? field.required,
-            default_value: updates.default_value ?? field.default_value,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        // Update last saved value
-        lastSavedValuesRef.current[fieldId] = {
-          ...lastSavedValuesRef.current[fieldId],
-          ...updates,
-        };
-        // Note: The new args will need to be linked to the tool via tool_args junction table
-        // This happens when Tool.tsx saves with the new args_id
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to create args:", error);
-        // Could add toast notification here
-      }
-    },
-    [createArgsAction, input_args_fields, create_tool_id, group_id]
-  );
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ args_id: string | null } | void> => {
-    // Skip if no action available
-    if (!createArgsAction || !group_id) {
-      return;
-    }
-
-    // Flush all pending field changes
-    for (const fieldId of Object.keys(fieldValues)) {
-      const currentValue = fieldValues[fieldId];
-      const lastSaved = lastSavedValuesRef.current[fieldId];
-      if (currentValue && JSON.stringify(currentValue) !== JSON.stringify(lastSaved)) {
-        await saveField(fieldId, currentValue);
-      }
-    }
-
-    // Return null since Args manages multiple fields, not a single resource ID
-    return { args_id: null };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
-  // Handle field value change with debouncing
+  // Handle field value change
   const handleFieldChange = useCallback(
     (
       fieldId: string,
@@ -231,81 +148,30 @@ export function Args({
           [key]: value,
         },
       }));
-
-      // Skip autosave if disabled (manual save mode)
-      if (!isAutosaveEnabled) {
-        return;
-      }
-
-      // Clear existing timer for this field
-      if (debounceTimerRef.current[fieldId]) {
-        clearTimeout(debounceTimerRef.current[fieldId]);
-      }
-
-      // Set new timer (500ms debounce like SchemaInput.tsx)
-      debounceTimerRef.current[fieldId] = setTimeout(() => {
-        const currentValue = fieldValues[fieldId];
-        const lastSaved = lastSavedValuesRef.current[fieldId];
-        // Only save if value actually changed
-        if (
-          !lastSaved ||
-          lastSaved[key] !== value ||
-          JSON.stringify(currentValue) !== JSON.stringify(lastSaved)
-        ) {
-          saveField(fieldId, { [key]: value });
-        }
-      }, 500);
     },
-    [fieldValues, saveField, isAutosaveEnabled]
+    []
   );
 
-  // Cleanup timers on unmount
-  useEffect(() => {
-    const timers = debounceTimerRef.current;
-    return () => {
-      Object.values(timers).forEach((timer) => {
-        if (timer) clearTimeout(timer);
-      });
-    };
+  // Accept pending — pending items are already in selection, no-op
+  const handleAccept = useCallback(() => {
+    // Pending items are already in args_ids (selected=true), just confirm
+    // The next draft save will persist them as active
+    // Nothing to change in form state — they're already included
   }, []);
 
-  // Socket-based AI suggestion handling via shared hook
-  const { aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "args",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-
-  // Accept AI suggestion - add AI-suggested args field values
-  const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    // For Args, we accept the suggested field values by updating internal state
-    const newFieldValues: Record<string, Partial<ArgsFieldDetail>> = { ...fieldValues };
-    aiSuggestions.forEach((aiArg) => {
-      if (aiArg.id && aiArg.name) {
-        newFieldValues[aiArg.id] = {
-          ...newFieldValues[aiArg.id],
-          name: aiArg.name,
-        };
-      }
-    });
-    setFieldValues(newFieldValues);
-    clearAi();
-  }, [aiSuggestions, fieldValues, clearAi]);
-
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending args from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    if (onChange) {
+      const newIds = args_ids.filter((id) => !pendingIds.has(id));
+      onChange(newIds);
+    }
+  }, [args_ids, pendingIds, onChange]);
 
   // Don't render if no args selected
   if (args_ids.length === 0) {
     return (
       <div className="text-sm text-muted-foreground p-4">
-        No args selected. Select args in the "Args" step to edit their fields.
+        No args selected. Select args in the &quot;Args&quot; step to edit their fields.
       </div>
     );
   }
@@ -321,7 +187,7 @@ export function Args({
 
   return (
     <div className="space-y-6">
-      {/* Header with AI diff controls */}
+      {/* Header with pending diff controls */}
       {showDiff && (
         <div className="flex items-center gap-2">
           <Label className="flex items-center gap-1">Args Fields</Label>
@@ -360,34 +226,28 @@ export function Args({
         </div>
       )}
 
-      {/* AI-suggested args preview */}
-      {showDiff && aiSuggestions.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Args</p>
-          <div className="space-y-2">
-            {aiSuggestions.map((item, idx) => (
-              <div
-                key={item.id || idx}
-                className={cn(
-                  "p-3 rounded-lg border-2 border-success bg-success/10",
-                  "text-sm"
-                )}
-              >
-                {item.name || ""}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Fields */}
       {sortedFields.map((field) => {
         const fieldValue = fieldValues[field.args_id] ?? {};
+        const isPending = pendingIds.has(field.args_id);
+
         return (
           <div
             key={field.args_id}
-            className="border rounded-md p-4 space-y-4"
+            className={cn(
+              "border rounded-md p-4 space-y-4",
+              isPending && "ring-2 ring-success bg-success/10",
+            )}
           >
+            {/* Pending badge */}
+            {isPending && (
+              <div className="flex justify-end">
+                <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </span>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               {/* Field Name */}
               <div className="space-y-2">

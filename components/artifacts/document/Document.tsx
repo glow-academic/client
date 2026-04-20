@@ -23,7 +23,7 @@ import { Images } from "@/components/resources/Images";
 import { Names } from "@/components/resources/Names";
 import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Texts } from "@/components/resources/Texts";
-import { Uploads } from "@/components/resources/Uploads";
+import { Files } from "@/components/resources/Files";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
@@ -107,7 +107,6 @@ type DocumentFormState = {
   file_ids: string[];
   image_ids: string[];
   text_ids: string[];
-  pending_upload_ids: string[];
   pending_text_contents: string[];
   pending_images: PendingImageValue[];
   pending_ids: string[];
@@ -128,7 +127,7 @@ export interface DocumentProps {
   uploadBasePath?: string;
   uploadFileAction?: (
     formData: FormData,
-  ) => Promise<{ success: boolean; upload_id?: string; message?: string }>;
+  ) => Promise<{ success: boolean; file_id?: string; message?: string }>;
 }
 
 const collectPendingIds = (data: DocumentData | null | undefined): string[] => {
@@ -169,7 +168,7 @@ function DocumentComponent({
   const documentDetail = documentDetailProp ?? documentDetailDefault ?? null;
   const { profile } = useProfile();
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
-  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
+  const { flushRegistryRef, flushAllResources } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 
   const documentSearchParamsClient = useMemo(
@@ -286,7 +285,7 @@ function DocumentComponent({
         file_ids: [],
         image_ids: [],
         text_ids: [],
-        pending_upload_ids: [],
+
         pending_text_contents: [],
         pending_images: [],
         pending_ids: [],
@@ -314,7 +313,6 @@ function DocumentComponent({
       text_ids: (data.texts?.filter((t) => t.selected) ?? [])
         .map((t) => t.texts_id ?? t.id)
         .filter(Boolean) as string[],
-      pending_upload_ids: [],
       pending_text_contents: [],
       pending_images: [],
       pending_ids: collectPendingIds(data),
@@ -344,10 +342,6 @@ function DocumentComponent({
     () => JSON.stringify(formState.parameter_field_ids),
     [formState.parameter_field_ids],
   );
-  const pendingUploadIdsStr = useMemo(
-    () => JSON.stringify(formState.pending_upload_ids),
-    [formState.pending_upload_ids],
-  );
   const pendingTextsStr = useMemo(
     () => JSON.stringify(formState.pending_text_contents),
     [formState.pending_text_contents],
@@ -374,7 +368,6 @@ function DocumentComponent({
         file_ids: formState.file_ids,
         image_ids: formState.image_ids,
         text_ids: formState.text_ids,
-        pending_upload_ids: formState.pending_upload_ids,
         pending_text_contents: formState.pending_text_contents,
         pending_images: formState.pending_images,
         pending_ids: formState.pending_ids,
@@ -390,7 +383,6 @@ function DocumentComponent({
       fileIdsStr,
       imageIdsStr,
       textIdsStr,
-      pendingUploadIdsStr,
       pendingTextsStr,
       pendingImagesStr,
       pendingIdsStr,
@@ -404,7 +396,6 @@ function DocumentComponent({
     ) ||
     !!formState.name ||
     !!formState.description ||
-    formState.pending_upload_ids.length > 0 ||
     formState.pending_text_contents.length > 0 ||
     formState.pending_images.length > 0;
 
@@ -441,12 +432,6 @@ function DocumentComponent({
           idPayload["description"] = current.description;
           delete idPayload["description_id"];
         }
-      }
-
-      if (current.pending_upload_ids.length > 0) {
-        idPayload["files"] = current.pending_upload_ids.map((upload_id) => ({
-          upload_id,
-        }));
       }
 
       if (current.pending_text_contents.length > 0) {
@@ -499,6 +484,39 @@ function DocumentComponent({
     onPatchSuccess,
   });
 
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((nameId: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      name_id: nameId,
+      name: nameId ? null : prev.name,
+    }));
+  }, []);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      name: name || null,
+      name_id: null,
+    }));
+  }, []);
+
+  const handleDescriptionIdChange = useCallback((descriptionId: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      description_id: descriptionId,
+      description: descriptionId ? null : prev.description,
+    }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      description: description || null,
+      description_id: null,
+    }));
+  }, []);
+
   useEffect(() => {
     const newState = getInitialFormState();
     setFormState((prev) => {
@@ -543,12 +561,9 @@ function DocumentComponent({
 
         const fs = result.form_state as DocumentDraftFormState | undefined;
         if (fs) {
-          serverSyncPendingRef.current = true;
           setFormState((prev) => {
-            const nextState: DocumentFormState = {
+            const next: DocumentFormState = {
               ...prev,
-              name: (fs.name ?? null) as string | null,
-              description: (fs.description ?? null) as string | null,
               name_id: (fs.name_id ?? prev.name_id) as string | null,
               description_id: (fs.description_id ?? prev.description_id) as string | null,
               active_flag_id:
@@ -561,13 +576,43 @@ function DocumentComponent({
               file_ids: (fs.file_ids as string[] | undefined) ?? prev.file_ids,
               image_ids: (fs.image_ids as string[] | undefined) ?? prev.image_ids,
               text_ids: (fs.text_ids as string[] | undefined) ?? prev.text_ids,
-              pending_upload_ids: [],
-              pending_text_contents: [],
-              pending_images: [],
+              // Clear value fields only once the server has resolved them to
+              // IDs — keeping the value would cause infinite re-saves (value
+              // takes precedence → new resource → new id → repeat).
+              name: fs.name_id ? null : prev.name,
+              description: fs.description_id ? null : prev.description,
+              // Only clear pending multi-text buffers when server returned IDs
+              // for them, not unconditionally.
+              pending_text_contents: (fs.text_ids as string[] | undefined)?.length
+                ? []
+                : prev.pending_text_contents,
+              pending_images: (fs.image_ids as string[] | undefined)?.length
+                ? []
+                : prev.pending_images,
               pending_ids: (fs.pending_ids as string[] | undefined) ?? prev.pending_ids,
             };
-            lastPatchedFormStateRef.current = nextState;
-            return nextState;
+            // Only set the server-sync absorb flag when the state actually
+            // changes — otherwise the flag sticks after a no-op sync and
+            // swallows the next user action. (Same fix as Persona / Scenario
+            // / Cohort / Simulation.)
+            const changed =
+              prev.name_id !== next.name_id ||
+              prev.name !== next.name ||
+              prev.description_id !== next.description_id ||
+              prev.description !== next.description ||
+              prev.active_flag_id !== next.active_flag_id ||
+              JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
+              JSON.stringify(prev.parameter_field_ids) !== JSON.stringify(next.parameter_field_ids) ||
+              JSON.stringify(prev.file_ids) !== JSON.stringify(next.file_ids) ||
+              JSON.stringify(prev.image_ids) !== JSON.stringify(next.image_ids) ||
+              JSON.stringify(prev.text_ids) !== JSON.stringify(next.text_ids) ||
+              JSON.stringify(prev.pending_text_contents) !== JSON.stringify(next.pending_text_contents) ||
+              JSON.stringify(prev.pending_images) !== JSON.stringify(next.pending_images) ||
+              JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
+            if (!changed) return prev;
+            serverSyncPendingRef.current = true;
+            lastPatchedFormStateRef.current = next;
+            return next;
           });
         }
 
@@ -678,7 +723,7 @@ function DocumentComponent({
         field_ids: effectiveFormState.parameter_field_ids.length
           ? effectiveFormState.parameter_field_ids
           : undefined,
-        upload_ids: effectiveFormState.file_ids.length
+        file_ids: effectiveFormState.file_ids.length
           ? effectiveFormState.file_ids
           : undefined,
         image_ids: effectiveFormState.image_ids.length
@@ -737,7 +782,7 @@ function DocumentComponent({
       const hasName = !!formState.name_id || !!formState.name;
       const hasDescription = !!formState.description_id || !!formState.description;
       const hasFields = formState.parameter_field_ids.length > 0;
-      const hasUploads = formState.file_ids.length > 0 || formState.pending_upload_ids.length > 0;
+      const hasUploads = formState.file_ids.length > 0;
       const hasImages = formState.image_ids.length > 0 || formState.pending_images.length > 0;
       const hasTexts = formState.text_ids.length > 0 || formState.pending_text_contents.length > 0;
 
@@ -852,7 +897,7 @@ function DocumentComponent({
           return {
             ...prev,
             file_ids: [],
-            pending_upload_ids: [],
+    
           };
         case "images":
           return {
@@ -931,25 +976,12 @@ function DocumentComponent({
                   show_name={true}
                   names={s?.names ?? []}
                   disabled={disabled}
-                  onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      name_id: nameId,
-                      name: nameId ? null : prev.name,
-                    }))
-                  }
-                  onNameChange={(name) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      name: name || null,
-                      name_id: null,
-                    }))
-                  }
+                  onNameIdChange={handleNameIdChange}
+                  onNameChange={handleNameChange}
                   placeholder="e.g., Course Syllabus"
                   defaultName="New Document"
                   required={true}
                   hideDescription={true}
-                  isAutosaveEnabled={isAutosaveEnabled}
                 />
               }
               resetFields={[
@@ -983,20 +1015,8 @@ function DocumentComponent({
                   show_description={true}
                   descriptions={s?.descriptions ?? []}
                   disabled={disabled}
-                  onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description_id: descriptionId,
-                      description: descriptionId ? null : prev.description,
-                    }))
-                  }
-                  onDescriptionChange={(description) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description: description || null,
-                      description_id: null,
-                    }))
-                  }
+                  onDescriptionIdChange={handleDescriptionIdChange}
+                  onDescriptionChange={handleDescriptionChange}
                   searchTerm={descriptionSearchTerm}
                   onSearchChange={(term) =>
                     setStepFormData({ descriptionSearch: term || null })
@@ -1005,7 +1025,6 @@ function DocumentComponent({
                   placeholder="Document description and purpose"
                   rows={4}
                   data-testid="input-document-description"
-                  isAutosaveEnabled={isAutosaveEnabled}
                 />
 
                 <Departments
@@ -1089,7 +1108,6 @@ function DocumentComponent({
                   }))
                 }
                 disabled={disabled}
-                isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>
           );
@@ -1122,30 +1140,23 @@ function DocumentComponent({
                 ) : undefined
               }
             >
-              <Uploads
-                upload_ids={formState.file_ids}
-                upload_resources={s?.files?.filter((f) => f.selected) ?? []}
-                show_uploads={true}
-                upload_suggestions={(s?.files ?? [])
-                  .filter((f) => f.suggested)
-                  .map((f) => f.files_id ?? f.id)
-                  .filter(Boolean) as string[]}
-                uploads={s?.files ?? []}
+              <Files
+                file_ids={formState.file_ids}
+                file_resources={s?.files?.filter((f) => f.selected) ?? []}
+                show_files={true}
+                files={s?.files ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, file_ids: ids }))
                 }
                 label="Files"
                 searchTerm={uploadSearchTerm}
-                registerFlush={registerFlushCallbacks["uploads"]}
-                isAutosaveEnabled={isAutosaveEnabled}
-                onFileUploadComplete={(uploadId) =>
+                onFileUploadComplete={(fileId) =>
                   setFormState((prev) => ({
                     ...prev,
-                    pending_upload_ids: [...prev.pending_upload_ids, uploadId],
+                    file_ids: [...prev.file_ids, fileId],
                   }))
                 }
-                {...(uploadBasePath ? { uploadBasePath } : {})}
                 {...(uploadFileAction ? { uploadFileAction } : {})}
               />
             </StepCard>
@@ -1181,18 +1192,12 @@ function DocumentComponent({
                 image_ids={formState.image_ids}
                 image_resources={s?.images?.filter((i) => i.selected) ?? []}
                 show_images={true}
-                image_suggestions={(s?.images ?? [])
-                  .filter((i) => i.suggested)
-                  .map((i) => i.image_id ?? i.id)
-                  .filter(Boolean) as string[]}
                 images={s?.images ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, image_ids: ids }))
                 }
                 label="Images"
-                registerFlush={registerFlushCallbacks["images"]}
-                isAutosaveEnabled={isAutosaveEnabled}
                 onImageUploadValue={(image) =>
                   setFormState((prev) => ({
                     ...prev,
@@ -1234,18 +1239,12 @@ function DocumentComponent({
                 text_ids={formState.text_ids}
                 text_resources={s?.texts?.filter((t) => t.selected) ?? []}
                 show_texts={true}
-                text_suggestions={(s?.texts ?? [])
-                  .filter((t) => t.suggested)
-                  .map((t) => t.texts_id ?? t.id)
-                  .filter(Boolean) as string[]}
                 texts={s?.texts ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, text_ids: ids }))
                 }
                 label="Texts"
-                registerFlush={registerFlushCallbacks["texts"]}
-                isAutosaveEnabled={isAutosaveEnabled}
                 onTextContentCreate={(content) =>
                   setFormState((prev) => ({
                     ...prev,
@@ -1273,10 +1272,8 @@ function DocumentComponent({
       formState.text_ids,
       handleDirectStepGenerate,
       handleGenerateResources,
-      isAutosaveEnabled,
       isEditMode,
       isGenerating,
-      registerFlushCallbacks,
       stableDocumentDataFields,
       stepResources,
       uploadBasePath,

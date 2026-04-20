@@ -62,8 +62,8 @@ export function VideoView({
   const [showControls, setShowControls] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
 
-  const videoUrl = video?.upload_id
-    ? `/api/attempts/download/${video.upload_id}`
+  const videoUrl = video?.video_id
+    ? `/api/system/video/${video.video_id}`
     : null;
 
   // Use video.length_seconds as fallback for duration

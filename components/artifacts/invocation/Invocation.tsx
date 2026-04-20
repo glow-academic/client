@@ -2,18 +2,18 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Names } from "@/components/resources/Names";
-import { Descriptions } from "@/components/resources/Descriptions";
-import { Values } from "@/components/resources/Values";
-import { Flags } from "@/components/resources/Flags";
 import { Departments } from "@/components/resources/Departments";
-import { Keys } from "@/components/resources/Keys";
+import { Descriptions } from "@/components/resources/Descriptions";
 import { Endpoints } from "@/components/resources/Endpoints";
+import { Flags, type FlagConfig } from "@/components/resources/Flags";
+import { Keys } from "@/components/resources/Keys";
 import { Modalities } from "@/components/resources/Modalities";
-import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
+import { Names } from "@/components/resources/Names";
 import { Pricing } from "@/components/resources/Pricing";
-import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
 import { Qualities } from "@/components/resources/Qualities";
+import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
+import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
+import { Values } from "@/components/resources/Values";
 import { Voices } from "@/components/resources/Voices";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useRouter } from "next/navigation";
@@ -21,104 +21,143 @@ import { parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-type GetBenchmarkBundleOut = OutputOf<
-  "/test/invocation/get",
-  "post"
->;
-export type InvocationData = GetBenchmarkBundleOut;
-type PatchBenchmarkBundleDraftIn = InputOf<
-  "/test/invocation/draft",
-  "patch"
->;
-type PatchBenchmarkBundleDraftOut = OutputOf<
-  "/test/invocation/draft",
-  "patch"
->;
+export type InvocationData = OutputOf<"/test/invocation/get", "post">;
 
-type BenchmarkBundleFormState = {
+type PatchInvocationDraftIn = InputOf<"/test/invocation/draft", "patch">;
+type PatchInvocationDraftOut = OutputOf<"/test/invocation/draft", "patch">;
+
+type InvocationFormState = {
+  name_id: string | null;
   name: string | null;
+  description_id: string | null;
   description: string | null;
-  name_ids: string[];
-  description_ids: string[];
-  value_ids: string[];
+  value_id: string | null;
   flag_ids: string[];
   department_ids: string[];
-  key_ids: string[];
-  endpoint_ids: string[];
+  key_id: string | null;
+  endpoint_id: string | null;
   modality_ids: string[];
-  temperature_level_ids: string[];
-  pricing_ids: string[];
-  reasoning_level_ids: string[];
+  temperature_level_id: string | null;
+  pricing_id: string | null;
+  reasoning_level_id: string | null;
   quality_ids: string[];
   voice_ids: string[];
+  pending_ids: string[];
 };
 
-function extractIds<T>(
-  items: T[] | null | undefined,
-  idKey: keyof T,
-): string[] {
-  if (!items) return [];
-  return items
-    .map((item) => item[idKey] as string | null | undefined)
-    .filter((id): id is string => !!id);
+function collectPendingIds(data: InvocationData): string[] {
+  return [
+    ...((data.names ?? []).map((item) => (item.pending ? item.id : null))),
+    ...((data.descriptions ?? []).map((item) => (item.pending ? item.id : null))),
+    ...((data.values ?? []).map((item) => (item.pending ? item.id : null))),
+    ...((data.flags ?? []).map((item) => (item.pending ? item.flag_option_id : null))),
+    ...((data.departments ?? []).map((item) => (item.pending ? item.department_id : null))),
+    ...((data.keys ?? []).map((item) => (item.pending ? (item.key_id ?? item.id) : null))),
+    ...((data.endpoints ?? []).map((item) => (item.pending ? item.id : null))),
+    ...((data.modalities ?? []).map((item) => (item.pending ? (item.modality_id ?? item.id) : null))),
+    ...((data.temperature_levels ?? []).map((item) => (item.pending ? item.id : null))),
+    ...((data.pricing ?? []).map((item) => (item.pending ? (item.pricing_id ?? item.id) : null))),
+    ...((data.reasoning_levels ?? []).map((item) => (item.pending ? item.id : null))),
+    ...((data.qualities ?? []).map((item) => (item.pending ? (item.quality_id ?? item.id) : null))),
+    ...((data.voices ?? []).map((item) => (item.pending ? item.id : null))),
+  ].filter((id): id is string => !!id);
+}
+
+function getInitialFormState(data: InvocationData): InvocationFormState {
+  return {
+    name_id: data.names?.find((item) => item.selected)?.id ?? null,
+    name: null,
+    description_id: data.descriptions?.find((item) => item.selected)?.id ?? null,
+    description: null,
+    value_id: data.values?.find((item) => item.selected)?.id ?? null,
+    flag_ids: (data.flags ?? [])
+      .filter((item) => item.selected)
+      .map((item) => item.flag_option_id)
+      .filter((id): id is string => !!id),
+    department_ids: (data.departments ?? [])
+      .filter((item) => item.selected)
+      .map((item) => item.department_id)
+      .filter((id): id is string => !!id),
+    key_id: data.keys?.find((item) => item.selected)?.id ?? null,
+    endpoint_id: data.endpoints?.find((item) => item.selected)?.id ?? null,
+    modality_ids: (data.modalities ?? [])
+      .filter((item) => item.selected)
+      .map((item) => item.modality_id ?? item.id)
+      .filter((id): id is string => !!id),
+    temperature_level_id: data.temperature_levels?.find((item) => item.selected)?.id ?? null,
+    pricing_id: data.pricing?.find((item) => item.selected)?.id ?? null,
+    reasoning_level_id: data.reasoning_levels?.find((item) => item.selected)?.id ?? null,
+    quality_ids: (data.qualities ?? [])
+      .filter((item) => item.selected)
+      .map((item) => item.quality_id ?? item.id)
+      .filter((id): id is string => !!id),
+    voice_ids: (data.voices ?? [])
+      .filter((item) => item.selected)
+      .map((item) => item.id)
+      .filter((id): id is string => !!id),
+    pending_ids: data.pending_ids?.length ? data.pending_ids : collectPendingIds(data),
+  };
 }
 
 interface InvocationProps {
-  bundleData: GetBenchmarkBundleOut;
+  bundleData: InvocationData;
   testId: string;
-  patchBenchmarkDraftAction: (
-    input: PatchBenchmarkBundleDraftIn,
-  ) => Promise<PatchBenchmarkBundleDraftOut>;
+  patchInvocationDraftAction: (input: PatchInvocationDraftIn) => Promise<PatchInvocationDraftOut>;
 }
 
 export default function Invocation({
   bundleData,
   testId,
-  patchBenchmarkDraftAction,
+  patchInvocationDraftAction,
 }: InvocationProps) {
   const router = useRouter();
-  const s = bundleData;
+  const data = bundleData;
 
-  const initialFormState = useMemo<BenchmarkBundleFormState>(
-    () => ({
-      name: null,
-      description: null,
-      name_ids: extractIds(s.names?.current, "id"),
-      description_ids: extractIds(s.descriptions?.current, "id"),
-      value_ids: extractIds(s.values?.current, "id"),
-      flag_ids: extractIds(s.flags?.current, "id"),
-      department_ids: extractIds(s.departments?.current, "department_id"),
-      key_ids: extractIds(s.keys?.current, "id"),
-      endpoint_ids: extractIds(s.endpoints?.current, "id"),
-      modality_ids: extractIds(s.modalities?.current, "id"),
-      temperature_level_ids: extractIds(s.temperature_levels?.current, "id"),
-      pricing_ids: extractIds(s.pricing?.current, "id"),
-      reasoning_level_ids: extractIds(s.reasoning_levels?.current, "id"),
-      quality_ids: extractIds(s.qualities?.current, "id"),
-      voice_ids: extractIds(s.voices?.current, "id"),
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
-
-  const [formState, setFormState] =
-    useState<BenchmarkBundleFormState>(initialFormState);
-
-  const [urlParams, setUrlParams] = useQueryStates(
-    {
-      draftId: parseAsString,
-    },
-    { history: "replace", shallow: true },
-  );
-
-  const [draftId, setDraftId] = useState<string | null>(
-    urlParams.draftId || null,
-  );
-  const [isSaving, setIsSaving] = useState(false);
-
+  const initialFormState = useMemo(() => getInitialFormState(data), [data]);
+  const [formState, setFormState] = useState<InvocationFormState>(initialFormState);
+  const formStateRef = useRef(formState);
+  const lastPatchedRef = useRef<InvocationFormState>(initialFormState);
+  const serverSyncPendingRef = useRef(false);
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const savingRef = useRef(false);
-  const serverSyncPendingRef = useRef(false);
+
+  useEffect(() => {
+    formStateRef.current = formState;
+  }, [formState]);
+
+  const [urlParams, setUrlParams] = useQueryStates(
+    { draftId: parseAsString },
+    { history: "replace", shallow: true },
+  );
+  const [draftId, setDraftId] = useState<string | null>(urlParams.draftId || null);
+  const [isSaving, setIsSaving] = useState(false);
+  const flagConfigs = useMemo<FlagConfig[]>(
+    () =>
+      (data.flags ?? []).map((flag) => ({
+        key: flag.key,
+        label: flag.label,
+        description: flag.description ?? null,
+        icon_id: flag.icon_id ?? null,
+        flag_option_id: flag.flag_option_id ?? null,
+        show: flag.show ?? true,
+        required: flag.required ?? false,
+        generated: flag.generated ?? null,
+        pending: flag.pending ?? null,
+      })),
+    [data.flags],
+  );
+  const flagIdsByKey = useMemo<Record<string, string | null>>(
+    () =>
+      Object.fromEntries(
+        flagConfigs.map((flag) => [
+          flag.key,
+          formState.flag_ids.includes(flag.flag_option_id ?? "")
+            ? (flag.flag_option_id ?? null)
+            : null,
+        ]),
+      ) as Record<string, string | null>,
+    [flagConfigs, formState.flag_ids],
+  );
 
   useEffect(() => {
     if (draftId && draftId !== urlParams.draftId) {
@@ -126,99 +165,96 @@ export default function Invocation({
     }
   }, [draftId, setUrlParams, urlParams.draftId]);
 
+  useEffect(() => {
+    const next = getInitialFormState(data);
+    setFormState((prev) => {
+      if (JSON.stringify(prev) !== JSON.stringify(next)) {
+        serverSyncPendingRef.current = true;
+        lastPatchedRef.current = next;
+        return next;
+      }
+      return prev;
+    });
+  }, [data]);
+
   const saveDraftNow = useCallback(async () => {
     if (savingRef.current) return;
-
     savingRef.current = true;
     try {
-      // Build payload with ID fields
+      const current = formStateRef.current;
       const payload: Record<string, unknown> = {
         input_draft_id: draftId,
-        name_ids: formState.name_ids,
-        description_ids: formState.description_ids,
-        value_ids: formState.value_ids,
-        flag_ids: formState.flag_ids,
-        department_ids: formState.department_ids,
-        key_ids: formState.key_ids,
-        endpoint_ids: formState.endpoint_ids,
-        temperature_level_ids: formState.temperature_level_ids,
-        pricing_ids: formState.pricing_ids,
-        reasoning_level_ids: formState.reasoning_level_ids,
-        voice_ids: formState.voice_ids,
+        draft_id: draftId,
+        name_id: current.name_id,
+        description_id: current.description_id,
+        value_id: current.value_id,
+        flag_ids: current.flag_ids,
+        department_ids: current.department_ids,
+        key_id: current.key_id,
+        endpoint_id: current.endpoint_id,
+        modality_ids: current.modality_ids,
+        temperature_level_id: current.temperature_level_id,
+        pricing_id: current.pricing_id,
+        reasoning_level_id: current.reasoning_level_id,
+        quality_ids: current.quality_ids,
+        voice_ids: current.voice_ids,
+        pending_ids: current.pending_ids,
       };
+      if (current.name !== null) payload["name"] = current.name;
+      if (current.description !== null) payload["description"] = current.description;
 
-      // Overlay value fields (name/description) if set
-      if (formState.name !== null) {
-        payload["name"] = formState.name;
-      }
-      if (formState.description !== null) {
-        payload["description"] = formState.description;
-      }
-
-      const result = await patchBenchmarkDraftAction({
+      const result = await patchInvocationDraftAction({
         body: payload,
-      } as PatchBenchmarkBundleDraftIn);
+      } as PatchInvocationDraftIn);
 
       if (result.draft_id) {
         setDraftId(result.draft_id);
       }
 
-      // Sync form state from server response (server is source of truth)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const fs = (result as any).form_state as
-        | {
-            name_ids: string[];
-            description_ids: string[];
-            value_ids: string[];
-            flag_ids: string[];
-            department_ids: string[];
-            key_ids: string[];
-            endpoint_ids: string[];
-            temperature_level_ids: string[];
-            pricing_ids: string[];
-            reasoning_level_ids: string[];
-            voice_ids: string[];
-          }
-        | undefined;
+      const fs = result.form_state;
       if (fs) {
         serverSyncPendingRef.current = true;
         setFormState((prev) => ({
           ...prev,
-          name: null,
-          description: null,
-          name_ids: fs.name_ids,
-          description_ids: fs.description_ids,
-          value_ids: fs.value_ids,
-          flag_ids: fs.flag_ids,
-          department_ids: fs.department_ids,
-          key_ids: fs.key_ids,
-          endpoint_ids: fs.endpoint_ids,
-          temperature_level_ids: fs.temperature_level_ids,
-          pricing_ids: fs.pricing_ids,
-          reasoning_level_ids: fs.reasoning_level_ids,
-          voice_ids: fs.voice_ids,
+          name_id: fs.name_id ?? prev.name_id,
+          name: fs.name ?? null,
+          description_id: fs.description_id ?? prev.description_id,
+          description: fs.description ?? null,
+          value_id: fs.value_id ?? prev.value_id,
+          flag_ids: fs.flag_ids ?? prev.flag_ids,
+          department_ids: fs.department_ids ?? prev.department_ids,
+          key_id: fs.key_id ?? prev.key_id,
+          endpoint_id: fs.endpoint_id ?? prev.endpoint_id,
+          modality_ids: fs.modality_ids ?? prev.modality_ids,
+          temperature_level_id: fs.temperature_level_id ?? prev.temperature_level_id,
+          pricing_id: fs.pricing_id ?? prev.pricing_id,
+          reasoning_level_id: fs.reasoning_level_id ?? prev.reasoning_level_id,
+          quality_ids: fs.quality_ids ?? prev.quality_ids,
+          voice_ids: fs.voice_ids ?? prev.voice_ids,
+          pending_ids: fs.pending_ids ?? prev.pending_ids,
         }));
       }
+
+      lastPatchedRef.current = { ...formStateRef.current };
     } catch {
-      toast.error("Failed to save draft selections.");
+      toast.error("Failed to save invocation draft.");
     } finally {
       savingRef.current = false;
     }
-  }, [draftId, formState, patchBenchmarkDraftAction]);
+  }, [draftId, patchInvocationDraftAction]);
 
-  // Debounced autosave on form state change
   useEffect(() => {
-    // Skip autosave when syncing server state
     if (serverSyncPendingRef.current) {
       serverSyncPendingRef.current = false;
       return;
     }
-
+    if (JSON.stringify(formState) === JSON.stringify(lastPatchedRef.current)) {
+      return;
+    }
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       void saveDraftNow();
     }, 700);
-
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
@@ -232,17 +268,15 @@ export default function Invocation({
       if (draftId) params.set("draftId", draftId);
       const qs = params.toString();
       router.push(`/test/${testId}${qs ? `?${qs}` : ""}`);
-    } catch {
-      toast.error("Failed to save draft.");
     } finally {
       setIsSaving(false);
     }
-  }, [saveDraftNow, testId, draftId, router]);
+  }, [draftId, router, saveDraftNow, testId]);
 
-  if (!s.profile_has_access) {
+  if (data.profile_has_access === false) {
     return (
       <p className="text-sm text-muted-foreground">
-        You do not have access to this benchmark bundle.
+        You do not have access to this invocation.
       </p>
     );
   }
@@ -250,208 +284,235 @@ export default function Invocation({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Customize Benchmark</h1>
+        <h1 className="text-2xl font-bold">Customize Invocation</h1>
         <p className="text-sm text-muted-foreground">
-          Configure resources for this benchmark run.
+          Configure the draft-backed resources for this test invocation.
         </p>
       </div>
 
-      {s.names?.show && (
-        <Names
-          name_id={formState.name_ids[0] ?? null}
-          name_resource={s.names.current?.[0] ?? null}
-          show_name={s.names.show}
-          names={s.names.resources ?? []}
-          disabled={false}
-          onNameIdChange={(id: string | null) =>
-            setFormState((prev) => ({
+      <Names
+        name_id={formState.name_id}
+        name_resource={data.names?.find((item) => item.selected) ?? null}
+        show_name={(data.names?.length ?? 0) > 0}
+        names={data.names ?? []}
+        disabled={false}
+        onNameIdChange={(id) =>
+          setFormState((prev) => ({
+            ...prev,
+            name_id: id,
+            name: null,
+            pending_ids: prev.pending_ids.filter((pendingId) => pendingId !== (prev.name_id ?? "")),
+          }))
+        }
+        onNameChange={(name) =>
+          setFormState((prev) => ({ ...prev, name: name || null, name_id: null }))
+        }
+      />
+
+      <Descriptions
+        description_id={formState.description_id}
+        description_resource={data.descriptions?.find((item) => item.selected) ?? null}
+        show_description={(data.descriptions?.length ?? 0) > 0}
+        descriptions={data.descriptions ?? []}
+        disabled={false}
+        onDescriptionIdChange={(id) =>
+          setFormState((prev) => ({
+            ...prev,
+            description_id: id,
+            description: null,
+            pending_ids: prev.pending_ids.filter((pendingId) => pendingId !== (prev.description_id ?? "")),
+          }))
+        }
+        onDescriptionChange={(description) =>
+          setFormState((prev) => ({ ...prev, description: description || null, description_id: null }))
+        }
+      />
+
+      <Values
+        value_ids={formState.value_id ? [formState.value_id] : []}
+        value_resources={formState.value_id ? data.values?.filter((item) => item.id === formState.value_id) ?? [] : []}
+        show_values={(data.values?.length ?? 0) > 0}
+        values={data.values ?? []}
+        disabled={false}
+        onChange={(ids) =>
+          setFormState((prev) => ({
+            ...prev,
+            value_id: ids[0] ?? null,
+            pending_ids: prev.pending_ids.filter((id) => id !== (prev.value_id ?? "")),
+          }))
+        }
+        label="Value"
+      />
+
+      <Flags
+        flags={flagConfigs}
+        flag_ids={flagIdsByKey}
+        mode="multi"
+        onChange={(key, flagId) =>
+          setFormState((prev) => {
+            const nextFlagIds = new Set(prev.flag_ids);
+            const currentForKey = flagConfigs.find((flag) => flag.key === key)?.flag_option_id;
+            if (currentForKey) nextFlagIds.delete(currentForKey);
+            if (flagId) nextFlagIds.add(flagId);
+            return {
               ...prev,
-              name_ids: id ? [id] : [],
-            }))
-          }
-          onNameChange={(name: string) =>
-            setFormState((prev) => ({ ...prev, name }))
-          }
-        />
-      )}
+              flag_ids: Array.from(nextFlagIds),
+              pending_ids: prev.pending_ids.filter((id) => id !== (currentForKey ?? "")),
+            };
+          })
+        }
+        show_flags={flagConfigs.length > 0}
+      />
 
-      {s.descriptions?.show && (
-        <Descriptions
-          description_id={formState.description_ids[0] ?? null}
-          description_resource={s.descriptions.current?.[0] ?? null}
-          show_description={s.descriptions.show}
-          descriptions={s.descriptions.resources ?? []}
-          disabled={false}
-          onDescriptionIdChange={(id: string | null) =>
-            setFormState((prev) => ({
+      <Departments
+        department_ids={formState.department_ids}
+        department_resources={(data.departments ?? []).filter((item) => item.selected)}
+        show_departments={(data.departments?.length ?? 0) > 0}
+        departments={data.departments ?? []}
+        disabled={false}
+        onChange={(ids) =>
+          setFormState((prev) => {
+            const removed = prev.department_ids.filter((id) => !ids.includes(id));
+            return {
               ...prev,
-              description_ids: id ? [id] : [],
-            }))
-          }
-          onDescriptionChange={(description: string) =>
-            setFormState((prev) => ({ ...prev, description }))
-          }
-        />
-      )}
+              department_ids: ids,
+              pending_ids: prev.pending_ids.filter((id) => !removed.includes(id)),
+            };
+          })
+        }
+      />
 
-      {s.values?.show && (
-        <Values
-          value_ids={formState.value_ids}
-          value_resources={s.values.current ?? []}
-          show_values={s.values.show}
-          values={s.values.resources ?? []}
-          disabled={false}
-          onChange={(ids) =>
-            setFormState((prev) => ({ ...prev, value_ids: ids }))
-          }
-          label="Values"
-        />
-      )}
+      <Keys
+        key_id={formState.key_id}
+        key_resource={data.keys?.find((item) => item.selected) ?? null}
+        show_key={(data.keys?.length ?? 0) > 0}
+        keys={data.keys ?? []}
+        disabled={false}
+        onKeyIdChange={(id) =>
+          setFormState((prev) => ({
+            ...prev,
+            key_id: id,
+            pending_ids: prev.pending_ids.filter((pendingId) => pendingId !== (prev.key_id ?? "")),
+          }))
+        }
+      />
 
-      {s.flags?.show && (
-        <Flags
-          flags={
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (s.flags.resources ?? []).map((f: any) => ({
-              key: f.id,
-              label: f.name ?? f.id,
-              description: f.description ?? null,
-              flag_option_id: formState.flag_ids.includes(f.id) ? f.id : null,
-              show: true,
-            }))
-          }
-          show_flags={s.flags.show}
-        />
-      )}
+      <Endpoints
+        endpoint_ids={formState.endpoint_id ? [formState.endpoint_id] : []}
+        endpoint_resources={formState.endpoint_id ? data.endpoints?.filter((item) => item.id === formState.endpoint_id) ?? [] : []}
+        show_endpoints={(data.endpoints?.length ?? 0) > 0}
+        endpoints={data.endpoints ?? []}
+        disabled={false}
+        onChange={(ids) =>
+          setFormState((prev) => ({
+            ...prev,
+            endpoint_id: ids[0] ?? null,
+            pending_ids: prev.pending_ids.filter((id) => id !== (prev.endpoint_id ?? "")),
+          }))
+        }
+        label="Endpoint"
+      />
 
-      {s.departments?.show && (
-        <Departments
-          department_ids={formState.department_ids}
-          department_resources={s.departments.current ?? []}
-          show_departments={s.departments.show}
-          departments={s.departments.resources ?? []}
-          onChange={(ids) =>
-            setFormState((prev) => ({ ...prev, department_ids: ids }))
-          }
-          disabled={false}
-          label="Departments"
-        />
-      )}
-
-      {s.keys?.show && (
-        <Keys
-          key_id={formState.key_ids[0] ?? null}
-          key_resource={s.keys.current?.[0] ?? null}
-          show_key={s.keys.show}
-          keys={s.keys.resources ?? []}
-          disabled={false}
-          onKeyIdChange={(id: string | null) =>
-            setFormState((prev) => ({ ...prev, key_ids: id ? [id] : [] }))
-          }
-        />
-      )}
-
-      {s.endpoints?.show && (
-        <Endpoints
-          endpoint_ids={formState.endpoint_ids}
-          endpoint_resources={s.endpoints.current ?? []}
-          show_endpoints={s.endpoints.show}
-          endpoints={s.endpoints.resources ?? []}
-          disabled={false}
-          onChange={(ids) =>
-            setFormState((prev) => ({ ...prev, endpoint_ids: ids }))
-          }
-          label="Endpoints"
-        />
-      )}
-
-      {s.modalities?.show && (
-        <Modalities
-          modality_ids={formState.modality_ids}
-          modality_resources={s.modalities.current ?? []}
-          show_modalities={s.modalities.show}
-          modalities={s.modalities.resources ?? []}
-          disabled={false}
-          onChange={(ids) =>
-            setFormState((prev) => ({ ...prev, modality_ids: ids }))
-          }
-          label="Modalities"
-        />
-      )}
-
-      {s.temperature_levels?.show && (
-        <TemperatureLevels
-          temperature_level_id={formState.temperature_level_ids[0] ?? null}
-          temperature_level_resource={s.temperature_levels.current?.[0] ?? null}
-          show_temperature_levels={s.temperature_levels.show}
-          temperature_levels={s.temperature_levels.resources ?? []}
-          disabled={false}
-          onTemperatureLevelIdChange={(id: string | null) =>
-            setFormState((prev) => ({
+      <Modalities
+        modality_ids={formState.modality_ids}
+        modality_resources={(data.modalities ?? []).filter((item) => item.selected)}
+        show_modalities={(data.modalities?.length ?? 0) > 0}
+        modalities={data.modalities ?? []}
+        disabled={false}
+        onChange={(ids) =>
+          setFormState((prev) => {
+            const removed = prev.modality_ids.filter((id) => !ids.includes(id));
+            return {
               ...prev,
-              temperature_level_ids: id ? [id] : [],
-            }))
-          }
-        />
-      )}
+              modality_ids: ids,
+              pending_ids: prev.pending_ids.filter((id) => !removed.includes(id)),
+            };
+          })
+        }
+        label="Modalities"
+      />
 
-      {s.pricing?.show && (
-        <Pricing
-          pricing_ids={formState.pricing_ids}
-          pricing_resources={s.pricing.current ?? []}
-          show_pricing={s.pricing.show}
-          pricings={s.pricing.resources ?? []}
-          disabled={false}
-          onChange={(ids) =>
-            setFormState((prev) => ({ ...prev, pricing_ids: ids }))
-          }
-          label="Pricing"
-        />
-      )}
+      <TemperatureLevels
+        temperature_level_id={formState.temperature_level_id}
+        temperature_level_resource={data.temperature_levels?.find((item) => item.selected) ?? null}
+        show_temperature_levels={(data.temperature_levels?.length ?? 0) > 0}
+        temperature_levels={data.temperature_levels ?? []}
+        disabled={false}
+        onTemperatureLevelIdChange={(id) =>
+          setFormState((prev) => ({
+            ...prev,
+            temperature_level_id: id,
+            pending_ids: prev.pending_ids.filter((pendingId) => pendingId !== (prev.temperature_level_id ?? "")),
+          }))
+        }
+      />
 
-      {s.reasoning_levels?.show && (
-        <ReasoningLevels
-          reasoning_level_id={formState.reasoning_level_ids[0] ?? null}
-          reasoning_level_resource={s.reasoning_levels.current?.[0] ?? null}
-          show_reasoning_levels={s.reasoning_levels.show}
-          reasoning_levels={s.reasoning_levels.resources ?? []}
-          disabled={false}
-          onReasoningLevelIdChange={(id: string | null) =>
-            setFormState((prev) => ({
+      <Pricing
+        pricing_ids={formState.pricing_id ? [formState.pricing_id] : []}
+        pricing_resources={formState.pricing_id ? data.pricing?.filter((item) => (item.pricing_id ?? item.id) === formState.pricing_id) ?? [] : []}
+        show_pricing={(data.pricing?.length ?? 0) > 0}
+        pricings={data.pricing ?? []}
+        disabled={false}
+        onChange={(ids) =>
+          setFormState((prev) => ({
+            ...prev,
+            pricing_id: ids[0] ?? null,
+            pending_ids: prev.pending_ids.filter((id) => id !== (prev.pricing_id ?? "")),
+          }))
+        }
+        label="Pricing"
+      />
+
+      <ReasoningLevels
+        reasoning_level_id={formState.reasoning_level_id}
+        reasoning_level_resource={data.reasoning_levels?.find((item) => item.selected) ?? null}
+        show_reasoning_levels={(data.reasoning_levels?.length ?? 0) > 0}
+        reasoning_levels={data.reasoning_levels ?? []}
+        disabled={false}
+        onReasoningLevelIdChange={(id) =>
+          setFormState((prev) => ({
+            ...prev,
+            reasoning_level_id: id,
+            pending_ids: prev.pending_ids.filter((pendingId) => pendingId !== (prev.reasoning_level_id ?? "")),
+          }))
+        }
+      />
+
+      <Qualities
+        quality_ids={formState.quality_ids}
+        quality_resources={(data.qualities ?? []).filter((item) => item.selected)}
+        show_qualities={(data.qualities?.length ?? 0) > 0}
+        qualities={data.qualities ?? []}
+        disabled={false}
+        onChange={(ids) =>
+          setFormState((prev) => {
+            const removed = prev.quality_ids.filter((id) => !ids.includes(id));
+            return {
               ...prev,
-              reasoning_level_ids: id ? [id] : [],
-            }))
-          }
-        />
-      )}
+              quality_ids: ids,
+              pending_ids: prev.pending_ids.filter((id) => !removed.includes(id)),
+            };
+          })
+        }
+      />
 
-      {s.qualities?.show && (
-        <Qualities
-          quality_ids={formState.quality_ids}
-          quality_resources={s.qualities.current ?? []}
-          show_qualities={s.qualities.show}
-          qualities={s.qualities.resources ?? []}
-          disabled={false}
-          onChange={(ids) =>
-            setFormState((prev) => ({ ...prev, quality_ids: ids }))
-          }
-          label="Qualities"
-        />
-      )}
-
-      {s.voices?.show && (
-        <Voices
-          voice_ids={formState.voice_ids}
-          voice_resources={s.voices.current ?? []}
-          show_voices={s.voices.show}
-          voices={s.voices.resources ?? []}
-          disabled={false}
-          onVoiceIdsChange={(ids) =>
-            setFormState((prev) => ({ ...prev, voice_ids: ids }))
-          }
-          label="Voices"
-        />
-      )}
+      <Voices
+        voice_ids={formState.voice_ids}
+        voice_resources={(data.voices ?? []).filter((item) => item.selected)}
+        show_voices={(data.voices?.length ?? 0) > 0}
+        voices={data.voices ?? []}
+        disabled={false}
+        onVoiceIdsChange={(ids) =>
+          setFormState((prev) => {
+            const removed = prev.voice_ids.filter((id) => !ids.includes(id));
+            return {
+              ...prev,
+              voice_ids: ids,
+              pending_ids: prev.pending_ids.filter((id) => !removed.includes(id)),
+            };
+          })
+        }
+      />
 
       <Card>
         <CardHeader>
@@ -462,12 +523,12 @@ export default function Invocation({
             <Button variant="outline" onClick={() => router.back()}>
               Cancel
             </Button>
-            <Button
-              onClick={() => void saveAndReturn()}
-              disabled={isSaving}
-            >
+            <Button onClick={() => void saveAndReturn()} disabled={isSaving}>
               {isSaving ? "Saving..." : "Save & Return"}
             </Button>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Invocation drafts are saved against the test-owned invocation surface. Some inherited test resources may still remain base-backed until their draft connections are added.
           </div>
         </CardContent>
       </Card>

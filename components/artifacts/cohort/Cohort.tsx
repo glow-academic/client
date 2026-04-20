@@ -100,8 +100,6 @@ export interface CohortProps {
   ) => Promise<PatchCohortDraftOut>;
 }
 
-const FLUSH_KEYS = ["names", "descriptions", "simulation_positions", "simulation_availability", "profile_personas"] as const;
-
 const VALID_RESOURCE_TYPES = [
   "names",
   "descriptions",
@@ -218,8 +216,8 @@ function CohortComponent({
   const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
 
   // --- Flush Registry ---
-  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
-    useFlushRegistry<FlushResult>(FLUSH_KEYS);
+  const { flushRegistryRef, flushAllResources } =
+    useFlushRegistry<FlushResult>([]);
 
   // --- AI Generation ---
   const { isGenerating, generate } = useArtifactAi({
@@ -682,6 +680,43 @@ function CohortComponent({
     onPatchSuccess,
   });
 
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((nameId: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      name_id: nameId,
+      name: null,
+      pending_ids: prev.pending_ids.filter((id) => id !== prev.name_id),
+    }));
+  }, []);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      name,
+      name_id: null,
+      pending_ids: prev.pending_ids.filter((id) => id !== prev.name_id),
+    }));
+  }, []);
+
+  const handleDescriptionIdChange = useCallback((descriptionId: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      description_id: descriptionId,
+      description: null,
+      pending_ids: prev.pending_ids.filter((id) => id !== prev.description_id),
+    }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      description,
+      description_id: null,
+      pending_ids: prev.pending_ids.filter((id) => id !== prev.description_id),
+    }));
+  }, []);
+
   // Update form state when server data changes
   // Use cohortData directly in dependency array, not getInitialFormState
   useEffect(() => {
@@ -737,33 +772,69 @@ function CohortComponent({
         } as PatchCohortDraftIn);
         if (result.form_state) {
           const fs = result.form_state;
-          serverSyncPendingRef.current = true;
-          const nextState: CohortFormState = {
-            name_id: fs.name_id ?? null,
-            description_id: fs.description_id ?? null,
-            active_flag_id: fs.active_flag_id ?? fs.flag_id ?? null,
-            department_ids: fs.department_ids ?? [],
-            simulation_ids: fs.simulation_ids ?? [],
-            simulation_position_ids: fs.simulation_position_ids ?? [],
-            simulation_availability_ids: fs.simulation_availability_ids ?? [],
-            simulation_positions: (fs.simulation_positions ?? []).map(
-              (position) => ({
-                simulation_id: position.simulation_id,
-                value: position.value,
-              }),
-            ),
-            profile_ids: fs.profile_ids ?? [],
-            profile_persona_ids: fs.profile_persona_ids ?? [],
-            name: fs.name ?? null,
-            description: fs.description ?? null,
-            simulation_position_values: fs.simulation_positions ?? null,
-            simulation_availability_values:
-              fs.simulation_availability ?? null,
-            profile_persona_values: fs.profile_personas ?? null,
-            pending_ids: fs.pending_ids ?? [],
-          };
-          setFormState(nextState);
-          lastPatchedFormStateRef.current = nextState;
+          setFormState((prev) => {
+            const next: CohortFormState = {
+              ...prev,
+              name_id: fs.name_id ?? prev.name_id,
+              description_id: fs.description_id ?? prev.description_id,
+              active_flag_id: fs.active_flag_id ?? fs.flag_id ?? prev.active_flag_id,
+              department_ids: fs.department_ids ?? prev.department_ids,
+              simulation_ids: fs.simulation_ids ?? prev.simulation_ids,
+              simulation_position_ids:
+                fs.simulation_position_ids ?? prev.simulation_position_ids,
+              simulation_availability_ids:
+                fs.simulation_availability_ids ?? prev.simulation_availability_ids,
+              simulation_positions: fs.simulation_positions
+                ? fs.simulation_positions.map((position) => ({
+                    simulation_id: position.simulation_id,
+                    value: position.value,
+                  }))
+                : prev.simulation_positions,
+              profile_ids: fs.profile_ids ?? prev.profile_ids,
+              profile_persona_ids:
+                fs.profile_persona_ids ?? prev.profile_persona_ids,
+              // Clear value fields only once the server has resolved them to
+              // IDs — keeping the value would cause infinite re-saves (value
+              // takes precedence → new resource → new id → repeat).
+              name: fs.name_id ? null : prev.name,
+              description: fs.description_id ? null : prev.description,
+              simulation_position_values: fs.simulation_position_ids?.length
+                ? null
+                : prev.simulation_position_values,
+              simulation_availability_values: fs.simulation_availability_ids?.length
+                ? null
+                : prev.simulation_availability_values,
+              profile_persona_values: fs.profile_persona_ids?.length
+                ? null
+                : prev.profile_persona_values,
+              pending_ids: fs.pending_ids ?? prev.pending_ids,
+            };
+            // Only set the server-sync absorb flag when the state actually
+            // changes. Unconditionally setting it would let it stick after a
+            // no-op sync and silently swallow the next user action. (Same fix
+            // as Persona / Scenario / Simulation.)
+            const changed =
+              prev.name_id !== next.name_id ||
+              prev.name !== next.name ||
+              prev.description_id !== next.description_id ||
+              prev.description !== next.description ||
+              prev.active_flag_id !== next.active_flag_id ||
+              JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
+              JSON.stringify(prev.simulation_ids) !== JSON.stringify(next.simulation_ids) ||
+              JSON.stringify(prev.simulation_position_ids) !== JSON.stringify(next.simulation_position_ids) ||
+              JSON.stringify(prev.simulation_availability_ids) !== JSON.stringify(next.simulation_availability_ids) ||
+              JSON.stringify(prev.simulation_positions) !== JSON.stringify(next.simulation_positions) ||
+              JSON.stringify(prev.profile_ids) !== JSON.stringify(next.profile_ids) ||
+              JSON.stringify(prev.profile_persona_ids) !== JSON.stringify(next.profile_persona_ids) ||
+              JSON.stringify(prev.simulation_position_values) !== JSON.stringify(next.simulation_position_values) ||
+              JSON.stringify(prev.simulation_availability_values) !== JSON.stringify(next.simulation_availability_values) ||
+              JSON.stringify(prev.profile_persona_values) !== JSON.stringify(next.profile_persona_values) ||
+              JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
+            if (!changed) return prev;
+            serverSyncPendingRef.current = true;
+            lastPatchedFormStateRef.current = next;
+            return next;
+          });
         }
         return result;
       };
@@ -1196,31 +1267,12 @@ function CohortComponent({
                   show_name={true}
                   names={s?.names ?? []}
                   disabled={disabled}
-                  onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      name_id: nameId,
-                      name: null,
-                      pending_ids: prev.pending_ids.filter(
-                        (id) => id !== prev.name_id,
-                      ),
-                    }))
-                  }
-                  onNameChange={(name) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      name,
-                      name_id: null,
-                      pending_ids: prev.pending_ids.filter(
-                        (id) => id !== prev.name_id,
-                      ),
-                    }))
-                  }
+                  onNameIdChange={handleNameIdChange}
+                  onNameChange={handleNameChange}
                   placeholder="e.g., Spring 2024 Cohort"
                   defaultName="New Cohort"
                   required={true}
                   hideDescription={true}
-                  isAutosaveEnabled={isAutosaveEnabled}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
@@ -1249,26 +1301,8 @@ function CohortComponent({
                   show_description={true}
                   descriptions={s?.descriptions ?? []}
                   disabled={disabled}
-                  onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description_id: descriptionId,
-                      description: null,
-                      pending_ids: prev.pending_ids.filter(
-                        (id) => id !== prev.description_id,
-                      ),
-                    }))
-                  }
-                  onDescriptionChange={(description) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description,
-                      description_id: null,
-                      pending_ids: prev.pending_ids.filter(
-                        (id) => id !== prev.description_id,
-                      ),
-                    }))
-                  }
+                  onDescriptionIdChange={handleDescriptionIdChange}
+                  onDescriptionChange={handleDescriptionChange}
                   searchTerm={
                     (stepFormData["descriptionSearch"] as
                       | string
@@ -1283,7 +1317,6 @@ function CohortComponent({
                   required={false}
                   rows={4}
                   data-testid="input-cohort-description"
-                  isAutosaveEnabled={isAutosaveEnabled}
                 />
 
                 {/* Department Selection */}
@@ -1452,8 +1485,6 @@ function CohortComponent({
                   onGenerate={
                     isEditMode ? handleGenerateSimulationPositions : undefined
                   }
-                  isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["simulation_positions"]}
                   onSimulationPositionValues={(positions) =>
                     setFormState((prev) => ({
                       ...prev,
@@ -1486,8 +1517,6 @@ function CohortComponent({
                   }
                   label="Simulation Availability"
                   required={false}
-                  isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["simulation_availability"]}
                   onSimulationAvailabilityValues={(values) =>
                     setFormState((prev) => ({
                       ...prev,
@@ -1608,8 +1637,6 @@ function CohortComponent({
                 onChange={() => undefined}
                 cohort_id={cohortId ?? null}
                 onGenerate={handleGenerateProfilePersonas}
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["profile_personas"]}
                 aiProfilePersonaResources={[]}
                 onProfilePersonaValues={(values) =>
                   setFormState((prev) => ({
@@ -1658,7 +1685,6 @@ function CohortComponent({
       canRegenerate,
       handleDirectStepGenerate,
       isAutosaveEnabled,
-      registerFlushCallbacks,
     ],
   );
 

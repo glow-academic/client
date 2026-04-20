@@ -109,11 +109,11 @@ export function Examples({
 
   // Internal state for display texts (synced with example_ids via exampleMapping)
   const [internalTexts, setInternalTexts] = useState<string[]>(() => {
-    // Initialize from example_ids using effectiveExampleMapping
     if (ids.length > 0 && Object.keys(effectiveExampleMapping).length > 0) {
-      return ids
+      const texts = ids
         .map((id) => effectiveExampleMapping[id] || "")
         .filter((text) => text.trim() !== "");
+      if (texts.length > 0) return texts;
     }
     return [""];
   });
@@ -122,47 +122,49 @@ export function Examples({
   const exampleIdMapRef = useRef<Map<string, string>>(new Map()); // Maps example text -> example_id
   const onExamplesChangeRef = useRef(onExamplesChange);
   onExamplesChangeRef.current = onExamplesChange;
+  // Dirty flag: once the user interacts, stop syncing from server data so we don't
+  // clobber their input (same pattern as Descriptions.tsx).
+  const isDirtyRef = useRef(false);
 
-  // Sync external example_ids changes (when loading from server)
+  // Sync external example_ids changes (only when user isn't actively editing,
+  // and only when the mapping has entries for every current id — otherwise we'd
+  // overwrite with stale/wrong text right after a save).
   useEffect(() => {
-    if (ids.length > 0 && Object.keys(effectiveExampleMapping).length > 0) {
-      const texts = ids
-        .map((id) => effectiveExampleMapping[id] || "")
-        .filter((text) => text.trim() !== "");
-      if (texts.length > 0) {
-        // Only update if texts actually changed to prevent infinite loops
-        const newTexts = texts.length > 0 ? texts : [""];
-        setInternalTexts((prev) => {
-          const prevStr = JSON.stringify(prev);
-          const newStr = JSON.stringify(newTexts);
-          if (prevStr === newStr) return prev;
-          return newTexts;
-        });
-        // Update mapping
-        ids.forEach((id, idx) => {
-          if (texts[idx]) {
-            exampleIdMapRef.current.set(texts[idx], id);
-          }
-        });
+    if (isDirtyRef.current) return;
+    if (ids.length === 0) return;
+    const hasAllMappings = ids.every((id) => effectiveExampleMapping[id]);
+    if (!hasAllMappings) return;
+
+    const newTexts = ids.map((id) => effectiveExampleMapping[id]!);
+    setInternalTexts((prev) => {
+      if (JSON.stringify(prev) === JSON.stringify(newTexts)) return prev;
+      return newTexts;
+    });
+    ids.forEach((id, idx) => {
+      if (newTexts[idx]) {
+        exampleIdMapRef.current.set(newTexts[idx], id);
       }
-    }
+    });
   }, [ids, effectiveExampleMapping]);
 
-  // Report example text changes upward via onExamplesChange
+  // Report example text changes upward via onExamplesChange.
+  // Only emit when the user has actually interacted — otherwise we'd emit on every
+  // render where internalTexts becomes a new array ref, clearing example_ids for
+  // no reason and triggering spurious saves.
   useEffect(() => {
-    // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
       return;
     }
+    if (!isDirtyRef.current) return;
 
     const currentTexts = internalTexts.filter((t) => t.trim());
     onExamplesChangeRef.current?.([...currentTexts]);
   }, [internalTexts]);
 
   const handleItemsChange = useCallback((items: string[]) => {
+    isDirtyRef.current = true;
     const newItems = items.length > 0 ? items : [""];
-    // Check for newly added texts that match existing suggestions
     for (const text of newItems) {
       if (text.trim() && !exampleIdMapRef.current.has(text)) {
         const existingId = suggestionTextToIdMap.get(text);

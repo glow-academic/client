@@ -18,7 +18,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { createLoader, parseAsString } from "nuqs/server";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
@@ -29,24 +29,7 @@ type CreateToolIn = InputOf<"/tool/create", "post">;
 type CreateToolOut = OutputOf<"/tool/create", "post">;
 type PatchToolDraftIn = InputOf<"/tool/draft", "patch">;
 type PatchToolDraftOut = OutputOf<"/tool/draft", "patch">;
-type CreateDraftArgsIn = InputOf<"/api/v5/resources/args", "post">;
-type CreateDraftArgsOut = OutputOf<"/api/v5/resources/args", "post">;
-type CreateDraftArgsOutputsIn = InputOf<
-  "/api/v5/resources/args_outputs",
-  "post"
->;
-type CreateDraftArgsOutputsOut = OutputOf<
-  "/api/v5/resources/args_outputs",
-  "post"
->;
-type CreateDraftArgPositionsIn = InputOf<
-  "/api/v5/resources/arg_positions",
-  "post"
->;
-type CreateDraftArgPositionsOut = OutputOf<
-  "/api/v5/resources/arg_positions",
-  "post"
->;
+
 type GroupToolIn = InputOf<"/tool/group", "post">;
 type GroupToolOut = OutputOf<"/tool/group", "post">;
 type GenerateToolIn = InputOf<"/tool/generate", "post">;
@@ -81,26 +64,6 @@ async function patchToolDraft(
   return api.patch("/tool/draft", input);
 }
 
-async function createDraftArgs(
-  input: CreateDraftArgsIn
-): Promise<CreateDraftArgsOut> {
-  "use server";
-  return api.post("/resources/args", input);
-}
-
-async function createDraftArgsOutputs(
-  input: CreateDraftArgsOutputsIn
-): Promise<CreateDraftArgsOutputsOut> {
-  "use server";
-  return api.post("/resources/args_outputs", input);
-}
-
-async function createDraftArgPositions(
-  input: CreateDraftArgPositionsIn
-): Promise<CreateDraftArgPositionsOut> {
-  "use server";
-  return api.post("/resources/arg_positions", input);
-}
 
 async function generateTool(
   input: GenerateToolIn
@@ -180,50 +143,88 @@ export default async function NewToolPage({
     // Inline server-side parsers for tool search params
     const toolSearchParams = {
       draftId: parseAsString,
+      argsSearch: parseAsString,
+      argPositionsSearch: parseAsString,
+      argsOutputsSearch: parseAsString,
+      permissionsSearch: parseAsString,
+      argsShowSelected: parseAsBoolean,
+      argPositionsShowSelected: parseAsBoolean,
+      argsOutputsShowSelected: parseAsBoolean,
+      permissionsShowSelected: parseAsBoolean,
     };
     const loadToolSearchParams = createLoader(toolSearchParams);
     const q = loadToolSearchParams(searchParamsObj);
 
     // Fetch tool default data (for dropdowns and defaults) with draft_id
-    const input: GetToolIn = {
+    const input = {
       body: {
-        tool_id: null,
+        id: null,
         draft_id: q.draftId ?? null,
-      } as GetToolIn["body"],
-    };
+        args:
+          q.argsSearch || q.argsShowSelected
+            ? {
+                search: q.argsSearch ?? undefined,
+                selected: q.argsShowSelected ?? undefined,
+              }
+            : undefined,
+        arg_positions:
+          q.argPositionsSearch || q.argPositionsShowSelected
+            ? {
+                search: q.argPositionsSearch ?? undefined,
+                selected: q.argPositionsShowSelected ?? undefined,
+              }
+            : undefined,
+        args_outputs:
+          q.argsOutputsSearch || q.argsOutputsShowSelected
+            ? {
+                search: q.argsOutputsSearch ?? undefined,
+                selected: q.argsOutputsShowSelected ?? undefined,
+              }
+            : undefined,
+        permissions:
+          q.permissionsSearch || q.permissionsShowSelected
+            ? {
+                search: q.permissionsSearch ?? undefined,
+                selected: q.permissionsShowSelected ?? undefined,
+              }
+            : undefined,
+      },
+    } as GetToolIn;
     const [toolDetailDefault, draftsResult, groupResult] = await Promise.all([
       getToolDefault(input),
-      api.post("/tool/drafts", {}),
+      api.post("/tool/drafts", { body: {} } as any),
       api.post("/tool/group", { body: {} } as GroupToolIn),
     ]);
 
+    const layoutProps = {
+      profileData: context.profile,
+      sessionSnapshot: snapshot,
+      initialSidebarOpen,
+      initialPanelOpen,
+      sidebarProps: {
+        activeSection: "tool",
+        createFeedback: createToolProblem as any,
+      },
+      breadcrumbs: [
+        { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+        { title: "Tools", section: "tools", url: "/intelligence/tools" },
+        { title: "New Tool" },
+      ],
+      toolbar: <SaveToolbar />,
+      panelProps: {
+        artifactType: "tool",
+        groupId: (groupResult as GroupToolOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateTool,
+        operations: ["draft", "get", "group"],
+        getGroupHistory: getToolGroupHistory,
+        searchGroups: searchToolGroups,
+        prompts: context.prompts?.prompts,
+      },
+    } as any;
+
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
-        <FullPageLayout
-          profileData={context.profile}
-          sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
-          initialPanelOpen={initialPanelOpen}
-          sidebarProps={{
-            activeSection: "tool",
-            createFeedback: createToolProblem,
-          }}
-          breadcrumbs={[
-            { title: "Intelligence", section: "intelligence", url: "/intelligence" },
-            { title: "Tools", section: "tools", url: "/intelligence/tools" },
-            { title: "New Tool" },
-          ]}
-          toolbar={<SaveToolbar />}
-          panelProps={{
-            artifactType: "tool",
-            groupId: (groupResult as GroupToolOut & { group_id?: string })?.group_id ?? null,
-            generateAction: generateTool,
-            operations: ["draft", "get", "group"],
-            getGroupHistory: getToolGroupHistory,
-            searchGroups: searchToolGroups,
-            prompts: context.prompts?.prompts,
-          }}
-        >
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
+        <FullPageLayout {...layoutProps}>
           <div
             className="space-y-6 px-4"
             data-page="tool-new"
@@ -234,9 +235,6 @@ export default async function NewToolPage({
               toolData={toolDetailDefault}
               createToolAction={createTool}
               patchToolDraftAction={patchToolDraft}
-              createArgsAction={createDraftArgs}
-              createArgPositionsAction={createDraftArgPositions}
-              createArgsOutputsAction={createDraftArgsOutputs}
             />
           </div>
         </FullPageLayout>

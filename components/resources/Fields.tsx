@@ -16,9 +16,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface FieldResourceItem {
@@ -27,6 +26,8 @@ export interface FieldResourceItem {
   description?: string | null;
   conditional_parameter_ids?: string[] | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface FieldItem {
@@ -39,8 +40,7 @@ export interface FieldsProps {
   field_ids?: string[]; // Current field resource IDs (standardized prop name)
   field_resources?: FieldResourceItem[]; // Selected field resources (each includes generated field)
   show_fields?: boolean; // Whether to show this resource picker
-  field_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  fields?: FieldResourceItem[]; // All available fields from API (each includes generated field)
+  fields?: FieldResourceItem[]; // All available fields from API (each includes generated and suggested fields)
   parameterIdFilter?: string | null; // Only show fields with this parameter_id
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update field_ids in form state
@@ -49,21 +49,16 @@ export interface FieldsProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   searchTerm?: string; // Search term for filtering fields
   showSelectedFilter?: boolean; // Whether to show only selected fields
   // Legacy props for backward compatibility
   fieldIds?: string[];
-  aiFieldResources?: Array<Pick<FieldResourceItem, "field_id" | "name">> | null;
 }
 
 export function Fields({
   field_ids,
   field_resources: _field_resources,
   show_fields = false,
-  field_suggestions: _field_suggestions,
   fields,
   parameterIdFilter,
   disabled = false,
@@ -73,9 +68,6 @@ export function Fields({
   required = false,
   placeholder: _placeholder = "Select fields...",
   description,
-  group_id,
-  onGenerate,
-  showAiGenerate = false,
   searchTerm = "",
   showSelectedFilter = false,
   // Legacy props for backward compatibility
@@ -85,28 +77,15 @@ export function Fields({
   const ids = useMemo(() => field_ids ?? fieldIds ?? [], [field_ids, fieldIds]);
   const show = show_fields ?? false;
   const allFieldsMemo = useMemo(() => fields ?? [], [fields]);
-  const suggestionsList = useMemo(
-    () => _field_suggestions ?? [],
-    [_field_suggestions]
-  );
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "fields",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestions
-          .map((f) => f.id)
-          .filter(Boolean) as string[]
-      ),
-    [aiSuggestions]
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allFieldsMemo.filter((f) => f.pending && f.field_id);
+  }, [allFieldsMemo]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((f) => f.field_id).filter(Boolean) as string[]),
+    [pendingItems]
   );
 
   // Convert fields array to FieldItem format for SelectableGrid
@@ -149,10 +128,13 @@ export function Fields({
     return filtered;
   }, [fieldItems, searchTerm, showSelectedFilter, ids]);
 
-  // Check if a field is suggested
+  // Check if a field is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
-    (fieldId: string) => suggestionsList.includes(fieldId),
-    [suggestionsList]
+    (fieldId: string) => {
+      const field = allFieldsMemo.find((f) => f.field_id === fieldId);
+      return field?.suggested === true;
+    },
+    [allFieldsMemo]
   );
 
   const handleSelect = useCallback(
@@ -168,27 +150,17 @@ export function Fields({
     [ids, onChange]
   );
 
-  // Check if any field resource is generated
-  const hasGenerated = useMemo(() => {
-    return _field_resources?.some((f) => f.generated) ?? false;
-  }, [_field_resources]);
-
-  // Accept AI suggestion - add AI-suggested fields to selection
+  // Accept pending — keep pending fields in selection (no-op, already included)
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((f) => f.id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending fields from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    const newIds = ids.filter((id) => !pendingIds.has(id));
+    onChange(newIds);
+  }, [ids, pendingIds, onChange]);
 
   // Don't render if show_fields is false (AFTER all hooks)
   if (!show) {
@@ -208,31 +180,6 @@ export function Fields({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -278,7 +225,7 @@ export function Fields({
         onSelect={handleSelect}
         getId={(item) => item.id}
         renderItem={(item, isSelected) => {
-          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const isPending = pendingIds.has(item.id);
 
           return (
             <div
@@ -286,24 +233,26 @@ export function Fields({
                 "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isSelected && !isPending && "ring-2 ring-primary bg-accent",
+                isPending && "ring-2 ring-success bg-success/10",
               )}
             >
               {/* Check icon - top right */}
-              {isSelected && (
+              {isSelected && !isPending && (
                 <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
                   <Check className="h-3 w-3 text-primary-foreground" />
                 </div>
               )}
-              {/* AI Suggested badge - top right */}
-              {isAiSuggested && !isSelected && (
+
+              {/* Pending badge - top right */}
+              {isPending && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  AI Suggested
+                  Pending
                 </div>
               )}
+
               {/* Suggested dot indicator - top right */}
-              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+              {isSuggested(item.id) && !isSelected && !isPending && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

@@ -12,6 +12,7 @@ import EvalHistory from "@/components/artifacts/benchmark/EvalHistory";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 
 import { buildSnapshot } from "@/lib/auth";
+import { guardPage } from "@/lib/permissions";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -46,16 +47,16 @@ type EvalsListOut = {
 };
 
 /** ---- Generation types from OpenAPI ---- */
-type ContextIn = InputOf<"/test/benchmark/context", "post">;
-type ContextOut = OutputOf<"/test/benchmark/context", "post">;
-type GenerateBenchmarkIn = InputOf<"/test/benchmark/generate", "post">;
-type GenerateBenchmarkOut = OutputOf<"/test/benchmark/generate", "post">;
-type GenerationsIn = InputOf<"/test/benchmark/generations", "post">;
-type GenerationsOut = OutputOf<"/test/benchmark/generations", "post">;
-type GroupBenchmarkIn = InputOf<"/test/benchmark/group", "post">;
-type GroupBenchmarkOut = OutputOf<"/test/benchmark/group", "post">;
-type ProblemBenchmarkIn = InputOf<"/test/benchmark/problem", "post">;
-type ProblemBenchmarkOut = OutputOf<"/test/benchmark/problem", "post">;
+type ContextIn = InputOf<"/test/context", "post">;
+type ContextOut = OutputOf<"/test/context", "post">;
+type GenerateBenchmarkIn = InputOf<"/test/generate", "post">;
+type GenerateBenchmarkOut = OutputOf<"/test/generate", "post">;
+type GenerationsIn = InputOf<"/test/generations", "post">;
+type GenerationsOut = OutputOf<"/test/generations", "post">;
+type GroupBenchmarkIn = InputOf<"/test/group", "post">;
+type GroupBenchmarkOut = OutputOf<"/test/group", "post">;
+type ProblemBenchmarkIn = InputOf<"/test/problem", "post">;
+type ProblemBenchmarkOut = OutputOf<"/test/problem", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getBenchmarkOverview = async (
@@ -84,28 +85,28 @@ async function generateBenchmark(
   input: GenerateBenchmarkIn
 ): Promise<GenerateBenchmarkOut> {
   "use server";
-  return api.post("/test/benchmark/generate", input);
+  return api.post("/test/generate", input);
 }
 
 async function getBenchmarkGroupHistory(groupId: string): Promise<GroupBenchmarkOut> {
   "use server";
-  return api.post("/test/benchmark/group", { body: { group_id: groupId } } as GroupBenchmarkIn);
+  return api.post("/test/group", { body: { group_id: groupId } } as GroupBenchmarkIn);
 }
 
 async function searchBenchmarkGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/test/benchmark/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/test/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createBenchmarkProblem(input: ProblemBenchmarkIn): Promise<ProblemBenchmarkOut> {
   "use server";
-  return api.post("/test/benchmark/problem", input);
+  return api.post("/test/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/test/benchmark/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await api.post("/test/context", { body: {} } as ContextIn) as ContextOut;
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -137,8 +138,9 @@ export default async function BenchmarkPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/test/benchmark/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await api.post("/test/context", { body: {} } as ContextIn) as ContextOut;
     const snapshot = buildSnapshot(session, context.profile);
+    guardPage("/benchmark", context.profile.role_permissions);
 
     // Parse search params via nuqs loader
     const q = loadBenchmarkSearchParams(await searchParams);
@@ -176,7 +178,7 @@ export default async function BenchmarkPage({
     // Fetch benchmark overview and group in parallel
     const [overviewData, groupResult] = await Promise.all([
       getBenchmarkOverview(overviewFilters),
-      api.post("/test/benchmark/group", { body: {} } as GroupBenchmarkIn),
+      api.post("/test/group", { body: {} } as GroupBenchmarkIn),
     ]);
 
     // Extract inline analytics facets

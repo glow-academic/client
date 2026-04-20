@@ -1,7 +1,8 @@
 /**
  * ModelFlags.tsx
  * Resource component for per-model flag selection
- * Uses base flags list and creates model_flags_resource entries
+ * Pure UI: displays flags, reports selections via onChange/onModelFlagValues
+ * Pending detection driven by `pending` field on resources (no socket AI)
  */
 
 "use client";
@@ -15,22 +16,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { SvgIcon } from "@/components/common/SvgIcon";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
+import { Check, Power, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-type CreateDraftModelFlagsIn = {
-  body: {
-    model_id: string;
-    flag_id: string;
-    mcp: boolean;
-  };
-};
-type CreateDraftModelFlagsOut = {
-  model_flags_id?: string | null;
-};
 
 export interface ModelFlagResourceItem {
   id?: string | null;
@@ -40,10 +29,10 @@ export interface ModelFlagResourceItem {
   description?: string | null;
   icon?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface ModelFlagsProps {
-  model_flag_ids?: string[];
   model_flag_resources?: ModelFlagResourceItem[];
   show_model_flags?: boolean;
   model_flags?: ModelFlagResourceItem[];
@@ -67,20 +56,6 @@ export interface ModelFlagsProps {
   id?: string;
   required?: boolean;
   description?: string;
-  group_id?: string | null;
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createModelFlagsAction?:
-    | ((
-        input: CreateDraftModelFlagsIn
-      ) => Promise<CreateDraftModelFlagsOut>)
-    | undefined;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ model_flag_ids: string[] } | void>) => void;
-  aiModelFlagResources?: Pick<ModelFlagResourceItem, "id">[] | null;
   /** Value callback for unified draft — reports all selected model+flag pairs */
   onModelFlagValues?: (flags: Array<{ model_id: string; flag_id: string }>) => void;
 }
@@ -93,7 +68,6 @@ type ModelFlagOption = {
 };
 
 export function ModelFlags({
-  model_flag_ids: _model_flag_ids,
   model_flag_resources,
   show_model_flags = false,
   model_flags,
@@ -106,14 +80,6 @@ export function ModelFlags({
   id = "model_flags",
   required = false,
   description,
-  group_id,
-  create_tool_id,
-  createModelFlagsAction,
-  onGenerate,
-  showAiGenerate = false,
-  isAutosaveEnabled = true,
-  registerFlush,
-  aiModelFlagResources,
   onModelFlagValues,
 }: ModelFlagsProps) {
   const show = show_model_flags ?? false;
@@ -149,26 +115,6 @@ export function ModelFlags({
     });
     return map;
   }, [models, model_resources]);
-  // Map resource ID → artifact ID for API calls
-  const artifactIdMap = useMemo(() => {
-    const map = new Map<string, string>();
-    (models ?? []).forEach((m) => {
-      if (m.id && m.model_id) {
-        map.set(m.id, m.model_id);
-      } else if (m.model_id) {
-        map.set(m.model_id, m.model_id);
-      }
-    });
-    (model_resources ?? []).forEach((m) => {
-      if (m.id && m.model_id) {
-        map.set(m.id, m.model_id);
-      } else if (m.model_id) {
-        map.set(m.model_id, m.model_id);
-      }
-    });
-    return map;
-  }, [models, model_resources]);
-
   // Multi-select: maps modelId → Set of selected flagIds
   const [selectedFlagsByModel, setSelectedFlagsByModel] = useState<
     Map<string, Set<string>>
@@ -177,25 +123,6 @@ export function ModelFlags({
   const [modelFlagResourceIds, setModelFlagResourceIds] = useState<
     Map<string, string>
   >(new Map());
-  const createdFlagKeysRef = useRef<Set<string>>(new Set());
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ model_flag_ids: string[] } | void>) | null>(null);
-
-  // Socket-based AI suggestion handling via shared hook
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestion: aiSuggestionFromSocket,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "model_flags",
-    groupId: group_id,
-  });
-
-  // Effective AI resources: hook (socket) takes priority, then prop fallback
-  const effectiveAiFlagResources =
-    aiSuggestionFromSocket ?? aiModelFlagResources ?? null;
-
   useEffect(() => {
     const nextSelected = new Map<string, Set<string>>();
     const nextResourceIds = new Map<string, string>();
@@ -268,66 +195,6 @@ export function ModelFlags({
     onModelFlagValuesRef.current(values);
   }, [selectedFlagsByModel]);
 
-  // Update flush function - returns current IDs from local state
-  flushRef.current = async (): Promise<{ model_flag_ids: string[] } | void> => {
-    const ids = Array.from(modelFlagResourceIds.values());
-    return { model_flag_ids: ids };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
-  const createModelFlag = useCallback(
-    async (modelId: string, flagId: string) => {
-      if (!isAutosaveEnabled || !createModelFlagsAction || !group_id) {
-        return;
-      }
-      const key = `${modelId}:${flagId}`;
-      if (createdFlagKeysRef.current.has(key)) {
-        return;
-      }
-      createdFlagKeysRef.current.add(key);
-
-      // Resolve resource ID to artifact ID for the API
-      const artifactModelId = artifactIdMap.get(modelId) ?? modelId;
-
-      try {
-        const result = await createModelFlagsAction({
-          body: {
-            model_id: artifactModelId,
-            flag_id: flagId,
-            mcp: false,
-          },
-        });
-
-        if (!result?.model_flags_id) {
-          return;
-        }
-
-        const resultId = result.model_flags_id as string;
-        setModelFlagResourceIds((prev) => {
-          const next = new Map(prev);
-          next.set(key, resultId);
-          return next;
-        });
-      } catch {
-        // Resource creation errors are handled by API; keep UI state intact.
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      isAutosaveEnabled,
-      createModelFlagsAction,
-      create_tool_id,
-      group_id,
-      artifactIdMap,
-    ]
-  );
-
   const handleToggle = useCallback(
     (modelId: string, flagId: string, checked: boolean) => {
       const key = `${modelId}:${flagId}`;
@@ -344,9 +211,7 @@ export function ModelFlags({
         return next;
       });
 
-      if (checked) {
-        void createModelFlag(modelId, flagId);
-      } else {
+      if (!checked) {
         setModelFlagResourceIds((prev) => {
           const next = new Map(prev);
           next.delete(key);
@@ -354,7 +219,7 @@ export function ModelFlags({
         });
       }
     },
-    [createModelFlag]
+    []
   );
 
   // Group flags by model_id from the SQL query
@@ -379,41 +244,35 @@ export function ModelFlags({
     return map;
   }, [allFlags]);
 
-  const hasGenerated = useMemo(() => {
-    return currentResources.some((flag) => flag.generated);
-  }, [currentResources]);
-
-  // AI suggestion state
-  const showDiff = !!effectiveAiFlagResources?.length;
-  const aiSuggestedFlagIds = useMemo(
+  // Pending detection from resource arrays
+  const pendingResources = useMemo(
+    () => currentResources.filter((r) => r.pending),
+    [currentResources]
+  );
+  const showDiff = pendingResources.length > 0;
+  const pendingFlagKeys = useMemo(
     () =>
       new Set(
-        effectiveAiFlagResources?.map((f) => f.id).filter(Boolean) as string[]
+        pendingResources
+          .filter((r) => r.model_id && r.flag_id)
+          .map((r) => `${r.model_id}:${r.flag_id}`)
       ),
-    [effectiveAiFlagResources]
+    [pendingResources]
   );
 
-  // Accept AI suggestion - apply all AI-suggested flags
+  // Accept pending — already reflected in form state, nothing to change
   const handleAccept = useCallback(() => {
-    if (!effectiveAiFlagResources?.length) return;
+    // Pending flags are already in form state — the next draft save persists them
+  }, []);
 
-    for (const aiFlag of effectiveAiFlagResources) {
-      if (!aiFlag.id) continue;
-      // Find which model and flag this applies to
-      for (const [modelId, flagOptions] of flagOptionsByModel) {
-        const matchingOption = flagOptions.find((opt) => opt.id === aiFlag.id);
-        if (matchingOption) {
-          handleToggle(modelId, matchingOption.id, true);
-        }
+  // Reject pending — unset pending flag selections
+  const handleReject = useCallback(() => {
+    for (const resource of pendingResources) {
+      if (resource.model_id && resource.flag_id) {
+        handleToggle(resource.model_id, resource.flag_id, false);
       }
     }
-    clearAi();
-  }, [effectiveAiFlagResources, flagOptionsByModel, handleToggle, clearAi]);
-
-  // Reject AI suggestion - just clear the pending state
-  const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+  }, [pendingResources, handleToggle]);
 
   if (!show || model_ids.length === 0) {
     return null;
@@ -432,31 +291,6 @@ export function ModelFlags({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -513,15 +347,13 @@ export function ModelFlags({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {modelOptions.map((option) => {
                   const isSelected = selectedFlags.has(option.id);
-                  const isAiSuggested =
-                    showDiff && aiSuggestedFlagIds.has(option.id);
-                  const wouldChange = isAiSuggested && !isSelected; // AI wants to turn this ON
+                  const isPending = pendingFlagKeys.has(`${modelId}:${option.id}`);
                   return (
                     <div
                       key={option.id}
                       className={cn(
                         "space-y-1 p-2 rounded-lg transition-all",
-                        isAiSuggested && "ring-2 ring-success bg-success/10"
+                        isPending && "ring-2 ring-success bg-success/10"
                       )}
                     >
                       <div className="flex items-center gap-2">
@@ -535,9 +367,9 @@ export function ModelFlags({
                             <Power className="h-3.5 w-3.5 text-muted-foreground" />
                           )}
                           {option.name}
-                          {isAiSuggested && (
+                          {isPending && (
                             <span className="ml-2 text-xs text-success font-medium">
-                              → {wouldChange ? "ON" : "OFF"} (AI)
+                              Pending
                             </span>
                           )}
                         </Label>

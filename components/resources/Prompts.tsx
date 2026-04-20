@@ -2,7 +2,8 @@
  * Prompts.tsx
  * Resource component for prompt selection and editing
  * Inline Monaco editor for prompt content editing
- * Creates resources independently and reports resource IDs to parent
+ * Reports raw prompt data to parent form state; draft endpoint handles resource creation
+ * Pure UI component: pending state drives accept/reject diff view
  */
 
 "use client";
@@ -16,10 +17,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
+
 import { cn } from "@/lib/utils";
-import { Check, Eye, Loader2, Sparkles, X } from "lucide-react";
+import { Check, Eye, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -33,8 +33,6 @@ const Monaco = dynamic(() => import("@monaco-editor/react"), {
   ),
 });
 
-type CreateDraftPromptsIn = InputOf<"/api/v5/resources/prompts", "post">;
-type CreateDraftPromptsOut = OutputOf<"/api/v5/resources/prompts", "post">;
 
 export interface PromptResourceItem {
   id?: string | null;
@@ -43,6 +41,7 @@ export interface PromptResourceItem {
   description?: string | null;
   system_prompt?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 // Word-based diff types and utilities
@@ -142,13 +141,14 @@ function DiffView({ current, proposed }: { current: string; proposed: string }) 
 }
 
 export interface PromptsProps {
-  prompt_id?: string | null; // Current prompt_id (standardized prop name)
-  prompt_resource?: PromptResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
-  show_prompts?: boolean; // Whether to show this resource picker
-  prompt_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  prompts?: PromptResourceItem[]; // Array of all available prompt options
-  disabled?: boolean; // Based on can_edit flag
-  onPromptIdChange: (promptId: string | null) => void; // Update prompt_id in parent form state
+  prompt_id?: string | null;
+  prompt_resource?: PromptResourceItem | null;
+  show_prompts?: boolean;
+  prompts?: PromptResourceItem[];
+  disabled?: boolean;
+  onPromptIdChange: (promptId: string | null) => void;
+  /** Report raw prompt text to parent form state (like onNameChange for Names) */
+  onPromptChange?: (prompt: { system_prompt: string; name: string; description: string } | null) => void;
   label?: string;
   placeholder?: string;
   required?: boolean;
@@ -157,37 +157,16 @@ export interface PromptsProps {
   helpText?: string;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
-  group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createPromptsAction?:
-    | ((input: CreateDraftPromptsIn) => Promise<CreateDraftPromptsOut>)
-    | undefined;
-  // Legacy props for backward compatibility
-  promptResource?: {
-    id: string;
-    system_prompt: string;
-    name: string;
-    description: string;
-    generated?: boolean | null;
-  } | null;
-  promptId?: string | null;
-  suggestions?: string[];
-  showAiGenerate?: boolean;
-  onGenerate?: () => void | Promise<void>;
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created ID */
-  registerFlush?: (flush: () => Promise<{ prompt_id: string | null } | void>) => void;
 }
 
 export function Prompts({
   prompt_id,
   prompt_resource,
   show_prompts = true,
-  prompt_suggestions: _prompt_suggestions,
   prompts,
   disabled = false,
   onPromptIdChange,
+  onPromptChange,
   label = "Prompt",
   placeholder = "Select a prompt",
   required = false,
@@ -196,20 +175,9 @@ export function Prompts({
   helpText,
   searchTerm,
   onSearchChange,
-  group_id,
-  createPromptsAction,
-  // Legacy props for backward compatibility
-  promptResource,
-  promptId: _promptId,
-  suggestions: _suggestions,
-  showAiGenerate = false,
-  onGenerate,
-  isAutosaveEnabled = true,
-  registerFlush,
 }: PromptsProps) {
-  // Use standardized props with fallback to legacy props
-  const resource = prompt_resource ?? promptResource ?? null;
-  const resourceId = prompt_id ?? _promptId ?? null;
+  const resource = prompt_resource ?? null;
+  const resourceId = prompt_id ?? null;
 
   // Use prompts array for GenericPicker items
   const pickerItems = useMemo(() => {
@@ -219,31 +187,25 @@ export function Prompts({
     return [];
   }, [prompts]);
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
-    resourceType: "prompts",
-    groupId: group_id,
-  });
+  // Pending state: current resource has pending=true (soft draft, awaiting acceptance)
+  const isPending = resource?.pending === true;
+  const showDiff = isPending;
+  const currentText = "";
+  const pendingText = resource?.system_prompt || "";
 
-  // AI diff view state
-  const showDiff = !!aiSuggestion?.system_prompt;
-  const aiText = aiSuggestion?.system_prompt || "";
-
-  // Accept AI suggestion - update prompt content and notify parent
+  // Accept pending — confirm the pending resource
   const handleAccept = useCallback(() => {
-    if (!aiSuggestion?.prompt_id) return;
-    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    const text = aiSuggestion.system_prompt || "";
+    if (!resource?.id) return;
+    const text = resource.system_prompt || "";
     setPromptContent(text);
     lastSavedContentRef.current = text;
-    onPromptIdChange(aiSuggestion.prompt_id);
-    clearAi();
-  }, [aiSuggestion, onPromptIdChange, clearAi]);
+    onPromptIdChange(resource.id);
+  }, [resource, onPromptIdChange]);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove the pending resource
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    onPromptIdChange(null);
+  }, [onPromptIdChange]);
 
   // Track prompt content in local state
   const [promptContent, setPromptContent] = useState<string>(
@@ -251,65 +213,8 @@ export function Prompts({
   );
   const [editorMode, setEditorMode] = useState<"editor" | "preview">("editor");
   const [theme, setTheme] = useState<"vs-dark" | "light">("vs-dark");
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContentRef = useRef<string>(resource?.system_prompt || "");
   const isInitialMountRef = useRef(true);
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ prompt_id: string | null } | void>) | undefined>(undefined);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ prompt_id: string | null } | void> => {
-    // Skip if no action available
-    if (!createPromptsAction || !group_id) {
-      return;
-    }
-
-    // Skip if no change AND we already have a resource for this value
-    if (promptContent === lastSavedContentRef.current && resourceId) {
-      return { prompt_id: resourceId };
-    }
-
-    try {
-      if (promptContent.trim()) {
-        const result = await createPromptsAction({
-          body: {
-            system_prompt: promptContent,
-            name: resource?.name || "Untitled Prompt",
-            description: resource?.description || "",
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-            ...(resourceId ? { prompt_id: resourceId } : {}),
-          },
-        });
-        if (result && typeof result === "object" && "prompt_id" in result) {
-          const newPromptId = (result as { prompt_id?: string | null }).prompt_id;
-          if (newPromptId) {
-            if (newPromptId !== resourceId) {
-              onPromptIdChange(newPromptId);
-            }
-            lastSavedContentRef.current = promptContent;
-            return { prompt_id: newPromptId };
-          }
-        }
-      } else {
-        onPromptIdChange(null);
-        lastSavedContentRef.current = promptContent;
-        return { prompt_id: null };
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to create prompt resource:", error);
-      throw error;
-    }
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Detect dark mode for Monaco editor
   useEffect(() => {
@@ -339,50 +244,32 @@ export function Prompts({
     }
   }, [resource?.system_prompt, resourceId, prompts]);
 
-  // Debounced resource creation/update - only when autosave is enabled
+  // Report prompt changes to parent form state (parent's draft autosave handles persistence)
   useEffect(() => {
-    // Skip if autosave is disabled (manual save mode)
-    if (!isAutosaveEnabled) {
-      return;
-    }
-
-    // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
       lastSavedContentRef.current = promptContent;
       return;
     }
 
-    // Skip if content hasn't changed
     if (promptContent === lastSavedContentRef.current) {
       return;
     }
 
-    // Skip if no action or empty content
-    if (!createPromptsAction || !promptContent.trim()) {
-      return;
-    }
+    lastSavedContentRef.current = promptContent;
 
-    // Clear existing timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set new timer
-    debounceTimerRef.current = setTimeout(() => {
-      flushRef.current?.();
-    }, 1000);
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
+    if (onPromptChange) {
+      if (promptContent.trim()) {
+        onPromptChange({
+          system_prompt: promptContent,
+          name: resource?.name || "",
+          description: resource?.description || "",
+        });
+      } else {
+        onPromptChange(null);
       }
-    };
-  }, [
-    promptContent,
-    createPromptsAction,
-    isAutosaveEnabled,
-  ]);
+    }
+  }, [promptContent, onPromptChange, resource?.name, resource?.description]);
 
   const handlePromptSelect = (selectedPromptId: string | null) => {
     if (selectedPromptId && prompts) {
@@ -486,31 +373,6 @@ export function Prompts({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {resource?.generated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -621,7 +483,9 @@ export function Prompts({
       <div className="space-y-2">
         <div className="h-[500px]" data-testid={`${dataTestId || id}-editor`}>
           {showDiff ? (
-            <DiffView current={promptContent} proposed={aiText} />
+            <div className="ring-2 ring-success rounded-md h-full">
+              <DiffView current={currentText} proposed={pendingText} />
+            </div>
           ) : (
             renderEditorContent()
           )}

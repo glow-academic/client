@@ -10,6 +10,7 @@ import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import Reports from "@/components/artifacts/reports/Reports";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { buildSnapshot } from "@/lib/auth";
+import { guardPage } from "@/lib/permissions";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -25,16 +26,16 @@ type ReportsIn = InputOf<"/attempt/report/search", "post">;
 type ReportsOut = OutputOf<"/attempt/report/search", "post">;
 
 /** ---- Generation types ---- */
-type ContextIn = InputOf<"/attempt/report/context", "post">;
-type ContextOut = OutputOf<"/attempt/report/context", "post">;
-type GenerateReportsIn = InputOf<"/attempt/report/generate", "post">;
-type GenerateReportsOut = OutputOf<"/attempt/report/generate", "post">;
-type GenerationsIn = InputOf<"/attempt/report/generations", "post">;
-type GenerationsOut = OutputOf<"/attempt/report/generations", "post">;
-type GroupReportsIn = InputOf<"/attempt/report/group", "post">;
-type GroupReportsOut = OutputOf<"/attempt/report/group", "post">;
-type ProblemReportsIn = InputOf<"/attempt/report/problem", "post">;
-type ProblemReportsOut = OutputOf<"/attempt/report/problem", "post">;
+type ContextIn = InputOf<"/attempt/context", "post">;
+type ContextOut = OutputOf<"/attempt/context", "post">;
+type GenerateReportsIn = InputOf<"/attempt/generate", "post">;
+type GenerateReportsOut = OutputOf<"/attempt/generate", "post">;
+type GenerationsIn = InputOf<"/attempt/generations", "post">;
+type GenerationsOut = OutputOf<"/attempt/generations", "post">;
+type GroupReportsIn = InputOf<"/attempt/group", "post">;
+type GroupReportsOut = OutputOf<"/attempt/group", "post">;
+type ProblemReportsIn = InputOf<"/attempt/problem", "post">;
+type ProblemReportsOut = OutputOf<"/attempt/problem", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports responses exceed Next.js 2MB cache limit (~3.2MB).
@@ -57,7 +58,7 @@ const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/attempt/report/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -89,8 +90,9 @@ export default async function ReportsFullPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/attempt/report/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
     const snapshot = buildSnapshot(session, context.profile);
+    guardPage("/analytics/reports", context.profile.role_permissions);
 
     // Parse search params via nuqs loader
     const q = loadReportsSearchParams(await searchParams);
@@ -160,7 +162,7 @@ export default async function ReportsFullPage({
         },
       }),
       readViewCookie("reports"),
-      api.post("/attempt/report/group", { body: {} } as GroupReportsIn),
+      api.post("/attempt/group", { body: {} } as GroupReportsIn),
     ]);
 
     // Extract inline analytics facets from response (replaces computeAnalyticsDefaults)
@@ -281,22 +283,22 @@ async function generateReports(
   input: GenerateReportsIn
 ): Promise<GenerateReportsOut> {
   "use server";
-  return api.post("/attempt/report/generate", input);
+  return api.post("/attempt/generate", input);
 }
 
 async function getReportsGroupHistory(groupId: string): Promise<GroupReportsOut> {
   "use server";
-  return api.post("/attempt/report/group", { body: { group_id: groupId } } as GroupReportsIn);
+  return api.post("/attempt/group", { body: { group_id: groupId } } as GroupReportsIn);
 }
 
 async function searchReportsGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/attempt/report/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/attempt/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createReportsProblem(input: ProblemReportsIn): Promise<ProblemReportsOut> {
   "use server";
-  return api.post("/attempt/report/problem", input);
+  return api.post("/attempt/problem", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

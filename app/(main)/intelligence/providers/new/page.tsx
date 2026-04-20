@@ -18,7 +18,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { createLoader, parseAsString } from "nuqs/server";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
@@ -29,20 +29,6 @@ type CreateProviderIn = InputOf<"/provider/create", "post">;
 type CreateProviderOut = OutputOf<"/provider/create", "post">;
 type PatchProviderDraftIn = InputOf<"/provider/draft", "patch">;
 type PatchProviderDraftOut = OutputOf<"/provider/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftValuesIn = InputOf<"/api/v5/resources/values", "post">;
-type CreateDraftValuesOut = OutputOf<"/api/v5/resources/values", "post">;
-type CreateDraftEndpointsIn = InputOf<"/api/v5/resources/endpoints", "post">;
-type CreateDraftEndpointsOut = OutputOf<"/api/v5/resources/endpoints", "post">;
 type GroupProviderIn = InputOf<"/provider/group", "post">;
 type GroupProviderOut = OutputOf<"/provider/group", "post">;
 type GenerateProviderIn = InputOf<"/provider/generate", "post">;
@@ -79,36 +65,7 @@ async function patchProviderDraft(
   input: PatchProviderDraftIn
 ): Promise<PatchProviderDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/provider/draft", input);
-}
-
-async function createNames(
-  input: CreateDraftNamesIn
-): Promise<CreateDraftNamesOut> {
-  "use server";
-  return api.post("/resources/names", input);
-}
-
-async function createDescriptions(
-  input: CreateDraftDescriptionsIn
-): Promise<CreateDraftDescriptionsOut> {
-  "use server";
-  return api.post("/resources/descriptions", input);
-}
-
-async function createValues(
-  input: CreateDraftValuesIn
-): Promise<CreateDraftValuesOut> {
-  "use server";
-  return api.post("/resources/values", input);
-}
-
-async function createEndpoints(
-  input: CreateDraftEndpointsIn
-): Promise<CreateDraftEndpointsOut> {
-  "use server";
-  return api.post("/resources/endpoints", input);
 }
 
 async function generateProvider(
@@ -188,49 +145,83 @@ export default async function NewProviderPage({
     // Inline server-side parsers for provider search params
     const providerSearchParams = {
       draftId: parseAsString,
+      descriptionSearch: parseAsString,
+      valueSearch: parseAsString,
+      endpointSearch: parseAsString,
+      keySearch: parseAsString,
+      departmentShowSelected: parseAsBoolean,
+      valueShowSelected: parseAsBoolean,
+      endpointShowSelected: parseAsBoolean,
+      keyShowSelected: parseAsBoolean,
     };
     const loadProviderSearchParams = createLoader(providerSearchParams);
     const q = loadProviderSearchParams(searchParamsObj);
 
     // Fetch default provider detail server-side with draft_id (provider_id = NULL for new mode)
-    const input: GetProviderIn = {
+    const input = {
       body: {
-        provider_id: null,
+        id: null,
         draft_id: q.draftId ?? null,
-      } as GetProviderIn["body"],
-    };
+        descriptions: q.descriptionSearch
+          ? { search: q.descriptionSearch ?? undefined }
+          : undefined,
+        departments: q.departmentShowSelected
+          ? { selected: q.departmentShowSelected ?? undefined }
+          : undefined,
+        values: q.valueSearch || q.valueShowSelected
+          ? {
+              search: q.valueSearch ?? undefined,
+              selected: q.valueShowSelected ?? undefined,
+            }
+          : undefined,
+        endpoints: q.endpointSearch || q.endpointShowSelected
+          ? {
+              search: q.endpointSearch ?? undefined,
+              selected: q.endpointShowSelected ?? undefined,
+            }
+          : undefined,
+        keys: q.keySearch || q.keyShowSelected
+          ? {
+              search: q.keySearch ?? undefined,
+              selected: q.keyShowSelected ?? undefined,
+            }
+          : undefined,
+      },
+    } as GetProviderIn;
     const [providerDetailDefault, draftsResult, groupResult] = await Promise.all([
       getProviderDefault(input),
-      api.post("/provider/drafts", {}),
+      api.post("/provider/drafts", { path: undefined } as InputOf<"/provider/drafts", "post">),
       api.post("/provider/group", { body: {} } as GroupProviderIn),
     ]);
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
         <FullPageLayout
-          profileData={context.profile}
-          sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
-          initialPanelOpen={initialPanelOpen}
-          sidebarProps={{
-            activeSection: "provider",
-            createFeedback: createProviderProblem,
-          }}
-          breadcrumbs={[
-            { title: "Intelligence", section: "intelligence", url: "/intelligence" },
-            { title: "Providers", section: "providers", url: "/intelligence/providers" },
-            { title: "New Provider" },
-          ]}
-          toolbar={<SaveToolbar />}
-          panelProps={{
-            artifactType: "provider",
-            groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
-            generateAction: generateProvider,
-            operations: ["draft", "get", "group"],
-            getGroupHistory: getProviderGroupHistory,
-            searchGroups: searchProviderGroups,
-            prompts: context.prompts?.prompts,
-          }}
+          {...({
+            profileData: context.profile,
+            sessionSnapshot: snapshot,
+            initialSidebarOpen,
+            initialPanelOpen,
+            sidebarProps: {
+              activeSection: "provider",
+              createFeedback: createProviderProblem,
+            },
+            breadcrumbs: [
+              { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+              { title: "Providers", section: "providers", url: "/intelligence/providers" },
+              { title: "New Provider" },
+            ],
+            toolbar: <SaveToolbar />,
+            panelProps: {
+              artifactType: "provider",
+              groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
+              generateAction: generateProvider,
+              operations: ["draft", "get", "group"],
+              getGroupHistory: getProviderGroupHistory,
+              searchGroups: searchProviderGroups,
+              prompts: context.prompts?.prompts,
+            },
+          } as any)}
         >
           <div
             className="space-y-6 px-4"
@@ -242,10 +233,6 @@ export default async function NewProviderPage({
               providerData={providerDetailDefault}
               createProviderAction={createProvider}
               patchProviderDraftAction={patchProviderDraft}
-              createNamesAction={createNames}
-              createDescriptionsAction={createDescriptions}
-              createValuesAction={createValues}
-              createEndpointsAction={createEndpoints}
             />
           </div>
         </FullPageLayout>
@@ -275,14 +262,6 @@ export type {
   GetProviderOut,
   PatchProviderDraftIn,
   PatchProviderDraftOut,
-  CreateDraftNamesIn,
-  CreateDraftNamesOut,
-  CreateDraftDescriptionsIn,
-  CreateDraftDescriptionsOut,
-  CreateDraftValuesIn,
-  CreateDraftValuesOut,
-  CreateDraftEndpointsIn,
-  CreateDraftEndpointsOut,
   CreateProviderIn,
   CreateProviderOut,
 };

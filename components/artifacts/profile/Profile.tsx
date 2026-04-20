@@ -231,29 +231,50 @@ function ProfileComponent({
 
       const formStateFromServer = result?.form_state;
       if (formStateFromServer) {
-        const serverPrimaryEmailIndex =
-          (formStateFromServer.email_ids?.length ?? 0) > 0 ? 0 : 0;
-        setFormState((prev) => ({
-          ...prev,
-          name_id: formStateFromServer.name_id ?? prev.name_id,
-          name:
-            formStateFromServer.name !== undefined
-              ? formStateFromServer.name
-              : formStateFromServer.name_id
-                ? null
-                : prev.name,
-          active_flag_id:
-            formStateFromServer.active_flag_id ??
-            formStateFromServer.flag_id ??
-            prev.active_flag_id,
-          department_ids:
-            formStateFromServer.department_ids ?? prev.department_ids,
-          email_ids: formStateFromServer.email_ids ?? prev.email_ids,
-          new_emails: [],
-          primary_email_index: serverPrimaryEmailIndex,
-          role_id: formStateFromServer.role_id ?? prev.role_id,
-          pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
-        }));
+        setFormState((prev) => {
+          const next: ProfileFormState = {
+            ...prev,
+            name_id: formStateFromServer.name_id ?? prev.name_id,
+            // Clear value fields only once the server has resolved them to IDs
+            // — keeping the value would cause infinite re-saves (value takes
+            // precedence → new resource → new id → repeat).
+            name: formStateFromServer.name_id ? null : prev.name,
+            active_flag_id:
+              formStateFromServer.active_flag_id ??
+              formStateFromServer.flag_id ??
+              prev.active_flag_id,
+            department_ids:
+              formStateFromServer.department_ids ?? prev.department_ids,
+            email_ids: formStateFromServer.email_ids ?? prev.email_ids,
+            // Only clear new_emails once the server returned email_ids for
+            // them. Unconditionally clearing would wipe an in-flight add.
+            new_emails: (formStateFromServer.email_ids?.length ?? 0) > 0
+              ? []
+              : prev.new_emails,
+            primary_email_index: (formStateFromServer.email_ids?.length ?? 0) > 0
+              ? 0
+              : prev.primary_email_index,
+            role_id: formStateFromServer.role_id ?? prev.role_id,
+            pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
+          };
+          // Only set the server-sync absorb flag when state actually changes.
+          // If the server returned identical values, setting the flag would
+          // let it stick and silently swallow the next user action. (Same fix
+          // as Persona / Scenario / Simulation / Cohort / Document.)
+          const changed =
+            prev.name_id !== next.name_id ||
+            prev.name !== next.name ||
+            prev.active_flag_id !== next.active_flag_id ||
+            prev.role_id !== next.role_id ||
+            prev.primary_email_index !== next.primary_email_index ||
+            JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
+            JSON.stringify(prev.email_ids) !== JSON.stringify(next.email_ids) ||
+            JSON.stringify(prev.new_emails) !== JSON.stringify(next.new_emails) ||
+            JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
+          if (!changed) return prev;
+          serverSyncPendingRef.current = true;
+          return next;
+        });
       }
 
       return result;
@@ -318,10 +339,20 @@ function ProfileComponent({
       formState as unknown as Record<string, unknown>,
     ) || formState.new_emails.length > 0;
 
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((nameId: string | null) => {
+    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }));
+  }, []);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({ ...prev, name, name_id: null }));
+  }, []);
+
   const {
     setUrlFormDataRef,
     onFormDataChange,
     flushAllAndSave,
+    serverSyncPendingRef,
     formDataRef,
   } = useDraftLifecycle({
     formStateKey,
@@ -737,12 +768,8 @@ function ProfileComponent({
                   show_name={true}
                   names={profileData?.names ?? []}
                   disabled={disabled}
-                  onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
-                  }
-                  onNameChange={(name) =>
-                    setFormState((prev) => ({ ...prev, name, name_id: null }))
-                  }
+                  onNameIdChange={handleNameIdChange}
+                  onNameChange={handleNameChange}
                   placeholder="e.g., Jane Doe"
                   defaultName="New Profile"
                   required={true}

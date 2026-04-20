@@ -195,7 +195,6 @@ export default async function NewPersonaPage({
             aria-label="Create new persona page"
           >
             <Persona
-              key={q.draftId || "no-draft"}
               groupId={(groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null}
               personaData={personaDetailDefault}
               createPersonaAction={createPersona}

@@ -39,7 +39,6 @@ export interface SimulationsProps {
   simulation_ids?: string[]; // Current simulation resource IDs (standardized prop name)
   simulation_resources?: SimulationResourceItem[]; // Selected simulation resources (each includes generated field)
   show_simulations?: boolean; // Whether to show this resource picker
-  simulation_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   simulations?: SimulationResourceItem[]; // All available simulations from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update simulation_ids in form state
@@ -49,8 +48,6 @@ export interface SimulationsProps {
   placeholder?: string;
   description?: string;
   group_id?: string | null; // Group ID for linking resources
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   searchTerm?: string; // Search term for filtering simulations
   showSelectedFilter?: boolean; // Whether to show only selected simulations
   // Legacy props for backward compatibility
@@ -64,7 +61,6 @@ export function Simulations({
   simulation_ids,
   simulation_resources: _simulation_resources,
   show_simulations = false,
-  simulation_suggestions: _simulation_suggestions,
   simulations,
   disabled = false,
   onChange,
@@ -73,8 +69,6 @@ export function Simulations({
   required = false,
   description,
   group_id: _group_id,
-  onGenerate: _onGenerate,
-  showAiGenerate: _showAiGenerate = false,
   searchTerm = "",
   showSelectedFilter = false,
   // Legacy props for backward compatibility

@@ -33,8 +33,9 @@ export interface DocumentAreaProps {
     can_delete: boolean | null;
     active: boolean | null;
     department_ids: Array<string> | null;
-    upload_id: string | null;
-    html: boolean | null;
+    text_id: string | null;
+    file_id: string | null;
+    template: boolean | null;
     field_ids: Array<string> | null;
   }>;
 
@@ -137,14 +138,16 @@ export function AttemptDocumentArea({
                     can_delete: selectedItem.data.can_delete ?? false,
                     active: selectedItem.data.active ?? false,
                     department_ids: selectedItem.data.department_ids,
-                    upload_id: selectedItem.data.upload_id,
-                    html: selectedItem.data.html,
+                    text_id: selectedItem.data.text_id,
+                    file_id: selectedItem.data.file_id,
+                    template: selectedItem.data.template,
                     field_ids: selectedItem.data.field_ids || [],
                     valid_field_ids: null,
                     active_scenario_count: null,
                     total_scenario_links: null,
                   }}
-                  downloadBaseUrl="/api/attempts/download"
+                  downloadBaseUrl="/api/attempts/file"
+                  textDownloadBaseUrl="/api/attempts/text"
                 />
               )}
             </div>

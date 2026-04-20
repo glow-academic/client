@@ -25,12 +25,25 @@ export interface SimulationControlsProps {
   attemptId: string;
   currentChatId: string;
   hasMessages: boolean;
+  isQuizMode?: boolean;
 }
+
+const QUIZ_GRADE_OPERATIONS = [
+  "chat_grade",
+  "chat_complete",
+  "get",
+  "chat_get",
+];
+
+const QUIZ_GRADE_INSTRUCTIONS = [
+  "Grade this attempt chat. Call attempt/get to fetch the user's quiz responses and attempt/chat_get to fetch the rubric, questions, and options (including is_correct flags). Use the rubric standards to determine a score between 0 and the rubric's total_points, weighing how the user's chosen options align with the correct answers. Then call chat_grade with the chat_id and your score.",
+];
 
 export function SimulationControls({
   attemptId,
   currentChatId,
   hasMessages,
+  isQuizMode = false,
 }: SimulationControlsProps) {
   const { grade, endChat, stage } = useAttemptEnd();
 
@@ -41,16 +54,25 @@ export function SimulationControls({
 
   // Handle End Session button click
   const handleEndSession = useCallback(() => {
-    // No messages: show confirmation → end without grading
+    // No gradeable content: show confirmation → end without grading
     if (!hasMessages) {
       setConfirmEndChatOpen(true);
       return;
     }
 
-    // Has messages: grade then end
     if (!currentChatId) return;
-    grade({ attemptId, chatId: currentChatId, endAfter: true });
-  }, [hasMessages, currentChatId, attemptId, grade]);
+    grade({
+      attemptId,
+      chatId: currentChatId,
+      endAfter: true,
+      ...(isQuizMode
+        ? {
+            operations: QUIZ_GRADE_OPERATIONS,
+            instructions: QUIZ_GRADE_INSTRUCTIONS,
+          }
+        : {}),
+    });
+  }, [hasMessages, currentChatId, attemptId, grade, isQuizMode]);
 
   // Confirm end session with 0 messages
   const handleConfirmEnd = useCallback(() => {
