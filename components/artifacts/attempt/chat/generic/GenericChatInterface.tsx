@@ -9,11 +9,13 @@
 import DocumentViewer, {
   type DocumentItem,
 } from "@/components/common/viewers/DocumentViewer";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -26,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { FileText } from "lucide-react";
+import { CheckCircle2, FileText } from "lucide-react";
 import React from "react";
 
 // Import component prop types (each component defines its own)
@@ -340,7 +342,8 @@ export function GenericChatInterface({
         </Dialog>
       )}
 
-      {/* Objectives Modal — mobile only. Simple bulleted list. */}
+      {/* Objectives Modal — mobile only. Matches v1 with green
+          CheckCircle icons on each objective and a footer Close button. */}
       {show_objectives_modal && chat_header_props.objectives && (
         <Dialog
           open={show_objectives_modal}
@@ -359,15 +362,32 @@ export function GenericChatInterface({
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 overflow-auto py-4">
-              <ul className="space-y-2 list-none">
-                {chat_header_props.objectives.map((objective, index) => (
-                  <li key={index} className="font-normal flex items-start gap-2">
-                    <span className="text-primary mt-1.5 flex-shrink-0">•</span>
-                    <span className="flex-1">{objective}</span>
-                  </li>
-                ))}
-              </ul>
+              {chat_header_props.objectives.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">
+                  No objectives defined for this scenario.
+                </p>
+              ) : (
+                <ul className="space-y-2 list-none">
+                  {chat_header_props.objectives.map((objective, index) => (
+                    <li
+                      key={index}
+                      className="font-normal flex items-start gap-2"
+                    >
+                      <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                      <span className="flex-1 -mt-0.5">{objective}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => on_close_objectives_modal?.()}
+              >
+                Close
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}

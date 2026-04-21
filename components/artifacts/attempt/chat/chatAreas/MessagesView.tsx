@@ -560,8 +560,8 @@ export function MessagesView({
                       // Streaming response not yet started
                       return (
                         <div key={message.id} className="flex justify-start mb-3">
-                          <div className="max-w-[80%]">
-                            <div className="bg-muted rounded-lg p-3 flex items-center justify-center">
+                          <div className="max-w-[95%] md:max-w-[80%]">
+                            <div className="bg-muted rounded-lg p-2 md:p-3 text-sm md:text-base flex items-center justify-center">
                               <LoadingDots />
                             </div>
                           </div>
@@ -571,8 +571,8 @@ export function MessagesView({
                     // Completed but empty
                     return (
                       <div key={message.id} className={`flex ${isQuery ? "justify-end" : "justify-start"} mb-3`}>
-                        <div className="max-w-[80%]">
-                          <div className="bg-muted rounded-lg p-3">
+                        <div className="max-w-[95%] md:max-w-[80%]">
+                          <div className="bg-muted rounded-lg p-2 md:p-3 text-sm md:text-base">
                             <span className="text-gray-500 italic">No content</span>
                           </div>
                         </div>
@@ -604,9 +604,13 @@ export function MessagesView({
                         // Show hints button on last content entry of response messages
                         const isLastContent = contentIndex === contents.length - 1;
                         const showHintsButton = !isQuery && isLastContent && hasHints;
+                        // Mobile uses a tighter column (matches v1 —
+                        // assistant icon button shrinks from 52/26px to
+                        // 44/22px on narrow viewports; persona/fork
+                        // column shrinks from w-9 to w-7).
                         const containerHeightClass = showHintsButton
-                          ? "h-[52px] min-h-[52px] max-h-[52px]"
-                          : "h-[26px] min-h-[26px] max-h-[26px]";
+                          ? "h-[44px] md:h-[52px] min-h-[44px] md:min-h-[52px] max-h-[44px] md:max-h-[52px]"
+                          : "h-[22px] md:h-[26px] min-h-[22px] md:min-h-[26px] max-h-[22px] md:max-h-[26px]";
 
                         // Check for error content
                         const isError = message.completed && contentText.startsWith("Error:");
@@ -629,9 +633,9 @@ export function MessagesView({
                                   ))}
                                 </div>
                               )}
-                              <div className="flex items-stretch gap-2 max-w-[80%]">
+                              <div className="flex items-stretch gap-1 md:gap-2 max-w-[95%] md:max-w-[80%]">
                                 <div
-                                  className="bg-primary text-primary-foreground rounded-lg p-3"
+                                  className="bg-primary text-primary-foreground rounded-lg p-2 md:p-3 text-sm md:text-base"
                                   data-testid={`message-${message.id}-content-${contentIndex}`}
                                   data-message-type="user"
                                 >
@@ -645,7 +649,7 @@ export function MessagesView({
                                       <Markdown>{contentText}</Markdown>
                                     )}
                                 </div>
-                                <div className={`flex flex-col gap-1 w-9 ${showForkButton ? "h-[52px] min-h-[52px] max-h-[52px]" : "h-[26px] min-h-[26px] max-h-[26px]"} overflow-hidden`}>
+                                <div className={`flex flex-col gap-1 w-7 md:w-9 ${showForkButton ? "h-[44px] md:h-[52px] min-h-[44px] md:min-h-[52px] max-h-[44px] md:max-h-[52px]" : "h-[22px] md:h-[26px] min-h-[22px] md:min-h-[26px] max-h-[22px] md:max-h-[26px]"} overflow-hidden`}>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Button
@@ -732,9 +736,9 @@ export function MessagesView({
                                 ))}
                               </div>
                             )}
-                            <div className="max-w-[80%] flex items-stretch gap-2">
+                            <div className="max-w-[95%] md:max-w-[80%] flex items-stretch gap-1 md:gap-2">
                                 {/* Left-aligned stacked controls */}
-                                <div className={`flex flex-col gap-1 w-9 ${containerHeightClass} overflow-visible`}>
+                                <div className={`flex flex-col gap-1 w-7 md:w-9 ${containerHeightClass} overflow-visible`}>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Button
@@ -812,7 +816,7 @@ export function MessagesView({
                                 <div className="relative group p-2 -m-2 flex-1">
                                   {isError ? (
                                     <div
-                                      className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 relative"
+                                      className="bg-destructive/10 border border-destructive/20 rounded-lg p-2 md:p-3 text-sm md:text-base relative"
                                       data-testid={`message-${message.id}-content-${contentIndex}`}
                                       data-message-type="assistant"
                                     >
@@ -856,7 +860,7 @@ export function MessagesView({
                                     </div>
                                   ) : (
                                     <div
-                                      className="bg-muted rounded-lg p-3"
+                                      className="bg-muted rounded-lg p-2 md:p-3 text-sm md:text-base"
                                       data-testid={`message-${message.id}-content-${contentIndex}`}
                                       data-message-type="assistant"
                                     >

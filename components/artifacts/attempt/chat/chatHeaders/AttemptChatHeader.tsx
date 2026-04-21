@@ -269,7 +269,7 @@ export function AttemptChatHeader({
             <Tooltip>
               <TooltipTrigger asChild>
                 <div
-                  className={`flex items-center justify-center gap-2 px-3 py-1 rounded-full w-[85px] overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
+                  className={`flex items-center justify-center gap-2 px-3 py-1 rounded-full ${
                     !attempt?.infinite_mode &&
                     display_chat?.completed &&
                     current_dynamic_rubric &&
