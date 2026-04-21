@@ -186,7 +186,10 @@ export default async function AttemptPage({
           prompts: context.prompts?.prompts,
         }}
       >
-        <div className="space-y-6 px-4">
+        {/* Desktop-only gutter. On mobile the chat bubbles and input
+            bar need the full horizontal room — the inner ScrollArea
+            already provides 4px of breathing space on the edges. */}
+        <div className="space-y-6 md:px-4">
           <AttemptChat
             attempt_id={attemptId}
             attempt_data={attemptData}
