@@ -25,13 +25,6 @@ export interface DocumentViewerProps {
   textDownloadBaseUrl?: string;
 }
 
-// Detect iOS Safari (native PDF viewer has scroll issues in iframes)
-const isMobileSafari =
-  typeof navigator !== "undefined" &&
-  /iP(ad|hone|od)/.test(navigator.userAgent) &&
-  /Safari/.test(navigator.userAgent) &&
-  !/CriOS|FxiOS/.test(navigator.userAgent);
-
 // Simplified document icon info (generic since we no longer have document types)
 const getDocumentIconInfo = () => {
   return { icon: "📄", color: "bg-gray-500" };
@@ -213,34 +206,31 @@ export default function DocumentViewer({
       );
     }
 
-    // PDF viewer - always fit to width
+    // PDF viewer — matches v1 split:
+    //   Mobile: "Open PDF" button only. Blob: PDFs don't render
+    //     reliably inside iframes on mobile browsers (Chrome Android,
+    //     Safari iOS, Firefox), so we skip the preview entirely and
+    //     let the browser's native viewer handle it in a new tab.
+    //   Desktop: iframe preview + "Open PDF" affordance below (the
+    //     embedded toolbar varies by browser, so the button guarantees
+    //     users can always pop the PDF into a real tab).
     if (type?.includes("application/pdf")) {
-      // iOS Safari: open natively (scroll works, no freeze)
-      if (isMobileSafari) {
-        return (
-          <div className="p-2">
+      return (
+        <div className="w-full h-full md:min-h-[400px] flex flex-col">
+          <div className="md:hidden p-2">
             <Button asChild variant="default" className="w-full">
               <a href={content ?? ""} target="_blank" rel="noopener noreferrer">
                 Open PDF
               </a>
             </Button>
           </div>
-        );
-      }
-
-      // Everyone else: iframe preview with an "Open PDF" affordance
-      // below it (matches v1). The iframe's embedded toolbar varies by
-      // browser/extension, so the button guarantees users can always
-      // pop the PDF into a real tab (downloads, search, print, etc.).
-      return (
-        <div className="w-full h-full min-h-[400px] flex flex-col">
           <iframe
             src={`${content}#view=FitH&toolbar=1&navpanes=0&scrollbar=1`}
             title={document.name ?? ""}
-            className="flex-1 w-full border-0 rounded-md"
+            className="hidden md:block flex-1 w-full border-0 rounded-md"
             style={{ minHeight: "500px" }}
           />
-          <div className="pt-2">
+          <div className="hidden md:block pt-2">
             <Button asChild variant="default" size="sm" className="w-full">
               <a href={content ?? ""} target="_blank" rel="noopener noreferrer">
                 Open PDF

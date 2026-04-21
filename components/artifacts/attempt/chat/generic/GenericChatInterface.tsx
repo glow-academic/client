@@ -252,8 +252,11 @@ export function GenericChatInterface({
           </Card>
         </ResizablePanel>
 
-        {/* Document Area */}
-        {show_documents && DocumentArea && document_area_props && (
+        {/* Document Area — desktop-only sidebar. On mobile docs open
+            in a modal triggered by the header icon; rendering the
+            inline panel would eat half the viewport and show the
+            documents beside the chat messages. Matches v1. */}
+        {!isMobile && show_documents && DocumentArea && document_area_props && (
           <DocumentArea
             {...document_area_props}
             disabled={disabled}
@@ -269,94 +272,105 @@ export function GenericChatInterface({
       {/* Pagination Footer */}
       {pagination_footer}
 
-      {/* Document Modal — mobile only. Renders the same DocumentViewer
-          the desktop sidebar uses, with a Select to switch between
-          multiple docs when the chat has more than one. */}
-      {show_document_modal && document_area_props && (
-        <Dialog
-          open={show_document_modal}
-          onOpenChange={(open) => {
-            if (!open) on_close_document_modal?.();
-          }}
-        >
-          <DialogContent
-            className="sm:max-w-4xl h-[90dvh] p-0 flex flex-col"
-            style={{ WebkitOverflowScrolling: "touch" }}
-          >
-            <DialogHeader className="px-4 pt-4 pb-2 border-b shrink-0">
-              <DialogTitle>Documents</DialogTitle>
-              <DialogDescription className="sr-only">
-                Scenario documents for this attempt
-              </DialogDescription>
-            </DialogHeader>
-            {(() => {
-              const filtered = document_area_props.documents.filter(
-                (d) => d.document_id,
-              );
-              if (filtered.length === 0) {
-                return (
-                  <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+      {/* Document Modal — opened via the header's document icon on
+          mobile. On mobile the DocumentViewer collapses to just an
+          "Open PDF" button (blob: PDFs don't embed reliably in mobile
+          iframes), so the whole modal stays compact. Desktop keeps
+          the inline iframe preview inside the modal. Matches v1:
+          doc name as title, "View scenario document" description,
+          Close button in the footer. */}
+      {show_document_modal &&
+        document_area_props &&
+        (() => {
+          const filtered = document_area_props.documents.filter(
+            (d) => d.document_id,
+          );
+          const selected =
+            filtered.find(
+              (d) =>
+                d.document_id ===
+                  document_area_props.selected_document_id ||
+                `doc:${d.document_id}` ===
+                  document_area_props.selected_document_id,
+            ) ?? filtered[0];
+          return (
+            <Dialog
+              open={show_document_modal}
+              onOpenChange={(open) => {
+                if (!open) on_close_document_modal?.();
+              }}
+            >
+              <DialogContent
+                className="sm:max-w-4xl max-h-[80vh] md:overflow-hidden overflow-auto flex flex-col"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
+                <DialogHeader>
+                  <DialogTitle className="truncate">
+                    {selected?.name || "Document"}
+                  </DialogTitle>
+                  <DialogDescription>View scenario document</DialogDescription>
+                </DialogHeader>
+                {filtered.length === 0 ? (
+                  <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm py-6">
                     No documents available
                   </div>
-                );
-              }
-              const selected =
-                filtered.find(
-                  (d) =>
-                    d.document_id ===
-                      document_area_props.selected_document_id ||
-                    `doc:${d.document_id}` ===
-                      document_area_props.selected_document_id,
-                ) ?? filtered[0];
-              return (
-                <>
-                  {filtered.length > 1 && (
-                    <div className="px-4 py-2 shrink-0">
-                      <Select
-                        value={selected?.document_id ?? ""}
-                        onValueChange={(v) =>
-                          document_area_props.on_select_document(v)
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {filtered.map((d) => (
-                            <SelectItem
-                              key={d.document_id!}
-                              value={d.document_id!}
-                            >
-                              <div className="flex items-center gap-2">
-                                <FileText className="h-4 w-4 text-muted-foreground" />
-                                <span>{d.name || "Document"}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <div className="flex-1 min-h-0 px-2 pb-2">
-                    {selected && (
-                      <DocumentViewer
-                        key={selected.document_id!}
-                        // Re-narrow to DocumentItem — the document_area_props
-                        // prop type has a slightly stricter in-repo shape
-                        // than the OpenAPI-derived type DocumentViewer
-                        // expects. Fields line up at runtime.
-                        document={selected as unknown as DocumentItem}
-                        downloadBaseUrl="/api/attempts/file"
-                        textDownloadBaseUrl="/api/attempts/text"
-                      />
+                ) : (
+                  <>
+                    {filtered.length > 1 && (
+                      <div className="pb-3">
+                        <Select
+                          value={selected?.document_id ?? ""}
+                          onValueChange={(v) =>
+                            document_area_props.on_select_document(v)
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filtered.map((d) => (
+                              <SelectItem
+                                key={d.document_id!}
+                                value={d.document_id!}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                  <span>{d.name || "Document"}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     )}
-                  </div>
-                </>
-              );
-            })()}
-          </DialogContent>
-        </Dialog>
-      )}
+                    <div className="flex-1 min-h-0 overflow-auto">
+                      {selected && (
+                        <DocumentViewer
+                          key={selected.document_id!}
+                          // Re-narrow to DocumentItem — the document_area_props
+                          // prop type has a slightly stricter in-repo shape
+                          // than the OpenAPI-derived type DocumentViewer
+                          // expects. Fields line up at runtime.
+                          document={selected as unknown as DocumentItem}
+                          downloadBaseUrl="/api/attempts/file"
+                          textDownloadBaseUrl="/api/attempts/text"
+                        />
+                      )}
+                    </div>
+                  </>
+                )}
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => on_close_document_modal?.()}
+                  >
+                    Close
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          );
+        })()}
 
       {/* Objectives Modal — mobile only. Matches v1 with green
           CheckCircle icons on each objective and a footer Close button. */}

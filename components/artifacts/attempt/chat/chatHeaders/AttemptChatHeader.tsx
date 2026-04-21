@@ -64,6 +64,12 @@ export interface ChatHeaderProps {
   on_open_documents_modal?: () => void;
   on_open_objectives_modal?: () => void;
 
+  // Mobile-only: modal open state. Drives the documents button's
+  // selected variant on mobile (highlighted while the modal is open).
+  // On desktop `show_documents` drives the variant instead, since the
+  // inline sidebar is the primary affordance there.
+  show_document_modal?: boolean;
+
   // Explicit objectives type - self-contained
   objectives?: Array<string>;
 
@@ -122,6 +128,7 @@ export function AttemptChatHeader({
   on_toggle_responses,
   on_open_documents_modal,
   on_open_objectives_modal,
+  show_document_modal = false,
   objectives = [],
   scenario_title,
   attempt,
@@ -235,30 +242,41 @@ export function AttemptChatHeader({
               </Tooltip>
             )}
 
-            {hasDocuments && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={show_documents ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      if (isMobile && on_open_documents_modal) {
-                        on_open_documents_modal();
-                      } else {
-                        on_toggle_documents(!show_documents);
-                      }
-                    }}
-                    className={`p-2 ${show_documents ? "bg-primary text-primary-foreground" : ""}`}
-                    disabled={disabled}
-                  >
-                    <FileText className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{show_documents ? "Hide Documents" : "Show Documents"}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+            {hasDocuments && (() => {
+              // Mobile: button state tracks the modal open state —
+              // the sidebar toggle is desktop-only, so `show_documents`
+              // is irrelevant on mobile. Matches v1.
+              const isActive = isMobile ? show_document_modal : show_documents;
+              const tooltipText = isMobile
+                ? "View Documents"
+                : show_documents
+                  ? "Hide Documents"
+                  : "Show Documents";
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isActive ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => {
+                        if (isMobile && on_open_documents_modal) {
+                          on_open_documents_modal();
+                        } else {
+                          on_toggle_documents(!show_documents);
+                        }
+                      }}
+                      className={`p-2 ${isActive ? "bg-primary text-primary-foreground" : ""}`}
+                      disabled={disabled}
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{tooltipText}</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })()}
           </div>
 
           {/* Completed badge + timer pill */}

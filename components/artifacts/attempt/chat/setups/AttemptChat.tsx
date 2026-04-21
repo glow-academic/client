@@ -890,6 +890,9 @@ export function AttemptChat({
       // cramped inline Collapsible.
       on_open_documents_modal: () => setShowDocumentModal(true),
       on_open_objectives_modal: () => setShowObjectivesModal(true),
+      // Mobile: lets the documents button reflect modal-open state
+      // instead of the desktop sidebar toggle. Matches v1.
+      show_document_modal: showDocumentModal,
       objectives:
         (resolvedChat?.objectives || [])
           .map((o) => o.objective)
@@ -929,6 +932,7 @@ export function AttemptChat({
     scenario,
     displayTimer,
     showDocuments,
+    showDocumentModal,
     showObjectives,
     showGrades,
     showResponses,
