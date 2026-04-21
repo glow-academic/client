@@ -635,7 +635,7 @@ export function MessagesView({
                               )}
                               <div className="flex items-stretch gap-1 md:gap-2 max-w-[95%] md:max-w-[80%]">
                                 <div
-                                  className="bg-primary text-primary-foreground rounded-lg p-2 md:p-3 text-sm md:text-base"
+                                  className="bg-primary text-primary-foreground rounded-lg p-2 md:p-3 text-sm md:text-base flex-1"
                                   data-testid={`message-${message.id}-content-${contentIndex}`}
                                   data-message-type="user"
                                 >
