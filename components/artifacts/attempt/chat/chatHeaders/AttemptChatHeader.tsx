@@ -147,191 +147,193 @@ export function AttemptChatHeader({
       onOpenChange={on_toggle_objectives}
       className="border-b"
     >
+      {/* Two-row header layout (matches v1):
+          Row 1: icon controls on the left, timer + status on the right
+          Row 2: scenario description as natural prose — NOT clamped. Long
+                 statements just push the chat down a bit; the whole
+                 region lives above the scrollable messages area. */}
       <div className="p-2 pt-0 flex flex-col gap-2">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-4 min-w-0 flex-1">
-            <div className="flex items-start gap-2 min-w-0">
-              {/* Clamp to 3 lines so the problem statement doesn't
-                  dominate the mobile viewport (same as v1). */}
-              <span className="font-medium line-clamp-3">
-                {scenario_title || "Chat"}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-start justify-end gap-2">
-            <div className="flex items-center gap-4">
-              {!attempt?.infinite_mode &&
-                display_chat?.completed &&
-                !current_dynamic_rubric &&
-                expected_chat_count ===
-                  chats.filter((chat) => chat?.completed).length && (
-                  <Badge variant="default">Completed</Badge>
-                )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              {shouldShowObjectives && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    {isMobile && on_open_objectives_modal ? (
-                      // Mobile: open the objectives modal directly. The
-                      // inline Collapsible below the header is visually
-                      // cramped and often overlaps the problem statement,
-                      // so mobile uses a dedicated full-screen dialog.
+        {/* Row 1: controls left, timer + status right */}
+        <div className="flex items-center justify-between gap-3">
+          {/* Left: icon controls (objectives, responses, rubric, documents) */}
+          <div className="flex items-center gap-2">
+            {shouldShowObjectives && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {isMobile && on_open_objectives_modal ? (
+                    // Mobile: open the objectives modal. The inline
+                    // Collapsible overlaps the problem statement on
+                    // narrow viewports, so mobile uses a dedicated
+                    // full-screen dialog.
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={on_open_objectives_modal}
+                      className="p-2"
+                      disabled={disabled}
+                    >
+                      <ListChecks className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <CollapsibleTrigger asChild>
                       <Button
-                        variant="outline"
+                        variant={show_objectives ? "default" : "outline"}
                         size="sm"
-                        onClick={on_open_objectives_modal}
-                        className="p-2"
+                        className={`p-2 ${show_objectives ? "bg-primary text-primary-foreground" : ""}`}
                         disabled={disabled}
                       >
                         <ListChecks className="h-4 w-4" />
                       </Button>
-                    ) : (
-                      <CollapsibleTrigger asChild>
-                        <Button
-                          variant={show_objectives ? "default" : "outline"}
-                          size="sm"
-                          className={`p-2 ${show_objectives ? "bg-primary text-primary-foreground" : ""}`}
-                          disabled={disabled}
-                        >
-                          <ListChecks className="h-4 w-4" />
-                        </Button>
-                      </CollapsibleTrigger>
-                    )}
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {show_objectives ? "Hide Objectives" : "Show Objectives"}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
+                    </CollapsibleTrigger>
+                  )}
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{show_objectives ? "Hide Objectives" : "Show Objectives"}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
 
-              {display_chat?.completed && has_video_questions && on_toggle_responses && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={show_responses ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => on_toggle_responses(!show_responses)}
-                      className={`p-2 ${show_responses ? "bg-primary text-primary-foreground" : ""}`}
-                      disabled={disabled}
-                    >
-                      <ClipboardCheck className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{show_responses ? "Hide Responses" : "View Responses"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-
-              {display_chat?.completed && !has_video_questions && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={show_rubric ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => on_toggle_rubric(!show_rubric)}
-                      className={`p-2 ${show_rubric ? "bg-primary text-primary-foreground" : ""}`}
-                      disabled={disabled}
-                    >
-                      <Table className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{show_rubric ? "Hide Rubric" : "Show Rubric"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-
-              {hasDocuments && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={show_documents ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => {
-                        if (isMobile && on_open_documents_modal) {
-                          on_open_documents_modal();
-                        } else {
-                          on_toggle_documents(!show_documents);
-                        }
-                      }}
-                      className={`p-2 ${show_documents ? "bg-primary text-primary-foreground" : ""}`}
-                      disabled={disabled}
-                    >
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {show_documents ? "Hide Documents" : "Show Documents"}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-
+            {display_chat?.completed && has_video_questions && on_toggle_responses && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div
-                    className={`flex items-center justify-center gap-2 px-3 py-1 rounded-full w-[85px] overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
-                      !attempt?.infinite_mode &&
-                      display_chat?.completed &&
-                      current_dynamic_rubric &&
-                      expected_chat_count ===
-                        chats.filter((chat) => chat?.completed).length
-                        ? current_dynamic_rubric?.passed
-                          ? "bg-green-100 dark:bg-green-900/30"
-                          : "bg-red-100 dark:bg-red-900/30"
-                        : "bg-muted"
-                    }`}
+                  <Button
+                    variant={show_responses ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => on_toggle_responses(!show_responses)}
+                    className={`p-2 ${show_responses ? "bg-primary text-primary-foreground" : ""}`}
+                    disabled={disabled}
                   >
-                    {isInfiniteMode ? (
-                      <InfinityIcon className="h-4 w-4 flex-shrink-0" />
-                    ) : (
-                      <Clock className="h-4 w-4 flex-shrink-0" />
-                    )}
-                    <span
-                      className={`text-sm font-medium ${
-                        attempt?.infinite_mode
-                          ? ""
-                          : simulation?.time_limit &&
-                              timer?.remaining !== null &&
-                              timer.remaining < 0
-                            ? "text-red-500"
-                            : ""
-                      }`}
-                      data-testid="timer"
-                    >
-                      {isInfiniteMode
-                        ? simulation?.time_limit
-                          ? formatTime(timer?.negative ? (timeRemaining ?? 0) : Math.max(timeRemaining || 0, 0))
-                          : formatTime(timer?.elapsed ?? 0)
-                        : simulation?.time_limit && timer?.remaining !== null
-                          ? formatTime(timer.remaining)
-                          : formatTime(timer?.elapsed ?? 0)}
-                    </span>
-                  </div>
+                    <ClipboardCheck className="h-4 w-4" />
+                  </Button>
                 </TooltipTrigger>
-                {!attempt?.infinite_mode &&
-                  display_chat?.completed &&
-                  current_dynamic_rubric &&
-                  expected_chat_count ===
-                    chats.filter((chat) => chat?.completed).length && (
-                    <TooltipContent>
-                      <p>
-                        {current_dynamic_rubric.passed ? "Passed" : "Failed"} (
-                        {current_dynamic_rubric?.score}/
-                        {current_dynamic_rubric?.total_possible_points})
-                      </p>
-                    </TooltipContent>
-                  )}
+                <TooltipContent>
+                  <p>{show_responses ? "Hide Responses" : "View Responses"}</p>
+                </TooltipContent>
               </Tooltip>
-            </div>
+            )}
+
+            {display_chat?.completed && !has_video_questions && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={show_rubric ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => on_toggle_rubric(!show_rubric)}
+                    className={`p-2 ${show_rubric ? "bg-primary text-primary-foreground" : ""}`}
+                    disabled={disabled}
+                  >
+                    <Table className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{show_rubric ? "Hide Rubric" : "Show Rubric"}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+
+            {hasDocuments && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={show_documents ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      if (isMobile && on_open_documents_modal) {
+                        on_open_documents_modal();
+                      } else {
+                        on_toggle_documents(!show_documents);
+                      }
+                    }}
+                    className={`p-2 ${show_documents ? "bg-primary text-primary-foreground" : ""}`}
+                    disabled={disabled}
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{show_documents ? "Hide Documents" : "Show Documents"}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+
+          {/* Right: completed badge + timer pill */}
+          <div className="flex items-center gap-2">
+            {!attempt?.infinite_mode &&
+              display_chat?.completed &&
+              !current_dynamic_rubric &&
+              expected_chat_count ===
+                chats.filter((chat) => chat?.completed).length && (
+                <Badge variant="default">Completed</Badge>
+              )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className={`flex items-center justify-center gap-2 px-3 py-1 rounded-full w-[85px] overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
+                    !attempt?.infinite_mode &&
+                    display_chat?.completed &&
+                    current_dynamic_rubric &&
+                    expected_chat_count ===
+                      chats.filter((chat) => chat?.completed).length
+                      ? current_dynamic_rubric?.passed
+                        ? "bg-green-100 dark:bg-green-900/30"
+                        : "bg-red-100 dark:bg-red-900/30"
+                      : "bg-muted"
+                  }`}
+                >
+                  {isInfiniteMode ? (
+                    <InfinityIcon className="h-4 w-4 flex-shrink-0" />
+                  ) : (
+                    <Clock className="h-4 w-4 flex-shrink-0" />
+                  )}
+                  <span
+                    className={`text-sm font-medium ${
+                      attempt?.infinite_mode
+                        ? ""
+                        : simulation?.time_limit &&
+                            timer?.remaining !== null &&
+                            timer.remaining < 0
+                          ? "text-red-500"
+                          : ""
+                    }`}
+                    data-testid="timer"
+                  >
+                    {isInfiniteMode
+                      ? simulation?.time_limit
+                        ? formatTime(timer?.negative ? (timeRemaining ?? 0) : Math.max(timeRemaining || 0, 0))
+                        : formatTime(timer?.elapsed ?? 0)
+                      : simulation?.time_limit && timer?.remaining !== null
+                        ? formatTime(timer.remaining)
+                        : formatTime(timer?.elapsed ?? 0)}
+                  </span>
+                </div>
+              </TooltipTrigger>
+              {!attempt?.infinite_mode &&
+                display_chat?.completed &&
+                current_dynamic_rubric &&
+                expected_chat_count ===
+                  chats.filter((chat) => chat?.completed).length && (
+                  <TooltipContent>
+                    <p>
+                      {current_dynamic_rubric.passed ? "Passed" : "Failed"} (
+                      {current_dynamic_rubric?.score}/
+                      {current_dynamic_rubric?.total_possible_points})
+                    </p>
+                  </TooltipContent>
+                )}
+            </Tooltip>
           </div>
         </div>
+
+        {/* Row 2: scenario description as natural prose — no clamp.
+            Matches v1: the problem statement flows as its own paragraph
+            below the controls. Long statements push the messages down
+            slightly; the whole header sits above the scrollable area. */}
+        {scenario_title && (
+          <div className="text-sm text-left">
+            <span className="font-medium">{scenario_title}</span>
+          </div>
+        )}
       </div>
 
       {/* Objectives Collapsible Content */}
