@@ -229,10 +229,12 @@ function AuthComponent({
         serverSyncPendingRef.current = true;
         setFormState((prev) => ({
           ...prev,
-          name: formStateFromServer.name ?? prev.name,
           name_id: formStateFromServer.name_id ?? prev.name_id,
-          description: formStateFromServer.description ?? prev.description,
+          // Clear value fields only once the server has resolved them to IDs.
+          // Otherwise a server echo would overwrite user's in-progress text.
+          name: formStateFromServer.name_id ? null : prev.name,
           description_id: formStateFromServer.description_id ?? prev.description_id,
+          description: formStateFromServer.description_id ? null : prev.description,
           active_flag_id: formStateFromServer.flag_id ?? prev.active_flag_id,
           department_ids: formStateFromServer.department_ids ?? prev.department_ids,
           protocol_ids: formStateFromServer.protocol_ids ?? prev.protocol_ids,
@@ -406,6 +408,37 @@ function AuthComponent({
       ),
     [sectionResourceIds],
   );
+
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((nameId: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      name_id: nameId,
+      name: null,
+      pending_ids: retainPendingIds(prev.pending_ids, "names", nameId ? [nameId] : []),
+    }));
+  }, [retainPendingIds]);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({ ...prev, name }));
+  }, []);
+
+  const handleDescriptionIdChange = useCallback((descriptionId: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      description_id: descriptionId,
+      description: null,
+      pending_ids: retainPendingIds(
+        prev.pending_ids,
+        "descriptions",
+        descriptionId ? [descriptionId] : [],
+      ),
+    }));
+  }, [retainPendingIds]);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({ ...prev, description }));
+  }, []);
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
@@ -639,17 +672,8 @@ function AuthComponent({
                   show_name={true}
                   names={s?.names ?? []}
                   disabled={disabled}
-                  onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      name_id: nameId,
-                      name: null,
-                      pending_ids: retainPendingIds(prev.pending_ids, "names", nameId ? [nameId] : []),
-                    }))
-                  }
-                  onNameChange={(name) =>
-                    setFormState((prev) => ({ ...prev, name }))
-                  }
+                  onNameIdChange={handleNameIdChange}
+                  onNameChange={handleNameChange}
                   required={nameRequired}
                   hideDescription={true}
                   isAutosaveEnabled={isAutosaveEnabled}
@@ -677,21 +701,8 @@ function AuthComponent({
                   show_description={true}
                   descriptions={s?.descriptions ?? []}
                   disabled={disabled}
-                  onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description_id: descriptionId,
-                      description: null,
-                      pending_ids: retainPendingIds(
-                        prev.pending_ids,
-                        "descriptions",
-                        descriptionId ? [descriptionId] : [],
-                      ),
-                    }))
-                  }
-                  onDescriptionChange={(description) =>
-                    setFormState((prev) => ({ ...prev, description }))
-                  }
+                  onDescriptionIdChange={handleDescriptionIdChange}
+                  onDescriptionChange={handleDescriptionChange}
                   searchTerm={
                     (stepFormData["descriptionSearch"] as
                       | string

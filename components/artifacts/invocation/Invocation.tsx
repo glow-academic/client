@@ -213,26 +213,53 @@ export default function Invocation({
 
       const fs = result.form_state;
       if (fs) {
-        serverSyncPendingRef.current = true;
-        setFormState((prev) => ({
-          ...prev,
-          name_id: fs.name_id ?? prev.name_id,
-          name: fs.name ?? null,
-          description_id: fs.description_id ?? prev.description_id,
-          description: fs.description ?? null,
-          value_id: fs.value_id ?? prev.value_id,
-          flag_ids: fs.flag_ids ?? prev.flag_ids,
-          department_ids: fs.department_ids ?? prev.department_ids,
-          key_id: fs.key_id ?? prev.key_id,
-          endpoint_id: fs.endpoint_id ?? prev.endpoint_id,
-          modality_ids: fs.modality_ids ?? prev.modality_ids,
-          temperature_level_id: fs.temperature_level_id ?? prev.temperature_level_id,
-          pricing_id: fs.pricing_id ?? prev.pricing_id,
-          reasoning_level_id: fs.reasoning_level_id ?? prev.reasoning_level_id,
-          quality_ids: fs.quality_ids ?? prev.quality_ids,
-          voice_ids: fs.voice_ids ?? prev.voice_ids,
-          pending_ids: fs.pending_ids ?? prev.pending_ids,
-        }));
+        setFormState((prev) => {
+          const nextNameId = fs.name_id ?? prev.name_id;
+          const nextDescriptionId = fs.description_id ?? prev.description_id;
+          const next = {
+            ...prev,
+            name_id: nextNameId,
+            // Clear value fields only once the server has resolved them to
+            // IDs — keeping the value would cause infinite re-saves (value
+            // takes precedence → new resource → new id → repeat).
+            name: nextNameId ? null : prev.name,
+            description_id: nextDescriptionId,
+            description: nextDescriptionId ? null : prev.description,
+            value_id: fs.value_id ?? prev.value_id,
+            flag_ids: fs.flag_ids ?? prev.flag_ids,
+            department_ids: fs.department_ids ?? prev.department_ids,
+            key_id: fs.key_id ?? prev.key_id,
+            endpoint_id: fs.endpoint_id ?? prev.endpoint_id,
+            modality_ids: fs.modality_ids ?? prev.modality_ids,
+            temperature_level_id: fs.temperature_level_id ?? prev.temperature_level_id,
+            pricing_id: fs.pricing_id ?? prev.pricing_id,
+            reasoning_level_id: fs.reasoning_level_id ?? prev.reasoning_level_id,
+            quality_ids: fs.quality_ids ?? prev.quality_ids,
+            voice_ids: fs.voice_ids ?? prev.voice_ids,
+            pending_ids: fs.pending_ids ?? prev.pending_ids,
+          };
+          // Only set the server-sync absorb flag when state actually changes.
+          const changed =
+            prev.name_id !== next.name_id ||
+            prev.name !== next.name ||
+            prev.description_id !== next.description_id ||
+            prev.description !== next.description ||
+            prev.value_id !== next.value_id ||
+            prev.key_id !== next.key_id ||
+            prev.endpoint_id !== next.endpoint_id ||
+            prev.temperature_level_id !== next.temperature_level_id ||
+            prev.pricing_id !== next.pricing_id ||
+            prev.reasoning_level_id !== next.reasoning_level_id ||
+            JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
+            JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
+            JSON.stringify(prev.modality_ids) !== JSON.stringify(next.modality_ids) ||
+            JSON.stringify(prev.quality_ids) !== JSON.stringify(next.quality_ids) ||
+            JSON.stringify(prev.voice_ids) !== JSON.stringify(next.voice_ids) ||
+            JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
+          if (!changed) return prev;
+          serverSyncPendingRef.current = true;
+          return next;
+        });
       }
 
       lastPatchedRef.current = { ...formStateRef.current };
@@ -273,6 +300,45 @@ export default function Invocation({
     }
   }, [draftId, router, saveDraftNow, testId]);
 
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((id: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      name_id: id,
+      name: null,
+      pending_ids: prev.pending_ids.filter(
+        (pendingId) => pendingId !== (prev.name_id ?? ""),
+      ),
+    }));
+  }, []);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      name: name || null,
+      name_id: null,
+    }));
+  }, []);
+
+  const handleDescriptionIdChange = useCallback((id: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      description_id: id,
+      description: null,
+      pending_ids: prev.pending_ids.filter(
+        (pendingId) => pendingId !== (prev.description_id ?? ""),
+      ),
+    }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      description: description || null,
+      description_id: null,
+    }));
+  }, []);
+
   if (data.profile_has_access === false) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -296,17 +362,8 @@ export default function Invocation({
         show_name={(data.names?.length ?? 0) > 0}
         names={data.names ?? []}
         disabled={false}
-        onNameIdChange={(id) =>
-          setFormState((prev) => ({
-            ...prev,
-            name_id: id,
-            name: null,
-            pending_ids: prev.pending_ids.filter((pendingId) => pendingId !== (prev.name_id ?? "")),
-          }))
-        }
-        onNameChange={(name) =>
-          setFormState((prev) => ({ ...prev, name: name || null, name_id: null }))
-        }
+        onNameIdChange={handleNameIdChange}
+        onNameChange={handleNameChange}
       />
 
       <Descriptions
@@ -315,17 +372,8 @@ export default function Invocation({
         show_description={(data.descriptions?.length ?? 0) > 0}
         descriptions={data.descriptions ?? []}
         disabled={false}
-        onDescriptionIdChange={(id) =>
-          setFormState((prev) => ({
-            ...prev,
-            description_id: id,
-            description: null,
-            pending_ids: prev.pending_ids.filter((pendingId) => pendingId !== (prev.description_id ?? "")),
-          }))
-        }
-        onDescriptionChange={(description) =>
-          setFormState((prev) => ({ ...prev, description: description || null, description_id: null }))
-        }
+        onDescriptionIdChange={handleDescriptionIdChange}
+        onDescriptionChange={handleDescriptionChange}
       />
 
       <Values

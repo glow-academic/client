@@ -322,33 +322,41 @@ function RubricComponent({
       if (res.form_state) {
         const fs = res.form_state as RubricDraftFormStateCompat;
         serverSyncPendingRef.current = true;
-        setFormState((prev) => ({
-          ...prev,
-          name: (fs.name as string | null | undefined) ?? null,
-          name_id: (fs.name_id as string | null | undefined) ?? prev.name_id,
-          description: (fs.description as string | null | undefined) ?? null,
-          description_id:
+        setFormState((prev) => {
+          const nextNameId =
+            (fs.name_id as string | null | undefined) ?? prev.name_id;
+          const nextDescriptionId =
             (fs.description_id as string | null | undefined) ??
-            prev.description_id,
-          active_flag_id:
-            (fs.active_flag_id as string | null | undefined) ??
-            (fs.flag_id as string | null | undefined) ??
-            prev.active_flag_id,
-          department_ids:
-            (fs.department_ids as string[] | null | undefined) ??
-            prev.department_ids,
-          total_points_id:
-            (fs.point_ids?.[0] as string | undefined) ?? prev.total_points_id,
-          standard_group_ids:
-            (fs.standard_group_ids as string[] | null | undefined) ??
-            prev.standard_group_ids,
-          standard_ids:
-            (fs.standard_ids as string[] | null | undefined) ??
-            prev.standard_ids,
-          pending_ids:
-            (fs.pending_ids as string[] | null | undefined) ??
-            prev.pending_ids,
-        }));
+            prev.description_id;
+          return {
+            ...prev,
+            name_id: nextNameId,
+            // Clear value fields only once the server has resolved them to
+            // IDs — keeping the value would cause infinite re-saves (value
+            // takes precedence → new resource → new id → repeat).
+            name: nextNameId ? null : prev.name,
+            description_id: nextDescriptionId,
+            description: nextDescriptionId ? null : prev.description,
+            active_flag_id:
+              (fs.active_flag_id as string | null | undefined) ??
+              (fs.flag_id as string | null | undefined) ??
+              prev.active_flag_id,
+            department_ids:
+              (fs.department_ids as string[] | null | undefined) ??
+              prev.department_ids,
+            total_points_id:
+              (fs.point_ids?.[0] as string | undefined) ?? prev.total_points_id,
+            standard_group_ids:
+              (fs.standard_group_ids as string[] | null | undefined) ??
+              prev.standard_group_ids,
+            standard_ids:
+              (fs.standard_ids as string[] | null | undefined) ??
+              prev.standard_ids,
+            pending_ids:
+              (fs.pending_ids as string[] | null | undefined) ??
+              prev.pending_ids,
+          };
+        });
         requestAnimationFrame(() => {
           serverSyncPendingRef.current = false;
         });
@@ -393,6 +401,27 @@ function RubricComponent({
     },
     [s],
   );
+
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((nameId: string | null) => {
+    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }));
+  }, []);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({ ...prev, name }));
+  }, []);
+
+  const handleDescriptionIdChange = useCallback((descriptionId: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      description_id: descriptionId,
+      description: null,
+    }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({ ...prev, description }));
+  }, []);
 
   const { setUrlFormDataRef, onFormDataChange, flushAllAndSave, formDataRef } =
     useDraftLifecycle({
@@ -710,12 +739,8 @@ function RubricComponent({
                 show_name={true}
                 names={s?.names ?? []}
                 disabled={disabled}
-                onNameIdChange={(nameId) =>
-                  setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
-                }
-                onNameChange={(name) =>
-                  setFormState((prev) => ({ ...prev, name }))
-                }
+                onNameIdChange={handleNameIdChange}
+                onNameChange={handleNameChange}
                 required={true}
                 hideDescription={true}
               />
@@ -751,12 +776,8 @@ function RubricComponent({
                 show_description={true}
                 descriptions={s?.descriptions ?? []}
                 disabled={disabled}
-                onDescriptionIdChange={(descriptionId) =>
-                  setFormState((prev) => ({ ...prev, description_id: descriptionId, description: null }))
-                }
-                onDescriptionChange={(description) =>
-                  setFormState((prev) => ({ ...prev, description }))
-                }
+                onDescriptionIdChange={handleDescriptionIdChange}
+                onDescriptionChange={handleDescriptionChange}
                 required={false}
               />
 

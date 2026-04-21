@@ -231,7 +231,6 @@ export default async function NewToolPage({
             aria-label="Create new tool page"
           >
             <Tool
-              key={q.draftId || "no-draft"}
               toolData={toolDetailDefault}
               createToolAction={createTool}
               patchToolDraftAction={patchToolDraft}

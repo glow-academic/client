@@ -149,6 +149,22 @@ const VALID_RESOURCE_TYPES: ScenarioResourceType[] = [
   "options",
 ];
 
+// Scenario has six toggleable flags (active + 5 feature toggles). Each maps to
+// a flag config entry on the server (by its `key`) and a state field on the
+// client. The server's draft schema carries them as a single `flag_ids` array
+// of UUIDs, so we translate both directions using this map.
+const SCENARIO_FLAG_KEY_TO_FIELD = {
+  scenario_active: "active_flag_id",
+  objectives_enabled: "objectives_enabled_flag_id",
+  images_enabled: "images_enabled_flag_id",
+  video_enabled: "video_enabled_flag_id",
+  questions_enabled: "questions_enabled_flag_id",
+  problem_statement_enabled: "problem_statement_enabled_flag_id",
+} as const;
+type ScenarioFlagKey = keyof typeof SCENARIO_FLAG_KEY_TO_FIELD;
+type ScenarioFlagField = typeof SCENARIO_FLAG_KEY_TO_FIELD[ScenarioFlagKey];
+const SCENARIO_FLAG_FIELDS = Object.values(SCENARIO_FLAG_KEY_TO_FIELD) as readonly ScenarioFlagField[];
+
 const SCENARIO_RESOURCES: ResourceConfig[] = [
   { key: "names", formKey: "name_id", flushKey: null, type: "single" },
   {
@@ -655,22 +671,23 @@ function ScenarioComponent({
         idPayload["options"] = current.options;
       }
 
-      // Build flag fields separately (individual flag fields)
-      const FLAG_FIELDS = [
-        "active_flag_id",
-        "objectives_enabled_flag_id",
-        "images_enabled_flag_id",
-        "video_enabled_flag_id",
-        "questions_enabled_flag_id",
-        "problem_statement_enabled_flag_id",
-      ] as const;
-      const flagPayload: Record<string, string | null> = {};
-      for (const field of FLAG_FIELDS) {
-        const effectiveVal = current[field] ?? null;
-        const refVal = ref?.[field] ?? null;
-        if (effectiveVal !== refVal) {
-          flagPayload[field] = effectiveVal;
-        }
+      // Flags — the server schema is a single `flag_ids: list[UUID]` array,
+      // not individual `*_flag_id` fields. Collect every non-null flag UUID
+      // from the six per-feature state fields. Previously these were sent as
+      // their own keys (active_flag_id, video_enabled_flag_id, ...) which
+      // pydantic silently dropped → flag toggles never reached the server.
+      const refFlagIds = (SCENARIO_FLAG_FIELDS
+        .map((f) => (ref?.[f] as string | null | undefined) ?? null)
+        .filter((v): v is string => !!v)
+        .sort()
+        .join(","));
+      const currentFlagIds = SCENARIO_FLAG_FIELDS
+        .map((f) => current[f])
+        .filter((v): v is string => !!v);
+      const currentFlagKey = [...currentFlagIds].sort().join(",");
+      const flagPayload: Record<string, unknown> = {};
+      if (currentFlagKey !== refFlagIds) {
+        flagPayload["flag_ids"] = currentFlagIds;
       }
 
       // Include pending_ids if any resources are still pending
@@ -823,6 +840,27 @@ function ScenarioComponent({
         const fs = (result as Record<string, unknown>)?.["form_state"] as Record<string, unknown> | undefined;
         if (fs) {
           setFormState((prev) => {
+            // Route the server's flat `flag_ids` array back into the per-feature
+            // state fields by looking up each UUID's `key` in the server flag
+            // config (e.g. "scenario_active" → `active_flag_id`). Server is
+            // authoritative: fields not represented in the returned array are
+            // cleared to null.
+            const serverFlagIds = fs["flag_ids"] as string[] | undefined;
+            const flagConfig = scenarioDataRef.current?.flags ?? [];
+            const flagFieldUpdates: Partial<Record<ScenarioFlagField, string | null>> = {};
+            if (serverFlagIds !== undefined) {
+              // Start from "all null" so anything not returned clears properly.
+              for (const f of SCENARIO_FLAG_FIELDS) flagFieldUpdates[f] = null;
+              for (const id of serverFlagIds) {
+                const cfg = flagConfig.find(
+                  (c: { flag_option_id?: string | null; key?: string | null }) =>
+                    c.flag_option_id === id,
+                );
+                const key = cfg?.key as ScenarioFlagKey | undefined;
+                const field = key ? SCENARIO_FLAG_KEY_TO_FIELD[key] : undefined;
+                if (field) flagFieldUpdates[field] = id;
+              }
+            }
             const newObjectiveIds = (fs["objective_ids"] as string[]) ?? prev.objective_ids;
             const newImageIds = (fs["image_ids"] as string[]) ?? prev.image_ids;
             const newVideoIds = (fs["video_ids"] as string[]) ?? prev.video_ids;
@@ -843,6 +881,8 @@ function ScenarioComponent({
               video_ids: newVideoIds,
               question_ids: newQuestionIds,
               option_ids: newOptionIds,
+              // Apply flag field updates (only present when server returned flag_ids)
+              ...flagFieldUpdates,
               // Clear value fields only once the server resolves them to IDs,
               // so a keystroke in flight isn't clobbered to null by a "no-op"
               // sync that kept the id unchanged.
@@ -861,6 +901,9 @@ function ScenarioComponent({
             // changes. If the server returned identical values, setting the
             // flag would let it stick until the next user action and silently
             // swallow that action's save. (Same fix as Persona.)
+            const flagFieldsChanged = SCENARIO_FLAG_FIELDS.some(
+              (f) => prev[f] !== next[f],
+            );
             const changed =
               prev.name_id !== next.name_id ||
               prev.name !== next.name ||
@@ -868,6 +911,7 @@ function ScenarioComponent({
               prev.description !== next.description ||
               prev.problem_statement_id !== next.problem_statement_id ||
               prev.problem_statement !== next.problem_statement ||
+              flagFieldsChanged ||
               JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
               JSON.stringify(prev.persona_ids) !== JSON.stringify(next.persona_ids) ||
               JSON.stringify(prev.document_ids) !== JSON.stringify(next.document_ids) ||

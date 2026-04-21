@@ -81,9 +81,7 @@ export default function Auths({
     setIsDuplicating(auth.auth_id ?? null);
     try {
       await duplicateAuthAction({
-        body: {
-          auth_id: auth.auth_id || "",
-        },
+        body: { auth_id: auth.auth_id || "", accept: true },
       });
       toast.success(`Auth "${auth.name}" duplicated successfully`);
       router.refresh();
@@ -109,9 +107,7 @@ export default function Auths({
 
     try {
       await deleteAuthAction({
-        body: {
-          auth_id: deleteItem.id,
-        },
+        body: { auth_ids: [deleteItem.id], accept: true },
       });
       toast.success(`Auth "${deleteItem.name}" deleted successfully`);
       router.refresh();

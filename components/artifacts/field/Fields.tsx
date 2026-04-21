@@ -297,9 +297,7 @@ export default function Fields({
     setIsDeleting(true);
     try {
       await deleteFieldAction({
-        body: {
-          field_id: deleteItem.id,
-        },
+        body: { field_ids: [deleteItem.id], accept: true },
       });
       // profileId comes from X-Profile-Id header automatically
       toast.success(`Field '${deleteItem.name}' deleted successfully`);
@@ -326,9 +324,7 @@ export default function Fields({
     setIsDuplicating(fieldId);
     try {
       await duplicateFieldAction({
-        body: {
-          field_id: fieldId,
-        },
+        body: { field_id: fieldId, accept: true },
       });
       // profileId comes from X-Profile-Id header automatically
       toast.success(`Field '${name}' duplicated successfully`);

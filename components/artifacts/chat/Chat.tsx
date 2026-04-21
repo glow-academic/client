@@ -290,31 +290,65 @@ export default function Chat({
         pending_ids?: string[];
       } | undefined;
       if (formStateData) {
-        serverSyncPendingRef.current = true;
-        setFormState((prev) => ({
-          ...prev,
-          name_id: formStateData.name_id ?? prev.name_id,
-          name: formStateData.name ?? prev.name,
-          description_id: formStateData.description_id ?? prev.description_id,
-          description: formStateData.description ?? prev.description,
-          problem_statement_id:
-            formStateData.problem_statement_id ?? prev.problem_statement_id,
-          problem_statement:
-            formStateData.problem_statement ?? prev.problem_statement,
-          department_ids: formStateData.department_ids ?? prev.department_ids,
-          persona_ids: formStateData.persona_ids ?? prev.persona_ids,
-          document_ids: formStateData.document_ids ?? prev.document_ids,
-          parameter_field_ids: formStateData.parameter_field_ids ?? prev.parameter_field_ids,
-          scenario_ids: formStateData.scenario_ids ?? prev.scenario_ids,
-          field_ids: formStateData.field_ids ?? prev.field_ids,
-          flag_ids: formStateData.flag_ids ?? prev.flag_ids,
-          question_ids: formStateData.question_ids ?? prev.question_ids,
-          option_ids: formStateData.option_ids ?? prev.option_ids,
-          video_ids: formStateData.video_ids ?? prev.video_ids,
-          image_ids: formStateData.image_ids ?? prev.image_ids,
-          objective_ids: formStateData.objective_ids ?? prev.objective_ids,
-          pending_ids: formStateData.pending_ids ?? prev.pending_ids,
-        }));
+        setFormState((prev) => {
+          const nextNameId = formStateData.name_id ?? prev.name_id;
+          const nextDescriptionId =
+            formStateData.description_id ?? prev.description_id;
+          const nextProblemStatementId =
+            formStateData.problem_statement_id ?? prev.problem_statement_id;
+          const next = {
+            ...prev,
+            name_id: nextNameId,
+            // Clear value fields only once the server has resolved them to
+            // IDs — keeping the value would cause infinite re-saves (value
+            // takes precedence → new resource → new id → repeat).
+            name: nextNameId ? null : prev.name,
+            description_id: nextDescriptionId,
+            description: nextDescriptionId ? null : prev.description,
+            problem_statement_id: nextProblemStatementId,
+            problem_statement: nextProblemStatementId ? null : prev.problem_statement,
+            department_ids: formStateData.department_ids ?? prev.department_ids,
+            persona_ids: formStateData.persona_ids ?? prev.persona_ids,
+            document_ids: formStateData.document_ids ?? prev.document_ids,
+            parameter_field_ids:
+              formStateData.parameter_field_ids ?? prev.parameter_field_ids,
+            scenario_ids: formStateData.scenario_ids ?? prev.scenario_ids,
+            field_ids: formStateData.field_ids ?? prev.field_ids,
+            flag_ids: formStateData.flag_ids ?? prev.flag_ids,
+            question_ids: formStateData.question_ids ?? prev.question_ids,
+            option_ids: formStateData.option_ids ?? prev.option_ids,
+            video_ids: formStateData.video_ids ?? prev.video_ids,
+            image_ids: formStateData.image_ids ?? prev.image_ids,
+            objective_ids: formStateData.objective_ids ?? prev.objective_ids,
+            pending_ids: formStateData.pending_ids ?? prev.pending_ids,
+          };
+          // Only set the server-sync absorb flag when state actually changes
+          // — otherwise the flag sticks after a no-op sync and the next
+          // autosave-effect run silently absorbs the next user action.
+          const changed =
+            prev.name_id !== next.name_id ||
+            prev.name !== next.name ||
+            prev.description_id !== next.description_id ||
+            prev.description !== next.description ||
+            prev.problem_statement_id !== next.problem_statement_id ||
+            prev.problem_statement !== next.problem_statement ||
+            JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
+            JSON.stringify(prev.persona_ids) !== JSON.stringify(next.persona_ids) ||
+            JSON.stringify(prev.document_ids) !== JSON.stringify(next.document_ids) ||
+            JSON.stringify(prev.parameter_field_ids) !== JSON.stringify(next.parameter_field_ids) ||
+            JSON.stringify(prev.scenario_ids) !== JSON.stringify(next.scenario_ids) ||
+            JSON.stringify(prev.field_ids) !== JSON.stringify(next.field_ids) ||
+            JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
+            JSON.stringify(prev.question_ids) !== JSON.stringify(next.question_ids) ||
+            JSON.stringify(prev.option_ids) !== JSON.stringify(next.option_ids) ||
+            JSON.stringify(prev.video_ids) !== JSON.stringify(next.video_ids) ||
+            JSON.stringify(prev.image_ids) !== JSON.stringify(next.image_ids) ||
+            JSON.stringify(prev.objective_ids) !== JSON.stringify(next.objective_ids) ||
+            JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
+          if (!changed) return prev;
+          serverSyncPendingRef.current = true;
+          return next;
+        });
       }
     } catch {
       toast.error("Failed to save draft selections.");
@@ -371,6 +405,54 @@ export default function Chat({
     }
   }, [socket, isConnected, saveDraftNow, attemptId, chatEntryId, formState, draftId, generate, generateError]);
 
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback(
+    (nameId: string | null) => {
+      setFormState((prev) => ({
+        ...prev,
+        name_id: nameId,
+        name: nameId
+          ? (s.names?.find((item) => item.id === nameId)?.name ?? null)
+          : null,
+      }));
+    },
+    [s.names],
+  );
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      name: name || null,
+      name_id: null,
+    }));
+  }, []);
+
+  const handleProblemStatementIdChange = useCallback(
+    (problemStatementId: string | null) => {
+      setFormState((prev) => ({
+        ...prev,
+        problem_statement_id: problemStatementId,
+        problem_statement: problemStatementId
+          ? (s.problem_statements?.find(
+              (item) => item.problem_statement_id === problemStatementId,
+            )?.problem_statement ?? null)
+          : null,
+      }));
+    },
+    [s.problem_statements],
+  );
+
+  const handleProblemStatementChange = useCallback(
+    (problemStatement: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        problem_statement: problemStatement || null,
+        problem_statement_id: null,
+      }));
+    },
+    [],
+  );
+
   if (!s.profile_has_access) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -395,20 +477,8 @@ export default function Chat({
           show_name={true}
           names={s.names ?? []}
           disabled={false}
-          onNameIdChange={(nameId) =>
-            setFormState((prev) => ({
-              ...prev,
-              name_id: nameId,
-              name: nameId ? (s.names?.find((item) => item.id === nameId)?.name ?? null) : null,
-            }))
-          }
-          onNameChange={(name) =>
-            setFormState((prev) => ({
-              ...prev,
-              name: name || null,
-              name_id: null,
-            }))
-          }
+          onNameIdChange={handleNameIdChange}
+          onNameChange={handleNameChange}
           placeholder="Enter name"
         />
       )}
@@ -540,26 +610,8 @@ export default function Chat({
           problem_statement_resource={selectedProblemStatement}
           show_problem_statement={true}
           problem_statements={s.problem_statements ?? []}
-          onProblemStatementIdChange={(problemStatementId) =>
-            setFormState((prev) => ({
-              ...prev,
-              problem_statement_id: problemStatementId,
-              problem_statement: problemStatementId
-                ? (
-                    s.problem_statements?.find(
-                      (item) => item.problem_statement_id === problemStatementId,
-                    )?.problem_statement ?? null
-                  )
-                : null,
-            }))
-          }
-          onProblemStatementChange={(problemStatement) =>
-            setFormState((prev) => ({
-              ...prev,
-              problem_statement: problemStatement || null,
-              problem_statement_id: null,
-            }))
-          }
+          onProblemStatementIdChange={handleProblemStatementIdChange}
+          onProblemStatementChange={handleProblemStatementChange}
           disabled={false}
           label="Problem Statements"
         />

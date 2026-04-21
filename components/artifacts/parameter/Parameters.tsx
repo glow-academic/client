@@ -289,9 +289,7 @@ export default function Parameters({
     setIsDuplicating(parameter.parameter_id);
     try {
       await duplicateParameterAction({
-        body: {
-          parameter_id: parameter.parameter_id,
-        },
+        body: { parameter_id: parameter.parameter_id, accept: true },
       });
       // profileId comes from X-Profile-Id header automatically
       toast.success(
@@ -318,9 +316,7 @@ export default function Parameters({
 
     try {
       await deleteParameterAction({
-        body: {
-          parameter_id: deleteItem.id,
-        },
+        body: { parameter_ids: [deleteItem.id], accept: true },
       });
       // profileId comes from X-Profile-Id header automatically
       toast.success(`Parameter "${deleteItem.name}" deleted successfully`);

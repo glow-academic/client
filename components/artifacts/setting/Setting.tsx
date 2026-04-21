@@ -320,6 +320,43 @@ function Setting({
     [pendingIdsBySection]
   );
 
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((id: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      name_id: id,
+      name: null,
+      pending_ids: pruneSectionPending("names", id ? [id] : []),
+    }));
+  }, [pruneSectionPending]);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      name_id: null,
+      name,
+      pending_ids: pruneSectionPending("names", []),
+    }));
+  }, [pruneSectionPending]);
+
+  const handleDescriptionIdChange = useCallback((id: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      description_id: id,
+      description: null,
+      pending_ids: pruneSectionPending("descriptions", id ? [id] : []),
+    }));
+  }, [pruneSectionPending]);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      description_id: null,
+      description,
+      pending_ids: pruneSectionPending("descriptions", []),
+    }));
+  }, [pruneSectionPending]);
+
   useEffect(() => {
     if (!patchSettingDraftAction) {
       patchActionRef.current = undefined;
@@ -335,42 +372,45 @@ function Setting({
         | undefined;
       if (fs) {
         serverSyncPendingRef.current = true;
-        setFormState({
-          name_id: (fs["name_id"] as string | null) ?? null,
-          name: (fs["name"] as string | null) ?? null,
-          description_id: (fs["description_id"] as string | null) ?? null,
-          description: (fs["description"] as string | null) ?? null,
-          active_flag_id:
-            ((fs["active_flag_id"] as string | null) ??
-              (fs["flag_id"] as string | null)) ??
-            null,
-          color_ids: (fs["color_ids"] as string[] | null) ?? [],
-          department_ids: (fs["department_ids"] as string[] | null) ?? [],
-          profile_ids: (fs["profile_ids"] as string[] | null) ?? [],
-          auth_ids: (fs["auth_ids"] as string[] | null) ?? [],
-          provider_key_ids: (fs["provider_key_ids"] as string[] | null) ?? [],
-          auth_item_key_ids: (fs["auth_item_key_ids"] as string[] | null) ?? [],
-          system_ids: (fs["system_ids"] as string[] | null) ?? [],
-          pending_ids: (fs["pending_ids"] as string[] | null) ?? [],
+        setFormState((prev) => {
+          const nextNameId = (fs["name_id"] as string | null) ?? prev.name_id;
+          const nextDescriptionId =
+            (fs["description_id"] as string | null) ?? prev.description_id;
+          const next = {
+            ...prev,
+            name_id: nextNameId,
+            // Clear value fields only once the server has resolved them to
+            // IDs — keeping the value would cause infinite re-saves (value
+            // takes precedence → new resource → new id → repeat).
+            name: nextNameId ? null : prev.name,
+            description_id: nextDescriptionId,
+            description: nextDescriptionId ? null : prev.description,
+            active_flag_id:
+              (fs["active_flag_id"] as string | null) ??
+              (fs["flag_id"] as string | null) ??
+              prev.active_flag_id,
+            // Arrays fall back to prev so a server that omits a field doesn't
+            // wipe user's selection.
+            color_ids: (fs["color_ids"] as string[] | null) ?? prev.color_ids,
+            department_ids:
+              (fs["department_ids"] as string[] | null) ?? prev.department_ids,
+            profile_ids:
+              (fs["profile_ids"] as string[] | null) ?? prev.profile_ids,
+            auth_ids: (fs["auth_ids"] as string[] | null) ?? prev.auth_ids,
+            provider_key_ids:
+              (fs["provider_key_ids"] as string[] | null) ??
+              prev.provider_key_ids,
+            auth_item_key_ids:
+              (fs["auth_item_key_ids"] as string[] | null) ??
+              prev.auth_item_key_ids,
+            system_ids:
+              (fs["system_ids"] as string[] | null) ?? prev.system_ids,
+            pending_ids:
+              (fs["pending_ids"] as string[] | null) ?? prev.pending_ids,
+          };
+          referenceStateRef.current = next;
+          return next;
         });
-        referenceStateRef.current = {
-          name_id: (fs["name_id"] as string | null) ?? null,
-          name: (fs["name"] as string | null) ?? null,
-          description_id: (fs["description_id"] as string | null) ?? null,
-          description: (fs["description"] as string | null) ?? null,
-          active_flag_id:
-            ((fs["active_flag_id"] as string | null) ??
-              (fs["flag_id"] as string | null)) ??
-            null,
-          color_ids: (fs["color_ids"] as string[] | null) ?? [],
-          department_ids: (fs["department_ids"] as string[] | null) ?? [],
-          profile_ids: (fs["profile_ids"] as string[] | null) ?? [],
-          auth_ids: (fs["auth_ids"] as string[] | null) ?? [],
-          provider_key_ids: (fs["provider_key_ids"] as string[] | null) ?? [],
-          auth_item_key_ids: (fs["auth_item_key_ids"] as string[] | null) ?? [],
-          system_ids: (fs["system_ids"] as string[] | null) ?? [],
-          pending_ids: (fs["pending_ids"] as string[] | null) ?? [],
-        };
         requestAnimationFrame(() => {
           serverSyncPendingRef.current = false;
         });
@@ -631,22 +671,8 @@ function Setting({
               show_name={true}
               names={s?.names ?? []}
               disabled={disabled}
-              onNameIdChange={(id) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  name_id: id,
-                  name: null,
-                  pending_ids: pruneSectionPending("names", id ? [id] : []),
-                }))
-              }
-              onNameChange={(name) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  name_id: null,
-                  name,
-                  pending_ids: pruneSectionPending("names", []),
-                }))
-              }
+              onNameIdChange={handleNameIdChange}
+              onNameChange={handleNameChange}
               defaultName="New Setting"
               hideDescription={true}
               required={true}
@@ -657,22 +683,8 @@ function Setting({
               show_description={true}
               descriptions={s?.descriptions ?? []}
               disabled={disabled}
-              onDescriptionIdChange={(id) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  description_id: id,
-                  description: null,
-                  pending_ids: pruneSectionPending("descriptions", id ? [id] : []),
-                }))
-              }
-              onDescriptionChange={(description) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  description_id: null,
-                  description,
-                  pending_ids: pruneSectionPending("descriptions", []),
-                }))
-              }
+              onDescriptionIdChange={handleDescriptionIdChange}
+              onDescriptionChange={handleDescriptionChange}
             />
             <Colors
               color_ids={formState.color_ids}

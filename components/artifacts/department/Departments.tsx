@@ -192,7 +192,7 @@ export default function Departments({
     setIsDuplicating(department.department_id);
     try {
       await duplicateDepartmentAction({
-        body: { department_id: department.department_id },
+        body: { department_id: department.department_id, accept: true },
       });
       toast.success(`Department "${department.name}" duplicated successfully`);
       router.refresh();
@@ -208,7 +208,7 @@ export default function Departments({
 
     try {
       await deleteDepartmentAction({
-        body: { department_id: deleteItem.id },
+        body: { department_ids: [deleteItem.id], accept: true },
       });
       toast.success(`Department "${deleteItem.name || "Unknown"}" deleted successfully`);
       router.refresh();

@@ -283,7 +283,8 @@ export default function Evals({
     try {
       await deleteEvalAction({
         body: {
-          eval_id: deleteItem.id,
+          eval_ids: [deleteItem.id],
+          accept: true,
         },
       });
       toast.success(`Eval "${deleteItem.name}" deleted successfully`);

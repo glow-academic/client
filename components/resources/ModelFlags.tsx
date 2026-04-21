@@ -123,6 +123,11 @@ export function ModelFlags({
   const [modelFlagResourceIds, setModelFlagResourceIds] = useState<
     Map<string, string>
   >(new Map());
+  // Dirty flag: only emit values upward after the user has actually toggled;
+  // server-sync-driven state changes just re-baseline silently (same pattern
+  // as ParameterFields.tsx).
+  const isDirtyRef = useRef(false);
+  const isInitialMountRef = useRef(true);
   useEffect(() => {
     const nextSelected = new Map<string, Set<string>>();
     const nextResourceIds = new Map<string, string>();
@@ -181,10 +186,17 @@ export function ModelFlags({
     }
   }, [modelFlagResourceIds]);
 
-  // Emit value callback for unified draft pattern
+  // Emit value callback for unified draft pattern. Only emit after user has
+  // actually toggled — otherwise the initial sync and every server refresh
+  // would emit and trigger spurious saves.
   const onModelFlagValuesRef = useRef(onModelFlagValues);
   onModelFlagValuesRef.current = onModelFlagValues;
   useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    if (!isDirtyRef.current) return;
     if (!onModelFlagValuesRef.current) return;
     const values: Array<{ model_id: string; flag_id: string }> = [];
     selectedFlagsByModel.forEach((flagIds, modelId) => {
@@ -197,6 +209,7 @@ export function ModelFlags({
 
   const handleToggle = useCallback(
     (modelId: string, flagId: string, checked: boolean) => {
+      isDirtyRef.current = true;
       const key = `${modelId}:${flagId}`;
 
       setSelectedFlagsByModel((prev) => {

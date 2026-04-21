@@ -571,7 +571,7 @@ export function Simulations({
 
     setIsDeleting(true);
     try {
-      await deleteSimulationAction({ body: { simulation_id: deleteItem.id } });
+      await deleteSimulationAction({ body: { simulation_ids: [deleteItem.id], accept: true } });
       toast.success("Simulation deleted successfully");
       router.refresh();
     } catch (err) {
@@ -594,9 +594,7 @@ export function Simulations({
     setIsBulkDeleting(true);
     try {
       const ids = deletableSimulations.map((s) => s.simulation_id!);
-      await Promise.all(
-        ids.map((id) => deleteSimulationAction({ body: { simulation_id: id } }))
-      );
+      await deleteSimulationAction({ body: { simulation_ids: ids, accept: true } });
       toast.success(`${ids.length} simulation(s) deleted successfully`);
       clearSelection();
       router.refresh();
@@ -693,7 +691,7 @@ export function Simulations({
 
     setIsDuplicating(simulationId);
     try {
-      await duplicateSimulationAction({ body: { simulation_id: simulationId } });
+      await duplicateSimulationAction({ body: { simulation_id: simulationId, accept: true } });
       toast.success("Simulation duplicated successfully");
       router.refresh();
     } catch (err) {

@@ -550,7 +550,7 @@ export default function Cohorts({
 
     setIsDeleting(true);
     try {
-      await deleteCohortAction({ body: { cohort_ids: [deleteItem.id] } });
+      await deleteCohortAction({ body: { cohort_ids: [deleteItem.id], accept: true } });
       toast.success("Cohort deleted successfully");
       router.refresh();
     } catch (err) {
@@ -573,7 +573,7 @@ export default function Cohorts({
     setIsBulkDeleting(true);
     try {
       const ids = deletableCohorts.map((c) => c.cohort_id!);
-      await deleteCohortAction({ body: { cohort_ids: ids } });
+      await deleteCohortAction({ body: { cohort_ids: ids, accept: true } });
       toast.success(`${ids.length} cohort(s) deleted successfully`);
       clearSelection();
       router.refresh();
@@ -647,7 +647,7 @@ export default function Cohorts({
 
     setIsDuplicating(cohortId);
     try {
-      await duplicateCohortAction({ body: { cohort_id: cohortId } });
+      await duplicateCohortAction({ body: { cohort_id: cohortId, accept: true } });
       toast.success(`Cohort "${cohortName}" duplicated successfully`);
       router.refresh();
     } catch (err) {

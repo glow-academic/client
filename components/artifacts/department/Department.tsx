@@ -214,30 +214,40 @@ function DepartmentComponent({
       const formStateFromServer =
         (result?.form_state ?? null) as DepartmentDraftFormState | null;
       if (formStateFromServer) {
-        setFormState((prev) => ({
-          ...prev,
-          name_id: formStateFromServer.name_id ?? prev.name_id,
-          name:
-            formStateFromServer.name !== undefined
-              ? formStateFromServer.name
-              : formStateFromServer.name_id
-                ? null
-                : prev.name,
-          description_id:
-            formStateFromServer.description_id ?? prev.description_id,
-          description:
-            formStateFromServer.description !== undefined
-              ? formStateFromServer.description
-              : formStateFromServer.description_id
-                ? null
-                : prev.description,
-          active_flag_id:
-            formStateFromServer.active_flag_id ??
-            formStateFromServer.flag_id ??
-            prev.active_flag_id,
-          setting_ids: formStateFromServer.setting_ids ?? prev.setting_ids,
-          pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
-        }));
+        setFormState((prev) => {
+          const next = {
+            ...prev,
+            name_id: formStateFromServer.name_id ?? prev.name_id,
+            // Clear value fields only once the server has resolved them to
+            // IDs — keeping the value would cause infinite re-saves (value
+            // takes precedence → new resource → new id → repeat).
+            name: formStateFromServer.name_id ? null : prev.name,
+            description_id:
+              formStateFromServer.description_id ?? prev.description_id,
+            description: formStateFromServer.description_id
+              ? null
+              : prev.description,
+            active_flag_id:
+              formStateFromServer.active_flag_id ??
+              formStateFromServer.flag_id ??
+              prev.active_flag_id,
+            setting_ids: formStateFromServer.setting_ids ?? prev.setting_ids,
+            pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
+          };
+          // Only set the server-sync absorb flag when state actually changes
+          // (same fix as Persona / Parameter / Profile / etc).
+          const changed =
+            prev.name_id !== next.name_id ||
+            prev.name !== next.name ||
+            prev.description_id !== next.description_id ||
+            prev.description !== next.description ||
+            prev.active_flag_id !== next.active_flag_id ||
+            JSON.stringify(prev.setting_ids) !== JSON.stringify(next.setting_ids) ||
+            JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
+          if (!changed) return prev;
+          serverSyncPendingRef.current = true;
+          return next;
+        });
       }
 
       return result;
@@ -286,10 +296,32 @@ function DepartmentComponent({
     formState as unknown as Record<string, unknown>,
   );
 
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((nameId: string | null) => {
+    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }));
+  }, []);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({ ...prev, name }));
+  }, []);
+
+  const handleDescriptionIdChange = useCallback((descriptionId: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      description_id: descriptionId,
+      description: null,
+    }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({ ...prev, description }));
+  }, []);
+
   const {
     setUrlFormDataRef,
     onFormDataChange,
     flushAllAndSave,
+    serverSyncPendingRef,
     formDataRef,
   } = useDraftLifecycle({
     formStateKey,
@@ -520,12 +552,8 @@ function DepartmentComponent({
             show_name={true}
             names={department?.names ?? []}
             disabled={disabled}
-            onNameIdChange={(nameId) =>
-              setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
-            }
-            onNameChange={(name) =>
-              setFormState((prev) => ({ ...prev, name }))
-            }
+            onNameIdChange={handleNameIdChange}
+            onNameChange={handleNameChange}
             required={true}
             hideDescription={true}
             isAutosaveEnabled={isAutosaveEnabled}
@@ -555,16 +583,8 @@ function DepartmentComponent({
             show_description={true}
             descriptions={department?.descriptions ?? []}
             disabled={disabled}
-            onDescriptionIdChange={(descriptionId) =>
-              setFormState((prev) => ({
-                ...prev,
-                description_id: descriptionId,
-                description: null,
-              }))
-            }
-            onDescriptionChange={(description) =>
-              setFormState((prev) => ({ ...prev, description }))
-            }
+            onDescriptionIdChange={handleDescriptionIdChange}
+            onDescriptionChange={handleDescriptionChange}
             required={false}
             isAutosaveEnabled={isAutosaveEnabled}
           />

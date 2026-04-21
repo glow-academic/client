@@ -230,7 +230,6 @@ export default async function NewRubricPage({
         >
           <div className="space-y-6 px-4" data-page="rubric-new">
             <Rubric
-              key={q.draftId || "no-draft"}
               rubricData={rubricData}
               createRubricAction={createRubric}
               patchRubricDraftAction={patchRubricDraft}

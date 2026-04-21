@@ -520,8 +520,6 @@ function ModelComponent({
 
   const formStateKey = React.useMemo(() => JSON.stringify(formState), [formState]);
 
-  const serverSyncPendingRef = React.useRef(false);
-
   const patchActionRef = React.useRef<
     ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>) | undefined
   >(undefined);
@@ -535,48 +533,77 @@ function ModelComponent({
         const fs = (res as { form_state?: Partial<typeof formState> | null })
           .form_state;
         if (fs) {
-          serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name_id: fs.name_id ?? prev.name_id,
-            name: fs.name ?? prev.name,
-            description_id: fs.description_id ?? prev.description_id,
-            description: fs.description ?? prev.description,
-            value_id: fs.value_id ?? prev.value_id,
-            value: fs.value ?? prev.value,
-            provider_id: fs.provider_id ?? prev.provider_id,
-            active_flag_id: fs.active_flag_id ?? prev.active_flag_id,
-            modalities_enabled_flag_id:
-              fs.modalities_enabled_flag_id ??
-              prev.modalities_enabled_flag_id,
-            temperature_enabled_flag_id:
-              fs.temperature_enabled_flag_id ??
-              prev.temperature_enabled_flag_id,
-            pricing_enabled_flag_id:
-              fs.pricing_enabled_flag_id ??
-              prev.pricing_enabled_flag_id,
-            voices_enabled_flag_id:
-              fs.voices_enabled_flag_id ??
-              prev.voices_enabled_flag_id,
-            reasoning_levels_enabled_flag_id:
-              fs.reasoning_levels_enabled_flag_id ??
-              prev.reasoning_levels_enabled_flag_id,
-            qualities_enabled_flag_id:
-              fs.qualities_enabled_flag_id ??
-              prev.qualities_enabled_flag_id,
-            department_ids: fs.department_ids ?? prev.department_ids,
-            modality_ids: fs.modality_ids ?? prev.modality_ids,
-            temperature_level_ids:
-              fs.temperature_level_ids ?? prev.temperature_level_ids,
-            pricing_ids: fs.pricing_ids ?? prev.pricing_ids,
-            reasoning_level_ids:
-              fs.reasoning_level_ids ?? prev.reasoning_level_ids,
-            quality_ids: fs.quality_ids ?? prev.quality_ids,
-            voice_ids: fs.voice_ids ?? prev.voice_ids,
-            pending_ids: fs.pending_ids ?? prev.pending_ids,
-          }));
-          requestAnimationFrame(() => {
-            serverSyncPendingRef.current = false;
+          setFormState((prev) => {
+            const next = {
+              ...prev,
+              name_id: fs.name_id ?? prev.name_id,
+              // Clear value fields only once the server has resolved them to
+              // IDs — keeping the value would cause infinite re-saves (value
+              // takes precedence → new resource → new id → repeat).
+              name: fs.name_id ? null : prev.name,
+              description_id: fs.description_id ?? prev.description_id,
+              description: fs.description_id ? null : prev.description,
+              value_id: fs.value_id ?? prev.value_id,
+              value: fs.value_id ? null : prev.value,
+              provider_id: fs.provider_id ?? prev.provider_id,
+              active_flag_id: fs.active_flag_id ?? prev.active_flag_id,
+              modalities_enabled_flag_id:
+                fs.modalities_enabled_flag_id ??
+                prev.modalities_enabled_flag_id,
+              temperature_enabled_flag_id:
+                fs.temperature_enabled_flag_id ??
+                prev.temperature_enabled_flag_id,
+              pricing_enabled_flag_id:
+                fs.pricing_enabled_flag_id ??
+                prev.pricing_enabled_flag_id,
+              voices_enabled_flag_id:
+                fs.voices_enabled_flag_id ??
+                prev.voices_enabled_flag_id,
+              reasoning_levels_enabled_flag_id:
+                fs.reasoning_levels_enabled_flag_id ??
+                prev.reasoning_levels_enabled_flag_id,
+              qualities_enabled_flag_id:
+                fs.qualities_enabled_flag_id ??
+                prev.qualities_enabled_flag_id,
+              department_ids: fs.department_ids ?? prev.department_ids,
+              modality_ids: fs.modality_ids ?? prev.modality_ids,
+              temperature_level_ids:
+                fs.temperature_level_ids ?? prev.temperature_level_ids,
+              pricing_ids: fs.pricing_ids ?? prev.pricing_ids,
+              reasoning_level_ids:
+                fs.reasoning_level_ids ?? prev.reasoning_level_ids,
+              quality_ids: fs.quality_ids ?? prev.quality_ids,
+              voice_ids: fs.voice_ids ?? prev.voice_ids,
+              pending_ids: fs.pending_ids ?? prev.pending_ids,
+            };
+            // Only set the server-sync absorb flag when state actually changes
+            // (same fix as Persona / Agent / Parameter).
+            const changed =
+              prev.name_id !== next.name_id ||
+              prev.name !== next.name ||
+              prev.description_id !== next.description_id ||
+              prev.description !== next.description ||
+              prev.value_id !== next.value_id ||
+              prev.value !== next.value ||
+              prev.provider_id !== next.provider_id ||
+              prev.active_flag_id !== next.active_flag_id ||
+              prev.modalities_enabled_flag_id !== next.modalities_enabled_flag_id ||
+              prev.temperature_enabled_flag_id !== next.temperature_enabled_flag_id ||
+              prev.pricing_enabled_flag_id !== next.pricing_enabled_flag_id ||
+              prev.voices_enabled_flag_id !== next.voices_enabled_flag_id ||
+              prev.reasoning_levels_enabled_flag_id !== next.reasoning_levels_enabled_flag_id ||
+              prev.qualities_enabled_flag_id !== next.qualities_enabled_flag_id ||
+              JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
+              JSON.stringify(prev.modality_ids) !== JSON.stringify(next.modality_ids) ||
+              JSON.stringify(prev.temperature_level_ids) !== JSON.stringify(next.temperature_level_ids) ||
+              JSON.stringify(prev.pricing_ids) !== JSON.stringify(next.pricing_ids) ||
+              JSON.stringify(prev.reasoning_level_ids) !== JSON.stringify(next.reasoning_level_ids) ||
+              JSON.stringify(prev.quality_ids) !== JSON.stringify(next.quality_ids) ||
+              JSON.stringify(prev.voice_ids) !== JSON.stringify(next.voice_ids) ||
+              JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
+            if (!changed) return prev;
+            serverSyncPendingRef.current = true;
+            return next;
           });
         }
         return res;
@@ -660,8 +687,30 @@ function ModelComponent({
     [s],
   );
 
-  const { setUrlFormDataRef, onFormDataChange, flushAllAndSave, formDataRef } =
-    useDraftLifecycle({
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((id: string | null) => {
+    setFormState((prev) => ({ ...prev, name_id: id, name: null }));
+  }, []);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({ ...prev, name, name_id: null }));
+  }, []);
+
+  const handleDescriptionIdChange = useCallback((id: string | null) => {
+    setFormState((prev) => ({ ...prev, description_id: id, description: null }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({ ...prev, description, description_id: null }));
+  }, []);
+
+  const {
+    setUrlFormDataRef,
+    onFormDataChange,
+    flushAllAndSave,
+    serverSyncPendingRef,
+    formDataRef,
+  } = useDraftLifecycle({
       formStateKey,
       patchActionRef,
       isAutosaveEnabled,
@@ -1243,12 +1292,8 @@ function ModelComponent({
                   show_name={s?.names?.show ?? true}
                   names={s?.names?.resources ?? []}
                   disabled={disabled}
-                  onNameIdChange={(id) =>
-                    setFormState((prev) => ({ ...prev, name_id: id, name: null }))
-                  }
-                  onNameChange={(name) =>
-                    setFormState((prev) => ({ ...prev, name, name_id: null }))
-                  }
+                  onNameIdChange={handleNameIdChange}
+                  onNameChange={handleNameChange}
                   placeholder="e.g., GPT-4"
                   defaultName="New Model"
                   required={s?.names?.required ?? true}
@@ -1296,12 +1341,8 @@ function ModelComponent({
                     setFormData({ descriptionSearch: term || null })
                   }
                   disabled={disabled}
-                  onDescriptionIdChange={(id) =>
-                    setFormState((prev) => ({ ...prev, description_id: id, description: null }))
-                  }
-                  onDescriptionChange={(description) =>
-                    setFormState((prev) => ({ ...prev, description, description_id: null }))
-                  }
+                  onDescriptionIdChange={handleDescriptionIdChange}
+                  onDescriptionChange={handleDescriptionChange}
                   placeholder="Enter a brief description"
                   required={s?.descriptions?.required ?? false}
                 />

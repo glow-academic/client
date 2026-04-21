@@ -574,7 +574,7 @@ export default function Documents({
     try {
       if (!deleteDocumentAction) return;
       await deleteDocumentAction({
-        body: { document_id: deletingDocument.document_id },
+        body: { document_ids: [deletingDocument.document_id], accept: true },
       });
       router.refresh();
       toast.success("Document deleted successfully");

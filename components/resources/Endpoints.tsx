@@ -84,6 +84,9 @@ export function Endpoints({
   const [internalValue, setInternalValue] = useState(initialValue);
 
   const lastSavedValueRef = useRef<string>(initialValue);
+  // Dirty flag: once the user interacts, stop syncing from server data so
+  // their in-progress edits aren't clobbered (same pattern as Descriptions.tsx).
+  const isDirtyRef = useRef(false);
 
   // Derive suggestion base_url strings from endpoints with suggested=true
   const suggestionBaseUrls = useMemo(() => {
@@ -106,8 +109,9 @@ export function Endpoints({
 
   const ghostSuffix = ghostMatch ? ghostMatch.slice(internalValue.length) : "";
 
-  // Update internal value when resource changes
+  // Update internal value when resource changes. Skip while user is editing.
   useEffect(() => {
+    if (isDirtyRef.current) return;
     if (endpoint != null) {
       if (internalValue !== endpoint) {
         setInternalValue(endpoint);
@@ -127,6 +131,7 @@ export function Endpoints({
   const handleChange = useCallback(
     (newValue: string) => {
       setInternalValue(newValue);
+      isDirtyRef.current = newValue !== lastSavedValueRef.current;
       onEndpointChange?.(newValue);
     },
     [onEndpointChange]
@@ -138,6 +143,8 @@ export function Endpoints({
         e.preventDefault();
         const nextValue = ghostMatch!;
         setInternalValue(nextValue);
+        lastSavedValueRef.current = nextValue;
+        isDirtyRef.current = false;
         const matchedResource = endpointsArray.find(
           (item) => item.base_url?.toLowerCase() === nextValue.toLowerCase()
         );

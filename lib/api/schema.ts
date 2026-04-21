@@ -6138,6 +6138,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/attempt/chat/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Audio
+         * @description Attach an audios_id to an attempt chat message.
+         */
+        post: operations["chat_audio_attempt_chat_audio_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/attempt/chat/grade": {
         parameters: {
             query?: never;
@@ -6149,10 +6169,7 @@ export interface paths {
         put?: never;
         /**
          * Chat Grade
-         * @description Trigger grading for an attempt chat.
-         *
-         *     Browser client: sends chat_id only, internal AI generates full grade.
-         *     Agent: can optionally provide score, feedbacks, strengths, etc. to skip AI.
+         * @description Manually grade an attempt chat with a score.
          */
         post: operations["chat_grade_attempt_chat_grade_post"];
         delete?: never;
@@ -6926,7 +6943,20 @@ export interface paths {
         put?: never;
         /**
          * Upload Audio
-         * @description Upload an audio file for an attempt.
+         * @description Upload audio or promote an existing raw upload.
+         *
+         *     Three shapes:
+         *       - **File only** → multipart ``file``: server writes bytes, creates
+         *         ``uploads_entry`` + full audio chain on top.
+         *       - **upload_id only** → ``?upload_id=<uuid>`` of an existing upload
+         *         (e.g. raw bytes captured by the realtime adapter). Server reuses
+         *         the upload and stacks resource + entry + junctions on top.
+         *       - **upload_id + file** → client pre-reserved via ``/attempt/audio/new``
+         *         and now fills the slot. Server writes bytes into that upload's
+         *         file and then runs the full chain.
+         *
+         *     Returns ``{audio_id, audios_id, upload_id}``. Client only needs
+         *     ``audios_id``; ``upload_id`` is the primitive handed back.
          */
         post: operations["upload_audio_attempt_audio_upload_post"];
         delete?: never;
@@ -15601,8 +15631,8 @@ export interface components {
             config?: components["schemas"]["GenerateConfig"] | null;
             /** Modalities */
             modalities?: string[] | null;
-            /** Audio Id */
-            audio_id?: string | null;
+            /** Audios Id */
+            audios_id?: string | null;
             /** Conversation Id */
             conversation_id?: string | null;
             /** Idempotency Key */
@@ -16111,14 +16141,6 @@ export interface components {
              */
             message: string;
         };
-        /** AttemptGradeAnalysisEntry */
-        AttemptGradeAnalysisEntry: {
-            /**
-             * Content
-             * @description Analysis text content
-             */
-            content: string;
-        };
         /**
          * AttemptGradeCompleteEvent
          * @description Server-to-client: aggregate grade result.
@@ -16134,55 +16156,6 @@ export interface components {
              * @description UUID of the grade record
              */
             grade_id?: string | null;
-        };
-        /** AttemptGradeFeedbackEntry */
-        AttemptGradeFeedbackEntry: {
-            /**
-             * Feedback
-             * @description Feedback text content
-             */
-            feedback: string;
-            /**
-             * Total
-             * @description Total score for this feedback entry
-             */
-            total?: number | null;
-        };
-        /** AttemptGradeHighlightEntry */
-        AttemptGradeHighlightEntry: {
-            /**
-             * Strength Id
-             * @description UUID of the parent strength
-             */
-            strength_id?: string | null;
-            /**
-             * Section
-             * @description Text section to highlight
-             */
-            section: string;
-            /**
-             * Idx
-             * @description Index position of the highlight
-             */
-            idx?: number | null;
-        };
-        /** AttemptGradeImprovementEntry */
-        AttemptGradeImprovementEntry: {
-            /**
-             * Name
-             * @description Name of the identified improvement area
-             */
-            name: string;
-            /**
-             * Description
-             * @description Description of the improvement
-             */
-            description: string;
-            /**
-             * Message Id
-             * @description UUID of the related message
-             */
-            message_id?: string | null;
         };
         /**
          * AttemptGradePayload
@@ -16239,29 +16212,6 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
-        /** AttemptGradeReplacementEntry */
-        AttemptGradeReplacementEntry: {
-            /**
-             * Improvement Id
-             * @description UUID of the parent improvement
-             */
-            improvement_id?: string | null;
-            /**
-             * Section
-             * @description Original text section to replace
-             */
-            section: string;
-            /**
-             * Replace
-             * @description Replacement text
-             */
-            replace: string;
-            /**
-             * Idx
-             * @description Index position of the replacement
-             */
-            idx?: number | null;
-        };
         /**
          * AttemptGradeStartEvent
          * @description Server-to-client: grading began.
@@ -16277,24 +16227,6 @@ export interface components {
              * @description UUID of the grade record
              */
             grade_id?: string | null;
-        };
-        /** AttemptGradeStrengthEntry */
-        AttemptGradeStrengthEntry: {
-            /**
-             * Name
-             * @description Name of the identified strength
-             */
-            name: string;
-            /**
-             * Description
-             * @description Description of the strength
-             */
-            description: string;
-            /**
-             * Message Id
-             * @description UUID of the related message
-             */
-            message_id?: string | null;
         };
         /**
          * AttemptJoinPayload
@@ -16960,13 +16892,19 @@ export interface components {
             /**
              * Audio Id
              * Format: uuid
-             * @description UUID of the created audios_entry
+             * @description UUID of the audios_entry (server plumbing; public handle is audios_id)
              */
             audio_id: string;
             /**
+             * Audios Id
+             * Format: uuid
+             * @description UUID of the audios_resource — use this for /generate, /chat/message, download
+             */
+            audios_id: string;
+            /**
              * Upload Id
              * Format: uuid
-             * @description UUID of the uploads_entry (file on disk)
+             * @description UUID of the uploads_entry (primitive raw file)
              */
             upload_id: string;
         };
@@ -17822,11 +17760,23 @@ export interface components {
         };
         /** Body_upload_audio_attempt_audio_upload_post */
         Body_upload_audio_attempt_audio_upload_post: {
+            /** File */
+            file?: string | null;
             /**
-             * File
-             * Format: binary
+             * Length Seconds
+             * @default 0
              */
-            file: string;
+            length_seconds: number;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
         };
         /** Body_upload_file_document_file_upload_post */
         Body_upload_file_document_file_upload_post: {
@@ -17952,6 +17902,31 @@ export interface components {
         ChatAnalysisItem: {
             /** Content */
             content: string;
+        };
+        /** ChatAudioRequest */
+        ChatAudioRequest: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /**
+             * Audios Id
+             * Format: uuid
+             */
+            audios_id: string;
+        };
+        /** ChatAudioResponse */
+        ChatAudioResponse: {
+            /** Success */
+            success: boolean;
+            /** Attempt Audio Id */
+            attempt_audio_id: string;
         };
         /** ChatCompleteRequest */
         ChatCompleteRequest: {
@@ -18604,8 +18579,6 @@ export interface components {
             text: string;
             /** Persona Id */
             persona_id?: string | null;
-            /** Audio Id */
-            audio_id?: string | null;
             /** Parent Message Id */
             parent_message_id?: string | null;
         };
@@ -19040,6 +19013,8 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
+            /** Length Seconds */
+            length_seconds?: number | null;
             /** Generated */
             generated?: boolean | null;
             /**
@@ -28737,15 +28712,10 @@ export interface components {
             group_id?: string | null;
             /** Run Id */
             run_id?: string | null;
-            /**
-             * Modality
-             * @default text
-             */
-            modality: string;
             /** Modalities */
             modalities?: string[] | null;
-            /** Audio Id */
-            audio_id?: string | null;
+            /** Audios Id */
+            audios_id?: string | null;
             /** Conversation Id */
             conversation_id?: string | null;
             /** Extra Messages */
@@ -31107,7 +31077,7 @@ export interface components {
             current_chat_id?: string | null;
             /**
              * Has Messages
-             * @description Whether the chat has messages
+             * @description Whether the current chat has gradeable content (messages or quiz responses)
              * @default false
              */
             has_messages: boolean;
@@ -31205,7 +31175,7 @@ export interface components {
             current_chat_id?: string | null;
             /**
              * Has Messages
-             * @description Whether the chat has messages
+             * @description Whether the current chat has gradeable content (messages or quiz responses)
              * @default false
              */
             has_messages: boolean;
@@ -37462,6 +37432,20 @@ export interface components {
              */
             entries?: components["schemas"]["GetToolDraftResponse"][] | null;
         };
+        /** GradeAttemptApiRequest */
+        GradeAttemptApiRequest: {
+            /**
+             * Chat Id
+             * Format: uuid
+             * @description UUID of the attempt chat to grade
+             */
+            chat_id: string;
+            /**
+             * Score
+             * @description Overall score to record for the chat
+             */
+            score: number;
+        };
         /** GradeAttemptApiResponse */
         GradeAttemptApiResponse: {
             /** Chat Id */
@@ -37472,75 +37456,8 @@ export interface components {
             score?: number | null;
             /** Passed */
             passed?: boolean | null;
-        };
-        /** GradeAttemptRequest */
-        GradeAttemptRequest: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             * @description UUID of the attempt to grade
-             */
-            attempt_id: string;
-            /**
-             * Chat Id
-             * @description UUID of the chat to grade
-             */
-            chat_id?: string | null;
-            /**
-             * Resource Types
-             * @description Resource types to include in grading
-             */
-            resource_types?: string[] | null;
-            /**
-             * User Instructions
-             * @description Custom grading instructions
-             */
-            user_instructions?: string[] | null;
-            /**
-             * Score
-             * @description Overall score for the attempt
-             */
-            score?: number | null;
-            /**
-             * Passed
-             * @description Whether the attempt passed
-             */
-            passed?: boolean | null;
-            /**
-             * Time Taken
-             * @description Time taken in seconds
-             */
+            /** Time Taken */
             time_taken?: number | null;
-            /**
-             * Feedbacks
-             * @description Feedback entries from the grader
-             */
-            feedbacks?: components["schemas"]["AttemptGradeFeedbackEntry"][] | null;
-            /**
-             * Strengths
-             * @description Strength entries from the grader
-             */
-            strengths?: components["schemas"]["AttemptGradeStrengthEntry"][] | null;
-            /**
-             * Improvements
-             * @description Improvement entries from the grader
-             */
-            improvements?: components["schemas"]["AttemptGradeImprovementEntry"][] | null;
-            /**
-             * Analyses
-             * @description Analysis entries from the grader
-             */
-            analyses?: components["schemas"]["AttemptGradeAnalysisEntry"][] | null;
-            /**
-             * Highlights
-             * @description Highlight entries for strengths
-             */
-            highlights?: components["schemas"]["AttemptGradeHighlightEntry"][] | null;
-            /**
-             * Replacements
-             * @description Replacement entries for improvements
-             */
-            replacements?: components["schemas"]["AttemptGradeReplacementEntry"][] | null;
         };
         /**
          * GradeData
@@ -37610,7 +37527,7 @@ export interface components {
         };
         /**
          * GroupAgentApiRequest
-         * @description Request model for agent group endpoint.
+         * @description Request body for POST /agent/group.
          */
         GroupAgentApiRequest: {
             /**
@@ -37637,7 +37554,7 @@ export interface components {
         };
         /**
          * GroupAgentApiResponse
-         * @description Response model for agent group endpoint.
+         * @description Response body for POST /agent/group.
          */
         GroupAgentApiResponse: {
             /**
@@ -37661,10 +37578,15 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupAttemptApiRequest
-         * @description Request model for attempt group endpoint.
+         * @description Request body for POST /attempt/group.
          */
         GroupAttemptApiRequest: {
             /**
@@ -37677,10 +37599,21 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupAttemptApiResponse
-         * @description Response model for attempt group endpoint.
+         * @description Response body for POST /attempt/group.
          */
         GroupAttemptApiResponse: {
             /**
@@ -37699,10 +37632,20 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupAuthApiRequest
-         * @description Request model for auth group endpoint.
+         * @description Request body for POST /auth/group.
          */
         GroupAuthApiRequest: {
             /**
@@ -37729,7 +37672,7 @@ export interface components {
         };
         /**
          * GroupAuthApiResponse
-         * @description Response model for auth group endpoint.
+         * @description Response body for POST /auth/group.
          */
         GroupAuthApiResponse: {
             /**
@@ -37753,10 +37696,15 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupCall
-         * @description Tool call within a message.
+         * @description Tool call referenced by a message.
          */
         GroupCall: {
             /**
@@ -37766,10 +37714,12 @@ export interface components {
             id: string;
             /** Tool Name */
             tool_name?: string | null;
+            /** Template Name */
+            template_name?: string | null;
         };
         /**
          * GroupCohortApiRequest
-         * @description Request model for cohort group endpoint.
+         * @description Request body for POST /cohort/group.
          */
         GroupCohortApiRequest: {
             /**
@@ -37796,7 +37746,7 @@ export interface components {
         };
         /**
          * GroupCohortApiResponse
-         * @description Response model for cohort group endpoint.
+         * @description Response body for POST /cohort/group.
          */
         GroupCohortApiResponse: {
             /**
@@ -37820,10 +37770,15 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupDepartmentApiRequest
-         * @description Request model for department group endpoint.
+         * @description Request body for POST /department/group.
          */
         GroupDepartmentApiRequest: {
             /**
@@ -37850,7 +37805,7 @@ export interface components {
         };
         /**
          * GroupDepartmentApiResponse
-         * @description Response model for department group endpoint.
+         * @description Response body for POST /department/group.
          */
         GroupDepartmentApiResponse: {
             /**
@@ -37874,6 +37829,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupDetailCallItem
@@ -38075,7 +38035,7 @@ export interface components {
         };
         /**
          * GroupDocumentApiRequest
-         * @description Request model for document group endpoint.
+         * @description Request body for POST /document/group.
          */
         GroupDocumentApiRequest: {
             /**
@@ -38090,7 +38050,7 @@ export interface components {
             name?: string | null;
             /**
              * Idempotency Key
-             * @description Operation key for ack - promotes or rejects a dormant group
+             * @description Operation key for ack — promotes or rejects a dormant group
              */
             idempotency_key?: string | null;
             /**
@@ -38102,7 +38062,7 @@ export interface components {
         };
         /**
          * GroupDocumentApiResponse
-         * @description Response model for document group endpoint.
+         * @description Response body for POST /document/group.
          */
         GroupDocumentApiResponse: {
             /**
@@ -38126,10 +38086,15 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupEvalApiRequest
-         * @description Request model for eval group endpoint.
+         * @description Request body for POST /eval/group.
          */
         GroupEvalApiRequest: {
             /**
@@ -38156,7 +38121,7 @@ export interface components {
         };
         /**
          * GroupEvalApiResponse
-         * @description Response model for eval group endpoint.
+         * @description Response body for POST /eval/group.
          */
         GroupEvalApiResponse: {
             /**
@@ -38180,10 +38145,15 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupFieldApiRequest
-         * @description Request model for field group endpoint.
+         * @description Request body for POST /field/group.
          */
         GroupFieldApiRequest: {
             /**
@@ -38210,7 +38180,7 @@ export interface components {
         };
         /**
          * GroupFieldApiResponse
-         * @description Response model for field group endpoint.
+         * @description Response body for POST /field/group.
          */
         GroupFieldApiResponse: {
             /**
@@ -38234,6 +38204,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupListItem
@@ -38355,6 +38330,14 @@ export interface components {
             created_at?: string | null;
             /** Text Ids */
             text_ids?: string[];
+            /** Audio Ids */
+            audio_ids?: string[];
+            /** Image Ids */
+            image_ids?: string[];
+            /** Video Ids */
+            video_ids?: string[];
+            /** File Ids */
+            file_ids?: string[];
             /** Call Ids */
             call_ids?: string[];
             /** Calls */
@@ -38362,7 +38345,7 @@ export interface components {
         };
         /**
          * GroupModelApiRequest
-         * @description Request model for model group endpoint.
+         * @description Request body for POST /model/group.
          */
         GroupModelApiRequest: {
             /**
@@ -38389,7 +38372,7 @@ export interface components {
         };
         /**
          * GroupModelApiResponse
-         * @description Response model for model group endpoint.
+         * @description Response body for POST /model/group.
          */
         GroupModelApiResponse: {
             /**
@@ -38413,10 +38396,15 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupParameterApiRequest
-         * @description Request model for parameter group endpoint.
+         * @description Request body for POST /parameter/group.
          */
         GroupParameterApiRequest: {
             /**
@@ -38443,7 +38431,7 @@ export interface components {
         };
         /**
          * GroupParameterApiResponse
-         * @description Response model for parameter group endpoint.
+         * @description Response body for POST /parameter/group.
          */
         GroupParameterApiResponse: {
             /**
@@ -38467,10 +38455,15 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupPersonaApiRequest
-         * @description Request model for persona group endpoint.
+         * @description Request body for POST /persona/group.
          */
         GroupPersonaApiRequest: {
             /**
@@ -38497,7 +38490,7 @@ export interface components {
         };
         /**
          * GroupPersonaApiResponse
-         * @description Response model for persona group endpoint.
+         * @description Response body for POST /persona/group.
          */
         GroupPersonaApiResponse: {
             /**
@@ -38523,13 +38516,13 @@ export interface components {
             idempotency_key?: string | null;
             /**
              * Runs
-             * @description Conversation history (populated when resolving existing group)
+             * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupProfileApiRequest
-         * @description Request model for profile group endpoint.
+         * @description Request body for POST /profile/group.
          */
         GroupProfileApiRequest: {
             /**
@@ -38556,7 +38549,7 @@ export interface components {
         };
         /**
          * GroupProfileApiResponse
-         * @description Response model for profile group endpoint.
+         * @description Response body for POST /profile/group.
          */
         GroupProfileApiResponse: {
             /**
@@ -38580,10 +38573,15 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupProviderApiRequest
-         * @description Request model for provider group endpoint.
+         * @description Request body for POST /provider/group.
          */
         GroupProviderApiRequest: {
             /**
@@ -38610,7 +38608,7 @@ export interface components {
         };
         /**
          * GroupProviderApiResponse
-         * @description Response model for provider group endpoint.
+         * @description Response body for POST /provider/group.
          */
         GroupProviderApiResponse: {
             /**
@@ -38634,10 +38632,15 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupRubricApiRequest
-         * @description Request model for rubric group endpoint.
+         * @description Request body for POST /rubric/group.
          */
         GroupRubricApiRequest: {
             /**
@@ -38664,7 +38667,7 @@ export interface components {
         };
         /**
          * GroupRubricApiResponse
-         * @description Response model for rubric group endpoint.
+         * @description Response body for POST /rubric/group.
          */
         GroupRubricApiResponse: {
             /**
@@ -38688,10 +38691,15 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupRun
-         * @description Run within a group.
+         * @description Run within a group, with its messages.
          */
         GroupRun: {
             /**
@@ -38706,7 +38714,7 @@ export interface components {
         };
         /**
          * GroupScenarioApiRequest
-         * @description Request model for scenario group endpoint.
+         * @description Request body for POST /scenario/group.
          */
         GroupScenarioApiRequest: {
             /**
@@ -38733,7 +38741,7 @@ export interface components {
         };
         /**
          * GroupScenarioApiResponse
-         * @description Response model for scenario group endpoint.
+         * @description Response body for POST /scenario/group.
          */
         GroupScenarioApiResponse: {
             /**
@@ -38757,10 +38765,15 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupSettingApiRequest
-         * @description Request model for setting group endpoint.
+         * @description Request body for POST /setting/group.
          */
         GroupSettingApiRequest: {
             /**
@@ -38787,7 +38800,7 @@ export interface components {
         };
         /**
          * GroupSettingApiResponse
-         * @description Response model for setting group endpoint.
+         * @description Response body for POST /setting/group.
          */
         GroupSettingApiResponse: {
             /**
@@ -38811,10 +38824,15 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupSimulationApiRequest
-         * @description Request model for simulation group endpoint.
+         * @description Request body for POST /simulation/group.
          */
         GroupSimulationApiRequest: {
             /**
@@ -38841,7 +38859,7 @@ export interface components {
         };
         /**
          * GroupSimulationApiResponse
-         * @description Response model for simulation group endpoint.
+         * @description Response body for POST /simulation/group.
          */
         GroupSimulationApiResponse: {
             /**
@@ -38865,10 +38883,15 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupTestApiRequest
-         * @description Request model for test group endpoint.
+         * @description Request body for POST /test/group.
          */
         GroupTestApiRequest: {
             /**
@@ -38881,10 +38904,21 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupTestApiResponse
-         * @description Response model for test group endpoint.
+         * @description Response body for POST /test/group.
          */
         GroupTestApiResponse: {
             /**
@@ -38903,10 +38937,20 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
          * GroupToolApiRequest
-         * @description Request model for tool group endpoint.
+         * @description Request body for POST /tool/group.
          */
         GroupToolApiRequest: {
             /**
@@ -38933,7 +38977,7 @@ export interface components {
         };
         /**
          * GroupToolApiResponse
-         * @description Response model for tool group endpoint.
+         * @description Response body for POST /tool/group.
          */
         GroupToolApiResponse: {
             /**
@@ -38957,6 +39001,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -49383,11 +49432,6 @@ export interface components {
              */
             session_id?: string | null;
             /**
-             * Group Id
-             * @description Active group UUID for generation panel
-             */
-            group_id?: string | null;
-            /**
              * Is Emulation
              * @description Whether user is in emulation mode
              */
@@ -49752,11 +49796,6 @@ export interface components {
             id: string;
             /** @description Theme primitives (ThemeHydrator) */
             theme?: components["schemas"]["ThemePrimitives"] | null;
-            /**
-             * Group Id
-             * @description Active generation group UUID (GroupProvider)
-             */
-            group_id?: string | null;
             /**
              * Session Id
              * @description Current session UUID
@@ -52579,6 +52618,11 @@ export interface components {
              * @description Document description text
              */
             description?: string | null;
+            /**
+             * File Id
+             * @description UUID of the files_resource (used for download)
+             */
+            file_id?: string | null;
             /**
              * File Path
              * @description Storage path of the file
@@ -59681,6 +59725,11 @@ export interface components {
              * @description Description of the video
              */
             description?: string | null;
+            /**
+             * Length Seconds
+             * @description Duration of the video in seconds
+             */
+            length_seconds?: number | null;
         };
         /**
          * VideoUploadScenarioApiResponse
@@ -71606,6 +71655,39 @@ export interface operations {
             };
         };
     };
+    chat_audio_attempt_chat_audio_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatAudioRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatAudioResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     chat_grade_attempt_chat_grade_post: {
         parameters: {
             query?: never;
@@ -71615,7 +71697,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GradeAttemptRequest"];
+                "application/json": components["schemas"]["GradeAttemptApiRequest"];
             };
         };
         responses: {
@@ -72727,13 +72809,13 @@ export interface operations {
     upload_audio_attempt_audio_upload_post: {
         parameters: {
             query?: {
-                length_seconds?: number;
+                upload_id?: string | null;
             };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_upload_audio_attempt_audio_upload_post"];
             };

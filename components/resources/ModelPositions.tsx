@@ -132,6 +132,10 @@ export function ModelPositions({
   const [positionIdsByModel, setPositionIdsByModel] = useState<
     Map<string, string>
   >(new Map());
+  // Dirty flag: only emit values upward after the user has actually interacted;
+  // server-sync-driven state changes just re-baseline silently.
+  const isDirtyRef = useRef(false);
+  const isInitialMountRef = useRef(true);
 
   // Initialize positionIdsByModel from server resources
   // Use the resource's own id field, NOT index-based correlation with modelPositionIds
@@ -211,10 +215,17 @@ export function ModelPositions({
     });
   }, [model_ids, positionMap]);
 
-  // Emit value callback for unified draft pattern
+  // Emit value callback for unified draft pattern. Only emit after user has
+  // actually interacted — otherwise the initial sync and every server refresh
+  // would emit and trigger spurious saves.
   const onModelPositionValuesRef = useRef(onModelPositionValues);
   onModelPositionValuesRef.current = onModelPositionValues;
   useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    if (!isDirtyRef.current) return;
     if (!onModelPositionValuesRef.current) return;
     const values: Array<{ model_id: string; value: number }> = [];
     localPositions.forEach((value, modelId) => {
@@ -225,6 +236,7 @@ export function ModelPositions({
 
   const handlePositionChange = useCallback(
     (modelId: string, newValue: number) => {
+      isDirtyRef.current = true;
       const updated = new Map(localPositions);
       updated.set(modelId, newValue);
       setLocalPositions(updated);
@@ -292,6 +304,7 @@ export function ModelPositions({
 
   // Reject pending — remove pending positions from local state
   const handleReject = useCallback(() => {
+    isDirtyRef.current = true;
     const newPositions = new Map(localPositions);
     for (const pid of pendingIds) {
       newPositions.delete(pid);

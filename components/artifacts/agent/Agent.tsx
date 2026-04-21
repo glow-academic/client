@@ -583,7 +583,6 @@ export default function Agent({
     draftState as Record<string, unknown>,
   );
 
-  const serverSyncPendingRef = useRef(false);
   const flushAllResources = useCallback(async (): Promise<Record<string, unknown>> => {
     const results: Record<string, unknown> = {};
     for (const flush of flushRegistryRef.current.values()) {
@@ -611,31 +610,54 @@ export default function Agent({
       const result = await patchAgentDraftAction({ body: payload } as PatchAgentDraftIn);
       const fs = result?.form_state;
       if (fs) {
-        serverSyncPendingRef.current = true;
-        setDraftState((prev) => ({
-          ...prev,
-          name_id: fs.name_id ?? prev.name_id,
-          name: fs.name_id ? null : (fs as any).name ?? prev.name,
-          description_id: fs.description_id ?? prev.description_id,
-          description: fs.description_id ? null : (fs as any).description ?? prev.description,
-          active_flag_id: (fs as any).active_flag_id ?? prev.active_flag_id,
-          departmentIds: fs.department_ids ?? prev.departmentIds,
-          modelId: (fs as any).model_id ?? prev.modelId,
-          tool_ids: fs.tool_ids ?? prev.tool_ids,
-          reasoning_level_id:
-            (fs as any).reasoning_level_id ?? prev.reasoning_level_id,
-          temperature_level_id:
-            (fs as any).temperature_level_id ?? prev.temperature_level_id,
-          voice_ids: fs.voice_ids ?? prev.voice_ids,
-          quality_ids: (fs as any).quality_ids ?? prev.quality_ids,
-          rubric_ids: (fs as any).rubric_ids ?? prev.rubric_ids,
-          prompt_id: (fs as any).prompt_id ?? prev.prompt_id,
-          instructions_id:
-            (fs as any).instruction_id ?? prev.instructions_id,
-          pending_ids: (fs as any).pending_ids ?? prev.pending_ids,
-        }));
-        requestAnimationFrame(() => {
-          serverSyncPendingRef.current = false;
+        setDraftState((prev) => {
+          const next = {
+            ...prev,
+            name_id: fs.name_id ?? prev.name_id,
+            // Clear value fields only once the server has resolved them to
+            // IDs — keeping the value would cause infinite re-saves (value
+            // takes precedence → new resource → new id → repeat).
+            name: fs.name_id ? null : prev.name,
+            description_id: fs.description_id ?? prev.description_id,
+            description: fs.description_id ? null : prev.description,
+            active_flag_id: (fs as any).active_flag_id ?? prev.active_flag_id,
+            departmentIds: fs.department_ids ?? prev.departmentIds,
+            modelId: (fs as any).model_id ?? prev.modelId,
+            tool_ids: fs.tool_ids ?? prev.tool_ids,
+            reasoning_level_id:
+              (fs as any).reasoning_level_id ?? prev.reasoning_level_id,
+            temperature_level_id:
+              (fs as any).temperature_level_id ?? prev.temperature_level_id,
+            voice_ids: fs.voice_ids ?? prev.voice_ids,
+            quality_ids: (fs as any).quality_ids ?? prev.quality_ids,
+            rubric_ids: (fs as any).rubric_ids ?? prev.rubric_ids,
+            prompt_id: (fs as any).prompt_id ?? prev.prompt_id,
+            instructions_id:
+              (fs as any).instruction_id ?? prev.instructions_id,
+            pending_ids: (fs as any).pending_ids ?? prev.pending_ids,
+          };
+          // Only set the server-sync absorb flag when state actually changes.
+          // (Same fix as Persona / Parameter / Profile.)
+          const changed =
+            prev.name_id !== next.name_id ||
+            prev.name !== next.name ||
+            prev.description_id !== next.description_id ||
+            prev.description !== next.description ||
+            prev.active_flag_id !== next.active_flag_id ||
+            prev.modelId !== next.modelId ||
+            prev.reasoning_level_id !== next.reasoning_level_id ||
+            prev.temperature_level_id !== next.temperature_level_id ||
+            prev.prompt_id !== next.prompt_id ||
+            prev.instructions_id !== next.instructions_id ||
+            JSON.stringify(prev.departmentIds) !== JSON.stringify(next.departmentIds) ||
+            JSON.stringify(prev.tool_ids) !== JSON.stringify(next.tool_ids) ||
+            JSON.stringify(prev.voice_ids) !== JSON.stringify(next.voice_ids) ||
+            JSON.stringify(prev.quality_ids) !== JSON.stringify(next.quality_ids) ||
+            JSON.stringify(prev.rubric_ids) !== JSON.stringify(next.rubric_ids) ||
+            JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
+          if (!changed) return prev;
+          serverSyncPendingRef.current = true;
+          return next;
         });
       }
       return result;
@@ -702,10 +724,36 @@ export default function Agent({
     [draftState],
   );
 
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((nameId: string | null) => {
+    setDraftState((prev) => ({ ...prev, name_id: nameId, name: null }));
+  }, []);
+
+  const handleNameChange = useCallback((name: string | null) => {
+    setDraftState((prev) => ({ ...prev, name, name_id: null }));
+  }, []);
+
+  const handleDescriptionIdChange = useCallback((descriptionId: string | null) => {
+    setDraftState((prev) => ({
+      ...prev,
+      description_id: descriptionId,
+      description: null,
+    }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((description: string | null) => {
+    setDraftState((prev) => ({
+      ...prev,
+      description,
+      description_id: null,
+    }));
+  }, []);
+
   const {
     setUrlFormDataRef,
     onFormDataChange,
     flushAllAndSave,
+    serverSyncPendingRef,
     formDataRef,
   } = useDraftLifecycle({
     formStateKey: JSON.stringify(draftState),
@@ -1462,20 +1510,8 @@ export default function Agent({
                           name_suggestions={namesSection?.suggestions ?? []}
                           names={mergedNames}
                           disabled={isReadonly}
-                          onNameIdChange={(nameId: string | null) => {
-                            setDraftState((prev) => ({
-                              ...prev,
-                              name_id: nameId,
-                              name: null,
-                            }));
-                          }}
-                          onNameChange={(name: string | null) => {
-                            setDraftState((prev) => ({
-                              ...prev,
-                              name,
-                              name_id: null,
-                            }));
-                          }}
+                          onNameIdChange={handleNameIdChange}
+                          onNameChange={handleNameChange}
                           onGenerate={handleGenerateName}
                           placeholder="e.g., Customer Support Agent"
                           defaultName="New Agent"
@@ -1524,20 +1560,8 @@ export default function Agent({
                           }
                           descriptions={mergedDescriptions}
                           disabled={isReadonly}
-                          onDescriptionIdChange={(descriptionId: string | null) => {
-                            setDraftState((prev) => ({
-                              ...prev,
-                              description_id: descriptionId,
-                              description: null,
-                            }));
-                          }}
-                          onDescriptionChange={(description: string | null) => {
-                            setDraftState((prev) => ({
-                              ...prev,
-                              description,
-                              description_id: null,
-                            }));
-                          }}
+                          onDescriptionIdChange={handleDescriptionIdChange}
+                          onDescriptionChange={handleDescriptionChange}
                           searchTerm={descriptionSearch}
                           onSearchChange={(term: string) =>
                             setStepFormData({ descriptionSearch: term || null })

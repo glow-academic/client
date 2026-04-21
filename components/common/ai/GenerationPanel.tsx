@@ -193,8 +193,13 @@ export function GenerationPanel({
       return;
     }
 
-    // Only fetch on mount, group change, or generation completion
-    if (!justFinished && historicalMessages.length > 0) return;
+    // Clear stale state before fetching the new group's history.
+    // `historicalMessages` + `textContent` are keyed to the previous group and
+    // will otherwise bleed through until the new fetch resolves.
+    if (!justFinished) {
+      setHistoricalMessages([]);
+      setTextContent({});
+    }
 
     // Clear live messages when refetching (they'll be in history now)
     if (justFinished) {
@@ -615,19 +620,20 @@ export function GenerationPanel({
                 onChange={(e) => setInstructions(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Instructions..."
-                rows={2}
+                rows={1}
                 className="min-h-0 max-h-32 flex-1 resize-none overflow-y-auto text-sm"
               />
               <TooltipProvider>
                 <div className="flex flex-col gap-1 self-end shrink-0">
-                  {/* TODO: re-enable safe-mode toggle — button shown but onClick is a no-op; dangerousMode is hard-coded true */}
+                  {/* Dangerous-mode toggle hidden — safe mode not wired up, dangerousMode is hard-coded true.
+                      Restore this block when re-enabling the toggle:
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         size="icon"
                         variant="destructive"
                         className="h-9 w-9"
-                        onClick={() => { /* TODO: setDangerousMode((prev) => !prev) */ }}
+                        onClick={() => setDangerousMode((prev) => !prev)}
                       >
                         <ShieldAlert className="h-4 w-4" />
                       </Button>
@@ -636,6 +642,7 @@ export function GenerationPanel({
                       <p>Dangerous: executes immediately</p>
                     </TooltipContent>
                   </Tooltip>
+                  */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span tabIndex={0}>

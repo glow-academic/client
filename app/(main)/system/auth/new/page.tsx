@@ -183,7 +183,6 @@ export default async function AuthCreatePage({
         <FullPageLayout {...layoutProps}>
           <div className="space-y-6 px-4" data-page="auth-create">
             <Auth
-              key={q.draftId || "no-draft"}
               authData={authData}
               createAuthAction={createAuth}
               patchAuthDraftAction={patchAuthDraft}

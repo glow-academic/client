@@ -213,9 +213,14 @@ export function Flags(props: FlagsProps) {
         )}
       >
         {visibleFlags.map((flag) => {
-          // Resolve icon for this flag
+          // Icon is server-driven via flag.icon_id (SVG id). Fallback to Power
+          // only if the seed hasn't associated an icon for this flag type.
           const resolvedIcon = flag.icon_id ? (
-            <SvgIcon svg={flag.icon_id} className="h-3.5 w-3.5 text-muted-foreground" fallback={<Power className="h-3.5 w-3.5 text-muted-foreground" />} />
+            <SvgIcon
+              svg={flag.icon_id}
+              className="h-3.5 w-3.5 text-muted-foreground"
+              fallback={<Power className="h-3.5 w-3.5 text-muted-foreground" />}
+            />
           ) : (
             <Power className="h-3.5 w-3.5 text-muted-foreground" />
           );

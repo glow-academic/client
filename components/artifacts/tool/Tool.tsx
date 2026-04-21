@@ -385,16 +385,21 @@ function ToolComponent({
           serverSyncPendingRef.current = true;
           setFormState((prev) => ({
             ...prev,
-            name_id: fs.name_id ?? null,
-            name: fs.name ?? null,
-            description_id: fs.description_id ?? null,
-            description: fs.description ?? null,
-            active_flag_id: fs.active_flag_id ?? null,
-            args_ids: fs.arg_ids ?? [],
-            arg_position_ids: fs.arg_position_ids ?? [],
-            args_outputs_ids: fs.args_outputs_ids ?? fs.args_output_ids ?? [],
-            permission_ids: fs.permission_ids ?? [],
-            pending_ids: fs.pending_ids ?? [],
+            // Fall back to prev for ids/arrays so a server that omits a field
+            // doesn't wipe user's existing selection.
+            name_id: fs.name_id ?? prev.name_id,
+            // Clear value fields only once the server has resolved them to
+            // IDs — keeping the value would cause infinite re-saves (value
+            // takes precedence → new resource → new id → repeat).
+            name: fs.name_id ? null : prev.name,
+            description_id: fs.description_id ?? prev.description_id,
+            description: fs.description_id ? null : prev.description,
+            active_flag_id: fs.active_flag_id ?? prev.active_flag_id,
+            args_ids: fs.arg_ids ?? prev.args_ids,
+            arg_position_ids: fs.arg_position_ids ?? prev.arg_position_ids,
+            args_outputs_ids: fs.args_outputs_ids ?? fs.args_output_ids ?? prev.args_outputs_ids,
+            permission_ids: fs.permission_ids ?? prev.permission_ids,
+            pending_ids: fs.pending_ids ?? prev.pending_ids,
           }));
           requestAnimationFrame(() => {
             serverSyncPendingRef.current = false;
@@ -407,6 +412,39 @@ function ToolComponent({
 
     return () => clearTimeout(timer);
   }, [draftPatchKey, draftId, formState]);
+
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((id: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      name_id: id,
+      name: id ? null : prev.name,
+    }));
+  }, []);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      name,
+      name_id: null,
+    }));
+  }, []);
+
+  const handleDescriptionIdChange = useCallback((id: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      description_id: id,
+      description: id ? null : prev.description,
+    }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      description,
+      description_id: null,
+    }));
+  }, []);
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: ToolResourceType[]) => {
@@ -738,20 +776,8 @@ function ToolComponent({
                   show_name
                   names={s?.names ?? []}
                   disabled={disabled}
-                  onNameIdChange={(id) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      name_id: id,
-                      name: id ? null : prev.name,
-                    }))
-                  }
-                  onNameChange={(name) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      name,
-                      name_id: null,
-                    }))
-                  }
+                  onNameIdChange={handleNameIdChange}
+                  onNameChange={handleNameChange}
                 />
                 <Descriptions
                   description_id={formState.description_id}
@@ -759,20 +785,8 @@ function ToolComponent({
                   show_description
                   descriptions={s?.descriptions ?? []}
                   disabled={disabled}
-                  onDescriptionIdChange={(id) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description_id: id,
-                      description: id ? null : prev.description,
-                    }))
-                  }
-                  onDescriptionChange={(description) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description,
-                      description_id: null,
-                    }))
-                  }
+                  onDescriptionIdChange={handleDescriptionIdChange}
+                  onDescriptionChange={handleDescriptionChange}
                 />
                 <Flags
                   mode="single"

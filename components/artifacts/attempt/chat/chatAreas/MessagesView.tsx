@@ -584,7 +584,11 @@ export function MessagesView({
                   return (
                     <div key={message.id} className="space-y-2 mb-3">
                       {contents.map((contentEntry: ContentEntry, contentIndex: number) => {
-                        const displayName = contentEntry.name || (isQuery ? "You" : "Assistant");
+                        // Prefer persona name. Fallback labels kept only as
+                        // last resort (e.g. messages stored before a persona
+                        // was assigned to the attempt).
+                        const displayName =
+                          contentEntry.name || (isQuery ? "User" : "Assistant");
                         const displayColor = contentEntry.color;
                         const displayIcon = contentEntry.icon;
                         const contentText = contentEntry.content || "";
@@ -856,7 +860,12 @@ export function MessagesView({
                                       data-testid={`message-${message.id}-content-${contentIndex}`}
                                       data-message-type="assistant"
                                     >
-                                      {hasFeedbacks ? (
+                                      {!message.completed && !contentText ? (
+                                        // In-flight with no text yet — matches v1 pattern
+                                        <div className="flex items-center">
+                                          <LoadingDots />
+                                        </div>
+                                      ) : hasFeedbacks ? (
                                         <MessageContentAdapter
                                           content={contentText}
                                           feedbacks={feedbacks}

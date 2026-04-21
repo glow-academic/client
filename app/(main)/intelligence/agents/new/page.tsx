@@ -192,7 +192,6 @@ export default async function NewAgentPage({
             aria-label="Create new agent page"
           >
             <Agent
-              key={q.draftId || "no-draft"}
               agentDetailDefault={agentDetailDefault}
               createAgentAction={createAgent}
               patchAgentDraftAction={patchAgentDraft}

@@ -229,7 +229,6 @@ export default async function NewProviderPage({
             aria-label="Create new provider page"
           >
             <Provider
-              key={q.draftId || "no-draft"}
               providerData={providerDetailDefault}
               createProviderAction={createProvider}
               patchProviderDraftAction={patchProviderDraft}

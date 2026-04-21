@@ -784,7 +784,8 @@ export default function Personas({
     try {
       await deletePersonaAction({
         body: {
-          persona_ids: [deleteItem.id],
+          ids: [deleteItem.id],
+          accept: true,
         },
       });
       toast.success("Persona deleted successfully");
@@ -816,7 +817,8 @@ export default function Personas({
       const ids = deletablePersonas.map((p) => p.persona_id!);
       await deletePersonaAction({
         body: {
-          persona_ids: ids,
+          ids,
+          accept: true,
         },
       });
       toast.success(`${ids.length} persona(s) deleted successfully`);
@@ -905,7 +907,8 @@ export default function Personas({
     try {
       await duplicatePersonaAction({
         body: {
-          persona_id: personaId,
+          id: personaId,
+          accept: true,
         },
       });
       toast.success(`Persona "${personaName}" duplicated successfully`);

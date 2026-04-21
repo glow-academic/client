@@ -132,6 +132,10 @@ export function ModelRubrics({
   >(new Map());
   const [modelRubricIdsByModel, setModelRubricIdsByModel] =
     useState<Map<string, string>>(new Map());
+  // Dirty flag: only emit values upward after the user has actually selected;
+  // server-sync-driven state changes just re-baseline silently.
+  const isDirtyRef = useRef(false);
+  const isInitialMountRef = useRef(true);
   useEffect(() => {
     const nextRubrics = new Map<string, string | null>();
     const nextIds = new Map<string, string>();
@@ -182,10 +186,17 @@ export function ModelRubrics({
     }
   }, [modelRubricIdsByModel, model_ids]);
 
-  // Emit value callback for unified draft pattern
+  // Emit value callback for unified draft pattern. Only emit after user has
+  // actually selected — otherwise the initial sync and every server refresh
+  // would emit and trigger spurious saves.
   const onModelRubricValuesRef = useRef(onModelRubricValues);
   onModelRubricValuesRef.current = onModelRubricValues;
   useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    if (!isDirtyRef.current) return;
     if (!onModelRubricValuesRef.current) return;
     const values: Array<{ model_id: string; rubric_id: string }> = [];
     rubricIdByModel.forEach((rubricId, modelId) => {
@@ -198,6 +209,7 @@ export function ModelRubrics({
 
   const handleSelect = useCallback(
     (modelId: string, value: string) => {
+      isDirtyRef.current = true;
       const nextRubricId = value === NONE_OPTION ? null : value;
 
       setRubricIdByModel((prev) => {

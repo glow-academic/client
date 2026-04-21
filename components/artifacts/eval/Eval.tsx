@@ -509,28 +509,35 @@ function EvalComponent({
             serverFlagIds.find((flagId) => flagLookup.get(flagId) === key) ?? null;
 
           serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name: (serverFormState.name as string | null | undefined) ?? null,
-            name_id: (serverFormState.name_id as string | null | undefined) ?? prev.name_id,
-            description:
-              (serverFormState.description as string | null | undefined) ?? null,
-            description_id:
+          setFormState((prev) => {
+            const nextNameId =
+              (serverFormState.name_id as string | null | undefined) ?? prev.name_id;
+            const nextDescriptionId =
               (serverFormState.description_id as string | null | undefined) ??
-              prev.description_id,
-            active_flag_id: nextFlagId("active"),
-            dynamic_flag_id: nextFlagId("dynamic"),
-            groups_flag_id: nextFlagId("groups"),
-            department_ids:
-              (serverFormState.department_ids as string[] | null | undefined) ??
-              prev.department_ids,
-            model_ids:
-              (serverFormState.model_ids as string[] | null | undefined) ??
-              prev.model_ids,
-            pending_ids:
-              (serverFormState.pending_ids as string[] | null | undefined) ??
-              prev.pending_ids,
-          }));
+              prev.description_id;
+            return {
+              ...prev,
+              name_id: nextNameId,
+              // Clear value fields only once the server has resolved them to
+              // IDs — keeping the value would cause infinite re-saves (value
+              // takes precedence → new resource → new id → repeat).
+              name: nextNameId ? null : prev.name,
+              description_id: nextDescriptionId,
+              description: nextDescriptionId ? null : prev.description,
+              active_flag_id: nextFlagId("active"),
+              dynamic_flag_id: nextFlagId("dynamic"),
+              groups_flag_id: nextFlagId("groups"),
+              department_ids:
+                (serverFormState.department_ids as string[] | null | undefined) ??
+                prev.department_ids,
+              model_ids:
+                (serverFormState.model_ids as string[] | null | undefined) ??
+                prev.model_ids,
+              pending_ids:
+                (serverFormState.pending_ids as string[] | null | undefined) ??
+                prev.pending_ids,
+            };
+          });
           requestAnimationFrame(() => {
             serverSyncPendingRef.current = false;
           });
@@ -547,6 +554,27 @@ function EvalComponent({
 
     return () => clearTimeout(timer);
   }, [draftPatchKey, draftId, formState, s]);
+
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((nameId: string | null) => {
+    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }));
+  }, []);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({ ...prev, name }));
+  }, []);
+
+  const handleDescriptionIdChange = useCallback((descriptionId: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      description_id: descriptionId,
+      description: null,
+    }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({ ...prev, description }));
+  }, []);
 
   // Readonly logic using server-provided can_edit flag
   const disabled = useMemo(() => {
@@ -902,12 +930,8 @@ function EvalComponent({
                   show_name={true}
                   names={s?.names ?? []}
                   disabled={disabled}
-                  onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
-                  }
-                  onNameChange={(name) =>
-                    setFormState((prev) => ({ ...prev, name }))
-                  }
+                  onNameIdChange={handleNameIdChange}
+                  onNameChange={handleNameChange}
                   required={true}
                   placeholder="Eval name"
                   defaultName="New Eval"
@@ -941,16 +965,8 @@ function EvalComponent({
                   show_description={true}
                   descriptions={s?.descriptions ?? []}
                   disabled={disabled}
-                  onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description_id: descriptionId,
-                      description: null,
-                    }))
-                  }
-                  onDescriptionChange={(description) =>
-                    setFormState((prev) => ({ ...prev, description }))
-                  }
+                  onDescriptionIdChange={handleDescriptionIdChange}
+                  onDescriptionChange={handleDescriptionChange}
                   required={false}
                 />
 

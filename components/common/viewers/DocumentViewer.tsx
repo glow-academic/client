@@ -228,19 +228,25 @@ export default function DocumentViewer({
         );
       }
 
-      // Everyone else: keep iframe
+      // Everyone else: iframe preview with an "Open PDF" affordance
+      // below it (matches v1). The iframe's embedded toolbar varies by
+      // browser/extension, so the button guarantees users can always
+      // pop the PDF into a real tab (downloads, search, print, etc.).
       return (
-        <div className="w-full h-full min-h-[400px]">
+        <div className="w-full h-full min-h-[400px] flex flex-col">
           <iframe
             src={`${content}#view=FitH&toolbar=1&navpanes=0&scrollbar=1`}
             title={document.name ?? ""}
-            className="w-full h-full border-0 rounded-md"
-            style={{
-              minHeight: "500px",
-              width: "100%",
-              height: "100%",
-            }}
+            className="flex-1 w-full border-0 rounded-md"
+            style={{ minHeight: "500px" }}
           />
+          <div className="pt-2">
+            <Button asChild variant="default" size="sm" className="w-full">
+              <a href={content ?? ""} target="_blank" rel="noopener noreferrer">
+                Open PDF
+              </a>
+            </Button>
+          </div>
         </div>
       );
     }

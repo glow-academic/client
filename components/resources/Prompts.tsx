@@ -215,6 +215,9 @@ export function Prompts({
   const [theme, setTheme] = useState<"vs-dark" | "light">("vs-dark");
   const lastSavedContentRef = useRef<string>(resource?.system_prompt || "");
   const isInitialMountRef = useRef(true);
+  // Dirty flag: once the user interacts, stop syncing from server data so
+  // their in-progress edits aren't clobbered (same pattern as Descriptions.tsx).
+  const isDirtyRef = useRef(false);
 
   // Detect dark mode for Monaco editor
   useEffect(() => {
@@ -229,13 +232,14 @@ export function Prompts({
     }
   }, []);
 
-  // Update prompt content when resource or resourceId changes
+  // Update prompt content when resource or resourceId changes. Skip while the
+  // user is editing so their in-progress prompt isn't clobbered.
   useEffect(() => {
+    if (isDirtyRef.current) return;
     if (resource?.system_prompt !== undefined) {
       setPromptContent(resource.system_prompt || "");
       lastSavedContentRef.current = resource.system_prompt || "";
     } else if (resourceId && prompts) {
-      // Find prompt by ID and load its content
       const selectedPrompt = prompts.find((p) => p.id === resourceId);
       if (selectedPrompt?.system_prompt !== undefined) {
         setPromptContent(selectedPrompt.system_prompt || "");
@@ -244,13 +248,17 @@ export function Prompts({
     }
   }, [resource?.system_prompt, resourceId, prompts]);
 
-  // Report prompt changes to parent form state (parent's draft autosave handles persistence)
+  // Report prompt changes upward. Only emit after the user has actually
+  // interacted — otherwise the initial sync effect would emit on mount and
+  // trigger a spurious save.
   useEffect(() => {
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
       lastSavedContentRef.current = promptContent;
       return;
     }
+
+    if (!isDirtyRef.current) return;
 
     if (promptContent === lastSavedContentRef.current) {
       return;
@@ -281,11 +289,15 @@ export function Prompts({
         lastSavedContentRef.current = selectedPrompt.system_prompt || "";
       }
     }
+    // Picker selection is a fresh server-sourced state — reset dirty so the
+    // sync effect can keep in step with future prop changes.
+    isDirtyRef.current = false;
     onPromptIdChange(selectedPromptId);
   };
 
   const handlePromptContentChange = useCallback(
     (value: string) => {
+      isDirtyRef.current = true;
       setPromptContent(value);
       // Clear prompt_id when editing, indicating new prompt
       if (resourceId) {

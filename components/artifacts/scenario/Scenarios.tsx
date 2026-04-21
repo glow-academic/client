@@ -588,7 +588,7 @@ export function Scenarios({
 
     setIsDeleting(true);
     try {
-      await deleteScenarioAction({ body: { scenario_ids: [deleteItem.id] } });
+      await deleteScenarioAction({ body: { scenario_ids: [deleteItem.id], accept: true } });
       toast.success("Scenario deleted successfully");
       router.refresh();
     } catch (err) {
@@ -611,7 +611,7 @@ export function Scenarios({
     setIsBulkDeleting(true);
     try {
       const ids = deletableScenarios.map((s) => s.scenario_id!);
-      await deleteScenarioAction({ body: { scenario_ids: ids } });
+      await deleteScenarioAction({ body: { scenario_ids: ids, accept: true } });
       toast.success(`${ids.length} scenario(s) deleted successfully`);
       clearSelection();
       router.refresh();
@@ -682,7 +682,7 @@ export function Scenarios({
 
     setIsDuplicating(scenarioId);
     try {
-      await duplicateScenarioAction({ body: { scenario_id: scenarioId } });
+      await duplicateScenarioAction({ body: { scenario_id: scenarioId, accept: true } });
       toast.success(`Scenario "${scenarioName}" duplicated successfully`);
       router.refresh();
     } catch (err) {

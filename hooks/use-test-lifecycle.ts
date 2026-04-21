@@ -4,19 +4,19 @@ import type { ServerToClientEvents } from "@/lib/ws/types";
 
 // Re-export event types for consumer convenience
 export type TestStartedEvent =
-  Parameters<ServerToClientEvents["test_started"]>[0];
+  Parameters<ServerToClientEvents["test.start.completed"]>[0];
 export type TestRunStartEvent =
   Parameters<ServerToClientEvents["test_run_start"]>[0];
 export type TestRunCompleteEvent =
-  Parameters<ServerToClientEvents["test_run_complete"]>[0];
+  Parameters<ServerToClientEvents["test.run.completed"]>[0];
 export type TestGradedEvent =
   Parameters<ServerToClientEvents["test_graded"]>[0];
 export type TestAllCompleteEvent =
   Parameters<ServerToClientEvents["test_all_complete"]>[0];
 export type TestStoppedEvent =
-  Parameters<ServerToClientEvents["test_stopped"]>[0];
+  Parameters<ServerToClientEvents["test.stop.completed"]>[0];
 export type TestErrorEvent =
-  Parameters<ServerToClientEvents["test_error"]>[0];
+  Parameters<ServerToClientEvents["test.run.error"]>[0];
 
 interface UseTestLifecycleConfig {
   socket: AppSocket | null;
@@ -109,22 +109,39 @@ export function useTestLifecycle({
       callbacksRef.current.onError?.(data);
     };
 
-    socket.on("test_started", handleStarted);
+    socket.on("test.start.completed", handleStarted);
     socket.on("test_run_start", handleRunStart);
-    socket.on("test_run_complete", handleRunComplete);
+    socket.on("test.run.completed", handleRunComplete);
     socket.on("test_graded", handleGraded);
     socket.on("test_all_complete", handleAllComplete);
-    socket.on("test_stopped", handleStopped);
-    socket.on("test_error", handleError);
+    socket.on("test.stop.completed", handleStopped);
+    // Subscribe to every per-operation error — server-side errors are now scoped.
+    socket.on("test.start.error", handleError);
+    socket.on("test.stop.error", handleError);
+    socket.on("test.end.error", handleError);
+    socket.on("test.end_all.error", handleError);
+    socket.on("test.join.error", handleError);
+    socket.on("test.next.error", handleError);
+    socket.on("test.run.error", handleError);
+    socket.on("test.group.error", handleError);
+    socket.on("test.proceed.error", handleError);
 
     return () => {
-      socket.off("test_started", handleStarted);
+      socket.off("test.start.completed", handleStarted);
       socket.off("test_run_start", handleRunStart);
-      socket.off("test_run_complete", handleRunComplete);
+      socket.off("test.run.completed", handleRunComplete);
       socket.off("test_graded", handleGraded);
       socket.off("test_all_complete", handleAllComplete);
-      socket.off("test_stopped", handleStopped);
-      socket.off("test_error", handleError);
+      socket.off("test.stop.completed", handleStopped);
+      socket.off("test.start.error", handleError);
+      socket.off("test.stop.error", handleError);
+      socket.off("test.end.error", handleError);
+      socket.off("test.end_all.error", handleError);
+      socket.off("test.join.error", handleError);
+      socket.off("test.next.error", handleError);
+      socket.off("test.run.error", handleError);
+      socket.off("test.group.error", handleError);
+      socket.off("test.proceed.error", handleError);
     };
   }, [socket, invocationId]);
 

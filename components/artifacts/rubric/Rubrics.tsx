@@ -450,9 +450,7 @@ export default function Rubrics({
     setIsDeleting(true);
     try {
       await deleteRubricAction({
-        body: {
-          rubric_id: deleteItem.id,
-        },
+        body: { rubric_ids: [deleteItem.id], accept: true },
       });
       toast.success("Rubric deleted successfully");
       router.refresh();
@@ -479,9 +477,7 @@ export default function Rubrics({
     setIsDuplicating(rubric.rubric_id ?? null);
     try {
       await duplicateRubricAction({
-        body: {
-          rubric_id: rubric.rubric_id ?? "",
-        },
+        body: { rubric_id: rubric.rubric_id ?? "", accept: true },
       });
       toast.success(`Rubric "${rubric.name}" duplicated successfully`);
       router.refresh();

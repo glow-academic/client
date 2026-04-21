@@ -98,6 +98,12 @@ export function ArgsOutputs({
   const [outputNames, setOutputNames] = useState<Record<string, string>>({});
   const lastSavedNamesRef = useRef<Record<string, string>>({});
   const isNameInitialMountRef = useRef(true);
+  // Dirty flags: once the user edits, stop syncing from server so in-progress
+  // text isn't clobbered (same pattern as Descriptions.tsx). Names and
+  // templates track independently so a single field edit doesn't freeze the
+  // other sync paths.
+  const isNameDirtyRef = useRef(false);
+  const isTemplateDirtyRef = useRef(false);
 
   // Initialize output names from props
   useEffect(() => {
@@ -112,8 +118,9 @@ export function ArgsOutputs({
     }
   }, [output_args_outputs]);
 
-  // Sync output names when props change
+  // Sync output names when props change. Skip while the user is editing names.
   useEffect(() => {
+    if (isNameDirtyRef.current) return;
     const newNames: Record<string, string> = {};
     let hasChanges = false;
     output_args_outputs.forEach((output) => {
@@ -151,8 +158,9 @@ export function ArgsOutputs({
     }
   }, [output_args_outputs]);
 
-  // Sync output templates when props change
+  // Sync output templates when props change. Skip while user edits templates.
   useEffect(() => {
+    if (isTemplateDirtyRef.current) return;
     const newTemplates: Record<string, string> = {};
     let hasChanges = false;
     output_args_outputs.forEach((output) => {
@@ -174,6 +182,7 @@ export function ArgsOutputs({
   // Handle output name change
   const handleOutputNameChange = useCallback(
     (outputId: string, name: string) => {
+      isNameDirtyRef.current = true;
       setOutputNames((prev) => ({
         ...prev,
         [outputId]: name,
@@ -185,6 +194,7 @@ export function ArgsOutputs({
   // Handle output template change
   const handleOutputTemplateChange = useCallback(
     (outputId: string, template: string) => {
+      isTemplateDirtyRef.current = true;
       setOutputTemplates((prev) => ({
         ...prev,
         [outputId]: template,

@@ -2351,8 +2351,8 @@ export default function Profiles({
                     }
                     await deleteProfileAction({
                       body: {
-                        target_profile_id: deleteProfileMember.profile_id,
-                        current_profile_id: profile.id,
+                        profile_ids: [deleteProfileMember.profile_id],
+                        accept: true,
                       },
                     });
                     router.refresh();

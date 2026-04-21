@@ -168,10 +168,13 @@ export default async function AttemptPage({
               attemptId={attemptId}
               currentChatId={attemptData.current_chat_id}
               hasMessages={attemptData.has_messages ?? false}
-              isQuizMode={Boolean(
-                attemptData.chats?.find(
-                  (c) => c.id === attemptData.current_chat_id,
-                )?.question_ids?.length,
+              isStructuredMode={Boolean(
+                (() => {
+                  const chat = attemptData.entries?.attempt_chat?.find(
+                    (c) => c.id === attemptData.current_chat_id,
+                  );
+                  return chat?.question_ids?.length || chat?.video_ids?.length;
+                })(),
               )}
             />
           ) : undefined

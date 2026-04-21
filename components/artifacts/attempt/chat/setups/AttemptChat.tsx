@@ -157,7 +157,7 @@ export function AttemptChat({
 
   // Attempt message streaming hook
   const handleUserCompleteVoiceCleanup = useCallback(
-    (data: Parameters<import("@/lib/ws/types").ServerToClientEvents["attempt_user_complete"]>[0]) => {
+    (data: Parameters<import("@/lib/ws/types").ServerToClientEvents["attempt.message.user.completed"]>[0]) => {
       // Clean up voice optimistic messages matching this user message
       setOptimisticMessages((prev) => {
         const newMap = new Map(prev);
@@ -168,9 +168,12 @@ export function AttemptChat({
           matchedOptimisticId = itemIdToOptimisticIdRef.current.get(data.item_id) ?? null;
         }
 
-        // Fallback: content matching for backwards compat (text flow or missing item_id)
-        if (!matchedOptimisticId) {
-          const normalizedContent = data.content.trim().toLowerCase();
+        // Fallback: content matching for backwards compat (text flow or missing item_id).
+        // Audit ``chat_message.completed`` carries {success, chat_id, message_id,
+        // content_ids} — no raw ``content`` field — so guard the lookup.
+        const rawContent = (data as { content?: unknown }).content;
+        if (!matchedOptimisticId && typeof rawContent === "string") {
+          const normalizedContent = rawContent.trim().toLowerCase();
 
           for (const [tempId, optMsg] of newMap.entries()) {
             if (
@@ -246,6 +249,12 @@ export function AttemptChat({
     transport,
     chatIdRef: currentChatIdRef,
     personas: attemptData?.resources?.personas,
+    userPersonaId: attemptData?.attempt?.user_persona_id ?? null,
+    // Inline lookup — ``currentChat`` useMemo is declared below this block
+    // (temporal dead zone), but we only need its persona_ids here.
+    assistantPersonaIds:
+      (attemptData?.entries?.attempt_chat?.[currentChatIndex] ??
+        attemptData?.entries?.attempt_chat?.[0])?.persona_ids ?? null,
     onRefresh: useCallback(() => router.refresh(), [router]),
     onUserComplete: handleUserCompleteVoiceCleanup,
   });

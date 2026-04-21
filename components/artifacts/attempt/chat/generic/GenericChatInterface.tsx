@@ -17,7 +17,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import React from "react";
 
@@ -169,10 +168,15 @@ export function GenericChatInterface({
                     <ChatArea {...(chat_area_props as any)} />
                   </div>
                 ) : (
-                  <ScrollArea className="flex-1 px-1 min-h-0 relative z-10">
+                  // MessagesView owns its own ScrollArea + scroll-to-bottom
+                  // affordance. Wrapping it in another ScrollArea here would
+                  // swallow the inner viewport's overflow (scrollHeight ===
+                  // clientHeight from the inner ref's perspective) and hide
+                  // the scroll-down button permanently.
+                  <div className="flex-1 px-1 min-h-0 relative z-10 flex flex-col">
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     <ChatArea {...(chat_area_props as any)} />
-                  </ScrollArea>
+                  </div>
                 )}
               </div>
 

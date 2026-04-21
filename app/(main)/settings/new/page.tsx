@@ -192,7 +192,6 @@ export default async function NewSettingPage({
             aria-label="Create new settings page"
           >
             <Setting
-              key={q.draftId || "no-draft"}
               settingData={settingDetailDefault}
               createSettingAction={createSetting}
               patchSettingDraftAction={patchSettingDraft}

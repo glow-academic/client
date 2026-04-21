@@ -177,30 +177,43 @@ export default function Provider({
         | undefined;
       if (fs) {
         serverSyncPendingRef.current = true;
-        setFormState((prev) => ({
-          ...prev,
-          name_id: (fs["name_id"] as string | null) ?? null,
-          name: (fs["name"] as string | null) ?? null,
-          description_id: (fs["description_id"] as string | null) ?? null,
-          description: (fs["description"] as string | null) ?? null,
-          active_flag_id:
-            ((fs["active_flag_id"] as string | null) ??
-              (fs["flag_id"] as string | null)) ??
-            null,
-          department_ids: (fs["department_ids"] as string[] | null) ?? [],
-          value_id: (fs["value_id"] as string | null) ?? null,
-          value: (fs["value"] as string | null) ?? null,
-          endpoint_id:
-            ((fs["endpoint_id"] as string | null) ??
-              ((fs["endpoint_ids"] as string[] | null)?.[0] ?? null)) ??
-            null,
-          endpoint: (fs["endpoint"] as string | null) ?? null,
-          key_id:
-            ((fs["key_id"] as string | null) ??
-              ((fs["key_ids"] as string[] | null)?.[0] ?? null)) ??
-            null,
-          pending_ids: (fs["pending_ids"] as string[] | null) ?? [],
-        }));
+        setFormState((prev) => {
+          const nextNameId = (fs["name_id"] as string | null) ?? prev.name_id;
+          const nextDescriptionId =
+            (fs["description_id"] as string | null) ?? prev.description_id;
+          const nextValueId = (fs["value_id"] as string | null) ?? prev.value_id;
+          const nextEndpointId =
+            (fs["endpoint_id"] as string | null) ??
+            (fs["endpoint_ids"] as string[] | null)?.[0] ??
+            prev.endpoint_id;
+          const nextKeyId =
+            (fs["key_id"] as string | null) ??
+            (fs["key_ids"] as string[] | null)?.[0] ??
+            prev.key_id;
+          return {
+            ...prev,
+            name_id: nextNameId,
+            // Clear value fields only once the server has resolved them to
+            // IDs — keeping the value would cause infinite re-saves (value
+            // takes precedence → new resource → new id → repeat).
+            name: nextNameId ? null : prev.name,
+            description_id: nextDescriptionId,
+            description: nextDescriptionId ? null : prev.description,
+            active_flag_id:
+              (fs["active_flag_id"] as string | null) ??
+              (fs["flag_id"] as string | null) ??
+              prev.active_flag_id,
+            department_ids:
+              (fs["department_ids"] as string[] | null) ?? prev.department_ids,
+            value_id: nextValueId,
+            value: nextValueId ? null : prev.value,
+            endpoint_id: nextEndpointId,
+            endpoint: nextEndpointId ? null : prev.endpoint,
+            key_id: nextKeyId,
+            pending_ids:
+              (fs["pending_ids"] as string[] | null) ?? prev.pending_ids,
+          };
+        });
         requestAnimationFrame(() => {
           serverSyncPendingRef.current = false;
         });
@@ -255,6 +268,40 @@ export default function Provider({
     !!formState.value ||
     !!formState.endpoint ||
     formState.pending_ids.length > 0;
+
+  // --- Stable value-change handlers (extracted from inline arrows) ---
+  const handleNameIdChange = useCallback((id: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      name_id: id,
+      name: null,
+      pending_ids: prev.pending_ids.filter((pendingId) => pendingId !== prev.name_id),
+    }));
+  }, []);
+
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      name_id: null,
+      name,
+    }));
+  }, []);
+
+  const handleDescriptionIdChange = useCallback((id: string | null) => {
+    setFormState((prev) => ({
+      ...prev,
+      description_id: id,
+      description: null,
+    }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      description_id: null,
+      description,
+    }));
+  }, []);
 
   const {
     setUrlFormDataRef,
@@ -485,21 +532,8 @@ export default function Provider({
               show_name={true}
               names={s?.names ?? []}
               disabled={disabled}
-              onNameIdChange={(id) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  name_id: id,
-                  name: null,
-                  pending_ids: prev.pending_ids.filter((pendingId) => pendingId !== prev.name_id),
-                }))
-              }
-              onNameChange={(name) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  name_id: null,
-                  name,
-                }))
-              }
+              onNameIdChange={handleNameIdChange}
+              onNameChange={handleNameChange}
               defaultName="New Provider"
               hideDescription={true}
               required={true}
@@ -512,20 +546,8 @@ export default function Provider({
               show_description={true}
               descriptions={s?.descriptions ?? []}
               disabled={disabled}
-              onDescriptionIdChange={(id) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  description_id: id,
-                  description: null,
-                }))
-              }
-              onDescriptionChange={(description) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  description_id: null,
-                  description,
-                }))
-              }
+              onDescriptionIdChange={handleDescriptionIdChange}
+              onDescriptionChange={handleDescriptionChange}
               required={false}
             />
             <Flags

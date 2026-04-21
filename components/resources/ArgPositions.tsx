@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { ArrowDown, ArrowUp, Check, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface ArgPositionResourceItem {
   id?: string | null;
@@ -50,6 +50,10 @@ export function ArgPositions({
 }: ArgPositionsProps) {
 
   const [orderedArgs, setOrderedArgs] = useState<string[]>(args_ids);
+  // Dirty flag: once the user moves an arg, stop syncing from server so
+  // in-progress reordering isn't clobbered (same pattern as Examples.tsx).
+  const isDirtyRef = useRef(false);
+  const isInitialMountRef = useRef(true);
   const [positionIdsByArg, setPositionIdsByArg] = useState<Map<string, string>>(
     new Map()
   );
@@ -82,6 +86,7 @@ export function ArgPositions({
 
   // Reject pending — remove pending items from the ordered list and position IDs
   const handleReject = useCallback(() => {
+    isDirtyRef.current = true;
     const newOrdered = orderedArgs.filter((argId) => !pendingArgsIds.has(argId));
     setOrderedArgs(newOrdered);
     onOrderChange?.(newOrdered);
@@ -93,7 +98,9 @@ export function ArgPositions({
     }
   }, [orderedArgs, pendingArgsIds, onOrderChange, onPositionIdsChange, positionIdsByArg]);
 
+  // Sync from server — skip while user is reordering.
   useEffect(() => {
+    if (isDirtyRef.current) return;
     const valueByArg = new Map<string, number>();
     const idByArg = new Map<string, string>();
 
@@ -119,11 +126,20 @@ export function ArgPositions({
     setPositionIdsByArg(idByArg);
   }, [args_ids, arg_position_resources]);
 
+  // Emit order changes upward. Only emit after initial mount and when the
+  // user has actually reordered — otherwise the sync effect above would emit
+  // on every prop change and trigger spurious saves.
   useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    if (!isDirtyRef.current) return;
     onOrderChange?.(orderedArgs);
   }, [orderedArgs, onOrderChange]);
 
   useEffect(() => {
+    if (!isDirtyRef.current) return;
     if (!onPositionIdsChange) return;
     const ids = orderedArgs
       .map((argId) => positionIdsByArg.get(argId))
@@ -135,6 +151,7 @@ export function ArgPositions({
     const target = index + direction;
     if (target < 0 || target >= orderedArgs.length) return;
 
+    isDirtyRef.current = true;
     const next = [...orderedArgs];
     const tmp = next[index];
     next[index] = next[target]!;

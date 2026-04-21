@@ -79,6 +79,9 @@ export function Values({
   const [internalValue, setInternalValue] = useState(initialValue);
 
   const lastSavedValueRef = useRef<string>(initialValue);
+  // Dirty flag: once the user interacts, stop syncing from server data so
+  // their in-progress edits aren't clobbered (same pattern as Descriptions.tsx).
+  const isDirtyRef = useRef(false);
 
   // Derive suggestion value strings from values with suggested=true
   const suggestionValues = useMemo(() => {
@@ -101,8 +104,10 @@ export function Values({
 
   const ghostSuffix = ghostMatch ? ghostMatch.slice(internalValue.length) : "";
 
-  // Update internal value when resource changes
+  // Update internal value when resource changes. Skip while the user is
+  // actively editing so their in-progress input isn't clobbered.
   useEffect(() => {
+    if (isDirtyRef.current) return;
     if (value != null) {
       if (internalValue !== value) {
         setInternalValue(value);
@@ -122,6 +127,7 @@ export function Values({
   const handleChange = useCallback(
     (newValue: string) => {
       setInternalValue(newValue);
+      isDirtyRef.current = newValue !== lastSavedValueRef.current;
       onValueChange?.(newValue);
     },
     [onValueChange]
@@ -133,6 +139,8 @@ export function Values({
         e.preventDefault();
         const nextValue = ghostMatch!;
         setInternalValue(nextValue);
+        lastSavedValueRef.current = nextValue;
+        isDirtyRef.current = false;
         const matchedResource = valuesArray.find(
           (item) => item.value?.toLowerCase() === nextValue.toLowerCase()
         );

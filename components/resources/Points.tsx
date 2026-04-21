@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface PointsResourceItem {
   id?: string | null;
@@ -107,8 +107,12 @@ export function Points({
 
   const [internalValue, setInternalValue] = useState(resolvedValue);
   const debounceTimerRef = useMemo(() => ({ current: null as NodeJS.Timeout | null }), []);
+  // Dirty flag: once the user types, stop syncing from server data so their
+  // in-progress value isn't clobbered (same pattern as Descriptions.tsx).
+  const isDirtyRef = useRef(false);
 
   useEffect(() => {
+    if (isDirtyRef.current) return;
     if (resolvedValue !== internalValue) {
       setInternalValue(resolvedValue);
     }
@@ -126,6 +130,9 @@ export function Points({
 
   const handleSelect = useCallback(
     (selectedId: string) => {
+      // Picker selection is a fresh server-sourced baseline — reset dirty so
+      // future prop updates can sync in.
+      isDirtyRef.current = false;
       if (selectedId === resourceId) {
         onPointsIdChange(null);
         setInternalValue("");
@@ -142,6 +149,7 @@ export function Points({
 
   const handleInputChange = useCallback(
     (value: string) => {
+      isDirtyRef.current = true;
       setInternalValue(value);
 
       if (debounceTimerRef.current) {

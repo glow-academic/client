@@ -169,7 +169,6 @@ export default async function NewDepartmentPage({
             aria-label="Create new department page"
           >
             <Department
-              key={q.draftId || "no-draft"}
               departmentData={departmentDetailDefault}
               createDepartmentAction={createDepartment}
               patchDepartmentDraftAction={patchDepartmentDraft}

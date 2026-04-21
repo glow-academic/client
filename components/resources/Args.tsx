@@ -71,6 +71,9 @@ export function Args({
     {}
   );
   const isInitialMountRef = useRef(true);
+  // Dirty flag: once the user edits a field, stop syncing from server so
+  // in-progress field edits aren't clobbered (same pattern as Descriptions.tsx).
+  const isDirtyRef = useRef(false);
 
   // Pending state: items with pending=true from soft draft connections
   const pendingItems = useMemo(() => {
@@ -101,13 +104,14 @@ export function Args({
     }
   }, [input_args_fields]);
 
-  // Sync field values when props change
+  // Sync field values when props change. Skip while the user is editing so
+  // in-progress text isn't clobbered.
   useEffect(() => {
+    if (isDirtyRef.current) return;
     const newValues: Record<string, Partial<ArgsFieldDetail>> = {};
     let hasChanges = false;
     input_args_fields.forEach((field) => {
       const currentValue = lastSavedValuesRef.current[field.args_id];
-      // Only update if prop value differs from last saved value
       if (
         !currentValue ||
         currentValue.name !== field.name ||
@@ -141,6 +145,7 @@ export function Args({
       key: keyof ArgsFieldDetail,
       value: string | number | boolean
     ) => {
+      isDirtyRef.current = true;
       setFieldValues((prev) => ({
         ...prev,
         [fieldId]: {

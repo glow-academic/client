@@ -6,21 +6,21 @@ import type { components } from "@/lib/api/schema";
 type MessageData = components["schemas"]["MessageData"];
 type PersonaEntry = components["schemas"]["PersonaEntry"];
 
-// Event payload types — loosely typed to match Transport's Record<string, unknown>
-type AttemptAssistantStartEvent = Record<string, unknown>;
-type AttemptAssistantDeltaEvent = Record<string, unknown>;
-type AttemptAssistantCompleteEvent = Record<string, unknown>;
-type AttemptUserCompleteEvent = Record<string, unknown>;
-type AttemptCompleteEvent = Record<string, unknown>;
-type AttemptStoppedEvent = Record<string, unknown>;
-type AttemptErrorEvent = Record<string, unknown>;
+// Server payloads are loosely typed — the transport delivers Record<string, unknown>.
+type AnyEventData = Record<string, unknown>;
 
 interface UseAttemptMessagesConfig {
   transport: Transport;
   chatIdRef: React.RefObject<string | null>;
   personas: Record<string, PersonaEntry> | undefined;
+  /** The user's persona for this attempt — applied to optimistic user messages. */
+  userPersonaId?: string | null;
+  /** Assistant personas active in this chat. If there's exactly one, the
+   *  streaming optimistic assistant message adopts it immediately; if
+   *  multiple, it stays generic until args.persona_id parses in. */
+  assistantPersonaIds?: string[] | null;
   onRefresh: () => void;
-  onUserComplete?: (data: AttemptUserCompleteEvent) => void;
+  onUserComplete?: (data: AnyEventData) => void;
 }
 
 interface UseAttemptMessagesResult {
@@ -47,23 +47,44 @@ interface UseAttemptMessagesResult {
   ) => void;
 }
 
+/**
+ * Attempt messages hook.
+ *
+ * Subscribes to the narrow set of per-operation events that describe a chat
+ * message's lifecycle — the same channel works for text, audio, and realtime
+ * because every flow ends in the same `Attempt_Chat_Message` tool call.
+ *
+ *   attempt.chat_message.progress  — AI streaming tool-call args (the text)
+ *   attempt.chat_message.completed — message persisted to DB
+ *   attempt.chat_message.failed    — persist failed
+ *   attempt.generate.completed     — whole generation done (clear isSending)
+ *   attempt.generate.failed        — generation errored
+ *   attempt.stop.completed         — user stopped (clear isSending/isStopping)
+ */
 export function useAttemptMessages({
   transport,
   chatIdRef,
   personas,
+  userPersonaId,
+  assistantPersonaIds,
   onRefresh,
   onUserComplete,
 }: UseAttemptMessagesConfig): UseAttemptMessagesResult {
-  const [streamingContent, setStreamingContent] = useState<
-    Map<string, string>
-  >(new Map());
+  const userPersona =
+    userPersonaId && personas ? personas[userPersonaId] ?? null : null;
+  const defaultAssistantPersona =
+    assistantPersonaIds && assistantPersonaIds.length === 1 && personas
+      ? personas[assistantPersonaIds[0]] ?? null
+      : null;
+  const [streamingContent, setStreamingContent] = useState<Map<string, string>>(
+    new Map(),
+  );
   const [optimisticMessages, setOptimisticMessages] = useState<
     Map<string, MessageData>
   >(new Map());
   const [isSending, setIsSending] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const activeGroupIdRef = useRef<string | null>(null);
-
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const clearStreamingState = useCallback(() => {
@@ -71,263 +92,232 @@ export function useAttemptMessages({
     setOptimisticMessages(new Map());
   }, []);
 
+  const scheduleRefresh = useCallback(() => {
+    if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+    refreshTimeoutRef.current = setTimeout(() => {
+      onRefresh();
+      refreshTimeoutRef.current = null;
+    }, 500);
+  }, [onRefresh]);
+
   useEffect(() => {
-    const handleAssistantStart = (data: AttemptAssistantStartEvent) => {
-      if (data.chat_id !== chatIdRef.current) return;
+    // Streaming args for Attempt_Chat_Message — build up the optimistic
+    // assistant message as the AI writes the `text` argument. The server
+    // unpacks parsed args to top-level, so `data.text` / `data.persona_id`
+    // are available directly (as well as under `data.arguments`).
+    const handleChatMessageProgress = (data: AnyEventData) => {
+      const chatId = data.chat_id as string | undefined;
+      if (chatId && chatId !== chatIdRef.current) return;
+
+      // ``call_id`` is the server's pre-minted DB row id — the unified
+      // handle carried by streaming progress AND audit .started/.completed.
+      // Keying the optimistic bubble by call_id means the bubble naturally
+      // dedups: on .completed we swap the key from call_id to message_id,
+      // and the refetched real message shares that same message_id.
+      const callId = data.call_id as string | undefined;
+      if (!callId) return;
+      const args = (data.arguments as Record<string, unknown> | null) ?? {};
+      const text = ((data.text ?? args.text) as string | undefined) ?? "";
+      // Don't early-return on empty text — the UI shows a LoadingDots
+      // placeholder bubble (with persona card) while the AI is still
+      // streaming args before the `text` field appears.
+
+      // Persona resolution order:
+      //   1. Streamed args.persona_id (most specific)
+      //   2. Previously-resolved persona on the existing optimistic entry
+      //   3. Default assistant persona (if this chat has exactly one)
+      //   4. null → generic fallback in UI
+      const streamedPersonaId = (data.persona_id ?? args.persona_id) as
+        | string
+        | undefined;
+      const streamedPersona =
+        streamedPersonaId && personas ? personas[streamedPersonaId] : null;
 
       setIsSending(true);
-
-      setOptimisticMessages((prev) => {
-        const newMap = new Map(prev);
-        newMap.set(data.message_id as string, {
-          id: data.message_id as string,
-          type: "response",
-          created_at: data.created_at as string,
-          completed: false,
-          contents: [{ content: "" }],
-        });
-        return newMap;
+      setStreamingContent((prev) => {
+        const next = new Map(prev);
+        next.set(callId, text);
+        return next;
       });
-    };
-
-    const handleAssistantDelta = (data: AttemptAssistantDeltaEvent) => {
-      if (
-        data.chat_id === chatIdRef.current &&
-        data.content !== undefined
-      ) {
-        setStreamingContent((prev) => {
-          const newMap = new Map(prev);
-          newMap.set(data.message_id as string, data.content as string);
-          return newMap;
-        });
-      }
-    };
-
-    const handleAssistantComplete = (data: AttemptAssistantCompleteEvent) => {
-      if (data.chat_id !== chatIdRef.current) return;
-
-      const persona =
-        data.persona_id && personas
-          ? personas[data.persona_id as string]
-          : null;
-
-      if (data.content !== undefined) {
-        setStreamingContent((prev) => {
-          const newMap = new Map(prev);
-          newMap.set(data.message_id as string, data.content as string);
-          return newMap;
-        });
-      }
-
       setOptimisticMessages((prev) => {
-        const newMap = new Map(prev);
-        const existingMessage = newMap.get(data.message_id as string);
-        const existingContent = existingMessage?.contents?.[0];
-
-        newMap.set(data.message_id as string, {
-          id: data.message_id as string,
+        const next = new Map(prev);
+        const existing = next.get(callId);
+        const prevContent = existing?.contents?.[0];
+        const persona =
+          streamedPersona ??
+          (prevContent?.name
+            ? { name: prevContent.name, color: prevContent.color, icon: prevContent.icon }
+            : null) ??
+          defaultAssistantPersona;
+        next.set(callId, {
+          id: callId,
           type: "response",
-          created_at:
-            (data.created_at as string) ||
-            existingMessage?.created_at ||
-            new Date().toISOString(),
-          completed: true,
+          created_at: existing?.created_at ?? new Date().toISOString(),
+          completed: false,
           contents: [
             {
-              content:
-                (data.content as string) ?? existingContent?.content ?? "",
-              name: persona?.name ?? existingContent?.name ?? null,
-              color: persona?.color ?? existingContent?.color ?? null,
-              icon: persona?.icon ?? existingContent?.icon ?? null,
+              content: text,
+              name: persona?.name ?? null,
+              color: persona?.color ?? null,
+              icon: persona?.icon ?? null,
             },
           ],
         });
-        return newMap;
+        return next;
       });
-
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
-      refreshTimeoutRef.current = setTimeout(() => {
-        onRefresh();
-        refreshTimeoutRef.current = null;
-      }, 500);
     };
 
-    const handleUserComplete = (data: AttemptUserCompleteEvent) => {
-      if (data.chat_id !== chatIdRef.current) return;
+    // Canonical: tool call executed → message persisted. Works for text,
+    // audio, and realtime (all paths end in this tool call).
+    const handleChatMessageCompleted = (data: AnyEventData) => {
+      const chatId = data.chat_id as string | undefined;
+      if (chatId && chatId !== chatIdRef.current) return;
 
-      // Let parent handle voice-specific cleanup
+      // Let the parent do voice-specific cleanup (e.g. match optimistic
+      // voice messages by item_id).
       onUserComplete?.(data);
 
-      setOptimisticMessages((prev) => {
-        const newMap = new Map(prev);
-        newMap.set(data.message_id as string, {
-          id: data.message_id as string,
-          type: "query",
-          created_at: data.created_at as string,
-          completed: true,
-          contents: [{ content: data.content as string, name: "You" }],
+      // Dedup: the optimistic bubble is keyed by call_id (pre-minted at
+      // streaming start; matches the audit payload's call_id). Swap its
+      // key to the real message_id so the refetched real message — which
+      // shares that same message_id — dominates the id-based merge in
+      // MessagesView. No duplicate bubble.
+      const callId = data.call_id as string | undefined;
+      const messageId = data.message_id as string | undefined;
+      if (callId && messageId && callId !== messageId) {
+        setOptimisticMessages((prev) => {
+          const existing = prev.get(callId);
+          if (!existing) return prev;
+          const next = new Map(prev);
+          next.delete(callId);
+          next.set(messageId, { ...existing, id: messageId, completed: true });
+          return next;
         });
-        return newMap;
-      });
-    };
-
-    const handleAttemptComplete = (data: AttemptCompleteEvent) => {
-      if (data.chat_id !== chatIdRef.current) return;
-      setIsSending(false);
-    };
-
-    const handleStopped = (data: AttemptStoppedEvent) => {
-      if (data.chat_id === chatIdRef.current) {
-        setIsSending(false);
-        setIsStopping(false);
+        setStreamingContent((prev) => {
+          const streaming = prev.get(callId);
+          if (streaming === undefined) return prev;
+          const next = new Map(prev);
+          next.delete(callId);
+          next.set(messageId, streaming);
+          return next;
+        });
       }
 
-      if (data.success && data.message) {
-        toast.success(data.message as string);
-      } else if (!data.success) {
-        toast.error(data.message as string);
-      }
+      scheduleRefresh();
     };
 
-    const handleError = (data: AttemptErrorEvent) => {
+    const handleChatMessageFailed = (data: AnyEventData) => {
       setIsSending(false);
-      setIsStopping(false);
-      toast.error(data.message as string);
+      const msg = (data.message as string | undefined) ?? "Failed to send message";
+      toast.error(msg);
     };
 
-    // Listen for canonical generate events (AI response) + legacy attempt events
-    const handleGenerateTextProgress = (data: Record<string, unknown>) => {
-      const delta = data.delta as string;
-      if (!delta) return;
-      // Use a stable message ID for the streaming response
-      const msgId = (data.run_id as string) || "streaming";
-      setStreamingContent((prev) => {
-        const newMap = new Map(prev);
-        const existing = newMap.get(msgId) || "";
-        newMap.set(msgId, existing + delta);
-        return newMap;
-      });
-      // Ensure we have an optimistic message for the AI response
-      setOptimisticMessages((prev) => {
-        if (prev.has(msgId)) return prev;
-        const newMap = new Map(prev);
-        newMap.set(msgId, {
-          id: msgId,
-          type: "response",
-          created_at: new Date().toISOString(),
-          completed: false,
-          contents: [{ content: "" }],
-        });
-        return newMap;
-      });
+    const handleChatMessageStarted = (_data: AnyEventData) => {
+      setIsSending(true);
     };
 
-    const handleGenerateTextComplete = (data: Record<string, unknown>) => {
-      const text = data.text as string;
-      const role = data.role as string;
-      if (!text || role === "system" || role === "developer") return;
-      if (role === "user") return; // user messages handled by user_complete
-      const msgId = (data.run_id as string) || "streaming";
-      setStreamingContent((prev) => {
-        const newMap = new Map(prev);
-        newMap.set(msgId, text);
-        return newMap;
-      });
-      setOptimisticMessages((prev) => {
-        const newMap = new Map(prev);
-        newMap.set(msgId, {
-          id: msgId,
-          type: "response",
-          created_at: new Date().toISOString(),
-          completed: true,
-          contents: [{ content: text }],
-        });
-        return newMap;
-      });
-    };
-
-    const handleGenerateCompleted = (_data: Record<string, unknown>) => {
+    const handleGenerateCompleted = (_data: AnyEventData) => {
       setIsSending(false);
-      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
-      refreshTimeoutRef.current = setTimeout(() => {
-        onRefresh();
-        refreshTimeoutRef.current = null;
-      }, 500);
+      scheduleRefresh();
     };
 
-    const handleGenerateFailed = (data: Record<string, unknown>) => {
+    const handleGenerateFailed = (data: AnyEventData) => {
       setIsSending(false);
       toast.error((data.message as string) || "AI response failed");
     };
 
-    // Canonical: message persisted via tool call
-    const handleChatSendCompleted = (data: Record<string, unknown>) => {
-      const result = (data.result ?? data) as Record<string, unknown>;
-      const msgId = (result.message_id as string) || crypto.randomUUID();
-      const contentIds = (result.content_ids as string[]) || [];
-
-      // Mark the message as complete with the persisted content
-      setOptimisticMessages((prev) => {
-        const newMap = new Map(prev);
-        // Find the streaming message and finalize it, or create new
-        const streamingId = Array.from(prev.keys()).find(
-          (k) => !prev.get(k)?.completed && prev.get(k)?.type === "response"
-        );
-        const key = streamingId || msgId;
-        const existing = newMap.get(key);
-        newMap.set(key, {
-          id: msgId,
-          type: "response",
-          created_at: existing?.created_at || new Date().toISOString(),
-          completed: true,
-          contents: existing?.contents || [{ content: "" }],
-        });
-        return newMap;
-      });
+    const handleStopCompleted = (data: AnyEventData) => {
+      setIsSending(false);
+      setIsStopping(false);
+      if (data.success && data.message) {
+        toast.success(data.message as string);
+      } else if (data.success === false) {
+        toast.error((data.message as string) ?? "Failed to stop");
+      }
     };
 
     const unsubs = [
-      // Canonical generate events (AI response streaming)
-      transport.on("attempt.generate.text.progress", handleGenerateTextProgress),
-      transport.on("attempt.generate.text.complete", handleGenerateTextComplete),
+      transport.on("attempt.chat_message.started", handleChatMessageStarted),
+      transport.on("attempt.chat_message.progress", handleChatMessageProgress),
+      transport.on("attempt.chat_message.completed", handleChatMessageCompleted),
+      transport.on("attempt.chat_message.failed", handleChatMessageFailed),
       transport.on("attempt.generate.completed", handleGenerateCompleted),
       transport.on("attempt.generate.failed", handleGenerateFailed),
-      // Canonical: message persisted
-      transport.on("attempt.chat_message.completed", handleChatSendCompleted),
-      // Legacy attempt events (user message, stop, error)
-      transport.on("attempt.chat.assistant_start", handleAssistantStart),
-      transport.on("attempt.chat.assistant_progress", handleAssistantDelta),
-      transport.on("attempt.chat.assistant_complete", handleAssistantComplete),
-      transport.on("attempt.chat.user_complete", handleUserComplete),
-      transport.on("attempt.complete", handleAttemptComplete),
-      transport.on("attempt.chat.stopped", handleStopped),
-      transport.on("attempt.error", handleError),
+      transport.on("attempt.stop.completed", handleStopCompleted),
     ];
 
     return () => {
       unsubs.forEach((fn) => fn());
-
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
+      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
     };
-  }, [transport, chatIdRef, personas, onRefresh, onUserComplete]);
+  }, [
+    transport,
+    chatIdRef,
+    personas,
+    defaultAssistantPersona,
+    onUserComplete,
+    scheduleRefresh,
+  ]);
 
   // --- Emission methods ---
 
   const sendMessage = useCallback(
-    async (chatId: string, attemptId: string, message: string, parentMessageId?: string, personaId?: string) => {
+    async (
+      chatId: string,
+      attemptId: string,
+      message: string,
+      parentMessageId?: string,
+      personaId?: string,
+    ) => {
       setIsSending(true);
 
-      // Part 1: Persist the user message
-      await transport.send("/attempt/chat/message", {
+      // Optimistic user message — appears instantly with the user's
+      // persona card (name/color/icon) if set on the attempt. MessagesView
+      // deduplicates ``optimistic-user-*`` entries against the real
+      // message once it lands via refetch.
+      const optimisticUserId = `optimistic-user-${crypto.randomUUID()}`;
+      const resolvedUserPersona =
+        personaId && personas ? personas[personaId] : userPersona;
+      setOptimisticMessages((prev) => {
+        const next = new Map(prev);
+        next.set(optimisticUserId, {
+          id: optimisticUserId,
+          type: "query",
+          created_at: new Date().toISOString(),
+          completed: true,
+          contents: [
+            {
+              content: message,
+              name: resolvedUserPersona?.name ?? null,
+              color: resolvedUserPersona?.color ?? null,
+              icon: resolvedUserPersona?.icon ?? null,
+            },
+          ],
+        });
+        return next;
+      });
+
+      // Part 1: Persist the user message. The response returns the
+      // canonical message_id — swap the optimistic entry's key to it
+      // immediately so the refetch merges cleanly (id match) without
+      // relying on content-based dedup.
+      const persistResult = await transport.send("/attempt/chat/message", {
         chat_id: chatId,
         text: message,
         ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
         ...(personaId ? { persona_id: personaId } : {}),
       });
+      const realMessageId = persistResult?.["message_id"] as string | undefined;
+      if (realMessageId && realMessageId !== optimisticUserId) {
+        setOptimisticMessages((prev) => {
+          const existing = prev.get(optimisticUserId);
+          if (!existing) return prev;
+          const next = new Map(prev);
+          next.delete(optimisticUserId);
+          next.set(realMessageId, { ...existing, id: realMessageId });
+          return next;
+        });
+      }
 
       // Part 2: Trigger AI response via canonical generate
       const generateResult = await transport.send("/attempt/generate", {
@@ -342,17 +332,14 @@ export function useAttemptMessages({
       });
       activeGroupIdRef.current = (generateResult["group_id"] as string) ?? null;
     },
-    [transport],
+    [transport, personas, userPersona],
   );
 
-  const stopMessage = useCallback(
-    () => {
-      if (!activeGroupIdRef.current) return;
-      setIsStopping(true);
-      transport.send("/attempt/stop", { group_id: activeGroupIdRef.current });
-    },
-    [transport],
-  );
+  const stopMessage = useCallback(() => {
+    if (!activeGroupIdRef.current) return;
+    setIsStopping(true);
+    transport.send("/attempt/stop", { group_id: activeGroupIdRef.current });
+  }, [transport]);
 
   const submitResponse = useCallback(
     (chatId: string, questionId: string, optionIds: string[]) => {

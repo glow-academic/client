@@ -399,7 +399,7 @@ export default function Tools({
     setIsDuplicating(toolId);
     try {
       const result = await duplicateToolAction({
-        body: { tool_id: toolId },
+        body: { tool_id: toolId, accept: true },
       });
       if (result.tool_id) {
         const tool = toolsArray.find((t) => t.tool_id === toolId);
@@ -536,7 +536,7 @@ export default function Tools({
     setIsDeleting(true);
     try {
       const result = await deleteToolAction({
-        body: { tool_id: deleteItem.id },
+        body: { tool_ids: [deleteItem.id], accept: true },
       });
       if (result.success) {
         toast.success(

@@ -25,25 +25,25 @@ export interface SimulationControlsProps {
   attemptId: string;
   currentChatId: string;
   hasMessages: boolean;
-  isQuizMode?: boolean;
+  /** True for video/quiz-style chats — grading scoped to score only (no feedback/strengths/improvements). */
+  isStructuredMode?: boolean;
 }
 
-const QUIZ_GRADE_OPERATIONS = [
+const STRUCTURED_GRADE_OPERATIONS = [
   "chat_grade",
   "chat_complete",
   "get",
-  "chat_get",
 ];
 
-const QUIZ_GRADE_INSTRUCTIONS = [
-  "Grade this attempt chat. Call attempt/get to fetch the user's quiz responses and attempt/chat_get to fetch the rubric, questions, and options (including is_correct flags). Use the rubric standards to determine a score between 0 and the rubric's total_points, weighing how the user's chosen options align with the correct answers. Then call chat_grade with the chat_id and your score.",
+const STRUCTURED_GRADE_INSTRUCTIONS = [
+  "Grade this attempt chat. Call attempt/get to fetch the rubric, questions with their options (including is_correct flags), and the user's picks (marked '← user picked'). Default to equal weight per question (total_points divided by question count) unless the rubric indicates otherwise. Award full credit when the user picked the correct option, partial credit for near-misses that are reasonable or directionally good, and zero for clearly wrong picks. Sum across questions and call chat_grade with the chat_id and your integer score.",
 ];
 
 export function SimulationControls({
   attemptId,
   currentChatId,
   hasMessages,
-  isQuizMode = false,
+  isStructuredMode = false,
 }: SimulationControlsProps) {
   const { grade, endChat, stage } = useAttemptEnd();
 
@@ -65,14 +65,14 @@ export function SimulationControls({
       attemptId,
       chatId: currentChatId,
       endAfter: true,
-      ...(isQuizMode
+      ...(isStructuredMode
         ? {
-            operations: QUIZ_GRADE_OPERATIONS,
-            instructions: QUIZ_GRADE_INSTRUCTIONS,
+            operations: STRUCTURED_GRADE_OPERATIONS,
+            instructions: STRUCTURED_GRADE_INSTRUCTIONS,
           }
         : {}),
     });
-  }, [hasMessages, currentChatId, attemptId, grade, isQuizMode]);
+  }, [hasMessages, currentChatId, attemptId, grade, isStructuredMode]);
 
   // Confirm end session with 0 messages
   const handleConfirmEnd = useCallback(() => {

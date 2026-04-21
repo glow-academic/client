@@ -524,9 +524,7 @@ export default function Models({
     setIsDeleting(true);
     try {
       await deleteModelAction({
-        body: {
-          model_id: deleteItem.id,
-        },
+        body: { model_ids: [deleteItem.id], accept: true },
       });
       toast.success("Model deleted successfully");
       router.refresh();
@@ -567,9 +565,7 @@ export default function Models({
     setIsDuplicating(model.model_id);
     try {
       await duplicateModelAction({
-        body: {
-          model_id: model.model_id,
-        },
+        body: { model_id: model.model_id, accept: true },
       });
       toast.success(
         `Model '${model.name || "Unknown Model"}' duplicated successfully`
