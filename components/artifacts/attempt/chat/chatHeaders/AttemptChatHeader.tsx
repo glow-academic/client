@@ -148,10 +148,14 @@ export function AttemptChatHeader({
       className="border-b"
     >
       <div className="p-2 pt-0 flex flex-col gap-2">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-start gap-2">
-              <span className="font-medium">{scenario_title || "Chat"}</span>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-4 min-w-0 flex-1">
+            <div className="flex items-start gap-2 min-w-0">
+              {/* Clamp to 3 lines so the problem statement doesn't
+                  dominate the mobile viewport (same as v1). */}
+              <span className="font-medium line-clamp-3">
+                {scenario_title || "Chat"}
+              </span>
             </div>
           </div>
           <div className="flex items-start justify-end gap-2">
