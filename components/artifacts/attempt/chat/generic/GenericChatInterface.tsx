@@ -192,7 +192,13 @@ export function GenericChatInterface({
                   // swallow the inner viewport's overflow (scrollHeight ===
                   // clientHeight from the inner ref's perspective) and hide
                   // the scroll-down button permanently.
-                  <div className="flex-1 px-1 min-h-0 relative z-10 flex flex-col">
+                  //
+                  // No horizontal padding here — the ScrollArea inside
+                  // MessagesView has its own px-1 on mobile / px-2 on
+                  // desktop. Extra padding here was stacking on top of
+                  // that + the page-level md:px-4 gutter, so message
+                  // bubbles visibly shrank away from the edges on mobile.
+                  <div className="flex-1 min-h-0 relative z-10 flex flex-col">
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     <ChatArea {...(chat_area_props as any)} />
                   </div>

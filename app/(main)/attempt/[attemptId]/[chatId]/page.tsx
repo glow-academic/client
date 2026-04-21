@@ -148,7 +148,10 @@ export default async function ChatPage({
           { title: entityName || "Chat" },
         ]}
       >
-        <div className="px-4">
+        {/* Desktop-only gutter. On mobile the chat bubbles need the full
+            horizontal room — the inner ScrollArea already provides 4px
+            of breathing space on the edges. */}
+        <div className="md:px-4">
           <Chat
             bundleData={bundleData as ChatData}
             patchChatDraftAction={patchChatDraft}
