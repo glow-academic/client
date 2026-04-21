@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, FileText } from "lucide-react";
 import React from "react";
@@ -134,6 +135,7 @@ export function GenericChatInterface({
   input_area_props,
   input_area_ref,
 }: GenericChatInterfaceProps) {
+  const isMobile = useIsMobile();
   const backgroundImageUrl = background_image?.image_id
     ? `/api/system/image/${background_image.image_id}`
     : null;
@@ -153,7 +155,7 @@ export function GenericChatInterface({
           defaultSize={show_documents && document_area_props ? 70 : 100}
           className="md:flex-none"
         >
-          <Card className="h-full flex flex-col py-2 border-0 rounded-t-xl rounded-b-none bg-transparent">
+          <Card className="h-full flex flex-col py-0 md:py-2 border-0 rounded-none md:rounded-t-xl md:rounded-b-none bg-transparent">
             <div className="h-full flex flex-col">
               {/* Header - has its own background */}
               <div className="bg-card">
@@ -213,10 +215,18 @@ export function GenericChatInterface({
                   <div
                     className={cn(
                       chat_area_view_mode === "video" &&
-                        "flex-1 min-h-0 overflow-auto"
+                        "flex-1 min-h-0 overflow-auto",
+                      // Mobile (non-video): content-sized wrapper with its
+                      // own border-t + small top padding. Matches v1 prod —
+                      // on mobile the input bar hugs its natural height
+                      // instead of filling a 70px fixed box (which would
+                      // otherwise leave empty space above the textarea
+                      // because the CardFooter uses justify-end on desktop).
+                      chat_area_view_mode !== "video" &&
+                        "shrink-0 border-t pt-2 md:border-0 md:pt-0"
                     )}
                     style={
-                      chat_area_view_mode !== "video"
+                      !isMobile && chat_area_view_mode !== "video"
                         ? {
                             height: `${input_panel_height}px`,
                             minHeight: "70px",

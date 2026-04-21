@@ -147,15 +147,19 @@ export function AttemptChatHeader({
       onOpenChange={on_toggle_objectives}
       className="border-b"
     >
-      {/* Two-row header layout (matches v1):
-          Row 1: icon controls on the left, timer + status on the right
-          Row 2: scenario description as natural prose — NOT clamped. Long
-                 statements just push the chat down a bit; the whole
-                 region lives above the scrollable messages area. */}
-      <div className="p-2 pt-0 flex flex-col gap-2">
-        {/* Row 1: controls left, timer + status right */}
-        <div className="flex items-center justify-between gap-3">
-          {/* Left: icon controls (objectives, responses, rubric, documents) */}
+      {/* Header layout:
+          Desktop (md+): single row — scenario on the left (flex-1),
+                         icon controls + timer grouped on the right.
+                         Matches v1 production density.
+          Mobile: two rows — controls+timer on top, scenario below. */}
+      <div className="p-2 md:pt-0">
+      <div className="flex flex-col md:flex-row md:items-start gap-3 py-2 md:py-0">
+        {/* Controls row (mobile) / right group (desktop): on mobile this
+            stretches full-width with icons left + timer right via
+            justify-between; on desktop it shrinks to hug its contents
+            so the scenario can take the remaining space. */}
+        <div className="order-1 md:order-2 flex items-center justify-between md:justify-end gap-3 md:flex-shrink-0">
+          {/* Icon controls (objectives, responses, rubric, documents) */}
           <div className="flex items-center gap-2">
             {shouldShowObjectives && (
               <Tooltip>
@@ -257,7 +261,7 @@ export function AttemptChatHeader({
             )}
           </div>
 
-          {/* Right: completed badge + timer pill */}
+          {/* Completed badge + timer pill */}
           <div className="flex items-center gap-2">
             {!attempt?.infinite_mode &&
               display_chat?.completed &&
@@ -325,15 +329,15 @@ export function AttemptChatHeader({
           </div>
         </div>
 
-        {/* Row 2: scenario description as natural prose — no clamp.
-            Matches v1: the problem statement flows as its own paragraph
-            below the controls. Long statements push the messages down
-            slightly; the whole header sits above the scrollable area. */}
+        {/* Scenario description as natural prose — no clamp.
+            Desktop: sits on the left (order-1, flex-1) beside the icons.
+            Mobile: drops to its own row (order-2) below the controls. */}
         {scenario_title && (
-          <div className="text-sm text-left">
+          <div className="order-2 md:order-1 md:flex-1 text-sm md:text-base text-left">
             <span className="font-medium">{scenario_title}</span>
           </div>
         )}
+      </div>
       </div>
 
       {/* Objectives Collapsible Content */}

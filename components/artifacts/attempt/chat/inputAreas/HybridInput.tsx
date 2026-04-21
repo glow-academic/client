@@ -315,10 +315,11 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
       <TooltipProvider>
         <CardFooter
           ref={inputPanelRef}
-          // Mobile: no horizontal padding — the input bar extends edge
-          // to edge, voice/send buttons sit at 0px from the viewport.
-          // Desktop keeps px-2 for a small inset against the Card shell.
-          className="h-full px-0 md:px-2 pb-1.5 pt-0 border-t flex flex-col justify-end min-h-0"
+          // Mobile: no h-full/justify-end/border-t — the wrapper above
+          // provides border-t + pt-2 and lets the footer size to content.
+          // Desktop keeps the original behavior so content sits at the
+          // bottom of the fixed-height input panel.
+          className="px-2 pb-1.5 pt-0 flex flex-col min-h-0 md:h-full md:border-t md:justify-end"
         >
           <div className="w-full flex items-end gap-2 shrink-0">
             {/* Voice toggle button - LEFT side, show when audio enabled and voice mode OFF */}
