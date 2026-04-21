@@ -6,18 +6,27 @@
  */
 "use client";
 
-import { Button } from "@/components/ui/button";
+import DocumentViewer, {
+  type DocumentItem,
+} from "@/components/common/viewers/DocumentViewer";
 import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { FileText } from "lucide-react";
 import React from "react";
 
 // Import component prop types (each component defines its own)
@@ -70,6 +79,8 @@ export interface GenericChatInterfaceProps {
   show_documents?: boolean;
   show_document_modal?: boolean;
   show_objectives_modal?: boolean;
+  on_close_document_modal?: () => void;
+  on_close_objectives_modal?: () => void;
   input_panel_height?: number;
 
   // Standard props
@@ -108,6 +119,8 @@ export function GenericChatInterface({
   show_documents = false,
   show_document_modal = false,
   show_objectives_modal = false,
+  on_close_document_modal,
+  on_close_objectives_modal,
   input_panel_height = 70,
   disabled = false,
   hide_input_area = false,
@@ -125,7 +138,11 @@ export function GenericChatInterface({
 
   return (
     <div
-      className="h-[calc(100vh-4rem)] flex flex-col"
+      // 100dvh tracks the *visible* viewport on mobile — accounts for the
+      // iOS/Android address bar hiding and reappearing on scroll, so the
+      // input bar never clips behind chrome. Falls back to 100vh on
+      // browsers that don't support dvh (Chromium Lite, old Samsung).
+      className="h-[calc(100vh-4rem)] h-[calc(100dvh-4rem)] flex flex-col"
       data-testid="generic-chat-interface"
     >
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
@@ -234,37 +251,105 @@ export function GenericChatInterface({
       {/* Pagination Footer */}
       {pagination_footer}
 
-      {/* Document Modal - Mobile Only */}
+      {/* Document Modal — mobile only. Renders the same DocumentViewer
+          the desktop sidebar uses, with a Select to switch between
+          multiple docs when the chat has more than one. */}
       {show_document_modal && document_area_props && (
-        <Dialog open={show_document_modal} onOpenChange={() => {}}>
+        <Dialog
+          open={show_document_modal}
+          onOpenChange={(open) => {
+            if (!open) on_close_document_modal?.();
+          }}
+        >
           <DialogContent
-            className="sm:max-w-4xl max-h-[80vh] md:overflow-hidden overflow-auto flex flex-col"
+            className="sm:max-w-4xl h-[90dvh] p-0 flex flex-col"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
-            <DialogHeader>
-              <DialogTitle>
-                {document_area_props.documents.find(
-                  (doc) =>
-                    doc.document_id === document_area_props.selected_document_id
-                )?.name || "Document"}
-              </DialogTitle>
-              <DialogDescription>View scenario document</DialogDescription>
+            <DialogHeader className="px-4 pt-4 pb-2 border-b shrink-0">
+              <DialogTitle>Documents</DialogTitle>
+              <DialogDescription className="sr-only">
+                Scenario documents for this attempt
+              </DialogDescription>
             </DialogHeader>
-            {/* Document content would be rendered here */}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => {}}>
-                Close
-              </Button>
-            </DialogFooter>
+            {(() => {
+              const filtered = document_area_props.documents.filter(
+                (d) => d.document_id,
+              );
+              if (filtered.length === 0) {
+                return (
+                  <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+                    No documents available
+                  </div>
+                );
+              }
+              const selected =
+                filtered.find(
+                  (d) =>
+                    d.document_id ===
+                      document_area_props.selected_document_id ||
+                    `doc:${d.document_id}` ===
+                      document_area_props.selected_document_id,
+                ) ?? filtered[0];
+              return (
+                <>
+                  {filtered.length > 1 && (
+                    <div className="px-4 py-2 shrink-0">
+                      <Select
+                        value={selected?.document_id ?? ""}
+                        onValueChange={(v) =>
+                          document_area_props.on_select_document(v)
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filtered.map((d) => (
+                            <SelectItem
+                              key={d.document_id!}
+                              value={d.document_id!}
+                            >
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <span>{d.name || "Document"}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <div className="flex-1 min-h-0 px-2 pb-2">
+                    {selected && (
+                      <DocumentViewer
+                        key={selected.document_id!}
+                        // Re-narrow to DocumentItem — the document_area_props
+                        // prop type has a slightly stricter in-repo shape
+                        // than the OpenAPI-derived type DocumentViewer
+                        // expects. Fields line up at runtime.
+                        document={selected as unknown as DocumentItem}
+                        downloadBaseUrl="/api/attempts/file"
+                        textDownloadBaseUrl="/api/attempts/text"
+                      />
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </DialogContent>
         </Dialog>
       )}
 
-      {/* Objectives Modal - Mobile Only */}
+      {/* Objectives Modal — mobile only. Simple bulleted list. */}
       {show_objectives_modal && chat_header_props.objectives && (
-        <Dialog open={show_objectives_modal} onOpenChange={() => {}}>
+        <Dialog
+          open={show_objectives_modal}
+          onOpenChange={(open) => {
+            if (!open) on_close_objectives_modal?.();
+          }}
+        >
           <DialogContent
-            className="sm:max-w-2xl max-h-[80vh] overflow-auto flex flex-col"
+            className="sm:max-w-2xl max-h-[85dvh] overflow-auto flex flex-col"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
             <DialogHeader>
@@ -276,24 +361,17 @@ export function GenericChatInterface({
             <div className="flex-1 overflow-auto py-4">
               <ul className="space-y-2 list-none">
                 {chat_header_props.objectives.map((objective, index) => (
-                  <li
-                    key={index}
-                    className="font-normal flex items-start gap-2"
-                  >
+                  <li key={index} className="font-normal flex items-start gap-2">
                     <span className="text-primary mt-1.5 flex-shrink-0">•</span>
                     <span className="flex-1">{objective}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => {}}>
-                Close
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
+
     </div>
   );
 }

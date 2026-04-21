@@ -111,9 +111,15 @@ export function AttemptChat({
     initialAttemptData.current_chat_index ?? 0
   );
   const [showDocuments, setShowDocuments] = useState(true);
-  const [showDocumentModal, _setShowDocumentModal] = useState(false);
+  // Mobile modal state — opened via header buttons on mobile. Documents
+  // get a modal because the desktop sidebar is CSS-hidden below md;
+  // objectives get one because the inline Collapsible below the header
+  // overlaps the problem statement on narrow viewports. Rubric doesn't
+  // need a modal — it's a view-mode swap (RubricView replaces MessagesView
+  // in place) which already works on mobile.
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [showObjectives, setShowObjectives] = useState(false);
-  const [showObjectivesModal, _setShowObjectivesModal] = useState(false);
+  const [showObjectivesModal, setShowObjectivesModal] = useState(false);
   const [showGrades, setShowGrades] = useState(false);
   const [showResponses, setShowResponses] = useState(false);
   const [userHasManuallyToggledGrades, setUserHasManuallyToggledGrades] = useState(false);
@@ -878,6 +884,12 @@ export function AttemptChat({
       on_toggle_objectives: setShowObjectives,
       on_toggle_rubric: handleToggleGrades,
       on_toggle_responses: setShowResponses,
+      // Mobile: header swaps the inline toggle for a modal opener when
+      // useIsMobile() is true. Without these the documents button is
+      // dead on mobile (sidebar is CSS-hidden) and objectives opens a
+      // cramped inline Collapsible.
+      on_open_documents_modal: () => setShowDocumentModal(true),
+      on_open_objectives_modal: () => setShowObjectivesModal(true),
       objectives:
         (resolvedChat?.objectives || [])
           .map((o) => o.objective)
@@ -1273,6 +1285,8 @@ export function AttemptChat({
       show_documents={showDocuments}
       show_document_modal={showDocumentModal}
       show_objectives_modal={showObjectivesModal}
+      on_close_document_modal={() => setShowDocumentModal(false)}
+      on_close_objectives_modal={() => setShowObjectivesModal(false)}
       input_panel_height={inputPanelHeight}
       hide_input_area={chatAreaViewMode === "video" && currentChat?.completed}
       input_area_ref={inputAreaRef}

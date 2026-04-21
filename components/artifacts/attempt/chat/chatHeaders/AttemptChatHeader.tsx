@@ -17,6 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { formatTime } from "@/utils/time";
 import {
   CheckCircle2,
@@ -55,6 +56,13 @@ export interface ChatHeaderProps {
   on_toggle_objectives: (show: boolean) => void;
   on_toggle_rubric: (show: boolean) => void;
   on_toggle_responses?: (show: boolean) => void; // NEW - callback for video responses
+
+  // Mobile-only: open the full-screen modal instead of the inline toggle
+  // for features that don't fit the mobile viewport (documents sidebar
+  // is hidden, objectives Collapsible overlaps problem statement).
+  // Rubric stays on the inline toggle since it's just a view-mode swap.
+  on_open_documents_modal?: () => void;
+  on_open_objectives_modal?: () => void;
 
   // Explicit objectives type - self-contained
   objectives?: Array<string>;
@@ -112,6 +120,8 @@ export function AttemptChatHeader({
   on_toggle_objectives,
   on_toggle_rubric,
   on_toggle_responses,
+  on_open_documents_modal,
+  on_open_objectives_modal,
   objectives = [],
   scenario_title,
   attempt,
@@ -122,6 +132,7 @@ export function AttemptChatHeader({
   display_chat,
   disabled = false,
 }: ChatHeaderProps) {
+  const isMobile = useIsMobile();
   const isInfiniteMode = attempt?.infinite_mode ?? false;
   const _hasTimeLimit = Boolean(simulation?.time_limit);
   const timeRemaining = timer?.remaining ?? null;
@@ -158,22 +169,32 @@ export function AttemptChatHeader({
               {shouldShowObjectives && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <CollapsibleTrigger asChild>
+                    {isMobile && on_open_objectives_modal ? (
+                      // Mobile: open the objectives modal directly. The
+                      // inline Collapsible below the header is visually
+                      // cramped and often overlaps the problem statement,
+                      // so mobile uses a dedicated full-screen dialog.
                       <Button
-                        variant={show_objectives ? "default" : "outline"}
+                        variant="outline"
                         size="sm"
-                        onClick={(e) => {
-                          if (window.innerWidth < 768) {
-                            e.preventDefault();
-                            // Mobile: would open modal (handled by parent)
-                          }
-                        }}
-                        className={`p-2 ${show_objectives ? "bg-primary text-primary-foreground" : ""}`}
+                        onClick={on_open_objectives_modal}
+                        className="p-2"
                         disabled={disabled}
                       >
                         <ListChecks className="h-4 w-4" />
                       </Button>
-                    </CollapsibleTrigger>
+                    ) : (
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant={show_objectives ? "default" : "outline"}
+                          size="sm"
+                          className={`p-2 ${show_objectives ? "bg-primary text-primary-foreground" : ""}`}
+                          disabled={disabled}
+                        >
+                          <ListChecks className="h-4 w-4" />
+                        </Button>
+                      </CollapsibleTrigger>
+                    )}
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>
@@ -228,8 +249,8 @@ export function AttemptChatHeader({
                       variant={show_documents ? "default" : "outline"}
                       size="sm"
                       onClick={() => {
-                        if (window.innerWidth < 768) {
-                          // Mobile: would open modal (handled by parent)
+                        if (isMobile && on_open_documents_modal) {
+                          on_open_documents_modal();
                         } else {
                           on_toggle_documents(!show_documents);
                         }
