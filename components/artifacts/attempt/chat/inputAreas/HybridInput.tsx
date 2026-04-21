@@ -315,9 +315,9 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
       <TooltipProvider>
         <CardFooter
           ref={inputPanelRef}
-          className="h-full px-2 pb-1 md:pb-1.5 pt-0 border-t flex flex-col justify-end min-h-0"
+          className="h-full px-2 pb-1.5 pt-0 border-t flex flex-col justify-end min-h-0"
         >
-          <div className="w-full flex items-end gap-1 md:gap-2 shrink-0">
+          <div className="w-full flex items-end gap-2 shrink-0">
             {/* Voice toggle button - LEFT side, show when audio enabled and voice mode OFF */}
             {audio_enabled && !is_voice_mode_enabled && (
               <Tooltip>
@@ -326,7 +326,7 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
                     type="button"
                     variant="default"
                     size="icon"
-                    className="min-h-[36px] md:min-h-[40px] h-[36px] md:h-[40px] w-[36px] md:w-[40px] shrink-0"
+                    className="min-h-[40px] h-[40px] w-[40px] shrink-0"
                     onClick={handleVoiceStart}
                     disabled={
                       disabled ||
@@ -358,7 +358,7 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
                     type="button"
                     variant="destructive"
                     size="icon"
-                    className="min-h-[36px] md:min-h-[40px] h-[36px] md:h-[40px] w-[36px] md:w-[40px] shrink-0"
+                    className="min-h-[40px] h-[40px] w-[40px] shrink-0"
                     onClick={handleVoiceStop}
                     disabled={
                       disabled ||
@@ -383,10 +383,10 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
             )}
 
             {/* CENTER - Waveform OR Textarea */}
-            <div className="flex-1 relative min-h-[36px] md:min-h-[40px] max-h-32 flex items-center">
+            <div className="flex-1 relative min-h-[40px] max-h-32 flex items-center">
               {is_voice_mode_enabled && !is_mic_muted ? (
                 // Voice mode active and not muted - show waveform
-                <div className="w-full h-[36px] md:h-[40px] rounded-md border border-input bg-background px-3 py-2 flex items-center justify-center ring-offset-background overflow-hidden">
+                <div className="w-full h-[40px] rounded-md border border-input bg-background px-3 py-2 flex items-center justify-center ring-offset-background overflow-hidden">
                   <VoiceWaveform
                     media_stream={user_media_stream}
                     className="w-full h-full"
@@ -404,7 +404,7 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
                   }
                   placeholder={getPlaceholder()}
                   disabled={disabled || showDisabledTextForVoice}
-                  className="w-full resize-none overflow-y-auto text-sm md:text-base max-h-32 min-h-[36px] md:min-h-[40px]"
+                  className="w-full text-md resize-none overflow-y-auto text-base max-h-32 min-h-[40px]"
                   rows={1}
                   maxLength={MAX_INPUT_CHARS}
                   data-testid="attempt-chat-input"
@@ -428,7 +428,7 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
             </div>
 
             {/* RIGHT side buttons */}
-            <div className="flex gap-1 md:gap-2">
+            <div className="flex gap-2">
               {/* Stop button - when sending message (not in voice mode) */}
               {is_sending_message && !is_voice_mode_enabled ? (
                 <motion.div
@@ -442,7 +442,7 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
                     <TooltipTrigger asChild>
                       <Button
                         type="button"
-                        className="min-h-[36px] md:min-h-[40px] h-[36px] md:h-[40px] px-2.5 md:px-3"
+                        className="min-h-[40px] h-[40px] px-3"
                         variant="destructive"
                         disabled={disabled || is_stopping_message}
                         onClick={handleStopMessage}
@@ -473,7 +473,7 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
                     <TooltipTrigger asChild>
                       <Button
                         type="button"
-                        className="min-h-[36px] md:min-h-[40px] h-[36px] md:h-[40px] px-2.5 md:px-3"
+                        className="min-h-[40px] h-[40px] px-3"
                         variant={is_mic_muted ? "outline" : "default"}
                         disabled={
                           disabled ||
@@ -512,7 +512,7 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
                     <TooltipTrigger asChild>
                       <Button
                         type="button"
-                        className="min-h-[36px] md:min-h-[40px] h-[36px] md:h-[40px] px-2.5 md:px-3"
+                        className="min-h-[40px] h-[40px] px-3"
                         variant={is_mic_muted ? "outline" : "default"}
                         disabled={
                           disabled ||
@@ -551,7 +551,7 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
                     <TooltipTrigger asChild>
                       <Button
                         type="submit"
-                        className="min-h-[36px] md:min-h-[40px] h-[36px] md:h-[40px] px-2.5 md:px-3"
+                        className="min-h-[40px] h-[40px] px-3"
                         variant="default"
                         disabled={disabled || !is_connected || !hasTextMessage}
                         onClick={(e) => handleSendMessage(e)}
