@@ -34,6 +34,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDrafts } from "@/contexts/draft-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
@@ -171,9 +172,11 @@ interface EvalFormState {
   name_id: string | null;
   description: string | null;
   description_id: string | null;
-  active_flag_id: string | null;
-  dynamic_flag_id: string | null;
-  groups_flag_id: string | null;
+  // Unified flag_ids array (active / dynamic / groups / any future flag
+  // types). Server sends all eval-scoped flag options in `s.flags`; we
+  // render them with <Flags mode="multi"> and store just the selected
+  // flag_option_ids here.
+  flag_ids: string[];
   department_ids: string[];
   model_ids: string[];
   model_flag_ids: string[];
@@ -197,7 +200,7 @@ function EvalComponent({
   const router = useRouter();
   const isEditMode = !!evalId;
   const { profile } = useProfile();
-  const { selectedDraftId, setSelectedDraftId } = useDrafts();
+  const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
   const evalData = (isEditMode ? evalDetail : evalDetailDefault) as
     | EvalData
     | undefined;
@@ -251,17 +254,15 @@ function EvalComponent({
   const getInitialFormState = useCallback((): EvalFormState => {
     const data = evalDataRef.current;
     const selectedFlags = data?.flags?.filter((flag) => flag.selected) ?? [];
-    const flagIdForKey = (key: string) =>
-      selectedFlags.find((flag) => flag.key === key)?.flag_option_id ?? null;
     return {
       name: null,
       name_id: data?.names?.find((item) => item.selected)?.id ?? null,
       description: null,
       description_id:
         data?.descriptions?.find((item) => item.selected)?.id ?? null,
-      active_flag_id: flagIdForKey("active"),
-      dynamic_flag_id: flagIdForKey("dynamic"),
-      groups_flag_id: flagIdForKey("groups"),
+      flag_ids: selectedFlags
+        .map((flag) => flag.flag_option_id)
+        .filter((id): id is string => !!id),
       department_ids:
         (data?.departments ?? [])
           .filter((d) => d.selected)
@@ -365,9 +366,8 @@ function EvalComponent({
       if (
         prev.name_id !== nextState.name_id ||
         prev.description_id !== nextState.description_id ||
-        prev.active_flag_id !== nextState.active_flag_id ||
-        prev.dynamic_flag_id !== nextState.dynamic_flag_id ||
-        prev.groups_flag_id !== nextState.groups_flag_id ||
+        JSON.stringify(prev.flag_ids) !==
+          JSON.stringify(nextState.flag_ids) ||
         JSON.stringify(prev.department_ids) !==
           JSON.stringify(nextState.department_ids) ||
         JSON.stringify(prev.model_ids) !==
@@ -395,165 +395,210 @@ function EvalComponent({
     getInitialFormState,
   ]);
 
-  // URL-backed form data bridge
-  const [draftId, setDraftId] = useState<string | null>(null);
-  const setUrlFormDataRef = useRef<
-    null | ((updates: Record<string, unknown>) => void)
-  >(null);
-  const formDataRef = useRef<Record<string, unknown>>({});
-
-  const onFormDataChange = useCallback((fd: Record<string, unknown>) => {
-    formDataRef.current = fd;
-    const next = (fd["draftId"] as string | undefined) ?? null;
-    setDraftId((prev) => (prev === next ? prev : next));
-  }, []);
-
-  // Sync URL draftId to profile context
+  // ─── Draft autosave via shared lifecycle hook ─────────────────────────
+  // Matches Simulation.tsx — the hook debounces, dedupes via formStateKey,
+  // handles the server-sync absorb flag, and wires URL draftId round-trip.
+  const formStateRef = useRef<Record<string, unknown>>(
+    formState as unknown as Record<string, unknown>,
+  );
   useEffect(() => {
-    if (draftId !== selectedDraftId) {
-      setSelectedDraftId(draftId);
-    }
-  }, [draftId, selectedDraftId, setSelectedDraftId]);
-
-  // Draft patching
-  const patchEvalDraftActionRef = useRef(patchEvalDraftAction);
-  useEffect(() => {
-    patchEvalDraftActionRef.current = patchEvalDraftAction;
-  }, [patchEvalDraftAction]);
-
-  const serverSyncPendingRef = useRef(false);
-
-  const draftPatchKey = useMemo(() => {
-    if (serverSyncPendingRef.current) return null;
-    return JSON.stringify({
-      name: formState.name,
-      name_id: formState.name_id,
-      description: formState.description,
-      description_id: formState.description_id,
-      active_flag_id: formState.active_flag_id,
-      dynamic_flag_id: formState.dynamic_flag_id,
-      groups_flag_id: formState.groups_flag_id,
-      department_ids: formState.department_ids,
-      model_ids: formState.model_ids,
-      pending_ids: formState.pending_ids,
-    });
+    formStateRef.current = formState as unknown as Record<string, unknown>;
   }, [formState]);
 
-  const lastPatchedKeyRef = useRef<string | null>(null);
+  // Memoized content-key so reference-only formState changes don't trigger
+  // new saves.
+  const flagIdsStr = useMemo(
+    () => JSON.stringify(formState.flag_ids),
+    [formState.flag_ids],
+  );
+  const deptIdsStr = useMemo(
+    () => JSON.stringify(formState.department_ids),
+    [formState.department_ids],
+  );
+  const modelIdsCurStr = useMemo(
+    () => JSON.stringify(formState.model_ids),
+    [formState.model_ids],
+  );
+  const modelFlagIdsCurStr = useMemo(
+    () => JSON.stringify(formState.model_flag_ids),
+    [formState.model_flag_ids],
+  );
+  const modelPositionIdsCurStr = useMemo(
+    () => JSON.stringify(formState.model_position_ids),
+    [formState.model_position_ids],
+  );
+  const modelRubricIdsCurStr = useMemo(
+    () => JSON.stringify(formState.model_rubric_ids),
+    [formState.model_rubric_ids],
+  );
+  const pendingIdsCurStr = useMemo(
+    () => JSON.stringify(formState.pending_ids),
+    [formState.pending_ids],
+  );
 
+  const formStateKey = useMemo(
+    () =>
+      JSON.stringify({
+        name_id: formState.name_id,
+        name: formState.name,
+        description_id: formState.description_id,
+        description: formState.description,
+        flag_ids: formState.flag_ids,
+        department_ids: formState.department_ids,
+        model_ids: formState.model_ids,
+        model_flag_ids: formState.model_flag_ids,
+        model_position_ids: formState.model_position_ids,
+        model_rubric_ids: formState.model_rubric_ids,
+        model_flags: formState.model_flags,
+        model_positions: formState.model_positions,
+        model_rubrics: formState.model_rubrics,
+        pending_ids: formState.pending_ids,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      formState.name_id,
+      formState.name,
+      formState.description_id,
+      formState.description,
+      flagIdsStr,
+      deptIdsStr,
+      modelIdsCurStr,
+      modelFlagIdsCurStr,
+      modelPositionIdsCurStr,
+      modelRubricIdsCurStr,
+      formState.model_flags,
+      formState.model_positions,
+      formState.model_rubrics,
+      pendingIdsCurStr,
+    ],
+  );
+
+  const hasResourceIds =
+    !!formState.name_id ||
+    !!formState.description_id ||
+    formState.flag_ids.length > 0 ||
+    formState.department_ids.length > 0 ||
+    formState.model_ids.length > 0 ||
+    formState.model_flag_ids.length > 0 ||
+    formState.model_position_ids.length > 0 ||
+    formState.model_rubric_ids.length > 0 ||
+    !!formState.name ||
+    !!formState.description;
+
+  const buildPatchPayload = useCallback(
+    (draftId: string | null): Record<string, unknown> => {
+      const current = formStateRef.current as unknown as EvalFormState;
+      const payload: Record<string, unknown> = {
+        draft_id: draftId || null,
+      };
+      // Value takes precedence over ID for creatables.
+      if (current.name != null) payload["name"] = current.name;
+      else if (current.name_id) payload["name_id"] = current.name_id;
+      if (current.description != null) payload["description"] = current.description;
+      else if (current.description_id) payload["description_id"] = current.description_id;
+
+      if (current.flag_ids.length > 0) payload["flag_ids"] = current.flag_ids;
+      if (current.department_ids.length > 0) payload["department_ids"] = current.department_ids;
+      if (current.model_ids.length > 0) payload["model_ids"] = current.model_ids;
+      if (current.model_flag_ids.length > 0) payload["model_flag_ids"] = current.model_flag_ids;
+      if (current.model_position_ids.length > 0) payload["model_position_ids"] = current.model_position_ids;
+      if (current.model_rubric_ids.length > 0) payload["model_rubric_ids"] = current.model_rubric_ids;
+      if (current.model_flags?.length) payload["model_flags"] = current.model_flags;
+      if (current.model_positions?.length) payload["model_positions"] = current.model_positions;
+      if (current.model_rubrics?.length) payload["model_rubrics"] = current.model_rubrics;
+      if (current.pending_ids.length > 0) payload["pending_ids"] = current.pending_ids;
+      return payload;
+    },
+    [],
+  );
+
+  const patchActionRef = useRef<
+    | ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>)
+    | undefined
+  >(undefined);
   useEffect(() => {
-    const hasResourceIds =
-      formState.name_id ||
-      formState.description_id ||
-      formState.active_flag_id ||
-      formState.dynamic_flag_id ||
-      formState.groups_flag_id ||
-      formState.department_ids.length > 0 ||
-      formState.model_ids.length > 0 ||
-      formState.model_flag_ids.length > 0 ||
-      formState.model_position_ids.length > 0 ||
-      formState.model_rubric_ids.length > 0;
-
-    if (!hasResourceIds || !patchEvalDraftActionRef.current) {
+    if (!patchEvalDraftAction) {
+      patchActionRef.current = undefined;
       return;
     }
+    patchActionRef.current = async (payload: Record<string, unknown>) => {
+      const result = await patchEvalDraftAction({
+        body: payload,
+      } as PatchEvalDraftIn);
 
-    if (lastPatchedKeyRef.current === draftPatchKey) {
-      return;
-    }
+      const serverFormState = (result as Record<string, unknown>)?.[
+        "form_state"
+      ] as EvalDraftFormState | null | undefined;
+      if (serverFormState) {
+        setFormState((prev) => {
+          const nextNameId =
+            (serverFormState.name_id as string | null | undefined) ?? prev.name_id;
+          const nextDescriptionId =
+            (serverFormState.description_id as string | null | undefined) ??
+            prev.description_id;
+          const nextFlagIds =
+            (serverFormState.flag_ids as string[] | null | undefined) ??
+            prev.flag_ids;
+          const nextDeptIds =
+            (serverFormState.department_ids as string[] | null | undefined) ??
+            prev.department_ids;
+          const nextModelIds =
+            (serverFormState.model_ids as string[] | null | undefined) ??
+            prev.model_ids;
+          const nextPendingIds =
+            (serverFormState.pending_ids as string[] | null | undefined) ??
+            prev.pending_ids;
 
-    const timer = setTimeout(async () => {
-      try {
-        if (!patchEvalDraftActionRef.current) return;
-        const flagIds = [
-          formState.active_flag_id,
-          formState.dynamic_flag_id,
-          formState.groups_flag_id,
-        ].filter(Boolean) as string[];
+          const next: EvalFormState = {
+            ...prev,
+            name_id: nextNameId,
+            name: nextNameId ? null : prev.name,
+            description_id: nextDescriptionId,
+            description: nextDescriptionId ? null : prev.description,
+            flag_ids: nextFlagIds,
+            department_ids: nextDeptIds,
+            model_ids: nextModelIds,
+            pending_ids: nextPendingIds,
+          };
 
-        // Build payload with value field overlay
-        const payload: Record<string, unknown> = {
-          draft_id: draftId || null,
-          flag_ids: flagIds.length > 0 ? flagIds : null,
-          department_ids: formState.department_ids.length > 0 ? formState.department_ids : null,
-          model_ids: formState.model_ids.length > 0 ? formState.model_ids : null,
-          pending_ids: formState.pending_ids.length > 0 ? formState.pending_ids : null,
-        };
-        if (formState.name) {
-          payload["name"] = formState.name;
-        } else {
-          payload["name_id"] = formState.name_id;
-        }
-        if (formState.description) {
-          payload["description"] = formState.description;
-        } else {
-          payload["description_id"] = formState.description_id;
-        }
-
-        const result = await patchEvalDraftActionRef.current({
-          body: payload,
-        } as PatchEvalDraftIn);
-
-        lastPatchedKeyRef.current = draftPatchKey;
-
-        // Sync form_state from server response
-        const serverFormState = result.form_state as EvalDraftFormState | null | undefined;
-        if (serverFormState) {
-          const serverFlagIds = serverFormState.flag_ids ?? [];
-          const flagLookup = new Map(
-            (s?.flags ?? [])
-              .filter((flag) => flag.flag_option_id)
-              .map((flag) => [flag.flag_option_id as string, flag.key]),
-          );
-          const nextFlagId = (key: string) =>
-            serverFlagIds.find((flagId) => flagLookup.get(flagId) === key) ?? null;
-
+          const changed =
+            prev.name_id !== next.name_id ||
+            prev.name !== next.name ||
+            prev.description_id !== next.description_id ||
+            prev.description !== next.description ||
+            JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
+            JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
+            JSON.stringify(prev.model_ids) !== JSON.stringify(next.model_ids) ||
+            JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
+          if (!changed) return prev;
           serverSyncPendingRef.current = true;
-          setFormState((prev) => {
-            const nextNameId =
-              (serverFormState.name_id as string | null | undefined) ?? prev.name_id;
-            const nextDescriptionId =
-              (serverFormState.description_id as string | null | undefined) ??
-              prev.description_id;
-            return {
-              ...prev,
-              name_id: nextNameId,
-              // Clear value fields only once the server has resolved them to
-              // IDs — keeping the value would cause infinite re-saves (value
-              // takes precedence → new resource → new id → repeat).
-              name: nextNameId ? null : prev.name,
-              description_id: nextDescriptionId,
-              description: nextDescriptionId ? null : prev.description,
-              active_flag_id: nextFlagId("active"),
-              dynamic_flag_id: nextFlagId("dynamic"),
-              groups_flag_id: nextFlagId("groups"),
-              department_ids:
-                (serverFormState.department_ids as string[] | null | undefined) ??
-                prev.department_ids,
-              model_ids:
-                (serverFormState.model_ids as string[] | null | undefined) ??
-                prev.model_ids,
-              pending_ids:
-                (serverFormState.pending_ids as string[] | null | undefined) ??
-                prev.pending_ids,
-            };
-          });
-          requestAnimationFrame(() => {
-            serverSyncPendingRef.current = false;
-          });
-        }
-
-        if (!draftId && result.draft_id) {
-          setUrlFormDataRef.current?.({ draftId: result.draft_id });
-        }
-
-      } catch {
-        // Draft patch failed - leave lastPatchedKeyRef unchanged
+          return next;
+        });
       }
-    }, 1000);
 
-    return () => clearTimeout(timer);
-  }, [draftPatchKey, draftId, formState, s]);
+      return result as { draft_id?: string | null };
+    };
+  }, [patchEvalDraftAction]);
+
+  const emptyFlushRef = useRef(
+    new Map<string, () => Promise<void | Record<string, unknown>>>(),
+  );
+
+  const {
+    setUrlFormDataRef,
+    onFormDataChange,
+    serverSyncPendingRef,
+    formDataRef,
+  } = useDraftLifecycle({
+    formStateKey,
+    patchActionRef,
+    isAutosaveEnabled,
+    buildPatchPayload,
+    setSelectedDraftId,
+    hasResourceIds,
+    flushRegistryRef: emptyFlushRef,
+    formStateRef,
+  });
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
   const handleNameIdChange = useCallback((nameId: string | null) => {
@@ -694,11 +739,7 @@ function EvalComponent({
         throw new Error("Name is required");
       }
 
-      const saveFlagIds = [
-        formState.active_flag_id,
-        formState.dynamic_flag_id,
-        formState.groups_flag_id,
-      ].filter(Boolean) as string[];
+      const saveFlagIds = formState.flag_ids;
 
       try {
         if (isEditMode) {
@@ -821,9 +862,7 @@ function EvalComponent({
     () => [
       "name_id",
       "description_id",
-      "active_flag_id",
-      "dynamic_flag_id",
-      "groups_flag_id",
+      "flag_ids",
       "department_ids",
       "model_ids",
       "model_flag_ids",
@@ -854,9 +893,7 @@ function EvalComponent({
             name_id: null,
             description: null,
             description_id: null,
-            active_flag_id: null,
-            dynamic_flag_id: null,
-            groups_flag_id: null,
+            flag_ids: [],
             department_ids: [],
           };
         case "models":
@@ -970,49 +1007,53 @@ function EvalComponent({
                   required={false}
                 />
 
+                {/* Unified multi-flag picker — the server returns all
+                    eval-scoped flag options in `s.flags` (currently
+                    active / dynamic / groups); rendering them through
+                    one <Flags mode="multi"> collapses the old three
+                    separate Flags blocks and makes future flag types
+                    show up automatically. */}
                 <Flags
-                  flags={(s?.flags ?? []).filter((flag) => flag.key === "active")}
-                  flag_id={formState.active_flag_id ?? null}
-                  show_flags={(s?.flags ?? []).some((flag) => flag.key === "active" && flag.show !== false)}
+                  mode="multi"
+                  flags={s?.flags ?? []}
+                  flag_ids={(s?.flags ?? []).reduce(
+                    (
+                      acc: Record<string, string | null>,
+                      flag: { key?: string | null; flag_option_id?: string | null },
+                    ) => {
+                      const isEnabled = formState.flag_ids.includes(
+                        flag.flag_option_id ?? "",
+                      );
+                      if (flag.key) {
+                        acc[flag.key] = isEnabled
+                          ? (flag.flag_option_id ?? null)
+                          : null;
+                      }
+                      return acc;
+                    },
+                    {} as Record<string, string | null>,
+                  )}
+                  show_flags={(s?.flags?.length ?? 0) > 0}
                   columns={1}
-                  label="Active"
+                  label="Flags"
                   disabled={disabled}
-                  onChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      active_flag_id: flagId,
-                    }))
-                  }
-                />
-
-                <Flags
-                  flags={(s?.flags ?? []).filter((flag) => flag.key === "dynamic")}
-                  flag_id={formState.dynamic_flag_id ?? null}
-                  show_flags={(s?.flags ?? []).some((flag) => flag.key === "dynamic" && flag.show !== false)}
-                  columns={1}
-                  label="Dynamic"
-                  disabled={disabled}
-                  onChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      dynamic_flag_id: flagId,
-                    }))
-                  }
-                />
-
-                <Flags
-                  flags={(s?.flags ?? []).filter((flag) => flag.key === "groups")}
-                  flag_id={formState.groups_flag_id ?? null}
-                  show_flags={(s?.flags ?? []).some((flag) => flag.key === "groups" && flag.show !== false)}
-                  columns={1}
-                  label="Use Groups"
-                  disabled={disabled}
-                  onChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      groups_flag_id: flagId,
-                    }))
-                  }
+                  onChange={(key: string, flagId: string | null) => {
+                    setFormState((prev) => {
+                      if (flagId) {
+                        if (prev.flag_ids.includes(flagId)) return prev;
+                        return { ...prev, flag_ids: [...prev.flag_ids, flagId] };
+                      }
+                      const flag = (s?.flags ?? []).find(
+                        (f: { key?: string | null }) => f.key === key,
+                      );
+                      if (!flag?.flag_option_id) return prev;
+                      const nextIds = prev.flag_ids.filter(
+                        (id) => id !== flag.flag_option_id,
+                      );
+                      if (nextIds.length === prev.flag_ids.length) return prev;
+                      return { ...prev, flag_ids: nextIds };
+                    });
+                  }}
                 />
 
                 <Departments
@@ -1097,17 +1138,18 @@ function EvalComponent({
             >
               <div className="space-y-6">
                 <Models
-                  model_id={formState.model_ids?.[0] ?? null}
-                  model_resource={s?.models?.find((item) => item.selected) ?? null}
+                  model_ids={formState.model_ids ?? []}
+                  model_resources={(s?.models ?? []).filter((item) => item.selected)}
                   show_models={(s?.models?.length ?? 0) > 0}
                   models={s?.models ?? []}
                   disabled={disabled}
-                  onModelIdChange={(id) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      model_ids: id ? [id] : [],
-                    }))
+                  onModelIdsChange={(ids) =>
+                    setFormState((prev) => {
+                      if (JSON.stringify(prev.model_ids) === JSON.stringify(ids)) return prev;
+                      return { ...prev, model_ids: ids };
+                    })
                   }
+                  label="Models"
                   required={false}
                   searchTerm={modelSearch ?? ""}
                   showSelectedFilter={modelShowSelected}
@@ -1123,17 +1165,18 @@ function EvalComponent({
                   model_resources={(s?.models ?? []).filter((item) => item.selected)}
                   disabled={disabled}
                   onChange={(ids) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      model_flag_ids: ids,
-                    }))
+                    setFormState((prev) => {
+                      if (JSON.stringify(prev.model_flag_ids) === JSON.stringify(ids)) return prev;
+                      return { ...prev, model_flag_ids: ids };
+                    })
                   }
                   required={false}
                   onModelFlagValues={(flags) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      model_flags: flags.length > 0 ? flags : null,
-                    }))
+                    setFormState((prev) => {
+                      const nextVal = flags.length > 0 ? flags : null;
+                      if (JSON.stringify(prev.model_flags) === JSON.stringify(nextVal)) return prev;
+                      return { ...prev, model_flags: nextVal };
+                    })
                   }
                 />
                 <ModelPositions
@@ -1148,20 +1191,21 @@ function EvalComponent({
                   disabled={disabled}
                   onChange={() => {}}
                   onPositionIdsChange={(ids) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      model_position_ids: ids,
-                    }))
+                    setFormState((prev) => {
+                      if (JSON.stringify(prev.model_position_ids) === JSON.stringify(ids)) return prev;
+                      return { ...prev, model_position_ids: ids };
+                    })
                   }
                   simulation_id={evalId || null}
                   model_ids={formState.model_ids}
                   onGenerate={handleGenerateModelPositions}
                   required={false}
                   onModelPositionValues={(positions) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      model_positions: positions.length > 0 ? positions : null,
-                    }))
+                    setFormState((prev) => {
+                      const nextVal = positions.length > 0 ? positions : null;
+                      if (JSON.stringify(prev.model_positions) === JSON.stringify(nextVal)) return prev;
+                      return { ...prev, model_positions: nextVal };
+                    })
                   }
                 />
                 <ModelRubrics
@@ -1174,17 +1218,18 @@ function EvalComponent({
                   model_resources={(s?.models ?? []).filter((item) => item.selected)}
                   disabled={disabled}
                   onChange={(ids) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      model_rubric_ids: ids,
-                    }))
+                    setFormState((prev) => {
+                      if (JSON.stringify(prev.model_rubric_ids) === JSON.stringify(ids)) return prev;
+                      return { ...prev, model_rubric_ids: ids };
+                    })
                   }
                   required={false}
                   onModelRubricValues={(rubrics) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      model_rubrics: rubrics.length > 0 ? rubrics : null,
-                    }))
+                    setFormState((prev) => {
+                      const nextVal = rubrics.length > 0 ? rubrics : null;
+                      if (JSON.stringify(prev.model_rubrics) === JSON.stringify(nextVal)) return prev;
+                      return { ...prev, model_rubrics: nextVal };
+                    })
                   }
                 />
               </div>

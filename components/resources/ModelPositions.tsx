@@ -198,20 +198,26 @@ export function ModelPositions({
     },
   );
 
-  // Update local positions when model_ids or currentPositions change
+  // Hydrate local positions from server data. Skip once the user has
+  // interacted so a stale server refetch mid-save doesn't clobber the
+  // value they typed — the same class of bug fixed in ScenarioPositions:
+  // after save, formState.model_ids comes back as a new array ref a
+  // render before the new simulationData arrives with the newly created
+  // position resource, and the then-stale positionMap would otherwise
+  // overwrite the user's value.
   useEffect(() => {
+    if (isDirtyRef.current) return;
     setLocalPositions((prev) => {
       const newMap = new Map<string, number>();
       model_ids.forEach((modelId, index) => {
         const existingPosition = positionMap.get(modelId);
         newMap.set(modelId, existingPosition ?? index + 1);
       });
-      // Only update if content actually changed
       if (prev.size !== newMap.size) return newMap;
       for (const [key, value] of newMap) {
         if (prev.get(key) !== value) return newMap;
       }
-      return prev; // No change, return same reference
+      return prev;
     });
   }, [model_ids, positionMap]);
 
@@ -237,8 +243,24 @@ export function ModelPositions({
   const handlePositionChange = useCallback(
     (modelId: string, newValue: number) => {
       isDirtyRef.current = true;
+      // Clamp to [1..count] and swap on collision so positions stay a
+      // permutation of 1..N. Without this, typing a value that matches
+      // another entry's position would leave two models at the same slot
+      // (not a valid ordering). The move-up/down buttons already swap;
+      // mirror that behavior for direct numeric input.
+      const count = localPositions.size;
+      const clamped = Math.max(1, Math.min(count, newValue));
+      const previousValue = localPositions.get(modelId);
       const updated = new Map(localPositions);
-      updated.set(modelId, newValue);
+      if (previousValue !== undefined && previousValue !== clamped) {
+        for (const [mid, pos] of localPositions) {
+          if (mid !== modelId && pos === clamped) {
+            updated.set(mid, previousValue);
+            break;
+          }
+        }
+      }
+      updated.set(modelId, clamped);
       setLocalPositions(updated);
 
       // Convert to array format for parent

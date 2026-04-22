@@ -30,12 +30,19 @@ export interface ModelResourceItem {
 }
 
 export interface ModelsProps {
+  /** Single-select mode. Omit when using multi-select (`model_ids`). */
   model_id?: string | null;
+  /** Multi-select mode. When provided, the picker toggles membership. */
+  model_ids?: string[];
   model_resource?: ModelResourceItem | null;
+  model_resources?: ModelResourceItem[];
   show_models?: boolean;
   models?: ModelResourceItem[];
   disabled?: boolean;
-  onModelIdChange: (modelId: string | null) => void;
+  /** Required in single-select mode. */
+  onModelIdChange?: (modelId: string | null) => void;
+  /** Required in multi-select mode. */
+  onModelIdsChange?: (modelIds: string[]) => void;
   label?: string;
   required?: boolean;
   id?: string;
@@ -48,11 +55,14 @@ export interface ModelsProps {
 
 export function Models({
   model_id,
+  model_ids,
   model_resource: _model_resource,
+  model_resources: _model_resources,
   show_models = true,
   models,
   disabled = false,
   onModelIdChange,
+  onModelIdsChange,
   label = "Model",
   required = false,
   id = "model",
@@ -62,7 +72,17 @@ export function Models({
   showSelectedFilter = false,
   onShowSelectedChange,
 }: ModelsProps) {
+  // Mode is determined by which selection prop is supplied. Callers must
+  // pick one — single = `model_id` + `onModelIdChange`, multi =
+  // `model_ids` + `onModelIdsChange`. Single mode keeps backwards
+  // compatibility with Agent.tsx; multi mirrors the Scenarios picker used
+  // by Simulation.
+  const isMulti = model_ids !== undefined;
   const resourceId = model_id ?? null;
+  const selectedSet = useMemo(
+    () => new Set(model_ids ?? []),
+    [model_ids],
+  );
   const show = show_models ?? true;
   const allModels = useMemo(() => models ?? [], [models]);
 
@@ -124,8 +144,11 @@ export function Models({
     if (!showSelectedFilter) {
       return filteredModels;
     }
+    if (isMulti) {
+      return filteredModels.filter((model) => selectedSet.has(model.id));
+    }
     return filteredModels.filter((model) => model.id === resourceId);
-  }, [filteredModels, showSelectedFilter, resourceId]);
+  }, [filteredModels, showSelectedFilter, resourceId, isMulti, selectedSet]);
 
   // Check if a model is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
@@ -138,14 +161,23 @@ export function Models({
 
   const handleSelect = useCallback(
     (modelId: string) => {
-      // Toggle selection: if already selected, unselect; otherwise select
+      if (isMulti) {
+        // Toggle membership in the selected set.
+        const current = model_ids ?? [];
+        const next = current.includes(modelId)
+          ? current.filter((id) => id !== modelId)
+          : [...current, modelId];
+        onModelIdsChange?.(next);
+        return;
+      }
+      // Single-select: click-to-toggle (clicking the selected card clears it).
       if (modelId === resourceId) {
-        onModelIdChange(null);
+        onModelIdChange?.(null);
       } else {
-        onModelIdChange(modelId);
+        onModelIdChange?.(modelId);
       }
     },
-    [resourceId, onModelIdChange]
+    [isMulti, model_ids, resourceId, onModelIdChange, onModelIdsChange]
   );
 
   // Accept pending — keep pending model in selection (no-op, next save persists)
@@ -154,12 +186,18 @@ export function Models({
     // The next draft save will persist them as active
   }, []);
 
-  // Reject pending — if selected model is pending, deselect it
+  // Reject pending — clear any pending selections.
   const handleReject = useCallback(() => {
-    if (resourceId && pendingIds.has(resourceId)) {
-      onModelIdChange(null);
+    if (isMulti) {
+      const current = model_ids ?? [];
+      const next = current.filter((id) => !pendingIds.has(id));
+      if (next.length !== current.length) onModelIdsChange?.(next);
+      return;
     }
-  }, [resourceId, pendingIds, onModelIdChange]);
+    if (resourceId && pendingIds.has(resourceId)) {
+      onModelIdChange?.(null);
+    }
+  }, [isMulti, model_ids, resourceId, pendingIds, onModelIdChange, onModelIdsChange]);
 
   // Don't render if show_models is false (AFTER all hooks)
   if (!show) {
@@ -214,7 +252,8 @@ export function Models({
       <SelectableGrid<(typeof modelsItems)[0]>
         horizontal
         items={displayModels}
-        selectedId={resourceId || null}
+        selectedId={isMulti ? null : resourceId || null}
+        selectedIds={isMulti ? Array.from(selectedSet) : undefined}
         onSelect={handleSelect}
         getId={(item) => item.id}
         renderItem={(model, isSelected) => {

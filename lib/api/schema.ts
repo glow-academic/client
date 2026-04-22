@@ -7794,6 +7794,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/system/group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Group System
+         * @description Resolve or create the session's system group, optionally naming it.
+         */
+        post: operations["group_system_system_group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/system/group/get": {
         parameters: {
             query?: never;
@@ -39025,6 +39045,65 @@ export interface components {
          * @description Response body for POST /simulation/group.
          */
         GroupSimulationApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Resolved or newly created group UUID
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * @description UUID of the created group_names entry (if name was provided)
+             */
+            group_name_id?: string | null;
+            /**
+             * Name
+             * @description The name that was set (if provided)
+             */
+            name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history — populated when resolving an existing group for fetch
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
+        };
+        /**
+         * GroupSystemApiRequest
+         * @description Request body for POST /system/group.
+         */
+        GroupSystemApiRequest: {
+            /**
+             * Group Id
+             * @description Existing group UUID (omit to create or reuse via time window)
+             */
+            group_id?: string | null;
+            /**
+             * Name
+             * @description Optional name for the group
+             */
+            name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * GroupSystemApiResponse
+         * @description Response body for POST /system/group.
+         */
+        GroupSystemApiResponse: {
             /**
              * Group Id
              * Format: uuid
@@ -74593,6 +74672,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemSystemApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    group_system_system_group_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupSystemApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupSystemApiResponse"];
                 };
             };
             /** @description Validation Error */

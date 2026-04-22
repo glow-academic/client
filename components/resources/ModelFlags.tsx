@@ -153,7 +153,19 @@ export function ModelFlags({
       }
     });
 
-    // Only update if content actually changed (compare by serializing)
+    // Resource-id mapping always hydrates so new server-assigned ids flow
+    // through onChange emits, regardless of dirty state.
+    setModelFlagResourceIds((prev) => {
+      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
+      const nextKey = JSON.stringify(Array.from(nextResourceIds.entries()).sort());
+      return prevKey === nextKey ? prev : nextResourceIds;
+    });
+
+    // Freeze visible-selection hydration after the user clicks — otherwise
+    // a server refetch mid-save (still empty since the new junction row
+    // hasn't committed yet) clobbers the click and the Switch flips OFF.
+    if (isDirtyRef.current) return;
+
     setSelectedFlagsByModel((prev) => {
       const prevKey = JSON.stringify(
         Array.from(prev.entries()).map(([k, v]) => [k, Array.from(v).sort()])
@@ -162,11 +174,6 @@ export function ModelFlags({
         Array.from(nextSelected.entries()).map(([k, v]) => [k, Array.from(v).sort()])
       );
       return prevKey === nextKey ? prev : nextSelected;
-    });
-    setModelFlagResourceIds((prev) => {
-      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
-      const nextKey = JSON.stringify(Array.from(nextResourceIds.entries()).sort());
-      return prevKey === nextKey ? prev : nextResourceIds;
     });
   }, [currentResources, model_ids]);
 

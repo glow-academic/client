@@ -1187,10 +1187,14 @@ function SimulationComponent({
       );
       // Unlimited time limits are a practice-only convenience: training
       // and assessment simulations must commit to a concrete time budget.
-      // Gate the Unlimited switch on whether the simulation's `practice`
-      // flag option is currently selected.
+      // Gate the Unlimited switch on whether the simulation's practice
+      // flag option is currently selected. The server sets
+      // SimulationFlagConfig.key from the flag's `name` (not its `type`),
+      // which is "Practice" in the seed — match case-insensitively so the
+      // capitalization doesn't silently disable the toggle.
       const practiceFlagOptionId = (s.flags ?? []).find(
-        (f: { key?: string | null }) => f.key === "practice",
+        (f: { key?: string | null }) =>
+          (f.key ?? "").toLowerCase() === "practice",
       )?.flag_option_id;
       const allowUnlimitedTimeLimits = !!(
         practiceFlagOptionId &&

@@ -137,34 +137,38 @@ export function ModelRubrics({
   const isDirtyRef = useRef(false);
   const isInitialMountRef = useRef(true);
   useEffect(() => {
-    const nextRubrics = new Map<string, string | null>();
     const nextIds = new Map<string, string>();
+    currentResources.forEach((resource) => {
+      if (resource.model_id && resource.id) {
+        nextIds.set(resource.model_id, resource.id);
+      }
+    });
+    // Resource-id mapping always hydrates so new server-assigned ids flow
+    // through onChange emits, regardless of dirty state.
+    setModelRubricIdsByModel((prev) => {
+      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
+      const nextKey = JSON.stringify(Array.from(nextIds.entries()).sort());
+      return prevKey === nextKey ? prev : nextIds;
+    });
 
+    // Freeze visible-selection hydration after the user clicks.
+    if (isDirtyRef.current) return;
+
+    const nextRubrics = new Map<string, string | null>();
     currentResources.forEach((resource) => {
       if (resource.model_id) {
         nextRubrics.set(resource.model_id, resource.rubric_id ?? null);
-        if (resource.id) {
-          nextIds.set(resource.model_id, resource.id);
-        }
       }
     });
-
     model_ids.forEach((modelId) => {
       if (!nextRubrics.has(modelId)) {
         nextRubrics.set(modelId, null);
       }
     });
-
-    // Only update if content actually changed
     setRubricIdByModel((prev) => {
       const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
       const nextKey = JSON.stringify(Array.from(nextRubrics.entries()).sort());
       return prevKey === nextKey ? prev : nextRubrics;
-    });
-    setModelRubricIdsByModel((prev) => {
-      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
-      const nextKey = JSON.stringify(Array.from(nextIds.entries()).sort());
-      return prevKey === nextKey ? prev : nextIds;
     });
   }, [currentResources, model_ids]);
 
