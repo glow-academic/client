@@ -307,16 +307,73 @@ function RubricComponent({
     });
   }, [getInitialFormState]);
 
-  // NOTE: the actual server-sync flag that the autosave effect reads
-  // is returned from useDraftLifecycle below. Setting a local ref here
-  // (previous behavior) was a no-op — the hook's own effect couldn't
-  // see it, so server-sync absorbs re-triggered the debounce and the
-  // draft patched in a loop whenever Standards / StandardGroups
-  // mutated formState. Destructure + set the hook's ref instead.
   const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
   const patchActionRef = React.useRef<
     ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>) | undefined
   >(undefined);
+
+  const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
+    null,
+  );
+  const hasResourceIds = checkHasResourceIds(
+    RUBRIC_RESOURCES,
+    formState as unknown as Record<string, unknown>,
+  );
+
+  const buildPatchPayload = useCallback(
+    (
+      inputDraftId: string | null,
+      flushResults?: Record<string, unknown>,
+    ): Record<string, unknown> => {
+      const payload: Record<string, unknown> = {
+        input_draft_id: inputDraftId || null,
+        group_id: s?.group_id ?? null,
+        ...buildDraftPayload(RUBRIC_RESOURCES, {
+          formState: formStateRef.current,
+          referenceState: lastPatchedFormStateRef.current,
+          flushResults: flushResults ?? {},
+        }),
+      };
+      const fs = formStateRef.current as unknown as RubricFormState;
+      if (fs.name) {
+        payload["name"] = fs.name;
+        delete payload["name_id"];
+      }
+      if (fs.description) {
+        payload["description"] = fs.description;
+        delete payload["description_id"];
+      }
+      payload["pending_ids"] = fs.pending_ids;
+      return payload;
+    },
+    [s],
+  );
+
+  // Hook destructure must come BEFORE the patchActionRef effect so that
+  // `serverSyncPendingRef` is lexically in scope at the references inside
+  // patchActionRef.current's async body. The previous ordering (effect first,
+  // destructure after) relied on closure late-binding — technically correct
+  // but confusing to read.
+  const {
+    setUrlFormDataRef,
+    onFormDataChange,
+    flushAllAndSave,
+    formDataRef,
+    serverSyncPendingRef,
+  } = useDraftLifecycle({
+    formStateKey,
+    patchActionRef,
+    isAutosaveEnabled,
+    buildPatchPayload,
+    setSelectedDraftId,
+    hasResourceIds,
+    flushRegistryRef,
+    formStateRef,
+    onPatchSuccess: () => {
+      lastPatchedFormStateRef.current = { ...formStateRef.current };
+    },
+  });
+
   useEffect(() => {
     if (!patchRubricDraftAction) {
       patchActionRef.current = undefined;
@@ -368,44 +425,7 @@ function RubricComponent({
       }
       return res;
     };
-  }, [patchRubricDraftAction]);
-
-  const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
-    null,
-  );
-  const hasResourceIds = checkHasResourceIds(
-    RUBRIC_RESOURCES,
-    formState as unknown as Record<string, unknown>,
-  );
-
-  const buildPatchPayload = useCallback(
-    (
-      inputDraftId: string | null,
-      flushResults?: Record<string, unknown>,
-    ): Record<string, unknown> => {
-      const payload: Record<string, unknown> = {
-        input_draft_id: inputDraftId || null,
-        group_id: s?.group_id ?? null,
-        ...buildDraftPayload(RUBRIC_RESOURCES, {
-          formState: formStateRef.current,
-          referenceState: lastPatchedFormStateRef.current,
-          flushResults: flushResults ?? {},
-        }),
-      };
-      const fs = formStateRef.current as unknown as RubricFormState;
-      if (fs.name) {
-        payload["name"] = fs.name;
-        delete payload["name_id"];
-      }
-      if (fs.description) {
-        payload["description"] = fs.description;
-        delete payload["description_id"];
-      }
-      payload["pending_ids"] = fs.pending_ids;
-      return payload;
-    },
-    [s],
-  );
+  }, [patchRubricDraftAction, serverSyncPendingRef]);
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
   const handleNameIdChange = useCallback((nameId: string | null) => {
@@ -427,26 +447,6 @@ function RubricComponent({
   const handleDescriptionChange = useCallback((description: string) => {
     setFormState((prev) => ({ ...prev, description }));
   }, []);
-
-  const {
-    setUrlFormDataRef,
-    onFormDataChange,
-    flushAllAndSave,
-    formDataRef,
-    serverSyncPendingRef,
-  } = useDraftLifecycle({
-    formStateKey,
-    patchActionRef,
-    isAutosaveEnabled,
-    buildPatchPayload,
-    setSelectedDraftId,
-    hasResourceIds,
-    flushRegistryRef,
-    formStateRef,
-    onPatchSuccess: () => {
-      lastPatchedFormStateRef.current = { ...formStateRef.current };
-    },
-  });
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: RubricResourceType[], userInstructions?: string) => {
