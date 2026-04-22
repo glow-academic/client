@@ -98,17 +98,40 @@ export function useDraftLifecycle(config: {
 
   // --- Debounced autosave effect ---
   useEffect(() => {
+    // If a prior render dispatched "saving" and scheduled a timer, the effect
+    // cleanup above cleared it. Any early-return path below must clear the
+    // indicator, otherwise it stays stuck forever (e.g. hasResourceIds flips
+    // back to false after a server-sync absorb, or serverSyncPending consumes).
+    const clearPendingSaveIndicator = () => {
+      if (hasPendingChangesRef.current) {
+        hasPendingChangesRef.current = false;
+        window.dispatchEvent(
+          new CustomEvent("save-status-change", {
+            detail: { status: "idle" },
+          }),
+        );
+        window.dispatchEvent(
+          new CustomEvent("unsaved-changes", {
+            detail: { hasChanges: false },
+          }),
+        );
+      }
+    };
+
     if (!hasResourceIds || !patchActionRef.current) {
+      clearPendingSaveIndicator();
       return;
     }
 
     if (serverSyncPendingRef.current) {
       serverSyncPendingRef.current = false;
       lastPatchedKeyRef.current = draftPatchKey;
+      clearPendingSaveIndicator();
       return;
     }
 
     if (lastPatchedKeyRef.current === draftPatchKey) {
+      clearPendingSaveIndicator();
       return;
     }
 

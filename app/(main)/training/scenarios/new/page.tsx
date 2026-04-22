@@ -205,15 +205,8 @@ export default async function NewScenarioPage({
         images: q.imageSearch ? {
           search: q.imageSearch,
         } : undefined,
-        videos: q.videoSearch || q.videoEnabled === false ? {
-          search: q.videoSearch ?? undefined,
-          include: q.videoEnabled ?? undefined,
-        } : undefined,
-        objectives: q.objectivesEnabled === false ? {
-          include: false,
-        } : undefined,
-        questions: q.questionsEnabled === false ? {
-          include: false,
+        videos: q.videoSearch ? {
+          search: q.videoSearch,
         } : undefined,
         parameter_fields: fieldShowSelectedByParam || parameterIds ? {
           selected: fieldShowSelectedByParam ? Object.entries(fieldShowSelectedByParam).map(

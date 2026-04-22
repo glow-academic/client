@@ -88,6 +88,14 @@ export function ScenarioPositions({
   onPositionIdsChange,
   onScenarioPositionValues,
 }: ScenarioPositionsProps) {
+  // Dirty flag: flipped true inside any user interaction (see
+  // handlePositionChange / handleReject below). Both the hydrate effect and
+  // the value-emit effect gate on this so:
+  //  - hydrate: never overwrites user-typed values with stale server data.
+  //  - emit: never re-emits synthetic defaults (e.g. `index + 1`) back up
+  //    to the parent as if the user typed them, which was the source of an
+  //    infinite save loop.
+  const isDirtyRef = useRef(false);
   const show = show_scenario_positions ?? false;
   const currentPositions = useMemo(
     () => scenario_position_resources ?? [],
@@ -194,39 +202,65 @@ export function ScenarioPositions({
     },
   );
 
-  // Update local positions when scenario_ids or currentPositions change
+  // Hydrate local positions from server data (scenario_ids × positionMap).
+  // Skips once the user has typed, so their in-flight edit isn't clobbered
+  // by a stale server refetch — e.g. after a save the server returns the
+  // updated scenario_ids array ref a render before simulationData comes
+  // back fresh, and the old positionMap would otherwise overwrite the
+  // user's new number.
   useEffect(() => {
+    if (isDirtyRef.current) return;
     setLocalPositions((prev) => {
       const newMap = new Map<string, number>();
       scenario_ids.forEach((scenarioId, index) => {
         const existingPosition = positionMap.get(scenarioId);
         newMap.set(scenarioId, existingPosition ?? index + 1);
       });
-      // Only update if content actually changed
       if (prev.size !== newMap.size) return newMap;
       for (const [key, value] of newMap) {
         if (prev.get(key) !== value) return newMap;
       }
-      return prev; // No change, return same reference
+      return prev;
     });
   }, [scenario_ids, positionMap]);
 
-  // Emit value callback for unified draft pattern
+  // Emit value callback for unified draft pattern — gated on isDirtyRef
+  // (declared at the top of the component so both the hydrate and emit
+  // effects share it).
   const onScenarioPositionValuesRef = useRef(onScenarioPositionValues);
   onScenarioPositionValuesRef.current = onScenarioPositionValues;
   useEffect(() => {
     if (!onScenarioPositionValuesRef.current) return;
+    if (!isDirtyRef.current) return;
     const values: Array<{ scenario_id: string; value: number }> = [];
     localPositions.forEach((value, scenarioId) => {
       values.push({ scenario_id: scenarioId, value });
     });
+    values.sort((a, b) => a.scenario_id.localeCompare(b.scenario_id));
     onScenarioPositionValuesRef.current(values);
   }, [localPositions]);
 
   const handlePositionChange = useCallback(
     (scenarioId: string, newValue: number) => {
+      isDirtyRef.current = true;
+      // Clamp to [1..count] and swap on collision so positions stay a
+      // permutation of 1..N. Without this, typing e.g. "2" on a scenario
+      // when another already holds position 2 leaves two scenarios at the
+      // same slot (not a valid ordering). The move-up/down buttons already
+      // do a swap; mirror that behavior for direct numeric input.
+      const count = localPositions.size;
+      const clamped = Math.max(1, Math.min(count, newValue));
+      const previousValue = localPositions.get(scenarioId);
       const updated = new Map(localPositions);
-      updated.set(scenarioId, newValue);
+      if (previousValue !== undefined && previousValue !== clamped) {
+        for (const [sid, pos] of localPositions) {
+          if (sid !== scenarioId && pos === clamped) {
+            updated.set(sid, previousValue);
+            break;
+          }
+        }
+      }
+      updated.set(scenarioId, clamped);
       setLocalPositions(updated);
 
       // Convert to array format for parent
@@ -293,6 +327,7 @@ export function ScenarioPositions({
 
   // Reject pending — remove pending positions from selection
   const handleReject = useCallback(() => {
+    isDirtyRef.current = true;
     // Remove pending scenario IDs from localPositions and emit
     const newPositions = new Map(localPositions);
     pendingIds.forEach((sid) => newPositions.delete(sid));

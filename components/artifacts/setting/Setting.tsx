@@ -12,15 +12,17 @@ import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { AuthItemKeys } from "@/components/resources/AuthItemKeys";
-import { Auths } from "@/components/resources/Auths";
+import { AuthItemValues } from "@/components/resources/AuthItemValues";
 import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
+import { Logins } from "@/components/resources/Logins";
+import { Mcp } from "@/components/resources/Mcp";
 import { Names } from "@/components/resources/Names";
-import { Profiles } from "@/components/resources/Profiles";
 import { ProviderKeys } from "@/components/resources/ProviderKeys";
 import { Systems } from "@/components/resources/Systems";
+import { Thresholds } from "@/components/resources/Thresholds";
 import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
@@ -41,126 +43,6 @@ type PatchSettingDraftIn = InputOf<"/setting/draft", "patch">;
 type PatchSettingDraftOut = OutputOf<"/setting/draft", "patch">;
 type SettingData = OutputOf<"/setting/get", "post">;
 
-type NameItem = {
-  id?: string | null;
-  name?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type DescriptionItem = {
-  id?: string | null;
-  description?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type ColorItem = {
-  id?: string | null;
-  name?: string | null;
-  description?: string | null;
-  hex_code?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type FlagItem = {
-  key: string;
-  label: string;
-  description?: string | null;
-  icon_id?: string | null;
-  flag_option_id?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type DepartmentItem = {
-  department_id?: string | null;
-  name?: string | null;
-  description?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type ProfileItem = {
-  profile_id?: string | null;
-  name?: string | null;
-  description?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type AuthItem = {
-  auth_id?: string | null;
-  name?: string | null;
-  description?: string | null;
-  slug?: string | null;
-  protocol?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type ProviderKeyItem = {
-  id?: string | null;
-  provider_id?: string | null;
-  key_id?: string | null;
-  key?: string | null;
-  name?: string | null;
-  description?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type AuthItemKeyItem = {
-  id?: string | null;
-  auth_id?: string | null;
-  item_id?: string | null;
-  key_id?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type SystemItem = {
-  system_id?: string | null;
-  name?: string | null;
-  description?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type ProviderCatalogItem = {
-  provider_id?: string | null;
-  name?: string | null;
-  description?: string | null;
-};
-
-type KeyCatalogItem = {
-  key_id?: string | null;
-  name?: string | null;
-  description?: string | null;
-  masked_key?: string | null;
-};
-
 type CanonicalSettingData = SettingData;
 
 type SettingFormState = {
@@ -171,11 +53,13 @@ type SettingFormState = {
   active_flag_id: string | null;
   color_ids: string[];
   department_ids: string[];
-  profile_ids: string[];
-  auth_ids: string[];
+  logins_ids: string[];
+  system_ids: string[];
+  mcp_id: string | null;
+  threshold_ids: string[];
   provider_key_ids: string[];
   auth_item_key_ids: string[];
-  system_ids: string[];
+  auth_item_value_ids: string[];
   pending_ids: string[];
 };
 
@@ -185,11 +69,13 @@ const SETTING_RESOURCES: ResourceConfig[] = [
   { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
   { key: "colors", formKey: "color_ids", flushKey: null, type: "multi" },
   { key: "departments", formKey: "department_ids", flushKey: null, type: "multi" },
-  { key: "profiles", formKey: "profile_ids", flushKey: null, type: "multi" },
-  { key: "auths", formKey: "auth_ids", flushKey: null, type: "multi" },
+  { key: "logins", formKey: "logins_ids", flushKey: null, type: "multi" },
+  { key: "systems", formKey: "system_ids", flushKey: null, type: "multi" },
+  { key: "mcp", formKey: "mcp_id", flushKey: null, type: "single" },
+  { key: "thresholds", formKey: "threshold_ids", flushKey: null, type: "multi" },
   { key: "provider_keys", formKey: "provider_key_ids", flushKey: null, type: "multi" },
   { key: "auth_item_keys", formKey: "auth_item_key_ids", flushKey: null, type: "multi" },
-  { key: "systems", formKey: "system_ids", flushKey: null, type: "multi" },
+  { key: "auth_item_values", formKey: "auth_item_value_ids", flushKey: null, type: "multi" },
 ];
 
 const VALID_RESOURCE_TYPES: ResourceType[] = [
@@ -240,13 +126,18 @@ function Setting({
         (s?.departments?.filter((item) => item.selected) ?? [])
           .map((item) => item.department_id)
           .filter((id): id is string => !!id),
-      profile_ids:
-        (s?.profiles?.filter((item) => item.selected) ?? [])
-          .map((item) => item.profile_id)
+      logins_ids:
+        (s?.logins?.filter((item) => item.selected) ?? [])
+          .map((item) => item.logins_id)
           .filter((id): id is string => !!id),
-      auth_ids:
-        (s?.auths?.filter((item) => item.selected) ?? [])
-          .map((item) => item.auth_id)
+      system_ids:
+        (s?.systems?.filter((item) => item.selected) ?? [])
+          .map((item) => item.system_id)
+          .filter((id): id is string => !!id),
+      mcp_id: s?.mcp?.find((item) => item.selected)?.mcp_id ?? null,
+      threshold_ids:
+        (s?.thresholds?.filter((item) => item.selected) ?? [])
+          .map((item) => item.id)
           .filter((id): id is string => !!id),
       provider_key_ids:
         (s?.provider_keys?.filter((item) => item.selected) ?? [])
@@ -256,9 +147,9 @@ function Setting({
         (s?.auth_item_keys?.filter((item) => item.selected) ?? [])
           .map((item) => item.id)
           .filter((id): id is string => !!id),
-      system_ids:
-        (s?.systems?.filter((item) => item.selected) ?? [])
-          .map((item) => item.system_id)
+      auth_item_value_ids:
+        (s?.auth_item_values?.filter((item) => item.selected) ?? [])
+          .map((item) => item.id)
           .filter((id): id is string => !!id),
       pending_ids: (s?.pending_ids ?? []).filter((id): id is string => !!id),
     };
@@ -301,11 +192,13 @@ function Setting({
       flags: new Set((s?.flags ?? []).filter((item) => item.pending && item.flag_option_id).map((item) => item.flag_option_id as string)),
       colors: new Set((s?.colors ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
       departments: new Set((s?.departments ?? []).filter((item) => item.pending && item.department_id).map((item) => item.department_id as string)),
-      profiles: new Set((s?.profiles ?? []).filter((item) => item.pending && item.profile_id).map((item) => item.profile_id as string)),
-      auths: new Set((s?.auths ?? []).filter((item) => item.pending && item.auth_id).map((item) => item.auth_id as string)),
+      logins: new Set((s?.logins ?? []).filter((item) => item.pending && item.logins_id).map((item) => item.logins_id as string)),
+      systems: new Set((s?.systems ?? []).filter((item) => item.pending && item.system_id).map((item) => item.system_id as string)),
+      mcp: new Set((s?.mcp ?? []).filter((item) => item.pending && item.mcp_id).map((item) => item.mcp_id as string)),
+      thresholds: new Set((s?.thresholds ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
       provider_keys: new Set((s?.provider_keys ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
       auth_item_keys: new Set((s?.auth_item_keys ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
-      systems: new Set((s?.systems ?? []).filter((item) => item.pending && item.system_id).map((item) => item.system_id as string)),
+      auth_item_values: new Set((s?.auth_item_values ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
     }),
     [s]
   );
@@ -379,9 +272,6 @@ function Setting({
           const next = {
             ...prev,
             name_id: nextNameId,
-            // Clear value fields only once the server has resolved them to
-            // IDs — keeping the value would cause infinite re-saves (value
-            // takes precedence → new resource → new id → repeat).
             name: nextNameId ? null : prev.name,
             description_id: nextDescriptionId,
             description: nextDescriptionId ? null : prev.description,
@@ -389,22 +279,25 @@ function Setting({
               (fs["active_flag_id"] as string | null) ??
               (fs["flag_id"] as string | null) ??
               prev.active_flag_id,
-            // Arrays fall back to prev so a server that omits a field doesn't
-            // wipe user's selection.
             color_ids: (fs["color_ids"] as string[] | null) ?? prev.color_ids,
             department_ids:
               (fs["department_ids"] as string[] | null) ?? prev.department_ids,
-            profile_ids:
-              (fs["profile_ids"] as string[] | null) ?? prev.profile_ids,
-            auth_ids: (fs["auth_ids"] as string[] | null) ?? prev.auth_ids,
+            logins_ids:
+              (fs["logins_ids"] as string[] | null) ?? prev.logins_ids,
+            system_ids:
+              (fs["system_ids"] as string[] | null) ?? prev.system_ids,
+            mcp_id: (fs["mcp_id"] as string | null) ?? prev.mcp_id,
+            threshold_ids:
+              (fs["threshold_ids"] as string[] | null) ?? prev.threshold_ids,
             provider_key_ids:
               (fs["provider_key_ids"] as string[] | null) ??
               prev.provider_key_ids,
             auth_item_key_ids:
               (fs["auth_item_key_ids"] as string[] | null) ??
               prev.auth_item_key_ids,
-            system_ids:
-              (fs["system_ids"] as string[] | null) ?? prev.system_ids,
+            auth_item_value_ids:
+              (fs["auth_item_value_ids"] as string[] | null) ??
+              prev.auth_item_value_ids,
             pending_ids:
               (fs["pending_ids"] as string[] | null) ?? prev.pending_ids,
           };
@@ -517,44 +410,43 @@ function Setting({
 
   const steps = useMemo(
     () => [
-      {
-        id: "basic",
-        title: "Basic",
-        description: "Name, description, colors, status, and departments",
-      },
-      {
-        id: "access",
-        title: "Access",
-        description: "Profiles, auths, and systems",
-      },
-      {
-        id: "integrations",
-        title: "Integrations",
-        description: "Provider-key and auth-key pairs",
-      },
+      { id: "basic", title: "Basic", description: "Name, description, departments, and status" },
+      { id: "color", title: "Color", description: "Theme color" },
+      { id: "logins", title: "Logins", description: "Login buttons on the sign-in page" },
+      { id: "systems", title: "Systems", description: "Agent routing" },
+      { id: "mcp", title: "MCP", description: "Agent exposed as this setting's MCP server" },
+      { id: "thresholds", title: "Thresholds", description: "Scoring cutoffs" },
+      { id: "provider", title: "Provider", description: "Provider API keys" },
+      { id: "auth", title: "Auth", description: "OIDC/SAML claim keys and values" },
     ],
     []
   );
 
   const getStepStatus = useCallback(
     (stepId: string): StepStatus => {
-      if (stepId === "basic") {
-        return formState.name_id || formState.name ? "completed" : "active";
+      switch (stepId) {
+        case "basic":
+          return formState.name_id || formState.name ? "completed" : "active";
+        case "color":
+          return formState.color_ids.length > 0 ? "completed" : "pending";
+        case "logins":
+          return formState.logins_ids.length > 0 ? "completed" : "pending";
+        case "systems":
+          return formState.system_ids.length > 0 ? "completed" : "pending";
+        case "mcp":
+          return formState.mcp_id ? "completed" : "pending";
+        case "thresholds":
+          return formState.threshold_ids.length > 0 ? "completed" : "pending";
+        case "provider":
+          return formState.provider_key_ids.length > 0 ? "completed" : "pending";
+        case "auth":
+          return formState.auth_item_key_ids.length > 0 ||
+            formState.auth_item_value_ids.length > 0
+            ? "completed"
+            : "pending";
+        default:
+          return "pending";
       }
-      if (stepId === "access") {
-        return formState.profile_ids.length > 0 ||
-          formState.auth_ids.length > 0 ||
-          formState.system_ids.length > 0
-          ? "completed"
-          : "pending";
-      }
-      if (stepId === "integrations") {
-        return formState.provider_key_ids.length > 0 ||
-          formState.auth_item_key_ids.length > 0
-          ? "completed"
-          : "pending";
-      }
-      return "pending";
     },
     [formState]
   );
@@ -573,43 +465,31 @@ function Setting({
       throw new Error("At least one color is required");
     }
 
+    const body = {
+      name_id: effectiveState.name_id,
+      description_id: effectiveState.description_id,
+      active_flag_id: effectiveState.active_flag_id,
+      color_ids: effectiveState.color_ids.length > 0 ? effectiveState.color_ids : null,
+      department_ids: effectiveState.department_ids.length > 0 ? effectiveState.department_ids : null,
+      logins_ids: effectiveState.logins_ids.length > 0 ? effectiveState.logins_ids : null,
+      system_ids: effectiveState.system_ids.length > 0 ? effectiveState.system_ids : null,
+      mcp_id: effectiveState.mcp_id,
+      threshold_ids: effectiveState.threshold_ids.length > 0 ? effectiveState.threshold_ids : null,
+      provider_key_ids: effectiveState.provider_key_ids.length > 0 ? effectiveState.provider_key_ids : null,
+      auth_item_key_ids: effectiveState.auth_item_key_ids.length > 0 ? effectiveState.auth_item_key_ids : null,
+      auth_item_value_ids: effectiveState.auth_item_value_ids.length > 0 ? effectiveState.auth_item_value_ids : null,
+    };
+
     if (isEditMode && settingId && updateSettingAction) {
       await updateSettingAction({
         body: {
-          settings: [
-            {
-              setting_id: settingId,
-              name_id: effectiveState.name_id,
-              description_id: effectiveState.description_id,
-              active_flag_id: effectiveState.active_flag_id,
-              color_ids: effectiveState.color_ids.length > 0 ? effectiveState.color_ids : null,
-              department_ids: effectiveState.department_ids.length > 0 ? effectiveState.department_ids : null,
-              profile_ids: effectiveState.profile_ids.length > 0 ? effectiveState.profile_ids : null,
-              auth_ids: effectiveState.auth_ids.length > 0 ? effectiveState.auth_ids : null,
-              provider_key_ids: effectiveState.provider_key_ids.length > 0 ? effectiveState.provider_key_ids : null,
-              auth_item_key_ids: effectiveState.auth_item_key_ids.length > 0 ? effectiveState.auth_item_key_ids : null,
-              system_ids: effectiveState.system_ids.length > 0 ? effectiveState.system_ids : null,
-            },
-          ],
+          settings: [{ setting_id: settingId, ...body }],
         },
       } as UpdateSettingIn);
     } else if (createSettingAction) {
       await createSettingAction({
         body: {
-          settings: [
-            {
-              name_id: effectiveState.name_id,
-              description_id: effectiveState.description_id,
-              active_flag_id: effectiveState.active_flag_id,
-              color_ids: effectiveState.color_ids.length > 0 ? effectiveState.color_ids : null,
-              department_ids: effectiveState.department_ids.length > 0 ? effectiveState.department_ids : null,
-              profile_ids: effectiveState.profile_ids.length > 0 ? effectiveState.profile_ids : null,
-              auth_ids: effectiveState.auth_ids.length > 0 ? effectiveState.auth_ids : null,
-              provider_key_ids: effectiveState.provider_key_ids.length > 0 ? effectiveState.provider_key_ids : null,
-              auth_item_key_ids: effectiveState.auth_item_key_ids.length > 0 ? effectiveState.auth_item_key_ids : null,
-              system_ids: effectiveState.system_ids.length > 0 ? effectiveState.system_ids : null,
-            },
-          ],
+          settings: [body],
         },
       } as CreateSettingIn);
     } else {
@@ -652,6 +532,21 @@ function Setting({
             stepNumber={stepNumber}
             stepStatus={stepStatus}
             isReadonly={disabled}
+            customHeader={
+              <Names
+                name_id={formState.name_id}
+                name_resource={s?.names?.find((item) => item.selected) ?? null}
+                show_name={true}
+                names={s?.names ?? []}
+                disabled={disabled}
+                onNameIdChange={handleNameIdChange}
+                onNameChange={handleNameChange}
+                placeholder="e.g., University Settings"
+                defaultName="New Setting"
+                hideDescription={true}
+                required={true}
+              />
+            }
             actions={
               <StepCardAiButton
                 stepId="basic"
@@ -665,18 +560,6 @@ function Setting({
               />
             }
           >
-            <Names
-              name_id={formState.name_id}
-              name_resource={s?.names?.find((item) => item.selected) ?? null}
-              show_name={true}
-              names={s?.names ?? []}
-              disabled={disabled}
-              onNameIdChange={handleNameIdChange}
-              onNameChange={handleNameChange}
-              defaultName="New Setting"
-              hideDescription={true}
-              required={true}
-            />
             <Descriptions
               description_id={formState.description_id}
               description_resource={s?.descriptions?.find((item) => item.selected) ?? null}
@@ -685,35 +568,6 @@ function Setting({
               disabled={disabled}
               onDescriptionIdChange={handleDescriptionIdChange}
               onDescriptionChange={handleDescriptionChange}
-            />
-            <Colors
-              color_ids={formState.color_ids}
-              color_resources={(s?.colors ?? []).filter((item) => item.selected)}
-              colors={s?.colors ?? []}
-              multiSelect={true}
-              show_color={true}
-              disabled={disabled}
-              onChange={(ids) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  color_ids: ids,
-                  pending_ids: pruneSectionPending("colors", ids),
-                }))
-              }
-            />
-            <Flags
-              mode="single"
-              flag_id={formState.active_flag_id}
-              show_flags={true}
-              flags={s?.flags ?? []}
-              disabled={disabled}
-              onChange={(id) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  active_flag_id: id,
-                  pending_ids: pruneSectionPending("flags", id ? [id] : []),
-                }))
-              }
             />
             <Departments
               department_ids={formState.department_ids}
@@ -729,11 +583,27 @@ function Setting({
                 }))
               }
             />
+            <Flags
+              mode="single"
+              flag_id={formState.active_flag_id}
+              show_flags={true}
+              flags={s?.flags ?? []}
+              columns={1}
+              label="Flags"
+              disabled={disabled}
+              onChange={(id) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  active_flag_id: id,
+                  pending_ids: pruneSectionPending("flags", id ? [id] : []),
+                }))
+              }
+            />
           </StepCard>
         );
       }
 
-      if (stepId === "access") {
+      if (stepId === "color") {
         return (
           <StepCard
             stepTitle={stepTitle}
@@ -742,48 +612,62 @@ function Setting({
             stepStatus={stepStatus}
             isReadonly={disabled}
           >
-            <Profiles
-              profile_ids={formState.profile_ids}
-              profile_resources={(s?.profiles ?? []).filter((item) => item.selected)}
-              show_profiles={true}
+            <Colors
+              color_ids={formState.color_ids}
+              color_resources={(s?.colors ?? []).filter((item) => item.selected)}
+              colors={s?.colors ?? []}
+              multiSelect={true}
+              show_color={true}
+              disabled={disabled}
+              onChange={(ids) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  color_ids: ids,
+                  pending_ids: pruneSectionPending("colors", ids),
+                }))
+              }
+            />
+          </StepCard>
+        );
+      }
+
+      if (stepId === "logins") {
+        return (
+          <StepCard
+            stepTitle={stepTitle}
+            stepDescription={stepDescription}
+            stepNumber={stepNumber}
+            stepStatus={stepStatus}
+            isReadonly={disabled}
+          >
+            <Logins
+              logins_ids={formState.logins_ids}
+              logins={s?.logins ?? []}
               profiles={s?.profiles ?? []}
+              auths={s?.auths ?? []}
+              icons={s?.icons ?? []}
               disabled={disabled}
               onChange={(ids) =>
                 setFormState((prev) => ({
                   ...prev,
-                  profile_ids: ids,
-                  pending_ids: pruneSectionPending("profiles", ids),
+                  logins_ids: ids,
+                  pending_ids: pruneSectionPending("logins", ids),
                 }))
               }
             />
-            <Auths
-              auth_ids={formState.auth_ids}
-              auth_resources={(s?.auths ?? [])
-                .filter((item) => item.selected)
-                .map((item) => ({
-                  id: item.auth_id ?? undefined,
-                  name: item.name ?? undefined,
-                  description: item.description ?? undefined,
-                  slug: item.slug ?? undefined,
-                  generated: item.generated ?? undefined,
-                })) as any}
-              show_auths={true}
-              auths={(s?.auths ?? []).map((item) => ({
-                id: item.auth_id ?? undefined,
-                name: item.name ?? undefined,
-                description: item.description ?? undefined,
-                slug: item.slug ?? undefined,
-                generated: item.generated ?? undefined,
-              })) as any}
-              disabled={disabled}
-              onChange={(ids) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  auth_ids: ids,
-                  pending_ids: pruneSectionPending("auths", ids),
-                }))
-              }
-            />
+          </StepCard>
+        );
+      }
+
+      if (stepId === "systems") {
+        return (
+          <StepCard
+            stepTitle={stepTitle}
+            stepDescription={stepDescription}
+            stepNumber={stepNumber}
+            stepStatus={stepStatus}
+            isReadonly={disabled}
+          >
             <Systems
               system_ids={formState.system_ids}
               system_resources={(s?.systems ?? []).filter((item) => item.selected)}
@@ -802,6 +686,88 @@ function Setting({
         );
       }
 
+      if (stepId === "mcp") {
+        return (
+          <StepCard
+            stepTitle={stepTitle}
+            stepDescription={stepDescription}
+            stepNumber={stepNumber}
+            stepStatus={stepStatus}
+            isReadonly={disabled}
+          >
+            <Mcp
+              mcp_id={formState.mcp_id}
+              mcp={s?.mcp ?? []}
+              agents={s?.agents ?? []}
+              disabled={disabled}
+              onChange={(id) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  mcp_id: id,
+                  pending_ids: pruneSectionPending("mcp", id ? [id] : []),
+                }))
+              }
+            />
+          </StepCard>
+        );
+      }
+
+      if (stepId === "thresholds") {
+        return (
+          <StepCard
+            stepTitle={stepTitle}
+            stepDescription={stepDescription}
+            stepNumber={stepNumber}
+            stepStatus={stepStatus}
+            isReadonly={disabled}
+          >
+            <Thresholds
+              threshold_ids={formState.threshold_ids}
+              threshold_resources={(s?.thresholds ?? []).filter((item) => item.selected)}
+              thresholds={s?.thresholds ?? []}
+              show_thresholds={true}
+              disabled={disabled}
+              onChange={(ids) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  threshold_ids: ids,
+                  pending_ids: pruneSectionPending("thresholds", ids),
+                }))
+              }
+            />
+          </StepCard>
+        );
+      }
+
+      if (stepId === "provider") {
+        return (
+          <StepCard
+            stepTitle={stepTitle}
+            stepDescription={stepDescription}
+            stepNumber={stepNumber}
+            stepStatus={stepStatus}
+            isReadonly={disabled}
+          >
+            <ProviderKeys
+              provider_key_ids={formState.provider_key_ids}
+              provider_key_resources={(s?.provider_keys ?? []).filter((item) => item.selected)}
+              providers={s?.providers ?? []}
+              keys={s?.keys ?? []}
+              disabled={disabled}
+              onChange={(ids) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  provider_key_ids: ids,
+                  pending_ids: pruneSectionPending("provider_keys", ids),
+                }))
+              }
+              show_provider_keys={true}
+            />
+          </StepCard>
+        );
+      }
+
+      // auth
       return (
         <StepCard
           stepTitle={stepTitle}
@@ -810,29 +776,10 @@ function Setting({
           stepStatus={stepStatus}
           isReadonly={disabled}
         >
-          <ProviderKeys
-            provider_key_ids={formState.provider_key_ids}
-            provider_key_resources={(s?.provider_keys ?? []).filter((item) => item.selected)}
-            providers={s?.providers ?? []}
-            keys={s?.keys ?? []}
-            disabled={disabled}
-            onChange={(ids) =>
-              setFormState((prev) => ({
-                ...prev,
-                provider_key_ids: ids,
-                pending_ids: pruneSectionPending("provider_keys", ids),
-              }))
-            }
-            show_provider_keys={true}
-          />
           <AuthItemKeys
             auth_item_key_ids={formState.auth_item_key_ids}
             auth_item_key_resources={(s?.auth_item_keys ?? []).filter((item) => item.selected)}
-            auths={(s?.auths ?? []).map((item) => ({
-              auth_id: item.auth_id ?? undefined,
-              name: item.name ?? undefined,
-              description: item.description ?? undefined,
-            })) as any}
+            auths={s?.auths ?? []}
             keys={s?.keys ?? []}
             disabled={disabled}
             onChange={(ids) =>
@@ -844,23 +791,33 @@ function Setting({
             }
             show_auth_item_keys={true}
           />
+          <AuthItemValues
+            auth_item_value_ids={formState.auth_item_value_ids}
+            auth_item_values={s?.auth_item_values ?? []}
+            auths={s?.auths ?? []}
+            items={s?.items ?? []}
+            disabled={disabled}
+            onChange={(ids) =>
+              setFormState((prev) => ({
+                ...prev,
+                auth_item_value_ids: ids,
+                pending_ids: pruneSectionPending("auth_item_values", ids),
+              }))
+            }
+            show_auth_item_values={true}
+          />
         </StepCard>
       );
     },
     [
       canRegenerate,
       disabled,
-      formState.active_flag_id,
-      formState.auth_ids,
-      formState.auth_item_key_ids,
-      formState.color_ids,
-      formState.department_ids,
-      formState.description_id,
-      formState.name_id,
-      formState.profile_ids,
-      formState.provider_key_ids,
-      formState.system_ids,
+      formState,
+      handleDescriptionChange,
+      handleDescriptionIdChange,
       handleGenerateResources,
+      handleNameChange,
+      handleNameIdChange,
       isGenerating,
       pruneSectionPending,
       s,

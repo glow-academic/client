@@ -85,6 +85,12 @@ export function ScenarioRubrics({
   description,
   onScenarioRubricValues,
 }: ScenarioRubricsProps) {
+  // Dirty flag: flipped true inside handleSelect (user interactions). Both
+  // the hydrate effect and the value-emit effect gate on it so the parent
+  // re-rendering with a new currentResources filter ref doesn't clobber a
+  // click with stale server state, and we don't re-emit synthetic state
+  // up to the parent as if the user typed it.
+  const isDirtyRef = useRef(false);
   const show = show_scenario_rubrics ?? false;
   const currentResources = useMemo(
     () => scenario_rubric_resources ?? [],
@@ -134,34 +140,41 @@ export function ScenarioRubrics({
   const [scenarioRubricIdsByScenario, setScenarioRubricIdsByScenario] =
     useState<Map<string, string>>(new Map());
   useEffect(() => {
-    const nextRubrics = new Map<string, string | null>();
     const nextIds = new Map<string, string>();
+    currentResources.forEach((resource) => {
+      if (resource.scenario_id && resource.id) {
+        nextIds.set(resource.scenario_id, resource.id);
+      }
+    });
+    // Resource-id mapping always hydrates (needed so new server-assigned
+    // ids flow through onChange emits), regardless of dirty state.
+    setScenarioRubricIdsByScenario((prev) => {
+      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
+      const nextKey = JSON.stringify(Array.from(nextIds.entries()).sort());
+      return prevKey === nextKey ? prev : nextIds;
+    });
 
+    // Freeze visible-selection hydration after the user interacts so we
+    // don't overwrite a click with stale server data (the server-fetched
+    // currentResources doesn't include the new rubric until the save +
+    // refetch round-trips).
+    if (isDirtyRef.current) return;
+
+    const nextRubrics = new Map<string, string | null>();
     currentResources.forEach((resource) => {
       if (resource.scenario_id) {
         nextRubrics.set(resource.scenario_id, resource.rubric_id ?? null);
-        if (resource.id) {
-          nextIds.set(resource.scenario_id, resource.id);
-        }
       }
     });
-
     scenario_ids.forEach((scenarioId) => {
       if (!nextRubrics.has(scenarioId)) {
         nextRubrics.set(scenarioId, null);
       }
     });
-
-    // Only update if content actually changed
     setRubricIdByScenario((prev) => {
       const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
       const nextKey = JSON.stringify(Array.from(nextRubrics.entries()).sort());
       return prevKey === nextKey ? prev : nextRubrics;
-    });
-    setScenarioRubricIdsByScenario((prev) => {
-      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
-      const nextKey = JSON.stringify(Array.from(nextIds.entries()).sort());
-      return prevKey === nextKey ? prev : nextIds;
     });
   }, [currentResources, scenario_ids]);
 
@@ -183,11 +196,14 @@ export function ScenarioRubrics({
     }
   }, [scenarioRubricIdsByScenario, scenario_ids]);
 
-  // Emit value callback for unified draft pattern
+  // Emit value callback for unified draft pattern — gated on isDirtyRef
+  // so synthetic state rebuilt from server resources doesn't round-trip
+  // back up to the parent as user input.
   const onScenarioRubricValuesRef = useRef(onScenarioRubricValues);
   onScenarioRubricValuesRef.current = onScenarioRubricValues;
   useEffect(() => {
     if (!onScenarioRubricValuesRef.current) return;
+    if (!isDirtyRef.current) return;
     const values: Array<{ scenario_id: string; rubric_id: string }> = [];
     rubricIdByScenario.forEach((rubricId, scenarioId) => {
       if (rubricId) {
@@ -199,6 +215,7 @@ export function ScenarioRubrics({
 
   const handleSelect = useCallback(
     (scenarioId: string, value: string) => {
+      isDirtyRef.current = true;
       const nextRubricId = value === NONE_OPTION ? null : value;
 
       setRubricIdByScenario((prev) => {

@@ -2699,7 +2699,7 @@ export interface paths {
         put?: never;
         /**
          * Export Rubrics
-         * @description Export all rubrics as a clean, denormalized CSV.
+         * @description Export a rubric as a PDF (optionally filled with grade data).
          */
         post: operations["export_rubrics_rubric_export_post"];
         delete?: never;
@@ -14793,6 +14793,11 @@ export interface components {
              */
             icon_id?: string | null;
             /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
+            /**
              * Flag Option Id
              * @description UUID of the flag option
              */
@@ -17033,6 +17038,11 @@ export interface components {
              */
             icon_id?: string | null;
             /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
+            /**
              * Flag Option Id
              * @description UUID of the selected flag option
              */
@@ -18023,6 +18033,51 @@ export interface components {
              * @description Whether audio input is enabled
              */
             audio_enabled?: boolean | null;
+            /**
+             * Hints Enabled
+             * @description Whether hints should be generated on replies
+             */
+            hints_enabled?: boolean | null;
+            /**
+             * Analyses Enabled
+             * @description Whether chat-level analyses run during grading
+             */
+            analyses_enabled?: boolean | null;
+            /**
+             * Strengths Enabled
+             * @description Whether strengths are captured during grading
+             */
+            strengths_enabled?: boolean | null;
+            /**
+             * Improvements Enabled
+             * @description Whether improvements are captured during grading
+             */
+            improvements_enabled?: boolean | null;
+            /**
+             * Problem Statement Enabled
+             * @description Whether this chat has a problem statement capability
+             */
+            problem_statement_enabled?: boolean | null;
+            /**
+             * Objectives Enabled
+             * @description Whether this chat has objectives capability
+             */
+            objectives_enabled?: boolean | null;
+            /**
+             * Video Enabled
+             * @description Whether this chat has a video capability
+             */
+            video_enabled?: boolean | null;
+            /**
+             * Images Enabled
+             * @description Whether this chat has an images capability
+             */
+            images_enabled?: boolean | null;
+            /**
+             * Questions Enabled
+             * @description Whether this chat has a quiz/questions capability
+             */
+            questions_enabled?: boolean | null;
             /** @description Current grading state data */
             grading_state?: components["schemas"]["GradingStateData"] | null;
             /** @description Dynamic rubric data */
@@ -18166,6 +18221,51 @@ export interface components {
              * @description Whether audio input is enabled
              */
             audio_enabled?: boolean | null;
+            /**
+             * Hints Enabled
+             * @description Whether hints should be generated on replies
+             */
+            hints_enabled?: boolean | null;
+            /**
+             * Analyses Enabled
+             * @description Whether chat-level analyses run during grading
+             */
+            analyses_enabled?: boolean | null;
+            /**
+             * Strengths Enabled
+             * @description Whether strengths are captured during grading
+             */
+            strengths_enabled?: boolean | null;
+            /**
+             * Improvements Enabled
+             * @description Whether improvements are captured during grading
+             */
+            improvements_enabled?: boolean | null;
+            /**
+             * Problem Statement Enabled
+             * @description Whether this chat has a problem statement capability
+             */
+            problem_statement_enabled?: boolean | null;
+            /**
+             * Objectives Enabled
+             * @description Whether this chat has objectives capability
+             */
+            objectives_enabled?: boolean | null;
+            /**
+             * Video Enabled
+             * @description Whether this chat has a video capability
+             */
+            video_enabled?: boolean | null;
+            /**
+             * Images Enabled
+             * @description Whether this chat has an images capability
+             */
+            images_enabled?: boolean | null;
+            /**
+             * Questions Enabled
+             * @description Whether this chat has a quiz/questions capability
+             */
+            questions_enabled?: boolean | null;
             /** @description Current grading state data */
             grading_state?: components["schemas"]["GradingStateData"] | null;
             /** @description Dynamic rubric data */
@@ -18581,6 +18681,11 @@ export interface components {
             persona_id?: string | null;
             /** Parent Message Id */
             parent_message_id?: string | null;
+            /**
+             * Auto Link Parent
+             * @default true
+             */
+            auto_link_parent: boolean;
         };
         /** ChatMessageResponse */
         ChatMessageResponse: {
@@ -19165,6 +19270,11 @@ export interface components {
              * @description Icon identifier for the flag
              */
             icon_id?: string | null;
+            /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
             /**
              * Flag Option Id
              * @description Selected flag option UUID
@@ -22230,15 +22340,25 @@ export interface components {
              */
             color_ids?: string[] | null;
             /**
-             * Profile Ids
-             * @description Profile UUIDs to assign
+             * Logins Ids
+             * @description Logins resource UUIDs to assign
              */
-            profile_ids?: string[] | null;
+            logins_ids?: string[] | null;
             /**
-             * Auth Ids
-             * @description Auth provider UUIDs
+             * System Ids
+             * @description System UUIDs to assign
              */
-            auth_ids?: string[] | null;
+            system_ids?: string[] | null;
+            /**
+             * Mcp Id
+             * @description MCP resource UUID to assign (single)
+             */
+            mcp_id?: string | null;
+            /**
+             * Threshold Ids
+             * @description Threshold UUIDs to assign
+             */
+            threshold_ids?: string[] | null;
             /**
              * Provider Key Ids
              * @description Provider key UUIDs
@@ -22254,26 +22374,6 @@ export interface components {
              * @description Auth item value UUIDs
              */
             auth_item_value_ids?: string[] | null;
-            /**
-             * System Ids
-             * @description System UUIDs to assign
-             */
-            system_ids?: string[] | null;
-            /**
-             * Mcp Ids
-             * @description MCP resource UUIDs to assign
-             */
-            mcp_ids?: string[] | null;
-            /**
-             * Logins Ids
-             * @description Logins resource UUIDs to assign
-             */
-            logins_ids?: string[] | null;
-            /**
-             * Threshold Ids
-             * @description Threshold UUIDs to assign
-             */
-            threshold_ids?: string[] | null;
             /**
              * Setting Resource Ids
              * @description Setting resource UUIDs
@@ -24463,6 +24563,11 @@ export interface components {
              */
             icon_id?: string | null;
             /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
+            /**
              * Flag Option Id
              * @description UUID of the selected flag option
              */
@@ -26470,6 +26575,11 @@ export interface components {
              */
             icon_id?: string | null;
             /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
+            /**
              * Flag Option Id
              * @description Flag resource UUID
              */
@@ -27634,8 +27744,17 @@ export interface components {
          * @description Request model for rubric export.
          */
         ExportRubricApiRequest: {
-            /** Rubric Id */
-            rubric_id?: string | null;
+            /**
+             * Rubric Id
+             * Format: uuid
+             * @description Rubric UUID to export
+             */
+            rubric_id: string;
+            /**
+             * Chat Id
+             * @description Optional attempt chat UUID. When provided, the PDF highlights achieved/passed standards and renders per-standard feedback resolved from the chat's latest grade. Without it, an empty rubric template is returned.
+             */
+            chat_id?: string | null;
         };
         /**
          * ExportRubricApiResponse
@@ -28120,6 +28239,11 @@ export interface components {
              * @description Icon identifier for the flag
              */
             icon_id?: string | null;
+            /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
             /**
              * Flag Option Id
              * @description UUID of the selected flag option
@@ -35979,16 +36103,20 @@ export interface components {
             flags?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
             /** @description Filter options for departments */
             departments?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
-            /** @description Filter options for profiles */
-            profiles?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
-            /** @description Filter options for auths */
-            auths?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
+            /** @description Filter options for logins */
+            logins?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
+            /** @description Filter options for systems */
+            systems?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
+            /** @description Filter options for MCP configs */
+            mcp?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
+            /** @description Filter options for thresholds */
+            thresholds?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
             /** @description Filter options for provider keys */
             provider_keys?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
             /** @description Filter options for auth item keys */
             auth_item_keys?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
-            /** @description Filter options for systems */
-            systems?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
+            /** @description Filter options for auth item values */
+            auth_item_values?: components["schemas"]["app__infra__setting__types__SectionFilter"] | null;
         };
         /**
          * GetSettingApiResponse
@@ -36061,15 +36189,25 @@ export interface components {
              */
             departments?: components["schemas"]["SettingDepartmentResource"][] | null;
             /**
-             * Profiles
-             * @description Profile resources
+             * Logins
+             * @description Logins resources
              */
-            profiles?: components["schemas"]["SettingProfileResource"][] | null;
+            logins?: components["schemas"]["SettingLoginsResource"][] | null;
             /**
-             * Auths
-             * @description Auth resources
+             * Systems
+             * @description System resources
              */
-            auths?: components["schemas"]["SettingAuthResource"][] | null;
+            systems?: components["schemas"]["SettingSystemResource"][] | null;
+            /**
+             * Mcp
+             * @description MCP resources
+             */
+            mcp?: components["schemas"]["SettingMcpResource"][] | null;
+            /**
+             * Thresholds
+             * @description Threshold resources
+             */
+            thresholds?: components["schemas"]["SettingThresholdResource"][] | null;
             /**
              * Provider Keys
              * @description Provider key resources
@@ -36081,10 +36219,10 @@ export interface components {
              */
             auth_item_keys?: components["schemas"]["SettingAuthItemKeyResource"][] | null;
             /**
-             * Systems
-             * @description System resources
+             * Auth Item Values
+             * @description Auth item value resources
              */
-            systems?: components["schemas"]["SettingSystemResource"][] | null;
+            auth_item_values?: components["schemas"]["SettingAuthItemValueResource"][] | null;
             /**
              * Providers
              * @description Provider catalog used by provider key editing
@@ -36095,6 +36233,31 @@ export interface components {
              * @description Key catalog used by provider key and auth item key editing
              */
             keys?: components["schemas"]["SettingKeyCatalogResource"][] | null;
+            /**
+             * Items
+             * @description Claim item catalog used by auth item key/value editing
+             */
+            items?: components["schemas"]["SettingItemCatalogResource"][] | null;
+            /**
+             * Profiles
+             * @description Profile catalog used by logins editing
+             */
+            profiles?: components["schemas"]["SettingProfileCatalogResource"][] | null;
+            /**
+             * Auths
+             * @description Auth catalog used by logins and auth item editing
+             */
+            auths?: components["schemas"]["SettingAuthCatalogResource"][] | null;
+            /**
+             * Icons
+             * @description Icon catalog used by logins editing
+             */
+            icons?: components["schemas"]["SettingIconCatalogResource"][] | null;
+            /**
+             * Agents
+             * @description Agent catalog used by mcp and systems editing
+             */
+            agents?: components["schemas"]["SettingAgentCatalogResource"][] | null;
         };
         /** GetSettingDraftResponse */
         GetSettingDraftResponse: {
@@ -39516,6 +39679,11 @@ export interface components {
              * @description Icon identifier for the flag
              */
             icon_id?: string | null;
+            /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
             /**
              * Flag Option Id
              * @description UUID of the selected flag option
@@ -43388,6 +43556,11 @@ export interface components {
              */
             icon_id?: string | null;
             /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
+            /**
              * Flag Option Id
              * @description Option ID to use when enabling
              */
@@ -44185,6 +44358,11 @@ export interface components {
              * @description Icon identifier for the flag
              */
             icon_id?: string | null;
+            /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
             /**
              * Flag Option Id
              * @description Option ID to use when enabling
@@ -46202,7 +46380,7 @@ export interface components {
             color_id?: string | null;
             /**
              * Icon
-             * @description Icon identifier value (creates new resource if icon_id not provided)
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
              */
             icon?: string | null;
             /**
@@ -46977,15 +47155,25 @@ export interface components {
              */
             color_ids?: string[] | null;
             /**
-             * Profile Ids
-             * @description Profile UUIDs to assign
+             * Logins Ids
+             * @description Logins resource UUIDs to assign
              */
-            profile_ids?: string[] | null;
+            logins_ids?: string[] | null;
             /**
-             * Auth Ids
-             * @description Auth provider UUIDs
+             * System Ids
+             * @description System UUIDs to assign
              */
-            auth_ids?: string[] | null;
+            system_ids?: string[] | null;
+            /**
+             * Mcp Id
+             * @description MCP resource UUID to assign (single)
+             */
+            mcp_id?: string | null;
+            /**
+             * Threshold Ids
+             * @description Threshold UUIDs to assign
+             */
+            threshold_ids?: string[] | null;
             /**
              * Provider Key Ids
              * @description Provider key UUIDs
@@ -46997,10 +47185,10 @@ export interface components {
              */
             auth_item_key_ids?: string[] | null;
             /**
-             * System Ids
-             * @description System UUIDs to assign
+             * Auth Item Value Ids
+             * @description Auth item value UUIDs
              */
-            system_ids?: string[] | null;
+            auth_item_value_ids?: string[] | null;
             /**
              * Pending Ids
              * @description Resource IDs to retain as pending inactive connections
@@ -47570,6 +47758,11 @@ export interface components {
             description?: string | null;
             /** Icon Id */
             icon_id?: string | null;
+            /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
             /** Flag Option Id */
             flag_option_id?: string | null;
             /**
@@ -49572,6 +49765,11 @@ export interface components {
              */
             icon_id?: string | null;
             /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
+            /**
              * Flag Option Id
              * @description UUID of the selected flag option
              */
@@ -49707,6 +49905,11 @@ export interface components {
              * @description Icon identifier for the role
              */
             icon_id?: string | null;
+            /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
             /**
              * Color Id
              * @description Color identifier for the role
@@ -50024,6 +50227,11 @@ export interface components {
              * @description Icon identifier for the flag
              */
             icon_id?: string | null;
+            /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
             /**
              * Flag Option Id
              * @description Option ID to use when enabling
@@ -51979,6 +52187,11 @@ export interface components {
              */
             icon_id?: string | null;
             /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
+            /**
              * Flag Option Id
              * @description Selected flag option UUID
              */
@@ -52799,6 +53012,11 @@ export interface components {
          */
         ScenarioField: {
             /**
+             * Id
+             * @description UUID of the parameter_fields_resource junction row; required by the client picker to select a field
+             */
+            id?: string | null;
+            /**
              * Field Id
              * @description UUID of the field
              */
@@ -52890,6 +53108,11 @@ export interface components {
              * @description UUID of the selected icon resource
              */
             icon_id?: string | null;
+            /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
             /**
              * Flag Option Id
              * @description UUID of the flag option to use when enabling
@@ -54633,6 +54856,52 @@ export interface components {
              */
             extra_2?: string | null;
         };
+        /** SettingAgentCatalogResource */
+        SettingAgentCatalogResource: {
+            /**
+             * Agent Id
+             * @description Agent identifier
+             */
+            agent_id?: string | null;
+            /**
+             * Name
+             * @description Agent display name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Agent description
+             */
+            description?: string | null;
+        };
+        /** SettingAuthCatalogResource */
+        SettingAuthCatalogResource: {
+            /**
+             * Auth Id
+             * @description Auth provider identifier
+             */
+            auth_id?: string | null;
+            /**
+             * Name
+             * @description Auth display name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Auth description
+             */
+            description?: string | null;
+            /**
+             * Slug
+             * @description Auth slug
+             */
+            slug?: string | null;
+            /**
+             * Protocol
+             * @description Auth protocol
+             */
+            protocol?: string | null;
+        };
         /** SettingAuthItemKeyResource */
         SettingAuthItemKeyResource: {
             /**
@@ -54679,36 +54948,31 @@ export interface components {
              */
             pending: boolean;
         };
-        /** SettingAuthResource */
-        SettingAuthResource: {
+        /** SettingAuthItemValueResource */
+        SettingAuthItemValueResource: {
+            /**
+             * Id
+             * @description Auth item value identifier
+             */
+            id?: string | null;
             /**
              * Auth Id
-             * @description Auth identifier
+             * @description Auth provider identifier
              */
             auth_id?: string | null;
             /**
-             * Name
-             * @description Auth display name
+             * Item Id
+             * @description Claim item identifier
              */
-            name?: string | null;
+            item_id?: string | null;
             /**
-             * Description
-             * @description Auth description
+             * Value
+             * @description Literal claim value
              */
-            description?: string | null;
-            /**
-             * Slug
-             * @description Auth slug
-             */
-            slug?: string | null;
-            /**
-             * Protocol
-             * @description Auth protocol
-             */
-            protocol?: string | null;
+            value?: string | null;
             /**
              * Generated
-             * @description Whether the auth was AI-generated
+             * @description Whether the value was AI-generated
              */
             generated?: boolean | null;
             /**
@@ -54892,6 +55156,11 @@ export interface components {
              */
             icon_id?: string | null;
             /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
+            /**
              * Flag Option Id
              * @description UUID of the flag option to use when enabling
              */
@@ -54932,6 +55201,57 @@ export interface components {
              */
             pending: boolean;
         };
+        /** SettingIconCatalogResource */
+        SettingIconCatalogResource: {
+            /**
+             * Icon Id
+             * @description Icon identifier
+             */
+            icon_id?: string | null;
+            /**
+             * Name
+             * @description Icon display name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Icon description
+             */
+            description?: string | null;
+            /**
+             * Value
+             * @description Icon value (SVG markup or slug)
+             */
+            value?: string | null;
+        };
+        /** SettingItemCatalogResource */
+        SettingItemCatalogResource: {
+            /**
+             * Item Id
+             * @description Claim item identifier
+             */
+            item_id?: string | null;
+            /**
+             * Name
+             * @description Claim item display name (e.g. clientId)
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Claim item description
+             */
+            description?: string | null;
+            /**
+             * Encrypted
+             * @description Whether the item value must be stored encrypted
+             */
+            encrypted?: boolean | null;
+            /**
+             * Position
+             * @description Display ordering position
+             */
+            position?: number | null;
+        };
         /** SettingKeyCatalogResource */
         SettingKeyCatalogResource: {
             /**
@@ -54954,6 +55274,113 @@ export interface components {
              * @description Masked key value for display
              */
             masked_key?: string | null;
+        };
+        /** SettingLoginsResource */
+        SettingLoginsResource: {
+            /**
+             * Logins Id
+             * @description Logins resource identifier
+             */
+            logins_id?: string | null;
+            /**
+             * Profile Id
+             * @description Profile for test login
+             */
+            profile_id?: string | null;
+            /**
+             * Auth Id
+             * @description Auth provider for OIDC login
+             */
+            auth_id?: string | null;
+            /**
+             * Icon Id
+             * @description Icon for login button
+             */
+            icon_id?: string | null;
+            /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
+            /**
+             * Display Name
+             * @description Display text for login button
+             */
+            display_name?: string | null;
+            /**
+             * Login Type
+             * @description Login type: 'auth' or 'profile'
+             */
+            login_type?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** SettingMcpResource */
+        SettingMcpResource: {
+            /**
+             * Mcp Id
+             * @description MCP resource identifier
+             */
+            mcp_id?: string | null;
+            /**
+             * Agent Id
+             * @description Agent providing MCP tools
+             */
+            agent_id?: string | null;
+            /**
+             * Name
+             * @description MCP config display name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description MCP config description
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /** SettingNameResource */
         SettingNameResource: {
@@ -54991,8 +55418,8 @@ export interface components {
              */
             pending: boolean;
         };
-        /** SettingProfileResource */
-        SettingProfileResource: {
+        /** SettingProfileCatalogResource */
+        SettingProfileCatalogResource: {
             /**
              * Profile Id
              * @description Profile identifier
@@ -55008,29 +55435,6 @@ export interface components {
              * @description Profile description
              */
             description?: string | null;
-            /**
-             * Generated
-             * @description Whether the profile was AI-generated
-             */
-            generated?: boolean | null;
-            /**
-             * Suggested
-             * @description Whether this item is suggested
-             * @default false
-             */
-            suggested: boolean;
-            /**
-             * Selected
-             * @description Whether this item is selected
-             * @default false
-             */
-            selected: boolean;
-            /**
-             * Pending
-             * @description Whether this item is pending acceptance
-             * @default false
-             */
-            pending: boolean;
         };
         /** SettingProviderCatalogResource */
         SettingProviderCatalogResource: {
@@ -55167,6 +55571,47 @@ export interface components {
             /**
              * Generated
              * @description Whether the system was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** SettingThresholdResource */
+        SettingThresholdResource: {
+            /**
+             * Id
+             * @description Threshold resource identifier
+             */
+            id?: string | null;
+            /**
+             * Type
+             * @description Threshold type (e.g. 'success')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Threshold integer value
+             */
+            value?: number | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
              */
             generated?: boolean | null;
             /**
@@ -55368,6 +55813,11 @@ export interface components {
              * @description UUID of the selected icon resource
              */
             icon_id?: string | null;
+            /**
+             * Icon
+             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             */
+            icon?: string | null;
             /**
              * Flag Option Id
              * @description UUID of the flag option
@@ -59339,15 +59789,25 @@ export interface components {
              */
             color_ids?: string[] | null;
             /**
-             * Profile Ids
-             * @description Profile UUIDs to assign
+             * Logins Ids
+             * @description Logins resource UUIDs to assign
              */
-            profile_ids?: string[] | null;
+            logins_ids?: string[] | null;
             /**
-             * Auth Ids
-             * @description Auth provider UUIDs
+             * System Ids
+             * @description System UUIDs to assign
              */
-            auth_ids?: string[] | null;
+            system_ids?: string[] | null;
+            /**
+             * Mcp Id
+             * @description MCP resource UUID to assign (single)
+             */
+            mcp_id?: string | null;
+            /**
+             * Threshold Ids
+             * @description Threshold UUIDs to assign
+             */
+            threshold_ids?: string[] | null;
             /**
              * Provider Key Ids
              * @description Provider key UUIDs
@@ -59363,16 +59823,6 @@ export interface components {
              * @description Auth item value UUIDs
              */
             auth_item_value_ids?: string[] | null;
-            /**
-             * System Ids
-             * @description System UUIDs to assign
-             */
-            system_ids?: string[] | null;
-            /**
-             * Threshold Ids
-             * @description Threshold UUIDs to assign
-             */
-            threshold_ids?: string[] | null;
             /**
              * Setting Resource Ids
              * @description Setting resource UUIDs
@@ -61576,15 +62026,25 @@ export interface components {
              */
             color_ids?: string[];
             /**
-             * Profile Ids
-             * @description Assigned profile UUIDs
+             * Logins Ids
+             * @description Assigned logins resource UUIDs
              */
-            profile_ids?: string[];
+            logins_ids?: string[];
             /**
-             * Auth Ids
-             * @description Assigned auth provider UUIDs
+             * System Ids
+             * @description Assigned system UUIDs
              */
-            auth_ids?: string[];
+            system_ids?: string[];
+            /**
+             * Mcp Id
+             * @description Assigned MCP resource UUID
+             */
+            mcp_id?: string | null;
+            /**
+             * Threshold Ids
+             * @description Assigned threshold UUIDs
+             */
+            threshold_ids?: string[];
             /**
              * Provider Key Ids
              * @description Assigned provider key UUIDs
@@ -61596,10 +62056,10 @@ export interface components {
              */
             auth_item_key_ids?: string[];
             /**
-             * System Ids
-             * @description Assigned system UUIDs
+             * Auth Item Value Ids
+             * @description Assigned auth item value UUIDs
              */
-            system_ids?: string[];
+            auth_item_value_ids?: string[];
             /**
              * Pending Ids
              * @description Pending resource identifiers
@@ -66174,7 +66634,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExportRubricApiResponse"];
+                    "application/pdf": unknown;
                 };
             };
             /** @description Validation Error */

@@ -58,6 +58,12 @@ export interface ScenarioTimeLimitsProps {
   onTimeLimitIdsChange?: (ids: string[]) => void;
   /** Value callback for unified draft — reports all scenario+time_limit pairs */
   onScenarioTimeLimitValues?: (timeLimits: Array<{ scenario_id: string; time_limit_seconds: number; negative: boolean }>) => void;
+  /**
+   * Whether the Unlimited toggle should be available. Gated by the
+   * simulation's practice flag — non-practice (training / assessment)
+   * simulations must specify a concrete time limit.
+   */
+  allowUnlimited?: boolean;
 }
 
 export function ScenarioTimeLimits({
@@ -73,6 +79,7 @@ export function ScenarioTimeLimits({
   description,
   onTimeLimitIdsChange,
   onScenarioTimeLimitValues,
+  allowUnlimited = false,
 }: ScenarioTimeLimitsProps) {
   const show = show_scenario_time_limits ?? false;
   const timeLimitResources = useMemo(
@@ -126,6 +133,10 @@ export function ScenarioTimeLimits({
   const [timeLimitIdsByScenario, setTimeLimitIdsByScenario] = useState<
     Map<string, string>
   >(new Map());
+  // Dirty flag: flipped inside handleChange / handleNegativeToggle so the
+  // hydrate effect doesn't overwrite an in-flight edit (e.g. the user
+  // flipping Unlimited off) with stale server data.
+  const isDirtyRef = useRef(false);
   useEffect(() => {
     const nextLimits = new Map<string, number | null>();
     const nextIds = new Map<string, string>();
@@ -153,16 +164,23 @@ export function ScenarioTimeLimits({
       }
     });
 
-    // Only update if content actually changed
-    setTimeLimitByScenario((prev) => {
-      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
-      const nextKey = JSON.stringify(Array.from(nextLimits.entries()).sort());
-      return prevKey === nextKey ? prev : nextLimits;
-    });
+    // Resource-id mapping always hydrates so new server-assigned ids flow
+    // through onTimeLimitIdsChange, regardless of dirty state.
     setTimeLimitIdsByScenario((prev) => {
       const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
       const nextKey = JSON.stringify(Array.from(nextIds.entries()).sort());
       return prevKey === nextKey ? prev : nextIds;
+    });
+
+    // Freeze visible-value hydration after the user interacts so a stale
+    // server refetch doesn't overwrite the value they just typed or the
+    // Unlimited toggle they just flipped.
+    if (isDirtyRef.current) return;
+
+    setTimeLimitByScenario((prev) => {
+      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
+      const nextKey = JSON.stringify(Array.from(nextLimits.entries()).sort());
+      return prevKey === nextKey ? prev : nextLimits;
     });
     setNegativeByScenario((prev) => {
       const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
@@ -190,9 +208,18 @@ export function ScenarioTimeLimits({
     }
   }, [timeLimitIdsByScenario, scenario_ids]);
 
-  // Emit value callback for unified draft pattern
+  // Emit value callback for unified draft pattern.
+  //
+  // Content-dedup (matches the id-emit effect above). Without it, every
+  // time the sync effect replaces the internal map ref — even with the
+  // same content — this fired a fresh array up to the parent, which
+  // kept re-setting `formState.scenario_time_limits` and triggering a
+  // new autosave → a new append-only draft id. That showed up as the
+  // draftId URL param churning while the user sat on the time-limits
+  // section. Guard emits by a canonical JSON key instead.
   const onScenarioTimeLimitValuesRef = useRef(onScenarioTimeLimitValues);
   onScenarioTimeLimitValuesRef.current = onScenarioTimeLimitValues;
+  const prevValuesKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!onScenarioTimeLimitValuesRef.current) return;
     const values: Array<{ scenario_id: string; time_limit_seconds: number; negative: boolean }> = [];
@@ -205,11 +232,16 @@ export function ScenarioTimeLimits({
         });
       }
     });
+    values.sort((a, b) => a.scenario_id.localeCompare(b.scenario_id));
+    const key = JSON.stringify(values);
+    if (key === prevValuesKeyRef.current) return;
+    prevValuesKeyRef.current = key;
     onScenarioTimeLimitValuesRef.current(values);
   }, [timeLimitByScenario, negativeByScenario]);
 
   const handleChange = useCallback(
     (scenarioId: string, value: string) => {
+      isDirtyRef.current = true;
       const parsed = value.trim() === "" ? null : Number(value);
       const nextValue =
         parsed !== null && Number.isFinite(parsed) && parsed > 0
@@ -343,6 +375,7 @@ export function ScenarioTimeLimits({
           };
 
           const handleNegativeToggle = (checked: boolean) => {
+            isDirtyRef.current = true;
             setNegativeByScenario((prev) => {
               const next = new Map(prev);
               next.set(scenarioId, checked);
@@ -372,19 +405,27 @@ export function ScenarioTimeLimits({
                   )}
                 </h3>
                 <div className="flex items-center gap-2 mt-2">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={isUnlimited}
-                      onCheckedChange={handleUnlimitedToggle}
-                      disabled={disabled}
-                    />
-                    <span className="text-xs text-muted-foreground">
-                      Unlimited
-                    </span>
-                  </div>
-                  {!isUnlimited && (
+                  {/* Unlimited toggle is only available for practice
+                      simulations — training/assessment must commit to a
+                      concrete time budget, so the switch is hidden there
+                      and the numeric fields render unconditionally. */}
+                  {allowUnlimited && (
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={isUnlimited}
+                        onCheckedChange={handleUnlimitedToggle}
+                        disabled={disabled}
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        Unlimited
+                      </span>
+                    </div>
+                  )}
+                  {(!allowUnlimited || !isUnlimited) && (
                     <>
-                      <div className="w-px h-4 bg-border mx-1" />
+                      {allowUnlimited && (
+                        <div className="w-px h-4 bg-border mx-1" />
+                      )}
                       <div className="flex items-center gap-2">
                         <Switch
                           checked={isNegative}

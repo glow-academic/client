@@ -34,7 +34,8 @@ export interface FlagConfig {
   key: string; // Unique key (e.g., "active", "video_enabled")
   label: string; // Display label
   description?: string | null; // Help text from DB
-  icon_id?: string | null; // Icon name
+  icon_id?: string | null; // UUID of the icon resource
+  icon?: string | null; // Hydrated SVG markup (server fills this from icons_resource)
   flag_option_id?: string | null; // The artifact ID to use when enabling
   show?: boolean; // Whether to display this flag (defaults to true)
   required?: boolean; // Required indicator
@@ -49,6 +50,7 @@ interface CommonFlagsProps {
   columns?: 1 | 2 | 3 | 4; // Columns per row (default: 2)
   label?: string; // Section label
   disabled?: boolean;
+  headerRight?: React.ReactNode; // Right-aligned slot rendered next to the label
 }
 
 // Single-flag mode props - uses flag_id (optional) without flag_ids
@@ -76,6 +78,7 @@ export function Flags(props: FlagsProps) {
     columns = 2,
     label,
     disabled = false,
+    headerRight,
     onChange,
   } = props;
 
@@ -160,7 +163,7 @@ export function Flags(props: FlagsProps) {
   return (
     <div className="space-y-2 pt-2">
       {/* Section header with label and generate button */}
-      {label && (
+      {(label || headerRight) && (
         <div className="flex items-center gap-2">
           {label && <Label className="text-sm font-medium">{label}</Label>}
           {showDiff && (
@@ -199,6 +202,7 @@ export function Flags(props: FlagsProps) {
               </TooltipProvider>
             </>
           )}
+          {headerRight && <div className="ml-auto">{headerRight}</div>}
         </div>
       )}
 
@@ -213,11 +217,12 @@ export function Flags(props: FlagsProps) {
         )}
       >
         {visibleFlags.map((flag) => {
-          // Icon is server-driven via flag.icon_id (SVG id). Fallback to Power
-          // only if the seed hasn't associated an icon for this flag type.
-          const resolvedIcon = flag.icon_id ? (
+          // Icon is server-driven via flag.icon (SVG markup hydrated by the
+          // artifact context). Fallback to Power if the flag has no icon
+          // configured in the seed data.
+          const resolvedIcon = flag.icon ? (
             <SvgIcon
-              svg={flag.icon_id}
+              svg={flag.icon}
               className="h-3.5 w-3.5 text-muted-foreground"
               fallback={<Power className="h-3.5 w-3.5 text-muted-foreground" />}
             />

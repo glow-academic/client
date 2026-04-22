@@ -128,7 +128,7 @@ export default async function SettingsPage() {
         breadcrumbs={[
           { title: "Settings" },
         ]}
-        toolbar={<NewArtifactButton label="New Setting" href="/setting/new" />}
+        toolbar={<NewArtifactButton label="New Setting" href="/settings/new" />}
         panelProps={{
           artifactType: "setting",
           groupId: (groupResult as GroupSettingOut & { group_id?: string })?.group_id ?? null,

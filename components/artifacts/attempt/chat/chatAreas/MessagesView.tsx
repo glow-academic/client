@@ -144,14 +144,16 @@ export function MessagesView({
   const [branchSelections, setBranchSelections] = useState<Map<string, string>>(new Map());
 
   // ---- Entry-level AI subscriptions ----
-  const { events: _contentsEvents } = useEntryAi({ entryType: "contents", groupId: group_id });
+  // Only hints drive UI here (new-hints badge). The other entry types
+  // (contents/feedbacks/strengths/improvements/highlights/replacements/
+  // simulation_messages) were previously subscribed with underscore-
+  // prefixed names but never read — useEntryAi has no side effects
+  // outside its own state, so those subscriptions only produced
+  // re-renders on every incoming event. In graded mode that cascade
+  // reshuffled the `messages` memo identity on every feedback frame,
+  // re-firing the scroll-to-bottom effect and preventing the user
+  // from scrolling up. Subscribe only to what's actually consumed.
   const { events: hintsEvents } = useEntryAi({ entryType: "hints", groupId: group_id });
-  const { events: _feedbacksEvents } = useEntryAi({ entryType: "feedbacks", groupId: group_id });
-  const { events: _strengthsEvents } = useEntryAi({ entryType: "strengths", groupId: group_id });
-  const { events: _improvementsEvents } = useEntryAi({ entryType: "improvements", groupId: group_id });
-  const { events: _highlightsEvents } = useEntryAi({ entryType: "highlights", groupId: group_id });
-  const { events: _replacementsEvents } = useEntryAi({ entryType: "replacements", groupId: group_id });
-  const { events: _simulationMessagesEvents } = useEntryAi({ entryType: "simulation_messages", groupId: group_id });
 
   // Track which messages have new hints from entry events
   const messagesWithNewHints = useMemo(() => {
@@ -442,13 +444,22 @@ export function MessagesView({
     }
   };
 
+  // Scroll to bottom only when the message COUNT changes — i.e. a
+  // new message arrived. Do not depend on the `messages` array
+  // identity: its useMemo re-evaluates on any upstream render and
+  // produces a fresh reference even when contents are equal, which
+  // would snap the viewport down on every feedback/streaming frame
+  // and prevent the user from scrolling up in graded mode.
   useEffect(() => {
     if (messages.length > 0) {
       const timer = setTimeout(scrollToBottom, 100);
       return () => clearTimeout(timer);
     }
-  }, [messages.length, messages]);
+  }, [messages.length]);
 
+  // Scroll-position observer — only needs to re-bind when the count
+  // changes (new viewport height reference). Same identity-stability
+  // rationale as the effect above.
   useEffect(() => {
     const scrollArea = scrollAreaRef.current;
     if (!scrollArea) return;
@@ -465,7 +476,7 @@ export function MessagesView({
     handleScrollEvent();
     viewport.addEventListener("scroll", handleScrollEvent);
     return () => viewport.removeEventListener("scroll", handleScrollEvent);
-  }, [messages.length, messages]);
+  }, [messages.length]);
 
   // Clear streaming content and optimistic messages when chat changes
   useEffect(() => {

@@ -697,20 +697,13 @@ function SimulationComponent({
         prev.name_id !== newState.name_id ||
         prev.description_id !== newState.description_id ||
         JSON.stringify(prev.flag_ids) !== JSON.stringify(newState.flag_ids) ||
-        JSON.stringify(prev.department_ids) !==
-          JSON.stringify(newState.department_ids) ||
-        JSON.stringify(prev.scenario_ids) !==
-          JSON.stringify(newState.scenario_ids) ||
-        JSON.stringify(prev.scenario_flag_ids) !==
-          JSON.stringify(newState.scenario_flag_ids) ||
-        JSON.stringify(prev.scenario_position_ids) !==
-          JSON.stringify(newState.scenario_position_ids) ||
-        JSON.stringify(prev.scenario_rubric_ids) !==
-          JSON.stringify(newState.scenario_rubric_ids) ||
-        JSON.stringify(prev.scenario_time_limit_ids) !==
-          JSON.stringify(newState.scenario_time_limit_ids) ||
-        JSON.stringify(prev.pending_ids) !==
-          JSON.stringify(newState.pending_ids)
+        JSON.stringify(prev.department_ids) !== JSON.stringify(newState.department_ids) ||
+        JSON.stringify(prev.scenario_ids) !== JSON.stringify(newState.scenario_ids) ||
+        JSON.stringify(prev.scenario_flag_ids) !== JSON.stringify(newState.scenario_flag_ids) ||
+        JSON.stringify(prev.scenario_position_ids) !== JSON.stringify(newState.scenario_position_ids) ||
+        JSON.stringify(prev.scenario_rubric_ids) !== JSON.stringify(newState.scenario_rubric_ids) ||
+        JSON.stringify(prev.scenario_time_limit_ids) !== JSON.stringify(newState.scenario_time_limit_ids) ||
+        JSON.stringify(prev.pending_ids) !== JSON.stringify(newState.pending_ids)
       ) {
         serverSyncPendingRef.current = true;
         return newState;
@@ -1192,6 +1185,17 @@ function SimulationComponent({
       const selectedScenarioTimeLimits = s.scenario_time_limits.filter(
         (item) => item.selected,
       );
+      // Unlimited time limits are a practice-only convenience: training
+      // and assessment simulations must commit to a concrete time budget.
+      // Gate the Unlimited switch on whether the simulation's `practice`
+      // flag option is currently selected.
+      const practiceFlagOptionId = (s.flags ?? []).find(
+        (f: { key?: string | null }) => f.key === "practice",
+      )?.flag_option_id;
+      const allowUnlimitedTimeLimits = !!(
+        practiceFlagOptionId &&
+        (formState.flag_ids ?? []).includes(String(practiceFlagOptionId))
+      );
       const scenarioSuggestions = s.scenarios
         .filter((item) => item.suggested && item.scenario_id)
         .map((item) => item.scenario_id as string);
@@ -1445,19 +1449,20 @@ function SimulationComponent({
                   disabled={disabled}
                   onChange={() => {}}
                   onPositionIdsChange={(ids) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      scenario_position_ids: ids,
-                    }))
+                    setFormState((prev) => {
+                      if (JSON.stringify(prev.scenario_position_ids) === JSON.stringify(ids)) return prev;
+                      return { ...prev, scenario_position_ids: ids };
+                    })
                   }
                   simulation_id={simulationId || null}
                   scenario_ids={formState.scenario_ids}
                   required={SIMULATION_REQUIRED.scenario_positions}
                   onScenarioPositionValues={(positions) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      scenario_positions: positions.length > 0 ? positions : null,
-                    }))
+                    setFormState((prev) => {
+                      const nextVal = positions.length > 0 ? positions : null;
+                      if (JSON.stringify(prev.scenario_positions) === JSON.stringify(nextVal)) return prev;
+                      return { ...prev, scenario_positions: nextVal };
+                    })
                   }
                 />
                 <ScenarioRubrics
@@ -1499,18 +1504,20 @@ function SimulationComponent({
                   scenario_resources={selectedScenarios}
                   disabled={disabled}
                   onTimeLimitIdsChange={(ids) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      scenario_time_limit_ids: ids,
-                    }))
+                    setFormState((prev) => {
+                      if (JSON.stringify(prev.scenario_time_limit_ids) === JSON.stringify(ids)) return prev;
+                      return { ...prev, scenario_time_limit_ids: ids };
+                    })
                   }
                   required={SIMULATION_REQUIRED.scenario_time_limits}
                   onScenarioTimeLimitValues={(timeLimits) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      scenario_time_limits: timeLimits.length > 0 ? timeLimits : null,
-                    }))
+                    setFormState((prev) => {
+                      const nextVal = timeLimits.length > 0 ? timeLimits : null;
+                      if (JSON.stringify(prev.scenario_time_limits) === JSON.stringify(nextVal)) return prev;
+                      return { ...prev, scenario_time_limits: nextVal };
+                    })
                   }
+                  allowUnlimited={allowUnlimitedTimeLimits}
                 />
               </div>
             </StepCard>

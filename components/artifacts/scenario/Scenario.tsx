@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, {
   useCallback,
   useEffect,
@@ -37,13 +37,13 @@ import { Options } from "@/components/resources/Options";
 import { Questions } from "@/components/resources/Questions";
 import { Videos } from "@/components/resources/Videos";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildDraftPayload,
   checkHasResourceIds,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
@@ -262,11 +262,12 @@ function ScenarioComponent({
       documentShowSelected: parseAsBoolean,
       parameterShowSelected: parseAsBoolean,
       parameterIds: parseAsArrayOf(parseAsString),
-      videoEnabled: parseAsBoolean,
-      imagesEnabled: parseAsBoolean,
-      objectivesEnabled: parseAsBoolean,
-      questionsEnabled: parseAsBoolean,
-      problemStatementEnabled: parseAsBoolean,
+      // Single mode param replaces the old per-feature booleans
+      // (videoEnabled, imagesEnabled, objectivesEnabled, questionsEnabled,
+      // problemStatementEnabled). Needed in the URL so SSR knows which
+      // shape to render before hydration; section visibility itself is
+      // driven by formState.
+      mode: parseAsString,
     }),
     [],
   );
@@ -404,12 +405,38 @@ function ScenarioComponent({
   const formStateRef = useRef<Record<string, unknown>>(
     formState as unknown as Record<string, unknown>,
   );
-  const lastPatchedFormStateRef = useRef<ScenarioFormState | null>(null);
   // Track internal (unflushed) questions from Questions component for immediate Options rendering
   const [internalQuestions, setInternalQuestions] = useState<{ id: string; question_text: string }[]>([]);
   useEffect(() => {
     formStateRef.current = formState as unknown as Record<string, unknown>;
   }, [formState]);
+
+  // ── Assessment mode ──────────────────────────────────────────────────
+  // UI shape toggle. Not persisted as a scenario flag; the single `mode`
+  // URL param (`contextual | assessment`) lets SSR pick the right step
+  // layout before hydration, and lets a mid-flow refresh come back with
+  // the user's last choice. Initial fallback is derived from the saved
+  // flags so existing scenarios in assessment shape render correctly
+  // even without `?mode=` in the URL.
+  const searchParams = useSearchParams();
+  const [assessmentMode, setAssessmentMode] = useState<boolean>(() => {
+    const urlMode = searchParams.get("mode");
+    if (urlMode === "assessment") return true;
+    if (urlMode === "contextual") return false;
+    return (
+      !!formState.video_enabled_flag_id ||
+      !!formState.questions_enabled_flag_id
+    );
+  });
+  // If a server sync later populates an assessment flag (e.g. AI
+  // generation enabled video on a scenario that loaded as contextual),
+  // flip the mode on. We never auto-flip off — leaving mode=assessment
+  // on after the user clears both flags is fine (switches stay visible).
+  useEffect(() => {
+    if (formState.video_enabled_flag_id || formState.questions_enabled_flag_id) {
+      setAssessmentMode(true);
+    }
+  }, [formState.video_enabled_flag_id, formState.questions_enabled_flag_id]);
 
   // Memoize stringified array dependencies
   const departmentIdsStr = useMemo(
@@ -613,100 +640,77 @@ function ScenarioComponent({
   const hasResourceIds = checkHasResourceIds(
     SCENARIO_RESOURCES,
     formState as unknown as Record<string, unknown>,
-  ) || !!formState.name || !!formState.description || !!formState.problem_statement
+  )
+    || !!formState.name
+    || !!formState.description
+    || !!formState.problem_statement
     || (formState.objectives?.length ?? 0) > 0
     || (formState.images?.length ?? 0) > 0
     || (formState.videos?.length ?? 0) > 0
     || (formState.questions?.length ?? 0) > 0
-    || (formState.options?.length ?? 0) > 0;
+    || (formState.options?.length ?? 0) > 0
+    // Flag fields aren't in SCENARIO_RESOURCES (they're flattened to per-feature
+    // state fields and sent as a single flag_ids array). Without this, toggling
+    // a flag as the first action on a new-scenario page would leave
+    // hasResourceIds=false and the autosave effect would short-circuit.
+    || SCENARIO_FLAG_FIELDS.some((f) => !!formState[f]);
 
+  // Append-only drafts: every save sends a FULL snapshot of the current
+  // form state, never a diff. Diff-based saves caused prior-field loss —
+  // e.g. save name, then save description, the second save omitted name_id
+  // and the new draft row lost the name on refresh.
   const buildPatchPayload = useCallback(
-    (
-      draftId: string | null,
-    ): Record<string, unknown> => {
+    (draftId: string | null): Record<string, unknown> => {
       const current = formStateRef.current as unknown as ScenarioFormState;
-      const ref = lastPatchedFormStateRef.current;
+      const payload: Record<string, unknown> = {
+        input_draft_id: draftId || null,
+      };
 
-      // Build flat draft payload for ID-based resources
-      const idPayload = buildDraftPayload(SCENARIO_RESOURCES, {
-        formState: formStateRef.current,
-        referenceState: ref as unknown as Record<string, unknown> | null,
-        flushResults: {},
-      });
+      // Single-value creatables: value takes precedence over ID
+      if (current.name != null) payload["name"] = current.name;
+      else if (current.name_id) payload["name_id"] = current.name_id;
 
-      // Value fields for creatables (value takes precedence over ID)
-      if (current.name != null) {
-        if (!ref || current.name !== ref.name) {
-          idPayload["name"] = current.name;
-          delete idPayload["name_id"];
-        }
-      }
-      if (current.description != null) {
-        if (!ref || current.description !== ref.description) {
-          idPayload["description"] = current.description;
-          delete idPayload["description_id"];
-        }
-      }
-      if (current.problem_statement != null) {
-        if (!ref || current.problem_statement !== ref.problem_statement) {
-          idPayload["problem_statement"] = current.problem_statement;
-          delete idPayload["problem_statement_id"];
-        }
-      }
+      if (current.description != null) payload["description"] = current.description;
+      else if (current.description_id) payload["description_id"] = current.description_id;
 
-      // Multi-select creatable value fields (merged with IDs on server)
-      if (current.objectives && current.objectives.length > 0) {
-        idPayload["objectives"] = current.objectives;
-      }
-      if (current.images && current.images.length > 0) {
-        idPayload["images"] = current.images;
-      }
-      if (current.videos && current.videos.length > 0) {
-        idPayload["videos"] = current.videos;
-      }
-      if (current.questions && current.questions.length > 0) {
-        idPayload["questions"] = current.questions;
-      }
-      if (current.options && current.options.length > 0) {
-        idPayload["options"] = current.options;
-      }
+      if (current.problem_statement != null) payload["problem_statement"] = current.problem_statement;
+      else if (current.problem_statement_id) payload["problem_statement_id"] = current.problem_statement_id;
 
-      // Flags — the server schema is a single `flag_ids: list[UUID]` array,
-      // not individual `*_flag_id` fields. Collect every non-null flag UUID
-      // from the six per-feature state fields. Previously these were sent as
-      // their own keys (active_flag_id, video_enabled_flag_id, ...) which
-      // pydantic silently dropped → flag toggles never reached the server.
-      const refFlagIds = (SCENARIO_FLAG_FIELDS
-        .map((f) => (ref?.[f] as string | null | undefined) ?? null)
-        .filter((v): v is string => !!v)
-        .sort()
-        .join(","));
+      // Multi-value creatables: values merged with IDs server-side
+      if (current.objectives && current.objectives.length > 0) payload["objectives"] = current.objectives;
+      if (current.objective_ids && current.objective_ids.length > 0) payload["objective_ids"] = current.objective_ids;
+
+      if (current.images && current.images.length > 0) payload["images"] = current.images;
+      if (current.image_ids && current.image_ids.length > 0) payload["image_ids"] = current.image_ids;
+
+      if (current.videos && current.videos.length > 0) payload["videos"] = current.videos;
+      if (current.video_ids && current.video_ids.length > 0) payload["video_ids"] = current.video_ids;
+
+      if (current.questions && current.questions.length > 0) payload["questions"] = current.questions;
+      if (current.question_ids && current.question_ids.length > 0) payload["question_ids"] = current.question_ids;
+
+      if (current.options && current.options.length > 0) payload["options"] = current.options;
+      if (current.option_ids && current.option_ids.length > 0) payload["option_ids"] = current.option_ids;
+
+      // Flags flattened into a single flag_ids list (server schema)
       const currentFlagIds = SCENARIO_FLAG_FIELDS
         .map((f) => current[f])
         .filter((v): v is string => !!v);
-      const currentFlagKey = [...currentFlagIds].sort().join(",");
-      const flagPayload: Record<string, unknown> = {};
-      if (currentFlagKey !== refFlagIds) {
-        flagPayload["flag_ids"] = currentFlagIds;
-      }
+      if (currentFlagIds.length > 0) payload["flag_ids"] = currentFlagIds;
 
-      // Include pending_ids if any resources are still pending
-      const currentPendingIds = (formStateRef.current as unknown as ScenarioFormState).pending_ids;
-      return {
-        input_draft_id: draftId || null,
-        ...idPayload,
-        ...flagPayload,
-        ...(currentPendingIds?.length ? { pending_ids: currentPendingIds } : {}),
-      };
+      // Associations
+      if (current.department_ids?.length) payload["department_ids"] = current.department_ids;
+      if (current.persona_ids?.length) payload["persona_ids"] = current.persona_ids;
+      if (current.document_ids?.length) payload["document_ids"] = current.document_ids;
+      if (current.parameter_field_ids?.length) payload["parameter_field_ids"] = current.parameter_field_ids;
+
+      // Pending state
+      if (current.pending_ids?.length) payload["pending_ids"] = current.pending_ids;
+
+      return payload;
     },
     [],
   );
-
-  const onPatchSuccess = useCallback(() => {
-    lastPatchedFormStateRef.current = {
-      ...(formStateRef.current as unknown as ScenarioFormState),
-    };
-  }, []);
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
   // These keep child components from seeing a new onChange ref every render.
@@ -769,44 +773,104 @@ function ScenarioComponent({
     hasResourceIds,
     flushRegistryRef: emptyFlushRef,
     formStateRef,
-    onPatchSuccess,
   });
 
-  // Update form state when server data changes
+  // Update form state when server data changes.
+  //
+  // CRITICAL: merge, do not replace. Flag toggles write the URL (for server
+  // filtering) which causes the parent to refetch scenarioData. If we replaced
+  // prev with newState wholesale, any user toggle that hasn't been persisted
+  // yet would be clobbered back to null (server doesn't know about it until
+  // the debounced save lands). We preserve user-set IDs the server hasn't
+  // acknowledged by only adopting the server value when it's non-null or the
+  // user hadn't set anything either.
   useEffect(() => {
     const newState = getInitialFormState();
     setFormState((prev) => {
-      if (
-        prev.name_id !== newState.name_id ||
-        prev.description_id !== newState.description_id ||
-        prev.problem_statement_id !== newState.problem_statement_id ||
-        prev.active_flag_id !== newState.active_flag_id ||
-        prev.objectives_enabled_flag_id !==
-          newState.objectives_enabled_flag_id ||
-        prev.images_enabled_flag_id !== newState.images_enabled_flag_id ||
-        prev.video_enabled_flag_id !== newState.video_enabled_flag_id ||
-        prev.questions_enabled_flag_id !== newState.questions_enabled_flag_id ||
+      const mergeId = (p: string | null, n: string | null) =>
+        // Server wins when it has a concrete ID; if server returns null but
+        // user has set something, keep the user's in-flight value.
+        n !== null ? n : p;
+      const mergeList = (p: string[], n: string[]) =>
+        // Server wins when it has any entries; otherwise preserve user's
+        // in-flight selection.
+        n && n.length > 0 ? n : p;
+
+      const merged: ScenarioFormState = {
+        ...prev,
+        name_id: mergeId(prev.name_id, newState.name_id),
+        description_id: mergeId(prev.description_id, newState.description_id),
+        problem_statement_id: mergeId(
+          prev.problem_statement_id,
+          newState.problem_statement_id,
+        ),
+        active_flag_id: mergeId(prev.active_flag_id, newState.active_flag_id),
+        objectives_enabled_flag_id: mergeId(
+          prev.objectives_enabled_flag_id,
+          newState.objectives_enabled_flag_id,
+        ),
+        images_enabled_flag_id: mergeId(
+          prev.images_enabled_flag_id,
+          newState.images_enabled_flag_id,
+        ),
+        video_enabled_flag_id: mergeId(
+          prev.video_enabled_flag_id,
+          newState.video_enabled_flag_id,
+        ),
+        questions_enabled_flag_id: mergeId(
+          prev.questions_enabled_flag_id,
+          newState.questions_enabled_flag_id,
+        ),
+        problem_statement_enabled_flag_id: mergeId(
+          prev.problem_statement_enabled_flag_id,
+          newState.problem_statement_enabled_flag_id,
+        ),
+        department_ids: mergeList(prev.department_ids, newState.department_ids),
+        persona_ids: mergeList(prev.persona_ids, newState.persona_ids),
+        document_ids: mergeList(prev.document_ids, newState.document_ids),
+        parameter_field_ids: mergeList(
+          prev.parameter_field_ids,
+          newState.parameter_field_ids,
+        ),
+        image_ids: mergeList(prev.image_ids, newState.image_ids),
+        objective_ids: mergeList(prev.objective_ids, newState.objective_ids),
+        video_ids: mergeList(prev.video_ids, newState.video_ids),
+        question_ids: mergeList(prev.question_ids, newState.question_ids),
+        option_ids: mergeList(prev.option_ids, newState.option_ids),
+        // Value fields (name/description/...) are always prev — newState.* is
+        // always null here (server state only), and we never want to clobber
+        // in-flight user typing.
+      };
+
+      const changed =
+        prev.name_id !== merged.name_id ||
+        prev.description_id !== merged.description_id ||
+        prev.problem_statement_id !== merged.problem_statement_id ||
+        prev.active_flag_id !== merged.active_flag_id ||
+        prev.objectives_enabled_flag_id !== merged.objectives_enabled_flag_id ||
+        prev.images_enabled_flag_id !== merged.images_enabled_flag_id ||
+        prev.video_enabled_flag_id !== merged.video_enabled_flag_id ||
+        prev.questions_enabled_flag_id !== merged.questions_enabled_flag_id ||
         prev.problem_statement_enabled_flag_id !==
-          newState.problem_statement_enabled_flag_id ||
+          merged.problem_statement_enabled_flag_id ||
         JSON.stringify(prev.department_ids) !==
-          JSON.stringify(newState.department_ids) ||
-        JSON.stringify(prev.persona_ids) !==
-          JSON.stringify(newState.persona_ids) ||
+          JSON.stringify(merged.department_ids) ||
+        JSON.stringify(prev.persona_ids) !== JSON.stringify(merged.persona_ids) ||
         JSON.stringify(prev.document_ids) !==
-          JSON.stringify(newState.document_ids) ||
+          JSON.stringify(merged.document_ids) ||
         JSON.stringify(prev.parameter_field_ids) !==
-          JSON.stringify(newState.parameter_field_ids) ||
-        JSON.stringify(prev.image_ids) !== JSON.stringify(newState.image_ids) ||
+          JSON.stringify(merged.parameter_field_ids) ||
+        JSON.stringify(prev.image_ids) !== JSON.stringify(merged.image_ids) ||
         JSON.stringify(prev.objective_ids) !==
-          JSON.stringify(newState.objective_ids) ||
-        JSON.stringify(prev.video_ids) !== JSON.stringify(newState.video_ids) ||
+          JSON.stringify(merged.objective_ids) ||
+        JSON.stringify(prev.video_ids) !== JSON.stringify(merged.video_ids) ||
         JSON.stringify(prev.question_ids) !==
-          JSON.stringify(newState.question_ids) ||
-        JSON.stringify(prev.option_ids) !==
-          JSON.stringify(newState.option_ids)
-      ) {
+          JSON.stringify(merged.question_ids) ||
+        JSON.stringify(prev.option_ids) !== JSON.stringify(merged.option_ids);
+
+      if (changed) {
         serverSyncPendingRef.current = true;
-        return newState;
+        return merged;
       }
       return prev;
     });
@@ -1310,13 +1374,14 @@ function ScenarioComponent({
       });
     }
 
-    const serverShowProblemStatement = true;
-    const serverShowObjectives = true;
-    const serverShowImages = true;
-    const serverShowVideos = true;
-    const serverShowQuestions = true;
+    // Context step appears only if any of its features are enabled.
+    // Images is hidden in assessmentMode, so it doesn't count while on.
+    const hasAnyContextFeature =
+      !!formState.problem_statement_enabled_flag_id ||
+      !!formState.objectives_enabled_flag_id ||
+      (!assessmentMode && !!formState.images_enabled_flag_id);
 
-    if (serverShowProblemStatement || serverShowObjectives || serverShowImages) {
+    if (hasAnyContextFeature) {
       items.push({
         id: "context",
         title: "Context",
@@ -1331,12 +1396,32 @@ function ScenarioComponent({
       });
     }
 
-    if (serverShowVideos || serverShowQuestions) {
+    // Assessment step appears only in assessmentMode and only if at
+    // least one of its features is enabled. Label/description adapts to
+    // what's enabled so the card doesn't say "Video" when the scenario
+    // is questions-only.
+    const videoOn =
+      assessmentMode && !!formState.video_enabled_flag_id;
+    const questionsOn =
+      assessmentMode && !!formState.questions_enabled_flag_id;
+
+    if (videoOn || questionsOn) {
+      const title =
+        videoOn && questionsOn
+          ? "Video & Questions"
+          : videoOn
+            ? "Video"
+            : "Questions";
+      const description =
+        videoOn && questionsOn
+          ? "Add video content, questions, and answer options."
+          : videoOn
+            ? "Add video content for the scenario."
+            : "Add questions and answer options.";
       items.push({
         id: "video",
-        title: "Video",
-        description:
-          "Add video content, questions, and answer options.",
+        title,
+        description,
         resetFields: ["videos", "questions"],
       });
     }
@@ -1344,6 +1429,12 @@ function ScenarioComponent({
     return items;
   }, [
     stableScenarioDataFields,
+    assessmentMode,
+    formState.problem_statement_enabled_flag_id,
+    formState.objectives_enabled_flag_id,
+    formState.images_enabled_flag_id,
+    formState.video_enabled_flag_id,
+    formState.questions_enabled_flag_id,
   ]);
 
   const formFieldKeys = useMemo(
@@ -1724,17 +1815,17 @@ function ScenarioComponent({
       const parameterShowSelected =
         (formData["parameterShowSelected"] as boolean | undefined) ?? false;
 
-      // Section visibility from URL state (source of truth)
-      const urlVideoEnabled =
-        (formData["videoEnabled"] as boolean | undefined) ?? false;
-      const urlImagesEnabled =
-        (formData["imagesEnabled"] as boolean | undefined) ?? false;
-      const urlObjectivesEnabled =
-        (formData["objectivesEnabled"] as boolean | undefined) ?? false;
-      const urlQuestionsEnabled =
-        (formData["questionsEnabled"] as boolean | undefined) ?? false;
-      const urlProblemStatementEnabled =
-        (formData["problemStatementEnabled"] as boolean | undefined) ?? false;
+      // Section visibility is driven by formState + assessmentMode.
+      // Drafts retain saved IDs even when a flag is off; the API accepts
+      // them, the UI just hides the section.
+      const showProblemStatement = !!formState.problem_statement_enabled_flag_id;
+      const showObjectives = !!formState.objectives_enabled_flag_id;
+      const showImages = !assessmentMode && !!formState.images_enabled_flag_id;
+      const showVideo = assessmentMode && !!formState.video_enabled_flag_id;
+      const showQuestions = assessmentMode && !!formState.questions_enabled_flag_id;
+      // Child components (Personas/Documents) still accept a videoEnabled
+      // hint for their own filtering — alias of showVideo.
+      const urlVideoEnabled = showVideo;
 
       const resetProps = onReset ? { onReset, resetLabel: "Reset" } : {};
 
@@ -1843,34 +1934,103 @@ function ScenarioComponent({
                   onGenerate={generateHandlers["departments"]}
                 />
 
-                {/* Server-driven Flags - single component for all flags */}
-                {/* Filter out video_flag flags when video is not enabled */}
+                {/* Server-driven Flags — assessmentMode gates which feature
+                    switches are visible:
+                      off → contextual (images + PS + objectives)
+                      on  → assessment (video + questions, no images) */}
                 <Flags
-                  flags={(s?.flags ?? []).filter(
-                    (f: { video_flag?: boolean | null }) =>
-                      !f.video_flag || urlVideoEnabled,
-                  )}
-                  flag_ids={(() => {
-                    // Resolve flag UUID from available flags when URL says ON but no saved draft
-                    const resolve = (formValue: string | null, urlValue: boolean, key: string) => {
-                      if (formValue) return formValue;
-                      if (!urlValue) return null;
-                      const flag = (s?.flags ?? []).find((f: { key?: string }) => f.key === key);
-                      return flag?.flag_option_id ? String(flag.flag_option_id) : null;
-                    };
-                    return {
-                      scenario_active: formState.active_flag_id ?? null,
-                      video_enabled: resolve(formState.video_enabled_flag_id, urlVideoEnabled, "video_enabled"),
-                      problem_statement_enabled: resolve(formState.problem_statement_enabled_flag_id, urlProblemStatementEnabled, "problem_statement_enabled"),
-                      objectives_enabled: resolve(formState.objectives_enabled_flag_id, urlObjectivesEnabled, "objectives_enabled"),
-                      images_enabled: resolve(formState.images_enabled_flag_id, urlImagesEnabled, "images_enabled"),
-                      questions_enabled: resolve(formState.questions_enabled_flag_id, urlQuestionsEnabled, "questions_enabled"),
-                    };
+                  flags={(() => {
+                    // Keep presentation ordering local: Active first, then
+                    // the rest in server order. Done here (not server-side)
+                    // because the rest of the app still benefits from the
+                    // server's generic flag ordering.
+                    const filtered = (s?.flags ?? []).filter(
+                      (f: { video_flag?: boolean | null; key?: string | null }) => {
+                        // Mode-driven feature gating (wins over video_flag,
+                        // because questions_enabled is often seeded with
+                        // video_flag=true but is independent of video).
+                        if (f.key === "images_enabled") return !assessmentMode;
+                        if (f.key === "video_enabled" || f.key === "questions_enabled") {
+                          return assessmentMode;
+                        }
+                        // Other video-scoped flag suggestions only show when
+                        // video is actually enabled.
+                        if (f.video_flag && !formState.video_enabled_flag_id) return false;
+                        return true;
+                      },
+                    );
+                    return [...filtered].sort((a, b) => {
+                      if (a.key === "scenario_active") return -1;
+                      if (b.key === "scenario_active") return 1;
+                      return 0;
+                    });
                   })()}
+                  flag_ids={{
+                    scenario_active: formState.active_flag_id ?? null,
+                    video_enabled: formState.video_enabled_flag_id ?? null,
+                    problem_statement_enabled: formState.problem_statement_enabled_flag_id ?? null,
+                    objectives_enabled: formState.objectives_enabled_flag_id ?? null,
+                    images_enabled: formState.images_enabled_flag_id ?? null,
+                    questions_enabled: formState.questions_enabled_flag_id ?? null,
+                  }}
                   show_flags={true}
                   columns={2}
                   label="Flags"
                   disabled={disabled}
+                  headerRight={
+                    <div
+                      role="radiogroup"
+                      aria-label="Scenario mode"
+                      className="inline-flex items-center rounded-full border bg-muted/50 p-0.5 text-xs"
+                    >
+                      {([
+                        { value: false, label: "Contextual" },
+                        { value: true, label: "Assessment" },
+                      ] as const).map(({ value, label }) => {
+                        const active = assessmentMode === value;
+                        return (
+                          <button
+                            key={label}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            disabled={disabled}
+                            onClick={() => {
+                              if (assessmentMode === value) return;
+                              setAssessmentMode(value);
+                              // Keep persisted flags aligned with visible
+                              // switches: assessment clears images; contextual
+                              // clears video + questions. Saved IDs for the
+                              // hidden features stay in the backing draft —
+                              // a user who toggles back gets their values
+                              // restored via the server sync.
+                              setFormState((prev) =>
+                                value
+                                  ? { ...prev, images_enabled_flag_id: null }
+                                  : {
+                                      ...prev,
+                                      video_enabled_flag_id: null,
+                                      questions_enabled_flag_id: null,
+                                    },
+                              );
+                              setFormData({
+                                mode: value ? "assessment" : "contextual",
+                              });
+                            }}
+                            className={cn(
+                              "rounded-full px-3 py-1 font-medium transition-colors",
+                              active
+                                ? "bg-background text-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground",
+                              disabled && "pointer-events-none opacity-50",
+                            )}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  }
                   onChange={(key: string, flagId: string | null) => {
                     const fieldMap: Record<string, string> = {
                       scenario_active: "active_flag_id",
@@ -1885,22 +2045,9 @@ function ScenarioComponent({
                     if (field) {
                       setFormState((prev) => ({ ...prev, [field]: flagId }));
                     }
-                    // Sync toggle flags to URL for server-side filtering
-                    const urlMap: Record<string, string> = {
-                      video_enabled: "videoEnabled",
-                      images_enabled: "imagesEnabled",
-                      objectives_enabled: "objectivesEnabled",
-                      questions_enabled: "questionsEnabled",
-                      problem_statement_enabled: "problemStatementEnabled",
-                    };
-                    const urlKey = urlMap[key];
-                    if (urlKey) {
-                      setFormData({ [urlKey]: !!flagId });
-                    }
                   }}
                   onGenerate={generateHandlers["scenario_flags"]}
                   showAiGenerate={false}
-
                 />
               </div>
             </StepCard>
@@ -1934,11 +2081,11 @@ function ScenarioComponent({
               {...resetProps}
             >
               <div className="space-y-4">
-                {urlImagesEnabled && (
+                {showImages && (
                   <Images
                     image_ids={formState.image_ids}
                     image_resources={s?.images?.filter((i: any) => i.selected) ?? []}
-                    show_images={urlImagesEnabled}
+                    show_images={showImages}
                     images_required={false}
                     images={s?.images ?? []}
                     disabled={disabled}
@@ -1964,7 +2111,7 @@ function ScenarioComponent({
                     uploadFileAction={uploadFileAction}
                   />
                 )}
-                {urlProblemStatementEnabled && (
+                {showProblemStatement && (
                   <ProblemStatements
                     problem_statement_id={
                       formState.problem_statement_id ?? null
@@ -1972,7 +2119,7 @@ function ScenarioComponent({
                     problem_statement_resource={
                       s?.problem_statements?.find((p: any) => p.selected) ?? null
                     }
-                    show_problem_statement={urlProblemStatementEnabled}
+                    show_problem_statement={showProblemStatement}
                     problem_statements={s?.problem_statements ?? []}
                     disabled={disabled}
                     onProblemStatementIdChange={(problemStatementId) =>
@@ -1993,11 +2140,11 @@ function ScenarioComponent({
                     }
                   />
                 )}
-                {urlObjectivesEnabled && (
+                {showObjectives && (
                   <Objectives
                     objective_ids={formState.objective_ids}
                     objective_resources={s?.objectives?.filter((o: any) => o.selected) ?? []}
-                    show_objectives={urlObjectivesEnabled}
+                    show_objectives={showObjectives}
                     objectives_required={false}
                     objectives={s?.objectives ?? []}
                     disabled={disabled}
@@ -2258,11 +2405,11 @@ function ScenarioComponent({
               {...resetProps}
             >
               <div className="space-y-4">
-                {urlVideoEnabled && (
+                {showVideo && (
                   <Videos
                     video_ids={formState.video_ids}
                     video_resources={s?.videos?.filter((v: any) => v.selected) ?? []}
-                    show_videos={urlVideoEnabled}
+                    show_videos={showVideo}
                     videos_required={false}
                     videos={s?.videos ?? []}
                     disabled={disabled}
@@ -2286,11 +2433,11 @@ function ScenarioComponent({
                     uploadFileAction={uploadFileAction}
                   />
                 )}
-                {urlQuestionsEnabled && (
+                {showQuestions && (
                   <Questions
                     question_ids={formState.question_ids}
                     question_resources={s?.questions?.filter((q: any) => q.selected) ?? []}
-                    show_questions={urlQuestionsEnabled}
+                    show_questions={showQuestions}
                     questions_required={false}
                     questions={s?.questions ?? []}
                     disabled={disabled}
@@ -2308,7 +2455,7 @@ function ScenarioComponent({
                     onInternalQuestionsChange={setInternalQuestions}
                   />
                 )}
-                {showQuestionsSection && internalQuestions.length > 0 && (
+                {showQuestions && internalQuestions.length > 0 && (
                   <Options
                     option_ids={formState.option_ids}
                     option_resources={s?.options?.filter((o: any) => o.selected) ?? []}
@@ -2360,6 +2507,7 @@ function ScenarioComponent({
       showObjectivesSection,
       showProblemStatementSection,
       videoEnabled,
+      assessmentMode,
       makeOnGenerationComplete,
     ],
   );

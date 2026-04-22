@@ -402,66 +402,100 @@ export function Videos({
         />
       </div>
 
-      {/* Video Preview Container (matching ContentSection pattern) */}
-      <div className="relative border rounded-lg overflow-hidden min-h-[400px] flex-1 bg-black flex items-center justify-center">
-        {/* Upload progress overlay */}
-        {activeUploads.size > 0 && (
-          <div className="absolute inset-0 bg-black/80 z-10 flex flex-col items-center justify-center">
-            {Array.from(activeUploads.values()).map((upload) => (
-              <div key={upload.toastId} className="text-center text-white px-4 w-full max-w-xs">
-                <Loader2 className="h-12 w-12 mb-4 mx-auto animate-spin" />
-                <p className="text-sm font-medium mb-2 truncate">{upload.file.name}</p>
-                <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden mb-2">
-                  <div
-                    className="h-full bg-primary transition-all"
-                    style={{ width: `${upload.progress}%` }}
-                  />
-                </div>
-                <p className="text-sm text-white/70">
-                  {upload.status === "finalizing" ? "Finalizing..." : `${upload.progress}%`}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Video Preview Container — when no video is selected, the whole
+          box is the upload target (mirrors the empty-state add-image card
+          in Images.tsx). Clicking anywhere on the black area opens the
+          file picker. */}
+      {(() => {
+        const canUpload = !!(onVideoUpload || uploadFileAction);
+        const isEmptyState = !selectedVideo && canUpload;
+        const uploadDisabled =
+          disabled || isUploadingVideo || activeUploads.size > 0;
 
-        {selectedVideo ? (
-          selectedVideo.id ? (
-            <video
-              src={`/api/system/video/${selectedVideo.id}`}
-              controls
-              className="w-full h-full object-contain"
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center text-white/70">
-              <Video className="h-12 w-12 mb-2" />
-              <p className="text-sm">Video upload not available</p>
-            </div>
-          )
-        ) : (
-          <div className="flex flex-col items-center justify-center text-white/70">
-            <Video className="h-12 w-12 mb-2" />
-            <p className="text-sm">No video selected</p>
-            {/* Upload button when no video selected */}
-            {(onVideoUpload || uploadFileAction) && (
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => effectiveVideoInputRef.current?.click()}
-                disabled={disabled || isUploadingVideo || activeUploads.size > 0}
-                className="mt-4"
-              >
-                {activeUploads.size > 0 ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        const containerClass = cn(
+          "relative border rounded-lg overflow-hidden min-h-[400px] flex-1 bg-black flex items-center justify-center",
+          isEmptyState &&
+            "cursor-pointer transition-colors hover:bg-black/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          isEmptyState && uploadDisabled && "opacity-60 cursor-not-allowed",
+        );
+
+        const handleEmptyClick = () => {
+          if (isEmptyState && !uploadDisabled) {
+            effectiveVideoInputRef.current?.click();
+          }
+        };
+
+        return (
+          <div
+            className={containerClass}
+            onClick={isEmptyState ? handleEmptyClick : undefined}
+            role={isEmptyState ? "button" : undefined}
+            tabIndex={isEmptyState ? 0 : undefined}
+            aria-disabled={isEmptyState && uploadDisabled ? true : undefined}
+            onKeyDown={
+              isEmptyState
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleEmptyClick();
+                    }
+                  }
+                : undefined
+            }
+          >
+            {/* Upload progress overlay */}
+            {activeUploads.size > 0 && (
+              <div className="absolute inset-0 bg-black/80 z-10 flex flex-col items-center justify-center">
+                {Array.from(activeUploads.values()).map((upload) => (
+                  <div key={upload.toastId} className="text-center text-white px-4 w-full max-w-xs">
+                    <Loader2 className="h-12 w-12 mb-4 mx-auto animate-spin" />
+                    <p className="text-sm font-medium mb-2 truncate">{upload.file.name}</p>
+                    <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden mb-2">
+                      <div
+                        className="h-full bg-primary transition-all"
+                        style={{ width: `${upload.progress}%` }}
+                      />
+                    </div>
+                    <p className="text-sm text-white/70">
+                      {upload.status === "finalizing" ? "Finalizing..." : `${upload.progress}%`}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {selectedVideo ? (
+              selectedVideo.id ? (
+                <video
+                  src={`/api/system/video/${selectedVideo.id}`}
+                  controls
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center text-white/70">
+                  <Video className="h-12 w-12 mb-2" />
+                  <p className="text-sm">Video upload not available</p>
+                </div>
+              )
+            ) : (
+              <div className="flex flex-col items-center justify-center text-white/70 pointer-events-none">
+                {canUpload ? (
+                  <>
+                    <Upload className="h-10 w-10 mb-3" />
+                    <p className="text-sm font-medium">Click to upload video</p>
+                    <p className="text-xs text-white/50 mt-1">MP4, MOV up to the server limit</p>
+                  </>
                 ) : (
-                  <Upload className="h-4 w-4 mr-2" />
+                  <>
+                    <Video className="h-12 w-12 mb-2" />
+                    <p className="text-sm">No video selected</p>
+                  </>
                 )}
-                Upload Video
-              </Button>
+              </div>
             )}
           </div>
-        )}
-      </div>
+        );
+      })()}
 
       {/* Hidden file input */}
       {(onVideoUpload || uploadFileAction) && (

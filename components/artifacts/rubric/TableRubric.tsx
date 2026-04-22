@@ -7,7 +7,10 @@
 "use client";
 
 import * as React from "react";
+import { Loader2, TableProperties } from "lucide-react";
+import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -55,6 +58,12 @@ export interface TableRubricProps {
   // Optional: show full standards table on mobile (with horizontal scroll)
   // When false (default), shows simplified 2-column view on mobile
   showFullStandardsOnMobile?: boolean;
+
+  // Identifiers used by the mobile "Open Full Rubric" PDF button.
+  // The button is only rendered when both are set and gradingState
+  // exists — matches v1 parity (post-grading only).
+  rubricId?: string | null;
+  chatId?: string | null;
 }
 
 export default function TableRubric({
@@ -64,10 +73,49 @@ export default function TableRubric({
   gradingState,
   analyses,
   showFullStandardsOnMobile = false,
+  rubricId,
+  chatId,
 }: TableRubricProps) {
   const [flippedCells, setFlippedCells] = React.useState<Set<string>>(
     () => new Set<string>(),
   );
+  const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);
+
+  // v1 parity: only surface the download affordance once the chat has
+  // a grade overlay. Without one the PDF would be an empty template
+  // which isn't a useful action from this surface.
+  const canDownload = Boolean(rubricId && chatId && gradingState);
+
+  const handleDownloadPdf = React.useCallback(async () => {
+    // Open the target window SYNCHRONOUSLY inside the click handler —
+    // Safari (iOS) strips the user-gesture token from an async
+    // window.open, which breaks the tab open after fetch resolves.
+    // Match v1's pattern exactly: open now, redirect once the blob URL
+    // is ready.
+    const newWindow = window.open("", "_blank");
+    setIsGeneratingPdf(true);
+    try {
+      const res = await fetch("/api/rubric/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rubric_id: rubricId, chat_id: chatId }),
+      });
+      if (!res.ok) throw new Error(`Failed: ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      if (newWindow) {
+        newWindow.location.href = url;
+      } else {
+        // Fallback — browser blocked the synchronous open (rare).
+        window.open(url, "_blank");
+      }
+    } catch {
+      newWindow?.close();
+      toast.error("Failed to generate rubric PDF");
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  }, [rubricId, chatId]);
 
   // Helper function to determine if a standard was achieved (from server-computed state)
   const isStandardAchieved = (standardId: string) => {
@@ -103,6 +151,35 @@ export default function TableRubric({
     ...groupedStandards.map((g) => g.standardIds.length),
     0,
   );
+
+  // Mobile-only "Open Full Rubric" affordance. Matches v1 — the
+  // simplified 2-column mobile view can't show per-cell feedback
+  // density, so we offer the full PDF as an out-of-band view.
+  // Rendered between the criteria table and the analyses block so the
+  // user sees the summary scores first, then the affordance to expand,
+  // then the coach-style analyses (matches v1 ordering).
+  const downloadButton = canDownload ? (
+    <Button
+      variant="default"
+      size="sm"
+      className="w-full md:hidden"
+      disabled={isGeneratingPdf}
+      onClick={handleDownloadPdf}
+      data-testid="rubric-open-full-button"
+    >
+      {isGeneratingPdf ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          Generating...
+        </>
+      ) : (
+        <>
+          <TableProperties className="h-4 w-4 mr-2" />
+          Open Full Rubric
+        </>
+      )}
+    </Button>
+  ) : null;
 
   return (
     <div className="space-y-6 w-full">
@@ -203,6 +280,9 @@ export default function TableRubric({
               </TableBody>
             </Table>
           </div>
+
+          {/* Open Full Rubric — between criteria table and analyses. */}
+          {downloadButton}
 
           {/* Rubric summary (analyses) - mobile view */}
           {analyses && analyses.length > 0 && (

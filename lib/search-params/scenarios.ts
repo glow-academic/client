@@ -42,12 +42,9 @@ export const scenarioSearchParams = {
   personaShowSelected: parseAsBoolean,
   parameterShowSelected: parseAsBoolean,
 
-  // Section visibility toggles (URL-backed, persists across refreshes)
-  videoEnabled: parseAsBoolean,
-  imagesEnabled: parseAsBoolean,
-  objectivesEnabled: parseAsBoolean,
-  questionsEnabled: parseAsBoolean,
-  problemStatementEnabled: parseAsBoolean,
+  // Scenario shape mode (contextual | assessment). Drives SSR step
+  // layout; section visibility is driven by formState on the client.
+  mode: parseAsString,
 
   // Range values
   personaMin: parseAsInteger,

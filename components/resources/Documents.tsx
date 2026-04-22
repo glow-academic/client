@@ -310,8 +310,11 @@ export function Documents({
                 </TooltipProvider>
               )}
 
-              {/* Document preview */}
-              <div className="w-full h-full">
+              {/* Document preview — pointer-events-none so the embedded
+                  iframe/viewer doesn't eat clicks meant for the parent
+                  selection button. The preview eye icon above sits on z-10
+                  and still receives clicks. */}
+              <div className="w-full h-full pointer-events-none">
                 <DocumentViewer
                   document={docForViewer}
                   bare={true}

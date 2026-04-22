@@ -260,24 +260,28 @@ export function Objectives({
     setInternalTexts((prev) => [...prev, ""]);
   }, [internalTexts.length, maxItems]);
 
+  // Updaters must be PURE — calling the parent's setState inside a state
+  // updater is a side effect and triggers "Cannot update a component while
+  // rendering a different component" when React re-invokes the updater.
+  // Instead compute next deterministically from a ref snapshot, set local
+  // state, and notify the parent outside the updater.
+  const internalTextsRef = useRef(internalTexts);
+  internalTextsRef.current = internalTexts;
+
   const removeObjective = useCallback((index: number) => {
     isDirtyRef.current = true;
-    setInternalTexts((prev) => {
-      const next = [...prev];
-      next.splice(index, 1);
-      onObjectivesChangeRef.current?.(next.filter((t) => t.trim()));
-      return next;
-    });
+    const next = [...internalTextsRef.current];
+    next.splice(index, 1);
+    setInternalTexts(next);
+    onObjectivesChangeRef.current?.(next.filter((t) => t.trim()));
   }, []);
 
   const updateObjective = useCallback((index: number, value: string) => {
     isDirtyRef.current = true;
-    setInternalTexts((prev) => {
-      const next = [...prev];
-      next[index] = value;
-      onObjectivesChangeRef.current?.(next.filter((t) => t.trim()));
-      return next;
-    });
+    const next = [...internalTextsRef.current];
+    next[index] = value;
+    setInternalTexts(next);
+    onObjectivesChangeRef.current?.(next.filter((t) => t.trim()));
   }, []);
 
   const handleDragStartObjective = useCallback((e: React.DragEvent, index: number) => {

@@ -158,7 +158,33 @@ export function ScenarioFlags({
     return map;
   }, [pendingResources]);
 
+  // Hydrate internal selection from server resources. Once the user has
+  // interacted (isDirtyRef flipped inside handleToggle), stop syncing so
+  // we don't clobber their in-flight click with the still-empty server
+  // state — which would visually flip the Switch off the moment they
+  // turned it on.
+  const isDirtyRef = useRef(false);
   useEffect(() => {
+    if (isDirtyRef.current) {
+      // Still refresh resource-id mapping so new server-assigned ids flow
+      // through onChange emits, without touching the visible selection.
+      const nextResourceIds = new Map<string, string>();
+      currentResources.forEach((resource) => {
+        if (resource.scenario_id && resource.flag_id && resource.id) {
+          nextResourceIds.set(
+            `${resource.scenario_id}:${resource.flag_id}`,
+            resource.id,
+          );
+        }
+      });
+      setScenarioFlagResourceIds((prev) => {
+        const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
+        const nextKey = JSON.stringify(Array.from(nextResourceIds.entries()).sort());
+        return prevKey === nextKey ? prev : nextResourceIds;
+      });
+      return;
+    }
+
     const nextSelected = new Map<string, Set<string>>();
     const nextResourceIds = new Map<string, string>();
 
@@ -216,11 +242,14 @@ export function ScenarioFlags({
     }
   }, [scenarioFlagResourceIds]);
 
-  // Emit value callback for unified draft pattern
+  // Emit value callback for unified draft pattern. Gate on the same
+  // isDirtyRef as the hydrate effect: synthetic state built from server
+  // resources shouldn't round-trip back up as if the user typed it.
   const onScenarioFlagValuesRef = useRef(onScenarioFlagValues);
   onScenarioFlagValuesRef.current = onScenarioFlagValues;
   useEffect(() => {
     if (!onScenarioFlagValuesRef.current) return;
+    if (!isDirtyRef.current) return;
     const values: Array<{ scenario_id: string; flag_id: string }> = [];
     selectedFlagsByScenario.forEach((flagIds, scenarioId) => {
       flagIds.forEach((flagId) => {
@@ -232,6 +261,7 @@ export function ScenarioFlags({
 
   const handleToggle = useCallback(
     (scenarioId: string, flagId: string, checked: boolean) => {
+      isDirtyRef.current = true;
       const key = `${scenarioId}:${flagId}`;
 
       setSelectedFlagsByScenario((prev) => {
