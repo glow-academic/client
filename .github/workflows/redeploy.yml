@@ -38,6 +38,10 @@ on:
         description: 'Custom domain (e.g. app.example.com) — added to Traefik Host rule'
         required: false
         default: ''
+      campus:
+        description: 'Campus slug (passed as NEXT_PUBLIC_CAMPUS)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -133,6 +137,120 @@ jobs:
           BASE_DOMAIN=$(echo "$DOMAIN" | cut -d. -f2-)
           echo "subdomain=$SUBDOMAIN" >> $GITHUB_OUTPUT
           echo "base-domain=$BASE_DOMAIN" >> $GITHUB_OUTPUT
+          echo "domain=$DOMAIN" >> $GITHUB_OUTPUT
+
+      # Regenerate docker-compose.yml from the code at this SHA. Without this,
+      # redeploys keep the compose from the original Deploy (New), so env-var
+      # changes in the workflow template (e.g. INTERNAL_API_BASE) never reach
+      # the container on a redeploy-only path. Mirrors deploy.yml's Generate
+      # step (same image, same env).
+      - name: Regenerate docker-compose.yml
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:\${CLIENT_VERSION}"
+          DOMAIN="${{ steps.parse-origin.outputs.domain }}"
+          ORIGIN="${{ inputs.origin }}"
+          APP_PREFIX="${{ inputs.app_prefix }}"
+          CAMPUS="${{ inputs.campus }}"
+          PARENT_NETWORK="glow-${{ inputs.instance_id }}"
+
+          AUTH_CLIENT_SECRET="${AUTH_CLIENT_SECRET:-}"
+
+          if [ "${{ inputs.airgapped_api }}" = "true" ]; then
+            API_URL="${ORIGIN}"
+          else
+            API_URL="${{ inputs.api_url }}"
+            if [ -z "$API_URL" ]; then
+              API_URL="https://${{ inputs.instance_id }}.learn-loop.org"
+            fi
+          fi
+
+          cat > "$DEPLOY_DIR/docker-compose.yml" <<COMPOSE
+          services:
+            app-blue:
+              image: "${IMAGE}"
+              restart: unless-stopped
+              environment:
+                - HOSTNAME=0.0.0.0
+                - PORT=3000
+                - INTERNAL_API_BASE=http://glow-nginx:80
+                - AUTH_ISSUER=${API_URL}
+                - AUTH_CLIENT_ID=glow-client
+                - AUTH_CLIENT_SECRET=${AUTH_CLIENT_SECRET}
+                - AUTH_URL=${ORIGIN}${APP_PREFIX}/api/auth
+                - AUTH_SECRET=${AUTH_CLIENT_SECRET}
+                - NEXT_PUBLIC_CAMPUS=${CAMPUS}
+                - APP_PREFIX=${APP_PREFIX}
+                - NEXT_PUBLIC_APP_PREFIX=${APP_PREFIX}
+              healthcheck:
+                test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+                interval: 10s
+                timeout: 5s
+                retries: 5
+                start_period: 30s
+              networks:
+                - internal
+
+            app-green:
+              image: "${IMAGE}"
+              restart: unless-stopped
+              environment:
+                - HOSTNAME=0.0.0.0
+                - PORT=3000
+                - INTERNAL_API_BASE=http://glow-nginx:80
+                - AUTH_ISSUER=${API_URL}
+                - AUTH_CLIENT_ID=glow-client
+                - AUTH_CLIENT_SECRET=${AUTH_CLIENT_SECRET}
+                - AUTH_URL=${ORIGIN}${APP_PREFIX}/api/auth
+                - AUTH_SECRET=${AUTH_CLIENT_SECRET}
+                - NEXT_PUBLIC_CAMPUS=${CAMPUS}
+                - APP_PREFIX=${APP_PREFIX}
+                - NEXT_PUBLIC_APP_PREFIX=${APP_PREFIX}
+              healthcheck:
+                test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+                interval: 10s
+                timeout: 5s
+                retries: 5
+                start_period: 30s
+              networks:
+                - internal
+
+            nginx:
+              image: nginx:alpine
+              restart: unless-stopped
+              depends_on:
+                - app-blue
+                - app-green
+              environment:
+                - ACTIVE_ENV=\${ACTIVE_ENV:-blue}
+                - MCP_BACKEND=\${MCP_BACKEND:-glow-nginx:80}
+                - GLOW_NGINX=\${GLOW_NGINX:-glow-nginx:80}
+              volumes:
+                - ./web/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+                - ./web/generated:/etc/nginx/conf.d/generated:rw
+              networks:
+                - internal
+
+            docker-gen:
+              image: jwilder/docker-gen:0.7.6
+              restart: unless-stopped
+              environment:
+                - COMPOSE_PROJECT_NAME=\${COMPOSE_PROJECT_NAME}
+              volumes:
+                - /var/run/docker.sock:/tmp/docker.sock:ro
+                - ./web/templates:/etc/docker-gen/templates:ro
+                - ./web/generated:/etc/nginx/conf.d/generated:rw
+              command: >
+                -notify-sighup \${COMPOSE_PROJECT_NAME}-nginx
+                -watch
+                /etc/docker-gen/templates/upstreams.tmpl
+                /etc/nginx/conf.d/generated/upstreams.conf
+              networks:
+                - internal
+
+          networks:
+            internal:
+          COMPOSE
+          sed -i 's/^          //' "$DEPLOY_DIR/docker-compose.yml"
 
       - name: Provision Traefik labels
         run: |
