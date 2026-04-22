@@ -307,7 +307,12 @@ function RubricComponent({
     });
   }, [getInitialFormState]);
 
-  const serverSyncPendingRef = React.useRef(false);
+  // NOTE: the actual server-sync flag that the autosave effect reads
+  // is returned from useDraftLifecycle below. Setting a local ref here
+  // (previous behavior) was a no-op — the hook's own effect couldn't
+  // see it, so server-sync absorbs re-triggered the debounce and the
+  // draft patched in a loop whenever Standards / StandardGroups
+  // mutated formState. Destructure + set the hook's ref instead.
   const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
   const patchActionRef = React.useRef<
     ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>) | undefined
@@ -423,20 +428,25 @@ function RubricComponent({
     setFormState((prev) => ({ ...prev, description }));
   }, []);
 
-  const { setUrlFormDataRef, onFormDataChange, flushAllAndSave, formDataRef } =
-    useDraftLifecycle({
-      formStateKey,
-      patchActionRef,
-      isAutosaveEnabled,
-      buildPatchPayload,
-      setSelectedDraftId,
-      hasResourceIds,
-      flushRegistryRef,
-      formStateRef,
-      onPatchSuccess: () => {
-        lastPatchedFormStateRef.current = { ...formStateRef.current };
-      },
-    });
+  const {
+    setUrlFormDataRef,
+    onFormDataChange,
+    flushAllAndSave,
+    formDataRef,
+    serverSyncPendingRef,
+  } = useDraftLifecycle({
+    formStateKey,
+    patchActionRef,
+    isAutosaveEnabled,
+    buildPatchPayload,
+    setSelectedDraftId,
+    hasResourceIds,
+    flushRegistryRef,
+    formStateRef,
+    onPatchSuccess: () => {
+      lastPatchedFormStateRef.current = { ...formStateRef.current };
+    },
+  });
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: RubricResourceType[], userInstructions?: string) => {
