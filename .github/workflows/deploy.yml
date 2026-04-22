@@ -24,14 +24,9 @@ on:
         description: 'Campus display name'
         required: false
         default: 'University Name'
-      encrypted_payload:
-        description: 'Base64 hybrid-encrypted deploy config (initial deploy)'
-        required: false
-        default: ''
-      deployment_token:
-        description: 'Deployment token for light redeploys (when encrypted_payload is empty)'
-        required: false
-        default: ''
+      provision_token:
+        description: 'One-time token to claim DEPLOYMENT_TOKEN from LearnLoop'
+        required: true
       api_url:
         description: 'Parent API URL (e.g. https://glow-v1.learn-loop.org)'
         required: false
@@ -75,50 +70,26 @@ jobs:
       - name: Login GHCR
         run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Decrypt deploy config
+      - name: Claim DEPLOYMENT_TOKEN from LearnLoop
         run: |
-          if [ -n "${{ inputs.encrypted_payload }}" ]; then
-            echo "Decrypting encrypted_payload..."
-            python3 - <<'PYEOF'
-          import json, base64, os
-          from cryptography.fernet import Fernet
-          from cryptography.hazmat.primitives import hashes, serialization
-          from cryptography.hazmat.primitives.asymmetric import padding
-
-          private_key = serialization.load_pem_private_key(
-              os.environ['PROVISION_PRIVATE_KEY'].encode(), password=None
-          )
-          raw = base64.b64decode(os.environ['ENCRYPTED_PAYLOAD'])
-          key_len = int.from_bytes(raw[:4], 'big')
-          encrypted_key = raw[4:4+key_len]
-          encrypted_data = raw[4+key_len:]
-
-          sym_key = private_key.decrypt(
-              encrypted_key,
-              padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None)
-          )
-          f = Fernet(sym_key)
-          config = json.loads(f.decrypt(encrypted_data))
-
-          with open(os.environ['GITHUB_ENV'], 'a') as env:
-              for k, v in config.items():
-                  if isinstance(v, dict):
-                      v = json.dumps(v)
-                  env.write(f'{k}={v}\n')
-          PYEOF
-          elif [ -n "${{ inputs.deployment_token }}" ]; then
-            echo "Using deployment_token input (light redeploy)..."
-            echo "DEPLOYMENT_TOKEN=${{ inputs.deployment_token }}" >> $GITHUB_ENV
-          else
-            echo "::error::Either encrypted_payload or deployment_token is required"
+          HOST=$(echo "${{ inputs.learnloop_api_url }}" | sed 's|https\?://||' | sed 's|/.*||')
+          RESP=$(curl -sfk -X POST "https://localhost/provision/claim" \
+            -H "Host: $HOST" \
+            -H "Content-Type: application/json" \
+            -d '{"token": "${{ inputs.provision_token }}"}')
+          DEPLOYMENT_TOKEN=$(echo "$RESP" | jq -r '.deployment_token')
+          if [ -z "$DEPLOYMENT_TOKEN" ] || [ "$DEPLOYMENT_TOKEN" = "null" ]; then
+            echo "::error::Failed to claim deployment token"
+            echo "::error::Response: $RESP"
             exit 1
           fi
+          # Extract credentials from provision claim
+          SECRET_KEY=$(echo "$RESP" | jq -r '.secret_key // empty')
 
+          echo "DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}" >> $GITHUB_ENV
           echo "LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}" >> $GITHUB_ENV
-          echo "Deploy config resolved successfully"
-        env:
-          PROVISION_PRIVATE_KEY: ${{ secrets.PROVISION_PRIVATE_KEY }}
-          ENCRYPTED_PAYLOAD: ${{ inputs.encrypted_payload }}
+          [ -n "$SECRET_KEY" ] && echo "SECRET_KEY=${SECRET_KEY}" >> $GITHUB_ENV
+          echo "Deployment token claimed successfully"
 
       - name: Derive auth secret
         if: env.SECRET_KEY != ''

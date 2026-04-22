@@ -19,8 +19,8 @@ on:
         description: 'App prefix for path-based routing'
         required: false
         default: ''
-      deployment_token:
-        description: 'Deployment token for callback auth'
+      provision_token:
+        description: 'One-time token to claim DEPLOYMENT_TOKEN from LearnLoop'
         required: true
       api_url:
         description: 'Parent API URL'
@@ -100,11 +100,22 @@ jobs:
           cp scripts/*.sh "$DEPLOY_DIR/scripts/"
           chmod +x "$DEPLOY_DIR/scripts/"*.sh
 
-      - name: Set deployment token
+      - name: Claim DEPLOYMENT_TOKEN from LearnLoop
         run: |
-          echo "DEPLOYMENT_TOKEN=${{ inputs.deployment_token }}" >> $GITHUB_ENV
+          HOST=$(echo "${{ inputs.learnloop_api_url }}" | sed 's|https\?://||' | sed 's|/.*||')
+          RESP=$(curl -sfk -X POST "https://localhost/provision/claim" \
+            -H "Host: $HOST" \
+            -H "Content-Type: application/json" \
+            -d '{"token": "${{ inputs.provision_token }}"}')
+          DEPLOYMENT_TOKEN=$(echo "$RESP" | jq -r '.deployment_token')
+          if [ -z "$DEPLOYMENT_TOKEN" ] || [ "$DEPLOYMENT_TOKEN" = "null" ]; then
+            echo "::error::Failed to claim deployment token"
+            echo "::error::Response: $RESP"
+            exit 1
+          fi
+          echo "DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}" >> $GITHUB_ENV
           echo "LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}" >> $GITHUB_ENV
-          echo "Deployment token set from input"
+          echo "Deployment token claimed successfully"
 
       - name: Update .env with new version
         run: |
