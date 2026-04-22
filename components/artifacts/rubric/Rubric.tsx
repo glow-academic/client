@@ -299,12 +299,22 @@ function RubricComponent({
     formStateRef.current = formState as Record<string, unknown>;
   }, [formState]);
 
+  // Hydrate from server `s` when it changes (SSR re-fetch after each draft
+  // save returns a new draftId). Must set serverSyncPendingRef=true before
+  // returning a new state — otherwise the debounce effect reads the fresh
+  // formStateKey and patches again, cycling draftId forever. Mirrors
+  // Scenario.tsx:787-876.
   useEffect(() => {
     const next = getInitialFormState();
     setFormState((prev) => {
-      if (JSON.stringify(prev) !== JSON.stringify(next)) return next;
-      return prev;
+      if (JSON.stringify(prev) === JSON.stringify(next)) return prev;
+      // serverSyncPendingRef is destructured from useDraftLifecycle later
+      // in the body; the effect body runs post-commit so the binding is
+      // already live by then. Not in deps because refs are stable.
+      serverSyncPendingRef.current = true;
+      return next;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getInitialFormState]);
 
   const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
@@ -383,14 +393,13 @@ function RubricComponent({
       const res = await patchRubricDraftAction({ body: payload } as PatchRubricDraftIn);
       if (res.form_state) {
         const fs = res.form_state as RubricDraftFormStateCompat;
-        serverSyncPendingRef.current = true;
         setFormState((prev) => {
           const nextNameId =
             (fs.name_id as string | null | undefined) ?? prev.name_id;
           const nextDescriptionId =
             (fs.description_id as string | null | undefined) ??
             prev.description_id;
-          return {
+          const next: RubricFormState = {
             ...prev,
             name_id: nextNameId,
             // Clear value fields only once the server has resolved them to
@@ -418,14 +427,22 @@ function RubricComponent({
               (fs.pending_ids as string[] | null | undefined) ??
               prev.pending_ids,
           };
-        });
-        requestAnimationFrame(() => {
-          serverSyncPendingRef.current = false;
+          // No-op guard: if the server's merged state is identical to what
+          // we already have, return prev so formStateKey is unchanged and
+          // the debounce effect doesn't re-run. Only set the server-sync
+          // flag when we actually have a change to absorb — the hook's
+          // own absorb branch will reset the flag after one cycle, so no
+          // rAF reset is needed (rAF races with React's commit → effect
+          // ordering and can drop the absorb).
+          if (JSON.stringify(prev) === JSON.stringify(next)) return prev;
+          serverSyncPendingRef.current = true;
+          return next;
         });
       }
       return res;
     };
-  }, [patchRubricDraftAction, serverSyncPendingRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patchRubricDraftAction]);
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
   const handleNameIdChange = useCallback((nameId: string | null) => {
