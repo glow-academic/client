@@ -261,6 +261,11 @@ export function AttemptChat({
     assistantPersonaIds:
       (attemptData?.entries?.attempt_chat?.[currentChatIndex] ??
         attemptData?.entries?.attempt_chat?.[0])?.persona_ids ?? null,
+    // Drives whether `chat_hints` is added to the reply-gen op list.
+    // Same TDZ workaround as assistantPersonaIds — inline lookup.
+    hintsEnabled:
+      (attemptData?.entries?.attempt_chat?.[currentChatIndex] ??
+        attemptData?.entries?.attempt_chat?.[0])?.hints_enabled ?? null,
     onRefresh: useCallback(() => router.refresh(), [router]),
     onUserComplete: handleUserCompleteVoiceCleanup,
   });
@@ -695,18 +700,30 @@ export function AttemptChat({
       if (!message.trim() || !currentChat || isSendingMessage) return;
 
       try {
-        // If forking, find the parent assistant message for the forked user message
+        // If forking, take the fork target's parent so the new
+        // message lands as its sibling. When the target is a root
+        // (parent_message_id is null) we still want an explicit root
+        // branch, so opt out of the server's auto-link-to-latest
+        // behavior — otherwise the "fork" would degenerate into a
+        // linear continuation.
         let parentMessageId: string | undefined;
+        let autoLinkParent: boolean | undefined;
         if (forkAtMessageId) {
           const allMessages = attemptData?.entries?.attempt_message || [];
           const forkMsg = allMessages.find(m => m.id === forkAtMessageId);
-          if (forkMsg?.parent_message_id) {
-            parentMessageId = forkMsg.parent_message_id;
-          }
+          parentMessageId = forkMsg?.parent_message_id ?? undefined;
+          autoLinkParent = false;
           setForkAtMessageId(null);
         }
 
-        sendMessage(currentChat.id, attempt_id, message, parentMessageId, attemptData?.attempt?.user_persona_id ?? undefined);
+        sendMessage(
+          currentChat.id,
+          attempt_id,
+          message,
+          parentMessageId,
+          attemptData?.attempt?.user_persona_id ?? undefined,
+          autoLinkParent === undefined ? undefined : { autoLinkParent },
+        );
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
         setIsSendingMessage(false);
@@ -750,6 +767,11 @@ export function AttemptChat({
     transport,
     chatIdRef: currentChatIdRef,
     attemptIdRef,
+    // Same hints gate as the text reply path — keep the two surfaces
+    // aligned so turning hints off silences them everywhere.
+    hintsEnabled:
+      (attemptData?.entries?.attempt_chat?.[currentChatIndex] ??
+        attemptData?.entries?.attempt_chat?.[0])?.hints_enabled ?? null,
     onUserStart: useCallback((data: AttemptUserStartEvent) => {
       const optimisticMessageId = `optimistic-user-voice-${Date.now()}-${Math.random()}`;
 
@@ -1009,6 +1031,16 @@ export function AttemptChat({
         grading_state: currentChatData?.grading_state,
         analyses: currentChatData?.analyses,
         group_id: attemptData?.group_id,
+        // Identifiers for the mobile "Open Full Rubric" PDF button —
+        // TableRubric only renders it when both are present (plus
+        // grading_state), matching v1's post-grading-only affordance.
+        rubric_id: currentChat?.rubric_id ?? null,
+        chat_id: currentChat?.id ?? null,
+        // Capability gate — when the scenario author turned analyses
+        // off for this chat, hide the block even if stale data is
+        // still attached. Defaults to enabled (null / undefined) so
+        // the common case is unchanged.
+        analyses_enabled: currentChat?.analyses_enabled ?? null,
       };
       return props;
     }

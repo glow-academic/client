@@ -27,7 +27,26 @@ export interface SimulationControlsProps {
   hasMessages: boolean;
   /** True for video/quiz-style chats — grading scoped to score only (no feedback/strengths/improvements). */
   isStructuredMode?: boolean;
+  /**
+   * Per-attempt capability flags from ChatData. When set to false the
+   * corresponding grading op is omitted from the generate call so the
+   * AI never produces content that the scenario author turned off.
+   * Undefined = treat as enabled (safe default — matches the flag's
+   * nullable contract on ChatData).
+   */
+  chatFlags?: {
+    strengths_enabled?: boolean | null | undefined;
+    improvements_enabled?: boolean | null | undefined;
+    analyses_enabled?: boolean | null | undefined;
+  };
 }
+
+const BASE_GRADE_OPERATIONS = [
+  "chat_grade",
+  "chat_feedback",
+  "chat_complete",
+  "get",
+];
 
 const STRUCTURED_GRADE_OPERATIONS = [
   "chat_grade",
@@ -44,6 +63,7 @@ export function SimulationControls({
   currentChatId,
   hasMessages,
   isStructuredMode = false,
+  chatFlags,
 }: SimulationControlsProps) {
   const { grade, endChat, stage } = useAttemptEnd();
 
@@ -61,18 +81,36 @@ export function SimulationControls({
     }
 
     if (!currentChatId) return;
+
+    // Structured mode (quiz/video): fixed narrow op list, no per-flag
+    // gating — grading is just a score computation against the rubric.
+    if (isStructuredMode) {
+      grade({
+        attemptId,
+        chatId: currentChatId,
+        endAfter: true,
+        operations: STRUCTURED_GRADE_OPERATIONS,
+        instructions: STRUCTURED_GRADE_INSTRUCTIONS,
+      });
+      return;
+    }
+
+    // Free-form grading: always-on base ops plus per-flag additions.
+    // `undefined`/`null` flags are treated as "enabled" since the flag
+    // is nullable on ChatData; an absent value means "not configured",
+    // which we preserve as on (matches the scenario's defaults).
+    const operations = [...BASE_GRADE_OPERATIONS];
+    if (chatFlags?.strengths_enabled !== false) operations.push("chat_strengths");
+    if (chatFlags?.improvements_enabled !== false) operations.push("chat_improvements");
+    if (chatFlags?.analyses_enabled !== false) operations.push("chat_analyses");
+
     grade({
       attemptId,
       chatId: currentChatId,
       endAfter: true,
-      ...(isStructuredMode
-        ? {
-            operations: STRUCTURED_GRADE_OPERATIONS,
-            instructions: STRUCTURED_GRADE_INSTRUCTIONS,
-          }
-        : {}),
+      operations,
     });
-  }, [hasMessages, currentChatId, attemptId, grade, isStructuredMode]);
+  }, [hasMessages, currentChatId, attemptId, grade, isStructuredMode, chatFlags]);
 
   // Confirm end session with 0 messages
   const handleConfirmEnd = useCallback(() => {

@@ -163,21 +163,26 @@ export default async function AttemptPage({
           { title: entityName || "Attempt" },
         ]}
         toolbar={
-          attemptData.should_show_controls && attemptData.current_chat_id ? (
-            <SimulationControls
-              attemptId={attemptId}
-              currentChatId={attemptData.current_chat_id}
-              hasMessages={attemptData.has_messages ?? false}
-              isStructuredMode={Boolean(
-                (() => {
-                  const chat = attemptData.entries?.attempt_chat?.find(
-                    (c) => c.id === attemptData.current_chat_id,
-                  );
-                  return chat?.question_ids?.length || chat?.video_ids?.length;
-                })(),
-              )}
-            />
-          ) : undefined
+          attemptData.should_show_controls && attemptData.current_chat_id ? (() => {
+            const chat = attemptData.entries?.attempt_chat?.find(
+              (c) => c.id === attemptData.current_chat_id,
+            );
+            return (
+              <SimulationControls
+                attemptId={attemptId}
+                currentChatId={attemptData.current_chat_id}
+                hasMessages={attemptData.has_messages ?? false}
+                isStructuredMode={Boolean(
+                  chat?.question_ids?.length || chat?.video_ids?.length,
+                )}
+                chatFlags={{
+                  strengths_enabled: chat?.strengths_enabled,
+                  improvements_enabled: chat?.improvements_enabled,
+                  analyses_enabled: chat?.analyses_enabled,
+                }}
+              />
+            );
+          })() : undefined
         }
         panelProps={{
           artifactType: "attempt",

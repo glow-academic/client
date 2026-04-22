@@ -19,6 +19,11 @@ interface UseAttemptMessagesConfig {
    *  streaming optimistic assistant message adopts it immediately; if
    *  multiple, it stays generic until args.persona_id parses in. */
   assistantPersonaIds?: string[] | null;
+  /** Per-attempt hints capability. When false, `chat_hints` is not
+   *  added to the reply-gen op list — the AI produces no hints at
+   *  all. Undefined falls back to enabled (hints_enabled on ChatData
+   *  is nullable; absent = "not configured", which we keep on). */
+  hintsEnabled?: boolean | null;
   onRefresh: () => void;
   onUserComplete?: (data: AnyEventData) => void;
 }
@@ -38,6 +43,12 @@ interface UseAttemptMessagesResult {
     attemptId: string,
     message: string,
     parentMessageId?: string,
+    personaId?: string,
+    // Opts out of the server's auto-link-to-latest behavior when
+    // parentMessageId is absent. Fork of a root message passes
+    // { autoLinkParent: false } so the new message becomes an
+    // explicit sibling root instead of chaining to the latest.
+    opts?: { autoLinkParent?: boolean },
   ) => void;
   stopMessage: () => void;
   submitResponse: (
@@ -67,6 +78,7 @@ export function useAttemptMessages({
   personas,
   userPersonaId,
   assistantPersonaIds,
+  hintsEnabled,
   onRefresh,
   onUserComplete,
 }: UseAttemptMessagesConfig): UseAttemptMessagesResult {
@@ -268,6 +280,7 @@ export function useAttemptMessages({
       message: string,
       parentMessageId?: string,
       personaId?: string,
+      opts?: { autoLinkParent?: boolean },
     ) => {
       setIsSending(true);
 
@@ -306,6 +319,9 @@ export function useAttemptMessages({
         text: message,
         ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
         ...(personaId ? { persona_id: personaId } : {}),
+        // Only send the flag when we're explicitly opting out of the
+        // default — keeps the payload minimal for normal sends.
+        ...(opts?.autoLinkParent === false ? { auto_link_parent: false } : {}),
       });
       const realMessageId = persistResult?.["message_id"] as string | undefined;
       if (realMessageId && realMessageId !== optimisticUserId) {
@@ -319,11 +335,17 @@ export function useAttemptMessages({
         });
       }
 
-      // Part 2: Trigger AI response via canonical generate
+      // Part 2: Trigger AI response via canonical generate.
+      // `chat_hints` is added when hints are enabled for this chat —
+      // matches the scenario author's opt-in and prevents wasted
+      // token spend when the feature is off.
+      const operations = ["chat_message", "get"];
+      if (hintsEnabled !== false) operations.push("chat_hints");
+
       const generateResult = await transport.send("/attempt/generate", {
         instructions: ["Respond to the user's latest message in character."],
         config: {
-          operations: ["chat_message", "get"],
+          operations,
           params: {
             attempt_id: attemptId,
             chat_id: chatId,
@@ -332,7 +354,7 @@ export function useAttemptMessages({
       });
       activeGroupIdRef.current = (generateResult["group_id"] as string) ?? null;
     },
-    [transport, personas, userPersona],
+    [transport, personas, userPersona, hintsEnabled],
   );
 
   const stopMessage = useCallback(() => {

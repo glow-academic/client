@@ -29,6 +29,10 @@ interface UseAttemptVoiceConfig {
     audios_id: string;
     text: string;
   }) => void;
+  /** Per-attempt hints capability — when false, `chat_hints` is not
+   *  added to the voice generate op list. Undefined falls back to
+   *  enabled to match ChatData's nullable contract. */
+  hintsEnabled?: boolean | null;
 }
 
 interface UseAttemptVoiceReturn {
@@ -48,6 +52,7 @@ export function useAttemptVoice({
   onAudioChunk,
   onAssistantAudioComplete,
   onUserMessagePersisted,
+  hintsEnabled,
 }: UseAttemptVoiceConfig): UseAttemptVoiceReturn {
   // Store callbacks in refs to avoid re-registering listeners on every render
   const callbacksRef = useRef({
@@ -257,12 +262,15 @@ export function useAttemptVoice({
       const voiceReadyPromise = waitForAudioReady(chatId);
 
       // Step 2: canonical generate — modalities + conversation_id + operations.
+      // `chat_hints` is added when hints are enabled for this chat.
+      const operations = ["get", "chat_message"];
+      if (hintsEnabled !== false) operations.push("chat_hints");
       await transport.send("/attempt/generate", {
         instructions: ["Start a realtime voice conversation in character."],
         modalities: ["audio", "call", "text"],
         conversation_id: conversationId,
         config: {
-          operations: ["get", "chat_message"],
+          operations,
           params: {
             attempt_id: attemptId,
             chat_id: chatId,
@@ -272,7 +280,7 @@ export function useAttemptVoice({
 
       await voiceReadyPromise;
     },
-    [transport, waitForAudioReady],
+    [transport, waitForAudioReady, hintsEnabled],
   );
 
   const stopAudio = useCallback(
