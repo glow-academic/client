@@ -215,6 +215,7 @@ function EvalComponent({
       model_flags: evalData.model_flags,
       model_rubrics: evalData.model_rubrics,
       model_positions: evalData.model_positions,
+      rubrics: (evalData as { rubrics?: Array<{ id: string | null; name: string | null; description?: string | null }> }).rubrics,
       basic_show_ai_generate: evalData.basic_show_ai_generate,
       model_show_ai_generate: evalData.model_show_ai_generate,
       group_id: evalData.group_id,
@@ -739,6 +740,15 @@ function EvalComponent({
         throw new Error("Name is required");
       }
 
+      // Every model in the eval must be paired with a rubric. Mirrors
+      // the SIMULATION_REQUIRED.scenario_rubrics gate in Simulation.tsx
+      // — surfacing the error at submit time prevents a half-configured
+      // eval from landing in the DB.
+      if (!formState.model_rubric_ids || formState.model_rubric_ids.length === 0) {
+        toast.error("Model rubrics are required");
+        throw new Error("Model rubrics are required");
+      }
+
       const saveFlagIds = formState.flag_ids;
 
       try {
@@ -1213,6 +1223,7 @@ function EvalComponent({
                     (s?.model_rubrics ?? []).filter((item) => item.selected) ?? []
                   }
                   show_model_rubrics={showModelRubrics}
+                  rubrics={(s as { rubrics?: Array<{ id: string | null; name: string | null; description?: string | null }> } | null)?.rubrics ?? []}
                   model_ids={formState.model_ids ?? []}
                   models={s?.models ?? []}
                   model_resources={(s?.models ?? []).filter((item) => item.selected)}
@@ -1223,7 +1234,7 @@ function EvalComponent({
                       return { ...prev, model_rubric_ids: ids };
                     })
                   }
-                  required={false}
+                  required={true}
                   onModelRubricValues={(rubrics) =>
                     setFormState((prev) => {
                       const nextVal = rubrics.length > 0 ? rubrics : null;
