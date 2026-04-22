@@ -117,9 +117,29 @@ jobs:
             echo "::error::Response: $RESP"
             exit 1
           fi
+          SECRET_KEY=$(echo "$RESP" | jq -r '.secret_key // empty')
+
           echo "DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}" >> $GITHUB_ENV
           echo "LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}" >> $GITHUB_ENV
+          [ -n "$SECRET_KEY" ] && echo "SECRET_KEY=${SECRET_KEY}" >> $GITHUB_ENV
           echo "Deployment token claimed successfully"
+
+      - name: Derive auth secret
+        if: env.SECRET_KEY != ''
+        run: |
+          AUTH_CLIENT_SECRET=$(python3 /dev/stdin "$SECRET_KEY" <<'PYEOF'
+          import sys, hashlib, base64
+          from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+          from cryptography.hazmat.primitives import hashes
+          sk = sys.argv[1]
+          salt = hashlib.sha256(b"glow-auth-secret-v1").digest()
+          kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000)
+          key = kdf.derive(sk.encode())
+          print(base64.urlsafe_b64encode(key).decode().rstrip("="))
+          PYEOF
+          )
+          echo "AUTH_CLIENT_SECRET=${AUTH_CLIENT_SECRET}" >> $GITHUB_ENV
+          echo "Auth client secret derived from SECRET_KEY"
 
       - name: Update .env with new version
         run: |
