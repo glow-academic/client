@@ -23,9 +23,9 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { Departments } from "@/components/resources/Departments";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { ProviderCardGrid } from "@/components/artifacts/model/ProviderCardGrid";
+import { Providers } from "@/components/resources/Providers";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
@@ -37,7 +37,6 @@ import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
 import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
 import { Values } from "@/components/resources/Values";
 import { Voices } from "@/components/resources/Voices";
-import { Label } from "@/components/ui/label";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
@@ -67,6 +66,65 @@ const findCurrentFlagId = (
   flags: CanonicalFlag[] | null | undefined,
   key: string,
 ): string | null => flags?.find((f) => f.key === key)?.flag_option_id ?? null;
+
+// Canonical mapping from flag key → (flag_id field on FormState, associated
+// array field to clear when the flag turns off). Used by the unified
+// <Flags mode="multi"> picker so the 7 flag groups collapse into a single
+// render with one onChange handler instead of seven parallel JSX blocks.
+type ModelFlagKey =
+  | "active"
+  | "modalities_enabled"
+  | "temperature_enabled"
+  | "pricing_enabled"
+  | "voices_enabled"
+  | "reasoning_levels_enabled"
+  | "qualities_enabled";
+
+type ModelFlagMapping = {
+  flagField:
+    | "active_flag_id"
+    | "modalities_enabled_flag_id"
+    | "temperature_enabled_flag_id"
+    | "pricing_enabled_flag_id"
+    | "voices_enabled_flag_id"
+    | "reasoning_levels_enabled_flag_id"
+    | "qualities_enabled_flag_id";
+  idsField?:
+    | "modality_ids"
+    | "temperature_level_ids"
+    | "pricing_ids"
+    | "voice_ids"
+    | "reasoning_level_ids"
+    | "quality_ids";
+};
+
+const MODEL_FLAG_KEY_TO_FIELD: Record<ModelFlagKey, ModelFlagMapping> = {
+  active: { flagField: "active_flag_id" },
+  modalities_enabled: {
+    flagField: "modalities_enabled_flag_id",
+    idsField: "modality_ids",
+  },
+  temperature_enabled: {
+    flagField: "temperature_enabled_flag_id",
+    idsField: "temperature_level_ids",
+  },
+  pricing_enabled: {
+    flagField: "pricing_enabled_flag_id",
+    idsField: "pricing_ids",
+  },
+  voices_enabled: {
+    flagField: "voices_enabled_flag_id",
+    idsField: "voice_ids",
+  },
+  reasoning_levels_enabled: {
+    flagField: "reasoning_levels_enabled_flag_id",
+    idsField: "reasoning_level_ids",
+  },
+  qualities_enabled: {
+    flagField: "qualities_enabled_flag_id",
+    idsField: "quality_ids",
+  },
+};
 
 // Types defined inline using InputOf/OutputOf
 type CreateModelIn = InputOf<"/model/create", "post">;
@@ -1257,8 +1315,6 @@ function ModelComponent({
       const descriptionSearch =
         (formData["descriptionSearch"] as string | undefined) ?? "";
       const valueSearch = (formData["valueSearch"] as string | undefined) ?? "";
-      const departmentSearch =
-        (formData["departmentSearch"] as string | undefined) ?? "";
       const modalitySearch =
         (formData["modalitySearch"] as string | undefined) ?? "";
       const temperatureSearch =
@@ -1273,7 +1329,6 @@ function ModelComponent({
 
       // Section-first flag access
       const allFlags = s?.flags?.resources ?? [];
-      const flagConfig = (key: string) => allFlags.find((f) => f.key === key);
 
       switch (stepId) {
         case "basic":
@@ -1399,154 +1454,65 @@ function ModelComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
 
-                {validDepartmentIds && validDepartmentIds.length > 1 && (
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <GenericPicker
-                      items={departments.map((d) => ({
-                        id: d.department_id ?? "",
-                        name: d.name ?? "",
-                        description: d.description ?? "",
-                      }))}
-                      itemIds={validDepartmentIds}
-                      selectedIds={formState.department_ids}
-                      onSelect={(ids) =>
-                        setFormState({
-                          ...formState,
-                          department_ids: ids.length > 0 ? ids : [],
-                        })
-                      }
-                      getId={(dept: { id: string }) => dept.id}
-                      getLabel={(dept: { name?: string | null }) =>
-                        dept.name || ""
-                      }
-                      getSearchText={(dept: {
-                        name?: string | null;
-                        description?: string | null;
-                      }) => `${dept.name || ""} ${dept.description || ""}`}
-                      {...{ initialSearchTerm: departmentSearch }}
-                      {...{
-                        onSearchChange: (term: string) =>
-                          setFormData({ departmentSearch: term || null }),
-                      }}
-                      placeholder="All Departments"
-                      disabled={disabled}
-                      multiSelect={true}
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
-                    />
-                  </div>
-                )}
-
-                <Flags
-                  flags={allFlags.filter(f => f.key === "active") as any}
-                  flag_id={formState.active_flag_id ?? null}
-                  show_flags={flagConfig("active")?.show ?? false}
-                  columns={1}
-                  label="Active"
+                {/* Departments: hidden when the profile only has access to
+                    one department (nothing to pick from). Uses the same
+                    <Departments> component as Scenario/Eval/etc. */}
+                <Departments
+                  department_ids={formState.department_ids}
+                  department_resources={departments.filter(
+                    (d) => d.selected,
+                  )}
+                  show_departments={
+                    validDepartmentIds && validDepartmentIds.length > 1
+                  }
+                  departments={departments}
                   disabled={disabled}
-                  onChange={(id) =>
-                    setFormState((prev) => ({ ...prev, active_flag_id: id }))
+                  onChange={(ids) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      department_ids: ids,
+                    }))
                   }
                 />
 
+                {/* Unified multi-flag picker. The seven model flag groups
+                    (active + six *_enabled toggles) collapse to one render
+                    driven by MODEL_FLAG_KEY_TO_FIELD. The per-key onChange
+                    still clears the associated ids array when a toggle
+                    turns off (e.g. modalities_enabled → modality_ids). */}
                 <Flags
-                  flags={allFlags.filter(f => f.key === "modalities_enabled") as any}
-                  flag_id={formState.modalities_enabled_flag_id ?? null}
-                  show_flags={flagConfig("modalities_enabled")?.show ?? false}
+                  mode="multi"
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  flags={allFlags as any}
+                  flag_ids={Object.fromEntries(
+                    (
+                      Object.entries(MODEL_FLAG_KEY_TO_FIELD) as Array<
+                        [ModelFlagKey, ModelFlagMapping]
+                      >
+                    ).map(([key, { flagField }]) => [
+                      key,
+                      (formState[flagField] as string | null | undefined) ?? null,
+                    ]),
+                  )}
+                  show_flags={allFlags.length > 0}
                   columns={1}
-                  label="Modalities"
+                  label="Flags"
                   disabled={disabled}
-                  onChange={(id) => {
-                    setFormState((prev) => ({
-                      ...prev,
-                      modalities_enabled_flag_id: id,
-                      modality_ids: id ? prev.modality_ids : [],
-                    }));
-                  }}
-                />
-
-                <Flags
-                  flags={allFlags.filter(f => f.key === "temperature_enabled") as any}
-                  flag_id={formState.temperature_enabled_flag_id ?? null}
-                  show_flags={flagConfig("temperature_enabled")?.show ?? false}
-                  columns={1}
-                  label="Temperature"
-                  disabled={disabled}
-                  onChange={(id) => {
-                    setFormState((prev) => ({
-                      ...prev,
-                      temperature_enabled_flag_id: id,
-                      temperature_level_ids: id
-                        ? prev.temperature_level_ids
-                        : [],
-                    }));
-                  }}
-                />
-
-                <Flags
-                  flags={allFlags.filter(f => f.key === "pricing_enabled") as any}
-                  flag_id={formState.pricing_enabled_flag_id ?? null}
-                  show_flags={flagConfig("pricing_enabled")?.show ?? false}
-                  columns={1}
-                  label="Pricing"
-                  disabled={disabled}
-                  onChange={(id) => {
-                    setFormState((prev) => ({
-                      ...prev,
-                      pricing_enabled_flag_id: id,
-                      pricing_ids: id ? prev.pricing_ids : [],
-                    }));
-                  }}
-                />
-
-                <Flags
-                  flags={allFlags.filter(f => f.key === "voices_enabled") as any}
-                  flag_id={formState.voices_enabled_flag_id ?? null}
-                  show_flags={flagConfig("voices_enabled")?.show ?? false}
-                  columns={1}
-                  label="Voices"
-                  disabled={disabled}
-                  onChange={(id) => {
-                    setFormState((prev) => ({
-                      ...prev,
-                      voices_enabled_flag_id: id,
-                      voice_ids: id ? prev.voice_ids : [],
-                    }));
-                  }}
-                />
-
-                <Flags
-                  flags={allFlags.filter(f => f.key === "reasoning_levels_enabled") as any}
-                  flag_id={formState.reasoning_levels_enabled_flag_id ?? null}
-                  show_flags={
-                    flagConfig("reasoning_levels_enabled")?.show ?? false
-                  }
-                  columns={1}
-                  label="Reasoning Levels"
-                  disabled={disabled}
-                  onChange={(id) => {
-                    setFormState((prev) => ({
-                      ...prev,
-                      reasoning_levels_enabled_flag_id: id,
-                      reasoning_level_ids: id ? prev.reasoning_level_ids : [],
-                    }));
-                  }}
-                />
-
-                <Flags
-                  flags={allFlags.filter(f => f.key === "qualities_enabled") as any}
-                  flag_id={formState.qualities_enabled_flag_id ?? null}
-                  show_flags={flagConfig("qualities_enabled")?.show ?? false}
-                  columns={1}
-                  label="Qualities"
-                  disabled={disabled}
-                  onChange={(id) => {
-                    setFormState((prev) => ({
-                      ...prev,
-                      qualities_enabled_flag_id: id,
-                      quality_ids: id ? prev.quality_ids : [],
-                    }));
+                  onChange={(key: string, flagId: string | null) => {
+                    const mapping =
+                      MODEL_FLAG_KEY_TO_FIELD[key as ModelFlagKey];
+                    if (!mapping) return;
+                    setFormState((prev) => {
+                      const next = {
+                        ...prev,
+                        [mapping.flagField]: flagId,
+                      } as typeof prev;
+                      if (!flagId && mapping.idsField) {
+                        (next as Record<string, unknown>)[mapping.idsField] =
+                          [];
+                      }
+                      return next;
+                    });
                   }}
                 />
               </div>
@@ -1566,35 +1532,21 @@ function ModelComponent({
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
-              <ProviderCardGrid
-                providerMapping={providers.reduce(
-                  (
-                    acc: Record<string, { name: string; description: string }>,
-                    p,
-                  ) => {
-                    const providerId = p.id ?? null;
-                    if (providerId) {
-                      acc[String(providerId)] = {
-                        name: p.name ?? "",
-                        description: p.description ?? "",
-                      };
-                    }
-                    return acc;
-                  },
-                  {} as Record<string, { name: string; description: string }>,
-                )}
-                validProviderIds={providers
-                  .map((p) => p.id ?? null)
-                  .filter((id): id is string => !!id)
-                  .map((id) => String(id))}
-                selectedProviderId={formState.provider_id || null}
-                onSelect={(providerId) => {
-                  setFormState({
-                    ...formState,
-                    provider_id: providerId || null,
-                  });
-                }}
-                readonly={disabled}
+              <Providers
+                provider_id={formState.provider_id}
+                providers={providers}
+                provider_resource={
+                  providers.find((p) => p.id === formState.provider_id) ?? null
+                }
+                show_providers={providers.length > 0}
+                disabled={disabled}
+                onChange={(providerId) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    provider_id: providerId,
+                  }))
+                }
+                required={s?.providers?.required ?? true}
               />
             </StepCard>
           );
