@@ -469,7 +469,7 @@ function AuthComponent({
           body: {
             auths: [
               {
-                auth_id: authId,
+                id: authId,
                 name_id: effectiveFormState.name_id ?? undefined,
                 description_id: effectiveFormState.description_id ?? undefined,
                 active_flag_id: effectiveFormState.active_flag_id ?? undefined,
@@ -674,6 +674,8 @@ function AuthComponent({
                   disabled={disabled}
                   onNameIdChange={handleNameIdChange}
                   onNameChange={handleNameChange}
+                  placeholder="e.g., Production API Key"
+                  defaultName="New Auth"
                   required={nameRequired}
                   hideDescription={true}
                   isAutosaveEnabled={isAutosaveEnabled}
@@ -721,6 +723,7 @@ function AuthComponent({
                   flag_id={formState.active_flag_id}
                   show_flags={true}
                   columns={1}
+                  label="Flags"
                   disabled={disabled}
                   onChange={(flagId) =>
                     setFormState((prev) => ({

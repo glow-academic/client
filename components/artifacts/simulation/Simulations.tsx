@@ -641,7 +641,7 @@ export function Simulations({
         }
 
         return {
-          simulation_id: sim.simulation_id!,
+          id: sim.simulation_id!,
           ...(hasAnyFlagChange && { flag_ids: flagIds }),
           ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
         };

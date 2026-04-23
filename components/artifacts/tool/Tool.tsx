@@ -477,7 +477,7 @@ function ToolComponent({
             body: {
               tools: [
                 {
-                  tool_id: toolId,
+                  id: toolId,
                   ...(formState.name_id
                     ? { name_id: formState.name_id }
                     : { name: formState.name }),
@@ -765,11 +765,7 @@ function ToolComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["name", "description", "active_flag_id"]}
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-            >
-              <div className="space-y-4">
+              customHeader={
                 <Names
                   name_id={formState.name_id}
                   name_resource={selectedName}
@@ -778,7 +774,17 @@ function ToolComponent({
                   disabled={disabled}
                   onNameIdChange={handleNameIdChange}
                   onNameChange={handleNameChange}
+                  placeholder="e.g., Calculator"
+                  defaultName="New Tool"
+                  hideDescription={true}
+                  required={true}
                 />
+              }
+              resetFields={["name", "description", "active_flag_id"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <div className="space-y-4">
                 <Descriptions
                   description_id={formState.description_id}
                   description_resource={selectedDescription}
@@ -797,7 +803,7 @@ function ToolComponent({
                   onChange={(flagId) =>
                     setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
                   }
-                  label="Status"
+                  label="Flags"
                 />
               </div>
             </StepCard>

@@ -956,7 +956,7 @@ function ModelComponent({
           await updateModelAction({
             body: {
               models: [{
-                model_id: modelId,
+                id: modelId,
                 name_id: efs.name_id!,
                 description_id: efs.description_id ?? null,
                 provider_id: efs.provider_id ?? null,

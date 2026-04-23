@@ -21961,20 +21961,15 @@ export interface components {
              */
             departments?: string[] | null;
             /**
-             * Total Points
-             * @description Total points for rubric
+             * Pass Points Id
+             * @description Pass-type Points resource UUID
              */
-            total_points?: number | null;
+            pass_points_id?: string | null;
             /**
              * Pass Points
-             * @description Points required to pass
+             * @description Pass points value (resolves to a pass-type Points resource)
              */
             pass_points?: number | null;
-            /**
-             * Point Ids
-             * @description Point UUIDs
-             */
-            point_ids?: string[] | null;
             /**
              * Standard Group Ids
              * @description Standard group UUIDs
@@ -26885,6 +26880,28 @@ export interface components {
              * @description List of per-field errors
              */
             errors?: components["schemas"]["EvalFieldError"][] | null;
+        };
+        /**
+         * EvalRubricResource
+         * @description Top-level rubric catalog entry. The ModelRubrics picker renders
+         *     one of these per option (alongside a "no rubric" clear state).
+         */
+        EvalRubricResource: {
+            /**
+             * Id
+             * @description Rubric resource UUID
+             */
+            id?: string | null;
+            /**
+             * Name
+             * @description Rubric display name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Rubric description
+             */
+            description?: string | null;
         };
         /**
          * ExportActivityApiResponse
@@ -32939,6 +32956,11 @@ export interface components {
              * @description Model position resources
              */
             model_positions?: components["schemas"]["EvalModelPositionResource"][] | null;
+            /**
+             * Rubrics
+             * @description Top-level rubric catalog for the ModelRubrics picker
+             */
+            rubrics?: components["schemas"]["EvalRubricResource"][] | null;
         };
         /** GetEvalDraftResponse */
         GetEvalDraftResponse: {
@@ -46861,8 +46883,10 @@ export interface components {
          *
          *     Dual-mode for creatable resources only:
          *       - name/name_id, description/description_id
+         *       - standards/standard_ids (grid editor sends value objects; flat IDs also
+         *         accepted for the legacy picker)
          *     ID-only for non-creatable resources:
-         *       - flag_id, department_ids, point_ids, standard_group_ids, standard_ids
+         *       - flag_id, department_ids, point_ids, standard_group_ids
          *
          *     Client always sends full state (append-only — each write is a new snapshot).
          */
@@ -46913,6 +46937,16 @@ export interface components {
              */
             flag_id?: string | null;
             /**
+             * Simulation Rubric Flag Id
+             * @description Simulation rubric flag resource UUID
+             */
+            simulation_rubric_flag_id?: string | null;
+            /**
+             * Video Rubric Flag Id
+             * @description Video rubric flag resource UUID
+             */
+            video_rubric_flag_id?: string | null;
+            /**
              * Departments
              * @description Department names to resolve
              */
@@ -46923,10 +46957,15 @@ export interface components {
              */
             department_ids?: string[] | null;
             /**
-             * Point Ids
-             * @description Point UUIDs
+             * Pass Points Id
+             * @description Pass-type Points resource UUID
              */
-            point_ids?: string[] | null;
+            pass_points_id?: string | null;
+            /**
+             * Pass Points
+             * @description Pass points value (resolves to a pass-type Points resource)
+             */
+            pass_points?: number | null;
             /**
              * Standard Group Ids
              * @description Standard group UUIDs
@@ -46937,6 +46976,11 @@ export interface components {
              * @description Standard UUIDs
              */
             standard_ids?: string[] | null;
+            /**
+             * Standards
+             * @description Grid-editor standards. Entries without id are created; resulting IDs merge into standard_ids.
+             */
+            standards?: components["schemas"]["RubricStandardDraftValue"][] | null;
             /**
              * Pending Ids
              * @description Resource IDs to keep pending where supported
@@ -46958,7 +47002,36 @@ export interface components {
          * PatchRubricDraftApiResponse
          * @description Response model for new-style rubric draft endpoint.
          */
-        PatchRubricDraftApiResponse: {
+        "PatchRubricDraftApiResponse-Input": {
+            /**
+             * Success
+             * @description Whether the operation succeeded
+             */
+            success: boolean;
+            /**
+             * Draft Id
+             * Format: uuid
+             * @description Draft UUID
+             */
+            draft_id: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key for this draft operation
+             */
+            idempotency_key?: string | null;
+            /**
+             * Message
+             * @description Human-readable result message
+             */
+            message: string;
+            /** @description Server-authoritative form state */
+            form_state?: components["schemas"]["app__infra__rubric__types__DraftFormState"] | null;
+        };
+        /**
+         * PatchRubricDraftApiResponse
+         * @description Response model for new-style rubric draft endpoint.
+         */
+        "PatchRubricDraftApiResponse-Output": {
             /**
              * Success
              * @description Whether the operation succeeded
@@ -52565,6 +52638,44 @@ export interface components {
             errors?: components["schemas"]["RubricFieldError"][] | null;
         };
         /**
+         * RubricStandardDraftValue
+         * @description Value-object for authoring a standard inline from the rubric grid.
+         *
+         *     The grid editor sends these instead of (or alongside) standard_ids. Entries
+         *     without an `id` are created server-side; entries with an `id` are trusted
+         *     as-is. Append-only: updates are modeled as create-new-id, old rows become
+         *     orphans and stop appearing in the draft once the client drops them.
+         */
+        RubricStandardDraftValue: {
+            /**
+             * Id
+             * @description Existing standard UUID, if any
+             */
+            id?: string | null;
+            /**
+             * Name
+             * @description Level name (column header)
+             */
+            name: string;
+            /**
+             * Description
+             * @description Cell description text
+             * @default
+             */
+            description: string;
+            /**
+             * Points
+             * @description Implied points from column index
+             */
+            points: number;
+            /**
+             * Standard Group Id
+             * Format: uuid
+             * @description Parent standard group UUID (row)
+             */
+            standard_group_id: string;
+        };
+        /**
          * RubricStandardGroupResource
          * @description Standard group resource for rubric.
          */
@@ -57839,11 +57950,11 @@ export interface components {
          */
         UpdateAgentItem: {
             /**
-             * Agent Id
+             * Id
              * Format: uuid
              * @description UUID of the agent to update
              */
-            agent_id: string;
+            id: string;
             /**
              * Name Id
              * @description UUID of the name resource
@@ -57980,11 +58091,11 @@ export interface components {
          */
         UpdateAuthItem: {
             /**
-             * Auth Id
+             * Id
              * Format: uuid
              * @description UUID of the auth provider to update
              */
-            auth_id: string;
+            id: string;
             /**
              * Name Id
              * @description UUID of the name resource
@@ -58116,11 +58227,11 @@ export interface components {
          */
         UpdateCohortItem: {
             /**
-             * Cohort Id
+             * Id
              * Format: uuid
              * @description Cohort UUID to update
              */
-            cohort_id: string;
+            id: string;
             /**
              * Name Id
              * @description Name resource UUID
@@ -58262,11 +58373,11 @@ export interface components {
          */
         UpdateDepartmentItem: {
             /**
-             * Department Id
+             * Id
              * Format: uuid
              * @description UUID of the department to update
              */
-            department_id: string;
+            id: string;
             /**
              * Name Id
              * @description UUID of the name resource
@@ -58370,11 +58481,11 @@ export interface components {
          */
         UpdateDocumentItem: {
             /**
-             * Document Id
+             * Id
              * Format: uuid
              * @description Document UUID to update
              */
-            document_id: string;
+            id: string;
             /**
              * Name Id
              * @description Name resource UUID
@@ -58513,11 +58624,11 @@ export interface components {
          */
         UpdateEvalItem: {
             /**
-             * Eval Id
+             * Id
              * Format: uuid
              * @description Eval UUID to update
              */
-            eval_id: string;
+            id: string;
             /**
              * Name Id
              * @description Name resource UUID
@@ -58646,11 +58757,11 @@ export interface components {
          */
         UpdateFieldItem: {
             /**
-             * Field Id
+             * Id
              * Format: uuid
              * @description UUID of the field to update
              */
-            field_id: string;
+            id: string;
             /**
              * Name Id
              * @description UUID of the name resource
@@ -58769,11 +58880,11 @@ export interface components {
          */
         UpdateModelItem: {
             /**
-             * Model Id
+             * Id
              * Format: uuid
              * @description Target model identifier to update
              */
-            model_id: string;
+            id: string;
             /**
              * Name Id
              * @description Name resource identifier
@@ -58925,11 +59036,11 @@ export interface components {
          */
         UpdateParameterItem: {
             /**
-             * Parameter Id
+             * Id
              * Format: uuid
              * @description Target parameter identifier to update
              */
-            parameter_id: string;
+            id: string;
             /**
              * Name Id
              * @description Name resource identifier
@@ -59300,11 +59411,11 @@ export interface components {
          */
         UpdateProviderItem: {
             /**
-             * Provider Id
+             * Id
              * Format: uuid
              * @description Target provider identifier to update
              */
-            provider_id: string;
+            id: string;
             /**
              * Name Id
              * @description Name resource identifier
@@ -59421,11 +59532,11 @@ export interface components {
          */
         UpdateRubricItem: {
             /**
-             * Rubric Id
+             * Id
              * Format: uuid
              * @description Rubric UUID to update
              */
-            rubric_id: string;
+            id: string;
             /**
              * Name Id
              * @description Name resource UUID
@@ -59487,10 +59598,15 @@ export interface components {
              */
             departments?: string[] | null;
             /**
-             * Point Ids
-             * @description Point UUIDs
+             * Pass Points Id
+             * @description Pass-type Points resource UUID
              */
-            point_ids?: string[] | null;
+            pass_points_id?: string | null;
+            /**
+             * Pass Points
+             * @description Pass points value (resolves to a pass-type Points resource)
+             */
+            pass_points?: number | null;
             /**
              * Standard Group Ids
              * @description Standard group UUIDs
@@ -59564,11 +59680,11 @@ export interface components {
          */
         UpdateScenarioItem: {
             /**
-             * Scenario Id
+             * Id
              * Format: uuid
              * @description UUID of the scenario to update
              */
-            scenario_id: string;
+            id: string;
             /**
              * Name Id
              * @description UUID of the name resource
@@ -59817,11 +59933,11 @@ export interface components {
          */
         UpdateSettingItem: {
             /**
-             * Setting Id
+             * Id
              * Format: uuid
              * @description UUID of the setting to update
              */
-            setting_id: string;
+            id: string;
             /**
              * Name Id
              * @description UUID of the name resource
@@ -59970,11 +60086,11 @@ export interface components {
          */
         UpdateSimulationItem: {
             /**
-             * Simulation Id
+             * Id
              * Format: uuid
              * @description UUID of the simulation to update
              */
-            simulation_id: string;
+            id: string;
             /**
              * Name Id
              * @description UUID of the name resource
@@ -60118,11 +60234,11 @@ export interface components {
          */
         UpdateToolItem: {
             /**
-             * Tool Id
+             * Id
              * Format: uuid
              * @description Target tool identifier to update
              */
-            tool_id: string;
+            id: string;
             /**
              * Name Id
              * @description Name resource identifier
@@ -61914,15 +62030,40 @@ export interface components {
              */
             active_flag_id?: string | null;
             /**
+             * Simulation Rubric Flag Id
+             * @description Selected simulation_rubric flag option UUID
+             */
+            simulation_rubric_flag_id?: string | null;
+            /**
+             * Video Rubric Flag Id
+             * @description Selected video_rubric flag option UUID
+             */
+            video_rubric_flag_id?: string | null;
+            /**
              * Department Ids
              * @description Selected department UUIDs
              */
             department_ids?: string[];
             /**
-             * Point Ids
-             * @description Selected point UUIDs
+             * Pass Points Id
+             * @description Pass-type Points resource UUID
              */
-            point_ids?: string[];
+            pass_points_id?: string | null;
+            /**
+             * Pass Points
+             * @description Denormalized pass points value
+             */
+            pass_points?: number | null;
+            /**
+             * Total Points Id
+             * @description Total-type Points resource UUID (computed)
+             */
+            total_points_id?: string | null;
+            /**
+             * Total Points
+             * @description Denormalized total points value (sum of standards)
+             */
+            total_points?: number | null;
             /**
              * Standard Group Ids
              * @description Selected standard group UUIDs
@@ -61933,6 +62074,11 @@ export interface components {
              * @description Selected standard UUIDs
              */
             standard_ids?: string[];
+            /**
+             * Standards
+             * @description Resolved grid-editor standards (all ids filled in).
+             */
+            standards?: components["schemas"]["RubricStandardDraftValue"][];
             /**
              * Pending Ids
              * @description Pending resource identifiers
@@ -66660,7 +66806,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PatchRubricDraftApiResponse"];
+                    "application/json": components["schemas"]["PatchRubricDraftApiResponse-Output"];
                 };
             };
             /** @description Validation Error */
@@ -85386,7 +85532,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PatchRubricDraftApiResponse"];
+                "application/json": components["schemas"]["PatchRubricDraftApiResponse-Input"];
             };
         };
         responses: {

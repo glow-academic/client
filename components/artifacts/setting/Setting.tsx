@@ -483,7 +483,7 @@ function Setting({
     if (isEditMode && settingId && updateSettingAction) {
       await updateSettingAction({
         body: {
-          settings: [{ setting_id: settingId, ...body }],
+          settings: [{ id: settingId, ...body }],
         },
       } as UpdateSettingIn);
     } else if (createSettingAction) {

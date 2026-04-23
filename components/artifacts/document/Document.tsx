@@ -102,6 +102,7 @@ type DocumentFormState = {
   name_id: string | null;
   description_id: string | null;
   active_flag_id: string | null;
+  template_flag_id: string | null;
   department_ids: string[];
   parameter_field_ids: string[];
   file_ids: string[];
@@ -182,6 +183,14 @@ function DocumentComponent({
     }),
     [],
   );
+
+  const flagIdByKey = useMemo(() => {
+    const map: Record<string, string> = {};
+    (documentDetail?.flags ?? []).forEach((flag) => {
+      if (flag.key && flag.flag_option_id) map[flag.key] = flag.flag_option_id;
+    });
+    return map;
+  }, [documentDetail?.flags]);
 
   const documentDataRef = useRef(documentDetail);
   useEffect(() => {
@@ -280,6 +289,7 @@ function DocumentComponent({
         name_id: null,
         description_id: null,
         active_flag_id: null,
+        template_flag_id: null,
         department_ids: [],
         parameter_field_ids: [],
         file_ids: [],
@@ -297,7 +307,10 @@ function DocumentComponent({
       description: null,
       name_id: data.names?.find((n) => n.selected)?.id ?? null,
       description_id: data.descriptions?.find((d) => d.selected)?.id ?? null,
-      active_flag_id: data.flags?.find((f) => f.selected)?.flag_option_id ?? null,
+      active_flag_id:
+        data.flags?.find((f) => f.key === "active" && f.selected)?.flag_option_id ?? null,
+      template_flag_id:
+        data.flags?.find((f) => f.key === "template" && f.selected)?.flag_option_id ?? null,
       department_ids: (data.departments?.filter((d) => d.selected) ?? [])
         .map((d) => d.department_id)
         .filter(Boolean) as string[],
@@ -363,6 +376,7 @@ function DocumentComponent({
         name_id: formState.name_id,
         description_id: formState.description_id,
         active_flag_id: formState.active_flag_id,
+        template_flag_id: formState.template_flag_id,
         department_ids: formState.department_ids,
         parameter_field_ids: formState.parameter_field_ids,
         file_ids: formState.file_ids,
@@ -378,6 +392,7 @@ function DocumentComponent({
       formState.name_id,
       formState.description_id,
       formState.active_flag_id,
+      formState.template_flag_id,
       departmentIdsStr,
       parameterFieldIdsStr,
       fileIdsStr,
@@ -416,8 +431,16 @@ function DocumentComponent({
         flushResults: (flushResults ?? {}) as Record<string, unknown>,
       });
 
-      if (current.active_flag_id !== (ref?.active_flag_id ?? null)) {
-        idPayload["flag_ids"] = current.active_flag_id ? [current.active_flag_id] : null;
+      // Flags are round-tripped through `flag_ids` (server's multi-id contract).
+      // Send whenever either active or template changed.
+      const currentFlagIds = [current.active_flag_id, current.template_flag_id].filter(
+        (id): id is string => !!id,
+      );
+      const refFlagIds = [ref?.active_flag_id ?? null, ref?.template_flag_id ?? null].filter(
+        (id): id is string => !!id,
+      );
+      if (JSON.stringify(currentFlagIds) !== JSON.stringify(refFlagIds)) {
+        idPayload["flag_ids"] = currentFlagIds.length > 0 ? currentFlagIds : null;
       }
 
       if (current.name != null) {
@@ -524,6 +547,7 @@ function DocumentComponent({
         prev.name_id !== newState.name_id ||
         prev.description_id !== newState.description_id ||
         prev.active_flag_id !== newState.active_flag_id ||
+        prev.template_flag_id !== newState.template_flag_id ||
         JSON.stringify(prev.department_ids) !== JSON.stringify(newState.department_ids) ||
         JSON.stringify(prev.parameter_field_ids) !==
           JSON.stringify(newState.parameter_field_ids) ||
@@ -562,12 +586,23 @@ function DocumentComponent({
         const fs = result.form_state as DocumentDraftFormState | undefined;
         if (fs) {
           setFormState((prev) => {
+            const nextFlagIds = (fs.flag_ids as string[] | undefined) ?? null;
+            const activeId = flagIdByKey["active"];
+            const templateId = flagIdByKey["template"];
             const next: DocumentFormState = {
               ...prev,
               name_id: (fs.name_id ?? prev.name_id) as string | null,
               description_id: (fs.description_id ?? prev.description_id) as string | null,
-              active_flag_id:
-                ((fs.flag_ids?.[0] ?? prev.active_flag_id) as string | null) ?? null,
+              active_flag_id: nextFlagIds
+                ? activeId && nextFlagIds.includes(activeId)
+                  ? activeId
+                  : null
+                : prev.active_flag_id,
+              template_flag_id: nextFlagIds
+                ? templateId && nextFlagIds.includes(templateId)
+                  ? templateId
+                  : null
+                : prev.template_flag_id,
               department_ids:
                 (fs.department_ids as string[] | undefined) ?? prev.department_ids,
               parameter_field_ids:
@@ -601,6 +636,7 @@ function DocumentComponent({
               prev.description_id !== next.description_id ||
               prev.description !== next.description ||
               prev.active_flag_id !== next.active_flag_id ||
+              prev.template_flag_id !== next.template_flag_id ||
               JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
               JSON.stringify(prev.parameter_field_ids) !== JSON.stringify(next.parameter_field_ids) ||
               JSON.stringify(prev.file_ids) !== JSON.stringify(next.file_ids) ||
@@ -621,7 +657,7 @@ function DocumentComponent({
     } else {
       patchActionRef.current = undefined;
     }
-  }, [patchDocumentDraftAction, serverSyncPendingRef]);
+  }, [patchDocumentDraftAction, flagIdByKey, serverSyncPendingRef]);
 
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "document",
@@ -716,7 +752,8 @@ function DocumentComponent({
         description: !effectiveFormState.description_id
           ? (effectiveFormState.description ?? undefined)
           : undefined,
-        flag_id: effectiveFormState.active_flag_id || undefined,
+        active_flag_id: effectiveFormState.active_flag_id || undefined,
+        template_flag_id: effectiveFormState.template_flag_id || undefined,
         department_ids: effectiveFormState.department_ids.length
           ? effectiveFormState.department_ids
           : undefined,
@@ -738,7 +775,7 @@ function DocumentComponent({
         if (isEditMode && documentId && updateDocumentAction) {
           await updateDocumentAction({
             body: {
-              documents: [{ document_id: documentId, ...commonFields }],
+              documents: [{ id: documentId, ...commonFields }],
             },
           } as UpdateDocumentIn);
         } else if (createDocumentAction) {
@@ -849,6 +886,7 @@ function DocumentComponent({
       "name_id",
       "description_id",
       "active_flag_id",
+      "template_flag_id",
       "department_ids",
       "parameter_field_ids",
       "file_ids",
@@ -886,6 +924,7 @@ function DocumentComponent({
             name_id: null,
             description_id: null,
             active_flag_id: null,
+            template_flag_id: null,
             department_ids: [],
           };
         case "fields":
@@ -1039,17 +1078,30 @@ function DocumentComponent({
                 />
 
                 <Flags
+                  mode="multi"
                   flags={s?.flags ?? []}
-                  flag_id={formState.active_flag_id}
+                  flag_ids={Object.fromEntries(
+                    Object.entries(flagIdByKey).map(([key, id]) => [
+                      key,
+                      (key === "active"
+                        ? formState.active_flag_id
+                        : key === "template"
+                          ? formState.template_flag_id
+                          : null) === id
+                        ? id
+                        : null,
+                    ])
+                  )}
                   show_flags={(s?.flags?.length ?? 0) > 0}
-                  columns={1}
-                  label="Active"
+                  columns={2}
+                  label="Flags"
                   disabled={disabled}
-                  onChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      active_flag_id: flagId,
-                    }))
+                  onChange={(key, flagId) =>
+                    setFormState((prev) => {
+                      if (key === "active") return { ...prev, active_flag_id: flagId };
+                      if (key === "template") return { ...prev, template_flag_id: flagId };
+                      return prev;
+                    })
                   }
                 />
               </div>
@@ -1325,7 +1377,8 @@ export default React.memo(DocumentComponent, (prevProps, nextProps) => {
   const prevIds = {
     name_id: prevDetail?.names?.find((n) => n.selected)?.id,
     description_id: prevDetail?.descriptions?.find((d) => d.selected)?.id,
-    active_flag_id: prevDetail?.flags?.find((f) => f.selected)?.flag_option_id,
+    active_flag_id: prevDetail?.flags?.find((f) => f.key === "active" && f.selected)?.flag_option_id,
+    template_flag_id: prevDetail?.flags?.find((f) => f.key === "template" && f.selected)?.flag_option_id,
     department_ids: (prevDetail?.departments?.filter((d) => d.selected) ?? []).map(
       (d) => d.department_id,
     ),
@@ -1346,7 +1399,8 @@ export default React.memo(DocumentComponent, (prevProps, nextProps) => {
   const nextIds = {
     name_id: nextDetail?.names?.find((n) => n.selected)?.id,
     description_id: nextDetail?.descriptions?.find((d) => d.selected)?.id,
-    active_flag_id: nextDetail?.flags?.find((f) => f.selected)?.flag_option_id,
+    active_flag_id: nextDetail?.flags?.find((f) => f.key === "active" && f.selected)?.flag_option_id,
+    template_flag_id: nextDetail?.flags?.find((f) => f.key === "template" && f.selected)?.flag_option_id,
     department_ids: (nextDetail?.departments?.filter((d) => d.selected) ?? []).map(
       (d) => d.department_id,
     ),

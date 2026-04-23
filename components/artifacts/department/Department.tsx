@@ -441,7 +441,7 @@ function DepartmentComponent({
           body: {
             departments: [
               {
-                department_id: departmentId,
+                id: departmentId,
                 name_id: effectiveFormState.name_id ?? undefined,
                 description_id: effectiveFormState.description_id ?? undefined,
                 active_flag_id: effectiveFormState.active_flag_id ?? undefined,
@@ -554,6 +554,8 @@ function DepartmentComponent({
             disabled={disabled}
             onNameIdChange={handleNameIdChange}
             onNameChange={handleNameChange}
+            placeholder="e.g., Customer Success"
+            defaultName="New Department"
             required={true}
             hideDescription={true}
             isAutosaveEnabled={isAutosaveEnabled}
@@ -594,6 +596,7 @@ function DepartmentComponent({
             flag_id={formState.active_flag_id}
             show_flags={(department?.flags?.length ?? 0) > 0}
             columns={1}
+            label="Flags"
             disabled={disabled}
             onChange={(flagId) =>
               setFormState((prev) => ({ ...prev, active_flag_id: flagId }))

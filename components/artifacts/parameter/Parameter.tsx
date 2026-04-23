@@ -16,8 +16,6 @@ import { Descriptions } from "@/components/resources/Descriptions";
 import { Fields } from "@/components/resources/Fields";
 import { Flags, type FlagConfig } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
@@ -50,11 +48,6 @@ type ParameterFormState = {
   flag_ids: string[];
   department_ids: string[];
   field_ids: string[];
-  simulation_parameter: boolean;
-  document_parameter: boolean;
-  persona_parameter: boolean;
-  scenario_parameter: boolean;
-  video_parameter: boolean;
   pending_ids: string[];
 };
 
@@ -166,7 +159,6 @@ function ParameterComponent({
     const selectedFlagIds = selectedFlags
       .map((flag) => flag.flag_option_id)
       .filter((id): id is string => !!id);
-    const hasFlag = (key: string) => selectedFlags.some((flag) => flag.key === key);
 
     if (!data) {
       return {
@@ -178,11 +170,6 @@ function ParameterComponent({
         flag_ids: [],
         department_ids: [],
         field_ids: [],
-        simulation_parameter: false,
-        document_parameter: false,
-        persona_parameter: false,
-        scenario_parameter: false,
-        video_parameter: false,
         pending_ids: [],
       };
     }
@@ -203,11 +190,6 @@ function ParameterComponent({
         (data.parameter_fields?.filter((item) => item.selected) ?? [])
           .map((item) => item.id)
           .filter((id): id is string => !!id),
-      simulation_parameter: hasFlag("simulation"),
-      document_parameter: hasFlag("document"),
-      persona_parameter: hasFlag("persona"),
-      scenario_parameter: hasFlag("scenario"),
-      video_parameter: hasFlag("video"),
       pending_ids: data.pending_ids ?? [],
     };
   }, []);
@@ -226,25 +208,6 @@ function ParameterComponent({
     formStateRef.current = formState as Record<string, unknown>;
   }, [formState]);
 
-  const deriveFlagIds = useCallback(
-    (state: ParameterFormState): string[] => {
-      const ids: string[] = [];
-      if (state.active_flag_id) {
-        ids.push(state.active_flag_id);
-      }
-      const pushIf = (key: string, enabled: boolean) => {
-        const id = flagIdByKey[key];
-        if (enabled && id) ids.push(id);
-      };
-      pushIf("simulation", state.simulation_parameter);
-      pushIf("document", state.document_parameter);
-      pushIf("persona", state.persona_parameter);
-      pushIf("scenario", state.scenario_parameter);
-      pushIf("video", state.video_parameter);
-      return Array.from(new Set(ids));
-    },
-    [flagIdByKey]
-  );
 
   const patchActionRef = useRef<
     | ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>)
@@ -266,10 +229,6 @@ function ParameterComponent({
       const formStateFromServer = result?.form_state;
       if (formStateFromServer) {
         const nextFlagIds = formStateFromServer.flag_ids ?? [];
-        const resolveBoolean = (key: string, previous: boolean) => {
-          const id = flagIdByKey[key];
-          return id ? nextFlagIds.includes(id) : previous;
-        };
 
         setFormState((prev) => {
           const next = {
@@ -291,11 +250,6 @@ function ParameterComponent({
             flag_ids: nextFlagIds,
             department_ids: formStateFromServer.department_ids ?? prev.department_ids,
             field_ids: formStateFromServer.field_ids ?? prev.field_ids,
-            simulation_parameter: resolveBoolean("simulation", prev.simulation_parameter),
-            document_parameter: resolveBoolean("document", prev.document_parameter),
-            persona_parameter: resolveBoolean("persona", prev.persona_parameter),
-            scenario_parameter: resolveBoolean("scenario", prev.scenario_parameter),
-            video_parameter: resolveBoolean("video", prev.video_parameter),
             pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
           };
           // Only set the server-sync absorb flag when state actually changes.
@@ -307,11 +261,6 @@ function ParameterComponent({
             prev.description_id !== next.description_id ||
             prev.description !== next.description ||
             prev.active_flag_id !== next.active_flag_id ||
-            prev.simulation_parameter !== next.simulation_parameter ||
-            prev.document_parameter !== next.document_parameter ||
-            prev.persona_parameter !== next.persona_parameter ||
-            prev.scenario_parameter !== next.scenario_parameter ||
-            prev.video_parameter !== next.video_parameter ||
             JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
             JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
             JSON.stringify(prev.field_ids) !== JSON.stringify(next.field_ids) ||
@@ -335,11 +284,11 @@ function ParameterComponent({
     ): Record<string, unknown> => {
       const currentFormState: ParameterFormState =
         formStateRef.current as unknown as ParameterFormState;
-      const effectiveFlags = deriveFlagIds(currentFormState);
+      const effectiveFlags = currentFormState.flag_ids;
       const referenceState = lastPatchedFormStateRef.current as
         | (ParameterFormState & Record<string, unknown>)
         | null;
-      const referenceFlags = referenceState ? deriveFlagIds(referenceState) : [];
+      const referenceFlags = referenceState?.flag_ids ?? [];
       const flagsChanged =
         JSON.stringify(effectiveFlags) !== JSON.stringify(referenceFlags);
 
@@ -371,14 +320,14 @@ function ParameterComponent({
 
       return payload;
     },
-    [deriveFlagIds]
+    []
   );
 
   const hasResourceIds =
     checkHasResourceIds(
       PARAMETER_RESOURCES,
       formState as unknown as Record<string, unknown>
-    ) || deriveFlagIds(formState).length > 0;
+    ) || formState.flag_ids.length > 0;
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
   const handleNameIdChange = useCallback((nameId: string | null) => {
@@ -531,7 +480,7 @@ function ParameterComponent({
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
       const current = formStateRef.current as unknown as ParameterFormState;
-      const effectiveFlags = deriveFlagIds(current);
+      const effectiveFlags = current.flag_ids;
 
       if (!current.name_id && !current.name?.trim()) {
         toast.error("Parameter name is required");
@@ -552,7 +501,7 @@ function ParameterComponent({
           body: {
             parameters: [
               {
-                parameter_id: parameterId,
+                id: parameterId,
                 ...(current.name_id ? { name_id: current.name_id } : {}),
                 ...(current.name ? { name: current.name } : {}),
                 ...(current.description_id
@@ -603,7 +552,6 @@ function ParameterComponent({
     },
     [
       createParameterAction,
-      deriveFlagIds,
       isEditMode,
       parameterId,
       profile?.id,
@@ -620,8 +568,6 @@ function ParameterComponent({
       switch (_stepId) {
         case "basic":
           return hasName ? "completed" : "active";
-        case "parameter-config":
-          return hasName ? "completed" : "pending";
         case "fields":
           if (!hasName) return "pending";
           return hasFields ? "completed" : "active";
@@ -657,20 +603,8 @@ function ParameterComponent({
         id: "basic",
         title: "Basic Information",
         description:
-          "Set the parameter name, description, departments, and active status.",
-        resetFields: ["name_id", "description_id", "department_ids", "active_flag_id"],
-      },
-      {
-        id: "parameter-config",
-        title: "Parameter Configuration",
-        description: "Configure where this parameter type is used.",
-        resetFields: [
-          "simulation_parameter",
-          "document_parameter",
-          "persona_parameter",
-          "scenario_parameter",
-          "video_parameter",
-        ],
+          "Set the parameter name, description, departments, scope, and active status.",
+        resetFields: ["name_id", "description_id", "department_ids", "flag_ids"],
       },
       {
         id: "fields",
@@ -690,11 +624,6 @@ function ParameterComponent({
       "flag_ids",
       "department_ids",
       "field_ids",
-      "simulation_parameter",
-      "document_parameter",
-      "persona_parameter",
-      "scenario_parameter",
-      "video_parameter",
       "pending_ids",
     ],
     []
@@ -704,8 +633,6 @@ function ParameterComponent({
     switch (stepId) {
       case "basic":
         return "Basic information reset";
-      case "parameter-config":
-        return "Parameter configuration reset";
       case "fields":
         return "Fields reset";
       default:
@@ -724,17 +651,8 @@ function ParameterComponent({
             description_id: null,
             description: null,
             active_flag_id: null,
-            flag_ids: prev.flag_ids.filter((id) => id !== (prev.active_flag_id ?? "")),
+            flag_ids: [],
             department_ids: [],
-          };
-        case "parameter-config":
-          return {
-            ...prev,
-            simulation_parameter: false,
-            document_parameter: false,
-            persona_parameter: false,
-            scenario_parameter: false,
-            video_parameter: false,
           };
         case "fields":
           return {
@@ -856,25 +774,34 @@ function ParameterComponent({
                 />
 
                 <Flags
-                  flags={
-                    ((parameterData?.flags ?? []).filter(
-                      (flag) => flag.key === "active"
-                    ) as unknown as FlagConfig[]) ?? []
-                  }
-                  flag_id={formState.active_flag_id}
-                  show_flags={true}
-                  columns={1}
-                  label="Active"
+                  mode="multi"
+                  flags={(parameterData?.flags ?? []) as unknown as FlagConfig[]}
+                  flag_ids={Object.fromEntries(
+                    Object.entries(flagIdByKey).map(([key, id]) => [
+                      key,
+                      formState.flag_ids.includes(id) ? id : null,
+                    ])
+                  )}
+                  show_flags={(parameterData?.flags?.length ?? 0) > 0}
+                  columns={2}
+                  label="Flags"
                   disabled={disabled}
-                  onChange={(flagId) =>
+                  onChange={(key, flagId) =>
                     setFormState((prev) => {
+                      const optionId = flagIdByKey[key];
+                      // Drop any previously-enabled id for this key, then add
+                      // the new one (null means disabled). Keeps flag_ids in
+                      // sync with the server's single-id-per-key contract.
                       const nextFlagIds = prev.flag_ids.filter(
-                        (id) => id !== (prev.active_flag_id ?? "")
+                        (id) => id !== optionId
                       );
                       if (flagId) nextFlagIds.push(flagId);
                       return {
                         ...prev,
-                        active_flag_id: flagId,
+                        active_flag_id:
+                          key === "active"
+                            ? flagId
+                            : prev.active_flag_id,
                         flag_ids: Array.from(new Set(nextFlagIds)),
                       };
                     })
@@ -883,97 +810,6 @@ function ParameterComponent({
               </div>
             </StepCard>
           );
-
-        case "parameter-config": {
-          const toggleTypeFlag = (key: string, checked: boolean) => {
-            const optionId = flagIdByKey[key];
-            setFormState((prev) => {
-              const nextIds = prev.flag_ids.filter((id) => id !== optionId);
-              if (checked && optionId) nextIds.push(optionId);
-              return {
-                ...prev,
-                flag_ids: Array.from(new Set(nextIds)),
-                simulation_parameter:
-                  key === "simulation" ? checked : prev.simulation_parameter,
-                document_parameter:
-                  key === "document" ? checked : prev.document_parameter,
-                persona_parameter:
-                  key === "persona" ? checked : prev.persona_parameter,
-                scenario_parameter:
-                  key === "scenario" ? checked : prev.scenario_parameter,
-                video_parameter: key === "video" ? checked : prev.video_parameter,
-              };
-            });
-          };
-
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              resetFields={[
-                "simulation_parameter",
-                "document_parameter",
-                "persona_parameter",
-                "scenario_parameter",
-                "video_parameter",
-              ]}
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-            >
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="simulation_parameter">Simulation Parameter</Label>
-                  <Switch
-                    id="simulation_parameter"
-                    checked={formState.simulation_parameter}
-                    onCheckedChange={(checked) => toggleTypeFlag("simulation", checked)}
-                    disabled={disabled}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="document_parameter">Document Parameter</Label>
-                  <Switch
-                    id="document_parameter"
-                    checked={formState.document_parameter}
-                    onCheckedChange={(checked) => toggleTypeFlag("document", checked)}
-                    disabled={disabled}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="persona_parameter">Persona Parameter</Label>
-                  <Switch
-                    id="persona_parameter"
-                    checked={formState.persona_parameter}
-                    onCheckedChange={(checked) => toggleTypeFlag("persona", checked)}
-                    disabled={disabled}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="scenario_parameter">Scenario Parameter</Label>
-                  <Switch
-                    id="scenario_parameter"
-                    checked={formState.scenario_parameter}
-                    onCheckedChange={(checked) => toggleTypeFlag("scenario", checked)}
-                    disabled={disabled}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="video_parameter">Video Parameter</Label>
-                  <Switch
-                    id="video_parameter"
-                    checked={formState.video_parameter}
-                    onCheckedChange={(checked) => toggleTypeFlag("video", checked)}
-                    disabled={disabled}
-                  />
-                </div>
-              </div>
-            </StepCard>
-          );
-        }
 
         case "fields": {
           const fieldSearchTerm =

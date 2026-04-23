@@ -611,7 +611,7 @@ export default function Cohorts({
         }
 
         return {
-          cohort_id: cohort.cohort_id!,
+          id: cohort.cohort_id!,
           ...(hasActiveChange && { flag_id: flagId }),
           ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
         };

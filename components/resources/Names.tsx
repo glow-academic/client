@@ -215,8 +215,11 @@ export function Names({
   }
 
   // Get the display value for sizing
-  // When input has value, measure that; otherwise measure placeholder
-  const displayValue = internalValue || defaultName || "";
+  // When input has value, measure that; otherwise measure defaultName, then
+  // placeholder, so the grid column never collapses to ~1ch and visibly clips
+  // the placeholder text (e.g. "Enter name" → "Er").
+  const displayValue =
+    internalValue || defaultName || placeholder || "Enter name";
 
   // Pending name for diff display
   const pendingName = resource?.name || "";

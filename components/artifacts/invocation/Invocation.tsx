@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StepCard } from "@/components/common/forms/StepCard";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Endpoints } from "@/components/resources/Endpoints";
@@ -349,23 +350,27 @@ export default function Invocation({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Customize Invocation</h1>
-        <p className="text-sm text-muted-foreground">
-          Configure the draft-backed resources for this test invocation.
-        </p>
-      </div>
-
-      <Names
-        name_id={formState.name_id}
-        name_resource={data.names?.find((item) => item.selected) ?? null}
-        show_name={(data.names?.length ?? 0) > 0}
-        names={data.names ?? []}
-        disabled={false}
-        onNameIdChange={handleNameIdChange}
-        onNameChange={handleNameChange}
-      />
-
+      <StepCard
+        stepStatus="active"
+        stepNumber={1}
+        stepTitle="Customize Invocation"
+        stepDescription="Configure the draft-backed resources for this test invocation."
+        customHeader={
+          <Names
+            name_id={formState.name_id}
+            name_resource={data.names?.find((item) => item.selected) ?? null}
+            show_name={(data.names?.length ?? 0) > 0}
+            names={data.names ?? []}
+            disabled={false}
+            onNameIdChange={handleNameIdChange}
+            onNameChange={handleNameChange}
+            placeholder="e.g., Smoke Test Run"
+            defaultName="New Invocation"
+            hideDescription={true}
+          />
+        }
+      >
+      <div className="space-y-4">
       <Descriptions
         description_id={formState.description_id}
         description_resource={data.descriptions?.find((item) => item.selected) ?? null}
@@ -410,6 +415,7 @@ export default function Invocation({
           })
         }
         show_flags={flagConfigs.length > 0}
+        label="Flags"
       />
 
       <Departments
@@ -561,6 +567,8 @@ export default function Invocation({
           })
         }
       />
+      </div>
+      </StepCard>
 
       <Card>
         <CardHeader>

@@ -758,7 +758,7 @@ function EvalComponent({
             body: {
               evals: [
                 {
-                  eval_id: evalId!,
+                  id: evalId!,
                   name_id: formState.name_id ?? undefined,
                   description_id: formState.description_id ?? undefined,
                   flag_ids: saveFlagIds.length > 0 ? saveFlagIds : undefined,

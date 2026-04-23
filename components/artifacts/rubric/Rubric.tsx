@@ -60,8 +60,13 @@ type RubricDraftFormStateCompat = {
   description_id?: string | null;
   active_flag_id?: string | null;
   flag_id?: string | null;
+  simulation_rubric_flag_id?: string | null;
+  video_rubric_flag_id?: string | null;
   department_ids?: string[] | null;
-  point_ids?: string[] | null;
+  pass_points_id?: string | null;
+  pass_points?: number | null;
+  total_points_id?: string | null;
+  total_points?: number | null;
   standard_group_ids?: string[] | null;
   standard_ids?: string[] | null;
   standards?: Array<{
@@ -165,8 +170,14 @@ type RubricFormState = {
   description: string | null;
   description_id: string | null;
   active_flag_id: string | null;
+  simulation_rubric_flag_id: string | null;
+  video_rubric_flag_id: string | null;
   department_ids: string[];
-  total_points_id: string | null;
+  // Pass points: canonical resource ID + denormalized numeric value (dual mode).
+  // Total points: computed from standards; server-returned read-only display.
+  pass_points_id: string | null;
+  pass_points: number | null;
+  total_points: number | null;
   standard_group_ids: string[];
   standard_ids: string[];
   // Value-object array fed by Standards.tsx grid. Server resolves
@@ -211,8 +222,8 @@ const RUBRIC_RESOURCES: ResourceConfig[] = [
   },
   {
     key: "points",
-    formKey: "total_points_id",
-    flushKey: "total_points_id",
+    formKey: "pass_points_id",
+    flushKey: null,
     type: "single",
   },
   {
@@ -256,8 +267,12 @@ function RubricComponent({
     description: null,
     description_id: null,
     active_flag_id: null,
+    simulation_rubric_flag_id: null,
+    video_rubric_flag_id: null,
     department_ids: [],
-    total_points_id: null,
+    pass_points_id: null,
+    pass_points: null,
+    total_points: null,
     standard_group_ids: [],
     standard_ids: [],
     standards: null,
@@ -282,8 +297,12 @@ function RubricComponent({
         description: null,
         description_id: null,
         active_flag_id: null,
+        simulation_rubric_flag_id: null,
+        video_rubric_flag_id: null,
         department_ids: [],
-        total_points_id: null,
+        pass_points_id: null,
+        pass_points: null,
+        total_points: null,
         standard_group_ids: [],
         standard_ids: [],
         standards: null,
@@ -297,13 +316,27 @@ function RubricComponent({
       description: null,
       description_id: s.descriptions?.find((item) => item.selected)?.id ?? null,
       active_flag_id:
-        s.flags?.find((item) => item.selected)?.flag_option_id ?? null,
+        s.flags?.find((item) => item.key === "active" && item.selected)
+          ?.flag_option_id ?? null,
+      simulation_rubric_flag_id:
+        s.flags?.find((item) => item.key === "simulation_rubric" && item.selected)
+          ?.flag_option_id ?? null,
+      video_rubric_flag_id:
+        s.flags?.find((item) => item.key === "video_rubric" && item.selected)
+          ?.flag_option_id ?? null,
       department_ids:
         (s.departments ?? [])
           .filter((x) => x.selected)
           ?.map((x) => x.department_id)
           .filter((x): x is string => !!x) ?? [],
-      total_points_id: s.points?.find((item) => item.selected)?.id ?? null,
+      // Pass points comes from the pass-typed selected Points resource.
+      pass_points_id:
+        s.points?.find((item) => item.type === "pass" && item.selected)?.id ?? null,
+      pass_points:
+        s.points?.find((item) => item.type === "pass" && item.selected)?.value ?? null,
+      // Total is computed server-side — synthetic row with type="total".
+      total_points:
+        s.points?.find((item) => item.type === "total")?.value ?? null,
       standard_group_ids:
         (s.standard_groups ?? [])
           .filter((x) => x.selected)
@@ -381,6 +414,15 @@ function RubricComponent({
         payload["description"] = fs.description;
         delete payload["description_id"];
       }
+      // Per-type rubric flag slots (active is covered by RUBRIC_RESOURCES;
+      // the two below are tracked outside that registry because they share
+      // the same `flags` section on the server but bind to distinct fields).
+      if (fs.simulation_rubric_flag_id !== undefined) {
+        payload["simulation_rubric_flag_id"] = fs.simulation_rubric_flag_id;
+      }
+      if (fs.video_rubric_flag_id !== undefined) {
+        payload["video_rubric_flag_id"] = fs.video_rubric_flag_id;
+      }
       // Grid-editor standards: send the value array whenever the user has
       // edited any cell. Server creates rows for id=null entries and merges
       // all resolved IDs into `standard_ids` on the response.
@@ -446,11 +488,26 @@ function RubricComponent({
               (fs.active_flag_id as string | null | undefined) ??
               (fs.flag_id as string | null | undefined) ??
               prev.active_flag_id,
+            simulation_rubric_flag_id:
+              (fs.simulation_rubric_flag_id as string | null | undefined) ??
+              prev.simulation_rubric_flag_id,
+            video_rubric_flag_id:
+              (fs.video_rubric_flag_id as string | null | undefined) ??
+              prev.video_rubric_flag_id,
             department_ids:
               (fs.department_ids as string[] | null | undefined) ??
               prev.department_ids,
-            total_points_id:
-              (fs.point_ids?.[0] as string | undefined) ?? prev.total_points_id,
+            pass_points_id:
+              (fs.pass_points_id as string | null | undefined) ??
+              prev.pass_points_id,
+            pass_points:
+              (fs.pass_points as number | null | undefined) ??
+              // Keep echoed value in sync with id transitions; clear when
+              // the id is cleared.
+              (fs.pass_points_id === null ? null : prev.pass_points),
+            total_points:
+              (fs.total_points as number | null | undefined) ??
+              prev.total_points,
             standard_group_ids:
               (fs.standard_group_ids as string[] | null | undefined) ??
               prev.standard_group_ids,
@@ -555,8 +612,7 @@ function RubricComponent({
 
   const stepResources: Record<string, RubricResourceType[]> = useMemo(
     () => ({
-      basic: ["names", "descriptions", "flags", "departments"],
-      points: ["points"],
+      basic: ["names", "descriptions", "flags", "departments", "points"],
       standard_groups: ["standard_groups"],
       standards: ["standards"],
     }),
@@ -581,18 +637,6 @@ function RubricComponent({
   const selectedDescriptionResource = useMemo(
     () => s?.descriptions?.find((item) => item.selected) ?? null,
     [s?.descriptions],
-  );
-  const selectedPointResource = useMemo(
-    () => s?.points?.find((item) => item.selected) ?? null,
-    [s?.points],
-  );
-  const pointSuggestions = useMemo(
-    () =>
-      (s?.points ?? [])
-        .filter((item) => item.suggested)
-        .map((item) => item.id)
-        .filter((item): item is string => !!item),
-    [s?.points],
   );
   // Grid values. Once the user has edited any cell, `formState.standards` is
   // non-null and takes precedence. Until then, seed from the server catalog
@@ -651,9 +695,14 @@ function RubricComponent({
         throw new Error("Missing group_id");
       }
 
-      const pointIds = [effectiveFormState.total_points_id].filter(
-        (x): x is string => !!x,
-      );
+      // Pass points: prefer id (already resolved), fall back to numeric value
+      // for the server's dual-mode resolver. Total is computed server-side and
+      // is never sent on write.
+      const passPointsPayload = effectiveFormState.pass_points_id
+        ? { pass_points_id: effectiveFormState.pass_points_id }
+        : effectiveFormState.pass_points != null
+          ? { pass_points: effectiveFormState.pass_points }
+          : {};
 
       if (isEditMode) {
         if (!updateRubricAction) throw new Error("Update action not available");
@@ -661,14 +710,18 @@ function RubricComponent({
           body: {
             rubrics: [
               {
-                rubric_id: rubricId!,
+                id: rubricId!,
                 name_id: effectiveFormState.name_id ?? undefined,
                 description_id: effectiveFormState.description_id ?? undefined,
                 active_flag_id: effectiveFormState.active_flag_id ?? undefined,
+                simulation_rubric_flag_id:
+                  effectiveFormState.simulation_rubric_flag_id ?? undefined,
+                video_rubric_flag_id:
+                  effectiveFormState.video_rubric_flag_id ?? undefined,
                 department_ids: effectiveFormState.department_ids?.length
                   ? effectiveFormState.department_ids
                   : undefined,
-                point_ids: pointIds.length ? pointIds : undefined,
+                ...passPointsPayload,
                 standard_group_ids: effectiveFormState.standard_group_ids?.length
                   ? effectiveFormState.standard_group_ids
                   : undefined,
@@ -689,10 +742,14 @@ function RubricComponent({
                 name_id: effectiveFormState.name_id!,
                 description_id: effectiveFormState.description_id ?? undefined,
                 active_flag_id: effectiveFormState.active_flag_id ?? undefined,
+                simulation_rubric_flag_id:
+                  effectiveFormState.simulation_rubric_flag_id ?? undefined,
+                video_rubric_flag_id:
+                  effectiveFormState.video_rubric_flag_id ?? undefined,
                 department_ids: effectiveFormState.department_ids?.length
                   ? effectiveFormState.department_ids
                   : undefined,
-                point_ids: pointIds.length ? pointIds : undefined,
+                ...passPointsPayload,
                 standard_group_ids: effectiveFormState.standard_group_ids?.length
                   ? effectiveFormState.standard_group_ids
                   : undefined,
@@ -729,8 +786,6 @@ function RubricComponent({
           return formState.name_id && formState.description_id
             ? "completed"
             : "active";
-        case "points":
-          return formState.total_points_id ? "completed" : "active";
         case "standard_groups":
           return formState.standard_group_ids.length > 0 ? "completed" : "active";
         case "standards":
@@ -747,14 +802,16 @@ function RubricComponent({
       {
         id: "basic",
         title: "Basic Information",
-        description: "Set rubric name, description, departments, and active status.",
-        resetFields: ["name_id", "description_id", "active_flag_id", "department_ids"],
-      },
-      {
-        id: "points",
-        title: "Points",
-        description: "Set points for the rubric.",
-        resetFields: ["total_points_id"],
+        description:
+          "Set rubric name, description, departments, pass threshold, and active status.",
+        resetFields: [
+          "name_id",
+          "description_id",
+          "active_flag_id",
+          "department_ids",
+          "pass_points_id",
+          "pass_points",
+        ],
       },
       {
         id: "standard_groups",
@@ -778,7 +835,8 @@ function RubricComponent({
       "description_id",
       "active_flag_id",
       "department_ids",
-      "total_points_id",
+      "pass_points_id",
+      "pass_points",
       "standard_group_ids",
       "standard_ids",
       "pending_ids",
@@ -823,6 +881,8 @@ function RubricComponent({
                 disabled={disabled}
                 onNameIdChange={handleNameIdChange}
                 onNameChange={handleNameChange}
+                placeholder="e.g., Sales Call Rubric"
+                defaultName="New Rubric"
                 required={true}
                 hideDescription={true}
               />
@@ -876,84 +936,62 @@ function RubricComponent({
               />
 
               <Flags
+                mode="multi"
                 flags={s?.flags ?? []}
-                flag_id={formState.active_flag_id}
+                flag_ids={{
+                  active: formState.active_flag_id,
+                  simulation_rubric: formState.simulation_rubric_flag_id,
+                  video_rubric: formState.video_rubric_flag_id,
+                }}
                 show_flags={Boolean((s?.flags ?? []).length)}
-                columns={1}
+                columns={2}
+                label="Flags"
                 disabled={disabled}
-                onChange={(flagId) =>
-                  setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
+                onChange={(key, flagId) =>
+                  setFormState((prev) => {
+                    if (key === "active")
+                      return { ...prev, active_flag_id: flagId };
+                    if (key === "simulation_rubric")
+                      return { ...prev, simulation_rubric_flag_id: flagId };
+                    if (key === "video_rubric")
+                      return { ...prev, video_rubric_flag_id: flagId };
+                    return prev;
+                  })
                 }
               />
+
+              {/* Pass points is user-writeable; total is computed server-side
+                  and rendered read-only. Pass points suggestions come from
+                  the pass-typed Points resources returned by GET. */}
+              <div className="flex items-end gap-6 flex-wrap">
+                <Points
+                  mode="picker"
+                  label="Pass Points"
+                  value={formState.pass_points}
+                  points={s?.points ?? []}
+                  filterType="pass"
+                  disabled={disabled}
+                  required={true}
+                  onChange={(v) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      pass_points: v,
+                      // Invalidate id so the server re-resolves from the value.
+                      pass_points_id: null,
+                    }))
+                  }
+                />
+                <Points
+                  mode="readonly"
+                  label="Total Points"
+                  value={formState.total_points}
+                />
+              </div>
             </div>
           </StepCard>
         );
       }
 
-      if (stepId === "points") {
-        return (
-          <StepCard
-            stepStatus={stepStatus}
-            stepNumber={stepNumber}
-            stepTitle={stepTitle}
-            stepDescription={stepDescription}
-            isReadonly={disabled}
-            isEditMode={isEditMode}
-            resetFields={["total_points_id"]}
-            actions={
-              s?.content_show_ai_generate ? (
-                <StepCardAiButton
-                  stepId="points"
-                  resourceTypes={stepResources["points"] ?? []}
-                  canRegenerate={(rt) =>
-                    canRegenerate(rt as RubricResourceType)
-                  }
-                  isGenerating={(rt) =>
-                    isGenerating(rt as RubricResourceType)
-                  }
-                  onOpenModal={handleDirectStepGenerate}
-                  disabled={disabled}
-                />
-              ) : undefined
-            }
-            {...(onReset ? { onReset } : {})}
-          >
-            <div className="space-y-4">
-              <Points
-                points_id={formState.total_points_id}
-                points_resource={
-                  selectedPointResource
-                    ? {
-                        id: selectedPointResource.id ?? null,
-                        value: selectedPointResource.value ?? null,
-                        generated: selectedPointResource.generated ?? null,
-                        suggested: selectedPointResource.suggested ?? null,
-                        pending: selectedPointResource.pending ?? null,
-                      }
-                    : null
-                }
-                show_points={true}
-                points_suggestions={pointSuggestions}
-                points={(s?.points ?? []).map((p) => ({
-                  id: p.id ?? null,
-                  value: p.value ?? null,
-                  generated: p.generated ?? null,
-                  suggested: p.suggested ?? null,
-                  pending: p.pending ?? null,
-                }))}
-                disabled={disabled}
-                onPointsIdChange={(pointsId) =>
-                  setFormState((prev) => ({ ...prev, total_points_id: pointsId }))
-                }
-                onGenerate={() => handleGenerateResources(["points"])}
-                label="Points"
-                required={true}
-                showAiGenerate={false}
-              />
-            </div>
-          </StepCard>
-        );
-      }
 
       if (stepId === "standard_groups") {
         return (
@@ -1063,8 +1101,6 @@ function RubricComponent({
       handleDirectStepGenerate,
       selectedNameResource,
       selectedDescriptionResource,
-      selectedPointResource,
-      pointSuggestions,
       standardGridValues,
     ],
   );
@@ -1105,13 +1141,11 @@ function RubricComponent({
                 description: null,
                 description_id: null,
                 active_flag_id: null,
+                simulation_rubric_flag_id: null,
+                video_rubric_flag_id: null,
                 department_ids: [],
-              }));
-            }
-            if (stepId === "points") {
-              setFormState((prev) => ({
-                ...prev,
-                total_points_id: null,
+                pass_points_id: null,
+                pass_points: null,
               }));
             }
             if (stepId === "standard_groups") {

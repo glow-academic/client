@@ -449,7 +449,7 @@ function FieldComponent({
         body: {
           fields: [
             {
-              field_id: fieldId,
+              id: fieldId,
               ...(current.name_id ? { name_id: current.name_id } : {}),
               ...(current.name ? { name: current.name } : {}),
               ...(current.description_id
@@ -731,7 +731,7 @@ function FieldComponent({
                   flag_id={formState.active_flag_id}
                   show_flags={true}
                   columns={1}
-                  label="Active"
+                  label="Flags"
                   disabled={disabled}
                   onChange={(flagId) =>
                     setFormState((prev) => ({ ...prev, active_flag_id: flagId }))

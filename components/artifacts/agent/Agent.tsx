@@ -160,10 +160,8 @@ const toMultiSection = <
   };
 };
 
-const NamesField = Names as any;
 const DescriptionsField = Descriptions as any;
 const DepartmentsField = Departments as any;
-const FlagsField = Flags as any;
 const ToolsField = Tools as any;
 const ModelsField = Models as any;
 const TemperatureLevelsField = TemperatureLevels as any;
@@ -1049,7 +1047,7 @@ export default function Agent({
             body: {
               agents: [
                 {
-                  agent_id: agentId,
+                  id: agentId,
                   name_id: efsTyped.name_id ?? undefined,
                   name: efsTyped.name ?? undefined,
                   description_id: efsTyped.description_id ?? undefined,
@@ -1333,11 +1331,6 @@ export default function Agent({
   );
 
   // Individual generation handlers
-  const handleGenerateName = useCallback(
-    async () => handleGenerateResources(["names"]),
-    [handleGenerateResources],
-  );
-
   const handleGenerateDescription = useCallback(
     async () => handleGenerateResources(["descriptions"]),
     [handleGenerateResources],
@@ -1503,22 +1496,18 @@ export default function Agent({
                       isReadonly={isReadonly}
                       isEditMode={isEditMode}
                       customHeader={
-                        <NamesField
+                        <Names
                           name_id={draftState.name_id}
                           name_resource={namesSection?.resource ?? null}
                           show_name={namesSection?.show ?? true}
-                          name_suggestions={namesSection?.suggestions ?? []}
                           names={mergedNames}
                           disabled={isReadonly}
                           onNameIdChange={handleNameIdChange}
                           onNameChange={handleNameChange}
-                          onGenerate={handleGenerateName}
                           placeholder="e.g., Customer Support Agent"
                           defaultName="New Agent"
                           required={namesSection?.required ?? false}
                           hideDescription={true}
-
-                          showAiGenerate={false}
                         />
                       }
                       resetFields={[
@@ -1604,12 +1593,12 @@ export default function Agent({
                           showAiGenerate={false}
                         />
 
-                        <FlagsField
+                        <Flags
                           flags={flagsSection?.resources ?? []}
                           flag_id={draftState.active_flag_id}
                           show_flags={flagsSection?.show ?? false}
                           columns={1}
-                          label="Active"
+                          label="Flags"
                           disabled={isReadonly}
                           onChange={(flagId: string | null) => {
                             setDraftState((prev) => ({
@@ -1617,9 +1606,6 @@ export default function Agent({
                               active_flag_id: flagId,
                             }));
                           }}
-                          onGenerate={handleGenerateFlags}
-
-                          showAiGenerate={false}
                         />
                       </div>
                     </StepCard>

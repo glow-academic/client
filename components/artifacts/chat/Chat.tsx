@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StepCard } from "@/components/common/forms/StepCard";
 import { Departments } from "@/components/resources/Departments";
 import { Personas } from "@/components/resources/Personas";
 import { Documents } from "@/components/resources/Documents";
@@ -463,26 +464,29 @@ export default function Chat({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Customize Training</h1>
-        <p className="text-sm text-muted-foreground">
-          {s.simulation_name || "Training bundle"}
-        </p>
-      </div>
-
-      {s.names && (
-        <Names
-          name_id={formState.name_id}
-          name_resource={selectedName}
-          show_name={true}
-          names={s.names ?? []}
-          disabled={false}
-          onNameIdChange={handleNameIdChange}
-          onNameChange={handleNameChange}
-          placeholder="Enter name"
-        />
-      )}
-
+      <StepCard
+        stepStatus="active"
+        stepNumber={1}
+        stepTitle="Customize Training"
+        stepDescription={s.simulation_name || "Training bundle"}
+        customHeader={
+          s.names ? (
+            <Names
+              name_id={formState.name_id}
+              name_resource={selectedName}
+              show_name={true}
+              names={s.names ?? []}
+              disabled={false}
+              onNameIdChange={handleNameIdChange}
+              onNameChange={handleNameChange}
+              placeholder="e.g., My Training Session"
+              defaultName="New Training"
+              hideDescription={true}
+            />
+          ) : undefined
+        }
+      >
+      <div className="space-y-4">
       {s.departments && (
         <Departments
           department_ids={formState.department_ids}
@@ -630,6 +634,8 @@ export default function Chat({
           label="Objectives"
         />
       )}
+      </div>
+      </StepCard>
 
       <Card>
         <CardHeader>

@@ -649,7 +649,7 @@ export function Scenarios({
         }
 
         return {
-          scenario_id: scenario.scenario_id!,
+          id: scenario.scenario_id!,
           ...(hasActiveChange && { active_flag_id: activeFlag }),
           ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
         };

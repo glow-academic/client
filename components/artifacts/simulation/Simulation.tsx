@@ -890,7 +890,7 @@ function SimulationComponent({
         if (isEditMode && simulationId && updateSimulationAction) {
           await updateSimulationAction({
             body: {
-              simulations: [{ simulation_id: simulationId, ...commonFields }],
+              simulations: [{ id: simulationId, ...commonFields }],
             },
           } as UpdateSimulationIn);
         } else if (createSimulationAction) {

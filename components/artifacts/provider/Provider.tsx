@@ -403,7 +403,7 @@ export default function Provider({
         body: {
           providers: [
             {
-              provider_id: providerId,
+              id: providerId,
               name_id: effectiveState.name_id,
               description_id: effectiveState.description_id,
               active_flag_id: effectiveState.active_flag_id,
@@ -510,6 +510,21 @@ export default function Provider({
             stepNumber={stepNumber}
             stepStatus={stepStatus}
             isReadonly={disabled}
+            customHeader={
+              <Names
+                name_id={formState.name_id}
+                name_resource={s?.names?.find((item: any) => item.selected) ?? null}
+                show_name={true}
+                names={s?.names ?? []}
+                disabled={disabled}
+                onNameIdChange={handleNameIdChange}
+                onNameChange={handleNameChange}
+                placeholder="e.g., OpenAI"
+                defaultName="New Provider"
+                hideDescription={true}
+                required={true}
+              />
+            }
             actions={
               <StepCardAiButton
                 stepId="basic"
@@ -526,18 +541,6 @@ export default function Provider({
               />
             }
           >
-            <Names
-              name_id={formState.name_id}
-              name_resource={s?.names?.find((item: any) => item.selected) ?? null}
-              show_name={true}
-              names={s?.names ?? []}
-              disabled={disabled}
-              onNameIdChange={handleNameIdChange}
-              onNameChange={handleNameChange}
-              defaultName="New Provider"
-              hideDescription={true}
-              required={true}
-            />
             <Descriptions
               description_id={formState.description_id}
               description_resource={
@@ -555,6 +558,7 @@ export default function Provider({
               flag_id={formState.active_flag_id}
               show_flags={true}
               flags={s?.flags ?? []}
+              label="Flags"
               disabled={disabled}
               onChange={(id) =>
                 setFormState((prev) => ({ ...prev, active_flag_id: id }))

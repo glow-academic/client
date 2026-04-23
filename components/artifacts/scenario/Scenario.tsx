@@ -1685,7 +1685,7 @@ function ScenarioComponent({
         if (isEditMode && scenarioId && updateScenarioAction) {
           await updateScenarioAction({
             body: {
-              scenarios: [{ scenario_id: scenarioId, ...commonFields }],
+              scenarios: [{ id: scenarioId, ...commonFields }],
             },
           } as UpdateScenarioIn);
         } else if (createScenarioAction) {

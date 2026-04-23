@@ -48,7 +48,7 @@ interface CommonFlagsProps {
   flags: FlagConfig[]; // Array of flag configurations from server
   show_flags?: boolean; // Master visibility control
   columns?: 1 | 2 | 3 | 4; // Columns per row (default: 2)
-  label?: string; // Section label
+  label?: string; // Section label (canonical: "Flags")
   disabled?: boolean;
   headerRight?: React.ReactNode; // Right-aligned slot rendered next to the label
 }
@@ -93,22 +93,12 @@ export function Flags(props: FlagsProps) {
     [flags]
   );
 
-  // Detect pending items
-  const hasPending = useMemo(
-    () => visibleFlags.some((flag) => flag.pending),
-    [visibleFlags]
-  );
-
   // Pending state: flags with pending=true from soft draft connections
   const pendingFlags = useMemo(
     () => visibleFlags.filter((f) => f.pending),
     [visibleFlags]
   );
   const showDiff = pendingFlags.length > 0;
-  const pendingFlagIds = useMemo(
-    () => new Set(pendingFlags.map((f) => f.flag_option_id).filter(Boolean) as string[]),
-    [pendingFlags]
-  );
 
   // Get the checked state for a flag
   const isChecked = useCallback(

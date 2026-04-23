@@ -977,7 +977,7 @@ function CohortComponent({
           await updateCohortAction({
             body: {
               cohorts: [{
-                cohort_id: cohortId,
+                id: cohortId,
                 ...commonFields,
               }],
             },
