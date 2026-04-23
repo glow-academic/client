@@ -64,6 +64,13 @@ type RubricDraftFormStateCompat = {
   point_ids?: string[] | null;
   standard_group_ids?: string[] | null;
   standard_ids?: string[] | null;
+  standards?: Array<{
+    id: string | null;
+    name: string;
+    description: string;
+    points: number;
+    standard_group_id: string;
+  }> | null;
   pending_ids?: string[] | null;
 };
 
@@ -141,6 +148,17 @@ type RubricDataCompat = RubricData & {
   }> | null;
 };
 
+// Grid-editor value-object shape. Duplicates StandardValue from
+// components/resources/Standards.tsx intentionally — keeps the artifact
+// layer independent of picker internals.
+type RubricStandardValue = {
+  id: string | null;
+  name: string;
+  description: string;
+  points: number;
+  standard_group_id: string;
+};
+
 type RubricFormState = {
   name: string | null;
   name_id: string | null;
@@ -151,6 +169,10 @@ type RubricFormState = {
   total_points_id: string | null;
   standard_group_ids: string[];
   standard_ids: string[];
+  // Value-object array fed by Standards.tsx grid. Server resolves
+  // id=null entries into fresh standards_resource rows and returns
+  // their IDs via form_state.standards.
+  standards: RubricStandardValue[] | null;
   pending_ids: string[];
 };
 
@@ -238,6 +260,7 @@ function RubricComponent({
     total_points_id: null,
     standard_group_ids: [],
     standard_ids: [],
+    standards: null,
     pending_ids: [],
   });
 
@@ -263,6 +286,7 @@ function RubricComponent({
         total_points_id: null,
         standard_group_ids: [],
         standard_ids: [],
+        standards: null,
         pending_ids: [],
       };
     }
@@ -290,6 +314,10 @@ function RubricComponent({
           .filter((x) => x.selected)
           ?.map((x) => x.standard_id)
           .filter((x): x is string => !!x) ?? [],
+      // Grid seeds locally from the catalog in Standards.tsx; no need to
+      // mirror it in the form state on hydrate. Keep null so the draft
+      // payload omits it until the user actually edits a cell.
+      standards: null,
       pending_ids: s.pending_ids ?? [],
     };
   }, [s]);
@@ -352,6 +380,12 @@ function RubricComponent({
       if (fs.description) {
         payload["description"] = fs.description;
         delete payload["description_id"];
+      }
+      // Grid-editor standards: send the value array whenever the user has
+      // edited any cell. Server creates rows for id=null entries and merges
+      // all resolved IDs into `standard_ids` on the response.
+      if (fs.standards && fs.standards.length > 0) {
+        payload["standards"] = fs.standards;
       }
       payload["pending_ids"] = fs.pending_ids;
       return payload;
@@ -423,6 +457,12 @@ function RubricComponent({
             standard_ids:
               (fs.standard_ids as string[] | null | undefined) ??
               prev.standard_ids,
+            // Grid standards: server fills in ids for any id=null entries
+            // we just sent. Replace the whole array with the server's
+            // resolved version so subsequent saves don't re-create rows.
+            standards:
+              (fs.standards as RubricStandardValue[] | null | undefined) ??
+              prev.standards,
             pending_ids:
               (fs.pending_ids as string[] | null | undefined) ??
               prev.pending_ids,
@@ -554,14 +594,29 @@ function RubricComponent({
         .filter((item): item is string => !!item),
     [s?.points],
   );
-  const standardSuggestions = useMemo(
-    () =>
-      (s?.standards ?? [])
-        .filter((item) => item.suggested)
-        .map((item) => item.standard_id ?? item.id)
-        .filter((item): item is string => !!item),
-    [s?.standards],
-  );
+  // Grid values. Once the user has edited any cell, `formState.standards` is
+  // non-null and takes precedence. Until then, seed from the server catalog
+  // (standards marked selected under a group that's also selected).
+  const standardGridValues = useMemo<RubricStandardValue[]>(() => {
+    if (formState.standards !== null) return formState.standards;
+    const selectedGroupIds = new Set(formState.standard_group_ids);
+    return (s?.standards ?? [])
+      .filter(
+        (x) =>
+          x.selected &&
+          x.standard_id &&
+          x.name &&
+          x.standard_group_id &&
+          selectedGroupIds.has(x.standard_group_id),
+      )
+      .map((x) => ({
+        id: x.standard_id as string,
+        name: x.name as string,
+        description: x.description ?? "",
+        points: x.points ?? 0,
+        standard_group_id: x.standard_group_id as string,
+      }));
+  }, [formState.standards, formState.standard_group_ids, s?.standards]);
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
@@ -971,18 +1026,27 @@ function RubricComponent({
           {...(onReset ? { onReset } : {})}
         >
           <Standards
-            standard_ids={formState.standard_ids}
-            standard_resources={(s?.standards ?? []).filter((item) => item.selected)}
+            values={standardGridValues}
+            standard_group_ids={formState.standard_group_ids}
+            standard_groups={s?.standard_groups ?? []}
             show_standards={true}
-            standard_suggestions={standardSuggestions}
-            standards={s?.standards ?? []}
             disabled={disabled}
-            onChange={(ids) =>
-              setFormState((prev) => ({ ...prev, standard_ids: ids }))
-            }
-            onGenerate={() => handleGenerateResources(["standards"])}
+            onValuesChange={(next) => {
+              setFormState((prev) => {
+                const nextIds = next
+                  .map((v) => v.id)
+                  .filter((x): x is string => !!x);
+                const prevIdsStr = JSON.stringify(prev.standard_ids);
+                const nextIdsStr = JSON.stringify(nextIds);
+                const prevValsStr = JSON.stringify(prev.standards);
+                const nextValsStr = JSON.stringify(next);
+                if (prevIdsStr === nextIdsStr && prevValsStr === nextValsStr) {
+                  return prev;
+                }
+                return { ...prev, standard_ids: nextIds, standards: next };
+              });
+            }}
             required={true}
-            showAiGenerate={false}
           />
         </StepCard>
       );
@@ -1001,7 +1065,7 @@ function RubricComponent({
       selectedDescriptionResource,
       selectedPointResource,
       pointSuggestions,
-      standardSuggestions,
+      standardGridValues,
     ],
   );
 
