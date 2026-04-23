@@ -288,7 +288,12 @@ function ModelComponent({
         showAiGenerate: !!modelData.provider_show_ai_generate,
       }),
       flags: {
-        current: (modelData.flags ?? []).filter((flag) => flag.selected),
+        // The server's flag catalog doesn't carry a `selected` field
+        // (a flag is "on" when its flag_option_id is assigned to the
+        // artifact in form state, not when a catalog entry says so),
+        // so `current` stays empty. Callers that used to read it have
+        // been migrated to `resources`.
+        current: [] as typeof modelData.flags,
         resources: modelData.flags ?? [],
         show: true,
         required: false,
@@ -815,26 +820,11 @@ function ModelComponent({
     async () => handleGenerateResources(["descriptions"]),
     [handleGenerateResources],
   );
-  const handleGenerateModalities = useCallback(
-    async () => handleGenerateResources(["modalities"]),
-    [handleGenerateResources],
-  );
-  const handleGenerateTemperatureLevels = useCallback(
-    async () => handleGenerateResources(["temperature_levels"]),
-    [handleGenerateResources],
-  );
-  const handleGeneratePricing = useCallback(
-    async () => handleGenerateResources(["pricing"]),
-    [handleGenerateResources],
-  );
-  const handleGenerateReasoningLevels = useCallback(
-    async () => handleGenerateResources(["reasoning_levels"]),
-    [handleGenerateResources],
-  );
-  const handleGenerateQualities = useCallback(
-    async () => handleGenerateResources(["qualities"]),
-    [handleGenerateResources],
-  );
+  // AI-generate callbacks for the sub-resource pickers were wired as
+  // onGenerate props; those props no longer exist on the resource
+  // components (AI generation is driven by StepCardAiButton in each
+  // step's header). The dedicated handlers are kept in
+  // handleGenerateResources; the per-resource wrappers were dead code.
 
   const disabled = useMemo(() => {
     if (!s) return false;
@@ -891,7 +881,7 @@ function ModelComponent({
         case "descriptions":
           return s.descriptions?.resource?.generated ?? false;
         case "flags":
-          return s.flags?.current?.some((f) => f.generated) ?? false;
+          return s.flags?.resources?.some((f) => f.generated) ?? false;
         case "modalities":
           return s.modalities?.current?.some((m) => m.generated) ?? false;
         case "temperature_levels":
@@ -1404,8 +1394,8 @@ function ModelComponent({
 
                 <Values
                   value_ids={formState.value_id ? [formState.value_id] : []}
-                  value_resources={(
-                    formState.value_id && s?.values?.resource
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  value_resources={((formState.value_id && s?.values?.resource
                       ? [
                           {
                             id: s.values.resource.id,
@@ -1413,12 +1403,9 @@ function ModelComponent({
                             generated: s.values.resource.generated,
                           },
                         ]
-                      : []
-                  ) as any}
+                      : []) as any)}
                   show_values={s?.values?.show ?? true}
-                  value_suggestions={
-                    ((s?.values?.suggestions ?? []).filter(Boolean) as string[])
-                  }
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   values={((s?.values?.resources ?? []).map((v) => ({
                     id: v.id,
                     value: v.value,
@@ -1451,7 +1438,6 @@ function ModelComponent({
                   placeholder="Select model value identifier (e.g., gpt-4, gemini-pro)"
                   required={s?.values?.required ?? true}
                   description="Unique identifier for this model (used in API calls)"
-                  isAutosaveEnabled={isAutosaveEnabled}
                 />
 
                 {/* Departments: hidden when the profile only has access to
@@ -1586,19 +1572,20 @@ function ModelComponent({
             >
               <Modalities
                 modality_ids={formState.modality_ids}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 modality_resources={((s?.modalities?.current ?? []).map((m) => ({
                   modality_id: m.id,
                   name: m.modality,
                   generated: m.generated,
                 })) as any)}
                 show_modalities={s?.modalities?.show ?? true}
-                modality_suggestions={
-                  ((s?.modalities?.suggestions ?? []).filter(Boolean) as string[])
-                }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 modalities={((s?.modalities?.resources ?? []).map((m) => ({
                   modality_id: m.id,
                   name: m.modality,
                   generated: m.generated,
+                  suggested: m.suggested,
+                  pending: m.pending,
                 })) as any)}
                 searchTerm={modalitySearch}
                 onSearchChange={(term: string) =>
@@ -1611,8 +1598,6 @@ function ModelComponent({
                 label="Modalities"
                 placeholder="Select modalities"
                 required={s?.modalities?.required ?? true}
-                showAiGenerate={false}
-                onGenerate={handleGenerateModalities}
               />
             </StepCard>
           );
@@ -1656,8 +1641,8 @@ function ModelComponent({
                     ? (formState.temperature_level_ids[0] ?? null)
                     : null
                 }
-                temperature_level_resource={(
-                  formState.temperature_level_ids.length > 0 &&
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                temperature_level_resource={((formState.temperature_level_ids.length > 0 &&
                   s?.temperature_levels?.current?.[0]
                     ? {
                         id: s.temperature_levels.current[0].id,
@@ -1667,18 +1652,19 @@ function ModelComponent({
                         is_upper: false,
                         generated: s.temperature_levels.current[0].generated,
                       }
-                    : null
-                ) as any}
+                    : null) as any)}
                 show_temperature_levels={s?.temperature_levels?.show ?? true}
-                temperature_level_suggestions={
-                  ((s?.temperature_levels?.suggestions ?? []).filter(Boolean) as string[])
-                }
-                temperature_levels={((s?.temperature_levels?.resources ?? []).map((t) => ({
-                  id: t.id,
-                  temperature: String(t.temperature),
-                  is_upper: false,
-                  generated: t.generated,
-                })) as any)}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                temperature_levels={((s?.temperature_levels?.resources ?? []).map(
+                  (t) => ({
+                    id: t.id,
+                    temperature: String(t.temperature),
+                    is_upper: false,
+                    generated: t.generated,
+                    suggested: t.suggested,
+                    pending: t.pending,
+                  }),
+                ) as any)}
                 searchTerm={temperatureSearch}
                 onSearchChange={(term: string) =>
                   setFormData({ temperatureSearch: term || null })
@@ -1693,8 +1679,6 @@ function ModelComponent({
                 label="Temperature Levels"
                 placeholder="Select temperature levels"
                 required={s?.temperature_levels?.required ?? false}
-                showAiGenerate={false}
-                onGenerate={handleGenerateTemperatureLevels}
               />
             </StepCard>
           );
@@ -1734,6 +1718,7 @@ function ModelComponent({
             >
               <Pricing
                 pricing_ids={formState.pricing_ids}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 pricing_resources={((s?.pricing?.current ?? []).map((p) => ({
                   pricing_id: p.id,
                   name: `${p.pricing_type}`,
@@ -1741,14 +1726,14 @@ function ModelComponent({
                   generated: p.generated,
                 })) as any)}
                 show_pricing={s?.pricing?.show ?? true}
-                pricing_suggestions={
-                  ((s?.pricing?.suggestions ?? []).filter(Boolean) as string[])
-                }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 pricings={((s?.pricing?.resources ?? []).map((p) => ({
                   pricing_id: p.id,
                   name: `${p.pricing_type}`,
                   description: `${p.price}`,
                   generated: p.generated,
+                  suggested: p.suggested,
+                  pending: p.pending,
                 })) as any)}
                 searchTerm={pricingSearch}
                 onSearchChange={(term: string) =>
@@ -1761,10 +1746,7 @@ function ModelComponent({
                 label="Pricing"
                 placeholder="Select pricing configurations"
                 required={s?.pricing?.required ?? false}
-                showAiGenerate={false}
-                  onGenerate={handleGeneratePricing}
-                  isAutosaveEnabled={isAutosaveEnabled}
-                />
+              />
             </StepCard>
           );
 
@@ -1807,8 +1789,8 @@ function ModelComponent({
                     ? (formState.reasoning_level_ids[0] ?? null)
                     : null
                 }
-                reasoning_level_resource={(
-                  formState.reasoning_level_ids.length > 0 &&
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                reasoning_level_resource={((formState.reasoning_level_ids.length > 0 &&
                   s?.reasoning_levels?.current?.[0]
                     ? {
                         id: s.reasoning_levels.current[0].id,
@@ -1816,17 +1798,16 @@ function ModelComponent({
                           s.reasoning_levels.current[0].reasoning_level,
                         generated: s.reasoning_levels.current[0].generated,
                       }
-                    : null
-                ) as any}
+                    : null) as any)}
                 show_reasoning_levels={s?.reasoning_levels?.show ?? true}
-                reasoning_level_suggestions={
-                  ((s?.reasoning_levels?.suggestions ?? []).filter(Boolean) as string[])
-                }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 reasoning_levels={((s?.reasoning_levels?.resources ?? []).map(
                   (r) => ({
                     id: r.id,
                     reasoning_level: r.reasoning_level,
                     generated: r.generated,
+                    suggested: r.suggested,
+                    pending: r.pending,
                   }),
                 ) as any)}
                 searchTerm={reasoningSearch}
@@ -1843,8 +1824,6 @@ function ModelComponent({
                 label="Reasoning Levels"
                 placeholder="Select reasoning levels"
                 required={s?.reasoning_levels?.required ?? false}
-                showAiGenerate={false}
-                onGenerate={handleGenerateReasoningLevels}
               />
             </StepCard>
           );
