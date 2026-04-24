@@ -494,18 +494,7 @@ function FieldComponent({
       throw new Error("Profile not loaded");
     }
 
-    // The create/update endpoint still takes active_flag_id. Resolve the
-    // first true-valued flag from flag_ids for back-compat.
-    const activeFlagId = (() => {
-      const rows = fieldData?.flags ?? [];
-      const byId = new Map(rows.filter((f) => f.id).map((f) => [f.id, f]));
-      for (const id of current.flag_ids) {
-        const row = byId.get(id);
-        const type = row?.type ?? row?.name;
-        if (type === "field_active" && row?.value === true) return id;
-      }
-      return undefined;
-    })();
+    const flagIds = current.flag_ids.length > 0 ? current.flag_ids : null;
 
     if (isEditMode && fieldId) {
       if (!updateFieldAction) {
@@ -523,7 +512,7 @@ function FieldComponent({
                 ? { description_id: current.description_id }
                 : {}),
               ...(current.description ? { description: current.description } : {}),
-              ...(activeFlagId ? { active_flag_id: activeFlagId } : {}),
+              ...(flagIds ? { flag_ids: flagIds } : {}),
               ...(current.department_ids.length > 0
                 ? { department_ids: current.department_ids }
                 : {}),
@@ -549,7 +538,7 @@ function FieldComponent({
                 ? { description_id: current.description_id }
                 : {}),
               ...(current.description ? { description: current.description } : {}),
-              ...(activeFlagId ? { active_flag_id: activeFlagId } : {}),
+              ...(flagIds ? { flag_ids: flagIds } : {}),
               ...(current.department_ids.length > 0
                 ? { department_ids: current.department_ids }
                 : {}),

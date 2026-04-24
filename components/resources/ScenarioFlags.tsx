@@ -1,7 +1,21 @@
 /**
- * ScenarioFlags.tsx
- * Resource component for per-scenario flag selection
- * Uses base flags list and creates scenario_flags_resource entries
+ * ScenarioFlags.tsx — canonical scenario-flag picker.
+ *
+ * Mirrors `Flags.tsx` but scoped per scenario. Props are:
+ *   - `options`: flat list of option rows (cross-product of scenarios ×
+ *     flag types × values). Each row is one flags_resource entry tied to
+ *     a scenario.
+ *   - `existing`: current scenario_flags_resource junction rows (selected
+ *     or pending).
+ *   - `values`: denormalized state keyed by `{scenario_id}:{type}` →
+ *     bool | null. null = unset (fallback to server default).
+ *   - `onChange(scenario_id, type, next)`: toggle callback. Parent stores
+ *     the bool on its form state and ships it either as `scenario_flag_ids`
+ *     (via catalog lookup) or `scenario_flag_values` to the server.
+ *
+ * The component is fully controlled — no internal dirty refs or mirrored
+ * state. Rows are grouped by (scenario_id, type) and render one Switch
+ * per group.
  */
 
 "use client";
@@ -18,383 +32,170 @@ import {
 import { SvgIcon } from "@/components/common/SvgIcon";
 import { cn } from "@/lib/utils";
 import { Check, Power, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo } from "react";
 
-export interface ScenarioFlagsResourceItem {
-  id?: string | null;
+export interface ScenarioFlagOption {
   scenario_id?: string | null;
   flag_id?: string | null;
+  type?: string | null;
+  value?: boolean | null;
   name?: string | null;
   description?: string | null;
   icon?: string | null;
-  generated?: boolean | null;
+}
+
+export interface ScenarioFlagExisting {
+  id?: string | null; // scenario_flags_resource.id
+  scenario_id?: string | null;
+  flag_id?: string | null;
+  type?: string | null;
+  value?: boolean | null;
   pending?: boolean | null;
 }
 
-export interface ScenarioFlagsProps {
-  scenario_flag_ids?: string[];
-  scenario_flag_resources?: ScenarioFlagsResourceItem[];
-  show_scenario_flags?: boolean;
-  scenario_flags?: ScenarioFlagsResourceItem[];
-  scenario_ids?: string[];
-  scenarios?: Array<{
-    id?: string | null;
-    scenario_id?: string | null;
-    name?: string | null;
-    title?: string | null; // API returns title, map to name
-    description?: string | null;
-  }>;
-  scenario_resources?: Array<{
-    id?: string | null;
-    scenario_id?: string | null;
-    name?: string | null;
-    title?: string | null; // API returns title, map to name
-    description?: string | null;
-    generated?: boolean | null;
-    // Show flags from backend (controls which flags to render)
-    show_problem_statement?: boolean | null;
-    show_objectives?: boolean | null;
-    show_video?: boolean | null;
-    show_text?: boolean | null;
-    show_audio?: boolean | null;
-    show_copy_paste?: boolean | null;
-    show_images?: boolean | null;
-    show_questions?: boolean | null;
-    show_templates?: boolean | null;
-    show_hints?: boolean | null; // Computed on frontend based on practice_simulation
-  }>;
-  disabled?: boolean;
-  onChange: (ids: string[]) => void;
-  label?: string;
-  id?: string;
-  required?: boolean;
-  description?: string;
-  /** Value callback for unified draft — reports all selected scenario+flag pairs */
-  onScenarioFlagValues?: (flags: Array<{ scenario_id: string; flag_id: string }>) => void;
+export interface ScenarioFlagScenario {
+  id?: string | null;
+  scenario_id?: string | null;
+  name?: string | null;
+  title?: string | null;
+  description?: string | null;
 }
 
-type ScenarioFlagOption = {
-  id: string;
-  name: string;
-  description?: string;
-  icon?: string;
+export interface ScenarioFlagsProps {
+  options: ScenarioFlagOption[];
+  existing: ScenarioFlagExisting[];
+  values: Record<string, boolean | null>; // "{scenario_id}:{type}" → bool | null
+  scenarios: ScenarioFlagScenario[];
+  onChange: (scenario_id: string, type: string, next: boolean | null) => void;
+  label?: string;
+  disabled?: boolean;
+  show_scenario_flags?: boolean;
+}
+
+type ScenarioFlagGroup = {
+  scenario_id: string;
+  type: string;
+  label: string;
+  description: string | null;
+  icon: string | null;
+  trueRow: ScenarioFlagOption | null;
+  falseRow: ScenarioFlagOption | null;
 };
 
+function deriveLabel(typeOrName: string | null | undefined): string {
+  if (!typeOrName) return "";
+  const stripped = typeOrName.replace(
+    /^(show|scenario)_/,
+    "",
+  );
+  const source = stripped || typeOrName;
+  return source
+    .split("_")
+    .filter(Boolean)
+    .map((w) => w[0]!.toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function scenarioKey(scenario: ScenarioFlagScenario): string | null {
+  return (scenario.scenario_id || scenario.id || null) as string | null;
+}
+
+function scenarioLabel(scenario: ScenarioFlagScenario): string | null {
+  const text = (scenario.name || scenario.title || scenario.description || "").trim();
+  return text || null;
+}
+
 export function ScenarioFlags({
-  scenario_flag_ids: _scenario_flag_ids,
-  scenario_flag_resources,
-  show_scenario_flags = false,
-  scenario_flags,
-  scenario_ids = [],
+  options,
+  existing,
+  values,
   scenarios,
-  scenario_resources,
-  disabled = false,
   onChange,
   label = "Scenario Flags",
-  id = "scenario_flags",
-  required = false,
-  description,
-  onScenarioFlagValues,
+  disabled = false,
+  show_scenario_flags = true,
 }: ScenarioFlagsProps) {
-  const show = show_scenario_flags ?? false;
-  const allFlags = useMemo(() => scenario_flags ?? [], [scenario_flags]);
-  const currentResources = useMemo(
-    () => scenario_flag_resources ?? [],
-    [scenario_flag_resources]
-  );
-  const scenarioLabelMap = useMemo(() => {
-    const map = new Map<string, string>();
-    // Use full scenarios list as base (keyed by scenario_id to match scenario_ids)
-    // Handle both naming conventions: API returns scenario_id/title, but we also support id/name
-    (scenarios ?? []).forEach((scenario) => {
-      const id = scenario.scenario_id || scenario.id;
-      if (id) {
-        const name = (scenario.title || scenario.name)?.trim() || null;
-        const desc = scenario.description?.trim() || null;
-        if (name || desc) {
-          map.set(id, name || desc || "Untitled scenario");
-        }
-      }
-    });
-    // Override with scenario_resources (server-confirmed data takes priority)
-    (scenario_resources ?? []).forEach((scenario) => {
-      const id = scenario.scenario_id || scenario.id;
-      if (id) {
-        const name = (scenario.title || scenario.name)?.trim() || "";
-        const descriptionText = scenario.description?.trim() || "";
-        map.set(
-          id,
-          name || descriptionText || "Untitled scenario"
-        );
-      }
-    });
-    return map;
-  }, [scenarios, scenario_resources]);
-
-  // Multi-select: maps scenarioId → Set of selected flagIds
-  const [selectedFlagsByScenario, setSelectedFlagsByScenario] = useState<
-    Map<string, Set<string>>
-  >(new Map());
-  // Maps "scenarioId:flagId" → scenario_flags_resource ID (for emitting)
-  const [scenarioFlagResourceIds, setScenarioFlagResourceIds] = useState<
-    Map<string, string>
-  >(new Map());
-  // Detect pending items from current resources (items with pending: true)
-  const pendingResources = useMemo(
-    () => currentResources.filter((r) => r.pending),
-    [currentResources]
-  );
-  const showDiff = pendingResources.length > 0;
-  const pendingByScenario = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-    pendingResources.forEach((r) => {
-      if (r.scenario_id && r.flag_id) {
-        if (!map.has(r.scenario_id)) {
-          map.set(r.scenario_id, new Set());
-        }
-        map.get(r.scenario_id)!.add(r.flag_id);
-      }
-    });
-    return map;
-  }, [pendingResources]);
-
-  // Hydrate internal selection from server resources. Once the user has
-  // interacted (isDirtyRef flipped inside handleToggle), stop syncing so
-  // we don't clobber their in-flight click with the still-empty server
-  // state — which would visually flip the Switch off the moment they
-  // turned it on.
-  const isDirtyRef = useRef(false);
-  useEffect(() => {
-    if (isDirtyRef.current) {
-      // Still refresh resource-id mapping so new server-assigned ids flow
-      // through onChange emits, without touching the visible selection.
-      const nextResourceIds = new Map<string, string>();
-      currentResources.forEach((resource) => {
-        if (resource.scenario_id && resource.flag_id && resource.id) {
-          nextResourceIds.set(
-            `${resource.scenario_id}:${resource.flag_id}`,
-            resource.id,
-          );
-        }
-      });
-      setScenarioFlagResourceIds((prev) => {
-        const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
-        const nextKey = JSON.stringify(Array.from(nextResourceIds.entries()).sort());
-        return prevKey === nextKey ? prev : nextResourceIds;
-      });
-      return;
+  // Group options by scenario_id, then by type. Each group has trueRow /
+  // falseRow (one per value). The UI picks between these two flag_ids when
+  // the user toggles the Switch.
+  const groupsByScenario = useMemo(() => {
+    const outer = new Map<string, Map<string, ScenarioFlagGroup>>();
+    for (const row of options) {
+      const sid = row.scenario_id;
+      const type = row.type ?? row.name;
+      if (!sid || !type) continue;
+      const inner = outer.get(sid) ?? new Map<string, ScenarioFlagGroup>();
+      const group =
+        inner.get(type) ?? {
+          scenario_id: sid,
+          type,
+          label: row.name ? deriveLabel(row.name) : deriveLabel(type),
+          description: row.description ?? null,
+          icon: row.icon ?? null,
+          trueRow: null,
+          falseRow: null,
+        };
+      if (row.value === true) group.trueRow = row;
+      else if (row.value === false) group.falseRow = row;
+      if (!group.description && row.description) group.description = row.description;
+      if (!group.icon && row.icon) group.icon = row.icon;
+      inner.set(type, group);
+      outer.set(sid, inner);
     }
+    return outer;
+  }, [options]);
 
-    const nextSelected = new Map<string, Set<string>>();
-    const nextResourceIds = new Map<string, string>();
-
-    currentResources.forEach((resource) => {
-      if (resource.scenario_id && resource.flag_id) {
-        if (!nextSelected.has(resource.scenario_id)) {
-          nextSelected.set(resource.scenario_id, new Set());
-        }
-        nextSelected.get(resource.scenario_id)!.add(resource.flag_id);
-        if (resource.id) {
-          nextResourceIds.set(
-            `${resource.scenario_id}:${resource.flag_id}`,
-            resource.id
-          );
-        }
-      }
-    });
-
-    scenario_ids.forEach((scenarioId) => {
-      if (!nextSelected.has(scenarioId)) {
-        nextSelected.set(scenarioId, new Set());
-      }
-    });
-
-    // Only update if content actually changed (compare by serializing)
-    setSelectedFlagsByScenario((prev) => {
-      const prevKey = JSON.stringify(
-        Array.from(prev.entries()).map(([k, v]) => [k, Array.from(v).sort()])
-      );
-      const nextKey = JSON.stringify(
-        Array.from(nextSelected.entries()).map(([k, v]) => [k, Array.from(v).sort()])
-      );
-      return prevKey === nextKey ? prev : nextSelected;
-    });
-    setScenarioFlagResourceIds((prev) => {
-      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
-      const nextKey = JSON.stringify(Array.from(nextResourceIds.entries()).sort());
-      return prevKey === nextKey ? prev : nextResourceIds;
-    });
-  }, [currentResources, scenario_ids]);
-
-  // Sync scenarioFlagResourceIds to parent via onChange (must be in useEffect, not during setState)
-  // Use ref for onChange to avoid dependency that changes every render
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
-  const prevIdsRef = useRef<string[]>([]);
-  useEffect(() => {
-    const ids = Array.from(scenarioFlagResourceIds.values());
-    // Only emit if IDs actually changed to prevent infinite loops
-    const idsKey = ids.join(",");
-    const prevKey = prevIdsRef.current.join(",");
-    if (idsKey !== prevKey) {
-      prevIdsRef.current = ids;
-      onChangeRef.current(ids);
+  // Pending lookup keyed by `{scenario_id}:{type}`. We infer a pending group
+  // from junction rows flagged `pending: true` — the row's flag_id tells us
+  // which type it belongs to via the catalog (options).
+  const pendingKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of existing) {
+      if (!e.pending || !e.scenario_id) continue;
+      const type = e.type
+        ?? options.find((o) => o.flag_id && e.flag_id && o.flag_id === e.flag_id)?.type
+        ?? null;
+      if (type) set.add(`${e.scenario_id}:${type}`);
     }
-  }, [scenarioFlagResourceIds]);
+    return set;
+  }, [existing, options]);
 
-  // Emit value callback for unified draft pattern. Gate on the same
-  // isDirtyRef as the hydrate effect: synthetic state built from server
-  // resources shouldn't round-trip back up as if the user typed it.
-  const onScenarioFlagValuesRef = useRef(onScenarioFlagValues);
-  onScenarioFlagValuesRef.current = onScenarioFlagValues;
-  useEffect(() => {
-    if (!onScenarioFlagValuesRef.current) return;
-    if (!isDirtyRef.current) return;
-    const values: Array<{ scenario_id: string; flag_id: string }> = [];
-    selectedFlagsByScenario.forEach((flagIds, scenarioId) => {
-      flagIds.forEach((flagId) => {
-        values.push({ scenario_id: scenarioId, flag_id: flagId });
-      });
-    });
-    onScenarioFlagValuesRef.current(values);
-  }, [selectedFlagsByScenario]);
+  const showDiff = pendingKeys.size > 0;
 
   const handleToggle = useCallback(
-    (scenarioId: string, flagId: string, checked: boolean) => {
-      isDirtyRef.current = true;
-      const key = `${scenarioId}:${flagId}`;
-
-      setSelectedFlagsByScenario((prev) => {
-        const next = new Map(prev);
-        const flags = new Set(prev.get(scenarioId) ?? []);
-        if (checked) {
-          flags.add(flagId);
-        } else {
-          flags.delete(flagId);
-        }
-        next.set(scenarioId, flags);
-        return next;
-      });
-
-      if (!checked) {
-        setScenarioFlagResourceIds((prev) => {
-          const next = new Map(prev);
-          next.delete(key);
-          return next;
-        });
-      }
+    (scenario_id: string, type: string, checked: boolean) => {
+      onChange(scenario_id, type, checked);
     },
-    []
+    [onChange],
   );
 
-  // Group flags by scenario_id (resource ID) from the SQL query
-  // The SQL now returns flags per-scenario via resource_flags_relation
-  const flagOptionsByScenario = useMemo(() => {
-    const map = new Map<string, ScenarioFlagOption[]>();
-
-    allFlags
-      .filter((flag) => flag.flag_id && flag.name && flag.scenario_id)
-      .forEach((flag) => {
-        const scenarioId = flag.scenario_id as string;
-        if (!map.has(scenarioId)) {
-          map.set(scenarioId, []);
-        }
-        map.get(scenarioId)!.push({
-          id: flag.flag_id as string,
-          name: flag.name as string,
-          description: flag.description ?? "",
-          icon: flag.icon ?? undefined,
-        });
-      });
-
-    return map;
-  }, [allFlags]);
-
-  // Filter flags based on scenario's show_x_flag booleans from backend
-  const filteredFlagOptionsByScenario = useMemo(() => {
-    const map = new Map<string, ScenarioFlagOption[]>();
-
-    flagOptionsByScenario.forEach((flags, scenarioId) => {
-      const scenarioConfig = scenario_resources?.find(
-        (s) => (s.scenario_id || s.id) === scenarioId
-      );
-
-      // If no scenario config found, show all flags (backwards compatibility)
-      if (!scenarioConfig) {
-        map.set(scenarioId, flags);
-        return;
-      }
-
-      const filtered = flags.filter((flag) => {
-        const flagName = flag.name.toLowerCase();
-
-        // Map flag names to show_* booleans
-        if (flagName === "show_problem_statement") {
-          return scenarioConfig.show_problem_statement !== false;
-        }
-        if (flagName === "show_objectives") {
-          return scenarioConfig.show_objectives !== false;
-        }
-        if (flagName === "text_enabled") {
-          return scenarioConfig.show_text !== false;
-        }
-        if (flagName === "audio_enabled") {
-          return scenarioConfig.show_audio !== false;
-        }
-        if (flagName === "copy_paste_allowed") {
-          return scenarioConfig.show_copy_paste !== false;
-        }
-        if (flagName === "show_images" || flagName === "image_input_active") {
-          return scenarioConfig.show_images !== false;
-        }
-        if (flagName === "hints_enabled") {
-          return scenarioConfig.show_hints !== false;
-        }
-        // show_video, show_questions, show_templates don't have corresponding flags yet
-        // but are available for future use
-
-        // Show all other flags by default
-        return true;
-      });
-
-      map.set(scenarioId, filtered);
-    });
-
-    return map;
-  }, [flagOptionsByScenario, scenario_resources]);
-
-  // Accept pending — pending flags are already reflected in form state, no-op
   const handleAccept = useCallback(() => {
-    // Pending flags are already reflected in form state — nothing to change
-    // The next draft save will persist them as active
+    // Pending keys confirm themselves on next non-pending save; no-op here.
   }, []);
 
-  // Reject pending — unset pending flags
   const handleReject = useCallback(() => {
-    for (const resource of pendingResources) {
-      if (resource.scenario_id && resource.flag_id) {
-        handleToggle(resource.scenario_id, resource.flag_id, false);
-      }
+    for (const key of pendingKeys) {
+      const [sid, type] = key.split(":");
+      if (sid && type) onChange(sid, type, null);
     }
-  }, [pendingResources, handleToggle]);
+  }, [pendingKeys, onChange]);
 
-  if (!show || scenario_ids.length === 0) {
-    return null;
-  }
+  // Order scenarios as provided; filter to those we have options for so the
+  // component stays hidden when the catalog is empty for a scenario.
+  const scenariosWithOptions = useMemo(() => {
+    return scenarios
+      .map((s) => ({ scenario: s, sid: scenarioKey(s) }))
+      .filter((entry) => entry.sid && groupsByScenario.has(entry.sid))
+      .map((entry) => entry as { scenario: ScenarioFlagScenario; sid: string });
+  }, [scenarios, groupsByScenario]);
+
+  if (!show_scenario_flags || scenariosWithOptions.length === 0) return null;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 pt-2">
       {label && (
         <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1">
-            {label}
-            {required && <span className="text-destructive">*</span>}
-            {description && (
-              <span className="text-xs text-muted-foreground ml-2">
-                {description}
-              </span>
-            )}
-          </Label>
+          <Label className="text-sm font-medium">{label}</Label>
           {showDiff && (
             <>
               <TooltipProvider>
@@ -434,44 +235,50 @@ export function ScenarioFlags({
         </div>
       )}
       <div className="space-y-4 pl-4">
-        {scenario_ids.map((scenarioId) => {
-          const labelText =
-            scenarioLabelMap.get(scenarioId) ?? scenarioId.slice(0, 8);
-          const selectedFlags =
-            selectedFlagsByScenario.get(scenarioId) ?? new Set<string>();
-          const scenarioOptions = filteredFlagOptionsByScenario.get(scenarioId) ?? [];
+        {scenariosWithOptions.map(({ scenario, sid }) => {
+          const inner = groupsByScenario.get(sid);
+          if (!inner) return null;
+          const groups = Array.from(inner.values());
+          const headerText =
+            scenarioLabel(scenario) ?? sid.slice(0, 8);
+
           return (
-            <div
-              key={scenarioId}
-              className="space-y-2"
-            >
-              <Label className="text-sm font-medium" title={labelText}>
-                {labelText}
+            <div key={sid} className="space-y-2">
+              <Label className="text-sm font-medium" title={headerText}>
+                {headerText}
               </Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {scenarioOptions.map((option) => {
-                  const isSelected = selectedFlags.has(option.id);
-                  const isPending =
-                    pendingByScenario.get(scenarioId)?.has(option.id) ?? false;
+                {groups.map((group) => {
+                  const key = `${sid}:${group.type}`;
+                  const current = values[key];
+                  const checked = current === true;
+                  const isPending = pendingKeys.has(key);
+                  const resolvedIcon = group.icon ? (
+                    <SvgIcon
+                      svg={group.icon}
+                      className="h-3.5 w-3.5 text-muted-foreground"
+                      fallback={
+                        <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                      }
+                    />
+                  ) : (
+                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                  );
                   return (
                     <div
-                      key={option.id}
+                      key={group.type}
                       className={cn(
                         "space-y-1 p-2 rounded-lg transition-all",
-                        isPending && "ring-2 ring-success bg-success/10"
+                        isPending && "ring-2 ring-success bg-success/10",
                       )}
                     >
                       <div className="flex items-center gap-2">
                         <Label
-                          htmlFor={`flag-${scenarioId}-${option.id}`}
+                          htmlFor={`sflag-${sid}-${group.type}`}
                           className="text-sm flex items-center gap-1 flex-1"
                         >
-                          {option.icon ? (
-                            <SvgIcon svg={option.icon} className="h-3.5 w-3.5 text-muted-foreground" />
-                          ) : (
-                            <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                          )}
-                          {option.name}
+                          {resolvedIcon}
+                          {group.label}
                           {isPending && (
                             <span className="ml-2 text-xs text-success font-medium">
                               Pending
@@ -479,23 +286,23 @@ export function ScenarioFlags({
                           )}
                         </Label>
                         <Switch
-                          id={`flag-${scenarioId}-${option.id}`}
-                          checked={isSelected}
-                          onCheckedChange={(checked) =>
-                            handleToggle(scenarioId, option.id, checked)
+                          id={`sflag-${sid}-${group.type}`}
+                          checked={checked}
+                          onCheckedChange={(c) =>
+                            handleToggle(sid, group.type, c)
                           }
                           disabled={disabled}
                         />
                       </div>
-                      {option.description && (
+                      {group.description && (
                         <p className="text-xs text-muted-foreground pl-5">
-                          {option.description}
+                          {group.description}
                         </p>
                       )}
                     </div>
                   );
                 })}
-                {scenarioOptions.length === 0 && (
+                {groups.length === 0 && (
                   <div className="col-span-full text-sm text-muted-foreground">
                     No scenario flags available.
                   </div>

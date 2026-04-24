@@ -858,7 +858,7 @@ export default function Personas({
     try {
       const items = editablePersonas.map((p) => ({
         persona_id: p.persona_id!,
-        ...(hasActiveChange && { active_flag: bulkEditActiveStatus }),
+        ...(hasActiveChange && { active: bulkEditActiveStatus }),
         ...(hasColorChange && { color_id: bulkEditColorIds[0] }),
         ...(hasIconChange && { icon_id: bulkEditIconIds[0] }),
         ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
@@ -1676,7 +1676,7 @@ export default function Personas({
               color: item.color as string | undefined,
               icon: item.icon as string | undefined,
               instructions: item.instructions as string | undefined,
-              active_flag: item.active_flag as boolean | undefined,
+              active: item['active_flag'] as boolean | undefined,
               departments: item.departments as string[] | undefined,
               parameter_fields: item.parameter_fields as string[] | undefined,
               examples: item.examples as string[] | undefined,

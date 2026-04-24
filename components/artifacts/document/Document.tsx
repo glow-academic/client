@@ -755,19 +755,6 @@ function DocumentComponent({
         throw new Error("Document name is required");
       }
 
-      // The create/update endpoint still takes active_flag_id. Resolve the
-      // first true-valued flag from flag_ids for back-compat.
-      const activeFlagId = (() => {
-        const rows = stableDocumentDataFields?.flags ?? [];
-        const byId = new Map(rows.filter((f) => f.id).map((f) => [f.id, f]));
-        for (const id of effectiveFormState.flag_ids) {
-          const row = byId.get(id);
-          const type = row?.type ?? row?.name;
-          if (type === "document_active" && row?.value === true) return id;
-        }
-        return undefined;
-      })();
-
       const commonFields = {
         name_id: effectiveFormState.name_id || undefined,
         name: !effectiveFormState.name_id
@@ -777,7 +764,9 @@ function DocumentComponent({
         description: !effectiveFormState.description_id
           ? (effectiveFormState.description ?? undefined)
           : undefined,
-        active_flag_id: activeFlagId,
+        flag_ids: effectiveFormState.flag_ids.length > 0
+          ? effectiveFormState.flag_ids
+          : null,
         department_ids: effectiveFormState.department_ids.length
           ? effectiveFormState.department_ids
           : undefined,
@@ -834,7 +823,6 @@ function DocumentComponent({
       isEditMode,
       profile?.id,
       router,
-      stableDocumentDataFields?.flags,
       updateDocumentAction,
     ],
   );

@@ -1,10 +1,14 @@
 /**
- * ModelFlags.tsx
- * Resource component for per-model flag selection
- * Pure UI: displays flags, reports selections via onChange/onModelFlagValues
- * Pending detection driven by `pending` field on resources (no socket AI)
+ * ModelFlags.tsx — canonical per-(model, flag-type) picker.
+ *
+ * Analogous to Flags.tsx but keyed by (model_id, flag_type). The server
+ * sends `options` (cross-product of selected-models × flag-types ×
+ * {true,false}) plus the currently-linked junction rows (`existing`). We
+ * group options by (model_id, type) and render one Switch per group. The
+ * parent owns the state map keyed `"{model_id}:{type}"` → boolean|null and
+ * feeds `onChange(model_id, type, next)` back into its form state (via the
+ * `model_flag_values` denormalized shape on the draft request).
  */
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -19,298 +23,168 @@ import {
 import { SvgIcon } from "@/components/common/SvgIcon";
 import { cn } from "@/lib/utils";
 import { Check, Power, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo } from "react";
 
-export interface ModelFlagResourceItem {
-  id?: string | null;
+export interface ModelFlagOption {
   model_id?: string | null;
   flag_id?: string | null;
+  type?: string | null;
+  value?: boolean | null;
   name?: string | null;
   description?: string | null;
   icon?: string | null;
-  generated?: boolean | null;
+}
+
+export interface ModelFlagExisting {
+  id?: string | null;
+  model_id?: string | null;
+  flag_id?: string | null;
+  type?: string | null;
+  value?: boolean | null;
   pending?: boolean | null;
 }
 
 export interface ModelFlagsProps {
-  model_flag_resources?: ModelFlagResourceItem[];
-  show_model_flags?: boolean;
-  model_flags?: ModelFlagResourceItem[];
-  model_ids?: string[];
-  models?: Array<{
+  options: ModelFlagOption[];
+  existing: ModelFlagExisting[];
+  /** key "{model_id}:{type}" → boolean|null */
+  values: Record<string, boolean | null>;
+  models: Array<{
     id?: string | null;
     model_id?: string | null;
     name?: string | null;
     description?: string | null;
   }>;
-  model_resources?: Array<{
-    id?: string | null;
-    model_id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-  }>;
-  disabled?: boolean;
-  onChange: (ids: string[]) => void;
+  onChange: (model_id: string, type: string, next: boolean | null) => void;
   label?: string;
-  id?: string;
-  required?: boolean;
-  description?: string;
-  /** Value callback for unified draft — reports all selected model+flag pairs */
-  onModelFlagValues?: (flags: Array<{ model_id: string; flag_id: string }>) => void;
+  disabled?: boolean;
+  show_model_flags?: boolean;
 }
 
-type ModelFlagOption = {
-  id: string;
-  name: string;
-  description?: string;
-  icon?: string;
+type Group = {
+  model_id: string;
+  type: string;
+  label: string;
+  description: string | null;
+  icon: string | null;
+  trueOption: ModelFlagOption | null;
+  falseOption: ModelFlagOption | null;
 };
 
+function deriveLabel(typeOrName: string | null | undefined): string {
+  if (!typeOrName) return "";
+  const stripped = typeOrName.replace(
+    /^(model|setting|persona|cohort|rubric|scenario|simulation|auth|document|field|parameter|tool|provider|profile|eval|agent|department|rubric)_/,
+    "",
+  );
+  const source = stripped || typeOrName;
+  return source
+    .split("_")
+    .filter(Boolean)
+    .map((w) => w[0]!.toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 export function ModelFlags({
-  model_flag_resources,
-  show_model_flags = false,
-  model_flags,
-  model_ids = [],
+  options,
+  existing,
+  values,
   models,
-  model_resources,
-  disabled = false,
   onChange,
   label = "Model Flags",
-  id = "model_flags",
-  required = false,
-  description,
-  onModelFlagValues,
+  disabled = false,
+  show_model_flags = true,
 }: ModelFlagsProps) {
-  const show = show_model_flags ?? false;
-  const allFlags = useMemo(() => model_flags ?? [], [model_flags]);
-  const currentResources = useMemo(
-    () => model_flag_resources ?? [],
-    [model_flag_resources]
-  );
+  // Stable lookup for model display names.
   const modelLabelMap = useMemo(() => {
     const map = new Map<string, string>();
-    // Use full models list as base (keyed by model_id to match model_ids)
-    (models ?? []).forEach((model) => {
-      const modelId = model.model_id || model.id;
-      if (modelId) {
-        const name = model.name?.trim() || null;
-        const desc = model.description?.trim() || null;
-        if (name || desc) {
-          map.set(modelId, name || desc || "Untitled model");
-        }
-      }
-    });
-    // Override with model_resources (server-confirmed data takes priority)
-    (model_resources ?? []).forEach((model) => {
-      const modelId = model.model_id || model.id;
-      if (modelId) {
-        const name = model.name?.trim() || "";
-        const descriptionText = model.description?.trim() || "";
-        map.set(
-          modelId,
-          name || descriptionText || "Untitled model"
-        );
-      }
-    });
+    for (const model of models ?? []) {
+      const id = model.model_id || model.id;
+      if (!id) continue;
+      const name = model.name?.trim() || model.description?.trim() || "";
+      map.set(id, name || `Model ${id.slice(0, 8)}`);
+    }
     return map;
-  }, [models, model_resources]);
-  // Multi-select: maps modelId → Set of selected flagIds
-  const [selectedFlagsByModel, setSelectedFlagsByModel] = useState<
-    Map<string, Set<string>>
-  >(new Map());
-  // Maps "modelId:flagId" → model_flags_resource ID (for emitting)
-  const [modelFlagResourceIds, setModelFlagResourceIds] = useState<
-    Map<string, string>
-  >(new Map());
-  // Dirty flag: only emit values upward after the user has actually toggled;
-  // server-sync-driven state changes just re-baseline silently (same pattern
-  // as ParameterFields.tsx).
-  const isDirtyRef = useRef(false);
-  const isInitialMountRef = useRef(true);
-  useEffect(() => {
-    const nextSelected = new Map<string, Set<string>>();
-    const nextResourceIds = new Map<string, string>();
+  }, [models]);
 
-    currentResources.forEach((resource) => {
-      if (resource.model_id && resource.flag_id) {
-        if (!nextSelected.has(resource.model_id)) {
-          nextSelected.set(resource.model_id, new Set());
-        }
-        nextSelected.get(resource.model_id)!.add(resource.flag_id);
-        if (resource.id) {
-          nextResourceIds.set(
-            `${resource.model_id}:${resource.flag_id}`,
-            resource.id
-          );
-        }
+  // Bucket options by (model_id, type). Each bucket has up to one trueOption
+  // and one falseOption — matching the Flags.tsx shape.
+  const groupsByModel = useMemo(() => {
+    const byModel = new Map<string, Map<string, Group>>();
+    for (const opt of options ?? []) {
+      const modelId = opt.model_id ?? null;
+      const type = opt.type ?? null;
+      if (!modelId || !type) continue;
+      let modelGroups = byModel.get(modelId);
+      if (!modelGroups) {
+        modelGroups = new Map<string, Group>();
+        byModel.set(modelId, modelGroups);
       }
-    });
-
-    model_ids.forEach((modelId) => {
-      if (!nextSelected.has(modelId)) {
-        nextSelected.set(modelId, new Set());
+      let group = modelGroups.get(type);
+      if (!group) {
+        group = {
+          model_id: modelId,
+          type,
+          label: opt.name ? deriveLabel(opt.name) : deriveLabel(type),
+          description: opt.description ?? null,
+          icon: opt.icon ?? null,
+          trueOption: null,
+          falseOption: null,
+        };
+        modelGroups.set(type, group);
       }
-    });
-
-    // Resource-id mapping always hydrates so new server-assigned ids flow
-    // through onChange emits, regardless of dirty state.
-    setModelFlagResourceIds((prev) => {
-      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
-      const nextKey = JSON.stringify(Array.from(nextResourceIds.entries()).sort());
-      return prevKey === nextKey ? prev : nextResourceIds;
-    });
-
-    // Freeze visible-selection hydration after the user clicks — otherwise
-    // a server refetch mid-save (still empty since the new junction row
-    // hasn't committed yet) clobbers the click and the Switch flips OFF.
-    if (isDirtyRef.current) return;
-
-    setSelectedFlagsByModel((prev) => {
-      const prevKey = JSON.stringify(
-        Array.from(prev.entries()).map(([k, v]) => [k, Array.from(v).sort()])
-      );
-      const nextKey = JSON.stringify(
-        Array.from(nextSelected.entries()).map(([k, v]) => [k, Array.from(v).sort()])
-      );
-      return prevKey === nextKey ? prev : nextSelected;
-    });
-  }, [currentResources, model_ids]);
-
-  // Sync modelFlagResourceIds to parent via onChange (must be in useEffect, not during setState)
-  // Use ref for onChange to avoid dependency that changes every render
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
-  const prevIdsRef = useRef<string[]>([]);
-  useEffect(() => {
-    const ids = Array.from(modelFlagResourceIds.values());
-    // Only emit if IDs actually changed to prevent infinite loops
-    const idsKey = ids.join(",");
-    const prevKey = prevIdsRef.current.join(",");
-    if (idsKey !== prevKey) {
-      prevIdsRef.current = ids;
-      onChangeRef.current(ids);
+      if (opt.value === true) group.trueOption = opt;
+      else if (opt.value === false) group.falseOption = opt;
+      if (!group.description && opt.description) group.description = opt.description;
+      if (!group.icon && opt.icon) group.icon = opt.icon;
     }
-  }, [modelFlagResourceIds]);
+    return byModel;
+  }, [options]);
 
-  // Emit value callback for unified draft pattern. Only emit after user has
-  // actually toggled — otherwise the initial sync and every server refresh
-  // would emit and trigger spurious saves.
-  const onModelFlagValuesRef = useRef(onModelFlagValues);
-  onModelFlagValuesRef.current = onModelFlagValues;
-  useEffect(() => {
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      return;
+  // Pending set: `{model_id}:{type}` keys whose existing junction is
+  // marked pending — matches Flags.tsx visual treatment.
+  const pendingKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const row of existing ?? []) {
+      if (!row.pending) continue;
+      const modelId = row.model_id;
+      const type = row.type;
+      if (!modelId || !type) continue;
+      set.add(`${modelId}:${type}`);
     }
-    if (!isDirtyRef.current) return;
-    if (!onModelFlagValuesRef.current) return;
-    const values: Array<{ model_id: string; flag_id: string }> = [];
-    selectedFlagsByModel.forEach((flagIds, modelId) => {
-      flagIds.forEach((flagId) => {
-        values.push({ model_id: modelId, flag_id: flagId });
-      });
-    });
-    onModelFlagValuesRef.current(values);
-  }, [selectedFlagsByModel]);
+    return set;
+  }, [existing]);
+  const showDiff = pendingKeys.size > 0;
 
   const handleToggle = useCallback(
-    (modelId: string, flagId: string, checked: boolean) => {
-      isDirtyRef.current = true;
-      const key = `${modelId}:${flagId}`;
-
-      setSelectedFlagsByModel((prev) => {
-        const next = new Map(prev);
-        const flags = new Set(prev.get(modelId) ?? []);
-        if (checked) {
-          flags.add(flagId);
-        } else {
-          flags.delete(flagId);
-        }
-        next.set(modelId, flags);
-        return next;
-      });
-
-      if (!checked) {
-        setModelFlagResourceIds((prev) => {
-          const next = new Map(prev);
-          next.delete(key);
-          return next;
-        });
-      }
+    (modelId: string, type: string, checked: boolean) => {
+      onChange(modelId, type, checked);
     },
-    []
+    [onChange],
   );
 
-  // Group flags by model_id from the SQL query
-  const flagOptionsByModel = useMemo(() => {
-    const map = new Map<string, ModelFlagOption[]>();
-
-    allFlags
-      .filter((flag) => flag.flag_id && flag.name && flag.model_id)
-      .forEach((flag) => {
-        const modelId = flag.model_id as string;
-        if (!map.has(modelId)) {
-          map.set(modelId, []);
-        }
-        map.get(modelId)!.push({
-          id: flag.flag_id as string,
-          name: flag.name as string,
-          description: flag.description ?? "",
-          icon: flag.icon ?? undefined,
-        });
-      });
-
-    return map;
-  }, [allFlags]);
-
-  // Pending detection from resource arrays
-  const pendingResources = useMemo(
-    () => currentResources.filter((r) => r.pending),
-    [currentResources]
-  );
-  const showDiff = pendingResources.length > 0;
-  const pendingFlagKeys = useMemo(
-    () =>
-      new Set(
-        pendingResources
-          .filter((r) => r.model_id && r.flag_id)
-          .map((r) => `${r.model_id}:${r.flag_id}`)
-      ),
-    [pendingResources]
-  );
-
-  // Accept pending — already reflected in form state, nothing to change
   const handleAccept = useCallback(() => {
-    // Pending flags are already in form state — the next draft save persists them
+    // Pending state is confirmed by the next non-pending save. No-op here.
   }, []);
 
-  // Reject pending — unset pending flag selections
   const handleReject = useCallback(() => {
-    for (const resource of pendingResources) {
-      if (resource.model_id && resource.flag_id) {
-        handleToggle(resource.model_id, resource.flag_id, false);
-      }
+    for (const key of pendingKeys) {
+      const [modelId, type] = key.split(":");
+      if (modelId && type) onChange(modelId, type, null);
     }
-  }, [pendingResources, handleToggle]);
+  }, [pendingKeys, onChange]);
 
-  if (!show || model_ids.length === 0) {
-    return null;
-  }
+  const modelIds = useMemo(() => {
+    return Array.from(groupsByModel.keys());
+  }, [groupsByModel]);
+
+  if (!show_model_flags || modelIds.length === 0) return null;
 
   return (
     <div className="space-y-2">
       {label && (
         <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1">
-            {label}
-            {required && <span className="text-destructive">*</span>}
-            {description && (
-              <span className="text-xs text-muted-foreground ml-2">
-                {description}
-              </span>
-            )}
-          </Label>
+          <Label className="flex items-center gap-1">{label}</Label>
           {showDiff && (
             <>
               <TooltipProvider>
@@ -350,43 +224,46 @@ export function ModelFlags({
         </div>
       )}
       <div className="space-y-4 pl-4">
-        {model_ids.map((modelId) => {
-          const labelText =
-            modelLabelMap.get(modelId) ?? modelId.slice(0, 8);
-          const selectedFlags =
-            selectedFlagsByModel.get(modelId) ?? new Set<string>();
-          const modelOptions = flagOptionsByModel.get(modelId) ?? [];
+        {modelIds.map((modelId) => {
+          const labelText = modelLabelMap.get(modelId) ?? modelId.slice(0, 8);
+          const groups = Array.from(groupsByModel.get(modelId)?.values() ?? []);
           return (
-            <div
-              key={modelId}
-              className="space-y-2"
-            >
+            <div key={modelId} className="space-y-2">
               <Label className="text-sm font-medium" title={labelText}>
                 {labelText}
               </Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {modelOptions.map((option) => {
-                  const isSelected = selectedFlags.has(option.id);
-                  const isPending = pendingFlagKeys.has(`${modelId}:${option.id}`);
+                {groups.map((group) => {
+                  const key = `${modelId}:${group.type}`;
+                  const current = values[key];
+                  const checked = current === true;
+                  const isPending = pendingKeys.has(key);
+                  const resolvedIcon = group.icon ? (
+                    <SvgIcon
+                      svg={group.icon}
+                      className="h-3.5 w-3.5 text-muted-foreground"
+                      fallback={
+                        <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                      }
+                    />
+                  ) : (
+                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                  );
                   return (
                     <div
-                      key={option.id}
+                      key={key}
                       className={cn(
                         "space-y-1 p-2 rounded-lg transition-all",
-                        isPending && "ring-2 ring-success bg-success/10"
+                        isPending && "ring-2 ring-success bg-success/10",
                       )}
                     >
                       <div className="flex items-center gap-2">
                         <Label
-                          htmlFor={`flag-${modelId}-${option.id}`}
+                          htmlFor={`model-flag-${key}`}
                           className="text-sm flex items-center gap-1 flex-1"
                         >
-                          {option.icon ? (
-                            <SvgIcon svg={option.icon} className="h-3.5 w-3.5 text-muted-foreground" />
-                          ) : (
-                            <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                          )}
-                          {option.name}
+                          {resolvedIcon}
+                          {group.label}
                           {isPending && (
                             <span className="ml-2 text-xs text-success font-medium">
                               Pending
@@ -394,23 +271,23 @@ export function ModelFlags({
                           )}
                         </Label>
                         <Switch
-                          id={`flag-${modelId}-${option.id}`}
-                          checked={isSelected}
-                          onCheckedChange={(checked) =>
-                            handleToggle(modelId, option.id, checked)
+                          id={`model-flag-${key}`}
+                          checked={checked}
+                          onCheckedChange={(c) =>
+                            handleToggle(group.model_id, group.type, c)
                           }
                           disabled={disabled}
                         />
                       </div>
-                      {option.description && (
+                      {group.description && (
                         <p className="text-xs text-muted-foreground pl-5">
-                          {option.description}
+                          {group.description}
                         </p>
                       )}
                     </div>
                   );
                 })}
-                {modelOptions.length === 0 && (
+                {groups.length === 0 && (
                   <div className="col-span-full text-sm text-muted-foreground">
                     No model flags available.
                   </div>

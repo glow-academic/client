@@ -198,6 +198,8 @@ function EvalComponent({
       departments: evalData.departments,
       models: evalData.models,
       model_flags: evalData.model_flags,
+      model_flag_options:
+        (evalData as { model_flag_options?: unknown[] }).model_flag_options ?? [],
       model_rubrics: evalData.model_rubrics,
       model_positions: evalData.model_positions,
       rubrics: (evalData as { rubrics?: Array<{ id: string | null; name: string | null; description?: string | null }> }).rubrics,
@@ -448,6 +450,126 @@ function EvalComponent({
       });
     },
     [flagRowsByType],
+  );
+
+  // Per-(model_id, type) boolean view of currently-linked model_flags.
+  // Derived from formState.model_flag_ids against s.model_flags (which carries
+  // the {type, value} pair after the eval get.py enrichment). Keyed
+  // "{model_id}:{type}" — the same key the ModelFlags picker reads.
+  const modelFlagValues = useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (s?.model_flags ?? [])
+        .filter((r: any) => r.id)
+        .map((r: any) => [r.id as string, r]),
+    );
+    for (const id of formState.model_flag_ids) {
+      const row: any = byId.get(id);
+      if (!row) continue;
+      const t = row.type ?? row.name;
+      if (row.model_id && t && row.value != null) {
+        map[`${row.model_id}:${t}`] = row.value;
+      }
+    }
+    return map;
+  }, [formState.model_flag_ids, s?.model_flags]);
+
+  const handleModelFlagToggle = useCallback(
+    (modelId: string, type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const options =
+          ((s as any)?.model_flag_options as Array<{
+            model_id?: string | null;
+            flag_id?: string | null;
+            type?: string | null;
+            value?: boolean | null;
+          }> | undefined) ?? [];
+
+        // All flag_ids that belong to this (model, type) bucket — we drop
+        // every such id and optionally add back the one matching the new bool.
+        const bucketFlagIds = new Set(
+          options
+            .filter((o) => o.model_id === modelId && o.type === type && o.flag_id)
+            .map((o) => o.flag_id as string),
+        );
+
+        // Drop any junction rows whose flag_id is in this bucket. We look up
+        // via s.model_flags (which carries flag_id on each row).
+        const junctionRowsByType = (s?.model_flags ?? []) as Array<{
+          id?: string | null;
+          model_id?: string | null;
+          flag_id?: string | null;
+        }>;
+        const junctionIdsToDrop = new Set(
+          junctionRowsByType
+            .filter(
+              (r) =>
+                r.model_id === modelId &&
+                r.flag_id &&
+                bucketFlagIds.has(r.flag_id),
+            )
+            .map((r) => r.id)
+            .filter((id): id is string => !!id),
+        );
+        const retained = prev.model_flag_ids.filter(
+          (id) => !junctionIdsToDrop.has(id),
+        );
+
+        // Drop matching (model_id, type) entries from the denormalized
+        // value-array so the server resolver sees the canonical state.
+        const filteredValues = (prev.model_flags ?? []).filter((entry) => {
+          if (entry.model_id !== modelId) return true;
+          const opt = options.find(
+            (o) => o.model_id === modelId && o.flag_id === entry.flag_id,
+          );
+          return opt?.type !== type;
+        });
+
+        if (next == null) {
+          const nextVals = filteredValues.length > 0 ? filteredValues : null;
+          return {
+            ...prev,
+            model_flag_ids: retained,
+            model_flags: nextVals,
+          };
+        }
+
+        const targetOption = options.find(
+          (o) => o.model_id === modelId && o.type === type && o.value === next,
+        );
+        // Look for an existing junction row whose flag_id matches the target.
+        const existingJunction = targetOption
+          ? junctionRowsByType.find(
+              (r) =>
+                r.model_id === modelId && r.flag_id === targetOption.flag_id,
+            )
+          : undefined;
+
+        if (existingJunction?.id) {
+          return {
+            ...prev,
+            model_flag_ids: [...retained, existingJunction.id],
+            model_flags:
+              filteredValues.length > 0 ? filteredValues : null,
+          };
+        }
+
+        // No junction row yet — push a {model_id, flag_id} inline-create pair
+        // and let the server resolver upsert it on the next draft save.
+        const pending = targetOption?.flag_id
+          ? [
+              ...filteredValues,
+              { model_id: modelId, flag_id: targetOption.flag_id },
+            ]
+          : filteredValues;
+        return {
+          ...prev,
+          model_flag_ids: retained,
+          model_flags: pending.length > 0 ? pending : null,
+        };
+      });
+    },
+    [s?.model_flag_options, s?.model_flags],
   );
   const deptIdsStr = useMemo(
     () => JSON.stringify(formState.department_ids),
@@ -1167,29 +1289,13 @@ function EvalComponent({
                   showSelectedFilter={modelShowSelected}
                 />
                 <ModelFlags
-                  model_flag_resources={
-                    (s?.model_flags ?? []).filter((item) => item.selected) ?? []
-                  }
-                  show_model_flags={showModelFlags}
-                  model_flags={s?.model_flags ?? []}
-                  model_ids={formState.model_ids ?? []}
+                  options={((s as any)?.model_flag_options ?? []) as any}
+                  existing={(s?.model_flags ?? []) as any}
+                  values={modelFlagValues}
                   models={s?.models ?? []}
-                  model_resources={(s?.models ?? []).filter((item) => item.selected)}
+                  onChange={handleModelFlagToggle}
+                  show_model_flags={showModelFlags}
                   disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => {
-                      if (JSON.stringify(prev.model_flag_ids) === JSON.stringify(ids)) return prev;
-                      return { ...prev, model_flag_ids: ids };
-                    })
-                  }
-                  required={false}
-                  onModelFlagValues={(flags) =>
-                    setFormState((prev) => {
-                      const nextVal = flags.length > 0 ? flags : null;
-                      if (JSON.stringify(prev.model_flags) === JSON.stringify(nextVal)) return prev;
-                      return { ...prev, model_flags: nextVal };
-                    })
-                  }
                 />
                 <ModelPositions
                   model_position_ids={formState.model_position_ids ?? []}

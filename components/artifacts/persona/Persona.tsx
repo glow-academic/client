@@ -956,19 +956,8 @@ function PersonaComponent({
         instructions: !fs.instructions_id ? (fs.instructions ?? undefined) : undefined,
         description_id: fs.description_id ?? undefined,
         description: !fs.description_id ? (fs.description ?? undefined) : undefined,
-        // Create/Update endpoint still uses active_flag_id; derive from the single
-        // persona_active id in flag_ids. (Server route: CreatePersonaItem/UpdatePersonaItem)
-        active_flag_id: (() => {
-          const flags = personaDataRef.current?.flags ?? [];
-          const byId = new Map(
-            flags.filter((f: any) => f.id).map((f: any) => [f.id as string, f]),
-          );
-          for (const id of fs.flag_ids ?? []) {
-            const row: any = byId.get(id);
-            if ((row?.type ?? row?.name) === "persona_active") return id;
-          }
-          return undefined;
-        })(),
+        // Canonical flag_ids — server resolves per-type semantics (incl. persona_active).
+        flag_ids: fs.flag_ids?.length ? fs.flag_ids : undefined,
         department_ids: fs.department_ids?.length ? fs.department_ids : undefined,
         parameter_field_ids: fs.parameter_field_ids?.length ? fs.parameter_field_ids : undefined,
         example_ids: fs.example_ids?.length ? fs.example_ids : undefined,

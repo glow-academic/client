@@ -481,18 +481,9 @@ function DepartmentComponent({
         throw new Error("Profile not loaded");
       }
 
-      // The create/update endpoint still takes active_flag_id. Resolve the
-      // first true-valued flag from flag_ids for back-compat.
-      const activeFlagId = (() => {
-        const rows = stableDepartmentData?.flags ?? [];
-        const byId = new Map(rows.filter((f) => f.id).map((f) => [f.id, f]));
-        for (const id of effectiveFormState.flag_ids) {
-          const row = byId.get(id);
-          const type = row?.type ?? row?.name;
-          if (type === "department_active" && row?.value === true) return id;
-        }
-        return undefined;
-      })();
+      const flagIds = effectiveFormState.flag_ids.length > 0
+        ? effectiveFormState.flag_ids
+        : null;
 
       if (isEditMode && departmentId && updateDepartmentAction) {
         await updateDepartmentAction({
@@ -502,7 +493,7 @@ function DepartmentComponent({
                 id: departmentId,
                 name_id: effectiveFormState.name_id ?? undefined,
                 description_id: effectiveFormState.description_id ?? undefined,
-                active_flag_id: activeFlagId,
+                flag_ids: flagIds,
                 settings_ids: effectiveFormState.setting_ids.length
                   ? effectiveFormState.setting_ids
                   : null,
@@ -518,7 +509,7 @@ function DepartmentComponent({
               {
                 name_id: effectiveFormState.name_id ?? undefined,
                 description_id: effectiveFormState.description_id ?? undefined,
-                active_flag_id: activeFlagId,
+                flag_ids: flagIds,
                 settings_ids: effectiveFormState.setting_ids.length
                   ? effectiveFormState.setting_ids
                   : null,

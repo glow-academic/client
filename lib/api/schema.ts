@@ -20413,10 +20413,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Flag Id
-             * @description Flag option UUID
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            flag_id?: string | null;
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized cohort_active flag state; resolved to a flag_ids entry server-side
+             */
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs
@@ -20447,16 +20452,6 @@ export interface components {
              * @description Profile persona UUIDs
              */
             profile_persona_ids?: string[] | null;
-            /**
-             * Active Flag Id
-             * @description UUID of the flag option to set active status
-             */
-            active_flag_id?: string | null;
-            /**
-             * Active Flag
-             * @description Whether the cohort is active (resolved to flag_id)
-             */
-            active_flag?: boolean | null;
             /**
              * Departments
              * @description Department names for resolution
@@ -20565,15 +20560,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Active Flag Id
-             * @description UUID of the active flag option
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether the department is active
+             * Active
+             * @description Denormalized department_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag?: boolean | null;
+            active?: boolean | null;
             /**
              * Settings Ids
              * @description Setting UUIDs to assign
@@ -20683,30 +20678,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Flag Id
-             * @description Flag option UUID
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            flag_id?: string | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag Id
-             * @description UUID of the flag option to set active status
+             * Active
+             * @description Denormalized document_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag_id?: string | null;
-            /**
-             * Active Flag
-             * @description Whether the document is active (resolved to flag_id)
-             */
-            active_flag?: boolean | null;
-            /**
-             * Template Flag
-             * @description Whether this is a template document
-             */
-            template_flag?: boolean | null;
-            /**
-             * Template Flag Id
-             * @description Template flag resource UUID
-             */
-            template_flag_id?: string | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs
@@ -20875,15 +20855,10 @@ export interface components {
              */
             model_position_ids?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether this eval is active
+             * Active
+             * @description Denormalized eval_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag?: boolean | null;
-            /**
-             * Active Flag Id
-             * @description Active flag resource UUID
-             */
-            active_flag_id?: string | null;
+            active?: boolean | null;
         };
         /** CreateFeedbackApiRequest */
         CreateFeedbackApiRequest: {
@@ -21015,20 +20990,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Active Flag
-             * @description Whether this field is active
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag?: boolean | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag Id
-             * @description Active flag resource UUID
+             * Active
+             * @description Denormalized field_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag_id?: string | null;
-            /**
-             * Flag Id
-             * @description UUID of the flag option
-             */
-            flag_id?: string | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs to assign
@@ -21489,15 +21459,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Active Flag Id
-             * @description UUID of the flag option to set active status
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether the persona is active (resolved to flag_id)
+             * Active
+             * @description Denormalized persona_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag?: boolean | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs to associate with this persona
@@ -21902,35 +21872,25 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Active Flag Id
-             * @description Active flag option UUID
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag
-             * @description Active flag boolean value
+             * Active
+             * @description Denormalized rubric_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag?: boolean | null;
+            active?: boolean | null;
             /**
-             * Simulation Rubric Flag
-             * @description Whether this is a simulation rubric
+             * Simulation Rubric
+             * @description Denormalized simulation_rubric flag state; resolved to a flag_ids entry server-side
              */
-            simulation_rubric_flag?: boolean | null;
+            simulation_rubric?: boolean | null;
             /**
-             * Simulation Rubric Flag Id
-             * @description Simulation rubric flag resource UUID
+             * Video Rubric
+             * @description Denormalized video_rubric flag state; resolved to a flag_ids entry server-side
              */
-            simulation_rubric_flag_id?: string | null;
-            /**
-             * Video Rubric Flag
-             * @description Whether this is a video rubric
-             */
-            video_rubric_flag?: boolean | null;
-            /**
-             * Video Rubric Flag Id
-             * @description Video rubric flag resource UUID
-             */
-            video_rubric_flag_id?: string | null;
+            video_rubric?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs
@@ -25387,6 +25347,32 @@ export interface components {
             persona_id: string;
         };
         /**
+         * DraftScenarioFlagDenormValue
+         * @description Denormalized scenario_flag value — resolved server-side to (scenario_id, flag_id).
+         *
+         *     Given (scenario_id, type, value), the server looks up the flags_resource
+         *     row matching (type, value) and upserts a scenario_flags_resource row for
+         *     (scenario_id, flag_id).
+         */
+        DraftScenarioFlagDenormValue: {
+            /**
+             * Scenario Id
+             * Format: uuid
+             * @description UUID of the parent scenario
+             */
+            scenario_id: string;
+            /**
+             * Type
+             * @description Flag type in flags_resource
+             */
+            type: string;
+            /**
+             * Value
+             * @description Desired boolean value for this flag type
+             */
+            value: boolean;
+        };
+        /**
          * DraftScenarioFlagValue
          * @description Value for creating a scenario_flag resource via draft.
          */
@@ -26608,6 +26594,51 @@ export interface components {
              */
             pending: boolean;
         };
+        /**
+         * EvalModelFlagOptionResource
+         * @description Cross-product option row: one per (model_id, flag_type, value) tuple.
+         *     The ModelFlags picker groups these by (model_id, type) and renders a
+         *     Switch per group; toggling picks the row whose `value` matches the new
+         *     state and sends its flag_id (or denormalized {model_id,type,value}) up
+         *     through the draft endpoint.
+         */
+        EvalModelFlagOptionResource: {
+            /**
+             * Model Id
+             * @description Model identifier
+             */
+            model_id?: string | null;
+            /**
+             * Flag Id
+             * @description Flag resource identifier (flags_resource row)
+             */
+            flag_id?: string | null;
+            /**
+             * Type
+             * @description Flag type, e.g. 'model_active'
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying flag value for this option
+             */
+            value?: boolean | null;
+            /**
+             * Name
+             * @description Display name from the flags_resource row
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Description text from the flags_resource row
+             */
+            description?: string | null;
+            /**
+             * Icon
+             * @description Icon SVG markup hydrated from icons_resource
+             */
+            icon?: string | null;
+        };
         /** EvalModelFlagResource */
         EvalModelFlagResource: {
             /**
@@ -26625,6 +26656,16 @@ export interface components {
              * @description Associated flag identifier
              */
             flag_id?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'model_active') of the linked flags_resource row
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of the linked flags_resource row
+             */
+            value?: boolean | null;
             /**
              * Name
              * @description Display name
@@ -26663,6 +26704,31 @@ export interface components {
              * @default false
              */
             pending: boolean;
+        };
+        /**
+         * EvalModelFlagValue
+         * @description Denormalized per-(model, type) selection. Clients send these to update
+         *     model-flag selections without needing the underlying flag_id; the server
+         *     resolves (type, value) -> flag_id and upserts the model_flags_resource
+         *     junction row.
+         */
+        EvalModelFlagValue: {
+            /**
+             * Model Id
+             * Format: uuid
+             * @description Target model identifier
+             */
+            model_id: string;
+            /**
+             * Type
+             * @description Flag type, e.g. 'model_active'
+             */
+            type: string;
+            /**
+             * Value
+             * @description Desired flag value
+             */
+            value: boolean;
         };
         /** EvalModelPositionResource */
         EvalModelPositionResource: {
@@ -32909,9 +32975,14 @@ export interface components {
             models?: components["schemas"]["EvalModelResource"][] | null;
             /**
              * Model Flags
-             * @description Model flag resources
+             * @description Model flag resources (linked junction rows)
              */
             model_flags?: components["schemas"]["EvalModelFlagResource"][] | null;
+            /**
+             * Model Flag Options
+             * @description Cross-product (model x flag-type x value) options for the ModelFlags picker.
+             */
+            model_flag_options?: components["schemas"]["EvalModelFlagOptionResource"][] | null;
             /**
              * Model Rubrics
              * @description Model rubric resources
@@ -36597,6 +36668,11 @@ export interface components {
              */
             scenario_flags?: components["schemas"]["SimulationScenarioFlag"][] | null;
             /**
+             * Scenario Flag Options
+             * @description Cross-product of (scenario × flag type × value) for the ScenarioFlags picker
+             */
+            scenario_flag_options?: components["schemas"]["SimulationScenarioFlagOption"][] | null;
+            /**
              * Scenario Positions
              * @description Scenario position resources with selected/suggested flags
              */
@@ -36875,6 +36951,16 @@ export interface components {
              * @description Voice resources
              */
             voices?: components["schemas"]["InvocationVoiceResource"][] | null;
+            /**
+             * Model Flags
+             * @description Per-model flag junction rows
+             */
+            model_flags?: components["schemas"]["InvocationModelFlagResource"][] | null;
+            /**
+             * Model Flag Options
+             * @description Cross-product (model × flag-type × value) options for the ModelFlags picker.
+             */
+            model_flag_options?: components["schemas"]["InvocationModelFlagOptionResource"][] | null;
         };
         /**
          * GetTestArtifactRequest
@@ -39924,6 +40010,138 @@ export interface components {
              * @default false
              */
             pending: boolean;
+        };
+        /**
+         * InvocationModelFlagOptionResource
+         * @description Cross-product option row: one per (model_id, flag_type, value) tuple.
+         */
+        InvocationModelFlagOptionResource: {
+            /**
+             * Model Id
+             * @description Model identifier
+             */
+            model_id?: string | null;
+            /**
+             * Flag Id
+             * @description Flag resource identifier
+             */
+            flag_id?: string | null;
+            /**
+             * Type
+             * @description Flag type, e.g. 'model_active'
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying flag value for this option
+             */
+            value?: boolean | null;
+            /**
+             * Name
+             * @description Display name from the flags_resource row
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Description text from the flags_resource row
+             */
+            description?: string | null;
+            /**
+             * Icon
+             * @description Icon SVG markup hydrated from icons_resource
+             */
+            icon?: string | null;
+        };
+        /**
+         * InvocationModelFlagResource
+         * @description Per-model flag junction row for an invocation.
+         */
+        InvocationModelFlagResource: {
+            /**
+             * Id
+             * @description Model-flag resource identifier
+             */
+            id?: string | null;
+            /**
+             * Model Id
+             * @description Associated model identifier
+             */
+            model_id?: string | null;
+            /**
+             * Flag Id
+             * @description Associated flag identifier
+             */
+            flag_id?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'model_active') of the linked flags_resource row
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of the linked flags_resource row
+             */
+            value?: boolean | null;
+            /**
+             * Name
+             * @description Display name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Description text
+             */
+            description?: string | null;
+            /**
+             * Icon
+             * @description Icon SVG markup
+             */
+            icon?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /**
+         * InvocationModelFlagValue
+         * @description Denormalized per-(model, type) selection for draft requests.
+         */
+        InvocationModelFlagValue: {
+            /**
+             * Model Id
+             * Format: uuid
+             * @description Target model identifier
+             */
+            model_id: string;
+            /**
+             * Type
+             * @description Flag type, e.g. 'model_active'
+             */
+            type: string;
+            /**
+             * Value
+             * @description Desired flag value
+             */
+            value: boolean;
         };
         /** InvocationNameResource */
         InvocationNameResource: {
@@ -45748,9 +45966,21 @@ export interface components {
             model_ids?: string[] | null;
             /**
              * Model Flag Ids
-             * @description Model flag UUIDs
+             * @description Model flag UUIDs (canonical junction-row ids)
              */
             model_flag_ids?: string[] | null;
+            /**
+             * Model Flags
+             * @description Inline-create shape for model_flags junction rows: list of {model_id, flag_id} (id=null entries). Resolver upserts the junction row and merges the id into model_flag_ids.
+             */
+            model_flags?: {
+                [key: string]: unknown;
+            }[] | null;
+            /**
+             * Model Flag Values
+             * @description Denormalized per-(model, type) selections. For each entry the server resolves (type, value) -> flag_id via search_flags, then upserts a model_flags_resource row for (model_id, flag_id) and merges its id into model_flag_ids.
+             */
+            model_flag_values?: components["schemas"]["EvalModelFlagValue"][] | null;
             /**
              * Model Position Ids
              * @description Model position UUIDs
@@ -45782,7 +46012,36 @@ export interface components {
          * PatchEvalDraftApiResponse
          * @description Response model for new-style eval draft endpoint.
          */
-        PatchEvalDraftApiResponse: {
+        "PatchEvalDraftApiResponse-Input": {
+            /**
+             * Success
+             * @description Whether the operation succeeded
+             */
+            success: boolean;
+            /**
+             * Draft Id
+             * Format: uuid
+             * @description Draft UUID
+             */
+            draft_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
+            /**
+             * Message
+             * @description Human-readable result message
+             */
+            message: string;
+            /** @description Server-authoritative form state */
+            form_state?: components["schemas"]["app__infra__eval__types__DraftFormState"] | null;
+        };
+        /**
+         * PatchEvalDraftApiResponse
+         * @description Response model for new-style eval draft endpoint.
+         */
+        "PatchEvalDraftApiResponse-Output": {
             /**
              * Success
              * @description Whether the operation succeeded
@@ -46018,9 +46277,21 @@ export interface components {
             voice_ids?: string[] | null;
             /**
              * Model Flag Ids
-             * @description Selected model flag identifiers
+             * @description Selected model flag identifiers (junction-row ids)
              */
             model_flag_ids?: string[] | null;
+            /**
+             * Model Flags
+             * @description Inline-create: list of {model_id, flag_id} pairs to upsert into model_flag_ids
+             */
+            model_flags?: {
+                [key: string]: unknown;
+            }[] | null;
+            /**
+             * Model Flag Values
+             * @description Denormalized per-(model, type) entries resolved server-side via (type, value) -> flag_id
+             */
+            model_flag_values?: components["schemas"]["InvocationModelFlagValue"][] | null;
             /**
              * Model Position Ids
              * @description Selected model position identifiers
@@ -46569,7 +46840,7 @@ export interface components {
          *     Dual-mode for creatable resources only:
          *       - name/name_id
          *     ID-only for non-creatable resources:
-         *       - active_flag_id, department_ids, email_ids, role_id
+         *       - flag_ids, department_ids, email_ids, role_id
          *
          *     Client always sends full state (append-only — each write is a new snapshot).
          */
@@ -47502,6 +47773,11 @@ export interface components {
              */
             scenario_flags?: components["schemas"]["DraftScenarioFlagValue"][] | null;
             /**
+             * Scenario Flag Values
+             * @description Denormalized (scenario_id, type, value) entries resolved server-side to scenario_flags_resource rows
+             */
+            scenario_flag_values?: components["schemas"]["DraftScenarioFlagDenormValue"][] | null;
+            /**
              * Scenario Position Ids
              * @description Existing scenario position UUIDs
              */
@@ -47552,7 +47828,37 @@ export interface components {
          * PatchSimulationDraftApiResponse
          * @description Response model for new-style simulation draft endpoint.
          */
-        PatchSimulationDraftApiResponse: {
+        "PatchSimulationDraftApiResponse-Input": {
+            /**
+             * Success
+             * @description Whether the operation succeeded
+             */
+            success: boolean;
+            /**
+             * Draft Id
+             * Format: uuid
+             * @description UUID of the saved draft
+             */
+            draft_id: string;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             * @description Idempotency key for this draft operation
+             */
+            idempotency_key: string;
+            /**
+             * Message
+             * @description Human-readable result message
+             */
+            message: string;
+            /** @description Server-authoritative form state */
+            form_state: components["schemas"]["app__infra__simulation__types__DraftFormState"];
+        };
+        /**
+         * PatchSimulationDraftApiResponse
+         * @description Response model for new-style simulation draft endpoint.
+         */
+        "PatchSimulationDraftApiResponse-Output": {
             /**
              * Success
              * @description Whether the operation succeeded
@@ -56560,7 +56866,7 @@ export interface components {
         };
         /**
          * SimulationScenarioFlag
-         * @description Scenario flag (denormalized: includes flag name/description/icon).
+         * @description Scenario flag (denormalized: includes flag name/description/icon/type/value).
          */
         SimulationScenarioFlag: {
             /**
@@ -56583,6 +56889,16 @@ export interface components {
              * @description Flag name
              */
             name?: string | null;
+            /**
+             * Type
+             * @description Underlying flag type (e.g. 'audio_enabled')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying flag boolean value
+             */
+            value?: boolean | null;
             /**
              * Description
              * @description Flag description text
@@ -56616,6 +56932,52 @@ export interface components {
              * @default false
              */
             pending: boolean;
+        };
+        /**
+         * SimulationScenarioFlagOption
+         * @description Option row for ScenarioFlags picker — one per (scenario × flag_type × value).
+         *
+         *     The junction row of scenario_flags_resource links (scenario_id, flag_id);
+         *     the client needs a pre-computed cross-product so each (scenario, type)
+         *     pair can be rendered as a switch. `flag_id` here is the underlying
+         *     flags_resource row ID for that (type, value) pair.
+         */
+        SimulationScenarioFlagOption: {
+            /**
+             * Scenario Id
+             * @description UUID of the parent scenario
+             */
+            scenario_id?: string | null;
+            /**
+             * Flag Id
+             * @description UUID of the underlying flag resource (value-specific)
+             */
+            flag_id?: string | null;
+            /**
+             * Type
+             * @description Flag type
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying flag boolean value
+             */
+            value?: boolean | null;
+            /**
+             * Name
+             * @description Flag display name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Flag description text
+             */
+            description?: string | null;
+            /**
+             * Icon
+             * @description Resolved SVG markup
+             */
+            icon?: string | null;
         };
         /**
          * SimulationScenarioPosition
@@ -58580,10 +58942,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Flag Id
-             * @description Flag option UUID
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            flag_id?: string | null;
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized cohort_active flag state; resolved to a flag_ids entry server-side
+             */
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs
@@ -58614,16 +58981,6 @@ export interface components {
              * @description Profile persona UUIDs
              */
             profile_persona_ids?: string[] | null;
-            /**
-             * Active Flag Id
-             * @description UUID of the flag option to set active status
-             */
-            active_flag_id?: string | null;
-            /**
-             * Active Flag
-             * @description Whether the cohort is active (resolved to flag_id)
-             */
-            active_flag?: boolean | null;
             /**
              * Departments
              * @description Department names for resolution
@@ -58726,15 +59083,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Active Flag Id
-             * @description UUID of the active flag option
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether the department is active
+             * Active
+             * @description Denormalized department_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag?: boolean | null;
+            active?: boolean | null;
             /**
              * Settings Ids
              * @description Setting UUIDs to assign
@@ -58834,30 +59191,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Flag Id
-             * @description Flag option UUID
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            flag_id?: string | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag Id
-             * @description UUID of the flag option to set active status
+             * Active
+             * @description Denormalized document_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag_id?: string | null;
-            /**
-             * Active Flag
-             * @description Whether the document is active (resolved to flag_id)
-             */
-            active_flag?: boolean | null;
-            /**
-             * Template Flag
-             * @description Whether this is a template document
-             */
-            template_flag?: boolean | null;
-            /**
-             * Template Flag Id
-             * @description Template flag resource UUID
-             */
-            template_flag_id?: string | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs
@@ -59012,15 +59354,10 @@ export interface components {
              */
             model_position_ids?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether this eval is active
+             * Active
+             * @description Denormalized eval_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag?: boolean | null;
-            /**
-             * Active Flag Id
-             * @description Active flag resource UUID
-             */
-            active_flag_id?: string | null;
+            active?: boolean | null;
         };
         /**
          * UpdateFieldApiRequest
@@ -59110,20 +59447,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Active Flag
-             * @description Whether this field is active
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag?: boolean | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag Id
-             * @description Active flag resource UUID
+             * Active
+             * @description Denormalized field_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag_id?: string | null;
-            /**
-             * Flag Id
-             * @description UUID of the flag option
-             */
-            flag_id?: string | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs to assign
@@ -59527,15 +59859,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Active Flag Id
-             * @description UUID of the flag option to set active status
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether the persona is active (resolved to flag_id)
+             * Active
+             * @description Denormalized persona_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag?: boolean | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs to associate (replaces existing)
@@ -59890,35 +60222,25 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Active Flag Id
-             * @description Active flag option UUID
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag
-             * @description Active flag boolean value
+             * Active
+             * @description Denormalized rubric_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag?: boolean | null;
+            active?: boolean | null;
             /**
-             * Simulation Rubric Flag
-             * @description Whether this is a simulation rubric
+             * Simulation Rubric
+             * @description Denormalized simulation_rubric flag state; resolved to a flag_ids entry server-side
              */
-            simulation_rubric_flag?: boolean | null;
+            simulation_rubric?: boolean | null;
             /**
-             * Simulation Rubric Flag Id
-             * @description Simulation rubric flag resource UUID
+             * Video Rubric
+             * @description Denormalized video_rubric flag state; resolved to a flag_ids entry server-side
              */
-            simulation_rubric_flag_id?: string | null;
-            /**
-             * Video Rubric Flag
-             * @description Whether this is a video rubric
-             */
-            video_rubric_flag?: boolean | null;
-            /**
-             * Video Rubric Flag Id
-             * @description Video rubric flag resource UUID
-             */
-            video_rubric_flag_id?: string | null;
+            video_rubric?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs
@@ -61485,6 +61807,11 @@ export interface components {
              */
             model_flag_ids?: string[];
             /**
+             * Model Flag Values
+             * @description Denormalized (model_id, type, value) echo derived from model_flag_ids
+             */
+            model_flag_values?: components["schemas"]["EvalModelFlagValue"][];
+            /**
              * Model Position Ids
              * @description Selected model position UUIDs
              */
@@ -61702,9 +62029,14 @@ export interface components {
             voice_ids?: string[];
             /**
              * Model Flag Ids
-             * @description Saved model flag identifiers
+             * @description Saved model flag junction-row identifiers
              */
             model_flag_ids?: string[];
+            /**
+             * Model Flag Values
+             * @description Denormalized (model_id, type, value) echo derived from model_flag_ids
+             */
+            model_flag_values?: components["schemas"]["InvocationModelFlagValue"][];
             /**
              * Model Position Ids
              * @description Saved model position identifiers
@@ -62757,6 +63089,12 @@ export interface components {
              * @default []
              */
             scenario_flag_ids: string[];
+            /**
+             * Scenario Flag Values
+             * @description Echoed denormalized (scenario_id, type, value) entries
+             * @default []
+             */
+            scenario_flag_values: components["schemas"]["DraftScenarioFlagDenormValue"][];
             /**
              * Scenario Position Ids
              * @description Selected scenario position UUIDs
@@ -64481,7 +64819,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PatchSimulationDraftApiResponse"];
+                    "application/json": components["schemas"]["PatchSimulationDraftApiResponse-Output"];
                 };
             };
             /** @description Validation Error */
@@ -66673,7 +67011,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PatchEvalDraftApiResponse"];
+                    "application/json": components["schemas"]["PatchEvalDraftApiResponse-Output"];
                 };
             };
             /** @description Validation Error */
@@ -85424,7 +85762,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PatchEvalDraftApiResponse"];
+                "application/json": components["schemas"]["PatchEvalDraftApiResponse-Input"];
             };
         };
         responses: {
@@ -86124,7 +86462,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PatchSimulationDraftApiResponse"];
+                "application/json": components["schemas"]["PatchSimulationDraftApiResponse-Input"];
             };
         };
         responses: {

@@ -1,28 +1,28 @@
 /**
- * HTTP + SSE transport — commands via HTTP, events via Server-Sent Events.
- * Enterprise mode: no WebSocket dependency, works through restrictive proxies.
+ * SSE event channel — maintains a single EventSource per auth token and
+ * dispatches multiplexed events by name. Used by http-sse and ws-sse modes.
+ *
+ * Current endpoint: /stream/?token=... (root multiplex). Will be replaced
+ * by per-artifact streams once the API side lands — at that point this
+ * file is the one thing to change; consumers via transport.on(event, …)
+ * don't know or care about the underlying URL.
  */
-import { api } from "@/lib/api/client";
 import { INTERNAL_HTTP_BASE } from "@/lib/api/config";
-import type { Transport } from "./types";
+import type { EventChannel } from "./types";
 
-/**
- * SSE multiplexer — maintains a single EventSource connection and dispatches
- * events to registered handlers by event name.
- */
+type Handler = (data: Record<string, unknown>) => void;
+
 class SseMultiplexer {
   private source: EventSource | null = null;
-  private handlers = new Map<string, Set<(data: Record<string, unknown>) => void>>();
-  private authToken: string | null = null;
+  private handlers = new Map<string, Set<Handler>>();
 
   connect(token: string | null) {
-    this.authToken = token;
     if (this.source) return;
 
-    // SSR guard — EventSource only exists in the browser
-    if (typeof window === "undefined" || typeof EventSource === "undefined") return;
+    // SSR guard — EventSource only exists in the browser.
+    if (typeof window === "undefined" || typeof EventSource === "undefined")
+      return;
 
-    // SSE endpoint — server multiplexes all events for this profile
     const url = new URL("/stream/", INTERNAL_HTTP_BASE);
     if (token) url.searchParams.set("token", token);
 
@@ -30,7 +30,10 @@ class SseMultiplexer {
 
     this.source.onmessage = (event) => {
       try {
-        const parsed = JSON.parse(event.data) as { event: string; data: Record<string, unknown> };
+        const parsed = JSON.parse(event.data) as {
+          event: string;
+          data: Record<string, unknown>;
+        };
         const listeners = this.handlers.get(parsed.event);
         if (listeners) {
           for (const handler of listeners) {
@@ -38,12 +41,12 @@ class SseMultiplexer {
           }
         }
       } catch {
-        // Malformed SSE data — skip
+        // Malformed SSE data — skip.
       }
     };
 
     this.source.onerror = () => {
-      // EventSource auto-reconnects — no action needed
+      // EventSource auto-reconnects — no action needed.
     };
   }
 
@@ -52,7 +55,7 @@ class SseMultiplexer {
     this.source = null;
   }
 
-  on(event: string, handler: (data: Record<string, unknown>) => void): () => void {
+  on(event: string, handler: Handler): () => void {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, new Set());
     }
@@ -72,17 +75,9 @@ class SseMultiplexer {
 
 const sseMultiplexer = new SseMultiplexer();
 
-export function createHttpSseTransport(authToken: string | null): Transport {
-  // Connect SSE on creation
+export function createSseEvents(authToken: string | null): EventChannel {
   sseMultiplexer.connect(authToken);
-
   return {
-    mode: "http-sse",
-
-    async send(endpoint, body) {
-      return api.post(endpoint as Parameters<typeof api.post>[0], { body }) as Promise<Record<string, unknown>>;
-    },
-
     on(event, handler) {
       return sseMultiplexer.on(event, handler);
     },

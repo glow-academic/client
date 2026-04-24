@@ -717,23 +717,11 @@ function RubricComponent({
           ? { pass_points: effectiveFormState.pass_points }
           : {};
 
-      // Create/Update endpoints still accept per-type flag ids; derive each
-      // slot from the canonical flag_ids list by matching the flag's type.
-      const flagsById = new Map(
-        (s?.flags ?? [])
-          .filter((f: any) => f.id)
-          .map((f: any) => [f.id as string, f]),
-      );
-      const pickFlagIdByType = (type: string): string | undefined => {
-        for (const fid of effectiveFormState.flag_ids ?? []) {
-          const row: any = flagsById.get(fid);
-          if ((row?.type ?? row?.name) === type) return fid;
-        }
-        return undefined;
-      };
-      const activeFlagId = pickFlagIdByType("rubric_active");
-      const simulationRubricFlagId = pickFlagIdByType("simulation_rubric");
-      const videoRubricFlagId = pickFlagIdByType("video_rubric");
+      // Canonical flag_ids — server resolves per-type semantics
+      // (rubric_active, simulation_rubric, video_rubric).
+      const flagIdsPayload = effectiveFormState.flag_ids?.length
+        ? effectiveFormState.flag_ids
+        : undefined;
 
       if (isEditMode) {
         if (!updateRubricAction) throw new Error("Update action not available");
@@ -744,9 +732,7 @@ function RubricComponent({
                 id: rubricId!,
                 name_id: effectiveFormState.name_id ?? undefined,
                 description_id: effectiveFormState.description_id ?? undefined,
-                active_flag_id: activeFlagId,
-                simulation_rubric_flag_id: simulationRubricFlagId,
-                video_rubric_flag_id: videoRubricFlagId,
+                flag_ids: flagIdsPayload,
                 department_ids: effectiveFormState.department_ids?.length
                   ? effectiveFormState.department_ids
                   : undefined,
@@ -770,9 +756,7 @@ function RubricComponent({
               {
                 name_id: effectiveFormState.name_id!,
                 description_id: effectiveFormState.description_id ?? undefined,
-                active_flag_id: activeFlagId,
-                simulation_rubric_flag_id: simulationRubricFlagId,
-                video_rubric_flag_id: videoRubricFlagId,
+                flag_ids: flagIdsPayload,
                 department_ids: effectiveFormState.department_ids?.length
                   ? effectiveFormState.department_ids
                   : undefined,

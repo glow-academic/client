@@ -1,23 +1,30 @@
 /**
- * TransportProvider — provides the active Transport to the component tree.
+ * TransportProvider — composes a Transport from a command channel and an
+ * event channel, picked by mode. Static/env-driven selection; no mid-session
+ * hot-swap.
  *
- * Mode selection:
- *   - "ws"       — full WebSocket (default when socket connected)
- *   - "http-ws"  — HTTP commands + WebSocket events
- *   - "http-sse" — HTTP commands + SSE events (enterprise fallback)
- *   - "ws-sse"   — WebSocket commands + SSE events
+ *   ws       — WS commands  + WS events
+ *   http-ws  — HTTP commands + WS events
+ *   http-sse — HTTP commands + SSE events
+ *   ws-sse   — WS commands   + SSE events
  *
- * Auto-detection: defaults to "ws" when socket is connected, falls back
- * to "http-sse" when socket is unavailable. Override via `mode` prop.
+ * Auto-detect: defaults to "ws" when the socket is connected, otherwise
+ * "http-sse". Override via the `mode` prop.
  */
 "use client";
 
 import React, { createContext, useContext, useMemo } from "react";
 import { useSocket } from "@/contexts/socket-context";
-import type { Transport, TransportMode } from "./types";
-import { createWsTransport } from "./ws-transport";
-import { createHttpWsTransport } from "./http-ws-transport";
-import { createHttpSseTransport } from "./http-sse-transport";
+import type {
+  CommandChannel,
+  EventChannel,
+  Transport,
+  TransportMode,
+} from "./types";
+import { createWsCommands } from "./commands-ws";
+import { createHttpCommands } from "./commands-http";
+import { createWsEvents } from "./events-ws";
+import { createSseEvents } from "./events-sse";
 
 const TransportContext = createContext<Transport | null>(null);
 
@@ -45,34 +52,31 @@ export function TransportProvider({
   const { socket, isConnected } = useSocket();
 
   const transport = useMemo<Transport>(() => {
-    // Resolve effective mode
-    const mode = modeProp ?? (socket && isConnected ? "ws" : "http-sse");
+    const mode: TransportMode =
+      modeProp ?? (socket && isConnected ? "ws" : "http-sse");
 
-    switch (mode) {
-      case "ws":
-        if (socket) return createWsTransport(socket);
-        // Fall through to http-sse if socket unavailable
-        return createHttpSseTransport(authToken ?? null);
+    // Pick a command channel. WS commands require a socket; fall back to HTTP
+    // when the mode wants WS but the socket isn't ready yet.
+    const wantsWsCommands = mode === "ws" || mode === "ws-sse";
+    const commands: CommandChannel =
+      wantsWsCommands && socket
+        ? createWsCommands(socket)
+        : createHttpCommands();
 
-      case "http-ws":
-        if (socket) return createHttpWsTransport(socket);
-        return createHttpSseTransport(authToken ?? null);
+    // Pick an event channel. WS events require a socket; fall back to SSE.
+    const wantsWsEvents = mode === "ws" || mode === "http-ws";
+    const events: EventChannel =
+      wantsWsEvents && socket
+        ? createWsEvents(socket)
+        : createSseEvents(authToken ?? null);
 
-      case "http-sse":
-        return createHttpSseTransport(authToken ?? null);
-
-      case "ws-sse":
-        if (socket) {
-          // Hybrid: WS for commands, SSE for events
-          const ws = createWsTransport(socket);
-          const sse = createHttpSseTransport(authToken ?? null);
-          return { mode: "ws-sse", send: ws.send, on: sse.on };
-        }
-        return createHttpSseTransport(authToken ?? null);
-
-      default:
-        return createHttpSseTransport(authToken ?? null);
-    }
+    return {
+      mode,
+      commands,
+      events,
+      send: commands.send,
+      on: events.on,
+    };
   }, [socket, isConnected, modeProp, authToken]);
 
   return (

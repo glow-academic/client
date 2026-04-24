@@ -76,6 +76,7 @@ const EMPTY_FORM_STATE: SimulationFormState = {
   name: null,
   description: null,
   scenario_flags: null,
+  scenario_flag_values: null,
   scenario_positions: null,
   scenario_rubrics: null,
   scenario_time_limits: null,
@@ -107,6 +108,9 @@ type SimulationFormState = {
   description: string | null;
   // Value fields for multi-select creatables (merged with IDs by draft endpoint)
   scenario_flags: Array<{ scenario_id: string; flag_id: string }> | null;
+  // Denormalized (scenario_id, type, value) — resolved server-side to a
+  // scenario_flags_resource row via flags_resource (type, value) lookup.
+  scenario_flag_values: Array<{ scenario_id: string; type: string; value: boolean }> | null;
   scenario_positions: Array<{ scenario_id: string; value: number }> | null;
   scenario_rubrics: Array<{ scenario_id: string; rubric_id: string }> | null;
   scenario_time_limits: Array<{ scenario_id: string; time_limit_seconds: number; negative: boolean }> | null;
@@ -330,6 +334,7 @@ function SimulationComponent({
       name: null,
       description: null,
       scenario_flags: null,
+      scenario_flag_values: null,
       scenario_positions: null,
       scenario_rubrics: null,
       scenario_time_limits: null,
@@ -391,6 +396,131 @@ function SimulationComponent({
       });
     },
     [flagRowsByType],
+  );
+
+  // Per (scenario, type) boolean view derived from scenario_flag_ids +
+  // catalog. Keys are `{scenario_id}:{type}`.
+  const scenarioFlagValues = React.useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const sfById = new Map(
+      (simulationData?.scenario_flags ?? [])
+        .filter((sf: any) => sf.id)
+        .map((sf: any) => [String(sf.id), sf]),
+    );
+    for (const id of formState.scenario_flag_ids ?? []) {
+      const row = sfById.get(id) as any;
+      if (!row) continue;
+      const t = row.type ?? row.name;
+      const sid = row.scenario_id;
+      if (t && sid && row.value != null) {
+        map[`${String(sid)}:${String(t)}`] = row.value;
+      }
+    }
+    return map;
+  }, [formState.scenario_flag_ids, simulationData?.scenario_flags]);
+
+  // Look up the junction row that matches a (scenario, type, value) from
+  // the server catalog. Tries selected rows first (those have a junction
+  // ID), then option rows (suggestion cross-product; flag_id only — the
+  // draft endpoint will upsert via scenario_flag_values).
+  const handleScenarioFlagToggle = useCallback(
+    (scenario_id: string, type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const existingRows = (simulationDataRef.current?.scenario_flags ?? []) as Array<any>;
+        const optionRows = ((simulationDataRef.current as any)?.scenario_flag_options ?? []) as Array<any>;
+        const key = `${scenario_id}:${type}`;
+
+        // Figure out which scenario_flag_ids belong to this (scenario, type)
+        // pair — those are the ones we need to drop before re-selecting.
+        const pairIds = new Set<string>();
+        for (const sf of existingRows) {
+          if (!sf?.id) continue;
+          const sfType = sf.type ?? sf.name;
+          if (sf.scenario_id === scenario_id && sfType === type) {
+            pairIds.add(String(sf.id));
+          }
+        }
+        const retainedIds = (prev.scenario_flag_ids ?? []).filter(
+          (id) => !pairIds.has(id),
+        );
+
+        // Strip any value-array entries for this same pair — we rebuild
+        // below if the new state is non-null.
+        const retainedValues = (prev.scenario_flags ?? []).filter(
+          (_) => true,
+        );
+
+        // New value-array entry for denormalized create path (server
+        // resolves via scenario_flag_values).
+        const nextValueEntries: Array<{ scenario_id: string; type: string; value: boolean }> = [];
+        for (const v of (prev as any).scenario_flag_values ?? []) {
+          if (!(v.scenario_id === scenario_id && v.type === type)) {
+            nextValueEntries.push(v);
+          }
+        }
+
+        if (next == null) {
+          return {
+            ...prev,
+            scenario_flag_ids: retainedIds,
+            scenario_flags: retainedValues.length > 0 ? retainedValues : null,
+            scenario_flag_values: nextValueEntries.length > 0 ? nextValueEntries : null,
+          } as typeof prev;
+        }
+
+        // Prefer an existing junction row whose flag_id already matches
+        // (type, value) — keeps ID stable when the user toggles back.
+        const matchingExisting = existingRows.find(
+          (sf) =>
+            sf?.id
+            && sf.scenario_id === scenario_id
+            && (sf.type ?? sf.name) === type
+            && sf.value === next,
+        );
+        if (matchingExisting?.id) {
+          return {
+            ...prev,
+            scenario_flag_ids: [...retainedIds, String(matchingExisting.id)],
+            scenario_flags: retainedValues.length > 0 ? retainedValues : null,
+            scenario_flag_values: nextValueEntries.length > 0 ? nextValueEntries : null,
+          } as typeof prev;
+        }
+
+        // No matching junction yet — ship as denormalized value. The
+        // draft endpoint resolves (type, value) → flag_id and upserts
+        // the scenario_flags_resource row.
+        nextValueEntries.push({ scenario_id, type, value: next });
+
+        // Opportunistically hint the flag_id via the options catalog so
+        // downstream legacy code paths that read `scenario_flags` still
+        // see a (scenario_id, flag_id) pair.
+        const catalogMatch = optionRows.find(
+          (opt) =>
+            opt?.flag_id
+            && opt.scenario_id === scenario_id
+            && opt.type === type
+            && opt.value === next,
+        );
+        const nextScenarioFlagHints = [...retainedValues];
+        if (catalogMatch?.flag_id) {
+          nextScenarioFlagHints.push({
+            scenario_id,
+            flag_id: String(catalogMatch.flag_id),
+          });
+        }
+        void key;
+
+        return {
+          ...prev,
+          scenario_flag_ids: retainedIds,
+          scenario_flags:
+            nextScenarioFlagHints.length > 0 ? nextScenarioFlagHints : null,
+          scenario_flag_values:
+            nextValueEntries.length > 0 ? nextValueEntries : null,
+        } as typeof prev;
+      });
+    },
+    [],
   );
 
   // --- AI Generation ---
@@ -1147,6 +1277,7 @@ function SimulationComponent({
             scenario_ids: [],
             scenario_flag_ids: [],
             scenario_flags: null,
+            scenario_flag_values: null,
             scenario_position_ids: [],
             scenario_positions: null,
             scenario_rubric_ids: [],
@@ -1228,7 +1359,6 @@ function SimulationComponent({
         s.descriptions.find((item) => item.selected) ?? null;
       const selectedDepartments = s.departments.filter((item) => item.selected);
       const selectedScenarios = s.scenarios.filter((item) => item.selected);
-      const selectedScenarioFlags = s.scenario_flags.filter((item) => item.selected);
       const selectedScenarioPositions = s.scenario_positions.filter(
         (item) => item.selected,
       );
@@ -1427,27 +1557,13 @@ function SimulationComponent({
                   showSelectedOnly={scenarioShowSelected}
                 />
                 <ScenarioFlags
-                  scenario_flag_ids={formState.scenario_flag_ids ?? []}
-                  scenario_flag_resources={selectedScenarioFlags}
-                  show_scenario_flags={showScenarioFlags}
-                  scenario_flags={s.scenario_flags ?? []}
-                  scenario_ids={formState.scenario_ids ?? []}
+                  options={(s as unknown as { scenario_flag_options?: Array<{ scenario_id?: string | null; flag_id?: string | null; type?: string | null; value?: boolean | null; name?: string | null; description?: string | null; icon?: string | null }> }).scenario_flag_options ?? []}
+                  existing={s.scenario_flags ?? []}
+                  values={scenarioFlagValues}
                   scenarios={s.scenarios ?? []}
-                  scenario_resources={scenarioResourcesWithShowHints}
+                  onChange={handleScenarioFlagToggle}
+                  show_scenario_flags={showScenarioFlags}
                   disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      scenario_flag_ids: ids,
-                  }))
-                  }
-                  required={SIMULATION_REQUIRED.scenario_flags}
-                  onScenarioFlagValues={(flags) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      scenario_flags: flags.length > 0 ? flags : null,
-                    }))
-                  }
                 />
                 <ScenarioPositions
                   scenario_position_ids={formState.scenario_position_ids ?? []}
@@ -1554,6 +1670,10 @@ function SimulationComponent({
       canRegenerate,
       handleDirectStepGenerate,
       scenarioResourcesWithShowHints,
+      scenarioFlagValues,
+      handleScenarioFlagToggle,
+      flagValues,
+      handleFlagToggle,
       isAutosaveEnabled,
     ],
   );
