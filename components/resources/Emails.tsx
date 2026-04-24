@@ -87,10 +87,9 @@ export function Emails({
   // Socket-based AI suggestion handling via shared hook
   const { isGenerating: aiIsGenerating, history: aiSuggestions, clear: clearAi } = useGenerationEvents<{ id?: string | null }>({
     events: {
-      started: "emails_generation_started",
-      progress: "emails_generation_progress",
-      complete: "emails_generation_complete",
-      error: "emails_generation_error",
+      progress: "emails.generate.progress",
+      complete: "emails.generate.completed",
+      error: "emails.generate.error",
     },
     scope: { groupId: group_id },
     accumulate: true,

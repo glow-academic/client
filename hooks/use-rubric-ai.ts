@@ -24,13 +24,10 @@ import { useGenerationToast } from "./use-generation-toast";
 const ARTIFACT = "rubric";
 
 const EVENTS = {
-  started: `${ARTIFACT}_generation_started`,
-  progress: `${ARTIFACT}_generation_progress`,
-  complete: `${ARTIFACT}_generation_complete`,
-  error: `${ARTIFACT}_generation_error`,
+  progress: `${ARTIFACT}.generate.progress`,
+  complete: `${ARTIFACT}.generate.completed`,
+  error: `${ARTIFACT}.generate.error`,
 } as const;
-
-const GENERATE_EVENT = "generate";
 
 export interface UseRubricAiConfig {
   /** Filter incoming events by group_id. */
@@ -183,8 +180,8 @@ export function useRubricAi(
         return next;
       });
 
-      const { runId, response } = emit(GENERATE_EVENT, {
-        artifact_type: ARTIFACT,
+      const { runId, response } = emit(`${ARTIFACT}.generate`, {
+        artifact: ARTIFACT,
         operations: ["get"],
         resource_types: resourceTypes,
         ...options,

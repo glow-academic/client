@@ -155,10 +155,9 @@ export function MessagesView({
   // from scrolling up. Subscribe only to what's actually consumed.
   const { history: hintsEvents } = useGenerationEvents({
     events: {
-      started: "hints_generation_started",
-      progress: "hints_generation_progress",
-      complete: "hints_generation_complete",
-      error: "hints_generation_error",
+      progress: "hints.generate.progress",
+      complete: "hints.generate.completed",
+      error: "hints.generate.error",
     },
     scope: { groupId: group_id },
     accumulate: true,

@@ -81,7 +81,7 @@ export function useGenerate({
       setIsGenerating(true);
 
       socket.emit("generate", {
-        artifact_type: artifactType,
+        artifact: artifactType,
         instructions: [instructions],
         operations: operationsRef.current,
         group_id: groupIdRef.current,
