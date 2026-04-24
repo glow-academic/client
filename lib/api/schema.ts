@@ -55773,6 +55773,11 @@ export interface components {
              */
             hex_code?: string | null;
             /**
+             * Type
+             * @description Color role — 'primary', 'secondary', 'accent', etc.
+             */
+            type?: string | null;
+            /**
              * Generated
              * @description Whether the color was AI-generated
              */

@@ -760,21 +760,65 @@ function Setting({
             stepStatus={stepStatus}
             isReadonly={disabled}
           >
-            <Colors
-              color_ids={formState.color_ids}
-              color_resources={(s?.colors ?? []).filter((item) => item.selected)}
-              colors={s?.colors ?? []}
-              multiSelect={true}
-              show_color={true}
-              disabled={disabled}
-              onChange={(ids) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  color_ids: ids,
-                  pending_ids: pruneSectionPending("colors", ids),
-                }))
+            {(() => {
+              // Group colors by their `type` role and render one
+              // single-select Colors picker per role. Canonical storage
+              // stays flat (color_ids: string[]); the per-type selection
+              // is derived from catalog intersection on each render.
+              type ColorRow = NonNullable<NonNullable<typeof s>["colors"]>[number];
+              const byType = new Map<string, ColorRow[]>();
+              for (const c of s?.colors ?? []) {
+                const t = c.type || "primary";
+                const list = byType.get(t) ?? [];
+                list.push(c);
+                byType.set(t, list);
               }
-            />
+              const types = Array.from(byType.keys()).sort();
+              return (
+                <div className="space-y-6">
+                  {types.map((type) => {
+                    const rows = byType.get(type) ?? [];
+                    const rowIdsForType = new Set(
+                      rows.map((r) => r.id).filter((id): id is string => !!id)
+                    );
+                    const currentId =
+                      formState.color_ids.find((id) => rowIdsForType.has(id)) ?? null;
+                    const label = type
+                      .split("_")
+                      .map((w) => w[0]!.toUpperCase() + w.slice(1))
+                      .join(" ");
+                    return (
+                      <Colors
+                        key={type}
+                        color_id={currentId}
+                        color_resource={
+                          rows.find((r) => r.id === currentId) ?? null
+                        }
+                        colors={rows}
+                        show_color={true}
+                        disabled={disabled}
+                        label={label}
+                        onColorIdChange={(nextId) =>
+                          setFormState((prev) => {
+                            const retained = prev.color_ids.filter(
+                              (id) => !rowIdsForType.has(id)
+                            );
+                            const nextIds = nextId
+                              ? [...retained, nextId]
+                              : retained;
+                            return {
+                              ...prev,
+                              color_ids: nextIds,
+                              pending_ids: pruneSectionPending("colors", nextIds),
+                            };
+                          })
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </StepCard>
         );
       }
