@@ -56181,6 +56181,16 @@ export interface components {
              * @description Agent identifier
              */
             agent_id: string;
+            /**
+             * Name
+             * @description Optional display name — defaults to agent.name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Optional description
+             */
+            description?: string | null;
         };
         /**
          * SettingMcpOption

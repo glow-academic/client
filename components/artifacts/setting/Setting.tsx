@@ -34,7 +34,15 @@ type LoginValue = {
   display_name: string | null;
   icon_id: string | null;
 };
-import { Mcp, type McpValue } from "@/components/resources/Mcp";
+import { Mcp, type McpDraft } from "@/components/resources/Mcp";
+
+// Matches SettingMcpDraftValue on the server. id=null = inline-create.
+type McpValue = {
+  id: string | null;
+  agent_id: string;
+  name: string | null;
+  description: string | null;
+};
 import { Names } from "@/components/resources/Names";
 import {
   ProviderKeys,
@@ -78,7 +86,9 @@ type SettingFormState = {
   logins: LoginValue[];
   system_ids: string[];
   mcp_id: string | null;
-  mcp_values: McpValue | null;
+  // Drafts only (id=null rows). Existing mcp_resource attachment is
+  // tracked via mcp_id; server resolves drafts and sets mcp_id on save.
+  mcp_values: McpValue[];
   threshold_ids: string[];
   provider_key_ids: string[];
   provider_keys: ProviderKeyValue[];
@@ -167,14 +177,7 @@ function Setting({
           .map((item) => item.system_id)
           .filter((id): id is string => !!id),
       mcp_id: s?.mcp?.find((item) => item.selected)?.mcp_id ?? null,
-      mcp_values: (() => {
-        const selected = s?.mcp?.find((item) => item.selected);
-        if (!selected?.agent_id) return null;
-        return {
-          id: selected.mcp_id ?? null,
-          agent_id: selected.agent_id,
-        };
-      })(),
+      mcp_values: [] as McpValue[],
       threshold_ids:
         (s?.thresholds?.filter((item) => item.selected) ?? [])
           .map((item) => item.id)
@@ -409,16 +412,8 @@ function Setting({
             system_ids:
               (fs["system_ids"] as string[] | null) ?? prev.system_ids,
             mcp_id: (fs["mcp_id"] as string | null) ?? prev.mcp_id,
-            mcp_values: ((): McpValue | null => {
-              const fsMcp = fs["mcp_values"] as McpValue[] | null | undefined;
-              if (fsMcp && fsMcp.length > 0) return fsMcp[0] ?? null;
-              const nextMcpId = (fs["mcp_id"] as string | null) ?? prev.mcp_id;
-              if (prev.mcp_values && prev.mcp_values.id === nextMcpId) return prev.mcp_values;
-              if (prev.mcp_values && nextMcpId) {
-                return { ...prev.mcp_values, id: nextMcpId };
-              }
-              return prev.mcp_values;
-            })(),
+            mcp_values:
+              (fs["mcp_values"] as McpValue[] | null) ?? prev.mcp_values,
             threshold_ids:
               (fs["threshold_ids"] as string[] | null) ?? prev.threshold_ids,
             provider_key_ids:
@@ -479,9 +474,7 @@ function Setting({
     payload["auth_item_keys"] = currentFormState.auth_item_keys;
     payload["auth_item_values"] = currentFormState.auth_item_values;
     payload["logins"] = currentFormState.logins;
-    payload["mcp_values"] = currentFormState.mcp_values
-      ? [currentFormState.mcp_values]
-      : [];
+    payload["mcp_values"] = currentFormState.mcp_values;
 
     return payload;
   }, []);
@@ -905,19 +898,30 @@ function Setting({
             isReadonly={disabled}
           >
             <Mcp
-              options={s?.mcp_options ?? []}
-              value={formState.mcp_values}
-              existing={s?.mcp ?? []}
+              mcp_id={formState.mcp_id}
+              mcp={s?.mcp ?? []}
+              agents={s?.agents ?? []}
               disabled={disabled}
-              onChange={(value) =>
+              show_mcp={true}
+              onChange={(id) =>
                 setFormState((prev) => ({
                   ...prev,
-                  mcp_values: value,
-                  mcp_id: value?.id ?? null,
-                  pending_ids: pruneSectionPending(
-                    "mcp",
-                    value?.id ? [value.id] : []
-                  ),
+                  mcp_id: id,
+                  pending_ids: pruneSectionPending("mcp", id ? [id] : []),
+                }))
+              }
+              onCreate={(draft: McpDraft) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  mcp_values: [
+                    ...prev.mcp_values,
+                    {
+                      id: null,
+                      agent_id: draft.agent_id,
+                      name: draft.name || null,
+                      description: draft.description || null,
+                    },
+                  ],
                 }))
               }
             />
