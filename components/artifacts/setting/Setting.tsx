@@ -23,7 +23,7 @@ import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
-import { Logins } from "@/components/resources/Logins";
+import { Logins, type LoginValue } from "@/components/resources/Logins";
 import { Mcp, type McpValue } from "@/components/resources/Mcp";
 import { Names } from "@/components/resources/Names";
 import {
@@ -65,6 +65,7 @@ type SettingFormState = {
   color_ids: string[];
   department_ids: string[];
   logins_ids: string[];
+  logins: LoginValue[];
   system_ids: string[];
   mcp_id: string | null;
   mcp_values: McpValue | null;
@@ -147,6 +148,25 @@ function Setting({
         (s?.logins?.filter((item) => item.selected) ?? [])
           .map((item) => item.logins_id)
           .filter((id): id is string => !!id),
+      logins: (s?.logins?.filter((item) => item.selected) ?? [])
+        .filter(
+          (item) =>
+            !!item.logins_id &&
+            !!item.login_type &&
+            (item.login_type === "auth"
+              ? !!item.auth_id
+              : item.login_type === "profile"
+                ? !!item.profile_id
+                : false)
+        )
+        .map((item) => ({
+          id: item.logins_id as string,
+          login_type: item.login_type as "auth" | "profile",
+          auth_id: item.auth_id ?? null,
+          profile_id: item.profile_id ?? null,
+          display_name: item.display_name ?? null,
+          icon_id: item.icon_id ?? null,
+        })),
       system_ids:
         (s?.systems?.filter((item) => item.selected) ?? [])
           .map((item) => item.system_id)
@@ -389,6 +409,8 @@ function Setting({
               (fs["department_ids"] as string[] | null) ?? prev.department_ids,
             logins_ids:
               (fs["logins_ids"] as string[] | null) ?? prev.logins_ids,
+            logins:
+              (fs["logins"] as LoginValue[] | null) ?? prev.logins,
             system_ids:
               (fs["system_ids"] as string[] | null) ?? prev.system_ids,
             mcp_id: (fs["mcp_id"] as string | null) ?? prev.mcp_id,
@@ -461,6 +483,7 @@ function Setting({
     payload["provider_keys"] = currentFormState.provider_keys;
     payload["auth_item_keys"] = currentFormState.auth_item_keys;
     payload["auth_item_values"] = currentFormState.auth_item_values;
+    payload["logins"] = currentFormState.logins;
     payload["mcp_values"] = currentFormState.mcp_values
       ? [currentFormState.mcp_values]
       : [];
@@ -766,18 +789,23 @@ function Setting({
             isReadonly={disabled}
           >
             <Logins
-              logins_ids={formState.logins_ids}
-              logins={s?.logins ?? []}
-              profiles={s?.profiles ?? []}
-              auths={s?.auths ?? []}
-              icons={s?.icons ?? []}
+              options={s?.login_options ?? []}
+              values={formState.logins}
+              existing={s?.logins ?? []}
               disabled={disabled}
-              onChange={(ids) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  logins_ids: ids,
-                  pending_ids: pruneSectionPending("logins", ids),
-                }))
+              show_logins={true}
+              onChange={(values) =>
+                setFormState((prev) => {
+                  const ids = values
+                    .map((v) => v.id)
+                    .filter((id): id is string => !!id);
+                  return {
+                    ...prev,
+                    logins: values,
+                    logins_ids: ids,
+                    pending_ids: pruneSectionPending("logins", ids),
+                  };
+                })
               }
             />
           </StepCard>

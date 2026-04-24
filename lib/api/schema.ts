@@ -6045,10 +6045,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Attempt Stream
-         * @description Stream events for all joined groups via SSE.
-         */
+        /** Attempt Stream */
         get: operations["attempt_stream_attempt_stream_get"];
         put?: never;
         post?: never;
@@ -36362,6 +36359,11 @@ export interface components {
              * @description Curated per-agent options for the MCP picker
              */
             mcp_options?: components["schemas"]["SettingMcpOption"][] | null;
+            /**
+             * Login Options
+             * @description Curated (auth × profile) options for the Logins picker
+             */
+            login_options?: components["schemas"]["SettingLoginOption"][] | null;
         };
         /** GetSettingDraftResponse */
         GetSettingDraftResponse: {
@@ -47629,6 +47631,11 @@ export interface components {
              */
             mcp_values?: components["schemas"]["SettingMcpDraftValue"][] | null;
             /**
+             * Logins
+             * @description Inline-creatable logins_resource value entries (auth or profile buttons)
+             */
+            logins?: components["schemas"]["SettingLoginDraftValue"][] | null;
+            /**
              * Pending Ids
              * @description Resource IDs to retain as pending inactive connections
              */
@@ -56020,6 +56027,78 @@ export interface components {
              */
             masked_key?: string | null;
         };
+        /**
+         * SettingLoginDraftValue
+         * @description Draft value object for an inline-creatable logins_resource row.
+         */
+        SettingLoginDraftValue: {
+            /**
+             * Id
+             * @description Existing logins_resource id when known
+             */
+            id?: string | null;
+            /**
+             * Login Type
+             * @description 'auth' or 'profile'
+             */
+            login_type: string;
+            /**
+             * Auth Id
+             * @description Auth id — required when login_type='auth'
+             */
+            auth_id?: string | null;
+            /**
+             * Profile Id
+             * @description Profile id — required when login_type='profile'
+             */
+            profile_id?: string | null;
+            /**
+             * Display Name
+             * @description Override label; falls back to Auth/Profile catalog name
+             */
+            display_name?: string | null;
+            /**
+             * Icon Id
+             * @description Override icon; falls back to defaults
+             */
+            icon_id?: string | null;
+        };
+        /**
+         * SettingLoginOption
+         * @description Server-curated catalog option for the Logins picker.
+         */
+        SettingLoginOption: {
+            /**
+             * Login Type
+             * @description 'auth' or 'profile'
+             */
+            login_type?: string | null;
+            /**
+             * Auth Id
+             * @description Auth identifier for login_type='auth'
+             */
+            auth_id?: string | null;
+            /**
+             * Profile Id
+             * @description Profile identifier for login_type='profile'
+             */
+            profile_id?: string | null;
+            /**
+             * Display Name
+             * @description Default button label
+             */
+            display_name?: string | null;
+            /**
+             * Icon Id
+             * @description Default icon (when Auth or Profile catalog provides one)
+             */
+            icon_id?: string | null;
+            /**
+             * Icon
+             * @description Resolved SVG markup for the icon (when available)
+             */
+            icon?: string | null;
+        };
         /** SettingLoginsResource */
         SettingLoginsResource: {
             /**
@@ -62989,6 +63068,11 @@ export interface components {
              * @description Echoed mcp value entries with resolved ids
              */
             mcp_values?: components["schemas"]["SettingMcpDraftValue"][];
+            /**
+             * Logins
+             * @description Echoed logins value entries with resolved ids
+             */
+            logins?: components["schemas"]["SettingLoginDraftValue"][];
             /**
              * Pending Ids
              * @description Pending resource identifiers

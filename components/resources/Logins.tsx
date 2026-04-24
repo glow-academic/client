@@ -13,139 +13,169 @@ import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-export interface LoginsResourceItem {
-  logins_id?: string | null;
-  profile_id?: string | null;
+export interface LoginOption {
+  login_type?: string | null;
   auth_id?: string | null;
+  profile_id?: string | null;
+  display_name?: string | null;
   icon_id?: string | null;
   icon?: string | null;
-  display_name?: string | null;
+}
+
+export interface LoginValue {
+  id: string | null;
+  login_type: "auth" | "profile";
+  auth_id: string | null;
+  profile_id: string | null;
+  display_name: string | null;
+  icon_id: string | null;
+}
+
+export interface LoginExisting {
+  id?: string | null;
   login_type?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
+  auth_id?: string | null;
+  profile_id?: string | null;
+  display_name?: string | null;
+  icon?: string | null;
   pending?: boolean | null;
 }
 
-type ProfileOption = {
-  profile_id?: string | null;
-  name?: string | null;
-};
-
-type AuthOption = {
-  auth_id?: string | null;
-  name?: string | null;
-  slug?: string | null;
-};
-
-type IconOption = {
-  icon_id?: string | null;
-  name?: string | null;
-  value?: string | null;
-};
-
 export interface LoginsProps {
-  logins_ids?: string[];
-  logins?: LoginsResourceItem[];
-  profiles?: ProfileOption[];
-  auths?: AuthOption[];
-  icons?: IconOption[];
-  show_logins?: boolean;
+  options?: LoginOption[];
+  values?: LoginValue[];
+  existing?: LoginExisting[];
   disabled?: boolean;
-  onChange: (ids: string[]) => void;
+  onChange: (values: LoginValue[]) => void;
   label?: string;
   description?: string;
+  show_logins?: boolean;
 }
 
+const optionKey = (
+  loginType: string | null | undefined,
+  authId: string | null | undefined,
+  profileId: string | null | undefined
+) => {
+  if (loginType === "auth") return `auth:${authId ?? ""}`;
+  if (loginType === "profile") return `profile:${profileId ?? ""}`;
+  return `${loginType ?? ""}:${authId ?? ""}:${profileId ?? ""}`;
+};
+
 export function Logins({
-  logins_ids,
-  logins,
-  profiles,
-  auths,
-  icons,
-  show_logins = true,
+  options,
+  values,
+  existing,
   disabled = false,
   onChange,
   label = "Logins",
   description = "Select which login buttons appear on the sign-in page.",
+  show_logins = true,
 }: LoginsProps) {
-  const ids = useMemo(() => logins_ids ?? [], [logins_ids]);
-  const allLogins = useMemo(() => logins ?? [], [logins]);
+  const opts = useMemo(() => options ?? [], [options]);
+  const vals = useMemo(() => values ?? [], [values]);
 
-  const profileLookup = useMemo(() => {
-    const map = new Map<string, string>();
-    (profiles ?? []).forEach((p) => {
-      if (p.profile_id && p.name) map.set(p.profile_id, p.name);
-    });
+  const valueByKey = useMemo(() => {
+    const map = new Map<string, LoginValue>();
+    for (const v of vals) {
+      map.set(optionKey(v.login_type, v.auth_id, v.profile_id), v);
+    }
     return map;
-  }, [profiles]);
+  }, [vals]);
 
-  const authLookup = useMemo(() => {
-    const map = new Map<string, string>();
-    (auths ?? []).forEach((a) => {
-      if (a.auth_id && a.name) map.set(a.auth_id, a.name);
-    });
+  const existingByKey = useMemo(() => {
+    const map = new Map<string, LoginExisting>();
+    for (const e of existing ?? []) {
+      if (!e.login_type) continue;
+      map.set(optionKey(e.login_type, e.auth_id, e.profile_id), e);
+    }
     return map;
-  }, [auths]);
+  }, [existing]);
 
-  const iconLookup = useMemo(() => {
-    const map = new Map<string, IconOption>();
-    (icons ?? []).forEach((i) => {
-      if (i.icon_id) map.set(i.icon_id, i);
-    });
-    return map;
-  }, [icons]);
-
-  const pendingIds = useMemo(
-    () =>
-      new Set(
-        allLogins
-          .filter((item) => item.pending && item.logins_id)
-          .map((item) => item.logins_id as string)
-      ),
-    [allLogins]
-  );
-  const showDiff = pendingIds.size > 0;
+  const pendingKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of existing ?? []) {
+      if (e.pending && e.login_type) {
+        set.add(optionKey(e.login_type, e.auth_id, e.profile_id));
+      }
+    }
+    return set;
+  }, [existing]);
+  const showDiff = pendingKeys.size > 0;
 
   type GridItem = {
-    id: string;
+    key: string;
+    option: LoginOption;
     displayName: string;
-    sourceLabel: string;
-    icon: IconOption | null;
-    loginType: string | null;
-    suggested: boolean;
+    icon: string | null;
+    loginType: string;
   };
 
   const items = useMemo<GridItem[]>(
     () =>
-      allLogins
-        .filter((item) => item.logins_id)
-        .map((item) => {
-          const icon = item.icon_id ? iconLookup.get(item.icon_id) ?? null : null;
-          const source =
-            item.login_type === "profile" && item.profile_id
-              ? profileLookup.get(item.profile_id) ?? "Unknown profile"
-              : item.auth_id
-                ? authLookup.get(item.auth_id) ?? "Unknown auth"
-                : "—";
+      opts
+        .filter(
+          (o) =>
+            (o.login_type === "auth" && o.auth_id) ||
+            (o.login_type === "profile" && o.profile_id)
+        )
+        .map((o) => {
+          const key = optionKey(o.login_type, o.auth_id, o.profile_id);
+          const existingRow = existingByKey.get(key);
           return {
-            id: item.logins_id!,
-            displayName: item.display_name || source,
-            sourceLabel: source,
-            icon,
-            loginType: item.login_type ?? null,
-            suggested: !!item.suggested,
+            key,
+            option: o,
+            displayName:
+              existingRow?.display_name || o.display_name || "Login",
+            icon: existingRow?.icon ?? o.icon ?? null,
+            loginType: o.login_type ?? "",
           };
         }),
-    [allLogins, authLookup, iconLookup, profileLookup]
+    [opts, existingByKey]
+  );
+
+  const toggleOption = useCallback(
+    (option: LoginOption) => {
+      const key = optionKey(option.login_type, option.auth_id, option.profile_id);
+      if (valueByKey.has(key)) {
+        onChange(
+          vals.filter(
+            (v) =>
+              optionKey(v.login_type, v.auth_id, v.profile_id) !== key
+          )
+        );
+        return;
+      }
+      const existingRow = existingByKey.get(key);
+      const loginType = option.login_type as "auth" | "profile";
+      onChange([
+        ...vals,
+        {
+          id: existingRow?.id ?? null,
+          login_type: loginType,
+          auth_id: option.auth_id ?? null,
+          profile_id: option.profile_id ?? null,
+          display_name:
+            existingRow?.display_name ?? option.display_name ?? null,
+          icon_id: option.icon_id ?? null,
+        },
+      ]);
+    },
+    [valueByKey, existingByKey, vals, onChange]
+  );
+
+  const selectedIds = useMemo(
+    () => items.filter((i) => valueByKey.has(i.key)).map((i) => i.key),
+    [items, valueByKey]
   );
 
   const handleSelect = useCallback(
-    (id: string) => {
-      const next = ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id];
-      onChange(next);
+    (key: string) => {
+      const item = items.find((i) => i.key === key);
+      if (!item) return;
+      toggleOption(item.option);
     },
-    [ids, onChange]
+    [items, toggleOption]
   );
 
   const handleAccept = useCallback(() => {
@@ -153,8 +183,13 @@ export function Logins({
   }, []);
 
   const handleReject = useCallback(() => {
-    onChange(ids.filter((id) => !pendingIds.has(id)));
-  }, [ids, onChange, pendingIds]);
+    onChange(
+      vals.filter(
+        (v) =>
+          !pendingKeys.has(optionKey(v.login_type, v.auth_id, v.profile_id))
+      )
+    );
+  }, [onChange, pendingKeys, vals]);
 
   if (!show_logins) return null;
 
@@ -202,28 +237,29 @@ export function Logins({
       <p className="text-xs text-muted-foreground">{description}</p>
       {items.length === 0 ? (
         <div className="text-sm text-muted-foreground py-2">
-          No login buttons configured yet.
+          No login options available.
         </div>
       ) : (
         <SelectableGrid
           items={items}
           selectedId={null}
-          selectedIds={ids}
+          selectedIds={selectedIds}
           onSelect={handleSelect}
-          getId={(item) => item.id}
+          getId={(item) => item.key}
           renderItem={(item, isSelected) => (
             <div
               className={cn(
                 "rounded-md border p-3 transition-colors",
                 isSelected && "border-primary bg-primary/5",
-                pendingIds.has(item.id) && "ring-2 ring-success bg-success/10"
+                pendingKeys.has(item.key) &&
+                  "ring-2 ring-success bg-success/10"
               )}
             >
               <div className="flex items-center gap-2">
-                {item.icon?.value && (
+                {item.icon && (
                   <div
                     className="h-5 w-5 shrink-0 text-muted-foreground"
-                    dangerouslySetInnerHTML={{ __html: item.icon.value }}
+                    dangerouslySetInnerHTML={{ __html: item.icon }}
                   />
                 )}
                 <div className="font-medium text-sm truncate">
@@ -231,13 +267,8 @@ export function Logins({
                 </div>
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                {item.loginType === "profile" ? "Profile" : "Auth"} · {item.sourceLabel}
+                {item.loginType === "profile" ? "Profile" : "Auth"}
               </div>
-              {item.suggested && (
-                <div className="text-[10px] uppercase tracking-wide text-primary mt-2">
-                  Suggested
-                </div>
-              )}
             </div>
           )}
           disabled={disabled}
