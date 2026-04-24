@@ -61,6 +61,21 @@ type SystemValue = {
 };
 import { Thresholds } from "@/components/resources/Thresholds";
 import { useDrafts } from "@/contexts/draft-context";
+
+// Matches SettingThresholdDraftValue on the server. Per-type slider
+// draft — server find-or-creates a row at (type, value) and swaps
+// the matching-type id into threshold_ids.
+type ThresholdValue = {
+  id: string | null;
+  type: string;
+  value: number;
+};
+
+const SETTING_THRESHOLD_TYPES: Array<{ type: string; label: string; default: number }> = [
+  { type: "success", label: "Success", default: 85 },
+  { type: "warning", label: "Warning", default: 80 },
+  { type: "danger", label: "Danger", default: 70 },
+];
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -103,6 +118,9 @@ type SettingFormState = {
   // tracked via mcp_id; server resolves drafts and sets mcp_id on save.
   mcp_values: McpValue[];
   threshold_ids: string[];
+  // Drafts for per-type slider changes. Server finds-or-creates a row
+  // matching (type, value) and replaces the same-type entry in threshold_ids.
+  threshold_values: ThresholdValue[];
   provider_key_ids: string[];
   provider_keys: ProviderKeyValue[];
   auth_item_key_ids: string[];
@@ -196,6 +214,7 @@ function Setting({
         (s?.thresholds?.filter((item) => item.selected) ?? [])
           .map((item) => item.id)
           .filter((id): id is string => !!id),
+      threshold_values: [] as ThresholdValue[],
       provider_key_ids:
         (s?.provider_keys?.filter((item) => item.selected) ?? [])
           .map((item) => item.id)
@@ -433,6 +452,9 @@ function Setting({
               (fs["mcp_values"] as McpValue[] | null) ?? prev.mcp_values,
             threshold_ids:
               (fs["threshold_ids"] as string[] | null) ?? prev.threshold_ids,
+            threshold_values:
+              (fs["threshold_values"] as ThresholdValue[] | null) ??
+              prev.threshold_values,
             provider_key_ids:
               (fs["provider_key_ids"] as string[] | null) ??
               prev.provider_key_ids,
@@ -493,6 +515,7 @@ function Setting({
     payload["logins"] = currentFormState.logins;
     payload["mcp_values"] = currentFormState.mcp_values;
     payload["system_values"] = currentFormState.system_values;
+    payload["threshold_values"] = currentFormState.threshold_values;
 
     return payload;
   }, []);
@@ -972,20 +995,47 @@ function Setting({
             stepStatus={stepStatus}
             isReadonly={disabled}
           >
-            <Thresholds
-              threshold_ids={formState.threshold_ids}
-              threshold_resources={(s?.thresholds ?? []).filter((item) => item.selected)}
-              thresholds={s?.thresholds ?? []}
-              show_thresholds={true}
-              disabled={disabled}
-              onChange={(ids) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  threshold_ids: ids,
-                  pending_ids: pruneSectionPending("thresholds", ids),
-                }))
-              }
-            />
+            <div className="space-y-6">
+              {SETTING_THRESHOLD_TYPES.map(({ type, label, default: dflt }) => {
+                // Derive the currently-attached threshold row for this type
+                // from threshold_ids × catalog. Draft overrides (e.g. user
+                // just dragged) take precedence.
+                const draft = formState.threshold_values.find(
+                  (v) => v.type === type,
+                );
+                const attachedId = formState.threshold_ids.find((id) =>
+                  (s?.thresholds ?? []).some(
+                    (row) => row.id === id && row.type === type,
+                  ),
+                ) ?? null;
+                return (
+                  <Thresholds
+                    key={type}
+                    type={type}
+                    label={label}
+                    thresholds={s?.thresholds ?? []}
+                    current_id={attachedId}
+                    defaultValue={draft?.value ?? dflt}
+                    disabled={disabled}
+                    onChange={(value) =>
+                      setFormState((prev) => {
+                        // Replace or append the draft for this type.
+                        const otherDrafts = prev.threshold_values.filter(
+                          (v) => v.type !== type,
+                        );
+                        return {
+                          ...prev,
+                          threshold_values: [
+                            ...otherDrafts,
+                            { id: null, type, value },
+                          ],
+                        };
+                      })
+                    }
+                  />
+                );
+              })}
+            </div>
           </StepCard>
         );
       }

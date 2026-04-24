@@ -70,7 +70,7 @@ import {
 } from "@/components/ui/tooltip";
 
 import { useProfile } from "@/contexts/profile-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { usePersonaAi } from "@/hooks/use-persona-ai";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
 
@@ -172,11 +172,9 @@ export default function Personas({
   // Bulk import state
   const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
 
-  // Socket listener for generation events (toasts, spinners, completion refresh)
-  // Generation is dispatched from the GenerationPanel, not from this page
-  useArtifactAi({
-    artifactType: "persona",
-    validResourceTypes: ["names", "descriptions", "colors", "icons", "instructions", "flags", "examples", "parameter_fields", "departments", "parameters", "voices"],
+  // Generation events for personas — refresh page on completion. Generation
+  // itself is dispatched from the GenerationPanel, not from this page.
+  usePersonaAi({
     onComplete: () => router.refresh(),
   });
 

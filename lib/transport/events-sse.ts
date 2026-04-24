@@ -1,82 +1,123 @@
 /**
- * SSE event channel — maintains a single EventSource per auth token and
- * dispatches multiplexed events by name. Used by http-sse and ws-sse modes.
+ * SSE event channel — one EventSource per artifact, opened lazily.
  *
- * Current endpoint: /stream/?token=... (root multiplex). Will be replaced
- * by per-artifact streams once the API side lands — at that point this
- * file is the one thing to change; consumers via transport.on(event, …)
- * don't know or care about the underlying URL.
+ * Topology:
+ *   Consumer calls `transport.on("persona.draft.progress", handler)`.
+ *   The first `.`-segment ("persona") is the artifact.
+ *   The channel lazily opens `GET /{artifact}/stream` if no EventSource
+ *   exists for that artifact, then registers the handler for that event type.
+ *   When the last handler for an artifact unsubscribes, its EventSource closes.
+ *
+ * Server-side the stream emits SSE named events:
+ *   event: artifacts.persona.draft.progress
+ *   data: {...json...}
+ *
+ * So we subscribe via `source.addEventListener(eventType, …)` rather than
+ * `onmessage`.
+ *
+ * Auth: token appended as `?token=…` query string (temporary — matches the
+ * current cross-origin EventSource limitation where headers can't be set).
+ *
+ * Used by `http-sse` and `ws-sse` transport modes.
  */
 import { INTERNAL_HTTP_BASE } from "@/lib/api/config";
 import type { EventChannel } from "./types";
 
 type Handler = (data: Record<string, unknown>) => void;
 
-class SseMultiplexer {
-  private source: EventSource | null = null;
-  private handlers = new Map<string, Set<Handler>>();
+interface EventSourceEntry {
+  source: EventSource;
+  /** eventType → { nativeListener, handlers } */
+  listeners: Map<
+    string,
+    { native: (ev: MessageEvent) => void; handlers: Set<Handler> }
+  >;
+}
 
-  connect(token: string | null) {
-    if (this.source) return;
+function artifactFromEventName(event: string): string {
+  const dot = event.indexOf(".");
+  return dot === -1 ? event : event.slice(0, dot);
+}
 
-    // SSR guard — EventSource only exists in the browser.
-    if (typeof window === "undefined" || typeof EventSource === "undefined")
-      return;
+class PerArtifactSseMultiplexer {
+  private sources = new Map<string, EventSourceEntry>();
+  private authToken: string | null = null;
 
-    const url = new URL("/stream/", INTERNAL_HTTP_BASE);
-    if (token) url.searchParams.set("token", token);
+  setAuth(token: string | null) {
+    this.authToken = token;
+  }
 
-    this.source = new EventSource(url.toString());
+  on(event: string, handler: Handler): () => void {
+    const artifact = artifactFromEventName(event);
+    const entry = this.ensureSource(artifact);
+    if (!entry) {
+      // SSR / no EventSource — return a no-op unsubscribe.
+      return () => {};
+    }
 
-    this.source.onmessage = (event) => {
-      try {
-        const parsed = JSON.parse(event.data) as {
-          event: string;
-          data: Record<string, unknown>;
-        };
-        const listeners = this.handlers.get(parsed.event);
-        if (listeners) {
-          for (const handler of listeners) {
-            handler(parsed.data);
-          }
+    let listener = entry.listeners.get(event);
+    if (!listener) {
+      const handlers = new Set<Handler>();
+      const native = (ev: MessageEvent) => {
+        let data: Record<string, unknown>;
+        try {
+          data = JSON.parse(ev.data) as Record<string, unknown>;
+        } catch {
+          return;
         }
-      } catch {
-        // Malformed SSE data — skip.
-      }
-    };
+        for (const h of handlers) h(data);
+      };
+      entry.source.addEventListener(event, native);
+      listener = { native, handlers };
+      entry.listeners.set(event, listener);
+    }
+    listener.handlers.add(handler);
 
-    this.source.onerror = () => {
-      // EventSource auto-reconnects — no action needed.
+    return () => {
+      const l = entry.listeners.get(event);
+      if (!l) return;
+      l.handlers.delete(handler);
+      if (l.handlers.size === 0) {
+        entry.source.removeEventListener(event, l.native);
+        entry.listeners.delete(event);
+      }
+      if (entry.listeners.size === 0) {
+        entry.source.close();
+        this.sources.delete(artifact);
+      }
     };
   }
 
   disconnect() {
-    this.source?.close();
-    this.source = null;
+    for (const entry of this.sources.values()) {
+      entry.source.close();
+    }
+    this.sources.clear();
   }
 
-  on(event: string, handler: Handler): () => void {
-    if (!this.handlers.has(event)) {
-      this.handlers.set(event, new Set());
-    }
-    this.handlers.get(event)!.add(handler);
+  private ensureSource(artifact: string): EventSourceEntry | null {
+    const existing = this.sources.get(artifact);
+    if (existing) return existing;
 
-    return () => {
-      const listeners = this.handlers.get(event);
-      if (listeners) {
-        listeners.delete(handler);
-        if (listeners.size === 0) {
-          this.handlers.delete(event);
-        }
-      }
-    };
+    if (typeof window === "undefined" || typeof EventSource === "undefined") {
+      return null;
+    }
+
+    const url = new URL(`/${artifact}/stream`, INTERNAL_HTTP_BASE);
+    if (this.authToken) url.searchParams.set("token", this.authToken);
+
+    const source = new EventSource(url.toString());
+    // EventSource auto-reconnects; no onerror action needed.
+    const entry: EventSourceEntry = { source, listeners: new Map() };
+    this.sources.set(artifact, entry);
+    return entry;
   }
 }
 
-const sseMultiplexer = new SseMultiplexer();
+const sseMultiplexer = new PerArtifactSseMultiplexer();
 
 export function createSseEvents(authToken: string | null): EventChannel {
-  sseMultiplexer.connect(authToken);
+  sseMultiplexer.setAuth(authToken);
   return {
     on(event, handler) {
       return sseMultiplexer.on(event, handler);
@@ -84,7 +125,7 @@ export function createSseEvents(authToken: string | null): EventChannel {
   };
 }
 
-/** Disconnect SSE — call on unmount/logout. */
+/** Disconnect every open SSE connection — call on logout. */
 export function disconnectSse() {
   sseMultiplexer.disconnect();
 }

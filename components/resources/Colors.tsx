@@ -354,7 +354,7 @@ export function Colors({
             return (
               <div
                 className={cn(
-                  "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
+                  "relative flex items-center gap-2 p-2 rounded-lg border bg-card text-card-foreground shadow-sm transition-all text-left h-10 pr-8",
                   "hover:shadow-md hover:bg-accent/50",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   isSelected && !isPendingColor && "ring-2 ring-primary bg-accent",
@@ -362,12 +362,12 @@ export function Colors({
                 )}
               >
                 {isSelected && !isPendingColor && (
-                  <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
-                    <Check className="h-3 w-3 text-primary-foreground" />
+                  <div className="absolute top-1/2 right-1.5 -translate-y-1/2 z-10 h-4 w-4 bg-primary rounded-full flex items-center justify-center">
+                    <Check className="h-2.5 w-2.5 text-primary-foreground" />
                   </div>
                 )}
                 {isPendingColor && (
-                  <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  <div className="absolute top-1/2 right-1.5 -translate-y-1/2 z-10 px-1 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
                     Pending
                   </div>
                 )}
@@ -375,30 +375,26 @@ export function Colors({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                        <div className="absolute top-1/2 right-2 -translate-y-1/2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
                       </TooltipTrigger>
                       <TooltipContent side="top">Suggested</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 )}
-                <div className="flex items-center gap-2 flex-1 overflow-hidden">
-                  {item.hex_code && (
-                    <div
-                      className="w-8 h-8 rounded-lg border-2 border-border shrink-0"
-                      style={{ backgroundColor: item.hex_code }}
-                    />
-                  )}
-                  <div className="flex-1 min-w-0 overflow-hidden">
-                    <h3 className="font-medium text-sm leading-tight truncate">
-                      {item.name}
-                    </h3>
-                    {item.hex_code && (
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                        {item.hex_code}
-                      </p>
-                    )}
-                  </div>
-                </div>
+                {item.hex_code && (
+                  <div
+                    className="w-5 h-5 rounded border border-border shrink-0"
+                    style={{ backgroundColor: item.hex_code }}
+                  />
+                )}
+                <h3 className="font-medium text-sm leading-tight truncate flex-1 min-w-0">
+                  {item.name}
+                </h3>
+                {item.hex_code && (
+                  <span className="text-[10px] text-muted-foreground font-mono shrink-0 uppercase">
+                    {item.hex_code}
+                  </span>
+                )}
               </div>
             );
           }}
@@ -412,7 +408,7 @@ export function Colors({
 
   // Single-select mode (existing logic)
   return (
-    <div className="space-y-4 min-w-0 w-full">
+    <div className="space-y-2 min-w-0 w-full">
       <div className="flex items-center gap-2">
         <Label htmlFor={id} className="flex items-center gap-1">
           {label}
@@ -454,6 +450,28 @@ export function Colors({
             </TooltipProvider>
           </>
         )}
+        {/* Hex input: flex-right on the label row so it stays aligned with the title. */}
+        <div className="ml-auto flex items-center gap-2">
+          <Input
+            id={`${id}Input`}
+            value={internalValue || ""}
+            onChange={(e) => {
+              const inputValue = e.target.value;
+              if (inputValue === "" || /^#?[0-9A-Fa-f]*$/.test(inputValue)) {
+                handleChange(
+                  inputValue.startsWith("#") ? inputValue : `#${inputValue}`,
+                );
+              }
+            }}
+            placeholder="#000000"
+            className="h-8 w-28 text-xs font-mono"
+            disabled={disabled}
+          />
+          <div
+            className="w-6 h-6 rounded border shrink-0"
+            style={{ backgroundColor: internalValue || "transparent" }}
+          />
+        </div>
       </div>
 
       {/* Color Grid */}
@@ -507,55 +525,45 @@ export function Colors({
             return (
             <div
               className={cn(
-                "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
+                "relative flex items-center gap-2 p-2 rounded-lg border bg-card text-card-foreground shadow-sm transition-all text-left h-10 pr-8",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && !isPendingColor && "ring-2 ring-primary bg-accent",
                 isPendingColor && "ring-2 ring-success bg-success/10"
               )}
             >
-              {/* Check icon - top right */}
               {isSelected && !isPendingColor && (
-                <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
-                  <Check className="h-3 w-3 text-primary-foreground" />
+                <div className="absolute top-1/2 right-1.5 -translate-y-1/2 z-10 h-4 w-4 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-2.5 w-2.5 text-primary-foreground" />
                 </div>
               )}
-
-              {/* Pending badge - top right */}
               {isPendingColor && (
-                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                <div className="absolute top-1/2 right-1.5 -translate-y-1/2 z-10 px-1 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
                   Pending
                 </div>
               )}
-
-              {/* Suggested dot indicator - top right */}
               {!isSelected &&
                 !isPendingColor &&
                 suggestedHexCodes.has(color.hex.toLowerCase()) && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                        <div className="absolute top-1/2 right-2 -translate-y-1/2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
                       </TooltipTrigger>
                       <TooltipContent side="top">Suggested</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 )}
-
-              <div className="flex items-center gap-2 flex-1 overflow-hidden">
-                <div
-                  className="w-8 h-8 rounded-lg border-2 border-border shrink-0"
-                  style={{ backgroundColor: color.hex }}
-                />
-                <div className="flex-1 min-w-0 overflow-hidden">
-                  <h3 className="font-medium text-sm leading-tight truncate">
-                    {color.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                    {color.hex}
-                  </p>
-                </div>
-              </div>
+              <div
+                className="w-5 h-5 rounded border border-border shrink-0"
+                style={{ backgroundColor: color.hex }}
+              />
+              <h3 className="font-medium text-sm leading-tight truncate flex-1 min-w-0">
+                {color.name}
+              </h3>
+              <span className="text-[10px] text-muted-foreground font-mono shrink-0 uppercase">
+                {color.hex}
+              </span>
             </div>
           );
           }}
@@ -565,34 +573,6 @@ export function Colors({
         />
       )}
 
-      {/* Hex Input */}
-      <div className="space-y-2">
-        <Label htmlFor={`${id}Input`}>Hex Color</Label>
-        <div className="flex gap-2">
-          <Input
-            id={`${id}Input`}
-            value={internalValue || ""}
-            onChange={(e) => {
-              const inputValue = e.target.value;
-              // Allow any hex value (with or without #, any length)
-              if (inputValue === "" || /^#?[0-9A-Fa-f]*$/.test(inputValue)) {
-                handleChange(
-                  inputValue.startsWith("#") ? inputValue : `#${inputValue}`
-                );
-              }
-            }}
-            placeholder="#000000"
-            className="flex-1"
-            disabled={disabled}
-          />
-          <div
-            className="w-10 h-10 rounded border shrink-0"
-            style={{
-              backgroundColor: internalValue || "transparent",
-            }}
-          />
-        </div>
-      </div>
     </div>
   );
 }
