@@ -1,279 +1,463 @@
+/**
+ * Logins.tsx — canonical logins picker.
+ *
+ * Shows every existing logins_resource row as a selectable card (toggle
+ * to include it on this setting) plus a collapsible `+ New login` form
+ * that appends a draft to the value-array. Matches StandardGroups' shape:
+ *   - `logins`: full catalog
+ *   - `logins_ids`: currently-attached ids
+ *   - `onChange(ids)`: parent updates logins_ids
+ *   - `onCreate(draft)`: parent appends {id: null, ...} to the value-array
+ */
 "use client";
 
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { SvgIcon } from "@/components/common/SvgIcon";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { Check, LogIn, Plus, X } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 
-export interface LoginOption {
-  login_type?: string | null;
+export interface LoginResource {
+  logins_id?: string | null;
   auth_id?: string | null;
   profile_id?: string | null;
-  display_name?: string | null;
   icon_id?: string | null;
   icon?: string | null;
-}
-
-export interface LoginValue {
-  id: string | null;
-  login_type: "auth" | "profile";
-  auth_id: string | null;
-  profile_id: string | null;
-  display_name: string | null;
-  icon_id: string | null;
-}
-
-export interface LoginExisting {
-  id?: string | null;
-  login_type?: string | null;
-  auth_id?: string | null;
-  profile_id?: string | null;
   display_name?: string | null;
-  icon?: string | null;
+  login_type?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
   pending?: boolean | null;
 }
 
+export interface LoginAuth {
+  auth_id?: string | null;
+  name?: string | null;
+}
+
+export interface LoginProfile {
+  profile_id?: string | null;
+  name?: string | null;
+}
+
+export interface LoginIcon {
+  icon_id?: string | null;
+  name?: string | null;
+  value?: string | null;
+}
+
+export interface LoginDraft {
+  login_type: "auth" | "profile";
+  auth_id: string | null;
+  profile_id: string | null;
+  display_name: string;
+  icon_id: string | null;
+}
+
 export interface LoginsProps {
-  options?: LoginOption[];
-  values?: LoginValue[];
-  existing?: LoginExisting[];
+  logins_ids?: string[];
+  logins?: LoginResource[];
+  auths?: LoginAuth[];
+  profiles?: LoginProfile[];
+  icons?: LoginIcon[];
   disabled?: boolean;
-  onChange: (values: LoginValue[]) => void;
+  onChange: (ids: string[]) => void;
+  onCreate?: (draft: LoginDraft) => void;
   label?: string;
   description?: string;
   show_logins?: boolean;
 }
 
-const optionKey = (
-  loginType: string | null | undefined,
-  authId: string | null | undefined,
-  profileId: string | null | undefined
-) => {
-  if (loginType === "auth") return `auth:${authId ?? ""}`;
-  if (loginType === "profile") return `profile:${profileId ?? ""}`;
-  return `${loginType ?? ""}:${authId ?? ""}:${profileId ?? ""}`;
+type GridItem = {
+  id: string;
+  display_name: string;
+  login_type: string;
+  subtitle: string | null;
+  icon: string | null;
+  generated: boolean;
+  suggested: boolean;
+  pending: boolean;
 };
 
 export function Logins({
-  options,
-  values,
-  existing,
+  logins_ids,
+  logins,
+  auths,
+  profiles,
+  icons: _icons,
   disabled = false,
   onChange,
+  onCreate,
   label = "Logins",
   description = "Select which login buttons appear on the sign-in page.",
   show_logins = true,
 }: LoginsProps) {
-  const opts = useMemo(() => options ?? [], [options]);
-  const vals = useMemo(() => values ?? [], [values]);
+  const ids = useMemo(() => logins_ids ?? [], [logins_ids]);
+  const catalog = useMemo(() => logins ?? [], [logins]);
+  const authsList = useMemo(() => auths ?? [], [auths]);
+  const profilesList = useMemo(() => profiles ?? [], [profiles]);
 
-  const valueByKey = useMemo(() => {
-    const map = new Map<string, LoginValue>();
-    for (const v of vals) {
-      map.set(optionKey(v.login_type, v.auth_id, v.profile_id), v);
+  // Inline-create form state (mirrors StandardGroups' draftName/...).
+  const [createOpen, setCreateOpen] = useState(false);
+  const [draftType, setDraftType] = useState<"auth" | "profile">("auth");
+  const [draftAuthId, setDraftAuthId] = useState<string>("");
+  const [draftProfileId, setDraftProfileId] = useState<string>("");
+  const [draftName, setDraftName] = useState<string>("");
+
+  const resetDraft = useCallback(() => {
+    setDraftType("auth");
+    setDraftAuthId("");
+    setDraftProfileId("");
+    setDraftName("");
+  }, []);
+
+  const authLookup = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of authsList) {
+      if (a.auth_id && a.name) map.set(a.auth_id, a.name);
     }
     return map;
-  }, [vals]);
-
-  const existingByKey = useMemo(() => {
-    const map = new Map<string, LoginExisting>();
-    for (const e of existing ?? []) {
-      if (!e.login_type) continue;
-      map.set(optionKey(e.login_type, e.auth_id, e.profile_id), e);
+  }, [authsList]);
+  const profileLookup = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of profilesList) {
+      if (p.profile_id && p.name) map.set(p.profile_id, p.name);
     }
     return map;
-  }, [existing]);
+  }, [profilesList]);
 
-  const pendingKeys = useMemo(() => {
-    const set = new Set<string>();
-    for (const e of existing ?? []) {
-      if (e.pending && e.login_type) {
-        set.add(optionKey(e.login_type, e.auth_id, e.profile_id));
-      }
-    }
-    return set;
-  }, [existing]);
-  const showDiff = pendingKeys.size > 0;
-
-  type GridItem = {
-    key: string;
-    option: LoginOption;
-    displayName: string;
-    icon: string | null;
-    loginType: string;
-  };
-
-  const items = useMemo<GridItem[]>(
+  const gridItems = useMemo<GridItem[]>(
     () =>
-      opts
-        .filter(
-          (o) =>
-            (o.login_type === "auth" && o.auth_id) ||
-            (o.login_type === "profile" && o.profile_id)
-        )
-        .map((o) => {
-          const key = optionKey(o.login_type, o.auth_id, o.profile_id);
-          const existingRow = existingByKey.get(key);
+      catalog
+        .filter((l) => l.logins_id)
+        .map((l) => {
+          const loginType = l.login_type ?? "auth";
+          const subtitle =
+            loginType === "auth"
+              ? l.auth_id
+                ? authLookup.get(l.auth_id) ?? "Auth"
+                : "Auth"
+              : l.profile_id
+                ? profileLookup.get(l.profile_id) ?? "Profile"
+                : "Profile";
           return {
-            key,
-            option: o,
-            displayName:
-              existingRow?.display_name || o.display_name || "Login",
-            icon: existingRow?.icon ?? o.icon ?? null,
-            loginType: o.login_type ?? "",
+            id: l.logins_id!,
+            display_name: l.display_name?.trim() || "Login",
+            login_type: loginType,
+            subtitle,
+            icon: l.icon ?? null,
+            generated: l.generated ?? false,
+            suggested: l.suggested ?? false,
+            pending: l.pending ?? false,
           };
         }),
-    [opts, existingByKey]
+    [catalog, authLookup, profileLookup]
   );
 
-  const toggleOption = useCallback(
-    (option: LoginOption) => {
-      const key = optionKey(option.login_type, option.auth_id, option.profile_id);
-      if (valueByKey.has(key)) {
-        onChange(
-          vals.filter(
-            (v) =>
-              optionKey(v.login_type, v.auth_id, v.profile_id) !== key
-          )
-        );
-        return;
-      }
-      const existingRow = existingByKey.get(key);
-      const loginType = option.login_type as "auth" | "profile";
-      onChange([
-        ...vals,
-        {
-          id: existingRow?.id ?? null,
-          login_type: loginType,
-          auth_id: option.auth_id ?? null,
-          profile_id: option.profile_id ?? null,
-          display_name:
-            existingRow?.display_name ?? option.display_name ?? null,
-          icon_id: option.icon_id ?? null,
-        },
-      ]);
+  const pendingIds = useMemo(
+    () => new Set(gridItems.filter((g) => g.pending).map((g) => g.id)),
+    [gridItems]
+  );
+  const showDiff = pendingIds.size > 0;
+
+  const handleToggle = useCallback(
+    (id: string) => {
+      const next = ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id];
+      onChange(next);
     },
-    [valueByKey, existingByKey, vals, onChange]
-  );
-
-  const selectedIds = useMemo(
-    () => items.filter((i) => valueByKey.has(i.key)).map((i) => i.key),
-    [items, valueByKey]
-  );
-
-  const handleSelect = useCallback(
-    (key: string) => {
-      const item = items.find((i) => i.key === key);
-      if (!item) return;
-      toggleOption(item.option);
-    },
-    [items, toggleOption]
+    [ids, onChange]
   );
 
   const handleAccept = useCallback(() => {
-    // Pending logins remain selected; next non-pending save confirms them.
+    // Pending rows are already in ids; next non-pending save confirms them.
   }, []);
-
   const handleReject = useCallback(() => {
-    onChange(
-      vals.filter(
-        (v) =>
-          !pendingKeys.has(optionKey(v.login_type, v.auth_id, v.profile_id))
-      )
-    );
-  }, [onChange, pendingKeys, vals]);
+    onChange(ids.filter((id) => !pendingIds.has(id)));
+  }, [ids, pendingIds, onChange]);
+
+  const canSubmit = useMemo(() => {
+    if (draftType === "auth") return !!draftAuthId;
+    return !!draftProfileId;
+  }, [draftType, draftAuthId, draftProfileId]);
+
+  const handleCreateSubmit = useCallback(() => {
+    if (!onCreate || !canSubmit) return;
+    const fallbackName =
+      draftType === "auth"
+        ? authLookup.get(draftAuthId) ?? ""
+        : profileLookup.get(draftProfileId) ?? "";
+    onCreate({
+      login_type: draftType,
+      auth_id: draftType === "auth" ? draftAuthId || null : null,
+      profile_id: draftType === "profile" ? draftProfileId || null : null,
+      display_name: draftName.trim() || fallbackName,
+      icon_id: null,
+    });
+    resetDraft();
+    setCreateOpen(false);
+  }, [
+    onCreate,
+    canSubmit,
+    draftType,
+    draftAuthId,
+    draftProfileId,
+    draftName,
+    authLookup,
+    profileLookup,
+    resetDraft,
+  ]);
 
   if (!show_logins) return null;
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <Label className="flex items-center gap-1">{label}</Label>
-        {showDiff && (
-          <>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-success hover:text-success"
-                    onClick={handleAccept}
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Accept</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-destructive hover:text-destructive"
-                    onClick={handleReject}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Reject</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </>
-        )}
-      </div>
-      <p className="text-xs text-muted-foreground">{description}</p>
-      {items.length === 0 ? (
-        <div className="text-sm text-muted-foreground py-2">
-          No login options available.
+      {(label || onCreate) && (
+        <div className="flex items-center gap-2">
+          {label && (
+            <Label className="flex items-center gap-1">
+              {label}
+              {description && (
+                <span className="text-xs text-muted-foreground ml-2">
+                  {description}
+                </span>
+              )}
+            </Label>
+          )}
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+          {onCreate && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="ml-auto"
+              onClick={() => setCreateOpen((v) => !v)}
+              disabled={disabled}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              {createOpen ? "Cancel" : "New login"}
+            </Button>
+          )}
         </div>
-      ) : (
-        <SelectableGrid
-          items={items}
-          selectedId={null}
-          selectedIds={selectedIds}
-          onSelect={handleSelect}
-          getId={(item) => item.key}
-          renderItem={(item, isSelected) => (
+      )}
+
+      {onCreate && createOpen && (
+        <div className="rounded-md border bg-card p-3 space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Type</Label>
+              <Select
+                value={draftType}
+                onValueChange={(v) => setDraftType(v as "auth" | "profile")}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auth">Auth (SSO)</SelectItem>
+                  <SelectItem value="profile">Profile</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {draftType === "auth" ? (
+              <div className="space-y-1">
+                <Label className="text-xs">Auth provider</Label>
+                <Select
+                  value={draftAuthId}
+                  onValueChange={setDraftAuthId}
+                  disabled={disabled}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder="Select auth…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {authsList
+                      .filter((a) => a.auth_id && a.name)
+                      .map((a) => (
+                        <SelectItem key={a.auth_id!} value={a.auth_id!}>
+                          {a.name!}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <Label className="text-xs">Profile</Label>
+                <Select
+                  value={draftProfileId}
+                  onValueChange={setDraftProfileId}
+                  disabled={disabled}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder="Select profile…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {profilesList
+                      .filter((p) => p.profile_id && p.name)
+                      .map((p) => (
+                        <SelectItem key={p.profile_id!} value={p.profile_id!}>
+                          {p.name!}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="space-y-1 sm:col-span-2">
+              <Label className="text-xs">Display name</Label>
+              <Input
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                placeholder="e.g. Continue with Google (defaults to provider name)"
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                resetDraft();
+                setCreateOpen(false);
+              }}
+              disabled={disabled}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleCreateSubmit}
+              disabled={disabled || !canSubmit}
+            >
+              Add login
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <SelectableGrid<GridItem>
+        horizontal
+        items={gridItems}
+        selectedId={null}
+        selectedIds={ids}
+        onSelect={handleToggle}
+        getId={(item) => item.id}
+        renderItem={(item, isSelected) => {
+          const isPending = pendingIds.has(item.id);
+          return (
             <div
               className={cn(
-                "rounded-md border p-3 transition-colors",
-                isSelected && "border-primary bg-primary/5",
-                pendingKeys.has(item.key) &&
-                  "ring-2 ring-success bg-success/10"
+                "relative flex flex-col gap-2 rounded-xl border bg-card p-4 text-left shadow-sm transition-all",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && !isPending && "ring-2 ring-primary bg-accent",
+                isPending && "ring-2 ring-success bg-success/10"
               )}
             >
+              {isSelected && !isPending && (
+                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                </div>
+              )}
+              {isPending && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </div>
+              )}
+              {!isSelected && !isPending && item.suggested && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Suggested</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               <div className="flex items-center gap-2">
-                {item.icon && (
-                  <div
-                    className="h-5 w-5 shrink-0 text-muted-foreground"
-                    dangerouslySetInnerHTML={{ __html: item.icon }}
+                {item.icon ? (
+                  <SvgIcon
+                    svg={item.icon}
+                    className="h-4 w-4 text-muted-foreground shrink-0"
+                    fallback={
+                      <LogIn className="h-4 w-4 text-muted-foreground shrink-0" />
+                    }
                   />
+                ) : (
+                  <LogIn className="h-4 w-4 text-muted-foreground shrink-0" />
                 )}
-                <div className="font-medium text-sm truncate">
-                  {item.displayName}
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium">
+                    {item.display_name}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {item.login_type === "auth" ? "Auth" : "Profile"}
+                    {item.subtitle ? ` · ${item.subtitle}` : ""}
+                  </div>
                 </div>
               </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {item.loginType === "profile" ? "Profile" : "Auth"}
-              </div>
             </div>
-          )}
-          disabled={disabled}
-        />
-      )}
+          );
+        }}
+        emptyMessage="No logins yet. Use + New login to add one."
+        disabled={disabled}
+      />
     </div>
   );
 }

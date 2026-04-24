@@ -23,7 +23,17 @@ import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
-import { Logins, type LoginValue } from "@/components/resources/Logins";
+import { Logins, type LoginDraft } from "@/components/resources/Logins";
+
+// Matches SettingLoginDraftValue on the server. id=null = inline-create.
+type LoginValue = {
+  id: string | null;
+  login_type: "auth" | "profile";
+  auth_id: string | null;
+  profile_id: string | null;
+  display_name: string | null;
+  icon_id: string | null;
+};
 import { Mcp, type McpValue } from "@/components/resources/Mcp";
 import { Names } from "@/components/resources/Names";
 import {
@@ -148,25 +158,10 @@ function Setting({
         (s?.logins?.filter((item) => item.selected) ?? [])
           .map((item) => item.logins_id)
           .filter((id): id is string => !!id),
-      logins: (s?.logins?.filter((item) => item.selected) ?? [])
-        .filter(
-          (item) =>
-            !!item.logins_id &&
-            !!item.login_type &&
-            (item.login_type === "auth"
-              ? !!item.auth_id
-              : item.login_type === "profile"
-                ? !!item.profile_id
-                : false)
-        )
-        .map((item) => ({
-          id: item.logins_id as string,
-          login_type: item.login_type as "auth" | "profile",
-          auth_id: item.auth_id ?? null,
-          profile_id: item.profile_id ?? null,
-          display_name: item.display_name ?? null,
-          icon_id: item.icon_id ?? null,
-        })),
+      // `logins` carries inline-create DRAFTS only (id=null). Existing rows
+      // are referenced via `logins_ids`; server resolver inline-creates
+      // the draft rows and merges their ids into logins_ids on save.
+      logins: [] as LoginValue[],
       system_ids:
         (s?.systems?.filter((item) => item.selected) ?? [])
           .map((item) => item.system_id)
@@ -848,23 +843,25 @@ function Setting({
             isReadonly={disabled}
           >
             <Logins
-              options={s?.login_options ?? []}
-              values={formState.logins}
-              existing={s?.logins ?? []}
+              logins_ids={formState.logins_ids}
+              logins={s?.logins ?? []}
+              auths={s?.auths ?? []}
+              profiles={s?.profiles ?? []}
+              icons={s?.icons ?? []}
               disabled={disabled}
               show_logins={true}
-              onChange={(values) =>
-                setFormState((prev) => {
-                  const ids = values
-                    .map((v) => v.id)
-                    .filter((id): id is string => !!id);
-                  return {
-                    ...prev,
-                    logins: values,
-                    logins_ids: ids,
-                    pending_ids: pruneSectionPending("logins", ids),
-                  };
-                })
+              onChange={(ids) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  logins_ids: ids,
+                  pending_ids: pruneSectionPending("logins", ids),
+                }))
+              }
+              onCreate={(draft: LoginDraft) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  logins: [...prev.logins, { id: null, ...draft }],
+                }))
               }
             />
           </StepCard>
