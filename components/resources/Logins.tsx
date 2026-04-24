@@ -100,7 +100,7 @@ export function Logins({
   logins,
   auths,
   profiles,
-  icons: _icons,
+  icons,
   disabled = false,
   onChange,
   onCreate,
@@ -119,12 +119,16 @@ export function Logins({
   const [draftAuthId, setDraftAuthId] = useState<string>("");
   const [draftProfileId, setDraftProfileId] = useState<string>("");
   const [draftName, setDraftName] = useState<string>("");
+  const [draftIconId, setDraftIconId] = useState<string>("");
+
+  const iconsList = useMemo(() => icons ?? [], [icons]);
 
   const resetDraft = useCallback(() => {
     setDraftType("auth");
     setDraftAuthId("");
     setDraftProfileId("");
     setDraftName("");
+    setDraftIconId("");
   }, []);
 
   const authLookup = useMemo(() => {
@@ -207,7 +211,7 @@ export function Logins({
       auth_id: draftType === "auth" ? draftAuthId || null : null,
       profile_id: draftType === "profile" ? draftProfileId || null : null,
       display_name: draftName.trim() || fallbackName,
-      icon_id: null,
+      icon_id: draftIconId || null,
     });
     resetDraft();
     setCreateOpen(false);
@@ -218,6 +222,7 @@ export function Logins({
     draftAuthId,
     draftProfileId,
     draftName,
+    draftIconId,
     authLookup,
     profileLookup,
     resetDraft,
@@ -364,6 +369,61 @@ export function Logins({
                 disabled={disabled}
                 className="h-8"
               />
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <Label className="text-xs">Icon</Label>
+              <Select
+                value={draftIconId || "__none__"}
+                onValueChange={(v) => setDraftIconId(v === "__none__" ? "" : v)}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue>
+                    {draftIconId ? (
+                      (() => {
+                        const picked = iconsList.find(
+                          (i) => i.icon_id === draftIconId
+                        );
+                        return (
+                          <span className="flex items-center gap-2">
+                            {picked?.value && (
+                              <SvgIcon
+                                svg={picked.value}
+                                className="h-3.5 w-3.5"
+                                fallback={<LogIn className="h-3.5 w-3.5" />}
+                              />
+                            )}
+                            <span className="truncate">{picked?.name ?? ""}</span>
+                          </span>
+                        );
+                      })()
+                    ) : (
+                      <span className="text-muted-foreground">No icon</span>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">
+                    <span className="text-muted-foreground">No icon</span>
+                  </SelectItem>
+                  {iconsList
+                    .filter((i) => i.icon_id && i.name)
+                    .map((i) => (
+                      <SelectItem key={i.icon_id!} value={i.icon_id!}>
+                        <span className="flex items-center gap-2">
+                          {i.value && (
+                            <SvgIcon
+                              svg={i.value}
+                              className="h-3.5 w-3.5"
+                              fallback={<LogIn className="h-3.5 w-3.5" />}
+                            />
+                          )}
+                          {i.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="flex items-center justify-end gap-2 pt-1">
