@@ -6,7 +6,7 @@ import { StepCard } from "@/components/common/forms/StepCard";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Endpoints } from "@/components/resources/Endpoints";
-import { Flags, type FlagConfig } from "@/components/resources/Flags";
+import { Flags } from "@/components/resources/Flags";
 import { Keys } from "@/components/resources/Keys";
 import { Modalities } from "@/components/resources/Modalities";
 import { Names } from "@/components/resources/Names";
@@ -51,7 +51,7 @@ function collectPendingIds(data: InvocationData): string[] {
     ...((data.names ?? []).map((item) => (item.pending ? item.id : null))),
     ...((data.descriptions ?? []).map((item) => (item.pending ? item.id : null))),
     ...((data.values ?? []).map((item) => (item.pending ? item.id : null))),
-    ...((data.flags ?? []).map((item) => (item.pending ? item.flag_option_id : null))),
+    ...((data.flags ?? []).map((item) => (item.pending ? item.id : null))),
     ...((data.departments ?? []).map((item) => (item.pending ? item.department_id : null))),
     ...((data.keys ?? []).map((item) => (item.pending ? (item.key_id ?? item.id) : null))),
     ...((data.endpoints ?? []).map((item) => (item.pending ? item.id : null))),
@@ -73,7 +73,7 @@ function getInitialFormState(data: InvocationData): InvocationFormState {
     value_id: data.values?.find((item) => item.selected)?.id ?? null,
     flag_ids: (data.flags ?? [])
       .filter((item) => item.selected)
-      .map((item) => item.flag_option_id)
+      .map((item) => item.id)
       .filter((id): id is string => !!id),
     department_ids: (data.departments ?? [])
       .filter((item) => item.selected)
@@ -132,32 +132,58 @@ export default function Invocation({
   );
   const [draftId, setDraftId] = useState<string | null>(urlParams.draftId || null);
   const [isSaving, setIsSaving] = useState(false);
-  const flagConfigs = useMemo<FlagConfig[]>(
-    () =>
-      (data.flags ?? []).map((flag) => ({
-        key: flag.key,
-        label: flag.label,
-        description: flag.description ?? null,
-        icon_id: flag.icon_id ?? null,
-        flag_option_id: flag.flag_option_id ?? null,
-        show: flag.show ?? true,
-        required: flag.required ?? false,
-        generated: flag.generated ?? null,
-        pending: flag.pending ?? null,
-      })),
-    [data.flags],
-  );
-  const flagIdsByKey = useMemo<Record<string, string | null>>(
-    () =>
-      Object.fromEntries(
-        flagConfigs.map((flag) => [
-          flag.key,
-          formState.flag_ids.includes(flag.flag_option_id ?? "")
-            ? (flag.flag_option_id ?? null)
-            : null,
-        ]),
-      ) as Record<string, string | null>,
-    [flagConfigs, formState.flag_ids],
+  // Per-type boolean view of flag_ids, built from the catalog. Rendered by Flags.
+  const flagValues = useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (data.flags ?? [])
+        .filter((f) => f.id)
+        .map((f) => [f.id as string, f]),
+    );
+    for (const id of formState.flag_ids) {
+      const row = byId.get(id);
+      if (!row) continue;
+      const t = row.type ?? row.name;
+      if (t && row.value != null) map[t] = row.value;
+    }
+    return map;
+  }, [formState.flag_ids, data.flags]);
+
+  // Rows grouped by flag type — used when a toggle swaps between true/false ids.
+  type InvocationFlagRow = NonNullable<typeof data.flags>[number];
+  const flagRowsByType = useMemo(() => {
+    const map = new Map<string, InvocationFlagRow[]>();
+    for (const f of data.flags ?? []) {
+      const t = f.type ?? f.name;
+      if (!t) continue;
+      const list = map.get(t) ?? [];
+      list.push(f);
+      map.set(t, list);
+    }
+    return map;
+  }, [data.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = flagRowsByType.get(type) ?? [];
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id),
+        );
+        const retained = prev.flag_ids.filter((id) => !rowIdsForType.has(id));
+        const target =
+          next == null ? null : rows.find((r) => r.value === next)?.id ?? null;
+        const nextIds = target ? [...retained, target] : retained;
+        return {
+          ...prev,
+          flag_ids: nextIds,
+          pending_ids: prev.pending_ids.filter(
+            (id) => !rowIdsForType.has(id) || nextIds.includes(id),
+          ),
+        };
+      });
+    },
+    [flagRowsByType],
   );
 
   useEffect(() => {
@@ -398,23 +424,10 @@ export default function Invocation({
       />
 
       <Flags
-        flags={flagConfigs}
-        flag_ids={flagIdsByKey}
-        mode="multi"
-        onChange={(key, flagId) =>
-          setFormState((prev) => {
-            const nextFlagIds = new Set(prev.flag_ids);
-            const currentForKey = flagConfigs.find((flag) => flag.key === key)?.flag_option_id;
-            if (currentForKey) nextFlagIds.delete(currentForKey);
-            if (flagId) nextFlagIds.add(flagId);
-            return {
-              ...prev,
-              flag_ids: Array.from(nextFlagIds),
-              pending_ids: prev.pending_ids.filter((id) => id !== (currentForKey ?? "")),
-            };
-          })
-        }
-        show_flags={flagConfigs.length > 0}
+        flags={data.flags ?? []}
+        values={flagValues}
+        onChange={handleFlagToggle}
+        show_flags={(data.flags?.length ?? 0) > 0}
         label="Flags"
       />
 

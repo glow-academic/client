@@ -67,20 +67,6 @@ type EvalDescriptionItem = {
   pending?: boolean | null;
 };
 
-type EvalFlagItem = {
-  key: string;
-  label: string;
-  description?: string | null;
-  icon_id?: string | null;
-  flag_option_id?: string | null;
-  show?: boolean;
-  required?: boolean;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
 type EvalDepartmentItem = {
   department_id?: string | null;
   name?: string | null;
@@ -172,10 +158,9 @@ interface EvalFormState {
   name_id: string | null;
   description: string | null;
   description_id: string | null;
-  // Unified flag_ids array (active / dynamic / groups / any future flag
-  // types). Server sends all eval-scoped flag options in `s.flags`; we
-  // render them with <Flags mode="multi"> and store just the selected
-  // flag_option_ids here.
+  // Canonical flag_ids array — server sends one row per flags_resource
+  // entry in `s.flags` (id/type/value); we store the selected ids here and
+  // render with <Flags values=...> which groups rows by type.
   flag_ids: string[];
   department_ids: string[];
   model_ids: string[];
@@ -262,7 +247,7 @@ function EvalComponent({
       description_id:
         data?.descriptions?.find((item) => item.selected)?.id ?? null,
       flag_ids: selectedFlags
-        .map((flag) => flag.flag_option_id)
+        .map((flag) => flag.id)
         .filter((id): id is string => !!id),
       department_ids:
         (data?.departments ?? [])
@@ -411,6 +396,58 @@ function EvalComponent({
   const flagIdsStr = useMemo(
     () => JSON.stringify(formState.flag_ids),
     [formState.flag_ids],
+  );
+
+  // Per-type boolean view of flag_ids, built from the catalog.
+  const flagValues = useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (s?.flags ?? [])
+        .filter((f: any) => f.id)
+        .map((f: any) => [f.id as string, f]),
+    );
+    for (const id of formState.flag_ids) {
+      const row: any = byId.get(id);
+      if (!row) continue;
+      const type = row.type ?? row.name;
+      if (type && row.value != null) map[type] = row.value;
+    }
+    return map;
+  }, [formState.flag_ids, s?.flags]);
+
+  const flagRowsByType = useMemo(() => {
+    const map = new Map<string, any[]>();
+    for (const f of s?.flags ?? []) {
+      const t = (f as any).type ?? (f as any).name;
+      if (!t) continue;
+      const list = map.get(t) ?? [];
+      list.push(f);
+      map.set(t, list);
+    }
+    return map;
+  }, [s?.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = flagRowsByType.get(type) ?? [];
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id),
+        );
+        const retained = prev.flag_ids.filter((id) => !rowIdsForType.has(id));
+        const target =
+          next == null ? null : rows.find((r) => r.value === next)?.id ?? null;
+        const nextIds = target ? [...retained, target] : retained;
+        if (
+          nextIds.length === prev.flag_ids.length &&
+          nextIds.every((id, i) => id === prev.flag_ids[i])
+        ) {
+          return prev;
+        }
+        return { ...prev, flag_ids: nextIds };
+      });
+    },
+    [flagRowsByType],
   );
   const deptIdsStr = useMemo(
     () => JSON.stringify(formState.department_ids),
@@ -1017,53 +1054,18 @@ function EvalComponent({
                   required={false}
                 />
 
-                {/* Unified multi-flag picker — the server returns all
-                    eval-scoped flag options in `s.flags` (currently
-                    active / dynamic / groups); rendering them through
-                    one <Flags mode="multi"> collapses the old three
-                    separate Flags blocks and makes future flag types
-                    show up automatically. */}
+                {/* Canonical flag picker — server returns one row per
+                    flags_resource entry in `s.flags` (typically one true/false
+                    pair per logical flag type). The component groups rows by
+                    type and emits onChange(type, boolean|null). */}
                 <Flags
-                  mode="multi"
                   flags={s?.flags ?? []}
-                  flag_ids={(s?.flags ?? []).reduce(
-                    (
-                      acc: Record<string, string | null>,
-                      flag: { key?: string | null; flag_option_id?: string | null },
-                    ) => {
-                      const isEnabled = formState.flag_ids.includes(
-                        flag.flag_option_id ?? "",
-                      );
-                      if (flag.key) {
-                        acc[flag.key] = isEnabled
-                          ? (flag.flag_option_id ?? null)
-                          : null;
-                      }
-                      return acc;
-                    },
-                    {} as Record<string, string | null>,
-                  )}
+                  values={flagValues}
                   show_flags={(s?.flags?.length ?? 0) > 0}
                   columns={1}
                   label="Flags"
                   disabled={disabled}
-                  onChange={(key: string, flagId: string | null) => {
-                    setFormState((prev) => {
-                      if (flagId) {
-                        if (prev.flag_ids.includes(flagId)) return prev;
-                        return { ...prev, flag_ids: [...prev.flag_ids, flagId] };
-                      }
-                      const flag = (s?.flags ?? []).find(
-                        (f: { key?: string | null }) => f.key === key,
-                      );
-                      if (!flag?.flag_option_id) return prev;
-                      const nextIds = prev.flag_ids.filter(
-                        (id) => id !== flag.flag_option_id,
-                      );
-                      if (nextIds.length === prev.flag_ids.length) return prev;
-                      return { ...prev, flag_ids: nextIds };
-                    });
-                  }}
+                  onChange={handleFlagToggle}
                 />
 
                 <Departments

@@ -42,7 +42,7 @@ type ToolFormState = {
   name: string | null;
   description_id: string | null;
   description: string | null;
-  active_flag_id: string | null;
+  flag_ids: string[];
   args_ids: string[];
   arg_position_ids: string[];
   args_outputs_ids: string[];
@@ -104,7 +104,6 @@ function ToolComponent({
   const s = toolData;
   const selectedName = s?.names?.find((item) => item.selected) ?? null;
   const selectedDescription = s?.descriptions?.find((item) => item.selected) ?? null;
-  const selectedFlag = s?.flags?.find((item) => item.selected) ?? null;
 
   const getInitialFormState = useCallback((): ToolFormState => {
     return {
@@ -112,7 +111,9 @@ function ToolComponent({
       name: null,
       description_id: selectedDescription?.id ?? null,
       description: null,
-      active_flag_id: selectedFlag?.flag_option_id ?? null,
+      flag_ids: (s?.flags?.filter((item) => item.selected) ?? [])
+        .map((item) => item.id)
+        .filter((id): id is string => !!id),
       args_ids: (s?.args?.filter((item) => item.selected) ?? [])
         .map((item) => item.id)
         .filter((id): id is string => !!id),
@@ -127,7 +128,7 @@ function ToolComponent({
         .filter((id): id is string => !!id),
       pending_ids: (s?.pending_ids ?? []) as string[],
     };
-  }, [s, selectedDescription, selectedFlag, selectedName]);
+  }, [s, selectedDescription, selectedName]);
 
   const [formState, setFormState] = useState<ToolFormState>(getInitialFormState);
   const formStateRef = useRef(formState);
@@ -307,7 +308,7 @@ function ToolComponent({
       description: formState.description || null,
       name_id: formState.name_id,
       description_id: formState.description_id,
-      active_flag_id: formState.active_flag_id,
+      flag_ids: formState.flag_ids,
       args_ids: formState.args_ids,
       arg_position_ids: formState.arg_position_ids,
       args_outputs_ids: formState.args_outputs_ids,
@@ -328,7 +329,7 @@ function ToolComponent({
       !!formState.name ||
       !!formState.description_id ||
       !!formState.description ||
-      !!formState.active_flag_id ||
+      formState.flag_ids.length > 0 ||
       formState.args_ids.length > 0 ||
       formState.arg_position_ids.length > 0 ||
       formState.args_outputs_ids.length > 0 ||
@@ -345,7 +346,7 @@ function ToolComponent({
         const payload: Record<string, unknown> = {
           draft_id: draftId || null,
           input_draft_id: draftId || null,
-          active_flag_id: current.active_flag_id,
+          flag_ids: current.flag_ids.length > 0 ? current.flag_ids : null,
           arg_ids: current.args_ids,
           arg_position_ids: current.arg_position_ids,
           args_output_ids: current.args_outputs_ids,
@@ -394,7 +395,7 @@ function ToolComponent({
             name: fs.name_id ? null : prev.name,
             description_id: fs.description_id ?? prev.description_id,
             description: fs.description_id ? null : prev.description,
-            active_flag_id: fs.active_flag_id ?? prev.active_flag_id,
+            flag_ids: fs.flag_ids ?? prev.flag_ids,
             args_ids: fs.arg_ids ?? prev.args_ids,
             arg_position_ids: fs.arg_position_ids ?? prev.arg_position_ids,
             args_outputs_ids: fs.args_outputs_ids ?? fs.args_output_ids ?? prev.args_outputs_ids,
@@ -412,6 +413,53 @@ function ToolComponent({
 
     return () => clearTimeout(timer);
   }, [draftPatchKey, draftId, formState]);
+
+  // Per-type boolean view of flag_ids, built from the catalog. Rendered by Flags.
+  const flagValues = useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (s?.flags ?? [])
+        .filter((f) => f.id)
+        .map((f) => [f.id as string, f])
+    );
+    for (const id of formState.flag_ids) {
+      const row = byId.get(id);
+      if (!row) continue;
+      const type = row.type ?? row.name;
+      if (type && row.value != null) map[type] = row.value;
+    }
+    return map;
+  }, [formState.flag_ids, s?.flags]);
+
+  type ToolFlagRow = NonNullable<NonNullable<typeof s>["flags"]>[number];
+  const flagRowsByType = useMemo(() => {
+    const map = new Map<string, ToolFlagRow[]>();
+    for (const f of s?.flags ?? []) {
+      const t = f.type ?? f.name;
+      if (!t) continue;
+      const list = map.get(t) ?? [];
+      list.push(f);
+      map.set(t, list);
+    }
+    return map;
+  }, [s?.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = flagRowsByType.get(type) ?? [];
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id)
+        );
+        const retained = prev.flag_ids.filter((id) => !rowIdsForType.has(id));
+        const target =
+          next == null ? null : rows.find((r) => r.value === next)?.id ?? null;
+        const nextIds = target ? [...retained, target] : retained;
+        return { ...prev, flag_ids: nextIds };
+      });
+    },
+    [flagRowsByType]
+  );
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
   const handleNameIdChange = useCallback((id: string | null) => {
@@ -484,7 +532,7 @@ function ToolComponent({
                   ...(formState.description_id
                     ? { description_id: formState.description_id }
                     : { description: formState.description || null }),
-                  flag_ids: formState.active_flag_id ? [formState.active_flag_id] : null,
+                  flag_ids: formState.flag_ids.length ? formState.flag_ids : null,
                   args_ids: formState.args_ids.length ? formState.args_ids : null,
                   arg_positions_ids: formState.arg_position_ids.length
                     ? formState.arg_position_ids
@@ -511,7 +559,7 @@ function ToolComponent({
                   ...(formState.description_id
                     ? { description_id: formState.description_id }
                     : { description: formState.description || null }),
-                  flag_ids: formState.active_flag_id ? [formState.active_flag_id] : null,
+                  flag_ids: formState.flag_ids.length ? formState.flag_ids : null,
                   args_ids: formState.args_ids.length ? formState.args_ids : null,
                   arg_positions_ids: formState.arg_position_ids.length
                     ? formState.arg_position_ids
@@ -609,7 +657,7 @@ function ToolComponent({
         id: "basic",
         title: "Basic Information",
         description: "Set the tool name, description, and status.",
-        resetFields: ["name", "description", "active_flag_id"],
+        resetFields: ["name", "description", "flag_ids"],
       },
       {
         id: "args",
@@ -685,7 +733,7 @@ function ToolComponent({
             name_id: null,
             description: null,
             description_id: null,
-            active_flag_id: null,
+            flag_ids: [],
           };
         case "args":
           return { ...prev, args_ids: [] };
@@ -780,7 +828,7 @@ function ToolComponent({
                   required={true}
                 />
               }
-              resetFields={["name", "description", "active_flag_id"]}
+              resetFields={["name", "description", "flag_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
@@ -795,14 +843,12 @@ function ToolComponent({
                   onDescriptionChange={handleDescriptionChange}
                 />
                 <Flags
-                  mode="single"
-                  flag_id={formState.active_flag_id}
+                  values={flagValues}
                   flags={s?.flags ?? []}
                   show_flags
+                  columns={1}
                   disabled={disabled}
-                  onChange={(flagId) =>
-                    setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
-                  }
+                  onChange={handleFlagToggle}
                   label="Flags"
                 />
               </div>

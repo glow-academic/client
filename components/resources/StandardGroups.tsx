@@ -9,7 +9,9 @@
 
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -17,8 +19,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { Check, Plus, X } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 
 export interface StandardGroupResourceItem {
   standard_group_id?: string | null;
@@ -46,6 +48,13 @@ export interface StandardGroupItem {
   generated?: boolean;
 }
 
+export interface StandardGroupDraft {
+  name: string;
+  description: string;
+  points: number;
+  pass_points: number;
+}
+
 export interface StandardGroupsProps {
   standard_group_ids?: string[]; // Current standard group resource IDs (standardized prop name)
   standard_group_resources?: StandardGroupResourceItem[]; // Selected standard group resources (each includes generated field)
@@ -53,6 +62,7 @@ export interface StandardGroupsProps {
   standard_groups?: StandardGroupResourceItem[]; // All available standard groups from API (each includes generated and suggested fields)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update standard_group_ids in form state
+  onCreate?: (draft: StandardGroupDraft) => void; // Optional inline-create handler
   label?: string;
   id?: string;
   required?: boolean;
@@ -70,6 +80,7 @@ export function StandardGroups({
   standard_groups,
   disabled = false,
   onChange,
+  onCreate,
   label = "Standard Groups",
   id = "standard_groups",
   required = false,
@@ -79,6 +90,34 @@ export function StandardGroups({
   // Legacy props — accepted for backward compat but unused after pending migration
   standardGroupIds,
 }: StandardGroupsProps) {
+  // Inline-create form state. Collapsed by default; opens via + New group.
+  const [createOpen, setCreateOpen] = useState(false);
+  const [draftName, setDraftName] = useState("");
+  const [draftDescription, setDraftDescription] = useState("");
+  const [draftPoints, setDraftPoints] = useState<string>("4");
+  const [draftPassPoints, setDraftPassPoints] = useState<string>("3");
+
+  const resetDraft = useCallback(() => {
+    setDraftName("");
+    setDraftDescription("");
+    setDraftPoints("4");
+    setDraftPassPoints("3");
+  }, []);
+
+  const handleCreateSubmit = useCallback(() => {
+    const name = draftName.trim();
+    if (!name || !onCreate) return;
+    const points = Number.parseInt(draftPoints, 10);
+    const passPoints = Number.parseInt(draftPassPoints, 10);
+    onCreate({
+      name,
+      description: draftDescription.trim(),
+      points: Number.isFinite(points) ? points : 0,
+      pass_points: Number.isFinite(passPoints) ? passPoints : 0,
+    });
+    resetDraft();
+    setCreateOpen(false);
+  }, [draftName, draftDescription, draftPoints, draftPassPoints, onCreate, resetDraft]);
   // Use standardized props with fallback to legacy props
   const ids = useMemo(
     () => standard_group_ids ?? standardGroupIds ?? [],
@@ -199,17 +238,19 @@ export function StandardGroups({
 
   return (
     <div className="space-y-2">
-      {label && (
+      {(label || onCreate) && (
         <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1">
-            {label}
-            {required && <span className="text-destructive">*</span>}
-            {description && (
-              <span className="text-xs text-muted-foreground ml-2">
-                {description}
-              </span>
-            )}
-          </Label>
+          {label && (
+            <Label htmlFor={id} className="flex items-center gap-1">
+              {label}
+              {required && <span className="text-destructive">*</span>}
+              {description && (
+                <span className="text-xs text-muted-foreground ml-2">
+                  {description}
+                </span>
+              )}
+            </Label>
+          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -246,8 +287,105 @@ export function StandardGroups({
               </TooltipProvider>
             </>
           )}
+          {onCreate && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="ml-auto"
+              onClick={() => setCreateOpen((v) => !v)}
+              disabled={disabled}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              {createOpen ? "Cancel" : "New group"}
+            </Button>
+          )}
         </div>
       )}
+
+      {onCreate && createOpen && (
+        <div className="rounded-md border bg-card p-3 space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor={`${id}-new-name`} className="text-xs">
+                Name
+              </Label>
+              <Input
+                id={`${id}-new-name`}
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                placeholder="e.g. Communication"
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`${id}-new-description`} className="text-xs">
+                Description
+              </Label>
+              <Textarea
+                id={`${id}-new-description`}
+                value={draftDescription}
+                onChange={(e) => setDraftDescription(e.target.value)}
+                placeholder="What this group measures"
+                disabled={disabled}
+                className="min-h-[32px] h-8 resize-y text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`${id}-new-points`} className="text-xs">
+                Points (max)
+              </Label>
+              <Input
+                id={`${id}-new-points`}
+                type="number"
+                min={0}
+                value={draftPoints}
+                onChange={(e) => setDraftPoints(e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`${id}-new-pass-points`} className="text-xs">
+                Pass points
+              </Label>
+              <Input
+                id={`${id}-new-pass-points`}
+                type="number"
+                min={0}
+                value={draftPassPoints}
+                onChange={(e) => setDraftPassPoints(e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                resetDraft();
+                setCreateOpen(false);
+              }}
+              disabled={disabled}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleCreateSubmit}
+              disabled={disabled || !draftName.trim()}
+            >
+              Add group
+            </Button>
+          </div>
+        </div>
+      )}
+
       <SelectableGrid<StandardGroupItem>
         horizontal
         items={displayStandardGroups}

@@ -1,20 +1,18 @@
 /**
  * ProfilePersonas.tsx
- * Resource component for managing profile persona assignments within cohorts
- * Manages profile_persona_ids array - which persona each profile talks to
+ * Resource component for managing profile persona assignments within cohorts.
+ *
+ * Canonical pattern: render one labeled section per profile, each containing a
+ * single-select Personas-style SelectableGrid (gradient tile + SvgIcon). This
+ * matches the persona presentation used everywhere else in the app and avoids
+ * a bespoke Select dropdown that printed raw SVG markup as text.
  */
 
 "use client";
 
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
@@ -22,8 +20,23 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
+import { SvgIcon } from "@/components/common/SvgIcon";
+import { Brain, Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+const generateGradientFromHex = (hexColor: string): string => {
+  const cleanHex = hexColor.replace("#", "");
+  const r = parseInt(cleanHex.substr(0, 2), 16);
+  const g = parseInt(cleanHex.substr(2, 2), 16);
+  const b = parseInt(cleanHex.substr(4, 2), 16);
+  const lighterR = Math.min(255, r + 60);
+  const lighterG = Math.min(255, g + 60);
+  const lighterB = Math.min(255, b + 60);
+  const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG
+    .toString(16)
+    .padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+  return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
+};
 
 export interface ProfilePersonasResourceItem {
   id?: string | null;
@@ -41,6 +54,14 @@ export interface ProfilePersonaItem {
   persona_icon?: string | undefined;
   persona_color?: string | undefined;
   generated?: boolean | undefined;
+}
+
+interface PersonaCard {
+  persona_id: string;
+  persona_name: string;
+  persona_description: string;
+  persona_icon: string;
+  persona_color: string;
 }
 
 export interface ProfilePersonasProps {
@@ -71,7 +92,9 @@ export interface ProfilePersonasProps {
   disabled?: boolean;
   onChange: (personas: ProfilePersonaItem[]) => void;
   /** Callback to emit persona values for unified draft */
-  onProfilePersonaValues?: (values: Array<{ profile_id: string; persona_id: string }>) => void;
+  onProfilePersonaValues?: (
+    values: Array<{ profile_id: string; persona_id: string }>,
+  ) => void;
   cohort_id?: string | null;
   profile_ids?: string[];
   label?: string;
@@ -108,13 +131,16 @@ export function ProfilePersonas({
     [profile_persona_resources],
   );
 
-  // Pending state: items with pending=true from soft draft connections
-  const pendingItems = useMemo(() => {
-    return allPersonas.filter((p) => p.pending && p.profile_id);
-  }, [allPersonas]);
+  const pendingItems = useMemo(
+    () => allPersonas.filter((p) => p.pending && p.profile_id),
+    [allPersonas],
+  );
   const showDiff = pendingItems.length > 0;
   const pendingProfileIds = useMemo(
-    () => new Set(pendingItems.map((p) => p.profile_id).filter(Boolean) as string[]),
+    () =>
+      new Set(
+        pendingItems.map((p) => p.profile_id).filter(Boolean) as string[],
+      ),
     [pendingItems],
   );
 
@@ -141,81 +167,68 @@ export function ProfilePersonas({
     return map;
   }, [profiles, profile_resources]);
 
-  // Build available personas list from the personas prop
-  const availablePersonas = useMemo(() => {
+  // Cards available globally (from personas catalog).
+  const availablePersonas: PersonaCard[] = useMemo(() => {
     return (personas ?? [])
       .filter((p) => p.persona_id)
       .map((p) => ({
         persona_id: p.persona_id!,
         persona_name: p.name || "Unnamed",
+        persona_description: p.description || "",
         persona_icon: p.icon || "",
-        persona_color: p.color || "",
+        persona_color: p.color || "#64748b",
       }));
   }, [personas]);
 
-  // Build persona lookup from allPersonas (profile_personas resources)
+  // Per-profile persona pool — falls back to the global catalog when the
+  // server hasn't narrowed it. Enrich entries with display details from the
+  // catalog (name/icon/color/description).
   const personasByProfile = useMemo(() => {
-    const map = new Map<
-      string,
-      Array<{
-        persona_id: string;
-        persona_name: string;
-        persona_icon: string;
-        persona_color: string;
-      }>
-    >();
+    const map = new Map<string, PersonaCard[]>();
     allPersonas.forEach((p) => {
-      if (p.profile_id && p.persona_id) {
-        const existing = map.get(p.profile_id) || [];
-        if (!existing.some((e) => e.persona_id === p.persona_id)) {
-          // Look up persona details from available personas
-          const details = availablePersonas.find(
-            (ap) => ap.persona_id === p.persona_id,
-          );
-          existing.push({
-            persona_id: p.persona_id,
-            persona_name: details?.persona_name || "Unnamed",
-            persona_icon: details?.persona_icon || "",
-            persona_color: details?.persona_color || "",
-          });
-        }
-        map.set(p.profile_id, existing);
-      }
+      if (!p.profile_id || !p.persona_id) return;
+      const existing = map.get(p.profile_id) || [];
+      if (existing.some((e) => e.persona_id === p.persona_id)) return;
+      const details = availablePersonas.find(
+        (ap) => ap.persona_id === p.persona_id,
+      );
+      existing.push({
+        persona_id: p.persona_id,
+        persona_name: details?.persona_name || "Unnamed",
+        persona_description: details?.persona_description || "",
+        persona_icon: details?.persona_icon || "",
+        persona_color: details?.persona_color || "#64748b",
+      });
+      map.set(p.profile_id, existing);
     });
     return map;
   }, [allPersonas, availablePersonas]);
 
-  // Track selected persona_id (artifact) by profile
+  // Selection state — one persona per profile.
   const [selectedPersonaByProfile, setSelectedPersonaByProfile] = useState<
     Map<string, string>
   >(new Map());
-  // Dirty flag: once the user interacts, stop syncing from server data and
-  // stop emitting on pure re-renders (same pattern as Examples.tsx).
   const isDirtyRef = useRef(false);
   const isInitialMountRef = useRef(true);
 
-  // Initialize from server resources — skip while the user is editing so
-  // in-progress assignments aren't clobbered.
+  // Hydrate from server while user hasn't edited yet.
   useEffect(() => {
     if (isDirtyRef.current) return;
-    const nextPersonas = new Map<string, string>();
+    const next = new Map<string, string>();
     currentPersonas.forEach((p) => {
-      const profileId = p.profile_id;
-      const personaId = p.persona_id;
-      if (profileId && personaId) {
-        nextPersonas.set(profileId, personaId);
+      if (p.profile_id && p.persona_id) {
+        next.set(p.profile_id, p.persona_id);
       }
     });
     setSelectedPersonaByProfile((prev) => {
       const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
-      const nextKey = JSON.stringify(Array.from(nextPersonas.entries()).sort());
-      return prevKey === nextKey ? prev : nextPersonas;
+      const nextKey = JSON.stringify(Array.from(next.entries()).sort());
+      return prevKey === nextKey ? prev : next;
     });
   }, [currentPersonas]);
 
-  // Emit persona values for unified draft. Only emit after the user has
-  // actually interacted — otherwise the initial sync effect and every
-  // server-driven re-render would emit and trigger spurious saves.
+  // Emit value array only after user interaction — initial sync and pure
+  // re-renders would otherwise spam the draft save.
   const onProfilePersonaValuesRef = useRef(onProfilePersonaValues);
   onProfilePersonaValuesRef.current = onProfilePersonaValues;
   useEffect(() => {
@@ -234,78 +247,71 @@ export function ProfilePersonas({
     onProfilePersonaValuesRef.current(values);
   }, [selectedPersonaByProfile]);
 
-  const handlePersonaChange = useCallback(
-    (profileId: string, personaId: string) => {
-      isDirtyRef.current = true;
-      const updated = new Map(selectedPersonaByProfile);
-      updated.set(profileId, personaId);
-      setSelectedPersonaByProfile(updated);
-
-      // Convert to array format for parent
-      const personasArray = Array.from(updated.entries()).map(([pid, perid]) => {
-        const details = availablePersonas.find(
-          (p) => p.persona_id === perid,
-        );
-        return {
-          cohort_id: cohort_id || "",
-          profile_id: pid,
-          persona_id: perid,
-          persona_name: details?.persona_name || undefined,
-          persona_description: undefined,
-          persona_icon: details?.persona_icon || undefined,
-          persona_color: details?.persona_color || undefined,
-          generated: false,
-        } satisfies ProfilePersonaItem;
-      });
-
+  const emitParentArray = useCallback(
+    (map: Map<string, string>) => {
+      const personasArray = Array.from(map.entries())
+        .filter(([, perid]) => !!perid)
+        .map(([pid, perid]) => {
+          const details = availablePersonas.find(
+            (p) => p.persona_id === perid,
+          );
+          return {
+            cohort_id: cohort_id || "",
+            profile_id: pid,
+            persona_id: perid,
+            persona_name: details?.persona_name || undefined,
+            persona_description: details?.persona_description || undefined,
+            persona_icon: details?.persona_icon || undefined,
+            persona_color: details?.persona_color || undefined,
+            generated: false,
+          } satisfies ProfilePersonaItem;
+        });
       onChange(personasArray);
     },
-    [selectedPersonaByProfile, cohort_id, onChange, availablePersonas],
+    [availablePersonas, cohort_id, onChange],
   );
 
-  // Accept pending — keep pending persona assignments in selection (no-op)
+  // Toggle: clicking the currently selected persona clears that profile's
+  // assignment; clicking a different one switches.
+  const handlePersonaSelect = useCallback(
+    (profileId: string, personaId: string) => {
+      isDirtyRef.current = true;
+      setSelectedPersonaByProfile((prev) => {
+        const updated = new Map(prev);
+        if (updated.get(profileId) === personaId) {
+          updated.delete(profileId);
+        } else {
+          updated.set(profileId, personaId);
+        }
+        emitParentArray(updated);
+        return updated;
+      });
+    },
+    [emitParentArray],
+  );
+
   const handleAccept = useCallback(() => {
-    // Pending items are already reflected in the selections
-    // The next draft save will persist them as active
-    // Nothing to change in form state — they're already included
+    // Pending items are already reflected — next save persists them.
   }, []);
 
-  // Reject pending — remove pending persona assignments from selection
   const handleReject = useCallback(() => {
     isDirtyRef.current = true;
-    const updated = new Map(selectedPersonaByProfile);
-    pendingProfileIds.forEach((profileId) => {
-      updated.delete(profileId);
+    setSelectedPersonaByProfile((prev) => {
+      const updated = new Map(prev);
+      pendingProfileIds.forEach((profileId) => {
+        updated.delete(profileId);
+      });
+      emitParentArray(updated);
+      return updated;
     });
-    setSelectedPersonaByProfile(updated);
+  }, [pendingProfileIds, emitParentArray]);
 
-    // Convert to array format for parent
-    const personasArray = Array.from(updated.entries()).map(([pid, perid]) => {
-      const details = availablePersonas.find(
-        (p) => p.persona_id === perid,
-      );
-      return {
-        cohort_id: cohort_id || "",
-        profile_id: pid,
-        persona_id: perid,
-        persona_name: details?.persona_name || undefined,
-        persona_description: undefined,
-        persona_icon: details?.persona_icon || undefined,
-        persona_color: details?.persona_color || undefined,
-        generated: false,
-      } satisfies ProfilePersonaItem;
-    });
-
-    onChange(personasArray);
-  }, [selectedPersonaByProfile, pendingProfileIds, availablePersonas, cohort_id, onChange]);
-
-  // Don't render if show_profile_personas is false or no profiles
   if (!show || profile_ids.length === 0) {
     return null;
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       {label && (
         <div className="flex items-center gap-2">
           <Label htmlFor={id} className="flex items-center gap-1">
@@ -355,67 +361,109 @@ export function ProfilePersonas({
           )}
         </div>
       )}
-      <div className="pl-4 space-y-3">
+
+      <div className="space-y-6">
         {profile_ids.map((profileId) => {
           const isPending = pendingProfileIds.has(profileId);
           const profileLabel =
             profileLabelMap.get(profileId) ?? "Untitled profile";
-          // Use per-profile personas if available, otherwise use all available personas
-          const profileAvailablePersonas =
-            personasByProfile.get(profileId) || availablePersonas;
+          const cards =
+            personasByProfile.get(profileId) ?? availablePersonas;
           const selectedPersonaId =
-            selectedPersonaByProfile.get(profileId) || "";
+            selectedPersonaByProfile.get(profileId) || null;
 
-          if (profileAvailablePersonas.length === 0) {
-            return null;
+          if (cards.length === 0) {
+            return (
+              <div key={profileId} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{profileLabel}</span>
+                </div>
+                <p className="text-xs text-muted-foreground pl-1">
+                  No personas available.
+                </p>
+              </div>
+            );
           }
 
           return (
-            <div
-              key={profileId}
-              className={cn(
-                "flex items-center gap-3",
-                isPending &&
-                  "ring-2 ring-success bg-success/10 rounded-lg p-2",
-              )}
-            >
-              <span
-                className="text-sm font-medium min-w-[140px] truncate"
-                title={profileLabel}
-              >
-                {profileLabel}
-              </span>
-              {isPending && (
-                <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  Pending
-                </span>
-              )}
-              <Select
-                value={selectedPersonaId}
-                onValueChange={(value) =>
-                  handlePersonaChange(profileId, value)
+            <div key={profileId} className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">{profileLabel}</span>
+                {isPending && (
+                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                    Pending
+                  </span>
+                )}
+              </div>
+
+              <SelectableGrid<PersonaCard>
+                items={cards}
+                selectedId={selectedPersonaId}
+                onSelect={(personaId) =>
+                  handlePersonaSelect(profileId, personaId)
                 }
+                getId={(item) => item.persona_id}
+                horizontal={true}
                 disabled={disabled}
-              >
-                <SelectTrigger className="w-[240px]">
-                  <SelectValue placeholder="Select persona..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {profileAvailablePersonas.map((persona) => (
-                    <SelectItem
-                      key={persona.persona_id}
-                      value={persona.persona_id}
+                renderItem={(item, isSelected) => {
+                  const cardPending = isPending && isSelected;
+                  return (
+                    <div
+                      className={cn(
+                        "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                        "hover:shadow-md hover:bg-accent/50",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        cardPending && "ring-2 ring-success bg-success/10",
+                        isSelected &&
+                          !cardPending &&
+                          "ring-2 ring-primary bg-accent",
+                      )}
                     >
-                      <div className="flex items-center gap-2">
-                        {persona.persona_icon && (
-                          <span>{persona.persona_icon}</span>
-                        )}
-                        <span>{persona.persona_name}</span>
+                      {isSelected && !cardPending && (
+                        <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                          <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                        </div>
+                      )}
+
+                      {cardPending && (
+                        <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                          Pending
+                        </div>
+                      )}
+
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="p-2 rounded-lg shadow-lg flex-shrink-0"
+                          style={{
+                            background: generateGradientFromHex(
+                              item.persona_color,
+                            ),
+                          }}
+                        >
+                          <SvgIcon
+                            svg={item.persona_icon}
+                            className="h-5 w-5 text-white"
+                            fallback={
+                              <Brain className="h-5 w-5 text-white" />
+                            }
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm leading-tight">
+                            {item.persona_name}
+                          </h3>
+                          {item.persona_description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {item.persona_description}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </div>
+                  );
+                }}
+                emptyMessage="No personas found."
+              />
             </div>
           );
         })}

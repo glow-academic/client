@@ -14,7 +14,7 @@ import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Fields } from "@/components/resources/Fields";
-import { Flags, type FlagConfig } from "@/components/resources/Flags";
+import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
@@ -44,7 +44,6 @@ type ParameterFormState = {
   name: string | null;
   description_id: string | null;
   description: string | null;
-  active_flag_id: string | null;
   flag_ids: string[];
   department_ids: string[];
   field_ids: string[];
@@ -67,6 +66,7 @@ const PARAMETER_RESOURCES: ResourceConfig[] = [
     flushKey: "description_id",
     type: "single",
   },
+  { key: "flags", formKey: "flag_ids", flushKey: null, type: "multi" },
   {
     key: "departments",
     formKey: "department_ids",
@@ -143,22 +143,8 @@ function ParameterComponent({
     parameterData?.fields_step_show_ai_generate,
   ]);
 
-  const flagIdByKey = useMemo(() => {
-    const map: Record<string, string> = {};
-    (parameterData?.flags ?? []).forEach((flag) => {
-      if (flag.key && flag.flag_option_id) {
-        map[flag.key] = flag.flag_option_id;
-      }
-    });
-    return map;
-  }, [parameterData?.flags]);
-
   const getInitialFormState = useCallback((): ParameterFormState => {
     const data = parameterDataRef.current;
-    const selectedFlags = data?.flags?.filter((flag) => flag.selected) ?? [];
-    const selectedFlagIds = selectedFlags
-      .map((flag) => flag.flag_option_id)
-      .filter((id): id is string => !!id);
 
     if (!data) {
       return {
@@ -166,7 +152,6 @@ function ParameterComponent({
         name: null,
         description_id: null,
         description: null,
-        active_flag_id: null,
         flag_ids: [],
         department_ids: [],
         field_ids: [],
@@ -179,9 +164,9 @@ function ParameterComponent({
       name: null,
       description_id: data.descriptions?.find((item) => item.selected)?.id ?? null,
       description: null,
-      active_flag_id:
-        selectedFlags.find((flag) => flag.key === "active")?.flag_option_id ?? null,
-      flag_ids: selectedFlagIds,
+      flag_ids: (data.flags?.filter((item) => item.selected) ?? [])
+        .map((item) => item.id)
+        .filter((id): id is string => !!id),
       department_ids:
         (data.departments?.filter((item) => item.selected) ?? [])
           .map((item) => item.department_id)
@@ -228,8 +213,6 @@ function ParameterComponent({
 
       const formStateFromServer = result?.form_state;
       if (formStateFromServer) {
-        const nextFlagIds = formStateFromServer.flag_ids ?? [];
-
         setFormState((prev) => {
           const next = {
             ...prev,
@@ -243,11 +226,7 @@ function ParameterComponent({
             description: formStateFromServer.description_id
               ? null
               : prev.description,
-            active_flag_id:
-              flagIdByKey["active"] && nextFlagIds.includes(flagIdByKey["active"])
-                ? flagIdByKey["active"]
-                : null,
-            flag_ids: nextFlagIds,
+            flag_ids: formStateFromServer.flag_ids ?? prev.flag_ids,
             department_ids: formStateFromServer.department_ids ?? prev.department_ids,
             field_ids: formStateFromServer.field_ids ?? prev.field_ids,
             pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
@@ -260,7 +239,6 @@ function ParameterComponent({
             prev.name !== next.name ||
             prev.description_id !== next.description_id ||
             prev.description !== next.description ||
-            prev.active_flag_id !== next.active_flag_id ||
             JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
             JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
             JSON.stringify(prev.field_ids) !== JSON.stringify(next.field_ids) ||
@@ -273,7 +251,7 @@ function ParameterComponent({
 
       return result;
     };
-  }, [flagIdByKey, patchParameterDraftAction]);
+  }, [patchParameterDraftAction]);
 
   const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
 
@@ -284,13 +262,9 @@ function ParameterComponent({
     ): Record<string, unknown> => {
       const currentFormState: ParameterFormState =
         formStateRef.current as unknown as ParameterFormState;
-      const effectiveFlags = currentFormState.flag_ids;
       const referenceState = lastPatchedFormStateRef.current as
         | (ParameterFormState & Record<string, unknown>)
         | null;
-      const referenceFlags = referenceState?.flag_ids ?? [];
-      const flagsChanged =
-        JSON.stringify(effectiveFlags) !== JSON.stringify(referenceFlags);
 
       const payload: Record<string, unknown> = {
         draft_id: inputDraftId || null,
@@ -300,9 +274,6 @@ function ParameterComponent({
           referenceState,
           flushResults: flushResults ?? {},
         }),
-        ...(flagsChanged
-          ? { flag_ids: effectiveFlags.length > 0 ? effectiveFlags : null }
-          : {}),
         pending_ids:
           currentFormState.pending_ids.length > 0
             ? currentFormState.pending_ids
@@ -328,6 +299,62 @@ function ParameterComponent({
       PARAMETER_RESOURCES,
       formState as unknown as Record<string, unknown>
     ) || formState.flag_ids.length > 0;
+
+  // Per-type boolean view of flag_ids, built from the catalog. Rendered by Flags.
+  const flagValues = useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (parameterData?.flags ?? [])
+        .filter((f) => f.id)
+        .map((f) => [f.id as string, f]),
+    );
+    for (const id of formState.flag_ids) {
+      const row = byId.get(id);
+      if (!row) continue;
+      const t = row.type ?? row.name;
+      if (t && row.value != null) map[t] = row.value;
+    }
+    return map;
+  }, [formState.flag_ids, parameterData?.flags]);
+
+  // Rows grouped by flag type — used when a toggle swaps between true/false ids.
+  type ParameterFlagRow = NonNullable<
+    NonNullable<typeof parameterData>["flags"]
+  >[number];
+  const flagRowsByType = useMemo(() => {
+    const map = new Map<string, ParameterFlagRow[]>();
+    for (const f of parameterData?.flags ?? []) {
+      const t = f.type ?? f.name;
+      if (!t) continue;
+      const list = map.get(t) ?? [];
+      list.push(f);
+      map.set(t, list);
+    }
+    return map;
+  }, [parameterData?.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = flagRowsByType.get(type) ?? [];
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id),
+        );
+        const retained = prev.flag_ids.filter((id) => !rowIdsForType.has(id));
+        const target =
+          next == null ? null : rows.find((r) => r.value === next)?.id ?? null;
+        const nextIds = target ? [...retained, target] : retained;
+        return {
+          ...prev,
+          flag_ids: nextIds,
+          pending_ids: prev.pending_ids.filter(
+            (id) => !rowIdsForType.has(id) || nextIds.includes(id),
+          ),
+        };
+      });
+    },
+    [flagRowsByType],
+  );
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
   const handleNameIdChange = useCallback((nameId: string | null) => {
@@ -620,7 +647,6 @@ function ParameterComponent({
     () => [
       "name_id",
       "description_id",
-      "active_flag_id",
       "flag_ids",
       "department_ids",
       "field_ids",
@@ -650,7 +676,6 @@ function ParameterComponent({
             name: null,
             description_id: null,
             description: null,
-            active_flag_id: null,
             flag_ids: [],
             department_ids: [],
           };
@@ -724,7 +749,7 @@ function ParameterComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
               }
-              resetFields={["name_id", "description_id", "department_ids", "active_flag_id"]}
+              resetFields={["name_id", "description_id", "department_ids", "flag_ids"]}
               actions={
                 stepResources["basic"]?.length &&
                 parameterData?.basic_show_ai_generate ? (
@@ -774,38 +799,13 @@ function ParameterComponent({
                 />
 
                 <Flags
-                  mode="multi"
-                  flags={(parameterData?.flags ?? []) as unknown as FlagConfig[]}
-                  flag_ids={Object.fromEntries(
-                    Object.entries(flagIdByKey).map(([key, id]) => [
-                      key,
-                      formState.flag_ids.includes(id) ? id : null,
-                    ])
-                  )}
+                  flags={parameterData?.flags ?? []}
+                  values={flagValues}
                   show_flags={(parameterData?.flags?.length ?? 0) > 0}
                   columns={2}
                   label="Flags"
                   disabled={disabled}
-                  onChange={(key, flagId) =>
-                    setFormState((prev) => {
-                      const optionId = flagIdByKey[key];
-                      // Drop any previously-enabled id for this key, then add
-                      // the new one (null means disabled). Keeps flag_ids in
-                      // sync with the server's single-id-per-key contract.
-                      const nextFlagIds = prev.flag_ids.filter(
-                        (id) => id !== optionId
-                      );
-                      if (flagId) nextFlagIds.push(flagId);
-                      return {
-                        ...prev,
-                        active_flag_id:
-                          key === "active"
-                            ? flagId
-                            : prev.active_flag_id,
-                        flag_ids: Array.from(new Set(nextFlagIds)),
-                      };
-                    })
-                  }
+                  onChange={handleFlagToggle}
                 />
               </div>
             </StepCard>
@@ -881,7 +881,8 @@ function ParameterComponent({
       allFieldResources,
       canRegenerateForStepCard,
       disabled,
-      flagIdByKey,
+      flagValues,
+      handleFlagToggle,
       formState,
       handleDirectStepGenerate,
       handleGenerateResources,

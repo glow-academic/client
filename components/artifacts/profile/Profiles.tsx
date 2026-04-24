@@ -562,7 +562,7 @@ export default function Profiles({
             id: role.role ?? "",
             name: role.name ?? role.role ?? "Role",
             description: role.description ?? "",
-            iconSvg: role.icon_value ?? null,
+            iconSvg: role.icon ?? role.icon_value ?? null,
             icon: UserIcon,
             color: role.color_hex ?? "#64748b",
           };

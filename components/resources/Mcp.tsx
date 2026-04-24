@@ -13,96 +13,94 @@ import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-export interface McpResourceItem {
-  mcp_id?: string | null;
+export interface McpOption {
   agent_id?: string | null;
-  name?: string | null;
-  description?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
+  agent_name?: string | null;
+  agent_description?: string | null;
+}
+
+export interface McpValue {
+  id: string | null;
+  agent_id: string;
+}
+
+export interface McpExisting {
+  id?: string | null;
+  agent_id?: string | null;
   pending?: boolean | null;
 }
 
-type AgentOption = {
-  agent_id?: string | null;
-  name?: string | null;
-  description?: string | null;
-};
-
 export interface McpProps {
-  mcp_id?: string | null;
-  mcp?: McpResourceItem[];
-  agents?: AgentOption[];
-  show_mcp?: boolean;
+  options?: McpOption[];
+  value?: McpValue | null;
+  existing?: McpExisting[];
   disabled?: boolean;
-  onChange: (id: string | null) => void;
+  onChange: (value: McpValue | null) => void;
   label?: string;
   description?: string;
+  show_mcp?: boolean;
 }
 
 export function Mcp({
-  mcp_id,
-  mcp,
-  agents,
-  show_mcp = true,
+  options,
+  value,
+  existing,
   disabled = false,
   onChange,
   label = "MCP",
   description = "Pick the agent to expose as this setting's MCP server.",
+  show_mcp = true,
 }: McpProps) {
-  const selectedId = mcp_id ?? null;
-  const allMcp = useMemo(() => mcp ?? [], [mcp]);
+  const opts = useMemo(() => options ?? [], [options]);
+  const selectedAgentId = value?.agent_id ?? null;
 
-  const agentLookup = useMemo(() => {
-    const map = new Map<string, AgentOption>();
-    (agents ?? []).forEach((a) => {
-      if (a.agent_id) map.set(a.agent_id, a);
-    });
+  const existingByAgent = useMemo(() => {
+    const map = new Map<string, McpExisting>();
+    for (const e of existing ?? []) {
+      if (e.agent_id) map.set(e.agent_id, e);
+    }
     return map;
-  }, [agents]);
+  }, [existing]);
 
-  const pendingIds = useMemo(
-    () =>
-      new Set(
-        allMcp
-          .filter((item) => item.pending && item.mcp_id)
-          .map((item) => item.mcp_id as string)
-      ),
-    [allMcp]
-  );
-  const showDiff = pendingIds.size > 0;
+  const pendingAgents = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of existing ?? []) {
+      if (e.pending && e.agent_id) set.add(e.agent_id);
+    }
+    return set;
+  }, [existing]);
+  const showDiff = pendingAgents.size > 0;
 
   type GridItem = {
     id: string;
+    agent_id: string;
     name: string;
     description: string | null;
-    agentName: string | null;
-    suggested: boolean;
   };
 
   const items = useMemo<GridItem[]>(
     () =>
-      allMcp
-        .filter((item) => item.mcp_id)
-        .map((item) => {
-          const agent = item.agent_id ? agentLookup.get(item.agent_id) : null;
-          return {
-            id: item.mcp_id!,
-            name: item.name || agent?.name || "Unnamed MCP",
-            description: item.description || agent?.description || null,
-            agentName: agent?.name ?? null,
-            suggested: !!item.suggested,
-          };
-        }),
-    [allMcp, agentLookup]
+      opts
+        .filter((o) => !!o.agent_id)
+        .map((o) => ({
+          id: o.agent_id!,
+          agent_id: o.agent_id!,
+          name: o.agent_name ?? "Unnamed agent",
+          description: o.agent_description ?? null,
+        })),
+    [opts]
   );
 
   const handleSelect = useCallback(
-    (id: string) => {
-      onChange(selectedId === id ? null : id);
+    (agentId: string) => {
+      if (selectedAgentId === agentId) {
+        onChange(null);
+        return;
+      }
+      const existingId = existingByAgent.get(agentId)?.id ?? null;
+      onChange({ id: existingId, agent_id: agentId });
     },
-    [selectedId, onChange]
+    [selectedAgentId, existingByAgent, onChange]
   );
 
   const handleAccept = useCallback(() => {
@@ -110,8 +108,8 @@ export function Mcp({
   }, []);
 
   const handleReject = useCallback(() => {
-    if (selectedId && pendingIds.has(selectedId)) onChange(null);
-  }, [onChange, pendingIds, selectedId]);
+    if (selectedAgentId && pendingAgents.has(selectedAgentId)) onChange(null);
+  }, [onChange, pendingAgents, selectedAgentId]);
 
   if (!show_mcp) return null;
 
@@ -159,36 +157,27 @@ export function Mcp({
       <p className="text-xs text-muted-foreground">{description}</p>
       {items.length === 0 ? (
         <div className="text-sm text-muted-foreground py-2">
-          No MCP configs available.
+          No agents available.
         </div>
       ) : (
         <SelectableGrid
           items={items}
-          selectedId={selectedId}
+          selectedId={selectedAgentId}
           onSelect={handleSelect}
-          getId={(item) => item.id}
+          getId={(item) => item.agent_id}
           renderItem={(item, isSelected) => (
             <div
               className={cn(
                 "rounded-md border p-3 transition-colors",
                 isSelected && "border-primary bg-primary/5",
-                pendingIds.has(item.id) && "ring-2 ring-success bg-success/10"
+                pendingAgents.has(item.agent_id) &&
+                  "ring-2 ring-success bg-success/10"
               )}
             >
               <div className="font-medium text-sm">{item.name}</div>
               {item.description ? (
                 <div className="text-xs text-muted-foreground mt-1">
                   {item.description}
-                </div>
-              ) : null}
-              {item.agentName && item.agentName !== item.name ? (
-                <div className="text-[10px] text-muted-foreground mt-1">
-                  Agent: {item.agentName}
-                </div>
-              ) : null}
-              {item.suggested ? (
-                <div className="text-[10px] uppercase tracking-wide text-primary mt-2">
-                  Suggested
                 </div>
               ) : null}
             </div>

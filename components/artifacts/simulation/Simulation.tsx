@@ -136,7 +136,7 @@ function collectPendingIds(data?: SimulationData): string[] {
     if (item.pending && item.id) ids.add(item.id);
   });
   data.flags?.forEach((item) => {
-    if (item.pending && item.flag_option_id) ids.add(item.flag_option_id);
+    if (item.pending && item.id) ids.add(item.id);
   });
   data.departments?.forEach((item) => {
     if (item.pending && item.department_id) ids.add(item.department_id);
@@ -307,7 +307,7 @@ function SimulationComponent({
       name_id: data.names?.find((item) => item.selected)?.id ?? null,
       description_id: data.descriptions?.find((item) => item.selected)?.id ?? null,
       flag_ids: (data.flags?.filter((item) => item.selected) ?? [])
-        .map((x) => x.flag_option_id)
+        .map((x) => x.id)
         .filter(Boolean) as string[],
       department_ids: (data.departments?.filter((item) => item.selected) ?? [])
         .map((x) => x.department_id)
@@ -339,6 +339,59 @@ function SimulationComponent({
 
   const [formState, setFormState] =
     useState<SimulationFormState>(getInitialFormState);
+
+  // Per-type boolean view of flag_ids, built from the catalog. Used by
+  // the canonical <Flags> picker.
+  const flagValues = React.useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (simulationData?.flags ?? [])
+        .filter((f: any) => f.id)
+        .map((f: any) => [String(f.id), f]),
+    );
+    for (const id of formState.flag_ids) {
+      const row = byId.get(id) as any;
+      if (!row) continue;
+      const t = row.type ?? row.name;
+      if (t && row.value != null) map[t] = row.value;
+    }
+    return map;
+  }, [formState.flag_ids, simulationData?.flags]);
+
+  type SimFlagRow = NonNullable<NonNullable<typeof simulationData>["flags"]>[number];
+  const flagRowsByType = React.useMemo(() => {
+    const map = new Map<string, SimFlagRow[]>();
+    for (const f of simulationData?.flags ?? []) {
+      const t = (f as any).type ?? (f as any).name;
+      if (!t) continue;
+      const list = map.get(t) ?? [];
+      list.push(f as SimFlagRow);
+      map.set(t, list);
+    }
+    return map;
+  }, [simulationData?.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = (flagRowsByType.get(type) ?? []) as Array<{
+          id?: string | null;
+          value?: boolean | null;
+        }>;
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id),
+        );
+        const retained = prev.flag_ids.filter((id) => !rowIdsForType.has(id));
+        const target =
+          next == null
+            ? null
+            : (rows.find((r) => r.value === next)?.id ?? null);
+        const nextIds = target ? [...retained, target] : retained;
+        return { ...prev, flag_ids: nextIds };
+      });
+    },
+    [flagRowsByType],
+  );
 
   // --- AI Generation ---
   const { isGenerating, generate } = useArtifactAi({
@@ -1192,10 +1245,12 @@ function SimulationComponent({
       // SimulationFlagConfig.key from the flag's `name` (not its `type`),
       // which is "Practice" in the seed — match case-insensitively so the
       // capitalization doesn't silently disable the toggle.
+      // Canonical: select the practice=true flag-resource row by (type, value).
       const practiceFlagOptionId = (s.flags ?? []).find(
-        (f: { key?: string | null }) =>
-          (f.key ?? "").toLowerCase() === "practice",
-      )?.flag_option_id;
+        (f: any) =>
+          ((f.type ?? f.name ?? "") as string).toLowerCase() === "practice"
+          && f.value === true,
+      )?.id;
       const allowUnlimitedTimeLimits = !!(
         practiceFlagOptionId &&
         (formState.flag_ids ?? []).includes(String(practiceFlagOptionId))
@@ -1280,62 +1335,13 @@ function SimulationComponent({
                   required={SIMULATION_REQUIRED.departments}
                 />
                 <Flags
-                  mode="multi"
                   flags={s.flags ?? []}
-                  flag_ids={
-                    // Convert flag_ids array to Record for Flags component
-                    (s.flags ?? []).reduce(
-                      (
-                        acc: Record<string, string | null>,
-                        flag: {
-                          key?: string | null;
-                          flag_option_id?: string | null;
-                        },
-                      ) => {
-                        const isEnabled = formState.flag_ids.includes(
-                          flag.flag_option_id ?? "",
-                        );
-                        if (flag.key) {
-                          acc[flag.key] = isEnabled
-                            ? (flag.flag_option_id ?? null)
-                            : null;
-                        }
-                        return acc;
-                      },
-                      {} as Record<string, string | null>,
-                    )
-                  }
+                  values={flagValues}
                   show_flags={(s.flags?.length ?? 0) > 0}
                   columns={1}
                   label="Flags"
                   disabled={disabled}
-                  onChange={(key: string, flagId: string | null) => {
-                    setFormState((prev) => {
-                      if (flagId) {
-                        // Add flag if not already present
-                        if (!prev.flag_ids.includes(flagId)) {
-                          return {
-                            ...prev,
-                            flag_ids: [...prev.flag_ids, flagId],
-                          };
-                        }
-                      } else {
-                        // Remove flag by finding the flag_option_id for this key
-                        const flag = (s.flags ?? []).find(
-                          (f: { key?: string | null }) => f.key === key,
-                        );
-                        if (flag?.flag_option_id) {
-                          return {
-                            ...prev,
-                            flag_ids: prev.flag_ids.filter(
-                              (id) => id !== flag.flag_option_id,
-                            ),
-                          };
-                        }
-                      }
-                      return prev;
-                    });
-                  }}
+                  onChange={handleFlagToggle}
                 />
               </div>
             </StepCard>

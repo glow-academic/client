@@ -509,40 +509,42 @@ export default function SimulationCard({
                     ? "Start Simulation (Complete)"
                     : "Start Simulation"}
             </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={() => void handleStartTraining(true)}
-                  disabled={isStarting}
-                  variant={gradientClass ? undefined : "default"}
-                  size="icon"
-                  className={`flex-shrink-0 hover:scale-105 transition-all duration-300 ${
-                    typeof gradientClass === "string" &&
-                    gradientClass !== null &&
-                    !gradientClass.startsWith("linear-gradient")
-                      ? `bg-gradient-to-r ${gradientClass} text-white border-0 hover:opacity-90`
-                      : typeof gradientClass === "string" &&
-                          gradientClass.startsWith("linear-gradient")
-                        ? "border-0"
-                        : ""
-                  }`}
-                  style={{
-                    ...(typeof gradientClass === "string" &&
-                      gradientClass.startsWith("linear-gradient") && {
-                        background: gradientClass,
-                        color: "white",
-                        border: "none",
-                      }),
-                  }}
-                  data-testid={`start-infinite-${id}`}
-                >
-                  <Infinity className="h-4 w-4 text-white" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Infinite Mode</p>
-              </TooltipContent>
-            </Tooltip>
+            {type === "default" && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => void handleStartTraining(true)}
+                    disabled={isStarting}
+                    variant={gradientClass ? undefined : "default"}
+                    size="icon"
+                    className={`flex-shrink-0 hover:scale-105 transition-all duration-300 ${
+                      typeof gradientClass === "string" &&
+                      gradientClass !== null &&
+                      !gradientClass.startsWith("linear-gradient")
+                        ? `bg-gradient-to-r ${gradientClass} text-white border-0 hover:opacity-90`
+                        : typeof gradientClass === "string" &&
+                            gradientClass.startsWith("linear-gradient")
+                          ? "border-0"
+                          : ""
+                    }`}
+                    style={{
+                      ...(typeof gradientClass === "string" &&
+                        gradientClass.startsWith("linear-gradient") && {
+                          background: gradientClass,
+                          color: "white",
+                          border: "none",
+                        }),
+                    }}
+                    data-testid={`start-infinite-${id}`}
+                  >
+                    <Infinity className="h-4 w-4 text-white" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Infinite Mode</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </CardFooter>
       </Card>

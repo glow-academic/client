@@ -48,7 +48,7 @@ type ProfileResourceType = "names" | "flags" | "departments" | "emails";
 type ProfileFormState = {
   name_id: string | null;
   name: string | null;
-  active_flag_id: string | null;
+  flag_ids: string[];
   department_ids: string[];
   email_ids: string[];
   new_emails: string[];
@@ -73,7 +73,7 @@ const VALID_RESOURCE_TYPES: ProfileResourceType[] = [
 
 const PROFILE_RESOURCES: ResourceConfig[] = [
   { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
-  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  { key: "flags", formKey: "flag_ids", flushKey: null, type: "multi" },
   {
     key: "departments",
     formKey: "department_ids",
@@ -148,7 +148,7 @@ function ProfileComponent({
       return {
         name_id: null,
         name: null,
-        active_flag_id: null,
+        flag_ids: [],
         department_ids: [],
         email_ids: [],
         new_emails: [],
@@ -161,8 +161,9 @@ function ProfileComponent({
     return {
       name_id: data.names?.find((item) => item.selected)?.id ?? null,
       name: null,
-      active_flag_id:
-        data.flags?.find((item) => item.selected)?.flag_option_id ?? null,
+      flag_ids: (data.flags?.filter((item) => item.selected) ?? [])
+        .map((item) => item.id)
+        .filter((id): id is string => !!id),
       department_ids:
         (data.departments?.filter((item) => item.selected) ?? [])
           .map((item) => item.department_id)
@@ -239,10 +240,7 @@ function ProfileComponent({
             // — keeping the value would cause infinite re-saves (value takes
             // precedence → new resource → new id → repeat).
             name: formStateFromServer.name_id ? null : prev.name,
-            active_flag_id:
-              formStateFromServer.active_flag_id ??
-              formStateFromServer.flag_id ??
-              prev.active_flag_id,
+            flag_ids: (formStateFromServer as any).flag_ids ?? prev.flag_ids,
             department_ids:
               formStateFromServer.department_ids ?? prev.department_ids,
             email_ids: formStateFromServer.email_ids ?? prev.email_ids,
@@ -264,7 +262,7 @@ function ProfileComponent({
           const changed =
             prev.name_id !== next.name_id ||
             prev.name !== next.name ||
-            prev.active_flag_id !== next.active_flag_id ||
+            JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
             prev.role_id !== next.role_id ||
             prev.primary_email_index !== next.primary_email_index ||
             JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
@@ -286,7 +284,7 @@ function ProfileComponent({
       JSON.stringify({
         name_id: formState.name_id,
         name: formState.name,
-        active_flag_id: formState.active_flag_id,
+        flag_ids: formState.flag_ids,
         department_ids: formState.department_ids,
         email_ids: formState.email_ids,
         new_emails: formState.new_emails,
@@ -554,7 +552,7 @@ function ProfileComponent({
               profile_id: profileId,
               ...(current.name_id ? { name_id: current.name_id } : {}),
               ...(current.name ? { name: current.name } : {}),
-              ...(current.active_flag_id ? { active_flag_id: current.active_flag_id } : {}),
+              ...(current.flag_ids.length > 0 ? { flag_ids: current.flag_ids } : {}),
               ...(current.department_ids.length > 0
                 ? { department_ids: current.department_ids }
                 : {}),
@@ -575,7 +573,7 @@ function ProfileComponent({
             {
               ...(current.name_id ? { name_id: current.name_id } : {}),
               ...(current.name ? { name: current.name } : {}),
-              ...(current.active_flag_id ? { active_flag_id: current.active_flag_id } : {}),
+              ...(current.flag_ids.length > 0 ? { flag_ids: current.flag_ids } : {}),
               ...(current.department_ids.length > 0
                 ? { department_ids: current.department_ids }
                 : {}),
@@ -647,7 +645,7 @@ function ProfileComponent({
         id: "basic",
         title: "Basic Information",
         description: "Set the profile name, departments, and active status.",
-        resetFields: ["name_id", "active_flag_id", "department_ids"],
+        resetFields: ["name_id", "flag_ids", "department_ids"],
       },
       {
         id: "contact",
@@ -668,7 +666,7 @@ function ProfileComponent({
   const formFieldKeys = useMemo(
     () => [
       "name_id",
-      "active_flag_id",
+      "flag_ids",
       "department_ids",
       "email_ids",
       "new_emails",
@@ -699,7 +697,7 @@ function ProfileComponent({
             ...prev,
             name_id: null,
             name: null,
-            active_flag_id: null,
+            flag_ids: [],
             department_ids: [],
           };
         case "contact":
@@ -810,14 +808,44 @@ function ProfileComponent({
 
                 <Flags
                   flags={profileData?.flags ?? []}
-                  flag_id={formState.active_flag_id}
+                  values={(() => {
+                    const map: Record<string, boolean | null> = {};
+                    const byId = new Map(
+                      (profileData?.flags ?? [])
+                        .filter((f: any) => f.id)
+                        .map((f: any) => [f.id as string, f])
+                    );
+                    for (const id of formState.flag_ids) {
+                      const row = byId.get(id) as any;
+                      if (!row) continue;
+                      const type = row.type ?? row.name;
+                      if (type && row.value != null) map[type] = row.value;
+                    }
+                    return map;
+                  })()}
                   show_flags={true}
                   columns={1}
                   label="Flags"
                   disabled={disabled}
-                  onChange={(flagId) =>
-                    setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
-                  }
+                  onChange={(type, next) => {
+                    setFormState((prev) => {
+                      const rows = (profileData?.flags ?? []).filter(
+                        (f: any) => (f.type ?? f.name) === type
+                      );
+                      const rowIds = new Set(
+                        rows.map((r: any) => r.id).filter((id: any): id is string => !!id)
+                      );
+                      const retained = prev.flag_ids.filter((id) => !rowIds.has(id));
+                      const target =
+                        next == null
+                          ? null
+                          : rows.find((r: any) => r.value === next)?.id ?? null;
+                      return {
+                        ...prev,
+                        flag_ids: target ? [...retained, target] : retained,
+                      };
+                    });
+                  }}
                 />
               </div>
             </StepCard>
@@ -1052,7 +1080,7 @@ function ProfileComponent({
       canRegenerateForStepCard,
       disabled,
       existingEmailItems,
-      formState.active_flag_id,
+      formState.flag_ids,
       formState.department_ids,
       formState.email_ids,
       formState.name_id,

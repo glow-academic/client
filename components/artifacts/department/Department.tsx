@@ -48,8 +48,8 @@ type DepartmentDraftFormState = {
   name?: string | null;
   description_id?: string | null;
   description?: string | null;
-  flag_id?: string | null;
-  active_flag_id?: string | null;
+  flag_ids?: string[] | null;
+  active?: boolean | null;
   setting_ids?: string[] | null;
   pending_ids?: string[] | null;
 };
@@ -63,7 +63,7 @@ type DepartmentFormState = {
   name: string | null;
   description_id: string | null;
   description: string | null;
-  active_flag_id: string | null;
+  flag_ids: string[];
   setting_ids: string[];
   pending_ids: string[];
 };
@@ -83,7 +83,7 @@ const DEPARTMENT_RESOURCES: ResourceConfig[] = [
     flushKey: "description_id",
     type: "single",
   },
-  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  { key: "flags", formKey: "flag_ids", flushKey: null, type: "multi" },
   { key: "settings", formKey: "setting_ids", flushKey: "setting_ids", type: "multi" },
 ];
 
@@ -153,7 +153,7 @@ function DepartmentComponent({
         name: null,
         description_id: null,
         description: null,
-        active_flag_id: null,
+        flag_ids: [],
         setting_ids: [],
         pending_ids: [],
       };
@@ -165,8 +165,9 @@ function DepartmentComponent({
       description_id:
         data.descriptions?.find((item) => item.selected)?.id ?? null,
       description: null,
-      active_flag_id:
-        data.flags?.find((item) => item.selected)?.flag_option_id ?? null,
+      flag_ids: (data.flags?.filter((item) => item.selected) ?? [])
+        .map((item) => item.id)
+        .filter((id): id is string => !!id),
       setting_ids:
         (data.settings?.filter((item) => item.selected) ?? [])
           .map((item) => item.id)
@@ -227,10 +228,7 @@ function DepartmentComponent({
             description: formStateFromServer.description_id
               ? null
               : prev.description,
-            active_flag_id:
-              formStateFromServer.active_flag_id ??
-              formStateFromServer.flag_id ??
-              prev.active_flag_id,
+            flag_ids: formStateFromServer.flag_ids ?? prev.flag_ids,
             setting_ids: formStateFromServer.setting_ids ?? prev.setting_ids,
             pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
           };
@@ -241,7 +239,7 @@ function DepartmentComponent({
             prev.name !== next.name ||
             prev.description_id !== next.description_id ||
             prev.description !== next.description ||
-            prev.active_flag_id !== next.active_flag_id ||
+            JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
             JSON.stringify(prev.setting_ids) !== JSON.stringify(next.setting_ids) ||
             JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
           if (!changed) return prev;
@@ -294,6 +292,53 @@ function DepartmentComponent({
   const hasResourceIds = checkHasResourceIds(
     DEPARTMENT_RESOURCES,
     formState as unknown as Record<string, unknown>,
+  );
+
+  // Per-type boolean view of flag_ids, built from the catalog. Rendered by Flags.
+  const flagValues = useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (department?.flags ?? [])
+        .filter((f) => f.id)
+        .map((f) => [f.id as string, f])
+    );
+    for (const id of formState.flag_ids) {
+      const row = byId.get(id);
+      if (!row) continue;
+      const type = row.type ?? row.name;
+      if (type && row.value != null) map[type] = row.value;
+    }
+    return map;
+  }, [formState.flag_ids, department?.flags]);
+
+  type FlagRow = NonNullable<NonNullable<typeof department>["flags"]>[number];
+  const flagRowsByType = useMemo(() => {
+    const map = new Map<string, FlagRow[]>();
+    for (const f of department?.flags ?? []) {
+      const t = f.type ?? f.name;
+      if (!t) continue;
+      const list = map.get(t) ?? [];
+      list.push(f);
+      map.set(t, list);
+    }
+    return map;
+  }, [department?.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = flagRowsByType.get(type) ?? [];
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id)
+        );
+        const retained = prev.flag_ids.filter((id) => !rowIdsForType.has(id));
+        const target =
+          next == null ? null : rows.find((r) => r.value === next)?.id ?? null;
+        const nextIds = target ? [...retained, target] : retained;
+        return { ...prev, flag_ids: nextIds };
+      });
+    },
+    [flagRowsByType]
   );
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
@@ -436,6 +481,19 @@ function DepartmentComponent({
         throw new Error("Profile not loaded");
       }
 
+      // The create/update endpoint still takes active_flag_id. Resolve the
+      // first true-valued flag from flag_ids for back-compat.
+      const activeFlagId = (() => {
+        const rows = stableDepartmentData?.flags ?? [];
+        const byId = new Map(rows.filter((f) => f.id).map((f) => [f.id, f]));
+        for (const id of effectiveFormState.flag_ids) {
+          const row = byId.get(id);
+          const type = row?.type ?? row?.name;
+          if (type === "department_active" && row?.value === true) return id;
+        }
+        return undefined;
+      })();
+
       if (isEditMode && departmentId && updateDepartmentAction) {
         await updateDepartmentAction({
           body: {
@@ -444,7 +502,7 @@ function DepartmentComponent({
                 id: departmentId,
                 name_id: effectiveFormState.name_id ?? undefined,
                 description_id: effectiveFormState.description_id ?? undefined,
-                active_flag_id: effectiveFormState.active_flag_id ?? undefined,
+                active_flag_id: activeFlagId,
                 settings_ids: effectiveFormState.setting_ids.length
                   ? effectiveFormState.setting_ids
                   : null,
@@ -460,7 +518,7 @@ function DepartmentComponent({
               {
                 name_id: effectiveFormState.name_id ?? undefined,
                 description_id: effectiveFormState.description_id ?? undefined,
-                active_flag_id: effectiveFormState.active_flag_id ?? undefined,
+                active_flag_id: activeFlagId,
                 settings_ids: effectiveFormState.setting_ids.length
                   ? effectiveFormState.setting_ids
                   : null,
@@ -505,7 +563,7 @@ function DepartmentComponent({
         resetFields: [
           "name_id",
           "description_id",
-          "active_flag_id",
+          "flag_ids",
           "setting_ids",
         ],
       },
@@ -514,7 +572,7 @@ function DepartmentComponent({
   );
 
   const formFieldKeys = useMemo(
-    () => ["name_id", "description_id", "active_flag_id", "setting_ids"],
+    () => ["name_id", "description_id", "flag_ids", "setting_ids"],
     [],
   );
 
@@ -561,7 +619,7 @@ function DepartmentComponent({
             isAutosaveEnabled={isAutosaveEnabled}
           />
         }
-        resetFields={["name_id", "description_id", "active_flag_id", "setting_ids"]}
+        resetFields={["name_id", "description_id", "flag_ids", "setting_ids"]}
         actions={
           stableDepartmentData?.basic_show_ai_generate ? (
             <StepCardAiButton
@@ -593,14 +651,12 @@ function DepartmentComponent({
 
           <Flags
             flags={department?.flags ?? []}
-            flag_id={formState.active_flag_id}
+            values={flagValues}
             show_flags={(department?.flags?.length ?? 0) > 0}
             columns={1}
             label="Flags"
             disabled={disabled}
-            onChange={(flagId) =>
-              setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
-            }
+            onChange={handleFlagToggle}
           />
 
           <Settings
@@ -621,11 +677,12 @@ function DepartmentComponent({
       department?.names,
       department?.settings,
       disabled,
-      formState.active_flag_id,
+      flagValues,
       formState.description_id,
       formState.name_id,
       formState.setting_ids,
       handleDirectStepGenerate,
+      handleFlagToggle,
       handleGenerateResources,
       isAutosaveEnabled,
       isEditMode,
@@ -670,7 +727,7 @@ function DepartmentComponent({
                 name: null,
                 description_id: null,
                 description: null,
-                active_flag_id: null,
+                flag_ids: [],
                 setting_ids: [],
                 pending_ids: [],
               });

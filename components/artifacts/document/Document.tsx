@@ -60,6 +60,7 @@ const DOCUMENT_RESOURCES: ResourceConfig[] = [
     flushKey: null,
     type: "single",
   },
+  { key: "flags", formKey: "flag_ids", flushKey: null, type: "multi" },
   {
     key: "departments",
     formKey: "department_ids",
@@ -101,8 +102,7 @@ type DocumentFormState = {
   description: string | null;
   name_id: string | null;
   description_id: string | null;
-  active_flag_id: string | null;
-  template_flag_id: string | null;
+  flag_ids: string[];
   department_ids: string[];
   parameter_field_ids: string[];
   file_ids: string[];
@@ -141,7 +141,7 @@ const collectPendingIds = (data: DocumentData | null | undefined): string[] => {
 
   (data.names ?? []).forEach((item) => item.pending && add(item.id));
   (data.descriptions ?? []).forEach((item) => item.pending && add(item.id));
-  (data.flags ?? []).forEach((item) => item.pending && add(item.flag_option_id));
+  (data.flags ?? []).forEach((item) => item.pending && add(item.id));
   (data.departments ?? []).forEach(
     (item) => item.pending && add(item.department_id),
   );
@@ -183,14 +183,6 @@ function DocumentComponent({
     }),
     [],
   );
-
-  const flagIdByKey = useMemo(() => {
-    const map: Record<string, string> = {};
-    (documentDetail?.flags ?? []).forEach((flag) => {
-      if (flag.key && flag.flag_option_id) map[flag.key] = flag.flag_option_id;
-    });
-    return map;
-  }, [documentDetail?.flags]);
 
   const documentDataRef = useRef(documentDetail);
   useEffect(() => {
@@ -288,8 +280,7 @@ function DocumentComponent({
         description: null,
         name_id: null,
         description_id: null,
-        active_flag_id: null,
-        template_flag_id: null,
+        flag_ids: [],
         department_ids: [],
         parameter_field_ids: [],
         file_ids: [],
@@ -307,15 +298,14 @@ function DocumentComponent({
       description: null,
       name_id: data.names?.find((n) => n.selected)?.id ?? null,
       description_id: data.descriptions?.find((d) => d.selected)?.id ?? null,
-      active_flag_id:
-        data.flags?.find((f) => f.key === "active" && f.selected)?.flag_option_id ?? null,
-      template_flag_id:
-        data.flags?.find((f) => f.key === "template" && f.selected)?.flag_option_id ?? null,
+      flag_ids: (data.flags?.filter((f) => f.selected) ?? [])
+        .map((f) => f.id)
+        .filter((id): id is string => !!id),
       department_ids: (data.departments?.filter((d) => d.selected) ?? [])
         .map((d) => d.department_id)
         .filter(Boolean) as string[],
       parameter_field_ids: (data.parameter_fields?.filter((f) => f.selected) ?? [])
-        .map((f) => f.field_id)
+        .map((f) => f.id)
         .filter(Boolean) as string[],
       file_ids: (data.files?.filter((f) => f.selected) ?? [])
         .map((f) => f.files_id ?? f.id)
@@ -368,6 +358,7 @@ function DocumentComponent({
     [formState.pending_ids],
   );
 
+  const flagIdsStr = useMemo(() => JSON.stringify(formState.flag_ids), [formState.flag_ids]);
   const formStateKey = useMemo(
     () =>
       JSON.stringify({
@@ -375,8 +366,7 @@ function DocumentComponent({
         description: formState.description,
         name_id: formState.name_id,
         description_id: formState.description_id,
-        active_flag_id: formState.active_flag_id,
-        template_flag_id: formState.template_flag_id,
+        flag_ids: formState.flag_ids,
         department_ids: formState.department_ids,
         parameter_field_ids: formState.parameter_field_ids,
         file_ids: formState.file_ids,
@@ -391,8 +381,7 @@ function DocumentComponent({
       formState.description,
       formState.name_id,
       formState.description_id,
-      formState.active_flag_id,
-      formState.template_flag_id,
+      flagIdsStr,
       departmentIdsStr,
       parameterFieldIdsStr,
       fileIdsStr,
@@ -430,18 +419,6 @@ function DocumentComponent({
         > | null,
         flushResults: (flushResults ?? {}) as Record<string, unknown>,
       });
-
-      // Flags are round-tripped through `flag_ids` (server's multi-id contract).
-      // Send whenever either active or template changed.
-      const currentFlagIds = [current.active_flag_id, current.template_flag_id].filter(
-        (id): id is string => !!id,
-      );
-      const refFlagIds = [ref?.active_flag_id ?? null, ref?.template_flag_id ?? null].filter(
-        (id): id is string => !!id,
-      );
-      if (JSON.stringify(currentFlagIds) !== JSON.stringify(refFlagIds)) {
-        idPayload["flag_ids"] = currentFlagIds.length > 0 ? currentFlagIds : null;
-      }
 
       if (current.name != null) {
         if (!ref || current.name !== ref.name) {
@@ -546,8 +523,7 @@ function DocumentComponent({
       if (
         prev.name_id !== newState.name_id ||
         prev.description_id !== newState.description_id ||
-        prev.active_flag_id !== newState.active_flag_id ||
-        prev.template_flag_id !== newState.template_flag_id ||
+        JSON.stringify(prev.flag_ids) !== JSON.stringify(newState.flag_ids) ||
         JSON.stringify(prev.department_ids) !== JSON.stringify(newState.department_ids) ||
         JSON.stringify(prev.parameter_field_ids) !==
           JSON.stringify(newState.parameter_field_ids) ||
@@ -586,23 +562,11 @@ function DocumentComponent({
         const fs = result.form_state as DocumentDraftFormState | undefined;
         if (fs) {
           setFormState((prev) => {
-            const nextFlagIds = (fs.flag_ids as string[] | undefined) ?? null;
-            const activeId = flagIdByKey["active"];
-            const templateId = flagIdByKey["template"];
             const next: DocumentFormState = {
               ...prev,
               name_id: (fs.name_id ?? prev.name_id) as string | null,
               description_id: (fs.description_id ?? prev.description_id) as string | null,
-              active_flag_id: nextFlagIds
-                ? activeId && nextFlagIds.includes(activeId)
-                  ? activeId
-                  : null
-                : prev.active_flag_id,
-              template_flag_id: nextFlagIds
-                ? templateId && nextFlagIds.includes(templateId)
-                  ? templateId
-                  : null
-                : prev.template_flag_id,
+              flag_ids: (fs.flag_ids as string[] | undefined) ?? prev.flag_ids,
               department_ids:
                 (fs.department_ids as string[] | undefined) ?? prev.department_ids,
               parameter_field_ids:
@@ -635,8 +599,7 @@ function DocumentComponent({
               prev.name !== next.name ||
               prev.description_id !== next.description_id ||
               prev.description !== next.description ||
-              prev.active_flag_id !== next.active_flag_id ||
-              prev.template_flag_id !== next.template_flag_id ||
+              JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
               JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
               JSON.stringify(prev.parameter_field_ids) !== JSON.stringify(next.parameter_field_ids) ||
               JSON.stringify(prev.file_ids) !== JSON.stringify(next.file_ids) ||
@@ -657,7 +620,56 @@ function DocumentComponent({
     } else {
       patchActionRef.current = undefined;
     }
-  }, [patchDocumentDraftAction, flagIdByKey, serverSyncPendingRef]);
+  }, [patchDocumentDraftAction, serverSyncPendingRef]);
+
+  // Per-type boolean view of flag_ids, built from the catalog. Rendered by Flags.
+  const flagValues = useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (stableDocumentDataFields?.flags ?? [])
+        .filter((f) => f.id)
+        .map((f) => [f.id as string, f])
+    );
+    for (const id of formState.flag_ids) {
+      const row = byId.get(id);
+      if (!row) continue;
+      const type = row.type ?? row.name;
+      if (type && row.value != null) map[type] = row.value;
+    }
+    return map;
+  }, [formState.flag_ids, stableDocumentDataFields?.flags]);
+
+  type DocFlagRow = NonNullable<
+    NonNullable<typeof stableDocumentDataFields>["flags"]
+  >[number];
+  const flagRowsByType = useMemo(() => {
+    const map = new Map<string, DocFlagRow[]>();
+    for (const f of stableDocumentDataFields?.flags ?? []) {
+      const t = f.type ?? f.name;
+      if (!t) continue;
+      const list = map.get(t) ?? [];
+      list.push(f);
+      map.set(t, list);
+    }
+    return map;
+  }, [stableDocumentDataFields?.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = flagRowsByType.get(type) ?? [];
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id)
+        );
+        const retained = prev.flag_ids.filter((id) => !rowIdsForType.has(id));
+        const target =
+          next == null ? null : rows.find((r) => r.value === next)?.id ?? null;
+        const nextIds = target ? [...retained, target] : retained;
+        return { ...prev, flag_ids: nextIds };
+      });
+    },
+    [flagRowsByType]
+  );
 
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "document",
@@ -743,6 +755,19 @@ function DocumentComponent({
         throw new Error("Document name is required");
       }
 
+      // The create/update endpoint still takes active_flag_id. Resolve the
+      // first true-valued flag from flag_ids for back-compat.
+      const activeFlagId = (() => {
+        const rows = stableDocumentDataFields?.flags ?? [];
+        const byId = new Map(rows.filter((f) => f.id).map((f) => [f.id, f]));
+        for (const id of effectiveFormState.flag_ids) {
+          const row = byId.get(id);
+          const type = row?.type ?? row?.name;
+          if (type === "document_active" && row?.value === true) return id;
+        }
+        return undefined;
+      })();
+
       const commonFields = {
         name_id: effectiveFormState.name_id || undefined,
         name: !effectiveFormState.name_id
@@ -752,8 +777,7 @@ function DocumentComponent({
         description: !effectiveFormState.description_id
           ? (effectiveFormState.description ?? undefined)
           : undefined,
-        active_flag_id: effectiveFormState.active_flag_id || undefined,
-        template_flag_id: effectiveFormState.template_flag_id || undefined,
+        active_flag_id: activeFlagId,
         department_ids: effectiveFormState.department_ids.length
           ? effectiveFormState.department_ids
           : undefined,
@@ -810,6 +834,7 @@ function DocumentComponent({
       isEditMode,
       profile?.id,
       router,
+      stableDocumentDataFields?.flags,
       updateDocumentAction,
     ],
   );
@@ -851,7 +876,7 @@ function DocumentComponent({
         id: "basic",
         title: "Basic Information",
         description: "Set the document name, description, departments, and active status.",
-        resetFields: ["name", "description", "department_ids", "active_flag_id"],
+        resetFields: ["name", "description", "department_ids", "flag_ids"],
       },
       {
         id: "fields",
@@ -885,8 +910,7 @@ function DocumentComponent({
     () => [
       "name_id",
       "description_id",
-      "active_flag_id",
-      "template_flag_id",
+      "flag_ids",
       "department_ids",
       "parameter_field_ids",
       "file_ids",
@@ -923,8 +947,7 @@ function DocumentComponent({
             description: null,
             name_id: null,
             description_id: null,
-            active_flag_id: null,
-            template_flag_id: null,
+            flag_ids: [],
             department_ids: [],
           };
         case "fields":
@@ -1028,7 +1051,7 @@ function DocumentComponent({
                 "description",
                 "descriptionSearch",
                 "department_ids",
-                "active_flag_id",
+                "flag_ids",
               ]}
               actions={
                 s?.basic_show_ai_generate ? (
@@ -1078,31 +1101,13 @@ function DocumentComponent({
                 />
 
                 <Flags
-                  mode="multi"
                   flags={s?.flags ?? []}
-                  flag_ids={Object.fromEntries(
-                    Object.entries(flagIdByKey).map(([key, id]) => [
-                      key,
-                      (key === "active"
-                        ? formState.active_flag_id
-                        : key === "template"
-                          ? formState.template_flag_id
-                          : null) === id
-                        ? id
-                        : null,
-                    ])
-                  )}
+                  values={flagValues}
                   show_flags={(s?.flags?.length ?? 0) > 0}
                   columns={2}
                   label="Flags"
                   disabled={disabled}
-                  onChange={(key, flagId) =>
-                    setFormState((prev) => {
-                      if (key === "active") return { ...prev, active_flag_id: flagId };
-                      if (key === "template") return { ...prev, template_flag_id: flagId };
-                      return prev;
-                    })
-                  }
+                  onChange={handleFlagToggle}
                 />
               </div>
             </StepCard>
@@ -1314,7 +1319,8 @@ function DocumentComponent({
     [
       canRegenerateForStepCard,
       disabled,
-      formState.active_flag_id,
+      flagValues,
+      handleFlagToggle,
       formState.department_ids,
       formState.description_id,
       formState.file_ids,
@@ -1377,14 +1383,15 @@ export default React.memo(DocumentComponent, (prevProps, nextProps) => {
   const prevIds = {
     name_id: prevDetail?.names?.find((n) => n.selected)?.id,
     description_id: prevDetail?.descriptions?.find((d) => d.selected)?.id,
-    active_flag_id: prevDetail?.flags?.find((f) => f.key === "active" && f.selected)?.flag_option_id,
-    template_flag_id: prevDetail?.flags?.find((f) => f.key === "template" && f.selected)?.flag_option_id,
+    flag_ids: (prevDetail?.flags?.filter((f) => f.selected) ?? [])
+      .map((f) => f.id)
+      .filter(Boolean),
     department_ids: (prevDetail?.departments?.filter((d) => d.selected) ?? []).map(
       (d) => d.department_id,
     ),
     parameter_field_ids: (
       prevDetail?.parameter_fields?.filter((f) => f.selected) ?? []
-    ).map((f) => f.field_id),
+    ).map((f) => f.id),
     file_ids: (prevDetail?.files?.filter((f) => f.selected) ?? []).map(
       (f) => f.files_id ?? f.id,
     ),
@@ -1399,14 +1406,15 @@ export default React.memo(DocumentComponent, (prevProps, nextProps) => {
   const nextIds = {
     name_id: nextDetail?.names?.find((n) => n.selected)?.id,
     description_id: nextDetail?.descriptions?.find((d) => d.selected)?.id,
-    active_flag_id: nextDetail?.flags?.find((f) => f.key === "active" && f.selected)?.flag_option_id,
-    template_flag_id: nextDetail?.flags?.find((f) => f.key === "template" && f.selected)?.flag_option_id,
+    flag_ids: (nextDetail?.flags?.filter((f) => f.selected) ?? [])
+      .map((f) => f.id)
+      .filter(Boolean),
     department_ids: (nextDetail?.departments?.filter((d) => d.selected) ?? []).map(
       (d) => d.department_id,
     ),
     parameter_field_ids: (
       nextDetail?.parameter_fields?.filter((f) => f.selected) ?? []
-    ).map((f) => f.field_id),
+    ).map((f) => f.id),
     file_ids: (nextDetail?.files?.filter((f) => f.selected) ?? []).map(
       (f) => f.files_id ?? f.id,
     ),

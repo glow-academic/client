@@ -50,7 +50,7 @@ type FieldFormState = {
   name: string | null;
   description_id: string | null;
   description: string | null;
-  active_flag_id: string | null;
+  flag_ids: string[];
   department_ids: string[];
   conditional_parameter_ids: string[];
   pending_ids: string[];
@@ -72,7 +72,7 @@ const FIELD_RESOURCES: ResourceConfig[] = [
     flushKey: "description_id",
     type: "single",
   },
-  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  { key: "flags", formKey: "flag_ids", flushKey: null, type: "multi" },
   {
     key: "departments",
     formKey: "department_ids",
@@ -150,7 +150,7 @@ function FieldComponent({
         name: null,
         description_id: null,
         description: null,
-        active_flag_id: null,
+        flag_ids: [],
         department_ids: [],
         conditional_parameter_ids: [],
         pending_ids: [],
@@ -162,8 +162,9 @@ function FieldComponent({
       name: null,
       description_id: data.descriptions?.find((item) => item.selected)?.id ?? null,
       description: null,
-      active_flag_id:
-        data.flags?.find((item) => item.selected)?.flag_option_id ?? null,
+      flag_ids: (data.flags?.filter((item) => item.selected) ?? [])
+        .map((item) => item.id)
+        .filter((id): id is string => !!id),
       department_ids:
         (data.departments?.filter((item) => item.selected) ?? [])
           .map((item) => item.department_id)
@@ -210,7 +211,16 @@ function FieldComponent({
         body: payload,
       } as PatchFieldDraftIn);
 
-      const formStateFromServer = result?.form_state;
+      const formStateFromServer = result?.form_state as
+        | {
+            name_id?: string | null;
+            description_id?: string | null;
+            flag_ids?: string[] | null;
+            department_ids?: string[] | null;
+            conditional_parameter_ids?: string[] | null;
+            pending_ids?: string[] | null;
+          }
+        | undefined;
       if (formStateFromServer) {
         setFormState((prev) => {
           const next = {
@@ -225,10 +235,7 @@ function FieldComponent({
             description: formStateFromServer.description_id
               ? null
               : prev.description,
-            active_flag_id:
-              formStateFromServer.active_flag_id ??
-              formStateFromServer.flag_id ??
-              prev.active_flag_id,
+            flag_ids: formStateFromServer.flag_ids ?? prev.flag_ids,
             department_ids:
               formStateFromServer.department_ids ?? prev.department_ids,
             conditional_parameter_ids:
@@ -243,7 +250,7 @@ function FieldComponent({
             prev.name !== next.name ||
             prev.description_id !== next.description_id ||
             prev.description !== next.description ||
-            prev.active_flag_id !== next.active_flag_id ||
+            JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
             JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
             JSON.stringify(prev.conditional_parameter_ids) !== JSON.stringify(next.conditional_parameter_ids) ||
             JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
@@ -296,6 +303,53 @@ function FieldComponent({
   const hasResourceIds = checkHasResourceIds(
     FIELD_RESOURCES,
     formState as unknown as Record<string, unknown>,
+  );
+
+  // Per-type boolean view of flag_ids, built from the catalog. Rendered by Flags.
+  const flagValues = useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (fieldData?.flags ?? [])
+        .filter((f) => f.id)
+        .map((f) => [f.id as string, f])
+    );
+    for (const id of formState.flag_ids) {
+      const row = byId.get(id);
+      if (!row) continue;
+      const type = row.type ?? row.name;
+      if (type && row.value != null) map[type] = row.value;
+    }
+    return map;
+  }, [formState.flag_ids, fieldData?.flags]);
+
+  type FieldFlagRow = NonNullable<NonNullable<typeof fieldData>["flags"]>[number];
+  const flagRowsByType = useMemo(() => {
+    const map = new Map<string, FieldFlagRow[]>();
+    for (const f of fieldData?.flags ?? []) {
+      const t = f.type ?? f.name;
+      if (!t) continue;
+      const list = map.get(t) ?? [];
+      list.push(f);
+      map.set(t, list);
+    }
+    return map;
+  }, [fieldData?.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = flagRowsByType.get(type) ?? [];
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id)
+        );
+        const retained = prev.flag_ids.filter((id) => !rowIdsForType.has(id));
+        const target =
+          next == null ? null : rows.find((r) => r.value === next)?.id ?? null;
+        const nextIds = target ? [...retained, target] : retained;
+        return { ...prev, flag_ids: nextIds };
+      });
+    },
+    [flagRowsByType]
   );
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
@@ -440,6 +494,19 @@ function FieldComponent({
       throw new Error("Profile not loaded");
     }
 
+    // The create/update endpoint still takes active_flag_id. Resolve the
+    // first true-valued flag from flag_ids for back-compat.
+    const activeFlagId = (() => {
+      const rows = fieldData?.flags ?? [];
+      const byId = new Map(rows.filter((f) => f.id).map((f) => [f.id, f]));
+      for (const id of current.flag_ids) {
+        const row = byId.get(id);
+        const type = row?.type ?? row?.name;
+        if (type === "field_active" && row?.value === true) return id;
+      }
+      return undefined;
+    })();
+
     if (isEditMode && fieldId) {
       if (!updateFieldAction) {
         toast.error("Update action not available");
@@ -456,7 +523,7 @@ function FieldComponent({
                 ? { description_id: current.description_id }
                 : {}),
               ...(current.description ? { description: current.description } : {}),
-              ...(current.active_flag_id ? { active_flag_id: current.active_flag_id } : {}),
+              ...(activeFlagId ? { active_flag_id: activeFlagId } : {}),
               ...(current.department_ids.length > 0
                 ? { department_ids: current.department_ids }
                 : {}),
@@ -482,7 +549,7 @@ function FieldComponent({
                 ? { description_id: current.description_id }
                 : {}),
               ...(current.description ? { description: current.description } : {}),
-              ...(current.active_flag_id ? { active_flag_id: current.active_flag_id } : {}),
+              ...(activeFlagId ? { active_flag_id: activeFlagId } : {}),
               ...(current.department_ids.length > 0
                 ? { department_ids: current.department_ids }
                 : {}),
@@ -551,7 +618,7 @@ function FieldComponent({
         title: "Basic Information",
         description:
           "Set the field name, description, departments, and active status.",
-        resetFields: ["name_id", "description_id", "active_flag_id", "department_ids"],
+        resetFields: ["name_id", "description_id", "flag_ids", "department_ids"],
       },
       {
         id: "conditional",
@@ -571,7 +638,7 @@ function FieldComponent({
     () => [
       "name_id",
       "description_id",
-      "active_flag_id",
+      "flag_ids",
       "department_ids",
       "conditional_parameter_ids",
       "pending_ids",
@@ -600,7 +667,7 @@ function FieldComponent({
             name: null,
             description_id: null,
             description: null,
-            active_flag_id: null,
+            flag_ids: [],
             department_ids: [],
           };
         case "conditional":
@@ -728,14 +795,12 @@ function FieldComponent({
 
                 <Flags
                   flags={fieldData?.flags ?? []}
-                  flag_id={formState.active_flag_id}
+                  values={flagValues}
                   show_flags={true}
                   columns={1}
                   label="Flags"
                   disabled={disabled}
-                  onChange={(flagId) =>
-                    setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
-                  }
+                  onChange={handleFlagToggle}
                 />
               </div>
             </StepCard>
@@ -822,7 +887,8 @@ function FieldComponent({
       fieldData?.flags,
       fieldData?.names,
       fieldData?.show_ai_generate,
-      formState.active_flag_id,
+      flagValues,
+      handleFlagToggle,
       formState.conditional_parameter_ids,
       formState.department_ids,
       formState.description_id,
@@ -844,8 +910,7 @@ function FieldComponent({
         name_id: (fd["name_id"] as string | undefined) ?? prev.name_id,
         description_id:
           (fd["description_id"] as string | undefined) ?? prev.description_id,
-        active_flag_id:
-          (fd["active_flag_id"] as string | undefined) ?? prev.active_flag_id,
+        flag_ids: (fd["flag_ids"] as string[] | undefined) ?? prev.flag_ids,
         department_ids:
           (fd["department_ids"] as string[] | undefined) ?? prev.department_ids,
         conditional_parameter_ids:

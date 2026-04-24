@@ -58,16 +58,23 @@ type RubricDraftFormStateCompat = {
   name_id?: string | null;
   description?: string | null;
   description_id?: string | null;
-  active_flag_id?: string | null;
-  flag_id?: string | null;
-  simulation_rubric_flag_id?: string | null;
-  video_rubric_flag_id?: string | null;
+  flag_ids?: string[] | null;
+  active?: boolean | null;
+  simulation_rubric?: boolean | null;
+  video_rubric?: boolean | null;
   department_ids?: string[] | null;
   pass_points_id?: string | null;
   pass_points?: number | null;
   total_points_id?: string | null;
   total_points?: number | null;
   standard_group_ids?: string[] | null;
+  standard_groups?: Array<{
+    id: string | null;
+    name: string;
+    description: string;
+    points: number;
+    pass_points: number;
+  }> | null;
   standard_ids?: string[] | null;
   standards?: Array<{
     id: string | null;
@@ -98,11 +105,13 @@ type RubricDataCompat = RubricData & {
     pending?: boolean | null;
   }> | null;
   flags?: Array<{
-    key?: string | null;
-    label?: string | null;
+    id?: string | null;
+    name?: string | null;
+    type?: string | null;
+    value?: boolean | null;
     description?: string | null;
     icon_id?: string | null;
-    flag_option_id?: string | null;
+    icon?: string | null;
     generated?: boolean | null;
     selected?: boolean | null;
     suggested?: boolean | null;
@@ -164,14 +173,24 @@ type RubricStandardValue = {
   standard_group_id: string;
 };
 
+// Inline-created standard group value-object. Mirrors
+// RubricStandardGroupDraftValue on the server.
+type RubricStandardGroupValue = {
+  id: string | null;
+  name: string;
+  description: string;
+  points: number;
+  pass_points: number;
+};
+
 type RubricFormState = {
   name: string | null;
   name_id: string | null;
   description: string | null;
   description_id: string | null;
-  active_flag_id: string | null;
-  simulation_rubric_flag_id: string | null;
-  video_rubric_flag_id: string | null;
+  // Canonical: ids of the flag-resource rows currently selected. Rubric has
+  // three logical flag types (rubric_active, simulation_rubric, video_rubric).
+  flag_ids: string[];
   department_ids: string[];
   // Pass points: canonical resource ID + denormalized numeric value (dual mode).
   // Total points: computed from standards; server-returned read-only display.
@@ -179,6 +198,10 @@ type RubricFormState = {
   pass_points: number | null;
   total_points: number | null;
   standard_group_ids: string[];
+  // Value-object array for inline-created groups. Server resolves
+  // id=null entries into fresh standard_groups_resource rows and
+  // returns their IDs via form_state.standard_groups.
+  standard_groups: RubricStandardGroupValue[] | null;
   standard_ids: string[];
   // Value-object array fed by Standards.tsx grid. Server resolves
   // id=null entries into fresh standards_resource rows and returns
@@ -213,7 +236,7 @@ const RUBRIC_RESOURCES: ResourceConfig[] = [
     flushKey: "description_id",
     type: "single",
   },
-  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  { key: "flags", formKey: "flag_ids", flushKey: null, type: "multi" },
   {
     key: "departments",
     formKey: "department_ids",
@@ -266,14 +289,13 @@ function RubricComponent({
     name_id: null,
     description: null,
     description_id: null,
-    active_flag_id: null,
-    simulation_rubric_flag_id: null,
-    video_rubric_flag_id: null,
+    flag_ids: [],
     department_ids: [],
     pass_points_id: null,
     pass_points: null,
     total_points: null,
     standard_group_ids: [],
+    standard_groups: null,
     standard_ids: [],
     standards: null,
     pending_ids: [],
@@ -296,14 +318,13 @@ function RubricComponent({
         name_id: null,
         description: null,
         description_id: null,
-        active_flag_id: null,
-        simulation_rubric_flag_id: null,
-        video_rubric_flag_id: null,
+        flag_ids: [],
         department_ids: [],
         pass_points_id: null,
         pass_points: null,
         total_points: null,
         standard_group_ids: [],
+        standard_groups: null,
         standard_ids: [],
         standards: null,
         pending_ids: [],
@@ -315,15 +336,9 @@ function RubricComponent({
       name_id: s.names?.find((item) => item.selected)?.id ?? null,
       description: null,
       description_id: s.descriptions?.find((item) => item.selected)?.id ?? null,
-      active_flag_id:
-        s.flags?.find((item) => item.key === "active" && item.selected)
-          ?.flag_option_id ?? null,
-      simulation_rubric_flag_id:
-        s.flags?.find((item) => item.key === "simulation_rubric" && item.selected)
-          ?.flag_option_id ?? null,
-      video_rubric_flag_id:
-        s.flags?.find((item) => item.key === "video_rubric" && item.selected)
-          ?.flag_option_id ?? null,
+      flag_ids: (s.flags?.filter((item: any) => item.selected) ?? [])
+        .map((item: any) => item.id)
+        .filter((id: unknown): id is string => !!id),
       department_ids:
         (s.departments ?? [])
           .filter((x) => x.selected)
@@ -342,6 +357,9 @@ function RubricComponent({
           .filter((x) => x.selected)
           ?.map((x) => x.standard_group_id)
           .filter((x): x is string => !!x) ?? [],
+      // Inline-create list — empty on hydrate; populated only when user
+      // adds new groups locally. Server echoes resolved ids back on save.
+      standard_groups: null,
       standard_ids:
         (s.standards ?? [])
           .filter((x) => x.selected)
@@ -414,14 +432,11 @@ function RubricComponent({
         payload["description"] = fs.description;
         delete payload["description_id"];
       }
-      // Per-type rubric flag slots (active is covered by RUBRIC_RESOURCES;
-      // the two below are tracked outside that registry because they share
-      // the same `flags` section on the server but bind to distinct fields).
-      if (fs.simulation_rubric_flag_id !== undefined) {
-        payload["simulation_rubric_flag_id"] = fs.simulation_rubric_flag_id;
-      }
-      if (fs.video_rubric_flag_id !== undefined) {
-        payload["video_rubric_flag_id"] = fs.video_rubric_flag_id;
+      // Inline-created standard groups: send the value array whenever the
+      // user has added any new groups. Server creates rows for id=null
+      // entries and merges resolved IDs into `standard_group_ids`.
+      if (fs.standard_groups && fs.standard_groups.length > 0) {
+        payload["standard_groups"] = fs.standard_groups;
       }
       // Grid-editor standards: send the value array whenever the user has
       // edited any cell. Server creates rows for id=null entries and merges
@@ -484,16 +499,8 @@ function RubricComponent({
             name: nextNameId ? null : prev.name,
             description_id: nextDescriptionId,
             description: nextDescriptionId ? null : prev.description,
-            active_flag_id:
-              (fs.active_flag_id as string | null | undefined) ??
-              (fs.flag_id as string | null | undefined) ??
-              prev.active_flag_id,
-            simulation_rubric_flag_id:
-              (fs.simulation_rubric_flag_id as string | null | undefined) ??
-              prev.simulation_rubric_flag_id,
-            video_rubric_flag_id:
-              (fs.video_rubric_flag_id as string | null | undefined) ??
-              prev.video_rubric_flag_id,
+            flag_ids:
+              (fs.flag_ids as string[] | null | undefined) ?? prev.flag_ids,
             department_ids:
               (fs.department_ids as string[] | null | undefined) ??
               prev.department_ids,
@@ -511,6 +518,12 @@ function RubricComponent({
             standard_group_ids:
               (fs.standard_group_ids as string[] | null | undefined) ??
               prev.standard_group_ids,
+            // Inline-created groups: server fills in ids for id=null
+            // entries. Replace the whole array so subsequent saves don't
+            // re-create the same group.
+            standard_groups:
+              (fs.standard_groups as RubricStandardGroupValue[] | null | undefined) ??
+              prev.standard_groups,
             standard_ids:
               (fs.standard_ids as string[] | null | undefined) ??
               prev.standard_ids,
@@ -704,6 +717,24 @@ function RubricComponent({
           ? { pass_points: effectiveFormState.pass_points }
           : {};
 
+      // Create/Update endpoints still accept per-type flag ids; derive each
+      // slot from the canonical flag_ids list by matching the flag's type.
+      const flagsById = new Map(
+        (s?.flags ?? [])
+          .filter((f: any) => f.id)
+          .map((f: any) => [f.id as string, f]),
+      );
+      const pickFlagIdByType = (type: string): string | undefined => {
+        for (const fid of effectiveFormState.flag_ids ?? []) {
+          const row: any = flagsById.get(fid);
+          if ((row?.type ?? row?.name) === type) return fid;
+        }
+        return undefined;
+      };
+      const activeFlagId = pickFlagIdByType("rubric_active");
+      const simulationRubricFlagId = pickFlagIdByType("simulation_rubric");
+      const videoRubricFlagId = pickFlagIdByType("video_rubric");
+
       if (isEditMode) {
         if (!updateRubricAction) throw new Error("Update action not available");
         await updateRubricAction({
@@ -713,11 +744,9 @@ function RubricComponent({
                 id: rubricId!,
                 name_id: effectiveFormState.name_id ?? undefined,
                 description_id: effectiveFormState.description_id ?? undefined,
-                active_flag_id: effectiveFormState.active_flag_id ?? undefined,
-                simulation_rubric_flag_id:
-                  effectiveFormState.simulation_rubric_flag_id ?? undefined,
-                video_rubric_flag_id:
-                  effectiveFormState.video_rubric_flag_id ?? undefined,
+                active_flag_id: activeFlagId,
+                simulation_rubric_flag_id: simulationRubricFlagId,
+                video_rubric_flag_id: videoRubricFlagId,
                 department_ids: effectiveFormState.department_ids?.length
                   ? effectiveFormState.department_ids
                   : undefined,
@@ -741,11 +770,9 @@ function RubricComponent({
               {
                 name_id: effectiveFormState.name_id!,
                 description_id: effectiveFormState.description_id ?? undefined,
-                active_flag_id: effectiveFormState.active_flag_id ?? undefined,
-                simulation_rubric_flag_id:
-                  effectiveFormState.simulation_rubric_flag_id ?? undefined,
-                video_rubric_flag_id:
-                  effectiveFormState.video_rubric_flag_id ?? undefined,
+                active_flag_id: activeFlagId,
+                simulation_rubric_flag_id: simulationRubricFlagId,
+                video_rubric_flag_id: videoRubricFlagId,
                 department_ids: effectiveFormState.department_ids?.length
                   ? effectiveFormState.department_ids
                   : undefined,
@@ -807,7 +834,7 @@ function RubricComponent({
         resetFields: [
           "name_id",
           "description_id",
-          "active_flag_id",
+          "flag_ids",
           "department_ids",
           "pass_points_id",
           "pass_points",
@@ -833,7 +860,7 @@ function RubricComponent({
     () => [
       "name_id",
       "description_id",
-      "active_flag_id",
+      "flag_ids",
       "department_ids",
       "pass_points_id",
       "pass_points",
@@ -842,6 +869,58 @@ function RubricComponent({
       "pending_ids",
     ],
     [],
+  );
+
+  // --- Flag helpers (canonical flag_ids pattern) ---
+  const flagValues = useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (s?.flags ?? [])
+        .filter((f: any) => f.id)
+        .map((f: any) => [f.id as string, f]),
+    );
+    for (const id of formState.flag_ids) {
+      const row: any = byId.get(id);
+      if (!row) continue;
+      const type = row.type ?? row.name;
+      if (type && row.value != null) map[type] = row.value;
+    }
+    return map;
+  }, [formState.flag_ids, s?.flags]);
+
+  const flagRowsByType = useMemo(() => {
+    const map = new Map<string, any[]>();
+    for (const f of s?.flags ?? []) {
+      const t = (f as any).type ?? (f as any).name;
+      if (!t) continue;
+      const list = map.get(t) ?? [];
+      list.push(f);
+      map.set(t, list);
+    }
+    return map;
+  }, [s?.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = flagRowsByType.get(type) ?? [];
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id),
+        );
+        const retained = prev.flag_ids.filter((id) => !rowIdsForType.has(id));
+        const target =
+          next == null ? null : rows.find((r) => r.value === next)?.id ?? null;
+        const nextIds = target ? [...retained, target] : retained;
+        if (
+          nextIds.length === prev.flag_ids.length &&
+          nextIds.every((id, i) => id === prev.flag_ids[i])
+        ) {
+          return prev;
+        }
+        return { ...prev, flag_ids: nextIds };
+      });
+    },
+    [flagRowsByType],
   );
 
   const renderStep = useCallback(
@@ -890,7 +969,7 @@ function RubricComponent({
             resetFields={[
               "name_id",
               "description_id",
-              "active_flag_id",
+              "flag_ids",
               "department_ids",
             ]}
             actions={
@@ -936,28 +1015,13 @@ function RubricComponent({
               />
 
               <Flags
-                mode="multi"
                 flags={s?.flags ?? []}
-                flag_ids={{
-                  active: formState.active_flag_id,
-                  simulation_rubric: formState.simulation_rubric_flag_id,
-                  video_rubric: formState.video_rubric_flag_id,
-                }}
+                values={flagValues}
                 show_flags={Boolean((s?.flags ?? []).length)}
                 columns={2}
                 label="Flags"
                 disabled={disabled}
-                onChange={(key, flagId) =>
-                  setFormState((prev) => {
-                    if (key === "active")
-                      return { ...prev, active_flag_id: flagId };
-                    if (key === "simulation_rubric")
-                      return { ...prev, simulation_rubric_flag_id: flagId };
-                    if (key === "video_rubric")
-                      return { ...prev, video_rubric_flag_id: flagId };
-                    return prev;
-                  })
-                }
+                onChange={handleFlagToggle}
               />
 
               {/* Pass points is user-writeable; total is computed server-side
@@ -1029,6 +1093,15 @@ function RubricComponent({
               disabled={disabled}
               onChange={(ids) =>
                 setFormState((prev) => ({ ...prev, standard_group_ids: ids }))
+              }
+              onCreate={(draft) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  standard_groups: [
+                    ...(prev.standard_groups ?? []),
+                    { id: null, ...draft },
+                  ],
+                }))
               }
               required={true}
             />
@@ -1140,16 +1213,18 @@ function RubricComponent({
                 name_id: null,
                 description: null,
                 description_id: null,
-                active_flag_id: null,
-                simulation_rubric_flag_id: null,
-                video_rubric_flag_id: null,
+                flag_ids: [],
                 department_ids: [],
                 pass_points_id: null,
                 pass_points: null,
               }));
             }
             if (stepId === "standard_groups") {
-              setFormState((prev) => ({ ...prev, standard_group_ids: [] }));
+              setFormState((prev) => ({
+                ...prev,
+                standard_group_ids: [],
+                standard_groups: null,
+              }));
             }
             if (stepId === "standards") {
               setFormState((prev) => ({ ...prev, standard_ids: [] }));

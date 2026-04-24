@@ -1,12 +1,14 @@
 /**
- * Flags.tsx
- * Server-driven flag resource component for boolean flag/switch fields
- * Supports two modes:
- * 1. Single-flag mode: flag_id + onChange(flagId)
- * 2. Multi-flag mode: flag_ids + onChange(key, flagId)
- * Receives enriched flag configs directly from server (no client-side transformation needed)
+ * Flags.tsx — canonical flag picker.
+ *
+ * Props are a flat array of flag resource rows (one per flags_resource entry;
+ * typically two per logical flag: value=true and value=false) plus a
+ * denormalized values map keyed by flag type (`{"setting_active": true,
+ * "mcp": false}`). The component groups rows by type and renders one Switch
+ * per type; toggling emits `onChange(type, next)` and the parent component
+ * stores the boolean on its form state, shipping it either as a typed field
+ * (`active: bool`) or via `flag_ids` lookup to the server.
  */
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -23,136 +25,126 @@ import { SvgIcon } from "@/components/common/SvgIcon";
 import { Check, Power, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-export interface FlagResourceItem {
+// Back-compat alias — artifacts still importing `FlagConfig` continue to work
+// until they're migrated to the new shape.
+export type FlagConfig = FlagResource;
+
+export interface FlagResource {
   id?: string | null;
   name?: string | null;
+  type?: string | null;
+  value?: boolean | null;
+  description?: string | null;
+  icon_id?: string | null;
+  icon?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  selected?: boolean | null;
   pending?: boolean | null;
 }
 
-export interface FlagConfig {
-  key: string; // Unique key (e.g., "active", "video_enabled")
-  label: string; // Display label
-  description?: string | null; // Help text from DB
-  icon_id?: string | null; // UUID of the icon resource
-  icon?: string | null; // Hydrated SVG markup (server fills this from icons_resource)
-  flag_option_id?: string | null; // The artifact ID to use when enabling
-  show?: boolean; // Whether to display this flag (defaults to true)
-  required?: boolean; // Required indicator
-  generated?: boolean | null; // Whether AI generated
-  pending?: boolean | null; // Whether this flag is pending acceptance
-}
+// Denormalized state: key = flag type (e.g. "setting_active"), value = bool|null.
+// null means "unset" (falls back to the artifact's default on server).
+export type FlagValues = Record<string, boolean | null>;
 
-// Common props for both modes
-interface CommonFlagsProps {
-  flags: FlagConfig[]; // Array of flag configurations from server
-  show_flags?: boolean; // Master visibility control
-  columns?: 1 | 2 | 3 | 4; // Columns per row (default: 2)
-  label?: string; // Section label (canonical: "Flags")
+export interface FlagsProps {
+  flags: FlagResource[]; // Flat server list — one per flags_resource row
+  values: FlagValues; // Denormalized per-type state
+  onChange: (type: string, next: boolean | null) => void;
+  label?: string;
+  columns?: 1 | 2 | 3 | 4;
   disabled?: boolean;
-  headerRight?: React.ReactNode; // Right-aligned slot rendered next to the label
+  headerRight?: React.ReactNode;
+  show_flags?: boolean;
 }
 
-// Single-flag mode props - uses flag_id (optional) without flag_ids
-export interface SingleFlagProps extends CommonFlagsProps {
-  mode?: "single";
-  flag_id?: string | null;
-  flag_ids?: never;
-  onChange: (flagId: string | null) => void;
-}
+type FlagGroup = {
+  type: string;
+  label: string;
+  description: string | null;
+  icon: string | null;
+  trueRow: FlagResource | null;
+  falseRow: FlagResource | null;
+};
 
-// Multi-flag mode props - uses flag_ids (required) without flag_id
-export interface MultiFlagProps extends CommonFlagsProps {
-  mode?: "multi";
-  flag_id?: never;
-  flag_ids: Record<string, string | null>;
-  onChange: (key: string, flagId: string | null) => void;
-}
-
-export type FlagsProps = SingleFlagProps | MultiFlagProps;
-
-export function Flags(props: FlagsProps) {
-  const {
-    flags,
-    show_flags = false,
-    columns = 2,
-    label,
-    disabled = false,
-    headerRight,
-    onChange,
-  } = props;
-
-  // Determine mode based on props
-  const isMultiMode = "flag_ids" in props && props.flag_ids !== undefined;
-  const flagIds = isMultiMode ? props.flag_ids : null;
-  const singleFlagId = !isMultiMode ? props.flag_id : null;
-
-  // Filter flags to only show those with show: true (default to true if not specified)
-  const visibleFlags = useMemo(
-    () => flags.filter((flag) => flag.show !== false),
-    [flags]
+// "setting_active" -> "Active"; "foo_bar_baz" -> "Foo Bar Baz"
+function deriveLabel(typeOrName: string | null | undefined): string {
+  if (!typeOrName) return "";
+  // Strip common artifact prefixes so `setting_active` → `active` before labeling.
+  const stripped = typeOrName.replace(
+    /^(setting|persona|cohort|rubric|model|scenario|simulation|auth|document|field|parameter|tool|provider|profile|eval|agent|department|rubric)_/,
+    ""
   );
+  const source = stripped || typeOrName;
+  return source
+    .split("_")
+    .filter(Boolean)
+    .map((w) => w[0]!.toUpperCase() + w.slice(1))
+    .join(" ");
+}
 
-  // Pending state: flags with pending=true from soft draft connections
-  const pendingFlags = useMemo(
-    () => visibleFlags.filter((f) => f.pending),
-    [visibleFlags]
-  );
-  const showDiff = pendingFlags.length > 0;
+export function Flags({
+  flags,
+  values,
+  onChange,
+  label,
+  columns = 2,
+  disabled = false,
+  headerRight,
+  show_flags = true,
+}: FlagsProps) {
+  // Group flag rows by type — each logical flag surfaces as one toggle.
+  const groups = useMemo<FlagGroup[]>(() => {
+    const byType = new Map<string, FlagGroup>();
+    for (const row of flags) {
+      const type = row.type ?? row.name;
+      if (!type) continue;
+      const group = byType.get(type) ?? {
+        type,
+        label: row.name ? deriveLabel(row.name) : deriveLabel(type),
+        description: row.description ?? null,
+        icon: row.icon ?? null,
+        trueRow: null,
+        falseRow: null,
+      };
+      if (row.value === true) group.trueRow = row;
+      else if (row.value === false) group.falseRow = row;
+      // Inherit metadata from whichever row we see first.
+      if (!group.description && row.description) group.description = row.description;
+      if (!group.icon && row.icon) group.icon = row.icon;
+      byType.set(type, group);
+    }
+    return Array.from(byType.values());
+  }, [flags]);
 
-  // Get the checked state for a flag
-  const isChecked = useCallback(
-    (flag: FlagConfig): boolean => {
-      if (isMultiMode && flagIds) {
-        return flagIds[flag.key] === flag.flag_option_id;
-      }
-      return singleFlagId === flag.flag_option_id;
+  const pendingTypes = useMemo(() => {
+    const set = new Set<string>();
+    for (const g of groups) {
+      if (g.trueRow?.pending || g.falseRow?.pending) set.add(g.type);
+    }
+    return set;
+  }, [groups]);
+  const showDiff = pendingTypes.size > 0;
+
+  const handleToggle = useCallback(
+    (type: string, checked: boolean) => {
+      onChange(type, checked);
     },
-    [isMultiMode, flagIds, singleFlagId]
+    [onChange]
   );
 
-  // Handle toggle for a specific flag
-  const handleChange = useCallback(
-    (flag: FlagConfig, checked: boolean) => {
-      const newValue = checked ? (flag.flag_option_id ?? null) : null;
-
-      if (isMultiMode) {
-        (onChange as (key: string, flagId: string | null) => void)(
-          flag.key,
-          newValue
-        );
-      } else {
-        (onChange as (flagId: string | null) => void)(newValue);
-      }
-    },
-    [isMultiMode, onChange]
-  );
-
-  // Accept pending — confirm pending flags in form state
   const handleAccept = useCallback(() => {
-    // Pending flags are already reflected in form state — nothing to change
-    // The next draft save will persist them as active
+    // Pending state is confirmed by the next non-pending save. No-op here.
   }, []);
 
-  // Reject pending — unset pending flags
   const handleReject = useCallback(() => {
-    for (const flag of pendingFlags) {
-      if (isMultiMode) {
-        (onChange as (key: string, flagId: string | null) => void)(flag.key, null);
-      } else {
-        (onChange as (flagId: string | null) => void)(null);
-      }
-    }
-  }, [pendingFlags, isMultiMode, onChange]);
+    for (const t of pendingTypes) onChange(t, null);
+  }, [pendingTypes, onChange]);
 
-  // Don't render if show_flags is false or no visible flags
-  if (!show_flags || visibleFlags.length === 0) {
-    return null;
-  }
+  if (!show_flags || groups.length === 0) return null;
 
   return (
     <div className="space-y-2 pt-2">
-      {/* Section header with label and generate button */}
       {(label || headerRight) && (
         <div className="flex items-center gap-2">
           {label && <Label className="text-sm font-medium">{label}</Label>}
@@ -195,8 +187,6 @@ export function Flags(props: FlagsProps) {
           {headerRight && <div className="ml-auto">{headerRight}</div>}
         </div>
       )}
-
-      {/* Grid layout for flags */}
       <div
         className={cn(
           "grid gap-3 pt-1",
@@ -206,13 +196,13 @@ export function Flags(props: FlagsProps) {
           columns === 4 && "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
         )}
       >
-        {visibleFlags.map((flag) => {
-          // Icon is server-driven via flag.icon (SVG markup hydrated by the
-          // artifact context). Fallback to Power if the flag has no icon
-          // configured in the seed data.
-          const resolvedIcon = flag.icon ? (
+        {groups.map((group) => {
+          const current = values[group.type];
+          const checked = current === true;
+          const isPending = pendingTypes.has(group.type);
+          const resolvedIcon = group.icon ? (
             <SvgIcon
-              svg={flag.icon}
+              svg={group.icon}
               className="h-3.5 w-3.5 text-muted-foreground"
               fallback={<Power className="h-3.5 w-3.5 text-muted-foreground" />}
             />
@@ -220,27 +210,21 @@ export function Flags(props: FlagsProps) {
             <Power className="h-3.5 w-3.5 text-muted-foreground" />
           );
 
-          const checked = isChecked(flag);
-          const isPending = flag.pending === true;
-
           return (
             <div
-              key={flag.key}
+              key={group.type}
               className={cn(
                 "space-y-1 p-2 rounded-lg transition-all",
-                isPending && "ring-2 ring-success bg-success/10",
+                isPending && "ring-2 ring-success bg-success/10"
               )}
             >
               <div className="flex items-center gap-2">
                 <Label
-                  htmlFor={`flag-${flag.key}`}
+                  htmlFor={`flag-${group.type}`}
                   className="text-sm flex items-center gap-1"
                 >
                   {resolvedIcon}
-                  {flag.label}
-                  {flag.required && (
-                    <span className="text-destructive">*</span>
-                  )}
+                  {group.label}
                   {isPending && (
                     <span className="ml-2 text-xs text-success font-medium">
                       Pending
@@ -248,15 +232,15 @@ export function Flags(props: FlagsProps) {
                   )}
                 </Label>
                 <Switch
-                  id={`flag-${flag.key}`}
+                  id={`flag-${group.type}`}
                   checked={checked}
-                  onCheckedChange={(c) => handleChange(flag, c)}
-                  disabled={disabled || !flag.flag_option_id}
+                  onCheckedChange={(c) => handleToggle(group.type, c)}
+                  disabled={disabled}
                 />
               </div>
-              {flag.description && (
+              {group.description && (
                 <p className="text-xs text-muted-foreground pl-5">
-                  {flag.description}
+                  {group.description}
                 </p>
               )}
             </div>

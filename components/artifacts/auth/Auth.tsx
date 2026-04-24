@@ -15,6 +15,7 @@ import {
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
+import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Items } from "@/components/resources/Items";
@@ -45,10 +46,12 @@ type AuthFormState = {
   name_id: string | null;
   description: string | null;
   description_id: string | null;
-  active_flag_id: string | null;
+  flag_ids: string[];
   department_ids: string[];
   protocol_ids: string[];
+  protocol_values: string[];
   slug_ids: string[];
+  slug_values: string[];
   item_ids: string[];
   pending_ids: string[];
   items: Array<{
@@ -108,10 +111,12 @@ function AuthComponent({
     name_id: null,
     description: null,
     description_id: null,
-    active_flag_id: null,
+    flag_ids: [],
     department_ids: [],
     protocol_ids: [],
+    protocol_values: [],
     slug_ids: [],
+    slug_values: [],
     item_ids: [],
     pending_ids: [],
     items: [],
@@ -133,10 +138,12 @@ function AuthComponent({
         name_id: null,
         description: null,
         description_id: null,
-        active_flag_id: null,
+        flag_ids: [],
         department_ids: [],
         protocol_ids: [],
+        protocol_values: [],
         slug_ids: [],
+        slug_values: [],
         item_ids: [],
         pending_ids: [],
         items: [],
@@ -145,7 +152,9 @@ function AuthComponent({
 
     const selectedName = s.names?.find((item) => item.selected) ?? null;
     const selectedDescription = s.descriptions?.find((item) => item.selected) ?? null;
-    const selectedFlag = s.flags?.find((item) => item.selected) ?? null;
+    const selectedFlagIds = (s.flags?.filter((item) => item.selected) ?? [])
+      .map((item) => item.id)
+      .filter((item): item is string => !!item);
     const selectedProtocols = (s.protocols?.filter((item) => item.selected) ?? [])
       .map((item) => item.id)
       .filter((item): item is string => !!item);
@@ -165,10 +174,12 @@ function AuthComponent({
       name_id: selectedName?.id ?? null,
       description: selectedDescription?.description ?? null,
       description_id: selectedDescription?.id ?? null,
-      active_flag_id: selectedFlag?.flag_option_id ?? null,
+      flag_ids: selectedFlagIds,
       department_ids: selectedDepartments,
       protocol_ids: selectedProtocols,
+      protocol_values: [],
       slug_ids: selectedSlugs,
+      slug_values: [],
       item_ids: selectedItems,
       pending_ids: (s.pending_ids ?? []).filter((item): item is string => !!item),
       items:
@@ -217,7 +228,7 @@ function AuthComponent({
           name_id?: string | null;
           description?: string | null;
           description_id?: string | null;
-          flag_id?: string | null;
+          flag_ids?: string[] | null;
           department_ids?: string[] | null;
           protocol_ids?: string[] | null;
           slug_ids?: string[] | null;
@@ -235,10 +246,13 @@ function AuthComponent({
           name: formStateFromServer.name_id ? null : prev.name,
           description_id: formStateFromServer.description_id ?? prev.description_id,
           description: formStateFromServer.description_id ? null : prev.description,
-          active_flag_id: formStateFromServer.flag_id ?? prev.active_flag_id,
+          flag_ids: formStateFromServer.flag_ids ?? prev.flag_ids,
           department_ids: formStateFromServer.department_ids ?? prev.department_ids,
           protocol_ids: formStateFromServer.protocol_ids ?? prev.protocol_ids,
+          // Clear raw protocol values once server has resolved them to IDs.
+          protocol_values: formStateFromServer.protocol_ids ? [] : prev.protocol_values,
           slug_ids: formStateFromServer.slug_ids ?? prev.slug_ids,
+          slug_values: formStateFromServer.slug_ids ? [] : prev.slug_values,
           item_ids: formStateFromServer.item_ids ?? prev.item_ids,
           pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
         }));
@@ -256,10 +270,12 @@ function AuthComponent({
   const hasResourceIds =
     !!formState.name_id ||
     !!formState.description_id ||
-    !!formState.active_flag_id ||
+    formState.flag_ids.length > 0 ||
     formState.department_ids.length > 0 ||
     formState.protocol_ids.length > 0 ||
+    formState.protocol_values.length > 0 ||
     formState.slug_ids.length > 0 ||
+    formState.slug_values.length > 0 ||
     formState.item_ids.length > 0 ||
     formState.items.length > 0;
 
@@ -268,13 +284,22 @@ function AuthComponent({
       const fs = formStateRef.current as unknown as AuthFormState;
       const payload: Record<string, unknown> = {
         draft_id: inputDraftId || null,
-        flag_id: fs.active_flag_id ?? null,
+        flag_ids: fs.flag_ids,
         department_ids: fs.department_ids.length > 0 ? fs.department_ids : [],
         protocol_ids: fs.protocol_ids.length > 0 ? fs.protocol_ids : [],
         slug_ids: fs.slug_ids.length > 0 ? fs.slug_ids : [],
         item_ids: fs.item_ids.length > 0 ? fs.item_ids : [],
         pending_ids: fs.pending_ids,
       };
+
+      // Raw-value creatable arrays: server resolves existing, creates new, and
+      // echoes resolved ids back via form_state.{protocol,slug}_ids.
+      if (fs.protocol_values.length > 0) {
+        payload["protocols"] = fs.protocol_values;
+      }
+      if (fs.slug_values.length > 0) {
+        payload["slugs"] = fs.slug_values;
+      }
 
       if (fs.name && fs.name.trim().length > 0) {
         payload["name"] = fs.name;
@@ -382,18 +407,20 @@ function AuthComponent({
   );
 
   const disabled = useMemo(() => !s?.can_edit, [s?.can_edit]);
-  const showProtocols = (s?.protocols?.length ?? 0) > 0;
-  const showSlugs = (s?.slugs?.length ?? 0) > 0;
+  // Protocols/slugs are always shown — the user can create new ones inline
+  // even when the catalog is empty.
+  const showProtocols = true;
+  const showSlugs = true;
   const showItems = (s?.items?.length ?? 0) > 0;
   const nameRequired = true;
   const descriptionRequired = false;
-  const protocolsRequired = showProtocols;
-  const slugsRequired = showSlugs;
+  const protocolsRequired = false;
+  const slugsRequired = false;
   const sectionResourceIds = useMemo(
     () => ({
       names: new Set((s?.names ?? []).map((item) => item.id).filter((item): item is string => !!item)),
       descriptions: new Set((s?.descriptions ?? []).map((item) => item.id).filter((item): item is string => !!item)),
-      flags: new Set((s?.flags ?? []).map((item) => item.flag_option_id).filter((item): item is string => !!item)),
+      flags: new Set((s?.flags ?? []).map((item) => item.id).filter((item): item is string => !!item)),
       protocols: new Set((s?.protocols ?? []).map((item) => item.id).filter((item): item is string => !!item)),
       slugs: new Set((s?.slugs ?? []).map((item) => item.id).filter((item): item is string => !!item)),
       items: new Set((s?.items ?? []).map((item) => item.id).filter((item): item is string => !!item)),
@@ -407,6 +434,58 @@ function AuthComponent({
         (id) => !sectionResourceIds[section].has(id) || nextSelectedIds.includes(id),
       ),
     [sectionResourceIds],
+  );
+
+  // Per-type boolean view of flag_ids, built from the catalog. Rendered by Flags.
+  const flagValues = useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (s?.flags ?? [])
+        .filter((f) => f.id)
+        .map((f) => [f.id as string, f])
+    );
+    for (const id of formState.flag_ids) {
+      const row = byId.get(id);
+      if (!row) continue;
+      const type = row.type ?? row.name;
+      if (type && row.value != null) map[type] = row.value;
+    }
+    return map;
+  }, [formState.flag_ids, s?.flags]);
+
+  // Rows grouped by flag type — used when a toggle swaps between true/false ids.
+  type FlagRow = NonNullable<NonNullable<typeof s>["flags"]>[number];
+  const flagRowsByType = useMemo(() => {
+    const map = new Map<string, FlagRow[]>();
+    for (const f of s?.flags ?? []) {
+      const t = f.type ?? f.name;
+      if (!t) continue;
+      const list = map.get(t) ?? [];
+      list.push(f);
+      map.set(t, list);
+    }
+    return map;
+  }, [s?.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = flagRowsByType.get(type) ?? [];
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id)
+        );
+        const retained = prev.flag_ids.filter((id) => !rowIdsForType.has(id));
+        const target =
+          next == null ? null : rows.find((r) => r.value === next)?.id ?? null;
+        const nextIds = target ? [...retained, target] : retained;
+        return {
+          ...prev,
+          flag_ids: nextIds,
+          pending_ids: retainPendingIds(prev.pending_ids, "flags", nextIds),
+        };
+      });
+    },
+    [flagRowsByType, retainPendingIds]
   );
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
@@ -472,7 +551,9 @@ function AuthComponent({
                 id: authId,
                 name_id: effectiveFormState.name_id ?? undefined,
                 description_id: effectiveFormState.description_id ?? undefined,
-                active_flag_id: effectiveFormState.active_flag_id ?? undefined,
+                flag_ids: effectiveFormState.flag_ids.length > 0
+                  ? effectiveFormState.flag_ids
+                  : null,
                 protocol_ids: effectiveFormState.protocol_ids?.length
                   ? effectiveFormState.protocol_ids
                   : null,
@@ -497,7 +578,9 @@ function AuthComponent({
               {
                 name_id: effectiveFormState.name_id ?? undefined,
                 description_id: effectiveFormState.description_id ?? undefined,
-                active_flag_id: effectiveFormState.active_flag_id ?? undefined,
+                flag_ids: effectiveFormState.flag_ids.length > 0
+                  ? effectiveFormState.flag_ids
+                  : null,
                 protocol_ids: effectiveFormState.protocol_ids?.length
                   ? effectiveFormState.protocol_ids
                   : null,
@@ -569,7 +652,7 @@ function AuthComponent({
         id: "basic",
         title: "Basic Information",
         description: "Set the auth name, description, and status.",
-        resetFields: ["name_id", "description_id", "active_flag_id"],
+        resetFields: ["name_id", "description_id", "flag_ids"],
       },
       {
         id: "protocols",
@@ -597,7 +680,7 @@ function AuthComponent({
     () => [
       "name_id",
       "description_id",
-      "active_flag_id",
+      "flag_ids",
       "protocol_ids",
       "slug_ids",
       "item_ids",
@@ -681,7 +764,7 @@ function AuthComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
               }
-              resetFields={["name_id", "description_id", "active_flag_id"]}
+              resetFields={["name_id", "description_id", "flag_ids"]}
               actions={
                 s?.basic_show_ai_generate ? (
                   <StepCardAiButton
@@ -718,20 +801,31 @@ function AuthComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
 
+                <Departments
+                  department_ids={formState.department_ids}
+                  department_resources={s?.departments?.filter((d) => d.selected) ?? []}
+                  show_departments={true}
+                  departments={s?.departments ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      department_ids: ids,
+                      pending_ids: prev.pending_ids.filter(
+                        (pid) => ids.includes(pid) || !prev.department_ids.includes(pid),
+                      ),
+                    }))
+                  }
+                />
+
                 <Flags
                   flags={s?.flags ?? []}
-                  flag_id={formState.active_flag_id}
+                  values={flagValues}
                   show_flags={true}
                   columns={1}
                   label="Flags"
                   disabled={disabled}
-                  onChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      active_flag_id: flagId,
-                      pending_ids: retainPendingIds(prev.pending_ids, "flags", flagId ? [flagId] : []),
-                    }))
-                  }
+                  onChange={handleFlagToggle}
                 />
               </div>
             </StepCard>
@@ -766,6 +860,10 @@ function AuthComponent({
                 protocol_resources={s?.protocols?.filter((item) => item.selected) ?? []}
                 show_protocols={showProtocols}
                 protocols={s?.protocols ?? []}
+                protocol_values={formState.protocol_values}
+                onValuesChange={(values) =>
+                  setFormState((prev) => ({ ...prev, protocol_values: values }))
+                }
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({
@@ -808,6 +906,10 @@ function AuthComponent({
                 slug_resources={s?.slugs?.filter((item) => item.selected) ?? []}
                 show_slugs={showSlugs}
                 slugs={s?.slugs ?? []}
+                slug_values={formState.slug_values}
+                onValuesChange={(values) =>
+                  setFormState((prev) => ({ ...prev, slug_values: values }))
+                }
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({
@@ -954,7 +1056,7 @@ function AuthComponent({
                   ...prev,
                   name_id: null,
                   description_id: null,
-                  active_flag_id: null,
+                  flag_ids: [],
                   pending_ids: retainPendingIds(
                     retainPendingIds(
                       retainPendingIds(prev.pending_ids, "names", []),
@@ -970,6 +1072,7 @@ function AuthComponent({
                 setFormState((prev) => ({
                   ...prev,
                   protocol_ids: [],
+                  protocol_values: [],
                   pending_ids: retainPendingIds(prev.pending_ids, "protocols", []),
                 }));
                 break;
@@ -977,6 +1080,7 @@ function AuthComponent({
                 setFormState((prev) => ({
                   ...prev,
                   slug_ids: [],
+                  slug_values: [],
                   pending_ids: retainPendingIds(prev.pending_ids, "slugs", []),
                 }));
                 break;

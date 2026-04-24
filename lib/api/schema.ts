@@ -14788,20 +14788,30 @@ export interface components {
             message: string;
         };
         /**
-         * AgentFlagConfig
-         * @description Enriched flag config for direct client consumption.
+         * AgentFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
          */
-        AgentFlagConfig: {
+        AgentFlagResource: {
             /**
-             * Key
-             * @description Flag config key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Display label for the flag
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'agent_active')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
              * @description Flag description text
@@ -14817,23 +14827,6 @@ export interface components {
              * @description Resolved SVG markup for the icon (hydrated from icons_resource)
              */
             icon?: string | null;
-            /**
-             * Flag Option Id
-             * @description UUID of the flag option
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether to show this flag in the UI
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this flag is required
-             * @default false
-             */
-            required: boolean;
             /**
              * Generated
              * @description Whether this was AI-generated
@@ -17033,20 +17026,30 @@ export interface components {
             message: string;
         };
         /**
-         * AuthFlagConfig
-         * @description Enriched flag config for direct client consumption.
+         * AuthFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
          */
-        AuthFlagConfig: {
+        AuthFlagResource: {
             /**
-             * Key
-             * @description Flag key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Human-readable flag label
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'auth_active')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
              * @description Flag description text
@@ -17062,23 +17065,6 @@ export interface components {
              * @description Resolved SVG markup for the icon (hydrated from icons_resource)
              */
             icon?: string | null;
-            /**
-             * Flag Option Id
-             * @description UUID of the selected flag option
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether the flag is visible to the client
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether the flag is required
-             * @default false
-             */
-            required: boolean;
             /**
              * Generated
              * @description Whether the flag was AI-generated
@@ -19266,20 +19252,30 @@ export interface components {
             message: string;
         };
         /**
-         * CohortFlagConfig
-         * @description Flag config for cohort — matches client FlagConfig interface.
+         * CohortFlagResource
+         * @description Flag option row for cohort — one per (name, type, value) flags_resource entry.
          */
-        CohortFlagConfig: {
+        CohortFlagResource: {
             /**
-             * Key
-             * @description Flag key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key?: string | null;
+            id?: string | null;
             /**
-             * Label
-             * @description Display label
+             * Name
+             * @description Flag display name
              */
-            label?: string | null;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'cohort_active')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
              * @description Flag description
@@ -19295,21 +19291,6 @@ export interface components {
              * @description Resolved SVG markup for the icon (hydrated from icons_resource)
              */
             icon?: string | null;
-            /**
-             * Flag Option Id
-             * @description Selected flag option UUID
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether to show this flag in the UI
-             */
-            show?: boolean | null;
-            /**
-             * Required
-             * @description Whether this flag is required
-             */
-            required?: boolean | null;
             /**
              * Generated
              * @description Whether this was AI-generated
@@ -19989,20 +19970,15 @@ export interface components {
              */
             departments?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether this agent is active
-             */
-            active_flag?: boolean | null;
-            /**
-             * Active Flag Id
-             * @description Active flag resource UUID
-             */
-            active_flag_id?: string | null;
-            /**
              * Flag Ids
-             * @description Associated flag UUIDs
+             * @description Selected flag option UUIDs
              */
             flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized agent_active flag state
+             */
+            active?: boolean | null;
             /**
              * Model Id
              * @description Associated model UUID
@@ -20305,15 +20281,15 @@ export interface components {
              */
             slug?: string | null;
             /**
-             * Active Flag Id
-             * @description UUID of the active flag option
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether the auth provider is active
+             * Active
+             * @description Denormalized auth_active flag state
              */
-            active_flag?: boolean | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs to assign
@@ -21643,10 +21619,15 @@ export interface components {
              */
             name?: string | null;
             /**
-             * Active Flag Id
-             * @description UUID of the flag option
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized profile_active flag state
+             */
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs to assign
@@ -21781,15 +21762,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Active Flag Id
-             * @description Active flag option identifier
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether the provider is active
+             * Active
+             * @description Denormalized provider_active flag state
              */
-            active_flag?: boolean | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department identifiers
@@ -24553,20 +24534,30 @@ export interface components {
             message: string;
         };
         /**
-         * DepartmentFlagConfig
-         * @description Enriched flag config for direct client consumption.
+         * DepartmentFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
          */
-        DepartmentFlagConfig: {
+        DepartmentFlagResource: {
             /**
-             * Key
-             * @description Flag key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Human-readable flag label
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'department_active')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
              * @description Flag description text
@@ -24582,23 +24573,6 @@ export interface components {
              * @description Resolved SVG markup for the icon (hydrated from icons_resource)
              */
             icon?: string | null;
-            /**
-             * Flag Option Id
-             * @description UUID of the selected flag option
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether the flag is visible to the client
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether the flag is required
-             * @default false
-             */
-            required: boolean;
             /**
              * Generated
              * @description Whether the flag was AI-generated
@@ -24995,42 +24969,45 @@ export interface components {
             pending: boolean;
         };
         /**
-         * DocumentFlagConfig
-         * @description Enriched flag config for direct client consumption.
+         * DocumentFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
          */
-        DocumentFlagConfig: {
+        DocumentFlagResource: {
             /**
-             * Key
-             * @description Flag key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Display label
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'document_active')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
-             * @description Flag description
+             * @description Flag description text
              */
             description?: string | null;
             /**
-             * Flag Option Id
-             * @description Flag option UUID to use when enabling
+             * Icon Id
+             * @description Icon identifier for the flag
              */
-            flag_option_id?: string | null;
+            icon_id?: string | null;
             /**
-             * Show
-             * @description Whether to show this flag in the UI
-             * @default true
+             * Icon
+             * @description Resolved SVG markup for the icon
              */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this flag is required
-             * @default false
-             */
-            required: boolean;
+            icon?: string | null;
             /**
              * Generated
              * @description Whether this was AI-generated
@@ -26567,21 +26544,34 @@ export interface components {
              */
             message: string;
         };
-        /** EvalFlagConfig */
-        EvalFlagConfig: {
+        /**
+         * EvalFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
+         */
+        EvalFlagResource: {
             /**
-             * Key
-             * @description Flag key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Display label
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'eval_active')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
-             * @description Flag description
+             * @description Flag description text
              */
             description?: string | null;
             /**
@@ -26591,46 +26581,29 @@ export interface components {
             icon_id?: string | null;
             /**
              * Icon
-             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             * @description Resolved SVG markup (hydrated from icons_resource)
              */
             icon?: string | null;
             /**
-             * Flag Option Id
-             * @description Flag resource UUID
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether to show this flag in the UI
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this flag is required
-             * @default false
-             */
-            required: boolean;
-            /**
              * Generated
-             * @description Whether this was AI-generated
+             * @description Whether the flag was AI-generated
              */
             generated?: boolean | null;
             /**
              * Suggested
-             * @description Whether this is a suggested option
+             * @description Whether this item is suggested
              * @default false
              */
             suggested: boolean;
             /**
              * Selected
-             * @description Whether this is currently selected
+             * @description Whether this item is selected
              * @default false
              */
             selected: boolean;
             /**
              * Pending
-             * @description Whether this selection is pending acceptance
+             * @description Whether this item is pending acceptance
              * @default false
              */
             pending: boolean;
@@ -28252,20 +28225,30 @@ export interface components {
             message: string;
         };
         /**
-         * FieldFlagConfig
-         * @description Enriched flag config for direct client consumption.
+         * FieldFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
          */
-        FieldFlagConfig: {
+        FieldFlagResource: {
             /**
-             * Key
-             * @description Flag key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Human-readable flag label
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'field_active')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
              * @description Flag description text
@@ -28281,23 +28264,6 @@ export interface components {
              * @description Resolved SVG markup for the icon (hydrated from icons_resource)
              */
             icon?: string | null;
-            /**
-             * Flag Option Id
-             * @description UUID of the selected flag option
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether the flag is visible to the client
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether the flag is required
-             * @default false
-             */
-            required: boolean;
             /**
              * Generated
              * @description Whether the flag was AI-generated
@@ -30921,9 +30887,9 @@ export interface components {
             instructions?: components["schemas"]["AgentInstructionResource"][] | null;
             /**
              * Flags
-             * @description Flag resources
+             * @description Flag resources (one per flags_resource row, value=true/false)
              */
-            flags?: components["schemas"]["AgentFlagConfig"][] | null;
+            flags?: components["schemas"]["AgentFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources
@@ -31508,9 +31474,9 @@ export interface components {
             descriptions?: components["schemas"]["AuthDescriptionResource"][] | null;
             /**
              * Flags
-             * @description Flag configs
+             * @description Flag resources (one per flags_resource row, value=true/false)
              */
-            flags?: components["schemas"]["AuthFlagConfig"][] | null;
+            flags?: components["schemas"]["AuthFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources
@@ -32149,7 +32115,7 @@ export interface components {
              * Flags
              * @description Flag resources with selected/suggested flags
              */
-            flags?: components["schemas"]["CohortFlagConfig"][] | null;
+            flags?: components["schemas"]["CohortFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources with selected/suggested flags
@@ -32434,9 +32400,9 @@ export interface components {
             descriptions?: components["schemas"]["DepartmentDescriptionResource"][] | null;
             /**
              * Flags
-             * @description Flag configs
+             * @description Flag resources (one per flags_resource row, value=true/false)
              */
-            flags?: components["schemas"]["DepartmentFlagConfig"][] | null;
+            flags?: components["schemas"]["DepartmentFlagResource"][] | null;
             /**
              * Settings
              * @description Setting resources
@@ -32648,9 +32614,9 @@ export interface components {
             descriptions?: components["schemas"]["DocumentDescriptionResource"][] | null;
             /**
              * Flags
-             * @description Flag configs
+             * @description Flag resources (one per flags_resource row, value=true/false)
              */
-            flags?: components["schemas"]["DocumentFlagConfig"][] | null;
+            flags?: components["schemas"]["DocumentFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources
@@ -32928,9 +32894,9 @@ export interface components {
             descriptions?: components["schemas"]["EvalDescriptionResource"][] | null;
             /**
              * Flags
-             * @description Flag configs
+             * @description Flag resources (one per flags_resource row, value=true/false)
              */
-            flags?: components["schemas"]["EvalFlagConfig"][] | null;
+            flags?: components["schemas"]["EvalFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources
@@ -33212,9 +33178,9 @@ export interface components {
             descriptions?: components["schemas"]["FieldDescriptionResource"][] | null;
             /**
              * Flags
-             * @description Flag configs
+             * @description Flag resources (one per flags_resource row, value=true/false)
              */
-            flags?: components["schemas"]["FieldFlagConfig"][] | null;
+            flags?: components["schemas"]["FieldFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources
@@ -34122,7 +34088,7 @@ export interface components {
              * Flags
              * @description Flag configs
              */
-            flags?: components["schemas"]["ModelFlagConfig"][] | null;
+            flags?: components["schemas"]["ModelFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources
@@ -34433,7 +34399,7 @@ export interface components {
              * Flags
              * @description Flag configs
              */
-            flags?: components["schemas"]["ParameterFlagConfig"][] | null;
+            flags?: components["schemas"]["ParameterFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources
@@ -34648,9 +34614,9 @@ export interface components {
             instructions?: components["schemas"]["PersonaInstructionResource"][] | null;
             /**
              * Flags
-             * @description Boolean flag configs with selected flag (e.g. active status)
+             * @description Flag resources (one per flags_resource row, value=true/false)
              */
-            flags?: components["schemas"]["PersonaFlagConfig"][] | null;
+            flags?: components["schemas"]["PersonaFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources with selected/suggested flags
@@ -35002,6 +34968,11 @@ export interface components {
              */
             pending_ids?: string[] | null;
             /**
+             * Role Options
+             * @description Role names the actor can assign
+             */
+            role_options?: string[] | null;
+            /**
              * Names
              * @description Name resources
              */
@@ -35013,9 +34984,9 @@ export interface components {
             emails?: components["schemas"]["ProfileEmailResource"][] | null;
             /**
              * Flags
-             * @description Flag configs
+             * @description Flag resources (one per flags_resource row, value=true/false)
              */
-            flags?: components["schemas"]["ProfileFlagConfig"][] | null;
+            flags?: components["schemas"]["ProfileFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources
@@ -35236,9 +35207,9 @@ export interface components {
             descriptions?: components["schemas"]["ProviderDescriptionResource"][] | null;
             /**
              * Flags
-             * @description Flag configs
+             * @description Flag resources (one per flags_resource row, value=true/false)
              */
-            flags?: components["schemas"]["ProviderFlagConfig"][] | null;
+            flags?: components["schemas"]["ProviderFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources
@@ -35484,9 +35455,9 @@ export interface components {
             descriptions?: components["schemas"]["RubricDescriptionResource"][] | null;
             /**
              * Flags
-             * @description Flag configs
+             * @description Flag resources (one per flags_resource row, value=true/false)
              */
-            flags?: components["schemas"]["RubricFlagConfig"][] | null;
+            flags?: components["schemas"]["RubricFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources
@@ -35753,7 +35724,7 @@ export interface components {
              * Flags
              * @description Flag configs
              */
-            flags?: components["schemas"]["ScenarioFlagConfig"][] | null;
+            flags?: components["schemas"]["ScenarioFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources
@@ -36222,9 +36193,9 @@ export interface components {
             colors?: components["schemas"]["SettingColorResource"][] | null;
             /**
              * Flags
-             * @description Flag configs
+             * @description Flag resources (one per flags_resource row, value=true/false)
              */
-            flags?: components["schemas"]["SettingFlagConfig"][] | null;
+            flags?: components["schemas"]["SettingFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources
@@ -36300,6 +36271,26 @@ export interface components {
              * @description Agent catalog used by mcp and systems editing
              */
             agents?: components["schemas"]["SettingAgentCatalogResource"][] | null;
+            /**
+             * Provider Key Options
+             * @description Curated (provider × key) options for the ProviderKeys picker
+             */
+            provider_key_options?: components["schemas"]["SettingProviderKeyOption"][] | null;
+            /**
+             * Auth Item Key Options
+             * @description Curated (auth × key) options for the AuthItemKeys picker
+             */
+            auth_item_key_options?: components["schemas"]["SettingAuthItemKeyOption"][] | null;
+            /**
+             * Auth Item Value Options
+             * @description Curated (auth × item) options for the AuthItemValues picker
+             */
+            auth_item_value_options?: components["schemas"]["SettingAuthItemValueOption"][] | null;
+            /**
+             * Mcp Options
+             * @description Curated per-agent options for the MCP picker
+             */
+            mcp_options?: components["schemas"]["SettingMcpOption"][] | null;
         };
         /** GetSettingDraftResponse */
         GetSettingDraftResponse: {
@@ -36589,7 +36580,7 @@ export interface components {
              * Flags
              * @description Flag configs with selected/suggested flags
              */
-            flags?: components["schemas"]["SimulationFlagConfig"][] | null;
+            flags?: components["schemas"]["SimulationFlagResource"][] | null;
             /**
              * Departments
              * @description Department resources with selected/suggested flags
@@ -37461,9 +37452,9 @@ export interface components {
             descriptions?: components["schemas"]["ToolDescriptionResource"][] | null;
             /**
              * Flags
-             * @description Flag configs
+             * @description Flag resources (one per flags_resource row, value=true/false)
              */
-            flags?: components["schemas"]["ToolFlagConfig"][] | null;
+            flags?: components["schemas"]["ToolFlagResource"][] | null;
             /**
              * Args
              * @description Argument resources
@@ -39753,23 +39744,31 @@ export interface components {
              */
             pending: boolean;
         };
-        /** InvocationFlagResource */
+        /**
+         * InvocationFlagResource
+         * @description Flag option row — one per (name, type, value) flags_resource entry.
+         */
         InvocationFlagResource: {
             /**
              * Id
-             * @description Unique identifier
+             * @description Flag resource identifier
              */
             id?: string | null;
             /**
-             * Key
-             * @description Flag key identifier
+             * Name
+             * @description Flag display name
              */
-            key: string;
+            name?: string | null;
             /**
-             * Label
-             * @description Human-readable flag label
+             * Type
+             * @description Flag type
              */
-            label: string;
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
              * @description Flag description text
@@ -39785,23 +39784,6 @@ export interface components {
              * @description Resolved SVG markup for the icon (hydrated from icons_resource)
              */
             icon?: string | null;
-            /**
-             * Flag Option Id
-             * @description UUID of the selected flag option
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether the flag is visible to the client
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether the flag is required
-             * @default false
-             */
-            required: boolean;
             /**
              * Generated
              * @description Whether the flag was AI-generated
@@ -43632,23 +43614,33 @@ export interface components {
             message: string;
         };
         /**
-         * ModelFlagConfig
-         * @description Enriched flag config for direct client consumption.
+         * ModelFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
          */
-        ModelFlagConfig: {
+        ModelFlagResource: {
             /**
-             * Key
-             * @description Flag key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Human-readable flag label
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'model_active')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
-             * @description Flag description
+             * @description Flag description text
              */
             description?: string | null;
             /**
@@ -43658,31 +43650,32 @@ export interface components {
             icon_id?: string | null;
             /**
              * Icon
-             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             * @description Resolved SVG markup (hydrated from icons_resource)
              */
             icon?: string | null;
             /**
-             * Flag Option Id
-             * @description Option ID to use when enabling
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether to display this flag in the UI
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this flag is required
-             * @default false
-             */
-            required: boolean;
-            /**
              * Generated
-             * @description Whether this flag was AI-generated
+             * @description Whether the flag was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /** ModelModalityResource */
         ModelModalityResource: {
@@ -44435,20 +44428,30 @@ export interface components {
             pending: boolean;
         };
         /**
-         * ParameterFlagConfig
-         * @description Enriched flag config for direct client consumption.
+         * ParameterFlagResource
+         * @description Flag option row — one per (name, type, value) flags_resource entry.
          */
-        ParameterFlagConfig: {
+        ParameterFlagResource: {
             /**
-             * Key
-             * @description Flag key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Human-readable flag label
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
              * @description Flag description
@@ -44464,23 +44467,6 @@ export interface components {
              * @description Resolved SVG markup for the icon (hydrated from icons_resource)
              */
             icon?: string | null;
-            /**
-             * Flag Option Id
-             * @description Option ID to use when enabling
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether to display this flag in the UI
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this flag is required
-             * @default false
-             */
-            required: boolean;
             /**
              * Generated
              * @description Whether this flag was AI-generated
@@ -44905,20 +44891,15 @@ export interface components {
              */
             description_id?: string | null;
             /**
-             * Active Flag
-             * @description Whether the agent is active
-             */
-            active_flag?: boolean | null;
-            /**
-             * Active Flag Id
-             * @description Active flag resource UUID
-             */
-            active_flag_id?: string | null;
-            /**
              * Flag Ids
-             * @description Associated flag UUIDs
+             * @description Selected flag option UUIDs — canonical
              */
             flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized agent_active flag state; resolved to a flag_ids entry server-side
+             */
+            active?: boolean | null;
             /**
              * Departments
              * @description Department names for matching
@@ -45090,15 +45071,15 @@ export interface components {
              */
             description_id?: string | null;
             /**
-             * Active Flag
-             * @description Whether the auth provider is active
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag?: boolean | null;
+            flag_ids?: string[] | null;
             /**
-             * Flag Id
-             * @description UUID of the flag option
+             * Active
+             * @description Denormalized auth_active flag state; resolved to a flag_ids entry server-side
              */
-            flag_id?: string | null;
+            active?: boolean | null;
             /**
              * Departments
              * @description Department names to resolve
@@ -45314,25 +45295,15 @@ export interface components {
              */
             description_id?: string | null;
             /**
-             * Flag
-             * @description Flag type or name to resolve
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            flag?: string | null;
+            flag_ids?: string[] | null;
             /**
-             * Flag Id
-             * @description Flag option UUID
+             * Active
+             * @description Denormalized cohort_active flag state; resolved to a flag_ids entry server-side
              */
-            flag_id?: string | null;
-            /**
-             * Active Flag Id
-             * @description UUID of the flag option to set active status
-             */
-            active_flag_id?: string | null;
-            /**
-             * Active Flag
-             * @description Whether the cohort is active (resolved to flag_id)
-             */
-            active_flag?: boolean | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs
@@ -45506,20 +45477,15 @@ export interface components {
              */
             description_id?: string | null;
             /**
-             * Active Flag
-             * @description Whether the department is active
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag?: boolean | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag Id
-             * @description UUID of the active flag resource
+             * Active
+             * @description Denormalized department_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag_id?: string | null;
-            /**
-             * Flag Id
-             * @description UUID of the flag option
-             */
-            flag_id?: string | null;
+            active?: boolean | null;
             /**
              * Settings
              * @description Setting names to resolve
@@ -45638,9 +45604,14 @@ export interface components {
             images?: components["schemas"]["app__infra__document__types__DraftImageValue"][] | null;
             /**
              * Flag Ids
-             * @description Flag option UUIDs
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
             flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized document_active flag state; resolved to a flag_ids entry server-side
+             */
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs
@@ -45752,9 +45723,14 @@ export interface components {
             description_id?: string | null;
             /**
              * Flag Ids
-             * @description Flag option UUIDs
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
             flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized eval_active flag state; resolved to a flag_ids entry server-side
+             */
+            active?: boolean | null;
             /**
              * Departments
              * @description Department names to resolve
@@ -45874,20 +45850,15 @@ export interface components {
              */
             description_id?: string | null;
             /**
-             * Active Flag
-             * @description Whether the field is active
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag?: boolean | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag Id
-             * @description UUID of the active flag resource
+             * Active
+             * @description Denormalized field_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag_id?: string | null;
-            /**
-             * Flag Id
-             * @description UUID of the flag option
-             */
-            flag_id?: string | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs to assign
@@ -46174,49 +46145,44 @@ export interface components {
             provider_id?: string | null;
             /**
              * Flag Ids
-             * @description Flag option identifiers
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
             flag_ids?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether the model is active
+             * Active
+             * @description Denormalized model_active flag state
              */
-            active_flag?: boolean | null;
+            active?: boolean | null;
             /**
-             * Active Flag Id
-             * @description Active flag resource identifier
+             * Modalities Enabled
+             * @description Denormalized model_modalities_enabled flag state
              */
-            active_flag_id?: string | null;
+            modalities_enabled?: boolean | null;
             /**
-             * Modalities Enabled Flag Id
-             * @description Modalities enabled flag resource identifier
+             * Temperature Enabled
+             * @description Denormalized model_temperature_enabled flag state
              */
-            modalities_enabled_flag_id?: string | null;
+            temperature_enabled?: boolean | null;
             /**
-             * Temperature Enabled Flag Id
-             * @description Temperature enabled flag resource identifier
+             * Pricing Enabled
+             * @description Denormalized model_pricing_enabled flag state
              */
-            temperature_enabled_flag_id?: string | null;
+            pricing_enabled?: boolean | null;
             /**
-             * Pricing Enabled Flag Id
-             * @description Pricing enabled flag resource identifier
+             * Voices Enabled
+             * @description Denormalized model_voices_enabled flag state
              */
-            pricing_enabled_flag_id?: string | null;
+            voices_enabled?: boolean | null;
             /**
-             * Voices Enabled Flag Id
-             * @description Voices enabled flag resource identifier
+             * Reasoning Levels Enabled
+             * @description Denormalized model_reasoning_levels_enabled flag state
              */
-            voices_enabled_flag_id?: string | null;
+            reasoning_levels_enabled?: boolean | null;
             /**
-             * Reasoning Levels Enabled Flag Id
-             * @description Reasoning levels enabled flag resource identifier
+             * Qualities Enabled
+             * @description Denormalized model_qualities_enabled flag state
              */
-            reasoning_levels_enabled_flag_id?: string | null;
-            /**
-             * Qualities Enabled Flag Id
-             * @description Qualities enabled flag resource identifier
-             */
-            qualities_enabled_flag_id?: string | null;
+            qualities_enabled?: boolean | null;
             /**
              * Departments
              * @description Department names to match
@@ -46500,15 +46466,15 @@ export interface components {
              */
             instructions_id?: string | null;
             /**
-             * Active Flag Id
-             * @description UUID of the flag option to set active status
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether the persona is active (resolved to flag_id)
+             * Active
+             * @description Denormalized persona_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag?: boolean | null;
+            active?: boolean | null;
             /**
              * Examples
              * @description Example texts (creates new example resources)
@@ -46639,10 +46605,15 @@ export interface components {
              */
             emails?: string[] | null;
             /**
-             * Active Flag Id
-             * @description UUID of the flag option
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized profile_active flag state; resolved to a flag_ids entry server-side
+             */
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs to assign
@@ -46757,20 +46728,15 @@ export interface components {
              */
             description_id?: string | null;
             /**
-             * Active Flag
-             * @description Whether the provider is active
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical
              */
-            active_flag?: boolean | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag Id
-             * @description Flag option identifier
+             * Active
+             * @description Denormalized provider_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag_id?: string | null;
-            /**
-             * Flag Id
-             * @description Legacy alias for flag option identifier
-             */
-            flag_id?: string | null;
+            active?: boolean | null;
             /**
              * Departments
              * @description Department names to match
@@ -46922,30 +46888,25 @@ export interface components {
              */
             description_id?: string | null;
             /**
-             * Active Flag
-             * @description Whether the rubric is active
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag?: boolean | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag Id
-             * @description Active flag option UUID
+             * Active
+             * @description Denormalized rubric_active flag state
              */
-            active_flag_id?: string | null;
+            active?: boolean | null;
             /**
-             * Flag Id
-             * @description Flag option UUID
+             * Simulation Rubric
+             * @description Denormalized simulation_rubric flag state
              */
-            flag_id?: string | null;
+            simulation_rubric?: boolean | null;
             /**
-             * Simulation Rubric Flag Id
-             * @description Simulation rubric flag resource UUID
+             * Video Rubric
+             * @description Denormalized video_rubric flag state
              */
-            simulation_rubric_flag_id?: string | null;
-            /**
-             * Video Rubric Flag Id
-             * @description Video rubric flag resource UUID
-             */
-            video_rubric_flag_id?: string | null;
+            video_rubric?: boolean | null;
             /**
              * Departments
              * @description Department names to resolve
@@ -46971,6 +46932,11 @@ export interface components {
              * @description Standard group UUIDs
              */
             standard_group_ids?: string[] | null;
+            /**
+             * Standard Groups
+             * @description Inline-created standard groups. Entries without id are created; resulting IDs merge into standard_group_ids.
+             */
+            standard_groups?: components["schemas"]["RubricStandardGroupDraftValue"][] | null;
             /**
              * Standard Ids
              * @description Standard UUIDs
@@ -47160,9 +47126,39 @@ export interface components {
             option_ids?: string[] | null;
             /**
              * Flag Ids
-             * @description Associated flag UUIDs
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
             flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized scenario_active flag state
+             */
+            active?: boolean | null;
+            /**
+             * Video Enabled
+             * @description Denormalized video_enabled flag state
+             */
+            video_enabled?: boolean | null;
+            /**
+             * Problem Statement Enabled
+             * @description Denormalized problem_statement_enabled flag state
+             */
+            problem_statement_enabled?: boolean | null;
+            /**
+             * Objectives Enabled
+             * @description Denormalized objectives_enabled flag state
+             */
+            objectives_enabled?: boolean | null;
+            /**
+             * Images Enabled
+             * @description Denormalized images_enabled flag state
+             */
+            images_enabled?: boolean | null;
+            /**
+             * Questions Enabled
+             * @description Denormalized questions_enabled flag state
+             */
+            questions_enabled?: boolean | null;
             /**
              * Department Ids
              * @description Associated department UUIDs
@@ -47277,20 +47273,20 @@ export interface components {
              */
             description_id?: string | null;
             /**
-             * Active Flag
-             * @description Whether the setting is active
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag?: boolean | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag Id
-             * @description UUID of the active flag option
+             * Active
+             * @description Denormalized setting_active flag state; resolved to a flag_ids entry server-side
              */
-            active_flag_id?: string | null;
+            active?: boolean | null;
             /**
-             * Flag Id
-             * @description Legacy alias for the active flag option
+             * Mcp
+             * @description Denormalized mcp flag state; resolved to a flag_ids entry server-side
              */
-            flag_id?: string | null;
+            mcp?: boolean | null;
             /**
              * Departments
              * @description Department names to resolve
@@ -47342,6 +47338,26 @@ export interface components {
              */
             auth_item_value_ids?: string[] | null;
             /**
+             * Provider Keys
+             * @description Inline-creatable (provider × key) value entries; id=null requests server to resolve or create
+             */
+            provider_keys?: components["schemas"]["SettingProviderKeyDraftValue"][] | null;
+            /**
+             * Auth Item Keys
+             * @description Inline-creatable (auth × key) value entries
+             */
+            auth_item_keys?: components["schemas"]["SettingAuthItemKeyDraftValue"][] | null;
+            /**
+             * Auth Item Values
+             * @description Inline-creatable (auth × item × value) entries
+             */
+            auth_item_values?: components["schemas"]["SettingAuthItemValueDraftValue"][] | null;
+            /**
+             * Mcp Values
+             * @description Inline-creatable mcp value entries
+             */
+            mcp_values?: components["schemas"]["SettingMcpDraftValue"][] | null;
+            /**
              * Pending Ids
              * @description Resource IDs to retain as pending inactive connections
              */
@@ -47351,7 +47367,36 @@ export interface components {
          * PatchSettingDraftApiResponse
          * @description Response model for new-style setting draft endpoint.
          */
-        PatchSettingDraftApiResponse: {
+        "PatchSettingDraftApiResponse-Input": {
+            /**
+             * Success
+             * @description Whether the draft save succeeded
+             */
+            success: boolean;
+            /**
+             * Draft Id
+             * Format: uuid
+             * @description UUID of the saved draft
+             */
+            draft_id: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
+            /**
+             * Message
+             * @description Result message
+             */
+            message: string;
+            /** @description Server-authoritative form state */
+            form_state?: components["schemas"]["app__infra__setting__types__DraftFormState"] | null;
+        };
+        /**
+         * PatchSettingDraftApiResponse
+         * @description Response model for new-style setting draft endpoint.
+         */
+        "PatchSettingDraftApiResponse-Output": {
             /**
              * Success
              * @description Whether the draft save succeeded
@@ -47423,9 +47468,19 @@ export interface components {
             description_id?: string | null;
             /**
              * Flag Ids
-             * @description Associated flag UUIDs
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
             flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized simulation_active flag state
+             */
+            active?: boolean | null;
+            /**
+             * Practice
+             * @description Denormalized practice flag state
+             */
+            practice?: boolean | null;
             /**
              * Department Ids
              * @description Associated department UUIDs
@@ -47559,20 +47614,15 @@ export interface components {
              */
             description_id?: string | null;
             /**
-             * Active Flag
-             * @description Whether the tool is active
-             */
-            active_flag?: boolean | null;
-            /**
-             * Active Flag Id
-             * @description Tool active flag identifier
-             */
-            active_flag_id?: string | null;
-            /**
              * Flag Ids
-             * @description Flag option identifiers
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
             flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized tool_active flag state; resolved to a flag_ids entry server-side
+             */
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department identifiers
@@ -47898,44 +47948,65 @@ export interface components {
             message: string;
         };
         /**
-         * PersonaFlagConfig
-         * @description Enriched flag config for direct client consumption.
+         * PersonaFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
          */
-        PersonaFlagConfig: {
-            /** Key */
-            key: string;
-            /** Label */
-            label: string;
-            /** Description */
+        PersonaFlagResource: {
+            /**
+             * Id
+             * @description Flag resource identifier
+             */
+            id?: string | null;
+            /**
+             * Name
+             * @description Flag display name
+             */
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'persona_active')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
+            /**
+             * Description
+             * @description Flag description text
+             */
             description?: string | null;
-            /** Icon Id */
+            /**
+             * Icon Id
+             * @description Icon identifier for the flag
+             */
             icon_id?: string | null;
             /**
              * Icon
-             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             * @description Resolved SVG markup (hydrated from icons_resource)
              */
             icon?: string | null;
-            /** Flag Option Id */
-            flag_option_id?: string | null;
             /**
-             * Show
-             * @default true
+             * Generated
+             * @description Whether the flag was AI-generated
              */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Generated */
             generated?: boolean | null;
             /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
              * Selected
+             * @description Whether this item is selected
              * @default false
              */
             selected: boolean;
             /**
              * Pending
+             * @description Whether this item is pending acceptance
              * @default false
              */
             pending: boolean;
@@ -49892,20 +49963,30 @@ export interface components {
             message: string;
         };
         /**
-         * ProfileFlagConfig
-         * @description Enriched profile flag config for direct client consumption.
+         * ProfileFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
          */
-        ProfileFlagConfig: {
+        ProfileFlagResource: {
             /**
-             * Key
-             * @description Flag key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Human-readable flag label
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'profile_active')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
              * @description Flag description text
@@ -49921,23 +50002,6 @@ export interface components {
              * @description Resolved SVG markup for the icon (hydrated from icons_resource)
              */
             icon?: string | null;
-            /**
-             * Flag Option Id
-             * @description UUID of the selected flag option
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether the flag is visible to the client
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether the flag is required
-             * @default false
-             */
-            required: boolean;
             /**
              * Generated
              * @description Whether the flag was AI-generated
@@ -50063,10 +50127,20 @@ export interface components {
              */
             icon?: string | null;
             /**
+             * Icon Value
+             * @description Legacy alias for resolved role icon SVG
+             */
+            icon_value?: string | null;
+            /**
              * Color Id
              * @description Color identifier for the role
              */
             color_id?: string | null;
+            /**
+             * Color Hex
+             * @description Resolved role color hex code
+             */
+            color_hex?: string | null;
             /**
              * Level
              * @description Role level for assignment filtering
@@ -50355,20 +50429,30 @@ export interface components {
             message: string;
         };
         /**
-         * ProviderFlagConfig
-         * @description Enriched flag config for direct client consumption.
+         * ProviderFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
          */
-        ProviderFlagConfig: {
+        ProviderFlagResource: {
             /**
-             * Key
-             * @description Flag key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Human-readable flag label
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'provider_active')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
              * @description Flag description
@@ -50384,23 +50468,6 @@ export interface components {
              * @description Resolved SVG markup for the icon (hydrated from icons_resource)
              */
             icon?: string | null;
-            /**
-             * Flag Option Id
-             * @description Option ID to use when enabling
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether to display this flag in the UI
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this flag is required
-             * @default false
-             */
-            required: boolean;
             /**
              * Generated
              * @description Whether this flag was AI-generated
@@ -52314,23 +52381,33 @@ export interface components {
             message: string;
         };
         /**
-         * RubricFlagConfig
-         * @description Enriched flag config for direct client consumption.
+         * RubricFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
          */
-        RubricFlagConfig: {
+        RubricFlagResource: {
             /**
-             * Key
-             * @description Flag key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Display label
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'rubric_active', 'simulation_rubric', 'video_rubric')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
-             * @description Flag description
+             * @description Flag description text
              */
             description?: string | null;
             /**
@@ -52340,46 +52417,29 @@ export interface components {
             icon_id?: string | null;
             /**
              * Icon
-             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             * @description Resolved SVG markup (hydrated from icons_resource)
              */
             icon?: string | null;
             /**
-             * Flag Option Id
-             * @description Selected flag option UUID
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether to show this flag in the UI
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this flag is required
-             * @default false
-             */
-            required: boolean;
-            /**
              * Generated
-             * @description Whether this was AI-generated
+             * @description Whether the flag was AI-generated
              */
             generated?: boolean | null;
             /**
              * Suggested
-             * @description Whether this is a suggested option
+             * @description Whether this item is suggested
              * @default false
              */
             suggested: boolean;
             /**
              * Selected
-             * @description Whether this is currently selected
+             * @description Whether this item is selected
              * @default false
              */
             selected: boolean;
             /**
              * Pending
-             * @description Whether this selection is pending acceptance
+             * @description Whether this item is pending acceptance
              * @default false
              */
             pending: boolean;
@@ -52674,6 +52734,44 @@ export interface components {
              * @description Parent standard group UUID (row)
              */
             standard_group_id: string;
+        };
+        /**
+         * RubricStandardGroupDraftValue
+         * @description Value-object for authoring a standard group inline from the rubric editor.
+         *
+         *     Entries without `id` are created server-side; resulting IDs merge into
+         *     standard_group_ids. Group-level `points`/`pass_points` drive the grid's
+         *     column count and passing threshold per row.
+         */
+        RubricStandardGroupDraftValue: {
+            /**
+             * Id
+             * @description Existing standard group UUID, if any
+             */
+            id?: string | null;
+            /**
+             * Name
+             * @description Group display name
+             */
+            name: string;
+            /**
+             * Description
+             * @description Group description
+             * @default
+             */
+            description: string;
+            /**
+             * Points
+             * @description Max points for this group (drives grid columns)
+             * @default 0
+             */
+            points: number;
+            /**
+             * Pass Points
+             * @description Passing threshold for this group
+             * @default 0
+             */
+            pass_points: number;
         };
         /**
          * RubricStandardGroupResource
@@ -53121,6 +53219,36 @@ export interface components {
              */
             flag_ids: string[];
             /**
+             * Active
+             * @description Echoed scenario_active flag state
+             */
+            active?: boolean | null;
+            /**
+             * Video Enabled
+             * @description Echoed video_enabled flag state
+             */
+            video_enabled?: boolean | null;
+            /**
+             * Problem Statement Enabled
+             * @description Echoed problem_statement_enabled flag state
+             */
+            problem_statement_enabled?: boolean | null;
+            /**
+             * Objectives Enabled
+             * @description Echoed objectives_enabled flag state
+             */
+            objectives_enabled?: boolean | null;
+            /**
+             * Images Enabled
+             * @description Echoed images_enabled flag state
+             */
+            images_enabled?: boolean | null;
+            /**
+             * Questions Enabled
+             * @description Echoed questions_enabled flag state
+             */
+            questions_enabled?: boolean | null;
+            /**
              * Department Ids
              * @description Selected department UUIDs
              * @default []
@@ -53274,20 +53402,30 @@ export interface components {
             message: string;
         };
         /**
-         * ScenarioFlagConfig
-         * @description Enriched flag config for direct client consumption.
+         * ScenarioFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
          */
-        ScenarioFlagConfig: {
+        ScenarioFlagResource: {
             /**
-             * Key
-             * @description Flag config key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Display label for the flag
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'scenario_active')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
              * @description Flag description text
@@ -53295,56 +53433,37 @@ export interface components {
             description?: string | null;
             /**
              * Icon Id
-             * @description UUID of the selected icon resource
+             * @description Icon identifier for the flag
              */
             icon_id?: string | null;
             /**
              * Icon
-             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             * @description Resolved SVG markup (hydrated from icons_resource)
              */
             icon?: string | null;
             /**
-             * Flag Option Id
-             * @description UUID of the flag option to use when enabling
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether to show this flag in the UI
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this flag is required
-             * @default false
-             */
-            required: boolean;
-            /**
              * Generated
-             * @description Whether this was AI-generated
+             * @description Whether the flag was AI-generated
              */
             generated?: boolean | null;
             /**
-             * Selected
-             * @default false
-             */
-            selected: boolean;
-            /**
              * Suggested
+             * @description Whether this item is suggested
              * @default false
              */
             suggested: boolean;
             /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
              * Pending
+             * @description Whether this item is pending acceptance
              * @default false
              */
             pending: boolean;
-            /**
-             * Video Flag
-             * @description Whether this flag only shows when video is enabled
-             */
-            video_flag?: boolean | null;
         };
         /**
          * ScenarioImage
@@ -55092,6 +55211,76 @@ export interface components {
              */
             protocol?: string | null;
         };
+        /**
+         * SettingAuthItemKeyDraftValue
+         * @description Draft value object for an inline-creatable (auth × item × key) triple.
+         */
+        SettingAuthItemKeyDraftValue: {
+            /**
+             * Id
+             * @description Existing auth_item_keys_resource id when known
+             */
+            id?: string | null;
+            /**
+             * Auth Id
+             * Format: uuid
+             * @description Auth provider identifier
+             */
+            auth_id: string;
+            /**
+             * Item Id
+             * Format: uuid
+             * @description Claim item identifier
+             */
+            item_id: string;
+            /**
+             * Key Id
+             * Format: uuid
+             * @description Key identifier
+             */
+            key_id: string;
+        };
+        /**
+         * SettingAuthItemKeyOption
+         * @description Server-curated (auth × item × key) catalog option for the AuthItemKeys picker.
+         */
+        SettingAuthItemKeyOption: {
+            /**
+             * Auth Id
+             * @description Auth provider identifier
+             */
+            auth_id?: string | null;
+            /**
+             * Item Id
+             * @description Claim item identifier
+             */
+            item_id?: string | null;
+            /**
+             * Key Id
+             * @description Key identifier
+             */
+            key_id?: string | null;
+            /**
+             * Auth Name
+             * @description Auth display name
+             */
+            auth_name?: string | null;
+            /**
+             * Item Name
+             * @description Claim item display name
+             */
+            item_name?: string | null;
+            /**
+             * Key Name
+             * @description Key display name
+             */
+            key_name?: string | null;
+            /**
+             * Masked Key
+             * @description Masked key value for display
+             */
+            masked_key?: string | null;
+        };
         /** SettingAuthItemKeyResource */
         SettingAuthItemKeyResource: {
             /**
@@ -55137,6 +55326,70 @@ export interface components {
              * @default false
              */
             pending: boolean;
+        };
+        /**
+         * SettingAuthItemValueDraftValue
+         * @description Draft value object for an inline-creatable (auth × item × value) triple.
+         */
+        SettingAuthItemValueDraftValue: {
+            /**
+             * Id
+             * @description Existing auth_item_values_resource id when known
+             */
+            id?: string | null;
+            /**
+             * Auth Id
+             * Format: uuid
+             * @description Auth provider identifier
+             */
+            auth_id: string;
+            /**
+             * Item Id
+             * Format: uuid
+             * @description Claim item identifier
+             */
+            item_id: string;
+            /**
+             * Value
+             * @description Literal claim value
+             */
+            value: string;
+        };
+        /**
+         * SettingAuthItemValueOption
+         * @description Server-curated (auth × item) catalog option for the AuthItemValues picker.
+         */
+        SettingAuthItemValueOption: {
+            /**
+             * Auth Id
+             * @description Auth provider identifier
+             */
+            auth_id?: string | null;
+            /**
+             * Item Id
+             * @description Claim item identifier
+             */
+            item_id?: string | null;
+            /**
+             * Auth Name
+             * @description Auth display name
+             */
+            auth_name?: string | null;
+            /**
+             * Item Name
+             * @description Claim item display name
+             */
+            item_name?: string | null;
+            /**
+             * Item Description
+             * @description Claim item description
+             */
+            item_description?: string | null;
+            /**
+             * Encrypted
+             * @description Whether the value must be stored encrypted
+             */
+            encrypted?: boolean | null;
         };
         /** SettingAuthItemValueResource */
         SettingAuthItemValueResource: {
@@ -55323,18 +55576,31 @@ export interface components {
              */
             message: string;
         };
-        /** SettingFlagConfig */
-        SettingFlagConfig: {
+        /**
+         * SettingFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
+         */
+        SettingFlagResource: {
             /**
-             * Key
-             * @description Flag key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Human-readable flag label
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'setting_active', 'mcp')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
              * @description Flag description text
@@ -55347,26 +55613,9 @@ export interface components {
             icon_id?: string | null;
             /**
              * Icon
-             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             * @description Resolved SVG markup (hydrated from icons_resource)
              */
             icon?: string | null;
-            /**
-             * Flag Option Id
-             * @description UUID of the flag option to use when enabling
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether the flag is visible to the client
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether the flag is required
-             * @default false
-             */
-            required: boolean;
             /**
              * Generated
              * @description Whether the flag was AI-generated
@@ -55526,6 +55775,44 @@ export interface components {
              */
             pending: boolean;
         };
+        /**
+         * SettingMcpDraftValue
+         * @description Draft value object for an inline-creatable mcp row.
+         */
+        SettingMcpDraftValue: {
+            /**
+             * Id
+             * @description Existing mcp_resource id when known
+             */
+            id?: string | null;
+            /**
+             * Agent Id
+             * Format: uuid
+             * @description Agent identifier
+             */
+            agent_id: string;
+        };
+        /**
+         * SettingMcpOption
+         * @description Server-curated per-agent catalog option for the MCP picker.
+         */
+        SettingMcpOption: {
+            /**
+             * Agent Id
+             * @description Agent identifier
+             */
+            agent_id?: string | null;
+            /**
+             * Agent Name
+             * @description Agent display name
+             */
+            agent_name?: string | null;
+            /**
+             * Agent Description
+             * @description Agent description
+             */
+            agent_description?: string | null;
+        };
         /** SettingMcpResource */
         SettingMcpResource: {
             /**
@@ -55643,6 +55930,60 @@ export interface components {
              * @description Provider description
              */
             description?: string | null;
+        };
+        /**
+         * SettingProviderKeyDraftValue
+         * @description Draft value object for an inline-creatable (provider × key) pair.
+         */
+        SettingProviderKeyDraftValue: {
+            /**
+             * Id
+             * @description Existing provider_keys_resource id when known
+             */
+            id?: string | null;
+            /**
+             * Provider Id
+             * Format: uuid
+             * @description Provider identifier
+             */
+            provider_id: string;
+            /**
+             * Key Id
+             * Format: uuid
+             * @description Key identifier
+             */
+            key_id: string;
+        };
+        /**
+         * SettingProviderKeyOption
+         * @description Server-curated (provider × key) catalog option for the ProviderKeys picker.
+         */
+        SettingProviderKeyOption: {
+            /**
+             * Provider Id
+             * @description Provider identifier
+             */
+            provider_id?: string | null;
+            /**
+             * Key Id
+             * @description Key identifier
+             */
+            key_id?: string | null;
+            /**
+             * Provider Name
+             * @description Provider display name
+             */
+            provider_name?: string | null;
+            /**
+             * Key Name
+             * @description Key display name
+             */
+            key_name?: string | null;
+            /**
+             * Masked Key
+             * @description Masked key value for display
+             */
+            masked_key?: string | null;
         };
         /** SettingProviderKeyResource */
         SettingProviderKeyResource: {
@@ -55979,20 +56320,30 @@ export interface components {
             message: string;
         };
         /**
-         * SimulationFlagConfig
-         * @description Enriched flag config for direct client consumption.
+         * SimulationFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
          */
-        SimulationFlagConfig: {
+        SimulationFlagResource: {
             /**
-             * Key
-             * @description Flag config key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Display label for the flag
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'simulation_active', 'practice')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
              * @description Flag description text
@@ -56000,51 +56351,34 @@ export interface components {
             description?: string | null;
             /**
              * Icon Id
-             * @description UUID of the selected icon resource
+             * @description Icon identifier for the flag
              */
             icon_id?: string | null;
             /**
              * Icon
-             * @description Resolved SVG markup for the icon (hydrated from icons_resource)
+             * @description Resolved SVG markup (hydrated from icons_resource)
              */
             icon?: string | null;
             /**
-             * Flag Option Id
-             * @description UUID of the flag option
-             */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether to show this flag in the UI
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this flag is required
-             * @default false
-             */
-            required: boolean;
-            /**
              * Generated
-             * @description Whether this was AI-generated
+             * @description Whether the flag was AI-generated
              */
             generated?: boolean | null;
             /**
              * Suggested
-             * @description Whether this is a suggested option
+             * @description Whether this item is suggested
              * @default false
              */
             suggested: boolean;
             /**
              * Selected
-             * @description Whether this is currently selected
+             * @description Whether this item is selected
              * @default false
              */
             selected: boolean;
             /**
              * Pending
-             * @description Whether this selection is pending acceptance
+             * @description Whether this item is pending acceptance
              * @default false
              */
             pending: boolean;
@@ -57685,20 +58019,30 @@ export interface components {
             message: string;
         };
         /**
-         * ToolFlagConfig
-         * @description Enriched flag config for direct client consumption.
+         * ToolFlagResource
+         * @description Flag option row — one per (name, type, value) entry in flags_resource.
          */
-        ToolFlagConfig: {
+        ToolFlagResource: {
             /**
-             * Key
-             * @description Flag key identifier
+             * Id
+             * @description Flag resource identifier
              */
-            key: string;
+            id?: string | null;
             /**
-             * Label
-             * @description Human-readable flag label
+             * Name
+             * @description Flag display name
              */
-            label: string;
+            name?: string | null;
+            /**
+             * Type
+             * @description Flag type (e.g. 'tool_active')
+             */
+            type?: string | null;
+            /**
+             * Value
+             * @description Underlying bool value of this option
+             */
+            value?: boolean | null;
             /**
              * Description
              * @description Flag description
@@ -57710,22 +58054,10 @@ export interface components {
              */
             icon_id?: string | null;
             /**
-             * Flag Option Id
-             * @description Option ID to use when enabling
+             * Icon
+             * @description Resolved SVG markup for the icon
              */
-            flag_option_id?: string | null;
-            /**
-             * Show
-             * @description Whether to display this flag in the UI
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this flag is required
-             * @default false
-             */
-            required: boolean;
+            icon?: string | null;
             /**
              * Generated
              * @description Whether this flag was AI-generated
@@ -57986,20 +58318,15 @@ export interface components {
              */
             departments?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether this agent is active
-             */
-            active_flag?: boolean | null;
-            /**
-             * Active Flag Id
-             * @description Active flag resource UUID
-             */
-            active_flag_id?: string | null;
-            /**
              * Flag Ids
-             * @description Associated flag UUIDs
+             * @description Selected flag option UUIDs
              */
             flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized agent_active flag state
+             */
+            active?: boolean | null;
             /**
              * Model Id
              * @description Associated model UUID
@@ -58127,15 +58454,15 @@ export interface components {
              */
             slug?: string | null;
             /**
-             * Active Flag Id
-             * @description UUID of the active flag option
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether the auth provider is active
+             * Active
+             * @description Denormalized auth_active flag state
              */
-            active_flag?: boolean | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs to assign
@@ -59326,10 +59653,15 @@ export interface components {
              */
             name?: string | null;
             /**
-             * Active Flag Id
-             * @description UUID of the flag option
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized profile_active flag state
+             */
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs to assign
@@ -59437,15 +59769,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Active Flag Id
-             * @description Active flag option identifier
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether the provider is active
+             * Active
+             * @description Denormalized provider_active flag state
              */
-            active_flag?: boolean | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department identifiers
@@ -60423,12 +60755,12 @@ export interface components {
              * Flag Ids
              * @description Selected flag UUIDs
              */
-            flag_ids: string[];
+            flag_ids?: string[];
             /**
-             * Active Flag Id
-             * @description Selected active flag UUID
+             * Active
+             * @description Echoed agent_active flag state
              */
-            active_flag_id?: string | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Selected department UUIDs
@@ -60539,10 +60871,15 @@ export interface components {
              */
             description_id?: string | null;
             /**
-             * Flag Id
-             * @description Resolved flag option UUID
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            flag_id?: string | null;
+            flag_ids?: string[];
+            /**
+             * Active
+             * @description Echoed auth_active flag state
+             */
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Assigned department UUIDs
@@ -60750,25 +61087,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Flag Id
-             * @description Selected flag option UUID
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            flag_id?: string | null;
+            flag_ids?: string[];
             /**
-             * Flag
-             * @description Flag value that was saved
+             * Active
+             * @description Echoed cohort_active flag state
              */
-            flag?: string | null;
-            /**
-             * Active Flag Id
-             * @description Selected active flag option UUID
-             */
-            active_flag_id?: string | null;
-            /**
-             * Active Flag
-             * @description Whether the active flag was enabled
-             */
-            active_flag?: boolean | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Selected department UUIDs
@@ -60923,15 +61250,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Flag Id
-             * @description Resolved flag option UUID
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            flag_id?: string | null;
+            flag_ids?: string[];
             /**
-             * Active Flag Id
-             * @description Resolved active flag option UUID
+             * Active
+             * @description Echoed department_active flag state
              */
-            active_flag_id?: string | null;
+            active?: boolean | null;
             /**
              * Setting Ids
              * @description Assigned setting UUIDs
@@ -61009,6 +61336,11 @@ export interface components {
              * @description Selected flag option UUIDs
              */
             flag_ids?: string[];
+            /**
+             * Active
+             * @description Echoed document_active flag state
+             */
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Selected department UUIDs
@@ -61133,6 +61465,11 @@ export interface components {
              */
             flag_ids?: string[];
             /**
+             * Active
+             * @description Echoed eval_active flag state
+             */
+            active?: boolean | null;
+            /**
              * Department Ids
              * @description Selected department UUIDs
              */
@@ -61222,25 +61559,25 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Flag Id
-             * @description Resolved flag option UUID
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            flag_id?: string | null;
+            flag_ids?: string[];
             /**
-             * Active Flag Id
-             * @description Resolved active flag option UUID
+             * Active
+             * @description Echoed field_active flag state
              */
-            active_flag_id?: string | null;
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Assigned department UUIDs
              */
-            department_ids: string[];
+            department_ids?: string[];
             /**
              * Conditional Parameter Ids
              * @description Assigned conditional parameter UUIDs
              */
-            conditional_parameter_ids: string[];
+            conditional_parameter_ids?: string[];
             /**
              * Pending Ids
              * @description Pending resource identifiers
@@ -61464,79 +61801,79 @@ export interface components {
             provider?: string | null;
             /**
              * Flag Ids
-             * @description Flag option identifiers
+             * @description Selected flag option UUIDs
              */
-            flag_ids: string[];
+            flag_ids?: string[];
             /**
-             * Active Flag Id
-             * @description Resolved active flag identifier
+             * Active
+             * @description Echoed model_active flag state
              */
-            active_flag_id?: string | null;
+            active?: boolean | null;
             /**
-             * Modalities Enabled Flag Id
-             * @description Resolved modalities enabled flag identifier
+             * Modalities Enabled
+             * @description Echoed model_modalities_enabled flag state
              */
-            modalities_enabled_flag_id?: string | null;
+            modalities_enabled?: boolean | null;
             /**
-             * Temperature Enabled Flag Id
-             * @description Resolved temperature enabled flag identifier
+             * Temperature Enabled
+             * @description Echoed model_temperature_enabled flag state
              */
-            temperature_enabled_flag_id?: string | null;
+            temperature_enabled?: boolean | null;
             /**
-             * Pricing Enabled Flag Id
-             * @description Resolved pricing enabled flag identifier
+             * Pricing Enabled
+             * @description Echoed model_pricing_enabled flag state
              */
-            pricing_enabled_flag_id?: string | null;
+            pricing_enabled?: boolean | null;
             /**
-             * Voices Enabled Flag Id
-             * @description Resolved voices enabled flag identifier
+             * Voices Enabled
+             * @description Echoed model_voices_enabled flag state
              */
-            voices_enabled_flag_id?: string | null;
+            voices_enabled?: boolean | null;
             /**
-             * Reasoning Levels Enabled Flag Id
-             * @description Resolved reasoning levels enabled flag identifier
+             * Reasoning Levels Enabled
+             * @description Echoed model_reasoning_levels_enabled flag state
              */
-            reasoning_levels_enabled_flag_id?: string | null;
+            reasoning_levels_enabled?: boolean | null;
             /**
-             * Qualities Enabled Flag Id
-             * @description Resolved qualities enabled flag identifier
+             * Qualities Enabled
+             * @description Echoed model_qualities_enabled flag state
              */
-            qualities_enabled_flag_id?: string | null;
+            qualities_enabled?: boolean | null;
             /**
              * Department Ids
              * @description Department identifiers
              */
-            department_ids: string[];
+            department_ids?: string[];
             /**
              * Modality Ids
              * @description Modality identifiers
              */
-            modality_ids: string[];
+            modality_ids?: string[];
             /**
              * Pricing Ids
              * @description Pricing tier identifiers
              */
-            pricing_ids: string[];
+            pricing_ids?: string[];
             /**
              * Quality Ids
              * @description Quality level identifiers
              */
-            quality_ids: string[];
+            quality_ids?: string[];
             /**
              * Reasoning Level Ids
              * @description Reasoning level identifiers
              */
-            reasoning_level_ids: string[];
+            reasoning_level_ids?: string[];
             /**
              * Temperature Level Ids
              * @description Temperature level identifiers
              */
-            temperature_level_ids: string[];
+            temperature_level_ids?: string[];
             /**
              * Voice Ids
              * @description Voice identifiers
              */
-            voice_ids: string[];
+            voice_ids?: string[];
             /**
              * Pending Ids
              * @description Pending resource identifiers
@@ -61712,10 +62049,15 @@ export interface components {
              */
             icon?: string | null;
             /**
-             * Active Flag Id
-             * @description Currently selected flag option UUID
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[];
+            /**
+             * Active
+             * @description Echoed persona_active flag state
+             */
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Currently associated department UUIDs
@@ -61789,15 +62131,15 @@ export interface components {
              */
             name?: string | null;
             /**
-             * Flag Id
-             * @description Resolved flag option UUID
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            flag_id?: string | null;
+            flag_ids?: string[];
             /**
-             * Active Flag Id
-             * @description Resolved flag option UUID
+             * Active
+             * @description Echoed profile_active flag state
              */
-            active_flag_id?: string | null;
+            active?: boolean | null;
             /**
              * Departments
              * @description Resolved department names
@@ -61891,15 +62233,15 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Flag Id
-             * @description Legacy flag option identifier
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            flag_id?: string | null;
+            flag_ids?: string[];
             /**
-             * Active Flag Id
-             * @description Flag option identifier
+             * Active
+             * @description Echoed provider_active flag state
              */
-            active_flag_id?: string | null;
+            active?: boolean | null;
             /**
              * Departments
              * @description Resolved department names
@@ -62020,25 +62362,25 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Flag Id
-             * @description Selected flag option UUID
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            flag_id?: string | null;
+            flag_ids?: string[];
             /**
-             * Active Flag Id
-             * @description Selected active flag option UUID
+             * Active
+             * @description Echoed rubric_active flag state
              */
-            active_flag_id?: string | null;
+            active?: boolean | null;
             /**
-             * Simulation Rubric Flag Id
-             * @description Selected simulation_rubric flag option UUID
+             * Simulation Rubric
+             * @description Echoed simulation_rubric flag state
              */
-            simulation_rubric_flag_id?: string | null;
+            simulation_rubric?: boolean | null;
             /**
-             * Video Rubric Flag Id
-             * @description Selected video_rubric flag option UUID
+             * Video Rubric
+             * @description Echoed video_rubric flag state
              */
-            video_rubric_flag_id?: string | null;
+            video_rubric?: boolean | null;
             /**
              * Department Ids
              * @description Selected department UUIDs
@@ -62069,6 +62411,11 @@ export interface components {
              * @description Selected standard group UUIDs
              */
             standard_group_ids?: string[];
+            /**
+             * Standard Groups
+             * @description Resolved inline-created standard groups (all ids filled in).
+             */
+            standard_groups?: components["schemas"]["RubricStandardGroupDraftValue"][];
             /**
              * Standard Ids
              * @description Selected standard UUIDs
@@ -62231,15 +62578,20 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Active Flag Id
-             * @description Resolved active flag option UUID
+             * Flag Ids
+             * @description Selected flag option UUIDs
              */
-            active_flag_id?: string | null;
+            flag_ids?: string[];
             /**
-             * Flag Id
-             * @description Legacy alias for the active flag option UUID
+             * Active
+             * @description Echoed setting_active flag state
              */
-            flag_id?: string | null;
+            active?: boolean | null;
+            /**
+             * Mcp
+             * @description Echoed mcp flag state
+             */
+            mcp?: boolean | null;
             /**
              * Department Ids
              * @description Assigned department UUIDs
@@ -62285,6 +62637,26 @@ export interface components {
              * @description Assigned auth item value UUIDs
              */
             auth_item_value_ids?: string[];
+            /**
+             * Provider Keys
+             * @description Echoed (provider × key) value entries with resolved ids
+             */
+            provider_keys?: components["schemas"]["SettingProviderKeyDraftValue"][];
+            /**
+             * Auth Item Keys
+             * @description Echoed (auth × key) value entries with resolved ids
+             */
+            auth_item_keys?: components["schemas"]["SettingAuthItemKeyDraftValue"][];
+            /**
+             * Auth Item Values
+             * @description Echoed (auth × item × value) entries with resolved ids
+             */
+            auth_item_values?: components["schemas"]["SettingAuthItemValueDraftValue"][];
+            /**
+             * Mcp Values
+             * @description Echoed mcp value entries with resolved ids
+             */
+            mcp_values?: components["schemas"]["SettingMcpDraftValue"][];
             /**
              * Pending Ids
              * @description Pending resource identifiers
@@ -62357,6 +62729,16 @@ export interface components {
              * @default []
              */
             flag_ids: string[];
+            /**
+             * Active
+             * @description Echoed simulation_active flag state
+             */
+            active?: boolean | null;
+            /**
+             * Practice
+             * @description Echoed practice flag state
+             */
+            practice?: boolean | null;
             /**
              * Department Ids
              * @description Selected department UUIDs
@@ -62462,20 +62844,20 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Active Flag Id
-             * @description Flag option identifier
-             */
-            active_flag_id?: string | null;
-            /**
              * Flag Ids
-             * @description Flag option identifiers
+             * @description Selected flag option UUIDs
              */
-            flag_ids: string[];
+            flag_ids?: string[];
+            /**
+             * Active
+             * @description Echoed tool_active flag state
+             */
+            active?: boolean | null;
             /**
              * Department Ids
              * @description Department identifiers
              */
-            department_ids: string[];
+            department_ids?: string[];
             /**
              * Arg Ids
              * @description Argument identifiers
@@ -67288,7 +67670,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PatchSettingDraftApiResponse"];
+                    "application/json": components["schemas"]["PatchSettingDraftApiResponse-Output"];
                 };
             };
             /** @description Validation Error */
@@ -85672,7 +86054,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PatchSettingDraftApiResponse"];
+                "application/json": components["schemas"]["PatchSettingDraftApiResponse-Input"];
             };
         };
         responses: {

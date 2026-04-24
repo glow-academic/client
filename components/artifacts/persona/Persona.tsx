@@ -71,7 +71,8 @@ type PersonaFormState = {
   color_id: string | null;
   icon_id: string | null;
   instructions_id: string | null;
-  active_flag_id: string | null;
+  // Canonical: ids of the flag-resource rows currently selected.
+  flag_ids: string[];
   department_ids: string[];
   parameter_field_ids: string[];
   example_ids: string[];
@@ -129,7 +130,7 @@ const PERSONA_RESOURCES: ResourceConfig[] = [
     flushKey: "instructions_id",
     type: "single",
   },
-  { key: "flags", formKey: "active_flag_id", flushKey: "active_flag_id", type: "single" },
+  { key: "flags", formKey: "flag_ids", flushKey: null, type: "multi" },
   {
     key: "departments",
     formKey: "department_ids",
@@ -306,7 +307,7 @@ function PersonaComponent({
         color_id: null,
         icon_id: null,
         instructions_id: null,
-        active_flag_id: null,
+        flag_ids: [],
         department_ids: [],
         parameter_field_ids: [],
         example_ids: [],
@@ -325,7 +326,9 @@ function PersonaComponent({
       color_id: data.colors?.find((c: any) => c.selected)?.id ?? null,
       icon_id: data.icons?.find((i: any) => i.selected)?.id ?? null,
       instructions_id: data.instructions?.find((i: any) => i.selected)?.id ?? null,
-      active_flag_id: data.flags?.find((f: any) => f.selected)?.flag_option_id ?? null,
+      flag_ids: (data.flags?.filter((f: any) => f.selected) ?? [])
+        .map((f: any) => f.id)
+        .filter((id: unknown): id is string => !!id),
       department_ids: (data.departments?.filter((d: any) => d.selected) ?? [])
         .map((d) => d.department_id)
         .filter(Boolean) as string[],
@@ -350,7 +353,7 @@ function PersonaComponent({
         ...((data.colors ?? []).filter((c: any) => c.pending).map((c: any) => c.id).filter(Boolean)),
         ...((data.icons ?? []).filter((i: any) => i.pending).map((i: any) => i.id).filter(Boolean)),
         ...((data.instructions ?? []).filter((i: any) => i.pending).map((i: any) => i.id).filter(Boolean)),
-        ...((data.flags ?? []).filter((f: any) => f.pending).map((f: any) => f.flag_option_id).filter(Boolean)),
+        ...((data.flags ?? []).filter((f: any) => f.pending).map((f: any) => f.id).filter(Boolean)),
         ...((data.departments ?? []).filter((d: any) => d.pending).map((d: any) => d.department_id).filter(Boolean)),
         ...((data.parameter_fields ?? []).filter((p: any) => p.pending).map((p: any) => p.id).filter(Boolean)),
         ...((data.examples ?? []).filter((e: any) => e.pending).map((e: any) => e.id).filter(Boolean)),
@@ -379,7 +382,7 @@ function PersonaComponent({
   const parameterFieldIdsStr = React.useMemo(() => {
     return JSON.stringify(
       (personaData?.parameter_fields?.filter((p: any) => p.selected) ?? [])
-        .map((f) => f.field_id)
+        .map((f) => f.id)
         .filter(Boolean),
     );
   }, [personaData?.parameter_fields]);
@@ -417,7 +420,7 @@ function PersonaComponent({
         color_id: formState.color_id,
         icon_id: formState.icon_id,
         instructions_id: formState.instructions_id,
-        active_flag_id: formState.active_flag_id,
+        flag_ids: formState.flag_ids,
         department_ids: formState.department_ids,
         parameter_field_ids: formState.parameter_field_ids,
         example_ids: formState.example_ids,
@@ -435,7 +438,8 @@ function PersonaComponent({
       formState.color_id,
       formState.icon_id,
       formState.instructions_id,
-      formState.active_flag_id,
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.flag_ids),
       // eslint-disable-next-line react-hooks/exhaustive-deps
       JSON.stringify(formState.department_ids),
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -497,7 +501,7 @@ function PersonaComponent({
       // Non-creatable resources: always send IDs
       if (current.color_id) payload.color_id = current.color_id;
       if (current.icon_id) payload.icon_id = current.icon_id;
-      if (current.active_flag_id) payload.active_flag_id = current.active_flag_id;
+      if (current.flag_ids.length > 0) payload["flag_ids"] = current.flag_ids;
       if (current.department_ids.length > 0) payload.department_ids = current.department_ids;
       if (current.parameter_field_ids.length > 0) payload.parameter_field_ids = current.parameter_field_ids;
       if (current.voice_ids.length > 0) payload.voice_ids = current.voice_ids;
@@ -637,7 +641,7 @@ function PersonaComponent({
         prev.color_id !== newState.color_id ||
         prev.icon_id !== newState.icon_id ||
         prev.instructions_id !== newState.instructions_id ||
-        prev.active_flag_id !== newState.active_flag_id ||
+        JSON.stringify(prev.flag_ids) !== JSON.stringify(newState.flag_ids) ||
         JSON.stringify(prev.department_ids) !==
           JSON.stringify(newState.department_ids) ||
         JSON.stringify(prev.parameter_field_ids) !==
@@ -695,7 +699,7 @@ function PersonaComponent({
               instructions: fs["instructions_id"] ? null : prev.instructions,
               color_id: (fs["color_id"] as string) ?? prev.color_id,
               icon_id: (fs["icon_id"] as string) ?? prev.icon_id,
-              active_flag_id: (fs["active_flag_id"] as string) ?? prev.active_flag_id,
+              flag_ids: (fs["flag_ids"] as string[] | null) ?? prev.flag_ids,
               department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
               parameter_field_ids: (fs["parameter_field_ids"] as string[]) ?? prev.parameter_field_ids,
               example_ids: (fs["example_ids"] as string[]) ?? prev.example_ids,
@@ -716,7 +720,7 @@ function PersonaComponent({
               prev.instructions !== next.instructions ||
               prev.color_id !== next.color_id ||
               prev.icon_id !== next.icon_id ||
-              prev.active_flag_id !== next.active_flag_id ||
+              JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
               JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
               JSON.stringify(prev.parameter_field_ids) !== JSON.stringify(next.parameter_field_ids) ||
               JSON.stringify(prev.example_ids) !== JSON.stringify(next.example_ids) ||
@@ -840,7 +844,7 @@ function PersonaComponent({
       for (const rt of resources) {
         const items = (data as any)[rt] ?? [];
         for (const item of items) {
-          const itemId = item.id ?? item.department_id ?? item.flag_option_id;
+          const itemId = item.id ?? item.department_id;
           if (itemId && pendingSet.has(itemId)) return true;
         }
       }
@@ -859,7 +863,7 @@ function PersonaComponent({
         const items = (data as any)[rt] ?? [];
         for (const item of items) {
           if (item.pending) {
-            const itemId = item.id ?? item.department_id ?? item.flag_option_id;
+            const itemId = item.id ?? item.department_id;
             if (itemId) idsToAccept.push(itemId);
           }
         }
@@ -883,7 +887,7 @@ function PersonaComponent({
         const items = (data as any)[rt] ?? [];
         for (const item of items) {
           if (item.pending) {
-            const itemId = item.id ?? item.department_id ?? item.flag_option_id;
+            const itemId = item.id ?? item.department_id;
             if (itemId) idsToReject.push(itemId);
           }
         }
@@ -897,7 +901,7 @@ function PersonaComponent({
         color_id: rejectSet.has(prev.color_id ?? "") ? null : prev.color_id,
         icon_id: rejectSet.has(prev.icon_id ?? "") ? null : prev.icon_id,
         instructions_id: rejectSet.has(prev.instructions_id ?? "") ? null : prev.instructions_id,
-        active_flag_id: rejectSet.has(prev.active_flag_id ?? "") ? null : prev.active_flag_id,
+        flag_ids: prev.flag_ids.filter((id) => !rejectSet.has(id)),
         department_ids: prev.department_ids.filter((id) => !rejectSet.has(id)),
         parameter_field_ids: prev.parameter_field_ids.filter((id) => !rejectSet.has(id)),
         example_ids: prev.example_ids.filter((id) => !rejectSet.has(id)),
@@ -952,7 +956,19 @@ function PersonaComponent({
         instructions: !fs.instructions_id ? (fs.instructions ?? undefined) : undefined,
         description_id: fs.description_id ?? undefined,
         description: !fs.description_id ? (fs.description ?? undefined) : undefined,
-        active_flag_id: fs.active_flag_id ?? undefined,
+        // Create/Update endpoint still uses active_flag_id; derive from the single
+        // persona_active id in flag_ids. (Server route: CreatePersonaItem/UpdatePersonaItem)
+        active_flag_id: (() => {
+          const flags = personaDataRef.current?.flags ?? [];
+          const byId = new Map(
+            flags.filter((f: any) => f.id).map((f: any) => [f.id as string, f]),
+          );
+          for (const id of fs.flag_ids ?? []) {
+            const row: any = byId.get(id);
+            if ((row?.type ?? row?.name) === "persona_active") return id;
+          }
+          return undefined;
+        })(),
         department_ids: fs.department_ids?.length ? fs.department_ids : undefined,
         parameter_field_ids: fs.parameter_field_ids?.length ? fs.parameter_field_ids : undefined,
         example_ids: fs.example_ids?.length ? fs.example_ids : undefined,
@@ -964,7 +980,7 @@ function PersonaComponent({
         if (isEditMode && personaId && updatePersonaAction) {
           await updatePersonaAction({
             body: {
-              personas: [{ persona_id: personaId, ...commonFields }],
+              personas: [{ id: personaId, ...commonFields }],
             },
           } as UpdatePersonaIn);
         } else if (createPersonaAction) {
@@ -1117,6 +1133,57 @@ function PersonaComponent({
     [],
   );
 
+  // --- Flag helpers (canonical flag_ids pattern) ---
+  const flagValues = useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (stablePersonaDataFields?.flags ?? [])
+        .filter((f: any) => f.id)
+        .map((f: any) => [f.id as string, f]),
+    );
+    for (const id of formState.flag_ids) {
+      const row: any = byId.get(id);
+      if (!row) continue;
+      const type = row.type ?? row.name;
+      if (type && row.value != null) map[type] = row.value;
+    }
+    return map;
+  }, [formState.flag_ids, stablePersonaDataFields?.flags]);
+
+  const flagRowsByType = useMemo(() => {
+    const map = new Map<string, any[]>();
+    for (const f of stablePersonaDataFields?.flags ?? []) {
+      const t = (f as any).type ?? (f as any).name;
+      if (!t) continue;
+      const list = map.get(t) ?? [];
+      list.push(f);
+      map.set(t, list);
+    }
+    return map;
+  }, [stablePersonaDataFields?.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = flagRowsByType.get(type) ?? [];
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id),
+        );
+        const retained = prev.flag_ids.filter((id) => !rowIdsForType.has(id));
+        const target =
+          next == null ? null : rows.find((r) => r.value === next)?.id ?? null;
+        const nextIds = target ? [...retained, target] : retained;
+        const removedIds = prev.flag_ids.filter((id) => !nextIds.includes(id));
+        return {
+          ...prev,
+          flag_ids: nextIds,
+          pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+        };
+      });
+    },
+    [flagRowsByType],
+  );
+
   // --- Render Step ---
   const renderStep = useCallback(
     ({
@@ -1265,22 +1332,12 @@ function PersonaComponent({
                 />
                 <Flags
                   flags={s?.flags ?? []}
-                  flag_id={formState.active_flag_id}
+                  values={flagValues}
                   show_flags={true}
                   columns={1}
                   label="Flags"
                   disabled={disabled}
-
-                  showAiGenerate={false}
-                  isAutosaveEnabled={isAutosaveEnabled}
-                  onChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      active_flag_id: flagId,
-                      pending_ids: prev.pending_ids.filter((id) => id !== prev.active_flag_id),
-                    }))
-                  }
-                  onGenerate={generateHandlers["flags"]}
+                  onChange={handleFlagToggle}
                 />
               </div>
             </StepCard>
@@ -1644,11 +1701,13 @@ function PersonaComponent({
       formState.color_id,
       formState.icon_id,
       formState.instructions_id,
-      formState.active_flag_id,
+      formState.flag_ids,
       formState.department_ids,
       formState.parameter_field_ids,
       formState.example_ids,
       formState.voice_ids,
+      flagValues,
+      handleFlagToggle,
       canRegenerate,
       handleDirectStepGenerate,
       isAutosaveEnabled,
@@ -1710,12 +1769,12 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
     color_id: prevData?.colors?.find((c: any) => c.selected)?.id ?? null,
     icon_id: prevData?.icons?.find((i: any) => i.selected)?.id ?? null,
     instructions_id: prevData?.instructions?.find((i: any) => i.selected)?.id ?? null,
-    active_flag_id: prevData?.flags?.find((f: any) => f.selected)?.flag_option_id ?? null,
+    flag_ids: (prevData?.flags?.filter((f: any) => f.selected) ?? []).map((f: any) => f.id).filter(Boolean),
     department_ids: (prevData?.departments?.filter((d: any) => d.selected) ?? [])
       .map((d) => d.department_id)
       .filter(Boolean),
     parameter_field_ids: (prevData?.parameter_fields?.filter((p: any) => p.selected) ?? [])
-      .map((f) => f.field_id)
+      .map((f) => f.id)
       .filter(Boolean),
     example_ids: (prevData?.examples?.filter((e: any) => e.selected) ?? [])
       .map((e) => e.id)
@@ -1727,12 +1786,12 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
     color_id: nextData?.colors?.find((c: any) => c.selected)?.id ?? null,
     icon_id: nextData?.icons?.find((i: any) => i.selected)?.id ?? null,
     instructions_id: nextData?.instructions?.find((i: any) => i.selected)?.id ?? null,
-    active_flag_id: nextData?.flags?.find((f: any) => f.selected)?.flag_option_id ?? null,
+    flag_ids: (nextData?.flags?.filter((f: any) => f.selected) ?? []).map((f: any) => f.id).filter(Boolean),
     department_ids: (nextData?.departments?.filter((d: any) => d.selected) ?? [])
       .map((d) => d.department_id)
       .filter(Boolean),
     parameter_field_ids: (nextData?.parameter_fields?.filter((p: any) => p.selected) ?? [])
-      .map((f) => f.field_id)
+      .map((f) => f.id)
       .filter(Boolean),
     example_ids: (nextData?.examples?.filter((e: any) => e.selected) ?? [])
       .map((e) => e.id)

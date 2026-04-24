@@ -11,16 +11,25 @@ import {
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
-import { AuthItemKeys } from "@/components/resources/AuthItemKeys";
-import { AuthItemValues } from "@/components/resources/AuthItemValues";
+import {
+  AuthItemKeys,
+  type AuthItemKeyValue,
+} from "@/components/resources/AuthItemKeys";
+import {
+  AuthItemValues,
+  type AuthItemValueValue,
+} from "@/components/resources/AuthItemValues";
 import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Logins } from "@/components/resources/Logins";
-import { Mcp } from "@/components/resources/Mcp";
+import { Mcp, type McpValue } from "@/components/resources/Mcp";
 import { Names } from "@/components/resources/Names";
-import { ProviderKeys } from "@/components/resources/ProviderKeys";
+import {
+  ProviderKeys,
+  type ProviderKeyValue,
+} from "@/components/resources/ProviderKeys";
 import { Systems } from "@/components/resources/Systems";
 import { Thresholds } from "@/components/resources/Thresholds";
 import { useDrafts } from "@/contexts/draft-context";
@@ -50,23 +59,29 @@ type SettingFormState = {
   name: string | null;
   description_id: string | null;
   description: string | null;
-  active_flag_id: string | null;
+  // Canonical: ids of the flag-resource rows currently selected. The server
+  // also accepts denormalized `active`/`mcp` booleans, but the UI ships ids.
+  flag_ids: string[];
   color_ids: string[];
   department_ids: string[];
   logins_ids: string[];
   system_ids: string[];
   mcp_id: string | null;
+  mcp_values: McpValue | null;
   threshold_ids: string[];
   provider_key_ids: string[];
+  provider_keys: ProviderKeyValue[];
   auth_item_key_ids: string[];
+  auth_item_keys: AuthItemKeyValue[];
   auth_item_value_ids: string[];
+  auth_item_values: AuthItemValueValue[];
   pending_ids: string[];
 };
 
 const SETTING_RESOURCES: ResourceConfig[] = [
   { key: "names", formKey: "name_id", flushKey: null, type: "single" },
   { key: "descriptions", formKey: "description_id", flushKey: null, type: "single" },
-  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  { key: "flags", formKey: "flag_ids", flushKey: null, type: "multi" },
   { key: "colors", formKey: "color_ids", flushKey: null, type: "multi" },
   { key: "departments", formKey: "department_ids", flushKey: null, type: "multi" },
   { key: "logins", formKey: "logins_ids", flushKey: null, type: "multi" },
@@ -117,7 +132,9 @@ function Setting({
       name: null,
       description_id: s?.descriptions?.find((item) => item.selected)?.id ?? null,
       description: null,
-      active_flag_id: s?.flags?.find((item) => item.selected)?.flag_option_id ?? null,
+      flag_ids: (s?.flags?.filter((item) => item.selected) ?? [])
+        .map((item) => item.id)
+        .filter((id): id is string => !!id),
       color_ids:
         (s?.colors?.filter((item) => item.selected) ?? [])
           .map((item) => item.id)
@@ -135,6 +152,14 @@ function Setting({
           .map((item) => item.system_id)
           .filter((id): id is string => !!id),
       mcp_id: s?.mcp?.find((item) => item.selected)?.mcp_id ?? null,
+      mcp_values: (() => {
+        const selected = s?.mcp?.find((item) => item.selected);
+        if (!selected?.agent_id) return null;
+        return {
+          id: selected.mcp_id ?? null,
+          agent_id: selected.agent_id,
+        };
+      })(),
       threshold_ids:
         (s?.thresholds?.filter((item) => item.selected) ?? [])
           .map((item) => item.id)
@@ -143,14 +168,44 @@ function Setting({
         (s?.provider_keys?.filter((item) => item.selected) ?? [])
           .map((item) => item.id)
           .filter((id): id is string => !!id),
+      provider_keys: (s?.provider_keys?.filter((item) => item.selected) ?? [])
+        .filter((item) => !!item.id && !!item.provider_id && !!item.key_id)
+        .map((item) => ({
+          id: item.id as string,
+          provider_id: item.provider_id as string,
+          key_id: item.key_id as string,
+        })),
       auth_item_key_ids:
         (s?.auth_item_keys?.filter((item) => item.selected) ?? [])
           .map((item) => item.id)
           .filter((id): id is string => !!id),
+      auth_item_keys: (s?.auth_item_keys?.filter((item) => item.selected) ?? [])
+        .filter(
+          (item) => !!item.id && !!item.auth_id && !!item.item_id && !!item.key_id
+        )
+        .map((item) => ({
+          id: item.id as string,
+          auth_id: item.auth_id as string,
+          item_id: item.item_id as string,
+          key_id: item.key_id as string,
+        })),
       auth_item_value_ids:
         (s?.auth_item_values?.filter((item) => item.selected) ?? [])
           .map((item) => item.id)
           .filter((id): id is string => !!id),
+      auth_item_values: (
+        s?.auth_item_values?.filter((item) => item.selected) ?? []
+      )
+        .filter(
+          (item) =>
+            !!item.id && !!item.auth_id && !!item.item_id && item.value != null
+        )
+        .map((item) => ({
+          id: item.id as string,
+          auth_id: item.auth_id as string,
+          item_id: item.item_id as string,
+          value: item.value as string,
+        })),
       pending_ids: (s?.pending_ids ?? []).filter((id): id is string => !!id),
     };
   }, [s]);
@@ -189,7 +244,7 @@ function Setting({
     () => ({
       names: new Set((s?.names ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
       descriptions: new Set((s?.descriptions ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
-      flags: new Set((s?.flags ?? []).filter((item) => item.pending && item.flag_option_id).map((item) => item.flag_option_id as string)),
+      flags: new Set((s?.flags ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
       colors: new Set((s?.colors ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
       departments: new Set((s?.departments ?? []).filter((item) => item.pending && item.department_id).map((item) => item.department_id as string)),
       logins: new Set((s?.logins ?? []).filter((item) => item.pending && item.logins_id).map((item) => item.logins_id as string)),
@@ -211,6 +266,59 @@ function Setting({
       );
     },
     [pendingIdsBySection]
+  );
+
+  // Per-type boolean view of flag_ids, built from the catalog. Rendered by Flags.
+  const flagValues = useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (s?.flags ?? [])
+        .filter((f) => f.id)
+        .map((f) => [f.id as string, f])
+    );
+    for (const id of formState.flag_ids) {
+      const row = byId.get(id);
+      if (!row) continue;
+      const type = row.type ?? row.name;
+      if (type && row.value != null) map[type] = row.value;
+    }
+    return map;
+  }, [formState.flag_ids, s?.flags]);
+
+  // Rows grouped by flag type — used when a toggle swaps between true/false ids.
+  type FlagRow = NonNullable<NonNullable<typeof s>["flags"]>[number];
+  const flagRowsByType = useMemo(() => {
+    const map = new Map<string, FlagRow[]>();
+    for (const f of s?.flags ?? []) {
+      const t = f.type ?? f.name;
+      if (!t) continue;
+      const list = map.get(t) ?? [];
+      list.push(f);
+      map.set(t, list);
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s?.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = flagRowsByType.get(type) ?? [];
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id)
+        );
+        const retained = prev.flag_ids.filter((id) => !rowIdsForType.has(id));
+        const target =
+          next == null ? null : rows.find((r) => r.value === next)?.id ?? null;
+        const nextIds = target ? [...retained, target] : retained;
+        return {
+          ...prev,
+          flag_ids: nextIds,
+          pending_ids: pruneSectionPending("flags", nextIds),
+        };
+      });
+    },
+    [flagRowsByType, pruneSectionPending]
   );
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
@@ -269,16 +377,13 @@ function Setting({
           const nextNameId = (fs["name_id"] as string | null) ?? prev.name_id;
           const nextDescriptionId =
             (fs["description_id"] as string | null) ?? prev.description_id;
-          const next = {
+          const next: SettingFormState = {
             ...prev,
             name_id: nextNameId,
             name: nextNameId ? null : prev.name,
             description_id: nextDescriptionId,
             description: nextDescriptionId ? null : prev.description,
-            active_flag_id:
-              (fs["active_flag_id"] as string | null) ??
-              (fs["flag_id"] as string | null) ??
-              prev.active_flag_id,
+            flag_ids: (fs["flag_ids"] as string[] | null) ?? prev.flag_ids,
             color_ids: (fs["color_ids"] as string[] | null) ?? prev.color_ids,
             department_ids:
               (fs["department_ids"] as string[] | null) ?? prev.department_ids,
@@ -287,17 +392,36 @@ function Setting({
             system_ids:
               (fs["system_ids"] as string[] | null) ?? prev.system_ids,
             mcp_id: (fs["mcp_id"] as string | null) ?? prev.mcp_id,
+            mcp_values: ((): McpValue | null => {
+              const fsMcp = fs["mcp_values"] as McpValue[] | null | undefined;
+              if (fsMcp && fsMcp.length > 0) return fsMcp[0] ?? null;
+              const nextMcpId = (fs["mcp_id"] as string | null) ?? prev.mcp_id;
+              if (prev.mcp_values && prev.mcp_values.id === nextMcpId) return prev.mcp_values;
+              if (prev.mcp_values && nextMcpId) {
+                return { ...prev.mcp_values, id: nextMcpId };
+              }
+              return prev.mcp_values;
+            })(),
             threshold_ids:
               (fs["threshold_ids"] as string[] | null) ?? prev.threshold_ids,
             provider_key_ids:
               (fs["provider_key_ids"] as string[] | null) ??
               prev.provider_key_ids,
+            provider_keys:
+              (fs["provider_keys"] as ProviderKeyValue[] | null) ??
+              prev.provider_keys,
             auth_item_key_ids:
               (fs["auth_item_key_ids"] as string[] | null) ??
               prev.auth_item_key_ids,
+            auth_item_keys:
+              (fs["auth_item_keys"] as AuthItemKeyValue[] | null) ??
+              prev.auth_item_keys,
             auth_item_value_ids:
               (fs["auth_item_value_ids"] as string[] | null) ??
               prev.auth_item_value_ids,
+            auth_item_values:
+              (fs["auth_item_values"] as AuthItemValueValue[] | null) ??
+              prev.auth_item_values,
             pending_ids:
               (fs["pending_ids"] as string[] | null) ?? prev.pending_ids,
           };
@@ -333,6 +457,13 @@ function Setting({
       payload["description"] = currentFormState.description;
       delete payload["description_id"];
     }
+
+    payload["provider_keys"] = currentFormState.provider_keys;
+    payload["auth_item_keys"] = currentFormState.auth_item_keys;
+    payload["auth_item_values"] = currentFormState.auth_item_values;
+    payload["mcp_values"] = currentFormState.mcp_values
+      ? [currentFormState.mcp_values]
+      : [];
 
     return payload;
   }, []);
@@ -468,7 +599,8 @@ function Setting({
     const body = {
       name_id: effectiveState.name_id,
       description_id: effectiveState.description_id,
-      active_flag_id: effectiveState.active_flag_id,
+      flag_ids:
+        effectiveState.flag_ids.length > 0 ? effectiveState.flag_ids : null,
       color_ids: effectiveState.color_ids.length > 0 ? effectiveState.color_ids : null,
       department_ids: effectiveState.department_ids.length > 0 ? effectiveState.department_ids : null,
       logins_ids: effectiveState.logins_ids.length > 0 ? effectiveState.logins_ids : null,
@@ -584,20 +716,13 @@ function Setting({
               }
             />
             <Flags
-              mode="single"
-              flag_id={formState.active_flag_id}
-              show_flags={true}
               flags={s?.flags ?? []}
+              values={flagValues}
               columns={1}
               label="Flags"
               disabled={disabled}
-              onChange={(id) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  active_flag_id: id,
-                  pending_ids: pruneSectionPending("flags", id ? [id] : []),
-                }))
-              }
+              show_flags={true}
+              onChange={handleFlagToggle}
             />
           </StepCard>
         );
@@ -696,15 +821,19 @@ function Setting({
             isReadonly={disabled}
           >
             <Mcp
-              mcp_id={formState.mcp_id}
-              mcp={s?.mcp ?? []}
-              agents={s?.agents ?? []}
+              options={s?.mcp_options ?? []}
+              value={formState.mcp_values}
+              existing={s?.mcp ?? []}
               disabled={disabled}
-              onChange={(id) =>
+              onChange={(value) =>
                 setFormState((prev) => ({
                   ...prev,
-                  mcp_id: id,
-                  pending_ids: pruneSectionPending("mcp", id ? [id] : []),
+                  mcp_values: value,
+                  mcp_id: value?.id ?? null,
+                  pending_ids: pruneSectionPending(
+                    "mcp",
+                    value?.id ? [value.id] : []
+                  ),
                 }))
               }
             />
@@ -749,17 +878,22 @@ function Setting({
             isReadonly={disabled}
           >
             <ProviderKeys
-              provider_key_ids={formState.provider_key_ids}
-              provider_key_resources={(s?.provider_keys ?? []).filter((item) => item.selected)}
-              providers={s?.providers ?? []}
-              keys={s?.keys ?? []}
+              options={s?.provider_key_options ?? []}
+              values={formState.provider_keys}
+              existing={s?.provider_keys ?? []}
               disabled={disabled}
-              onChange={(ids) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  provider_key_ids: ids,
-                  pending_ids: pruneSectionPending("provider_keys", ids),
-                }))
+              onChange={(values) =>
+                setFormState((prev) => {
+                  const ids = values
+                    .map((v) => v.id)
+                    .filter((id): id is string => !!id);
+                  return {
+                    ...prev,
+                    provider_keys: values,
+                    provider_key_ids: ids,
+                    pending_ids: pruneSectionPending("provider_keys", ids),
+                  };
+                })
               }
               show_provider_keys={true}
             />
@@ -777,32 +911,42 @@ function Setting({
           isReadonly={disabled}
         >
           <AuthItemKeys
-            auth_item_key_ids={formState.auth_item_key_ids}
-            auth_item_key_resources={(s?.auth_item_keys ?? []).filter((item) => item.selected)}
-            auths={s?.auths ?? []}
-            keys={s?.keys ?? []}
+            options={s?.auth_item_key_options ?? []}
+            values={formState.auth_item_keys}
+            existing={s?.auth_item_keys ?? []}
             disabled={disabled}
-            onChange={(ids) =>
-              setFormState((prev) => ({
-                ...prev,
-                auth_item_key_ids: ids,
-                pending_ids: pruneSectionPending("auth_item_keys", ids),
-              }))
+            onChange={(values) =>
+              setFormState((prev) => {
+                const ids = values
+                  .map((v) => v.id)
+                  .filter((id): id is string => !!id);
+                return {
+                  ...prev,
+                  auth_item_keys: values,
+                  auth_item_key_ids: ids,
+                  pending_ids: pruneSectionPending("auth_item_keys", ids),
+                };
+              })
             }
             show_auth_item_keys={true}
           />
           <AuthItemValues
-            auth_item_value_ids={formState.auth_item_value_ids}
-            auth_item_values={s?.auth_item_values ?? []}
-            auths={s?.auths ?? []}
-            items={s?.items ?? []}
+            options={s?.auth_item_value_options ?? []}
+            values={formState.auth_item_values}
+            existing={s?.auth_item_values ?? []}
             disabled={disabled}
-            onChange={(ids) =>
-              setFormState((prev) => ({
-                ...prev,
-                auth_item_value_ids: ids,
-                pending_ids: pruneSectionPending("auth_item_values", ids),
-              }))
+            onChange={(values) =>
+              setFormState((prev) => {
+                const ids = values
+                  .map((v) => v.id)
+                  .filter((id): id is string => !!id);
+                return {
+                  ...prev,
+                  auth_item_values: values,
+                  auth_item_value_ids: ids,
+                  pending_ids: pruneSectionPending("auth_item_values", ids),
+                };
+              })
             }
             show_auth_item_values={true}
           />

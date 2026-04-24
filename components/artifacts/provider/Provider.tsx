@@ -43,7 +43,7 @@ type ProviderFormState = {
   name: string | null;
   description_id: string | null;
   description: string | null;
-  active_flag_id: string | null;
+  flag_ids: string[];
   department_ids: string[];
   value_id: string | null;
   value: string | null;
@@ -56,7 +56,7 @@ type ProviderFormState = {
 const PROVIDER_RESOURCES: ResourceConfig[] = [
   { key: "names", formKey: "name_id", flushKey: null, type: "single" },
   { key: "descriptions", formKey: "description_id", flushKey: null, type: "single" },
-  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  { key: "flags", formKey: "flag_ids", flushKey: null, type: "multi" },
   { key: "departments", formKey: "department_ids", flushKey: null, type: "multi" },
   { key: "values", formKey: "value_id", flushKey: null, type: "single" },
   { key: "endpoints", formKey: "endpoint_id", flushKey: null, type: "single" },
@@ -102,7 +102,6 @@ export default function Provider({
     const selectedName = s?.names?.find((item: any) => item.selected) ?? null;
     const selectedDescription =
       s?.descriptions?.find((item: any) => item.selected) ?? null;
-    const selectedFlag = s?.flags?.find((item: any) => item.selected) ?? null;
     const selectedValue = s?.values?.find((item: any) => item.selected) ?? null;
     const selectedEndpoint = s?.endpoints?.find((item: any) => item.selected) ?? null;
     const selectedKey = s?.keys?.find((item: any) => item.selected) ?? null;
@@ -112,7 +111,9 @@ export default function Provider({
       name: null,
       description_id: selectedDescription?.id ?? null,
       description: null,
-      active_flag_id: selectedFlag?.flag_option_id ?? null,
+      flag_ids: (s?.flags?.filter((item: any) => item.selected) ?? [])
+        .map((item: any) => item.id)
+        .filter((id: unknown): id is string => !!id),
       department_ids: (s?.departments?.filter((item: any) => item.selected) ?? [])
         .map((item: any) => item.department_id)
         .filter(Boolean),
@@ -199,10 +200,7 @@ export default function Provider({
             name: nextNameId ? null : prev.name,
             description_id: nextDescriptionId,
             description: nextDescriptionId ? null : prev.description,
-            active_flag_id:
-              (fs["active_flag_id"] as string | null) ??
-              (fs["flag_id"] as string | null) ??
-              prev.active_flag_id,
+            flag_ids: (fs["flag_ids"] as string[] | null) ?? prev.flag_ids,
             department_ids:
               (fs["department_ids"] as string[] | null) ?? prev.department_ids,
             value_id: nextValueId,
@@ -268,6 +266,56 @@ export default function Provider({
     !!formState.value ||
     !!formState.endpoint ||
     formState.pending_ids.length > 0;
+
+  // Per-type boolean view of flag_ids, built from the catalog. Rendered by Flags.
+  const flagValues = useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (s?.flags ?? [])
+        .filter((f: any) => f.id)
+        .map((f: any) => [f.id as string, f])
+    );
+    for (const id of formState.flag_ids) {
+      const row = byId.get(id) as any;
+      if (!row) continue;
+      const type = row.type ?? row.name;
+      if (type && row.value != null) map[type] = row.value;
+    }
+    return map;
+  }, [formState.flag_ids, s?.flags]);
+
+  type ProviderFlagRow = { id?: string | null; type?: string | null; name?: string | null; value?: boolean | null };
+  const flagRowsByType = useMemo(() => {
+    const map = new Map<string, ProviderFlagRow[]>();
+    for (const f of (s?.flags ?? []) as ProviderFlagRow[]) {
+      const t = f.type ?? f.name;
+      if (!t) continue;
+      const list = map.get(t) ?? [];
+      list.push(f);
+      map.set(t, list);
+    }
+    return map;
+  }, [s?.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = flagRowsByType.get(type) ?? [];
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id)
+        );
+        const retained = prev.flag_ids.filter((id) => !rowIdsForType.has(id));
+        const target =
+          next == null ? null : rows.find((r) => r.value === next)?.id ?? null;
+        const nextIds = target ? [...retained, target] : retained;
+        return {
+          ...prev,
+          flag_ids: nextIds,
+        };
+      });
+    },
+    [flagRowsByType]
+  );
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
   const handleNameIdChange = useCallback((id: string | null) => {
@@ -406,7 +454,9 @@ export default function Provider({
               id: providerId,
               name_id: effectiveState.name_id,
               description_id: effectiveState.description_id,
-              active_flag_id: effectiveState.active_flag_id,
+              flag_ids: effectiveState.flag_ids.length > 0
+                ? effectiveState.flag_ids
+                : null,
               department_ids:
                 effectiveState.department_ids.length > 0
                   ? effectiveState.department_ids
@@ -427,7 +477,9 @@ export default function Provider({
             {
               name_id: effectiveState.name_id,
               description_id: effectiveState.description_id,
-              active_flag_id: effectiveState.active_flag_id,
+              flag_ids: effectiveState.flag_ids.length > 0
+                ? effectiveState.flag_ids
+                : null,
               department_ids:
                 effectiveState.department_ids.length > 0
                   ? effectiveState.department_ids
@@ -554,15 +606,13 @@ export default function Provider({
               required={false}
             />
             <Flags
-              mode="single"
-              flag_id={formState.active_flag_id}
-              show_flags={true}
               flags={s?.flags ?? []}
+              values={flagValues}
+              columns={1}
               label="Flags"
               disabled={disabled}
-              onChange={(id) =>
-                setFormState((prev) => ({ ...prev, active_flag_id: id }))
-              }
+              show_flags={true}
+              onChange={handleFlagToggle}
             />
             <Departments
               department_ids={formState.department_ids}
@@ -671,7 +721,9 @@ export default function Provider({
     [
       canRegenerate,
       disabled,
-      formState.active_flag_id,
+      formState.flag_ids,
+      flagValues,
+      handleFlagToggle,
       formState.department_ids,
       formState.description_id,
       formState.endpoint,

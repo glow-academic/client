@@ -1,8 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -13,124 +13,160 @@ import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-export interface AuthItemValuesResourceItem {
+export interface AuthItemValueOption {
+  auth_id?: string | null;
+  item_id?: string | null;
+  auth_name?: string | null;
+  item_name?: string | null;
+  item_description?: string | null;
+  encrypted?: boolean | null;
+}
+
+export interface AuthItemValueValue {
+  id: string | null;
+  auth_id: string;
+  item_id: string;
+  value: string;
+}
+
+export interface AuthItemValueExisting {
   id?: string | null;
   auth_id?: string | null;
   item_id?: string | null;
   value?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
   pending?: boolean | null;
 }
 
-type AuthOption = {
-  auth_id?: string | null;
-  name?: string | null;
-};
-
-type ItemOption = {
-  item_id?: string | null;
-  name?: string | null;
-  description?: string | null;
-  encrypted?: boolean | null;
-  position?: number | null;
-};
-
 export interface AuthItemValuesProps {
-  auth_item_value_ids?: string[];
-  auth_item_values?: AuthItemValuesResourceItem[];
-  auths?: AuthOption[];
-  items?: ItemOption[];
-  selected_auth_ids?: string[];
+  options?: AuthItemValueOption[];
+  values?: AuthItemValueValue[];
+  existing?: AuthItemValueExisting[];
   disabled?: boolean;
-  onChange: (ids: string[]) => void;
+  onChange: (values: AuthItemValueValue[]) => void;
   label?: string;
   description?: string;
   show_auth_item_values?: boolean;
 }
 
+const pairKey = (authId: string, itemId: string) => `${authId}:${itemId}`;
+
 export function AuthItemValues({
-  auth_item_value_ids,
-  auth_item_values,
-  auths,
-  items,
-  selected_auth_ids,
+  options,
+  values,
+  existing,
   disabled = false,
   onChange,
   label = "Auth Item Values",
-  description = "Select which literal claim values apply to each auth.",
+  description = "Enter the literal claim value each auth should send for each item.",
   show_auth_item_values = true,
 }: AuthItemValuesProps) {
-  const selectedIds = useMemo(() => auth_item_value_ids ?? [], [auth_item_value_ids]);
-  const rows = useMemo(() => auth_item_values ?? [], [auth_item_values]);
+  const opts = useMemo(() => options ?? [], [options]);
+  const vals = useMemo(() => values ?? [], [values]);
 
-  const authLookup = useMemo(() => {
-    const map = new Map<string, string>();
-    (auths ?? []).forEach((a) => {
-      if (a.auth_id && a.name) map.set(a.auth_id, a.name);
-    });
+  const valueByPair = useMemo(() => {
+    const map = new Map<string, AuthItemValueValue>();
+    for (const v of vals) map.set(pairKey(v.auth_id, v.item_id), v);
     return map;
-  }, [auths]);
+  }, [vals]);
 
-  const itemLookup = useMemo(() => {
-    const map = new Map<string, ItemOption>();
-    (items ?? []).forEach((i) => {
-      if (i.item_id) map.set(i.item_id, i);
-    });
+  const existingByPair = useMemo(() => {
+    const map = new Map<string, AuthItemValueExisting>();
+    for (const e of existing ?? []) {
+      if (e.auth_id && e.item_id) {
+        map.set(pairKey(e.auth_id, e.item_id), e);
+      }
+    }
     return map;
-  }, [items]);
+  }, [existing]);
 
-  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const pendingPairs = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of existing ?? []) {
+      if (e.pending && e.auth_id && e.item_id) {
+        set.add(pairKey(e.auth_id, e.item_id));
+      }
+    }
+    return set;
+  }, [existing]);
+  const showDiff = pendingPairs.size > 0;
 
-  const pendingIds = useMemo(
-    () =>
-      new Set(
-        rows.filter((r) => r.pending && r.id).map((r) => r.id as string)
-      ),
-    [rows]
-  );
-  const showDiff = pendingIds.size > 0;
-
-  const rowsByAuth = useMemo(() => {
-    const groups = new Map<string, AuthItemValuesResourceItem[]>();
-    rows.forEach((r) => {
-      if (!r.id || !r.auth_id) return;
-      if (selected_auth_ids && selected_auth_ids.length > 0 && !selected_auth_ids.includes(r.auth_id)) return;
-      const list = groups.get(r.auth_id) ?? [];
-      list.push(r);
-      groups.set(r.auth_id, list);
-    });
+  const byAuth = useMemo(() => {
+    const groups = new Map<
+      string,
+      { auth_name: string | null; options: AuthItemValueOption[] }
+    >();
+    for (const o of opts) {
+      if (!o.auth_id || !o.item_id) continue;
+      const entry = groups.get(o.auth_id) ?? {
+        auth_name: o.auth_name ?? null,
+        options: [],
+      };
+      entry.options.push(o);
+      groups.set(o.auth_id, entry);
+    }
     return groups;
-  }, [rows, selected_auth_ids]);
+  }, [opts]);
 
-  const emit = useCallback(
-    (nextIds: string[]) => onChange(Array.from(new Set(nextIds))),
-    [onChange]
-  );
+  const updateValue = useCallback(
+    (authId: string, itemId: string, nextValue: string) => {
+      const pk = pairKey(authId, itemId);
+      const existingEntry = existingByPair.get(pk);
+      const existingValue = valueByPair.get(pk);
 
-  const toggle = useCallback(
-    (id: string, checked: boolean) => {
-      if (checked) {
-        if (!selectedSet.has(id)) emit([...selectedIds, id]);
+      // Dropping to empty → remove the entry entirely.
+      if (nextValue === "") {
+        if (!existingValue) return;
+        onChange(
+          vals.filter(
+            (v) => !(v.auth_id === authId && v.item_id === itemId)
+          )
+        );
+        return;
+      }
+
+      // Keep the existing id if the value matches the server row; else drop id so
+      // the server creates a new row (append-only contract).
+      const reuseId =
+        existingEntry?.id && existingEntry.value === nextValue
+          ? existingEntry.id
+          : null;
+
+      if (existingValue) {
+        onChange(
+          vals.map((v) =>
+            v.auth_id === authId && v.item_id === itemId
+              ? { ...v, value: nextValue, id: reuseId }
+              : v
+          )
+        );
       } else {
-        emit(selectedIds.filter((x) => x !== id));
+        onChange([
+          ...vals,
+          {
+            id: reuseId,
+            auth_id: authId,
+            item_id: itemId,
+            value: nextValue,
+          },
+        ]);
       }
     },
-    [emit, selectedIds, selectedSet]
+    [existingByPair, valueByPair, vals, onChange]
   );
 
   const handleAccept = useCallback(() => {
-    // Pending values stay selected; next non-pending save confirms them.
+    // Pending values remain; next non-pending save confirms them.
   }, []);
 
   const handleReject = useCallback(() => {
-    emit(selectedIds.filter((id) => !pendingIds.has(id)));
-  }, [emit, pendingIds, selectedIds]);
+    onChange(
+      vals.filter((v) => !pendingPairs.has(pairKey(v.auth_id, v.item_id)))
+    );
+  }, [onChange, pendingPairs, vals]);
 
   if (!show_auth_item_values) return null;
 
-  const groups = Array.from(rowsByAuth.entries());
+  const groups = Array.from(byAuth.entries());
 
   return (
     <div className="space-y-2">
@@ -176,47 +212,64 @@ export function AuthItemValues({
       <p className="text-xs text-muted-foreground">{description}</p>
       {groups.length === 0 ? (
         <div className="text-sm text-muted-foreground py-2">
-          No auth item values configured yet.
+          No auth/item options available.
         </div>
       ) : (
         <div className="space-y-3">
-          {groups.map(([authId, authRows]) => (
+          {groups.map(([authId, group]) => (
             <div key={authId} className="rounded-md border p-3 space-y-2 bg-card">
               <div className="font-medium text-sm">
-                {authLookup.get(authId) ?? "Unknown auth"}
+                {group.auth_name ?? authId}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {authRows.map((row) => {
-                  const rowId = row.id!;
-                  const item = row.item_id ? itemLookup.get(row.item_id) : null;
-                  const checked = selectedSet.has(rowId);
-                  const isPending = pendingIds.has(rowId);
+              <div className="grid grid-cols-1 gap-2">
+                {group.options.map((opt) => {
+                  const itemId = opt.item_id!;
+                  const pk = pairKey(authId, itemId);
+                  const current = valueByPair.get(pk);
+                  const isPending = pendingPairs.has(pk);
+                  const isEncrypted = opt.encrypted === true;
                   return (
                     <div
-                      key={rowId}
+                      key={pk}
                       className={cn(
-                        "relative flex items-center justify-between rounded border px-2 py-1.5",
-                        checked && !isPending && "border-primary bg-primary/5",
+                        "rounded border px-2 py-2 space-y-1",
+                        current && !isPending && "border-primary bg-primary/5",
                         isPending && "ring-2 ring-success bg-success/10"
                       )}
                     >
-                      {isPending && (
-                        <div className="absolute top-1 right-1 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                          Pending
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <div className="truncate text-sm">{item?.name ?? row.item_id}</div>
-                        {row.value && (
-                          <div className="text-xs text-muted-foreground truncate">
-                            {item?.encrypted ? "••••••" : row.value}
+                      <div className="flex items-center justify-between">
+                        <Label
+                          htmlFor={`aiv-${pk}`}
+                          className="text-sm"
+                        >
+                          {opt.item_name ?? itemId}
+                          {isEncrypted && (
+                            <span className="ml-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+                              Encrypted
+                            </span>
+                          )}
+                        </Label>
+                        {isPending && (
+                          <div className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                            Pending
                           </div>
                         )}
                       </div>
-                      <Switch
-                        checked={checked}
+                      {opt.item_description && (
+                        <div className="text-xs text-muted-foreground">
+                          {opt.item_description}
+                        </div>
+                      )}
+                      <Input
+                        id={`aiv-${pk}`}
+                        type={isEncrypted ? "password" : "text"}
                         disabled={disabled}
-                        onCheckedChange={(value) => toggle(rowId, value)}
+                        value={current?.value ?? ""}
+                        onChange={(e) =>
+                          updateValue(authId, itemId, e.target.value)
+                        }
+                        placeholder={`Value for ${opt.item_name ?? "item"}`}
+                        className="h-8"
                       />
                     </div>
                   );

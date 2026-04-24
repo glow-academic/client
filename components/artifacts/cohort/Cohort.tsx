@@ -23,7 +23,7 @@ import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { ProfilePersonas } from "@/components/resources/ProfilePersonas";
 import { Profiles } from "@/components/resources/Profiles";
-import { Flags, type FlagConfig } from "@/components/resources/Flags";
+import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import {
   SimulationAvailability,
@@ -41,7 +41,6 @@ import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
   type ResourceConfig,
@@ -71,7 +70,7 @@ type FlushResult = {
 type CohortFormState = {
   name_id: string | null;
   description_id: string | null;
-  active_flag_id: string | null;
+  flag_ids: string[];
   department_ids: string[];
   simulation_ids: string[];
   simulation_position_ids: string[];
@@ -120,7 +119,7 @@ const COHORT_RESOURCES: ResourceConfig[] = [
     flushKey: "description_id",
     type: "single",
   },
-  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  { key: "flags", formKey: "flag_ids", flushKey: null, type: "multi" },
   {
     key: "departments",
     formKey: "department_ids",
@@ -179,7 +178,7 @@ function collectPendingIds(data?: CohortData | null): string[] {
     if (isPending(item) && item.id) ids.add(item.id);
   }
   for (const item of data.flags ?? []) {
-    if (isPending(item) && item.flag_option_id) ids.add(item.flag_option_id);
+    if (isPending(item) && item.id) ids.add(item.id);
   }
   for (const item of data.departments ?? []) {
     if (isPending(item) && item.department_id) ids.add(item.department_id);
@@ -376,7 +375,7 @@ function CohortComponent({
       return {
         name_id: null as string | null,
         description_id: null as string | null,
-        active_flag_id: null as string | null,
+        flag_ids: [] as string[],
         department_ids: [] as string[],
         simulation_ids: [] as string[],
         simulation_position_ids: [] as string[],
@@ -398,10 +397,9 @@ function CohortComponent({
     return {
       name_id: data.names?.find(isSelected)?.id ?? null,
       description_id: data.descriptions?.find(isSelected)?.id ?? null,
-      active_flag_id:
-        data.flags?.find(isSelected)?.flag_option_id ??
-        data.flags?.[0]?.flag_option_id ??
-        null,
+      flag_ids: (data.flags?.filter(isSelected) ?? [])
+        .map((f) => f.id)
+        .filter((id): id is string => !!id),
       department_ids: (data.departments?.filter(isSelected) ?? [])
         .map((d) => d.department_id)
         .filter((id): id is string => !!id),
@@ -440,9 +438,6 @@ function CohortComponent({
 
   const [formState, setFormState] =
     useState<CohortFormState>(getInitialFormState);
-  const lastPatchedFormStateRef = React.useRef<CohortFormState>(
-    getInitialFormState(),
-  );
   // Use ref to access formState in renderStep without depending on it
   const formStateRef = React.useRef<Record<string, unknown>>(
     formState as unknown as Record<string, unknown>,
@@ -450,6 +445,60 @@ function CohortComponent({
   React.useEffect(() => {
     formStateRef.current = formState as unknown as Record<string, unknown>;
   }, [formState]);
+
+  // Per-type boolean view of flag_ids, built from the catalog. Rendered by Flags.
+  const flagValues = React.useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (cohortData?.flags ?? [])
+        .filter((f) => f.id)
+        .map((f) => [f.id as string, f]),
+    );
+    for (const id of formState.flag_ids) {
+      const row = byId.get(id);
+      if (!row) continue;
+      const t = row.type ?? row.name;
+      if (t && row.value != null) map[t] = row.value;
+    }
+    return map;
+  }, [formState.flag_ids, cohortData?.flags]);
+
+  // Rows grouped by flag type — used when a toggle swaps between true/false ids.
+  type FlagRow = NonNullable<NonNullable<typeof cohortData>["flags"]>[number];
+  const flagRowsByType = React.useMemo(() => {
+    const map = new Map<string, FlagRow[]>();
+    for (const f of cohortData?.flags ?? []) {
+      const t = f.type ?? f.name;
+      if (!t) continue;
+      const list = map.get(t) ?? [];
+      list.push(f);
+      map.set(t, list);
+    }
+    return map;
+  }, [cohortData?.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = flagRowsByType.get(type) ?? [];
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id),
+        );
+        const retained = prev.flag_ids.filter((id) => !rowIdsForType.has(id));
+        const target =
+          next == null ? null : rows.find((r) => r.value === next)?.id ?? null;
+        const nextIds = target ? [...retained, target] : retained;
+        return {
+          ...prev,
+          flag_ids: nextIds,
+          pending_ids: prev.pending_ids.filter(
+            (id) => !rowIdsForType.has(id) || nextIds.includes(id),
+          ),
+        };
+      });
+    },
+    [flagRowsByType],
+  );
 
   // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
   const departmentIdsStr = React.useMemo(
@@ -520,57 +569,15 @@ function CohortComponent({
     | undefined
   >(undefined);
 
-  // Memoize stringified formState arrays for draft listener effect dependencies
-  const formStateDepartmentIdsStr = React.useMemo(
-    () => JSON.stringify(formState.department_ids),
-    [formState.department_ids],
-  );
-  const formStateSimulationIdsStr = React.useMemo(
-    () => JSON.stringify(formState.simulation_ids),
-    [formState.simulation_ids],
-  );
-  const formStateSimulationPositionsStr = React.useMemo(
-    () => JSON.stringify(formState.simulation_positions),
-    [formState.simulation_positions],
-  );
-  const formStateSimulationAvailabilityIdsStr = React.useMemo(
-    () => JSON.stringify(formState.simulation_availability_ids),
-    [formState.simulation_availability_ids],
-  );
-  const formStateProfileIdsStr = React.useMemo(
-    () => JSON.stringify(formState.profile_ids),
-    [formState.profile_ids],
-  );
-  const formStateProfilePersonaIdsStr = React.useMemo(
-    () => JSON.stringify(formState.profile_persona_ids),
-    [formState.profile_persona_ids],
-  );
-
-  // Memoize stringified value fields
-  const formStateSimulationPositionValuesStr = React.useMemo(
-    () => JSON.stringify(formState.simulation_position_values),
-    [formState.simulation_position_values],
-  );
-  const formStateSimulationAvailabilityValuesStr = React.useMemo(
-    () => JSON.stringify(formState.simulation_availability_values),
-    [formState.simulation_availability_values],
-  );
-  const formStateProfilePersonaValuesStr = React.useMemo(
-    () => JSON.stringify(formState.profile_persona_values),
-    [formState.profile_persona_values],
-  );
-  const formStatePendingIdsStr = React.useMemo(
-    () => JSON.stringify(formState.pending_ids),
-    [formState.pending_ids],
-  );
-
-  // formStateKey excludes draftId -- the hook prepends it
+  // formStateKey excludes draftId -- the hook prepends it.
+  // Append-only: every formState change produces a new key and triggers a save
+  // that sends the full current state.
   const formStateKey = React.useMemo(
     () =>
       JSON.stringify({
         name_id: formState.name_id,
         description_id: formState.description_id,
-        active_flag_id: formState.active_flag_id,
+        flag_ids: formState.flag_ids,
         department_ids: formState.department_ids,
         simulation_ids: formState.simulation_ids,
         simulation_position_ids: formState.simulation_position_ids,
@@ -589,77 +596,109 @@ function CohortComponent({
     [
       formState.name_id,
       formState.description_id,
-      formState.active_flag_id,
-      formStateDepartmentIdsStr,
-      formStateSimulationIdsStr,
-      formStateSimulationPositionsStr,
-      formStateSimulationAvailabilityIdsStr,
-      formStateProfileIdsStr,
-      formStateProfilePersonaIdsStr,
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.flag_ids),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.department_ids),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.simulation_ids),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.simulation_position_ids),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.simulation_availability_ids),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.simulation_positions),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.profile_ids),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.profile_persona_ids),
       formState.name,
       formState.description,
-      formStateSimulationPositionValuesStr,
-      formStateSimulationAvailabilityValuesStr,
-      formStateProfilePersonaValuesStr,
-      formStatePendingIdsStr,
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.simulation_position_values),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.simulation_availability_values),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.profile_persona_values),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.pending_ids),
     ],
   );
 
-  const hasResourceIds = checkHasResourceIds(COHORT_RESOURCES, formState);
+  // Autosave gate: IDs OR any value/pending field present. Without the value
+  // check, typing a name/description before a picker resolves an ID would
+  // never trigger a save.
+  const hasResourceIds =
+    checkHasResourceIds(
+      COHORT_RESOURCES,
+      formState as unknown as Record<string, unknown>,
+    ) ||
+    !!formState.name ||
+    !!formState.description ||
+    (formState.simulation_position_values?.length ?? 0) > 0 ||
+    (formState.simulation_availability_values?.length ?? 0) > 0 ||
+    (formState.profile_persona_values?.length ?? 0) > 0 ||
+    formState.pending_ids.length > 0;
 
-  const buildPatchPayload = useCallback(
-    (
-      draftId: string | null,
-      flushResults?: Record<string, unknown>,
-    ): Record<string, unknown> => {
-      const currentFormState =
-        formStateRef.current as unknown as CohortFormState;
-      const base: Record<string, unknown> = {
-        input_draft_id: draftId || null,
-        ...buildDraftPayload(COHORT_RESOURCES, {
-          formState: currentFormState as unknown as Record<string, unknown>,
-          referenceState: lastPatchedFormStateRef.current as unknown as Record<
-            string,
-            unknown
-          >,
-          flushResults: (flushResults ?? {}) as Record<string, unknown>,
-        }),
-      };
+  // Append-only: always send full current state as a complete snapshot.
+  // Values take precedence over IDs for creatables (server resolves value→id,
+  // echoes id back, local state clears the value on next merge).
+  const buildPatchPayload = useCallback((): Record<string, unknown> => {
+    const current = formStateRef.current as unknown as CohortFormState;
+    const payload: Record<string, unknown> = {};
 
-      // Overlay value fields (single-select values clear the corresponding ID)
-      if (currentFormState.name != null) {
-        base["name"] = currentFormState.name;
-        delete base["name_id"];
-      }
-      if (currentFormState.description != null) {
-        base["description"] = currentFormState.description;
-        delete base["description_id"];
-      }
-      // Multi-select compound values are sent alongside IDs
-      if (currentFormState.simulation_position_values?.length) {
-        base["simulation_positions"] = currentFormState.simulation_position_values;
-      }
-      if (currentFormState.simulation_availability_values?.length) {
-        base["simulation_availability"] =
-          currentFormState.simulation_availability_values;
-      }
-      if (currentFormState.profile_persona_values?.length) {
-        base["profile_personas"] = currentFormState.profile_persona_values;
-      }
-      if (currentFormState.pending_ids.length > 0) {
-        base["pending_ids"] = currentFormState.pending_ids;
-      }
+    if (current.name != null) {
+      payload["name"] = current.name;
+    } else if (current.name_id) {
+      payload["name_id"] = current.name_id;
+    }
 
-      return base;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
+    if (current.description != null) {
+      payload["description"] = current.description;
+    } else if (current.description_id) {
+      payload["description_id"] = current.description_id;
+    }
 
-  const onPatchSuccess = useCallback(() => {
-    lastPatchedFormStateRef.current = {
-      ...(formStateRef.current as unknown as CohortFormState),
-    };
+    if (current.flag_ids.length > 0) {
+      payload["flag_ids"] = current.flag_ids;
+    }
+    if (current.department_ids.length > 0) {
+      payload["department_ids"] = current.department_ids;
+    }
+    if (current.simulation_ids.length > 0) {
+      payload["simulation_ids"] = current.simulation_ids;
+    }
+    if (current.profile_ids.length > 0) {
+      payload["profile_ids"] = current.profile_ids;
+    }
+
+    // Compound values: prefer the value array; fall back to IDs once the
+    // server has resolved them.
+    if (current.simulation_position_values?.length) {
+      payload["simulation_positions"] = current.simulation_position_values;
+    } else if (current.simulation_position_ids.length > 0) {
+      payload["simulation_position_ids"] = current.simulation_position_ids;
+    }
+
+    if (current.simulation_availability_values?.length) {
+      payload["simulation_availability"] =
+        current.simulation_availability_values;
+    } else if (current.simulation_availability_ids.length > 0) {
+      payload["simulation_availability_ids"] =
+        current.simulation_availability_ids;
+    }
+
+    if (current.profile_persona_values?.length) {
+      payload["profile_personas"] = current.profile_persona_values;
+    } else if (current.profile_persona_ids.length > 0) {
+      payload["profile_persona_ids"] = current.profile_persona_ids;
+    }
+
+    if (current.pending_ids.length > 0) {
+      payload["pending_ids"] = current.pending_ids;
+    }
+
+    return payload;
   }, []);
 
   const {
@@ -677,7 +716,6 @@ function CohortComponent({
     hasResourceIds,
     flushRegistryRef,
     formStateRef,
-    onPatchSuccess,
   });
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
@@ -726,7 +764,7 @@ function CohortComponent({
       if (
         prev.name_id !== newState.name_id ||
         prev.description_id !== newState.description_id ||
-        prev.active_flag_id !== newState.active_flag_id ||
+        JSON.stringify(prev.flag_ids) !== JSON.stringify(newState.flag_ids) ||
         JSON.stringify(prev.department_ids) !==
           JSON.stringify(newState.department_ids) ||
         JSON.stringify(prev.simulation_ids) !==
@@ -747,9 +785,6 @@ function CohortComponent({
       }
       return prev;
     });
-    lastPatchedFormStateRef.current = newState;
-    // Use stringified arrays in dependencies to prevent effect from running when array references change but content is same
-    // Intentionally exclude formState and getInitialFormState to prevent infinite loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     cohortData?.names,
@@ -777,7 +812,7 @@ function CohortComponent({
               ...prev,
               name_id: fs.name_id ?? prev.name_id,
               description_id: fs.description_id ?? prev.description_id,
-              active_flag_id: fs.active_flag_id ?? fs.flag_id ?? prev.active_flag_id,
+              flag_ids: (fs.flag_ids as string[] | null) ?? prev.flag_ids,
               department_ids: fs.department_ids ?? prev.department_ids,
               simulation_ids: fs.simulation_ids ?? prev.simulation_ids,
               simulation_position_ids:
@@ -818,7 +853,7 @@ function CohortComponent({
               prev.name !== next.name ||
               prev.description_id !== next.description_id ||
               prev.description !== next.description ||
-              prev.active_flag_id !== next.active_flag_id ||
+              JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
               JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
               JSON.stringify(prev.simulation_ids) !== JSON.stringify(next.simulation_ids) ||
               JSON.stringify(prev.simulation_position_ids) !== JSON.stringify(next.simulation_position_ids) ||
@@ -832,7 +867,6 @@ function CohortComponent({
               JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
             if (!changed) return prev;
             serverSyncPendingRef.current = true;
-            lastPatchedFormStateRef.current = next;
             return next;
           });
         }
@@ -882,11 +916,6 @@ function CohortComponent({
 
   const handleGenerateProfiles = useCallback(
     async () => handleGenerateResources(["profiles"]),
-    [handleGenerateResources],
-  );
-
-  const handleGenerateProfilePersonas = useCallback(
-    async () => handleGenerateResources(["profile_personas"]),
     [handleGenerateResources],
   );
 
@@ -963,7 +992,10 @@ function CohortComponent({
         name: (effectiveFormState as CohortFormState).name || null,
         description_id: effectiveFormState.description_id || null,
         description: (effectiveFormState as CohortFormState).description || null,
-        flag_id: effectiveFormState.active_flag_id || null,
+        flag_ids:
+          effectiveFormState.flag_ids.length > 0
+            ? effectiveFormState.flag_ids
+            : null,
         department_ids: effectiveFormState.department_ids.length > 0 ? effectiveFormState.department_ids : null,
         simulation_ids: effectiveFormState.simulation_ids.length > 0 ? effectiveFormState.simulation_ids : null,
         simulation_position_ids: effectiveFormState.simulation_position_ids?.length > 0 ? effectiveFormState.simulation_position_ids : null,
@@ -1106,7 +1138,7 @@ function CohortComponent({
             ...prev,
             name_id: null,
             description_id: null,
-            active_flag_id: null,
+            flag_ids: [],
             department_ids: [],
             name: null,
             description: null,
@@ -1114,7 +1146,7 @@ function CohortComponent({
               (id) =>
                 id !== prev.name_id &&
                 id !== prev.description_id &&
-                id !== prev.active_flag_id &&
+                !prev.flag_ids.includes(id) &&
                 !prev.department_ids.includes(id),
             ),
           };
@@ -1345,21 +1377,13 @@ function CohortComponent({
 
                 {/* Active Switch - using Flags resource component */}
                 <Flags
-                  flags={(s?.flags ?? []) as FlagConfig[]}
-                  flag_id={formState.active_flag_id ?? null}
-                  show_flags={true}
+                  flags={s?.flags ?? []}
+                  values={flagValues}
                   columns={1}
                   label="Flags"
                   disabled={disabled}
-                  onChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      active_flag_id: flagId,
-                      pending_ids: prev.pending_ids.filter(
-                        (id) => id !== prev.active_flag_id,
-                      ),
-                    }))
-                  }
+                  show_flags={true}
+                  onChange={handleFlagToggle}
                 />
               </div>
             </StepCard>
@@ -1636,8 +1660,6 @@ function CohortComponent({
                 disabled={disabled}
                 onChange={() => undefined}
                 cohort_id={cohortId ?? null}
-                onGenerate={handleGenerateProfilePersonas}
-                aiProfilePersonaResources={[]}
                 onProfilePersonaValues={(values) =>
                   setFormState((prev) => ({
                     ...prev,
@@ -1665,17 +1687,18 @@ function CohortComponent({
       handleGenerateSimulationPositions,
       handleGenerateSimulationAvailability,
       handleGenerateProfiles,
-      handleGenerateProfilePersonas,
       isGenerating,
       stepResources,
       // Depend on individual formState fields instead of whole object to prevent callback recreation
       // when object reference changes but values are same
       formState.name_id,
       formState.description_id,
-      formState.active_flag_id,
+      formState.flag_ids,
       // Include arrays - they're used in the callback, but the formState sync effect ensures
       // they only change when content actually changes (not just reference)
       formState.department_ids,
+      flagValues,
+      handleFlagToggle,
       formState.simulation_ids,
       formState.simulation_positions,
       formState.simulation_availability_ids,
@@ -1734,8 +1757,9 @@ export default React.memo(CohortComponent, (prevProps, nextProps) => {
     description_id: prevProps.cohortData?.descriptions?.find(
       (item) => item.selected,
     )?.id,
-    active_flag_id: prevProps.cohortData?.flags?.find((item) => item.selected)
-      ?.flag_option_id,
+    flag_ids: prevProps.cohortData?.flags
+      ?.filter((item) => item.selected)
+      .map((item) => item.id),
     department_ids: prevProps.cohortData?.departments
       ?.filter((item) => item.selected)
       .map((item) => item.department_id),
@@ -1752,8 +1776,9 @@ export default React.memo(CohortComponent, (prevProps, nextProps) => {
     description_id: nextProps.cohortData?.descriptions?.find(
       (item) => item.selected,
     )?.id,
-    active_flag_id: nextProps.cohortData?.flags?.find((item) => item.selected)
-      ?.flag_option_id,
+    flag_ids: nextProps.cohortData?.flags
+      ?.filter((item) => item.selected)
+      .map((item) => item.id),
     department_ids: nextProps.cohortData?.departments
       ?.filter((item) => item.selected)
       .map((item) => item.department_id),

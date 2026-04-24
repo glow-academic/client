@@ -1,14 +1,17 @@
 /**
  * Protocols.tsx
- * Resource component for protocol selection
- * Uses GenericPicker to select existing protocol resources
- * Manages protocol_ids array and reports to parent
+ * Multi-select protocol picker. Mirrors Departments.tsx (SelectableGrid card
+ * grid, horizontal scroll) and adds an inline "create" input: values the user
+ * types are emitted via `onValuesChange` so the parent can forward them as
+ * raw `protocols: string[]` on the next draft save — the server resolves or
+ * creates each one and echoes back `protocol_ids`.
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Tooltip,
@@ -17,8 +20,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { Check, Plus, X } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 
 export interface ProtocolResourceItem {
   id?: string | null;
@@ -28,24 +31,27 @@ export interface ProtocolResourceItem {
   pending?: boolean | null;
 }
 
-export interface ProtocolItem {
+interface ProtocolGridItem {
   id: string;
   value: string;
+  isNew?: boolean;
 }
 
 export interface ProtocolsProps {
-  protocol_ids?: string[]; // Current protocol resource IDs (standardized prop name)
-  protocol_resources?: ProtocolResourceItem[]; // Selected protocol resources (each includes generated field)
-  show_protocols?: boolean; // Whether to show this resource picker
-  protocols?: ProtocolResourceItem[]; // All available protocols from API (each includes generated and suggested fields)
-  disabled?: boolean; // Based on can_edit flag
-  onChange: (ids: string[]) => void; // Update protocol_ids in form state
+  protocol_ids?: string[];
+  protocol_resources?: ProtocolResourceItem[];
+  show_protocols?: boolean;
+  protocols?: ProtocolResourceItem[];
+  /** Raw values the user typed that haven't been resolved to ids yet. */
+  protocol_values?: string[];
+  /** Emit the next raw-value array (parent forwards as `protocols` on save). */
+  onValuesChange?: (values: string[]) => void;
+  disabled?: boolean;
+  onChange: (ids: string[]) => void;
   label?: string;
   id?: string;
   required?: boolean;
-  placeholder?: string;
   description?: string;
-  aiProtocolResources?: Array<{ id?: string | null; value?: string | null }> | null;
 }
 
 export function Protocols({
@@ -53,176 +59,238 @@ export function Protocols({
   protocol_resources: _protocol_resources,
   show_protocols = false,
   protocols,
+  protocol_values,
+  onValuesChange,
   disabled = false,
   onChange,
   label = "Protocols",
   id = "protocols",
   required = false,
-  placeholder = "Select protocols...",
   description,
-  aiProtocolResources: _aiProtocolResources,
 }: ProtocolsProps) {
   const ids = useMemo(() => protocol_ids ?? [], [protocol_ids]);
+  const values = useMemo(() => protocol_values ?? [], [protocol_values]);
   const show = show_protocols ?? false;
   const allProtocols = useMemo(() => protocols ?? [], [protocols]);
+  const [input, setInput] = useState("");
 
-  // Pending state: items with pending=true from soft draft connections
-  const pendingItems = useMemo(() => {
-    return allProtocols.filter((p) => p.pending && p.id);
-  }, [allProtocols]);
+  const pendingItems = useMemo(
+    () => allProtocols.filter((p) => p.pending && p.id),
+    [allProtocols],
+  );
   const showDiff = pendingItems.length > 0;
   const pendingIds = useMemo(
     () => new Set(pendingItems.map((p) => p.id).filter(Boolean) as string[]),
-    [pendingItems]
+    [pendingItems],
   );
 
-  // Convert protocols array to ProtocolItem format for GenericPicker
-  const protocolItems = useMemo(() => {
-    return allProtocols
-      .filter((p) => p.id && p.value) // Filter out nulls
-      .map((p) => ({
-        id: p.id!,
-        value: p.value!,
-      }));
-  }, [allProtocols]);
+  const catalogItems = useMemo<ProtocolGridItem[]>(
+    () =>
+      allProtocols
+        .filter((p) => p.id && p.value)
+        .map((p) => ({ id: p.id!, value: p.value! })),
+    [allProtocols],
+  );
 
-  // Check if a protocol is suggested (derived from item.suggested field)
+  const gridItems = useMemo<ProtocolGridItem[]>(() => {
+    const existingLower = new Set(
+      catalogItems.map((p) => p.value.toLowerCase()),
+    );
+    const pseudo = values
+      .filter((v) => v && !existingLower.has(v.toLowerCase()))
+      .map<ProtocolGridItem>((v) => ({ id: `new:${v}`, value: v, isNew: true }));
+    return [...catalogItems, ...pseudo];
+  }, [catalogItems, values]);
+
   const isSuggested = useCallback(
     (protocolId: string) => {
-      const protocol = allProtocols.find((p) => p.id === protocolId);
-      return protocol?.suggested === true;
+      const p = allProtocols.find((x) => x.id === protocolId);
+      return p?.suggested === true;
     },
-    [allProtocols]
+    [allProtocols],
   );
 
   const handleSelect = useCallback(
-    (selectedIds: string[]) => {
-      onChange(selectedIds);
+    (itemId: string) => {
+      if (itemId.startsWith("new:")) {
+        // Clicking a pseudo-card removes that pending value.
+        const raw = itemId.slice(4);
+        onValuesChange?.(values.filter((v) => v !== raw));
+        return;
+      }
+      onChange(
+        ids.includes(itemId) ? ids.filter((x) => x !== itemId) : [...ids, itemId],
+      );
     },
-    [onChange]
+    [ids, values, onChange, onValuesChange],
   );
 
-  // Accept pending — keep pending protocols in selection
+  const handleAdd = useCallback(() => {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    const lower = trimmed.toLowerCase();
+
+    // Match existing catalog entry — select it instead of creating a duplicate.
+    const existing = catalogItems.find((p) => p.value.toLowerCase() === lower);
+    if (existing) {
+      if (!ids.includes(existing.id)) onChange([...ids, existing.id]);
+      setInput("");
+      return;
+    }
+
+    // Otherwise append as a pending raw value.
+    if (!values.some((v) => v.toLowerCase() === lower)) {
+      onValuesChange?.([...values, trimmed]);
+    }
+    setInput("");
+  }, [input, catalogItems, ids, values, onChange, onValuesChange]);
+
   const handleAccept = useCallback(() => {
-    // Pending items are already in ids (selected=true), just confirm
-    // The next draft save will persist them as active
-    // Nothing to change in form state — they're already included
+    // Pending items are already in selection — next save persists them.
   }, []);
 
-  // Reject pending — remove pending protocols from selection
   const handleReject = useCallback(() => {
-    const newIds = ids.filter((id) => !pendingIds.has(id));
-    onChange(newIds);
+    onChange(ids.filter((x) => !pendingIds.has(x)));
   }, [ids, pendingIds, onChange]);
 
-  // Don't render if show_protocols is false (AFTER all hooks)
-  if (!show) {
-    return null;
-  }
+  if (!show) return null;
 
   return (
-    <div className="space-y-2">
-      {label && (
-        <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1">
-            {label}
-            {required && <span className="text-destructive">*</span>}
-            {description && (
-              <span className="text-xs text-muted-foreground ml-2">
-                {description}
-              </span>
-            )}
-          </Label>
-          {showDiff && (
-            <>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-success hover:text-success"
-                      onClick={handleAccept}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Accept</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-destructive hover:text-destructive"
-                      onClick={handleReject}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Reject</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </>
+    <div className="space-y-3 min-w-0 w-full">
+      <div className="flex items-center gap-2">
+        <Label htmlFor={id} className="flex items-center gap-1">
+          {label}
+          {required && <span className="text-destructive">*</span>}
+          {description && (
+            <span className="text-xs text-muted-foreground ml-2">
+              {description}
+            </span>
           )}
+        </Label>
+        {showDiff && (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-success hover:text-success"
+                    onClick={handleAccept}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Accept</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
+        )}
+      </div>
+
+      {onValuesChange && (
+        <div className="flex items-center gap-2">
+          <Input
+            id={`${id}-new`}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAdd();
+              }
+            }}
+            placeholder="Type a protocol and press Enter…"
+            disabled={disabled}
+            className="h-8 text-sm"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleAdd}
+            disabled={disabled || !input.trim()}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Add
+          </Button>
         </div>
       )}
-      <GenericPicker<ProtocolItem>
-        items={protocolItems}
-        itemIds={allProtocols
-          .map((p) => p.id)
-          .filter((id): id is string => id !== null)} // All protocol IDs from array, filter nulls
+
+      <SelectableGrid<ProtocolGridItem>
+        horizontal
+        items={gridItems}
+        selectedId={null}
         selectedIds={ids}
         onSelect={handleSelect}
-        multiSelect={true}
         getId={(item) => item.id}
-        getLabel={(item) => item.value}
         renderItem={(item, isSelected) => {
           const isPending = pendingIds.has(item.id);
-
+          const isNew = !!item.isNew;
+          const effectiveSelected = isNew || isSelected;
           return (
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                {/* Suggested dot indicator */}
-                {isSuggested(item.id) && !isSelected && !isPending && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top">Suggested</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="truncate">{item.value}</div>
-                </div>
-              </div>
-              {/* Pending badge takes priority over check icon */}
-              {isPending ? (
-                <span className="ml-auto flex-shrink-0 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  Pending
-                </span>
-              ) : (
-                <Check
-                  className={cn(
-                    "ml-auto flex-shrink-0 h-4 w-4",
-                    isSelected ? "opacity-100" : "opacity-0"
-                  )}
-                />
+            <div
+              className={cn(
+                "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[72px]",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                effectiveSelected && !isPending && !isNew && "ring-2 ring-primary bg-accent",
+                isPending && "ring-2 ring-success bg-success/10",
+                isNew && "ring-2 ring-primary/60 bg-primary/5 border-dashed",
               )}
+            >
+              {isSelected && !isPending && !isNew && (
+                <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3 w-3 text-primary-foreground" />
+                </div>
+              )}
+              {isNew && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/20 text-primary text-[10px] rounded font-medium">
+                  New
+                </div>
+              )}
+              {isPending && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </div>
+              )}
+              {isSuggested(item.id) && !isSelected && !isPending && !isNew && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Suggested</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              <div className="flex flex-col justify-center flex-1 overflow-hidden">
+                <span className="text-sm font-medium truncate">
+                  {item.value}
+                </span>
+              </div>
             </div>
           );
         }}
-        placeholder={placeholder}
+        emptyMessage="No protocols yet. Type one above to add it."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
       />
     </div>
   );

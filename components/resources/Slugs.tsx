@@ -1,14 +1,17 @@
 /**
  * Slugs.tsx
- * Resource component for slug selection
- * Uses GenericPicker to select existing slug resources
- * Manages slug_ids array and reports to parent
+ * Multi-select slug picker. Mirrors Departments.tsx (SelectableGrid card
+ * grid, horizontal scroll) and adds an inline "create" input: values the user
+ * types are emitted via `onValuesChange` so the parent can forward them as
+ * raw `slugs: string[]` on the next draft save — the server resolves or
+ * creates each one and echoes back `slug_ids`.
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Tooltip,
@@ -17,8 +20,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { Check, Plus, X } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 
 export interface SlugResourceItem {
   id?: string | null;
@@ -28,26 +31,27 @@ export interface SlugResourceItem {
   pending?: boolean | null;
 }
 
-export interface SlugItem {
+interface SlugGridItem {
   id: string;
   value: string;
+  isNew?: boolean;
 }
 
 export interface SlugsProps {
-  slug_ids?: string[]; // Current slug resource IDs (standardized prop name)
-  slug_resources?: SlugResourceItem[]; // Selected slug resources (each includes generated field)
-  show_slugs?: boolean; // Whether to show this resource picker
-  slugs?: SlugResourceItem[]; // All available slugs from API (each includes generated, suggested, and pending fields)
-  disabled?: boolean; // Based on can_edit flag
-  onChange: (ids: string[]) => void; // Update slug_ids in form state
+  slug_ids?: string[];
+  slug_resources?: SlugResourceItem[];
+  show_slugs?: boolean;
+  slugs?: SlugResourceItem[];
+  /** Raw values the user typed that haven't been resolved to ids yet. */
+  slug_values?: string[];
+  /** Emit the next raw-value array (parent forwards as `slugs` on save). */
+  onValuesChange?: (values: string[]) => void;
+  disabled?: boolean;
+  onChange: (ids: string[]) => void;
   label?: string;
   id?: string;
   required?: boolean;
-  placeholder?: string;
   description?: string;
-  aiSlugResources?: Array<{ id?: string | null; value?: string | null }> | null;
-  // Legacy props kept for backward compatibility (unused after pending migration)
-  isAutosaveEnabled?: boolean;
 }
 
 export function Slugs({
@@ -55,180 +59,235 @@ export function Slugs({
   slug_resources: _slug_resources,
   show_slugs = false,
   slugs,
+  slug_values,
+  onValuesChange,
   disabled = false,
   onChange,
   label = "Slugs",
   id = "slugs",
   required = false,
-  placeholder = "Select slugs...",
   description,
-  aiSlugResources: _aiSlugResources,
 }: SlugsProps) {
   const ids = useMemo(() => slug_ids ?? [], [slug_ids]);
+  const values = useMemo(() => slug_values ?? [], [slug_values]);
   const show = show_slugs ?? false;
   const allSlugs = useMemo(() => slugs ?? [], [slugs]);
+  const [input, setInput] = useState("");
 
-  // Pending state: items with pending=true from soft draft connections
-  const pendingItems = useMemo(() => {
-    return allSlugs.filter((s) => s.pending && s.id);
-  }, [allSlugs]);
+  const pendingItems = useMemo(
+    () => allSlugs.filter((s) => s.pending && s.id),
+    [allSlugs],
+  );
   const showDiff = pendingItems.length > 0;
   const pendingIds = useMemo(
     () => new Set(pendingItems.map((s) => s.id).filter(Boolean) as string[]),
-    [pendingItems]
+    [pendingItems],
   );
 
-  // Convert slugs array to SlugItem format for GenericPicker
-  const slugItems = useMemo(() => {
-    return allSlugs
-      .filter((s) => s.id && s.value) // Filter out nulls
-      .map((s) => ({
-        id: s.id!,
-        value: s.value!,
-      }));
-  }, [allSlugs]);
+  const catalogItems = useMemo<SlugGridItem[]>(
+    () =>
+      allSlugs
+        .filter((s) => s.id && s.value)
+        .map((s) => ({ id: s.id!, value: s.value! })),
+    [allSlugs],
+  );
 
-  // Check if a slug is suggested (derived from item.suggested field)
+  const gridItems = useMemo<SlugGridItem[]>(() => {
+    const existingLower = new Set(
+      catalogItems.map((s) => s.value.toLowerCase()),
+    );
+    const pseudo = values
+      .filter((v) => v && !existingLower.has(v.toLowerCase()))
+      .map<SlugGridItem>((v) => ({ id: `new:${v}`, value: v, isNew: true }));
+    return [...catalogItems, ...pseudo];
+  }, [catalogItems, values]);
+
   const isSuggested = useCallback(
     (slugId: string) => {
-      const slug = allSlugs.find((s) => s.id === slugId);
-      return slug?.suggested === true;
+      const s = allSlugs.find((x) => x.id === slugId);
+      return s?.suggested === true;
     },
-    [allSlugs]
+    [allSlugs],
   );
 
   const handleSelect = useCallback(
-    (selectedIds: string[]) => {
-      onChange(selectedIds);
+    (itemId: string) => {
+      if (itemId.startsWith("new:")) {
+        const raw = itemId.slice(4);
+        onValuesChange?.(values.filter((v) => v !== raw));
+        return;
+      }
+      onChange(
+        ids.includes(itemId) ? ids.filter((x) => x !== itemId) : [...ids, itemId],
+      );
     },
-    [onChange]
+    [ids, values, onChange, onValuesChange],
   );
 
-  // Accept pending — keep pending slugs in selection (no-op, they're already in ids)
+  const handleAdd = useCallback(() => {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    const lower = trimmed.toLowerCase();
+
+    const existing = catalogItems.find((s) => s.value.toLowerCase() === lower);
+    if (existing) {
+      if (!ids.includes(existing.id)) onChange([...ids, existing.id]);
+      setInput("");
+      return;
+    }
+
+    if (!values.some((v) => v.toLowerCase() === lower)) {
+      onValuesChange?.([...values, trimmed]);
+    }
+    setInput("");
+  }, [input, catalogItems, ids, values, onChange, onValuesChange]);
+
   const handleAccept = useCallback(() => {
-    // Pending items are already in ids (selected=true), just confirm
-    // The next draft save will persist them as active
-    // Nothing to change in form state — they're already included
+    // Pending items are already in selection — next save persists them.
   }, []);
 
-  // Reject pending — remove pending slugs from selection
   const handleReject = useCallback(() => {
-    const newIds = ids.filter((id) => !pendingIds.has(id));
-    onChange(newIds);
+    onChange(ids.filter((x) => !pendingIds.has(x)));
   }, [ids, pendingIds, onChange]);
 
-  // Don't render if show_slugs is false (AFTER all hooks)
-  if (!show) {
-    return null;
-  }
+  if (!show) return null;
 
   return (
-    <div className="space-y-2">
-      {label && (
-        <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1">
-            {label}
-            {required && <span className="text-destructive">*</span>}
-            {description && (
-              <span className="text-xs text-muted-foreground ml-2">
-                {description}
-              </span>
-            )}
-          </Label>
-          {showDiff && (
-            <>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-success hover:text-success"
-                      onClick={handleAccept}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Accept</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-destructive hover:text-destructive"
-                      onClick={handleReject}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Reject</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </>
+    <div className="space-y-3 min-w-0 w-full">
+      <div className="flex items-center gap-2">
+        <Label htmlFor={id} className="flex items-center gap-1">
+          {label}
+          {required && <span className="text-destructive">*</span>}
+          {description && (
+            <span className="text-xs text-muted-foreground ml-2">
+              {description}
+            </span>
           )}
+        </Label>
+        {showDiff && (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-success hover:text-success"
+                    onClick={handleAccept}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Accept</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
+        )}
+      </div>
+
+      {onValuesChange && (
+        <div className="flex items-center gap-2">
+          <Input
+            id={`${id}-new`}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAdd();
+              }
+            }}
+            placeholder="Type a slug and press Enter…"
+            disabled={disabled}
+            className="h-8 text-sm"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleAdd}
+            disabled={disabled || !input.trim()}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Add
+          </Button>
         </div>
       )}
-      <GenericPicker<SlugItem>
-        items={slugItems}
-        itemIds={allSlugs
-          .map((s) => s.id)
-          .filter((id): id is string => id !== null)} // All slug IDs from array, filter nulls
+
+      <SelectableGrid<SlugGridItem>
+        horizontal
+        items={gridItems}
+        selectedId={null}
         selectedIds={ids}
         onSelect={handleSelect}
-        multiSelect={true}
         getId={(item) => item.id}
-        getLabel={(item) => item.value}
         renderItem={(item, isSelected) => {
           const isPending = pendingIds.has(item.id);
-
+          const isNew = !!item.isNew;
+          const effectiveSelected = isNew || isSelected;
           return (
-            <div className={cn(
-              "flex items-center justify-between w-full",
-              isPending && "ring-2 ring-success bg-success/10 rounded-md px-1",
-            )}>
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                {/* Pending badge - priority over selected and suggested */}
-                {isPending && (
-                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium shrink-0">
-                    Pending
-                  </span>
-                )}
-                {/* Suggested dot indicator */}
-                {isSuggested(item.id) && !isSelected && !isPending && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top">Suggested</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="truncate">{item.value}</div>
-                </div>
-              </div>
-              {!isPending && (
-                <Check
-                  className={cn(
-                    "ml-auto flex-shrink-0 h-4 w-4",
-                    isSelected ? "opacity-100" : "opacity-0"
-                  )}
-                />
+            <div
+              className={cn(
+                "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[72px]",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                effectiveSelected && !isPending && !isNew && "ring-2 ring-primary bg-accent",
+                isPending && "ring-2 ring-success bg-success/10",
+                isNew && "ring-2 ring-primary/60 bg-primary/5 border-dashed",
               )}
+            >
+              {isSelected && !isPending && !isNew && (
+                <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3 w-3 text-primary-foreground" />
+                </div>
+              )}
+              {isNew && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/20 text-primary text-[10px] rounded font-medium">
+                  New
+                </div>
+              )}
+              {isPending && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </div>
+              )}
+              {isSuggested(item.id) && !isSelected && !isPending && !isNew && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Suggested</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              <div className="flex flex-col justify-center flex-1 overflow-hidden">
+                <span className="text-sm font-medium truncate">
+                  {item.value}
+                </span>
+              </div>
             </div>
           );
         }}
-        placeholder={placeholder}
+        emptyMessage="No slugs yet. Type one above to add it."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
       />
     </div>
   );

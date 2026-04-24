@@ -61,69 +61,18 @@ const MODEL_VALID_RESOURCE_TYPES: ResourceType[] = [
   "voices",
 ];
 
-// Helper: find current flag option ID from flags section by key
-const findCurrentFlagId = (
-  flags: CanonicalFlag[] | null | undefined,
-  key: string,
-): string | null => flags?.find((f) => f.key === key)?.flag_option_id ?? null;
+// Canonical: server returns one ModelFlagResource row per flags_resource entry
+// (typically two per logical flag: value=true and value=false). The client
+// carries selection as a flat `flag_ids: string[]`.
 
-// Canonical mapping from flag key → (flag_id field on FormState, associated
-// array field to clear when the flag turns off). Used by the unified
-// <Flags mode="multi"> picker so the 7 flag groups collapse into a single
-// render with one onChange handler instead of seven parallel JSX blocks.
-type ModelFlagKey =
-  | "active"
-  | "modalities_enabled"
-  | "temperature_enabled"
-  | "pricing_enabled"
-  | "voices_enabled"
-  | "reasoning_levels_enabled"
-  | "qualities_enabled";
-
-type ModelFlagMapping = {
-  flagField:
-    | "active_flag_id"
-    | "modalities_enabled_flag_id"
-    | "temperature_enabled_flag_id"
-    | "pricing_enabled_flag_id"
-    | "voices_enabled_flag_id"
-    | "reasoning_levels_enabled_flag_id"
-    | "qualities_enabled_flag_id";
-  idsField?:
-    | "modality_ids"
-    | "temperature_level_ids"
-    | "pricing_ids"
-    | "voice_ids"
-    | "reasoning_level_ids"
-    | "quality_ids";
-};
-
-const MODEL_FLAG_KEY_TO_FIELD: Record<ModelFlagKey, ModelFlagMapping> = {
-  active: { flagField: "active_flag_id" },
-  modalities_enabled: {
-    flagField: "modalities_enabled_flag_id",
-    idsField: "modality_ids",
-  },
-  temperature_enabled: {
-    flagField: "temperature_enabled_flag_id",
-    idsField: "temperature_level_ids",
-  },
-  pricing_enabled: {
-    flagField: "pricing_enabled_flag_id",
-    idsField: "pricing_ids",
-  },
-  voices_enabled: {
-    flagField: "voices_enabled_flag_id",
-    idsField: "voice_ids",
-  },
-  reasoning_levels_enabled: {
-    flagField: "reasoning_levels_enabled_flag_id",
-    idsField: "reasoning_level_ids",
-  },
-  qualities_enabled: {
-    flagField: "qualities_enabled_flag_id",
-    idsField: "quality_ids",
-  },
+// Map of flag type → per-feature ids array to clear when the flag turns off.
+const MODEL_FLAG_TYPE_TO_IDS_FIELD: Record<string, string | undefined> = {
+  modalities_enabled: "modality_ids",
+  temperature_enabled: "temperature_level_ids",
+  pricing_enabled: "pricing_ids",
+  voices_enabled: "voice_ids",
+  reasoning_levels_enabled: "reasoning_level_ids",
+  qualities_enabled: "quality_ids",
 };
 
 // Types defined inline using InputOf/OutputOf
@@ -135,22 +84,6 @@ type PatchModelDraftIn = InputOf<"/model/draft", "patch">;
 type PatchModelDraftOut = OutputOf<"/model/draft", "patch">;
 
 type ModelData = OutputOf<"/model/get", "post">;
-
-type CanonicalFlag = {
-  key?: string | null;
-  label?: string | null;
-  description?: string | null;
-  icon_id?: string | null;
-  flag_option_id?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-  show?: boolean | null;
-  required?: boolean | null;
-};
-
-
 
 const toSingleSection = <T extends { id?: string | null; selected?: boolean | null; suggested?: boolean | null }>(
   items: T[] | null | undefined,
@@ -192,6 +125,7 @@ const MODEL_RESOURCES: ResourceConfig[] = [
   },
   { key: "values", formKey: "value_id", flushKey: null, type: "single" },
   { key: "providers", formKey: "provider_id", flushKey: null, type: "single" },
+  { key: "flags", formKey: "flag_ids", flushKey: null, type: "multi" },
   {
     key: "departments",
     formKey: "department_ids",
@@ -369,13 +303,7 @@ function ModelComponent({
         value: null as string | null,
         value_id: null as string | null,
         provider_id: null as string | null,
-        active_flag_id: null as string | null,
-        modalities_enabled_flag_id: null as string | null,
-        temperature_enabled_flag_id: null as string | null,
-        pricing_enabled_flag_id: null as string | null,
-        voices_enabled_flag_id: null as string | null,
-        reasoning_levels_enabled_flag_id: null as string | null,
-        qualities_enabled_flag_id: null as string | null,
+        flag_ids: [] as string[],
         modality_ids: [] as string[],
         temperature_level_ids: [] as string[],
         reasoning_level_ids: [] as string[],
@@ -387,8 +315,6 @@ function ModelComponent({
       };
     }
 
-    const curFlags = data.flags ?? [];
-
     return {
       name: null as string | null,
       value: null as string | null,
@@ -398,25 +324,10 @@ function ModelComponent({
         data.descriptions?.find((item) => item.selected)?.id ?? null,
       value_id: data.values?.find((item) => item.selected)?.id ?? null,
       provider_id: data.providers?.find((item) => item.selected)?.id ?? null,
-      active_flag_id: findCurrentFlagId(curFlags, "active"),
-      modalities_enabled_flag_id: findCurrentFlagId(
-        curFlags,
-        "modalities_enabled",
-      ),
-      temperature_enabled_flag_id: findCurrentFlagId(
-        curFlags,
-        "temperature_enabled",
-      ),
-      pricing_enabled_flag_id: findCurrentFlagId(curFlags, "pricing_enabled"),
-      voices_enabled_flag_id: findCurrentFlagId(curFlags, "voices_enabled"),
-      reasoning_levels_enabled_flag_id: findCurrentFlagId(
-        curFlags,
-        "reasoning_levels_enabled",
-      ),
-      qualities_enabled_flag_id: findCurrentFlagId(
-        curFlags,
-        "qualities_enabled",
-      ),
+      flag_ids: (data.flags ?? [])
+        .filter((f: any) => f.selected)
+        .map((f: any) => f.id)
+        .filter((id: any): id is string => !!id),
       modality_ids: (data.modalities ?? [])
         .filter((item) => item.selected)
         .map((m) => m.id as string)
@@ -453,6 +364,69 @@ function ModelComponent({
   }, [defaultDepartmentIds]);
 
   const [formState, setFormState] = useState(getInitialFormState);
+
+  // Per-type boolean view of flag_ids, built from the catalog. Used by
+  // getStepStatus and the canonical <Flags> picker.
+  const flagValues = useMemo<Record<string, boolean | null>>(() => {
+    const map: Record<string, boolean | null> = {};
+    const byId = new Map(
+      (modelData?.flags ?? [])
+        .filter((f: any) => f.id)
+        .map((f: any) => [String(f.id), f]),
+    );
+    for (const id of formState.flag_ids) {
+      const row = byId.get(id) as any;
+      if (!row) continue;
+      // Strip the artifact prefix (server returns 'model_active', etc.).
+      const t = (row.type ?? row.name ?? "").replace(/^model_/, "");
+      if (t && row.value != null) map[t] = row.value;
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formState.flag_ids, modelData?.flags]);
+
+  type FlagRow = NonNullable<NonNullable<typeof modelData>["flags"]>[number];
+  const flagRowsByType = useMemo(() => {
+    const map = new Map<string, FlagRow[]>();
+    for (const f of modelData?.flags ?? []) {
+      const raw = (f as any).type ?? (f as any).name;
+      if (!raw) continue;
+      const t = String(raw).replace(/^model_/, "");
+      const list = map.get(t) ?? [];
+      list.push(f as FlagRow);
+      map.set(t, list);
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modelData?.flags]);
+
+  const handleFlagToggle = useCallback(
+    (type: string, next: boolean | null) => {
+      setFormState((prev) => {
+        const rows = (flagRowsByType.get(type) ?? []) as Array<{
+          id?: string | null;
+          value?: boolean | null;
+        }>;
+        const rowIdsForType = new Set(
+          rows.map((r) => r.id).filter((id): id is string => !!id),
+        );
+        const retained = prev.flag_ids.filter(
+          (id: string) => !rowIdsForType.has(id),
+        );
+        const target =
+          next == null
+            ? null
+            : (rows.find((r) => r.value === next)?.id ?? null);
+        const nextIds = target ? [...retained, target] : retained;
+        // When a feature flag turns off, also clear its associated multi-select.
+        const idsField = MODEL_FLAG_TYPE_TO_IDS_FIELD[type];
+        const cleared: Record<string, string[]> =
+          next === false && idsField ? { [idsField]: [] } : {};
+        return { ...prev, flag_ids: nextIds, ...cleared };
+      });
+    },
+    [flagRowsByType],
+  );
 
   // AI generation via shared hook
   const { isGenerating, generate } = useArtifactAi({
@@ -536,16 +510,7 @@ function ModelComponent({
         prev.description_id !== newState.description_id ||
         prev.value_id !== newState.value_id ||
         prev.provider_id !== newState.provider_id ||
-        prev.active_flag_id !== newState.active_flag_id ||
-        prev.modalities_enabled_flag_id !==
-          newState.modalities_enabled_flag_id ||
-        prev.temperature_enabled_flag_id !==
-          newState.temperature_enabled_flag_id ||
-        prev.pricing_enabled_flag_id !== newState.pricing_enabled_flag_id ||
-        prev.voices_enabled_flag_id !== newState.voices_enabled_flag_id ||
-        prev.reasoning_levels_enabled_flag_id !==
-          newState.reasoning_levels_enabled_flag_id ||
-        prev.qualities_enabled_flag_id !== newState.qualities_enabled_flag_id ||
+        JSON.stringify(prev.flag_ids) !== JSON.stringify(newState.flag_ids) ||
         JSON.stringify(prev.department_ids) !==
           JSON.stringify(newState.department_ids) ||
         JSON.stringify(prev.modality_ids) !==
@@ -609,25 +574,9 @@ function ModelComponent({
               value_id: fs.value_id ?? prev.value_id,
               value: fs.value_id ? null : prev.value,
               provider_id: fs.provider_id ?? prev.provider_id,
-              active_flag_id: fs.active_flag_id ?? prev.active_flag_id,
-              modalities_enabled_flag_id:
-                fs.modalities_enabled_flag_id ??
-                prev.modalities_enabled_flag_id,
-              temperature_enabled_flag_id:
-                fs.temperature_enabled_flag_id ??
-                prev.temperature_enabled_flag_id,
-              pricing_enabled_flag_id:
-                fs.pricing_enabled_flag_id ??
-                prev.pricing_enabled_flag_id,
-              voices_enabled_flag_id:
-                fs.voices_enabled_flag_id ??
-                prev.voices_enabled_flag_id,
-              reasoning_levels_enabled_flag_id:
-                fs.reasoning_levels_enabled_flag_id ??
-                prev.reasoning_levels_enabled_flag_id,
-              qualities_enabled_flag_id:
-                fs.qualities_enabled_flag_id ??
-                prev.qualities_enabled_flag_id,
+              flag_ids:
+                ((fs as Record<string, unknown>)["flag_ids"] as string[] | null) ??
+                prev.flag_ids,
               department_ids: fs.department_ids ?? prev.department_ids,
               modality_ids: fs.modality_ids ?? prev.modality_ids,
               temperature_level_ids:
@@ -649,13 +598,7 @@ function ModelComponent({
               prev.value_id !== next.value_id ||
               prev.value !== next.value ||
               prev.provider_id !== next.provider_id ||
-              prev.active_flag_id !== next.active_flag_id ||
-              prev.modalities_enabled_flag_id !== next.modalities_enabled_flag_id ||
-              prev.temperature_enabled_flag_id !== next.temperature_enabled_flag_id ||
-              prev.pricing_enabled_flag_id !== next.pricing_enabled_flag_id ||
-              prev.voices_enabled_flag_id !== next.voices_enabled_flag_id ||
-              prev.reasoning_levels_enabled_flag_id !== next.reasoning_levels_enabled_flag_id ||
-              prev.qualities_enabled_flag_id !== next.qualities_enabled_flag_id ||
+              JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
               JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
               JSON.stringify(prev.modality_ids) !== JSON.stringify(next.modality_ids) ||
               JSON.stringify(prev.temperature_level_ids) !== JSON.stringify(next.temperature_level_ids) ||
@@ -686,13 +629,7 @@ function ModelComponent({
       formState as unknown as Record<string, unknown>,
     ) ||
     !!formState.value_id ||
-    !!formState.active_flag_id ||
-    !!formState.modalities_enabled_flag_id ||
-    !!formState.temperature_enabled_flag_id ||
-    !!formState.pricing_enabled_flag_id ||
-    !!formState.voices_enabled_flag_id ||
-    !!formState.reasoning_levels_enabled_flag_id ||
-    !!formState.qualities_enabled_flag_id;
+    formState.flag_ids.length > 0;
 
   const buildPatchPayload = useCallback(
     (inputDraftId: string | null): Record<string, unknown> => {
@@ -705,28 +642,7 @@ function ModelComponent({
           referenceState: lastPatchedFormStateRef.current,
           flushResults: {},
         }),
-        flag_ids: [
-          effectiveFormState.active_flag_id,
-          effectiveFormState.modalities_enabled_flag_id,
-          effectiveFormState.temperature_enabled_flag_id,
-          effectiveFormState.pricing_enabled_flag_id,
-          effectiveFormState.voices_enabled_flag_id,
-          effectiveFormState.reasoning_levels_enabled_flag_id,
-          effectiveFormState.qualities_enabled_flag_id,
-        ].filter((id): id is string => id != null),
-        active_flag_id: effectiveFormState.active_flag_id ?? null,
-        modalities_enabled_flag_id:
-          effectiveFormState.modalities_enabled_flag_id ?? null,
-        temperature_enabled_flag_id:
-          effectiveFormState.temperature_enabled_flag_id ?? null,
-        pricing_enabled_flag_id:
-          effectiveFormState.pricing_enabled_flag_id ?? null,
-        voices_enabled_flag_id:
-          effectiveFormState.voices_enabled_flag_id ?? null,
-        reasoning_levels_enabled_flag_id:
-          effectiveFormState.reasoning_levels_enabled_flag_id ?? null,
-        qualities_enabled_flag_id:
-          effectiveFormState.qualities_enabled_flag_id ?? null,
+        flag_ids: effectiveFormState.flag_ids ?? [],
         pending_ids: effectiveFormState.pending_ids ?? [],
       };
 
@@ -942,15 +858,7 @@ function ModelComponent({
 
       try {
         const efs = effectiveFormState;
-        const flagIds = [
-          efs.active_flag_id,
-          efs.modalities_enabled_flag_id,
-          efs.temperature_enabled_flag_id,
-          efs.pricing_enabled_flag_id,
-          efs.voices_enabled_flag_id,
-          efs.reasoning_levels_enabled_flag_id,
-          efs.qualities_enabled_flag_id,
-        ].filter((id): id is string => id != null);
+        const flagIds = efs.flag_ids ?? [];
 
         if (isEditMode && modelId && updateModelAction) {
           await updateModelAction({
@@ -1026,13 +934,12 @@ function ModelComponent({
       const hasDescription = !!formState.description_id;
       const hasProvider = !!formState.provider_id;
       const hasModalities = formState.modality_ids.length > 0;
-      const modalities_enabled_flag_id = formState.modalities_enabled_flag_id;
-      const temperature_enabled_flag_id = formState.temperature_enabled_flag_id;
-      const pricing_enabled_flag_id = formState.pricing_enabled_flag_id;
-      const voices_enabled_flag_id = formState.voices_enabled_flag_id;
-      const reasoning_levels_enabled_flag_id =
-        formState.reasoning_levels_enabled_flag_id;
-      const qualities_enabled_flag_id = formState.qualities_enabled_flag_id;
+      const modalities_enabled_flag_id = !!flagValues["modalities_enabled"];
+      const temperature_enabled_flag_id = !!flagValues["temperature_enabled"];
+      const pricing_enabled_flag_id = !!flagValues["pricing_enabled"];
+      const voices_enabled_flag_id = !!flagValues["voices_enabled"];
+      const reasoning_levels_enabled_flag_id = !!flagValues["reasoning_levels_enabled"];
+      const qualities_enabled_flag_id = !!flagValues["qualities_enabled"];
 
       switch (stepId) {
         case "basic":
@@ -1096,7 +1003,7 @@ function ModelComponent({
           return "pending";
       }
     },
-    [formState],
+    [formState, flagValues],
   );
 
   // Steps configuration
@@ -1113,13 +1020,7 @@ function ModelComponent({
           "descriptionSearch",
           "value_id",
           "valueSearch",
-          "active_flag_id",
-          "modalities_enabled_flag_id",
-          "temperature_enabled_flag_id",
-          "pricing_enabled_flag_id",
-          "voices_enabled_flag_id",
-          "reasoning_levels_enabled_flag_id",
-          "qualities_enabled_flag_id",
+          "flag_ids",
           "departmentSearch",
           "department_ids",
         ],
@@ -1180,13 +1081,7 @@ function ModelComponent({
     () => [
       "name_id",
       "description_id",
-      "active_flag_id",
-      "modalities_enabled_flag_id",
-      "temperature_enabled_flag_id",
-      "pricing_enabled_flag_id",
-      "voices_enabled_flag_id",
-      "reasoning_levels_enabled_flag_id",
-      "qualities_enabled_flag_id",
+      "flag_ids",
       "value_id",
       "provider_id",
       "department_ids",
@@ -1241,13 +1136,7 @@ function ModelComponent({
             name_id: null,
             description_id: null,
             value_id: null,
-            active_flag_id: null,
-            modalities_enabled_flag_id: null,
-            temperature_enabled_flag_id: null,
-            pricing_enabled_flag_id: null,
-            voices_enabled_flag_id: null,
-            reasoning_levels_enabled_flag_id: null,
-            qualities_enabled_flag_id: null,
+            flag_ids: [],
             department_ids: [],
           };
         case "provider":
@@ -1349,13 +1238,7 @@ function ModelComponent({
                 "name_id",
                 "description_id",
                 "value_id",
-                "active_flag_id",
-                "modalities_enabled_flag_id",
-                "temperature_enabled_flag_id",
-                "pricing_enabled_flag_id",
-                "voices_enabled_flag_id",
-                "reasoning_levels_enabled_flag_id",
-                "qualities_enabled_flag_id",
+                "flag_ids",
                 "department_ids",
               ]}
               {...(onReset ? { onReset } : {})}
@@ -1467,39 +1350,14 @@ function ModelComponent({
                     still clears the associated ids array when a toggle
                     turns off (e.g. modalities_enabled → modality_ids). */}
                 <Flags
-                  mode="multi"
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   flags={allFlags as any}
-                  flag_ids={Object.fromEntries(
-                    (
-                      Object.entries(MODEL_FLAG_KEY_TO_FIELD) as Array<
-                        [ModelFlagKey, ModelFlagMapping]
-                      >
-                    ).map(([key, { flagField }]) => [
-                      key,
-                      (formState[flagField] as string | null | undefined) ?? null,
-                    ]),
-                  )}
+                  values={flagValues}
                   show_flags={allFlags.length > 0}
                   columns={1}
                   label="Flags"
                   disabled={disabled}
-                  onChange={(key: string, flagId: string | null) => {
-                    const mapping =
-                      MODEL_FLAG_KEY_TO_FIELD[key as ModelFlagKey];
-                    if (!mapping) return;
-                    setFormState((prev) => {
-                      const next = {
-                        ...prev,
-                        [mapping.flagField]: flagId,
-                      } as typeof prev;
-                      if (!flagId && mapping.idsField) {
-                        (next as Record<string, unknown>)[mapping.idsField] =
-                          [];
-                      }
-                      return next;
-                    });
-                  }}
+                  onChange={handleFlagToggle}
                 />
               </div>
             </StepCard>
@@ -1538,7 +1396,7 @@ function ModelComponent({
           );
 
         case "modalities":
-          if (!formState.modalities_enabled_flag_id) return null;
+          if (!flagValues["modalities_enabled"]) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1603,7 +1461,7 @@ function ModelComponent({
           );
 
         case "temperature":
-          if (!formState.temperature_enabled_flag_id) return null;
+          if (!flagValues["temperature_enabled"]) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1684,7 +1542,7 @@ function ModelComponent({
           );
 
         case "pricing":
-          if (!formState.pricing_enabled_flag_id) return null;
+          if (!flagValues["pricing_enabled"]) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1751,7 +1609,7 @@ function ModelComponent({
           );
 
         case "reasoning":
-          if (!formState.reasoning_levels_enabled_flag_id) return null;
+          if (!flagValues["reasoning_levels_enabled"]) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1829,7 +1687,7 @@ function ModelComponent({
           );
 
         case "voices":
-          if (!formState.voices_enabled_flag_id) return null;
+          if (!flagValues["voices_enabled"]) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1877,7 +1735,7 @@ function ModelComponent({
           );
 
         case "qualities":
-          if (!formState.qualities_enabled_flag_id) return null;
+          if (!flagValues["qualities_enabled"]) return null;
           return (
             <StepCard
               stepStatus={stepStatus}

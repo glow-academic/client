@@ -93,7 +93,7 @@ const AGENT_RESOURCES: ResourceConfig[] = [
     flushKey: null,
     type: "single",
   },
-  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  { key: "flags", formKey: "flag_ids", flushKey: null, type: "multi" },
   {
     key: "departments",
     formKey: "department_ids",
@@ -445,7 +445,7 @@ export default function Agent({
     description: string | null;
     prompt_id: string | null;
     modelId: string;
-    active_flag_id: string | null;
+    flag_ids: string[];
     tool_ids: string[];
     departmentIds: string[];
     temperature_level_id: string | null;
@@ -483,7 +483,7 @@ export default function Agent({
         description: null,
         prompt_id: null,
         modelId: "",
-        active_flag_id: null,
+        flag_ids: [],
         tool_ids: [],
         departmentIds: defaultDepartmentIds,
         temperature_level_id: null,
@@ -496,7 +496,9 @@ export default function Agent({
       };
     }
 
-    const currentFlag = data.flags?.current?.[0];
+    const currentFlagIds: string[] = ((data.flags?.current ?? []) as any[])
+      .map((f: any) => f.id)
+      .filter((id: any): id is string => !!id);
     const currentDepartments =
       data.departments?.current
         ?.map((d: any) => d.department_id)
@@ -529,7 +531,7 @@ export default function Agent({
       description: null,
       prompt_id: data.prompts?.resource?.id ?? null,
       modelId: data.models?.resource?.id ?? "",
-      active_flag_id: currentFlag?.flag_option_id ?? null,
+      flag_ids: currentFlagIds,
       tool_ids: currentTools,
       departmentIds: currentDepartments,
       temperature_level_id: data.temperature_levels?.resource?.id ?? null,
@@ -618,7 +620,7 @@ export default function Agent({
             name: fs.name_id ? null : prev.name,
             description_id: fs.description_id ?? prev.description_id,
             description: fs.description_id ? null : prev.description,
-            active_flag_id: (fs as any).active_flag_id ?? prev.active_flag_id,
+            flag_ids: (fs as any).flag_ids ?? prev.flag_ids,
             departmentIds: fs.department_ids ?? prev.departmentIds,
             modelId: (fs as any).model_id ?? prev.modelId,
             tool_ids: fs.tool_ids ?? prev.tool_ids,
@@ -641,7 +643,7 @@ export default function Agent({
             prev.name !== next.name ||
             prev.description_id !== next.description_id ||
             prev.description !== next.description ||
-            prev.active_flag_id !== next.active_flag_id ||
+            JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
             prev.modelId !== next.modelId ||
             prev.reasoning_level_id !== next.reasoning_level_id ||
             prev.temperature_level_id !== next.temperature_level_id ||
@@ -696,10 +698,7 @@ export default function Agent({
           (flushResults["instructions_id"] as string | undefined) ??
           currentDraftState.instructions_id ??
           null,
-        flag_ids: currentDraftState.active_flag_id
-          ? [currentDraftState.active_flag_id]
-          : [],
-        active_flag_id: currentDraftState.active_flag_id ?? null,
+        flag_ids: currentDraftState.flag_ids ?? [],
         pending_ids: currentDraftState.pending_ids ?? [],
       };
       delete base["modelId"];
@@ -939,7 +938,7 @@ export default function Agent({
     () => ({
       name: (_s, init) => ({ name_id: init.name_id }),
       description: (_s, init) => ({ description_id: init.description_id }),
-      active: (_s, init) => ({ active_flag_id: init.active_flag_id }),
+      active: (_s, init) => ({ flag_ids: init.flag_ids }),
       departmentIds: (_s, init) => ({ departmentIds: init.departmentIds }),
       tool_ids: (_s, init) => ({ tool_ids: init.tool_ids }),
       modelId: (_s, init) => ({ modelId: init.modelId }),
@@ -1028,7 +1027,7 @@ export default function Agent({
         }
 
         const efsTyped = efs as unknown as DraftState;
-        const flagId = efsTyped.active_flag_id;
+        const flagIds = efsTyped.flag_ids ?? [];
         const deptIds = (efs["department_ids"] as string[])?.length
           ? (efs["department_ids"] as string[])
           : undefined;
@@ -1052,7 +1051,7 @@ export default function Agent({
                   name: efsTyped.name ?? undefined,
                   description_id: efsTyped.description_id ?? undefined,
                   description: efsTyped.description ?? undefined,
-                  flag_ids: flagId ? [flagId] : undefined,
+                  flag_ids: flagIds.length > 0 ? flagIds : undefined,
                   model_id: modelId ?? undefined,
                   department_ids: deptIds,
                   tool_ids: tIds,
@@ -1089,7 +1088,7 @@ export default function Agent({
                   name: efsTyped.name ?? undefined,
                   description_id: efsTyped.description_id ?? undefined,
                   description: efsTyped.description ?? undefined,
-                  flag_ids: flagId ? [flagId] : undefined,
+                  flag_ids: flagIds.length > 0 ? flagIds : undefined,
                   model_id: modelId ?? undefined,
                   department_ids: deptIds,
                   tool_ids: tIds,
@@ -1594,17 +1593,40 @@ export default function Agent({
                         />
 
                         <Flags
-                          flags={flagsSection?.resources ?? []}
-                          flag_id={draftState.active_flag_id}
+                          flags={(flagsSection?.resources ?? []) as any}
+                          values={(() => {
+                            const map: Record<string, boolean | null> = {};
+                            const rows = (flagsSection?.resources ?? []) as any[];
+                            const byId = new Map(
+                              rows.filter((f: any) => f.id).map((f: any) => [f.id as string, f])
+                            );
+                            for (const id of draftState.flag_ids) {
+                              const row = byId.get(id) as any;
+                              if (!row) continue;
+                              const type = row.type ?? row.name;
+                              if (type && row.value != null) map[type] = row.value;
+                            }
+                            return map;
+                          })()}
                           show_flags={flagsSection?.show ?? false}
                           columns={1}
                           label="Flags"
                           disabled={isReadonly}
-                          onChange={(flagId: string | null) => {
-                            setDraftState((prev) => ({
-                              ...prev,
-                              active_flag_id: flagId,
-                            }));
+                          onChange={(type: string, next: boolean | null) => {
+                            setDraftState((prev) => {
+                              const rows = ((flagsSection?.resources ?? []) as any[])
+                                .filter((f: any) => (f.type ?? f.name) === type);
+                              const rowIds = new Set(
+                                rows.map((r: any) => r.id).filter((id: any): id is string => !!id)
+                              );
+                              const retained = prev.flag_ids.filter((id) => !rowIds.has(id));
+                              const target =
+                                next == null ? null : rows.find((r: any) => r.value === next)?.id ?? null;
+                              return {
+                                ...prev,
+                                flag_ids: target ? [...retained, target] : retained,
+                              };
+                            });
                           }}
                         />
                       </div>
