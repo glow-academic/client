@@ -7,7 +7,6 @@
 
 import TableRubric from "@/components/artifacts/rubric/TableRubric";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useEntryAi } from "@/hooks/use-entry-ai";
 import type { components } from "@/lib/api/schema";
 
 // ---- OpenAPI types (single source of truth) ----
@@ -37,15 +36,11 @@ export function RubricView({
   rubric_structure,
   grading_state,
   analyses,
-  group_id,
+  group_id: _group_id,
   rubric_id,
   chat_id,
   analyses_enabled,
 }: RubricViewProps) {
-  // ---- Entry-level AI subscriptions ----
-  const { events: _feedbacksEvents } = useEntryAi({ entryType: "feedbacks", groupId: group_id });
-  const { events: _analysesEvents } = useEntryAi({ entryType: "analyses", groupId: group_id });
-
   const standardGroups = rubric_structure?.standard_groups || {};
   const standardGroupsMapping = rubric_structure?.standard_groups_mapping || {};
   const standardsMapping = rubric_structure?.standards_mapping || {};

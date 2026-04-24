@@ -38,7 +38,7 @@ import {
   User,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useEntryAi } from "@/hooks/use-entry-ai";
+import { useGenerationEvents } from "@/hooks/use-generation-events";
 import { MessageContentAdapter } from "../generic/utils/MessageContentAdapter";
 
 // ---- OpenAPI types (single source of truth) ----
@@ -153,7 +153,16 @@ export function MessagesView({
   // reshuffled the `messages` memo identity on every feedback frame,
   // re-firing the scroll-to-bottom effect and preventing the user
   // from scrolling up. Subscribe only to what's actually consumed.
-  const { events: hintsEvents } = useEntryAi({ entryType: "hints", groupId: group_id });
+  const { history: hintsEvents } = useGenerationEvents({
+    events: {
+      started: "hints_generation_started",
+      progress: "hints_generation_progress",
+      complete: "hints_generation_complete",
+      error: "hints_generation_error",
+    },
+    scope: { groupId: group_id },
+    accumulate: true,
+  });
 
   // Track which messages have new hints from entry events
   const messagesWithNewHints = useMemo(() => {

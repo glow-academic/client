@@ -38,7 +38,7 @@ import { Qualities } from "@/components/resources/Qualities";
 import { Rubrics } from "@/components/resources/Rubrics";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useAgentAi } from "@/hooks/use-agent-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import {
   buildDraftPayload,
@@ -1271,31 +1271,8 @@ export default function Agent({
     [canRegenerate],
   );
 
-  // Valid resource types for AI generation
-  const AGENT_VALID_RESOURCE_TYPES: ResourceType[] = useMemo(
-    () => [
-      "names",
-      "descriptions",
-      "models",
-      "prompts",
-      "instructions",
-      "flags",
-      "departments",
-      "reasoning_levels",
-      "temperature_levels",
-      "voices",
-      "tools",
-      "qualities",
-      "rubrics",
-    ],
-    [],
-  );
-
   // AI generation hook
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "agent",
-    validResourceTypes: AGENT_VALID_RESOURCE_TYPES,
-  });
+  const { isGenerating, generate } = useAgentAi({});
   const isGeneratingForStepCard = useCallback(
     (resourceType: string) => isGenerating(resourceType as ResourceType),
     [isGenerating],

@@ -19,7 +19,7 @@ import { Names } from "@/components/resources/Names";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useParameterAi } from "@/hooks/use-parameter-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
@@ -49,14 +49,6 @@ type ParameterFormState = {
   field_ids: string[];
   pending_ids: string[];
 };
-
-const VALID_RESOURCE_TYPES: ResourceType[] = [
-  "names",
-  "descriptions",
-  "flags",
-  "departments",
-  "fields",
-];
 
 const PARAMETER_RESOURCES: ResourceConfig[] = [
   { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
@@ -403,10 +395,7 @@ function ParameterComponent({
     },
   });
 
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "parameter",
-    validResourceTypes: VALID_RESOURCE_TYPES,
-  });
+  const { isGenerating, generate } = useParameterAi({});
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: ResourceType[], userInstructions?: string) => {

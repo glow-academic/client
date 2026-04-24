@@ -76,7 +76,7 @@ const SETTING_THRESHOLD_TYPES: Array<{ type: string; label: string; default: num
   { type: "warning", label: "Warning", default: 80 },
   { type: "danger", label: "Danger", default: 70 },
 ];
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useSettingAi } from "@/hooks/use-setting-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
@@ -286,10 +286,7 @@ function Setting({
     []
   );
 
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "setting",
-    validResourceTypes: VALID_RESOURCE_TYPES,
-  });
+  const { isGenerating, generate } = useSettingAi({});
 
   const pendingIdsBySection = useMemo(
     () => ({

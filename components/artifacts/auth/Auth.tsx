@@ -25,7 +25,7 @@ import { Slugs } from "@/components/resources/Slugs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useAuthAi } from "@/hooks/use-auth-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -78,15 +78,6 @@ type AuthResourceType =
 
 const FLUSH_KEYS = [] as const;
 
-const VALID_RESOURCE_TYPES: AuthResourceType[] = [
-  "names",
-  "descriptions",
-  "flags",
-  "protocols",
-  "slugs",
-  "items",
-];
-
 export interface AuthProps {
   authId?: string;
   authData?: AuthData;
@@ -126,10 +117,7 @@ function AuthComponent({
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
   const { flushRegistryRef, flushAllResources } = useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "auth",
-    validResourceTypes: VALID_RESOURCE_TYPES as string[],
-  });
+  const { isGenerating, generate } = useAuthAi({});
 
   const getInitialFormState = useCallback((): AuthFormState => {
     if (!s) {

@@ -19,7 +19,7 @@ import { Keys } from "@/components/resources/Keys";
 import { Names } from "@/components/resources/Names";
 import { Values } from "@/components/resources/Values";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useProviderAi } from "@/hooks/use-provider-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
@@ -61,16 +61,6 @@ const PROVIDER_RESOURCES: ResourceConfig[] = [
   { key: "values", formKey: "value_id", flushKey: null, type: "single" },
   { key: "endpoints", formKey: "endpoint_id", flushKey: null, type: "single" },
   { key: "keys", formKey: "key_id", flushKey: null, type: "single" },
-];
-
-const VALID_RESOURCE_TYPES: ResourceType[] = [
-  "names",
-  "descriptions",
-  "flags",
-  "departments",
-  "values",
-  "endpoints",
-  "keys",
 ];
 
 export interface ProviderProps {
@@ -141,10 +131,7 @@ export default function Provider({
     referenceStateRef.current = initial;
   }, [getInitialFormState]);
 
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "provider",
-    validResourceTypes: VALID_RESOURCE_TYPES as string[],
-  });
+  const { isGenerating, generate } = useProviderAi({});
 
   const providerSearchParamsClient = useMemo(
     () => ({ draftId: parseAsString }),

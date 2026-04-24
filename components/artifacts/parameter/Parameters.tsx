@@ -34,7 +34,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useParameterAi } from "@/hooks/use-parameter-ai";
 import { useProfile } from "@/contexts/profile-context";
 
 import {
@@ -83,9 +83,7 @@ export default function Parameters({
   const { profile } = useProfile();
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
 
-  useArtifactAi({
-    artifactType: "parameter",
-    validResourceTypes: ["names", "descriptions", "flags", "departments", "fields"],
+  useParameterAi({
     onComplete: () => router.refresh(),
   });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);

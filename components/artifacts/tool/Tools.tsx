@@ -41,7 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useToolAi } from "@/hooks/use-tool-ai";
 
 export interface ToolsProps {
   // Server-provided data (for server-side rendering)
@@ -72,9 +72,7 @@ export default function Tools({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  useArtifactAi({
-    artifactType: "tool",
-    validResourceTypes: ["names", "descriptions", "args", "arg_positions", "args_outputs", "flags"],
+  useToolAi({
     onComplete: () => router.refresh(),
   });
 

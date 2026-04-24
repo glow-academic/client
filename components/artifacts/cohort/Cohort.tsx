@@ -36,7 +36,7 @@ import { Simulations } from "@/components/resources/Simulations";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useCohortAi } from "@/hooks/use-cohort-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -98,18 +98,6 @@ export interface CohortProps {
     input: PatchCohortDraftIn,
   ) => Promise<PatchCohortDraftOut>;
 }
-
-const VALID_RESOURCE_TYPES = [
-  "names",
-  "descriptions",
-  "flags",
-  "departments",
-  "simulations",
-  "simulation_positions",
-  "simulation_availability",
-  "profiles",
-  "profile_personas",
-] as const;
 
 const COHORT_RESOURCES: ResourceConfig[] = [
   { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
@@ -219,10 +207,7 @@ function CohortComponent({
     useFlushRegistry<FlushResult>([]);
 
   // --- AI Generation ---
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "cohort",
-    validResourceTypes: VALID_RESOURCE_TYPES as unknown as ResourceType[],
-  });
+  const { isGenerating, generate } = useCohortAi({});
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   // Memoize to prevent new object reference on every render

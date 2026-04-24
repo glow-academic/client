@@ -47,7 +47,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useRubricAi } from "@/hooks/use-rubric-ai";
 
 export interface RubricsProps {
   // Server-provided data (for server-side rendering)
@@ -81,9 +81,7 @@ export default function Rubrics({
   const searchParams = useSearchParams();
   const { profile } = useProfile();
 
-  useArtifactAi({
-    artifactType: "rubric",
-    validResourceTypes: ["names", "descriptions", "departments", "flags", "points", "pass_points", "standard_groups", "standards"],
+  useRubricAi({
     onComplete: () => router.refresh(),
   });
 

@@ -39,7 +39,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useProviderAi } from "@/hooks/use-provider-ai";
 
 export interface ProvidersProps {
   // Server-provided data (for server-side rendering)
@@ -70,9 +70,7 @@ export default function Providers({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  useArtifactAi({
-    artifactType: "provider",
-    validResourceTypes: ["names", "descriptions", "flags", "departments", "values", "endpoints"],
+  useProviderAi({
     onComplete: () => router.refresh(),
   });
 

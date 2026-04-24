@@ -1,5 +1,5 @@
 /**
- * usePersonaAi — per-artifact composition of the three generation primitives.
+ * useDepartmentAi — per-artifact composition of the three generation primitives.
  *
  * Canonical template for per-artifact wrappers. Each artifact gets its own
  * ~80-line file that:
@@ -9,8 +9,8 @@
  *      here: the Set of resource_types currently generating, so callers can
  *      ask `isGenerating(rt)` per resource.
  *
- * Replaces the persona-level call into the deprecated `useArtifactAi`. When
- * server event names canonicalize to `artifacts.persona.generate.*`, update
+ * Replaces the department-level call into the deprecated `useArtifactAi`. When
+ * server event names canonicalize to `artifacts.department.generate.*`, update
  * the EVENTS map below — no caller change required.
  */
 "use client";
@@ -21,7 +21,7 @@ import { useGenerationEmit } from "./use-generation-emit";
 import { useGenerationEvents } from "./use-generation-events";
 import { useGenerationToast } from "./use-generation-toast";
 
-const ARTIFACT = "persona";
+const ARTIFACT = "department";
 
 const EVENTS = {
   started: `${ARTIFACT}_generation_started`,
@@ -32,7 +32,7 @@ const EVENTS = {
 
 const GENERATE_EVENT = "generate";
 
-export interface UsePersonaAiConfig {
+export interface UseDepartmentAiConfig {
   /** Filter incoming events by group_id. */
   groupId?: string | null;
   /** Filter by entity_id. */
@@ -43,7 +43,7 @@ export interface UsePersonaAiConfig {
   withToast?: boolean;
 }
 
-export interface UsePersonaAiReturn {
+export interface UseDepartmentAiReturn {
   /** Any resource type currently generating. */
   isAnyGenerating: boolean;
   /** True if the given resource_type is currently generating. Called with no arg: any. */
@@ -54,7 +54,7 @@ export interface UsePersonaAiReturn {
   generationProgress: number;
   /** Latest progress payload. */
   partial: Record<string, unknown> | null;
-  /** Emit a persona generation. `resourceTypes` is the list of resources to generate. */
+  /** Emit a department generation. `resourceTypes` is the list of resources to generate. */
   generate: (
     resourceTypes: string[],
     options?: Record<string, unknown>,
@@ -71,9 +71,9 @@ function pickResourceTypes(raw: Record<string, unknown> | null): string[] {
   return typeof single === "string" ? [single] : [];
 }
 
-export function usePersonaAi(
-  config: UsePersonaAiConfig = {},
-): UsePersonaAiReturn {
+export function useDepartmentAi(
+  config: UseDepartmentAiConfig = {},
+): UseDepartmentAiReturn {
   const { groupId = null, entityId = null, onComplete, withToast = true } = config;
 
   const events = useGenerationEvents({

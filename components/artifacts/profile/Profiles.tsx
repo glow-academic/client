@@ -85,7 +85,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useProfileAi } from "@/hooks/use-profile-ai";
 import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
 import { SvgIcon } from "@/components/common/SvgIcon";
@@ -378,9 +378,7 @@ export default function Profiles({
   } = useProfile();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useArtifactAi({
-    artifactType: "profile",
-    validResourceTypes: ["names", "flags", "departments", "emails"],
+  useProfileAi({
     onComplete: () => router.refresh(),
   });
 

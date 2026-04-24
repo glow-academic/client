@@ -32,7 +32,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useModelAi } from "@/hooks/use-model-ai";
 import { useProfile } from "@/contexts/profile-context";
 import {
   ColumnDef,
@@ -91,9 +91,7 @@ export default function Models({
   const { profile } = useProfile();
 
   // AI generation listener
-  useArtifactAi({
-    artifactType: "model",
-    validResourceTypes: ["names", "descriptions", "values", "providers", "flags", "departments", "modalities", "temperature_levels", "pricing", "reasoning_levels"],
+  useModelAi({
     onComplete: () => router.refresh(),
   });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);

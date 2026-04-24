@@ -20,7 +20,7 @@ import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useToolAi } from "@/hooks/use-tool-ai";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -50,12 +50,6 @@ type ToolFormState = {
   pending_ids: string[];
 };
 
-const VALID_TOOL_RESOURCE_TYPES: ToolResourceType[] = [
-  "args",
-  "arg_positions",
-  "args_outputs",
-];
-
 export interface ToolProps {
   toolId?: string;
   toolData?: ToolData;
@@ -76,10 +70,7 @@ function ToolComponent({
   const { selectedDraftId, setSelectedDraftId, isAutosaveEnabled } = useDrafts();
   const { flushAllResources } =
     useFlushRegistry<Record<string, unknown>>([]);
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "tool",
-    validResourceTypes: VALID_TOOL_RESOURCE_TYPES,
-  });
+  const { isGenerating, generate } = useToolAi({});
 
   const toolDataRef = useRef(toolData);
   useEffect(() => {

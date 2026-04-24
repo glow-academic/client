@@ -68,7 +68,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useCohortAi } from "@/hooks/use-cohort-ai";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
 export interface CohortsProps {
@@ -113,9 +113,7 @@ export default function Cohorts({
   flagSearch,
 }: CohortsProps) {
   const router = useRouter();
-  useArtifactAi({
-    artifactType: "cohort",
-    validResourceTypes: ["names", "descriptions", "flags", "departments", "simulations", "simulation_positions", "simulation_availability", "profiles", "profile_personas"],
+  useCohortAi({
     onComplete: () => router.refresh(),
   });
   const pathname = usePathname();

@@ -30,7 +30,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useSimulationAi } from "@/hooks/use-simulation-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -175,18 +175,6 @@ export interface SimulationProps {
     input: PatchSimulationDraftIn,
   ) => Promise<PatchSimulationDraftOut>;
 }
-
-const VALID_RESOURCE_TYPES: SimulationResourceType[] = [
-  "names",
-  "descriptions",
-  "flags",
-  "departments",
-  "scenarios",
-  "scenario_flags",
-  "scenario_positions",
-  "scenario_rubrics",
-  "scenario_time_limits",
-];
 
 const SIMULATION_RESOURCES: ResourceConfig[] = [
   { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
@@ -524,10 +512,7 @@ function SimulationComponent({
   );
 
   // --- AI Generation ---
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "simulation",
-    validResourceTypes: VALID_RESOURCE_TYPES,
-  });
+  const { isGenerating, generate } = useSimulationAi({});
 
   // Helper to check if a resource type can be regenerated
   // Use stableSimulationDataFields to prevent callback recreation when simulationData object reference changes

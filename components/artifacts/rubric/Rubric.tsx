@@ -25,7 +25,7 @@ import { StandardGroups } from "@/components/resources/StandardGroups";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useRubricAi } from "@/hooks/use-rubric-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -218,16 +218,6 @@ const FLUSH_KEYS = [
   "standard_groups",
 ] as const;
 
-const VALID_RESOURCE_TYPES: RubricResourceType[] = [
-  "names",
-  "descriptions",
-  "flags",
-  "departments",
-  "points",
-  "standard_groups",
-  "standards",
-];
-
 const RUBRIC_RESOURCES: ResourceConfig[] = [
   { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
   {
@@ -306,10 +296,7 @@ function RubricComponent({
   const { flushRegistryRef } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "rubric",
-    validResourceTypes: VALID_RESOURCE_TYPES as string[],
-  });
+  const { isGenerating, generate } = useRubricAi({});
 
   const getInitialFormState = useCallback((): RubricFormState => {
     if (!s) {

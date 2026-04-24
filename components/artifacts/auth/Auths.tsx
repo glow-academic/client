@@ -21,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useAuthAi } from "@/hooks/use-auth-ai";
 import { useProfile } from "@/contexts/profile-context";
 
 import type {
@@ -48,9 +48,7 @@ export default function Auths({
   const router = useRouter();
   const { profile } = useProfile();
 
-  useArtifactAi({
-    artifactType: "auth",
-    validResourceTypes: ["names", "descriptions", "flags", "protocols", "slugs", "items"],
+  useAuthAi({
     onComplete: () => router.refresh(),
   });
 

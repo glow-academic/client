@@ -33,7 +33,7 @@ import { Names } from "@/components/resources/Names";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDrafts } from "@/contexts/draft-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useEvalAi } from "@/hooks/use-eval-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
@@ -213,15 +213,8 @@ function EvalComponent({
   }, [evalData]);
 
   // Generation state for AI workflows
-  const VALID_EVAL_RESOURCE_TYPES: EvalResourceType[] = [
-    "names", "descriptions", "flags", "departments", "models",
-    "model_flags", "model_positions", "model_rubrics",
-  ];
   const { isGenerating, makeOnGenerationComplete, generate } =
-    useArtifactAi({
-      artifactType: "eval",
-      validResourceTypes: VALID_EVAL_RESOURCE_TYPES,
-    });
+    useEvalAi({});
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   const evalSearchParamsClient = useMemo(

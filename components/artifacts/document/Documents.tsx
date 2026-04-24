@@ -70,7 +70,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useDocumentAi } from "@/hooks/use-document-ai";
 import { useRouter } from "next/navigation";
 
 // Helper function to truncate text
@@ -125,9 +125,7 @@ export default function Documents({
 }: DocumentsProps) {
   const router = useRouter();
 
-  useArtifactAi({
-    artifactType: "document",
-    validResourceTypes: ["names", "descriptions", "flags", "departments", "fields", "uploads", "images", "texts"],
+  useDocumentAi({
     onComplete: () => router.refresh(),
   });
 

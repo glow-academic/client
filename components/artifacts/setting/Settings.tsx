@@ -29,7 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useSettingAi } from "@/hooks/use-setting-ai";
 import { useProfile } from "@/contexts/profile-context";
 
 export interface SettingsProps {
@@ -41,9 +41,7 @@ export default function Settings({ listData: serverListData }: SettingsProps) {
   const { departmentIds } = useProfile();
   const router = useRouter();
 
-  useArtifactAi({
-    artifactType: "setting",
-    validResourceTypes: ["names", "descriptions", "colors", "flags", "departments", "profiles", "auths", "provider_keys", "auth_item_keys", "roles", "role_routes"],
+  useSettingAi({
     onComplete: () => router.refresh(),
   });
 

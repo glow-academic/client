@@ -40,7 +40,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useScenarioAi } from "@/hooks/use-scenario-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
@@ -229,10 +229,7 @@ function ScenarioComponent({
 
   // --- AI Generation State ---
   const { isGenerating, makeOnGenerationComplete, generate } =
-    useArtifactAi({
-      artifactType: "scenario",
-      validResourceTypes: VALID_RESOURCE_TYPES as string[],
-    });
+    useScenarioAi({});
 
   // nuqs parsers for URL-backed state (search/filter params only)
   const scenarioSearchParamsClient = useMemo(

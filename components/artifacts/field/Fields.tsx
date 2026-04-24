@@ -48,7 +48,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useFieldAi } from "@/hooks/use-field-ai";
 
 export interface FieldsProps {
   // Server-provided data (for server-side rendering)
@@ -67,9 +67,7 @@ export default function Fields({
 }: FieldsProps) {
   const router = useRouter();
 
-  useArtifactAi({
-    artifactType: "field",
-    validResourceTypes: ["names", "descriptions", "flags", "departments", "conditional_parameters"],
+  useFieldAi({
     onComplete: () => router.refresh(),
   });
 

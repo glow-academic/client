@@ -24,7 +24,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useScenarioAi } from "@/hooks/use-scenario-ai";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
 import type {
@@ -155,9 +155,7 @@ export function Scenarios({
   const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
   const [bulkEditDepartmentIds, setBulkEditDepartmentIds] = useState<string[] | null>(null);
 
-  useArtifactAi({
-    artifactType: "scenario",
-    validResourceTypes: ["names", "descriptions", "problem_statements", "objectives", "scenario_flags", "departments", "personas", "documents", "parameters", "parameter_fields", "images", "videos", "questions"],
+  useScenarioAi({
     onComplete: () => router.refresh(),
   });
 

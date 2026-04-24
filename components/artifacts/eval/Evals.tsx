@@ -33,7 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useSocket } from "@/contexts/socket-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useEvalAi } from "@/hooks/use-eval-ai";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -68,9 +68,7 @@ export default function Evals({
   const searchParams = useSearchParams();
   const { socket } = useSocket();
 
-  useArtifactAi({
-    artifactType: "eval",
-    validResourceTypes: ["names", "descriptions", "flags", "departments", "agents", "run_positions", "group_positions", "run_rubrics", "group_rubrics"],
+  useEvalAi({
     onComplete: () => router.refresh(),
   });
 

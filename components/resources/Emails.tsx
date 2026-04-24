@@ -17,7 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
+import { useGenerationEvents } from "@/hooks/use-generation-events";
 import { cn } from "@/lib/utils";
 import {
   Check,
@@ -85,9 +85,14 @@ export function Emails({
   const allEmails = useMemo(() => emails ?? [], [emails]);
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "emails",
-    groupId: group_id,
+  const { isGenerating: aiIsGenerating, history: aiSuggestions, clear: clearAi } = useGenerationEvents<{ id?: string | null }>({
+    events: {
+      started: "emails_generation_started",
+      progress: "emails_generation_progress",
+      complete: "emails_generation_complete",
+      error: "emails_generation_error",
+    },
+    scope: { groupId: group_id },
     accumulate: true,
   });
   const suggestionsList = useMemo(

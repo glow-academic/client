@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDrafts } from "@/contexts/draft-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useProfileAi } from "@/hooks/use-profile-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
@@ -52,7 +52,10 @@ type ProfileFormState = {
   department_ids: string[];
   email_ids: string[];
   new_emails: string[];
-  primary_email_index: number;
+  // Which email (by resource id) is the profile's primary. On save
+  // orderedEmailIds puts this id first so the server's index-0 = primary
+  // convention picks it up.
+  primary_email_id: string | null;
   role_id: string | null;
   pending_ids: string[];
 };
@@ -152,11 +155,20 @@ function ProfileComponent({
         department_ids: [],
         email_ids: [],
         new_emails: [],
-        primary_email_index: 0,
+        primary_email_id: null,
         role_id: null,
         pending_ids: [],
       };
     }
+
+    const selectedEmails =
+      (data.emails?.filter((item) => item.selected) ?? []).filter(
+        (item): item is typeof item & { id: string } => !!item.id,
+      );
+    const primaryFromServer =
+      selectedEmails.find((item) => item.is_primary)?.id ??
+      selectedEmails[0]?.id ??
+      null;
 
     return {
       name_id: data.names?.find((item) => item.selected)?.id ?? null,
@@ -168,12 +180,9 @@ function ProfileComponent({
         (data.departments?.filter((item) => item.selected) ?? [])
           .map((item) => item.department_id)
           .filter((id): id is string => !!id),
-      email_ids:
-        (data.emails?.filter((item) => item.selected) ?? [])
-          .map((item) => item.id)
-          .filter((id): id is string => !!id),
+      email_ids: selectedEmails.map((item) => item.id),
       new_emails: [],
-      primary_email_index: 0,
+      primary_email_id: primaryFromServer,
       role_id: data.roles?.find((item) => item.selected)?.id ?? null,
       pending_ids: data.pending_ids?.filter((id): id is string => !!id) ?? [],
     };
@@ -213,11 +222,10 @@ function ProfileComponent({
 
   const orderedEmailIds = useMemo(() => {
     const ids = [...formState.email_ids];
-    if (ids.length <= 1) return ids;
-    const primaryEmailId = ids[formState.primary_email_index];
-    if (!primaryEmailId) return ids;
-    return [primaryEmailId, ...ids.filter((id) => id !== primaryEmailId)];
-  }, [formState.email_ids, formState.primary_email_index]);
+    const primary = formState.primary_email_id;
+    if (!primary || !ids.includes(primary)) return ids;
+    return [primary, ...ids.filter((id) => id !== primary)];
+  }, [formState.email_ids, formState.primary_email_id]);
 
   useEffect(() => {
     if (!patchProfileDraftAction) {
@@ -368,10 +376,7 @@ function ProfileComponent({
     },
   });
 
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "profile",
-    validResourceTypes: VALID_RESOURCE_TYPES,
-  });
+  const { isGenerating, generate } = useProfileAi({});
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: ProfileResourceType[], userInstructions?: string) => {

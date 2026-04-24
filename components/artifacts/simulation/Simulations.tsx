@@ -30,7 +30,7 @@ import type {
 } from "@/app/(main)/training/simulations/page";
 import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useSimulationAi } from "@/hooks/use-simulation-ai";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -141,9 +141,7 @@ export function Simulations({
   const [bulkEditPracticeMode, setBulkEditPracticeMode] = useState<boolean | null>(null);
   const [bulkEditDepartmentIds, setBulkEditDepartmentIds] = useState<string[] | null>(null);
 
-  useArtifactAi({
-    artifactType: "simulation",
-    validResourceTypes: ["names", "descriptions", "flags", "departments", "scenarios", "scenario_flags", "scenario_positions", "scenario_rubrics", "scenario_time_limits"],
+  useSimulationAi({
     onComplete: () => router.refresh(),
   });
 

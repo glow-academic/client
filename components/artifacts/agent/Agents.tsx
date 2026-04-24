@@ -42,7 +42,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useAgentAi } from "@/hooks/use-agent-ai";
 import { useProfile } from "@/contexts/profile-context";
 
 export interface AgentsProps {
@@ -79,9 +79,7 @@ export default function Agents({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  useArtifactAi({
-    artifactType: "agent",
-    validResourceTypes: ["names", "descriptions", "models", "prompts", "instructions", "flags", "departments", "tools", "temperature_levels", "reasoning_levels", "voices"],
+  useAgentAi({
     onComplete: () => router.refresh(),
   });
 

@@ -23,7 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useDepartmentAi } from "@/hooks/use-department-ai";
 
 import type {
   DeleteDepartmentIn,
@@ -65,9 +65,7 @@ export default function Departments({
 }: DepartmentsProps) {
   const router = useRouter();
 
-  useArtifactAi({
-    artifactType: "department",
-    validResourceTypes: ["names", "descriptions", "flags", "settings"],
+  useDepartmentAi({
     onComplete: () => router.refresh(),
   });
 

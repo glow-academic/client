@@ -23,7 +23,7 @@ import { Settings } from "@/components/resources/Settings";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDrafts } from "@/contexts/draft-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useDepartmentAi } from "@/hooks/use-department-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
@@ -67,13 +67,6 @@ type DepartmentFormState = {
   setting_ids: string[];
   pending_ids: string[];
 };
-
-const VALID_RESOURCE_TYPES: DepartmentResourceType[] = [
-  "names",
-  "descriptions",
-  "flags",
-  "settings",
-];
 
 const DEPARTMENT_RESOURCES: ResourceConfig[] = [
   { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
@@ -384,10 +377,7 @@ function DepartmentComponent({
     },
   });
 
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "department",
-    validResourceTypes: VALID_RESOURCE_TYPES as string[],
-  });
+  const { isGenerating, generate } = useDepartmentAi({});
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: DepartmentResourceType[], userInstructions?: string) => {

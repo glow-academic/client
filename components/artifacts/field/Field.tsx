@@ -19,7 +19,7 @@ import { Names } from "@/components/resources/Names";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useFieldAi } from "@/hooks/use-field-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
@@ -399,10 +399,7 @@ function FieldComponent({
     },
   });
 
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "field",
-    validResourceTypes: VALID_RESOURCE_TYPES as string[],
-  });
+  const { isGenerating, generate } = useFieldAi({});
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: FieldResourceType[], userInstructions?: string) => {

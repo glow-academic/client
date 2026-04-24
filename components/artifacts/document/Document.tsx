@@ -27,7 +27,7 @@ import { Files } from "@/components/resources/Files";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useDocumentAi } from "@/hooks/use-document-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -38,17 +38,6 @@ import {
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
-
-const VALID_RESOURCE_TYPES = [
-  "names",
-  "descriptions",
-  "flags",
-  "departments",
-  "fields",
-  "uploads",
-  "images",
-  "texts",
-] as const;
 
 const FLUSH_KEYS = ["uploads", "images", "texts"] as const;
 
@@ -671,10 +660,7 @@ function DocumentComponent({
     [flagRowsByType]
   );
 
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "document",
-    validResourceTypes: [...VALID_RESOURCE_TYPES],
-  });
+  const { isGenerating, generate } = useDocumentAi({});
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: ResourceType[], userInstructions?: string) => {

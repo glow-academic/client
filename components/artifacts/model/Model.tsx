@@ -50,16 +50,7 @@ import type { ResourceType } from "@/lib/resources/types";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import { parseAsString, type Parser } from "nuqs";
 
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
-
-const MODEL_VALID_RESOURCE_TYPES: ResourceType[] = [
-  "names",
-  "descriptions",
-  "flags",
-  "temperature_levels",
-  "reasoning_levels",
-  "voices",
-];
+import { useModelAi } from "@/hooks/use-model-ai";
 
 // Canonical: server returns one ModelFlagResource row per flags_resource entry
 // (typically two per logical flag: value=true and value=false). The client
@@ -429,10 +420,7 @@ function ModelComponent({
   );
 
   // AI generation via shared hook
-  const { isGenerating, generate } = useArtifactAi({
-    artifactType: "model",
-    validResourceTypes: MODEL_VALID_RESOURCE_TYPES as string[],
-  });
+  const { isGenerating, generate } = useModelAi({});
 
   const formStateRef = React.useRef(formState);
   React.useEffect(() => {
