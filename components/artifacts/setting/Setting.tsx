@@ -48,7 +48,17 @@ import {
   ProviderKeys,
   type ProviderKeyValue,
 } from "@/components/resources/ProviderKeys";
-import { Systems } from "@/components/resources/Systems";
+import { Systems, type SystemDraft } from "@/components/resources/Systems";
+
+// Matches SettingSystemDraftValue on the server. id=null = inline-create.
+type SystemValue = {
+  id: string | null;
+  name: string;
+  description: string | null;
+  agent_ids: string[];
+  resolution_strategy: string | null;
+  resolution_threshold: number | null;
+};
 import { Thresholds } from "@/components/resources/Thresholds";
 import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
@@ -85,6 +95,9 @@ type SettingFormState = {
   logins_ids: string[];
   logins: LoginValue[];
   system_ids: string[];
+  // Drafts only (id=null rows). Server inline-creates and merges ids
+  // into system_ids on save.
+  system_values: SystemValue[];
   mcp_id: string | null;
   // Drafts only (id=null rows). Existing mcp_resource attachment is
   // tracked via mcp_id; server resolves drafts and sets mcp_id on save.
@@ -176,6 +189,7 @@ function Setting({
         (s?.systems?.filter((item) => item.selected) ?? [])
           .map((item) => item.system_id)
           .filter((id): id is string => !!id),
+      system_values: [] as SystemValue[],
       mcp_id: s?.mcp?.find((item) => item.selected)?.mcp_id ?? null,
       mcp_values: [] as McpValue[],
       threshold_ids:
@@ -411,6 +425,9 @@ function Setting({
               (fs["logins"] as LoginValue[] | null) ?? prev.logins,
             system_ids:
               (fs["system_ids"] as string[] | null) ?? prev.system_ids,
+            system_values:
+              (fs["system_values"] as SystemValue[] | null) ??
+              prev.system_values,
             mcp_id: (fs["mcp_id"] as string | null) ?? prev.mcp_id,
             mcp_values:
               (fs["mcp_values"] as McpValue[] | null) ?? prev.mcp_values,
@@ -475,6 +492,7 @@ function Setting({
     payload["auth_item_values"] = currentFormState.auth_item_values;
     payload["logins"] = currentFormState.logins;
     payload["mcp_values"] = currentFormState.mcp_values;
+    payload["system_values"] = currentFormState.system_values;
 
     return payload;
   }, []);
@@ -872,8 +890,8 @@ function Setting({
           >
             <Systems
               system_ids={formState.system_ids}
-              system_resources={(s?.systems ?? []).filter((item) => item.selected)}
               systems={s?.systems ?? []}
+              agents={s?.agents ?? []}
               show_systems={true}
               disabled={disabled}
               onChange={(ids) =>
@@ -881,6 +899,22 @@ function Setting({
                   ...prev,
                   system_ids: ids,
                   pending_ids: pruneSectionPending("systems", ids),
+                }))
+              }
+              onCreate={(draft: SystemDraft) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  system_values: [
+                    ...prev.system_values,
+                    {
+                      id: null,
+                      name: draft.name,
+                      description: draft.description || null,
+                      agent_ids: draft.agent_ids,
+                      resolution_strategy: draft.resolution_strategy,
+                      resolution_threshold: draft.resolution_threshold,
+                    },
+                  ],
                 }))
               }
             />

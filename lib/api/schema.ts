@@ -327,6 +327,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/persona/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Persona Stream */
+        get: operations["persona_stream_persona_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/scenario/get": {
         parameters: {
             query?: never;
@@ -644,6 +661,23 @@ export interface paths {
          * @description Refresh scenario materialized views and invalidate caches.
          */
         post: operations["scenario_refresh_scenario_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scenario/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Scenario Stream */
+        get: operations["scenario_stream_scenario_stream_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1113,6 +1147,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/simulation/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Simulation Stream */
+        get: operations["simulation_stream_simulation_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/document/search": {
         parameters: {
             query?: never;
@@ -1430,6 +1481,23 @@ export interface paths {
          * @description Parse a CSV file and return mapped items for preview.
          */
         post: operations["parse_document_csv_document_csv_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/document/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Document Stream */
+        get: operations["document_stream_document_stream_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1859,6 +1927,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/department/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Department Stream */
+        get: operations["department_stream_department_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cohort/search": {
         parameters: {
             query?: never;
@@ -2176,6 +2261,23 @@ export interface paths {
          * @description Refresh cohort materialized views and invalidate caches.
          */
         post: operations["cohort_refresh_cohort_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cohort/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cohort Stream */
+        get: operations["cohort_stream_cohort_stream_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2505,6 +2607,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/eval/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eval Stream */
+        get: operations["eval_stream_eval_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rubric/get": {
         parameters: {
             query?: never;
@@ -2822,6 +2941,23 @@ export interface paths {
          * @description Refresh rubric materialized views and invalidate caches.
          */
         post: operations["rubric_refresh_rubric_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rubric/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Rubric Stream */
+        get: operations["rubric_stream_rubric_stream_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3171,6 +3307,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/setting/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Setting Stream */
+        get: operations["setting_stream_setting_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/agent/context": {
         parameters: {
             query?: never;
@@ -3494,6 +3647,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/agent/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Agent Stream */
+        get: operations["agent_stream_agent_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/model/get": {
         parameters: {
             query?: never;
@@ -3811,6 +3981,23 @@ export interface paths {
          * @description Refresh model materialized views and invalidate caches.
          */
         post: operations["model_refresh_model_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/model/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Model Stream */
+        get: operations["model_stream_model_stream_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4160,6 +4347,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/provider/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Provider Stream */
+        get: operations["provider_stream_provider_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/parameter/get": {
         parameters: {
             query?: never;
@@ -4477,6 +4681,23 @@ export interface paths {
          * @description Refresh parameter materialized views and invalidate caches.
          */
         post: operations["parameter_refresh_parameter_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/parameter/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Parameter Stream */
+        get: operations["parameter_stream_parameter_stream_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4806,6 +5027,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/field/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Field Stream */
+        get: operations["field_stream_field_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/profile/get": {
         parameters: {
             query?: never;
@@ -5080,6 +5318,23 @@ export interface paths {
          * @description Refresh profile materialized views and invalidate caches.
          */
         post: operations["profile_refresh_profile_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profile/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Profile Stream */
+        get: operations["profile_stream_profile_stream_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5769,6 +6024,23 @@ export interface paths {
          * @description Refresh tool materialized views and invalidate caches.
          */
         post: operations["tool_refresh_tool_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tool/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tool Stream */
+        get: operations["tool_stream_tool_stream_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -47631,6 +47903,11 @@ export interface components {
              */
             mcp_values?: components["schemas"]["SettingMcpDraftValue"][] | null;
             /**
+             * System Values
+             * @description Inline-creatable systems_resource value entries
+             */
+            system_values?: components["schemas"]["SettingSystemDraftValue"][] | null;
+            /**
              * Logins
              * @description Inline-creatable logins_resource value entries (auth or profile buttons)
              */
@@ -56467,6 +56744,42 @@ export interface components {
              */
             errors?: components["schemas"]["SettingFieldError"][] | null;
         };
+        /**
+         * SettingSystemDraftValue
+         * @description Draft value object for an inline-creatable systems_resource row.
+         */
+        SettingSystemDraftValue: {
+            /**
+             * Id
+             * @description Existing systems_resource id when known
+             */
+            id?: string | null;
+            /**
+             * Name
+             * @description System display name
+             */
+            name: string;
+            /**
+             * Description
+             * @description Optional description
+             */
+            description?: string | null;
+            /**
+             * Agent Ids
+             * @description Agents that this system routes to
+             */
+            agent_ids?: string[];
+            /**
+             * Resolution Strategy
+             * @description Routing strategy, e.g. 'first', 'best', 'all'
+             */
+            resolution_strategy?: string | null;
+            /**
+             * Resolution Threshold
+             * @description Score threshold (0–1) for resolution
+             */
+            resolution_threshold?: number | null;
+        };
         /** SettingSystemResource */
         SettingSystemResource: {
             /**
@@ -63084,6 +63397,11 @@ export interface components {
              */
             mcp_values?: components["schemas"]["SettingMcpDraftValue"][];
             /**
+             * System Values
+             * @description Echoed system value entries with resolved ids
+             */
+            system_values?: components["schemas"]["SettingSystemDraftValue"][];
+            /**
              * Logins
              * @description Echoed logins value entries with resolved ids
              */
@@ -63883,6 +64201,26 @@ export interface operations {
             };
         };
     };
+    persona_stream_persona_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     get_scenario_scenario_get_post: {
         parameters: {
             query?: never;
@@ -64394,6 +64732,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    scenario_stream_scenario_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
@@ -65150,6 +65508,26 @@ export interface operations {
             };
         };
     };
+    simulation_stream_simulation_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     search_document_document_search_post: {
         parameters: {
             query?: never;
@@ -65661,6 +66039,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_stream_document_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
@@ -66345,6 +66743,26 @@ export interface operations {
             };
         };
     };
+    department_stream_department_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     search_cohort_cohort_search_post: {
         parameters: {
             query?: never;
@@ -66856,6 +67274,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cohort_stream_cohort_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
@@ -67375,6 +67813,26 @@ export interface operations {
             };
         };
     };
+    eval_stream_eval_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     get_rubric_rubric_get_post: {
         parameters: {
             query?: never;
@@ -67886,6 +68344,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rubric_stream_rubric_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
@@ -68438,6 +68916,26 @@ export interface operations {
             };
         };
     };
+    setting_stream_setting_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     get_agent_context_agent_context_post: {
         parameters: {
             query?: never;
@@ -68953,6 +69451,26 @@ export interface operations {
             };
         };
     };
+    agent_stream_agent_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     get_model_model_get_post: {
         parameters: {
             query?: never;
@@ -69464,6 +69982,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    model_stream_model_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
@@ -70016,6 +70554,26 @@ export interface operations {
             };
         };
     };
+    provider_stream_provider_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     get_parameter_parameter_get_post: {
         parameters: {
             query?: never;
@@ -70527,6 +71085,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parameter_stream_parameter_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
@@ -71046,6 +71624,26 @@ export interface operations {
             };
         };
     };
+    field_stream_field_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     get_profile_profile_get_post: {
         parameters: {
             query?: never;
@@ -71491,6 +72089,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    profile_stream_profile_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
@@ -72587,6 +73205,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tool_stream_tool_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
