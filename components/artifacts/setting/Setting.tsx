@@ -773,7 +773,22 @@ function Setting({
                 list.push(c);
                 byType.set(t, list);
               }
-              const types = Array.from(byType.keys()).sort();
+              // Canonical theme-role order; any type not in this list is
+              // hidden (e.g. `chart1`/`chart3` seeds aren't theme roles).
+              const ROLE_ORDER = [
+                "primary",
+                "secondary",
+                "accent",
+                "background",
+                "foreground",
+                "surface",
+                "muted",
+                "success",
+                "warning",
+                "danger",
+                "info",
+              ];
+              const types = ROLE_ORDER.filter((t) => byType.has(t));
               return (
                 <div className="space-y-6">
                   {types.map((type) => {
