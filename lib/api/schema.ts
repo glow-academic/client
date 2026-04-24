@@ -41651,6 +41651,12 @@ export interface components {
              */
             email?: string | null;
             /**
+             * Is Primary
+             * @description Whether this is the profile's primary email
+             * @default false
+             */
+            is_primary: boolean;
+            /**
              * Generated
              * @description Whether the email was AI-generated
              */

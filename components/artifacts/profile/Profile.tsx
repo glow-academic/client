@@ -257,9 +257,17 @@ function ProfileComponent({
             new_emails: (formStateFromServer.email_ids?.length ?? 0) > 0
               ? []
               : prev.new_emails,
-            primary_email_index: (formStateFromServer.email_ids?.length ?? 0) > 0
-              ? 0
-              : prev.primary_email_index,
+            // Keep whichever id the user already marked primary if it's
+            // still in the server's email_ids; else fall back to the first
+            // entry (preserves the legacy index-0-primary convention).
+            primary_email_id: (() => {
+              const serverIds = formStateFromServer.email_ids ?? null;
+              if (!serverIds || serverIds.length === 0)
+                return prev.primary_email_id;
+              if (prev.primary_email_id && serverIds.includes(prev.primary_email_id))
+                return prev.primary_email_id;
+              return serverIds[0] ?? null;
+            })(),
             role_id: formStateFromServer.role_id ?? prev.role_id,
             pending_ids: formStateFromServer.pending_ids ?? prev.pending_ids,
           };
@@ -272,7 +280,7 @@ function ProfileComponent({
             prev.name !== next.name ||
             JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
             prev.role_id !== next.role_id ||
-            prev.primary_email_index !== next.primary_email_index ||
+            prev.primary_email_id !== next.primary_email_id ||
             JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
             JSON.stringify(prev.email_ids) !== JSON.stringify(next.email_ids) ||
             JSON.stringify(prev.new_emails) !== JSON.stringify(next.new_emails) ||
@@ -296,7 +304,7 @@ function ProfileComponent({
         department_ids: formState.department_ids,
         email_ids: formState.email_ids,
         new_emails: formState.new_emails,
-        primary_email_index: formState.primary_email_index,
+        primary_email_id: formState.primary_email_id,
         role_id: formState.role_id,
         pending_ids: formState.pending_ids,
       }),
@@ -495,14 +503,16 @@ function ProfileComponent({
   const removeExistingEmail = useCallback((emailId: string) => {
     setFormState((prev) => {
       const nextEmailIds = prev.email_ids.filter((id) => id !== emailId);
-      const nextPrimaryIndex =
-        prev.primary_email_index >= nextEmailIds.length
-          ? Math.max(0, nextEmailIds.length - 1)
-          : prev.primary_email_index;
+      // If the removed email was the primary, pick the first remaining
+      // email as the new primary (falls back to null if none).
+      const nextPrimary =
+        prev.primary_email_id === emailId
+          ? nextEmailIds[0] ?? null
+          : prev.primary_email_id;
       return {
         ...prev,
         email_ids: nextEmailIds,
-        primary_email_index: nextPrimaryIndex,
+        primary_email_id: nextPrimary,
       };
     });
   }, []);
@@ -536,13 +546,11 @@ function ProfileComponent({
     }
 
     const orderedEmails =
-      current.email_ids.length > 1
+      current.primary_email_id && current.email_ids.includes(current.primary_email_id)
         ? [
-            current.email_ids[current.primary_email_index]!,
-            ...current.email_ids.filter(
-              (_, index) => index !== current.primary_email_index,
-            ),
-          ].filter(Boolean)
+            current.primary_email_id,
+            ...current.email_ids.filter((id) => id !== current.primary_email_id),
+          ]
         : current.email_ids;
 
     if (isEditMode && profileId) {
@@ -710,7 +718,7 @@ function ProfileComponent({
             ...prev,
             email_ids: [],
             new_emails: [],
-            primary_email_index: 0,
+            primary_email_id: null,
           };
         case "roles":
           return {
@@ -881,102 +889,164 @@ function ProfileComponent({
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between gap-4">
-                  <Label className="flex items-center gap-1">
-                    Emails
-                  </Label>
-                  <GenericPicker<EmailPickerItem>
-                    items={existingEmailItems}
-                    selectedIds={formState.email_ids}
-                    onSelect={(ids) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        email_ids: ids,
-                        primary_email_index: Math.min(
-                          prev.primary_email_index,
-                          Math.max(0, ids.length - 1),
-                        ),
-                      }))
-                    }
-                    multiSelect={true}
-                    getId={(item) => item.id}
-                    getLabel={(item) => item.email}
-                    getSearchText={(item) => item.email}
-                    placeholder="Select previous emails"
-                    disabled={disabled}
-                    compact={true}
-                    buttonClassName="h-8"
-                    showLabel={false}
-                    hideSelectedChips={true}
-                  />
+              <div className="space-y-6">
+                {/* Primary Email — single-select. Setting the primary also
+                    ensures that email is part of email_ids. */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-4">
+                    <Label className="flex items-center gap-1">
+                      Primary Email
+                    </Label>
+                    <GenericPicker<EmailPickerItem>
+                      items={existingEmailItems}
+                      selectedIds={
+                        formState.primary_email_id
+                          ? [formState.primary_email_id]
+                          : []
+                      }
+                      onSelect={(ids) => {
+                        const nextPrimary = ids[0] ?? null;
+                        setFormState((prev) => ({
+                          ...prev,
+                          primary_email_id: nextPrimary,
+                          email_ids:
+                            nextPrimary && !prev.email_ids.includes(nextPrimary)
+                              ? [...prev.email_ids, nextPrimary]
+                              : prev.email_ids,
+                        }));
+                      }}
+                      multiSelect={false}
+                      getId={(item) => item.id}
+                      getLabel={(item) => item.email}
+                      getSearchText={(item) => item.email}
+                      placeholder="Select primary email"
+                      disabled={disabled}
+                      compact={true}
+                      buttonClassName="h-8"
+                      showLabel={false}
+                      hideSelectedChips={true}
+                    />
+                  </div>
+                  {formState.primary_email_id && (
+                    <div
+                      className={cn(
+                        "relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm",
+                        "bg-accent ring-2 ring-primary",
+                      )}
+                    >
+                      <Mail className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
+                      <div className="min-w-0 flex-1">
+                        <span className="truncate text-sm font-medium">
+                          {emailLookup.get(formState.primary_email_id) ??
+                            formState.primary_email_id}
+                        </span>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Primary email
+                        </p>
+                      </div>
+                      <Check className="h-4 w-4" />
+                    </div>
+                  )}
                 </div>
 
-                {selectedEmailItems.length > 0 && (
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    {selectedEmailItems.map((item, index) => {
-                      const isPrimary = index === formState.primary_email_index;
-
-                      return (
-                        <div
-                          key={item.id}
-                          className={cn(
-                            "relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-all",
-                            isPrimary && !item.pending && "bg-accent ring-2 ring-primary",
-                            item.pending && "bg-success/10 ring-2 ring-success",
-                          )}
-                        >
-                          <Mail className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="truncate text-sm font-medium">{item.email}</span>
-                              {item.pending && (
-                                <span className="rounded bg-success/20 px-1.5 py-0.5 text-xs font-medium text-success">
-                                  Pending
-                                </span>
-                              )}
-                              {item.suggested && !item.pending && !isPrimary && (
-                                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                              )}
-                            </div>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {isPrimary ? "Primary email" : "Click below to set primary"}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                setFormState((prev) => ({
-                                  ...prev,
-                                  primary_email_index: index,
-                                }))
-                              }
-                              disabled={disabled}
-                            >
-                              {isPrimary ? "Primary" : "Set Primary"}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive hover:text-destructive"
-                              onClick={() => removeExistingEmail(item.id)}
-                              disabled={disabled}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                          {isPrimary && !item.pending && (
-                            <Check className="absolute right-3 top-3 h-4 w-4" />
-                          )}
-                        </div>
-                      );
-                    })}
+                {/* Other Emails — multi-select. Excludes whatever is
+                    currently the primary. Selections merge with primary to
+                    form the full email_ids list. */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-4">
+                    <Label className="flex items-center gap-1">
+                      Other Emails
+                    </Label>
+                    <GenericPicker<EmailPickerItem>
+                      items={existingEmailItems.filter(
+                        (item) => item.id !== formState.primary_email_id,
+                      )}
+                      selectedIds={formState.email_ids.filter(
+                        (id) => id !== formState.primary_email_id,
+                      )}
+                      onSelect={(otherIds) =>
+                        setFormState((prev) => ({
+                          ...prev,
+                          email_ids: prev.primary_email_id
+                            ? [prev.primary_email_id, ...otherIds]
+                            : otherIds,
+                        }))
+                      }
+                      multiSelect={true}
+                      getId={(item) => item.id}
+                      getLabel={(item) => item.email}
+                      getSearchText={(item) => item.email}
+                      placeholder="Select additional emails"
+                      disabled={disabled}
+                      compact={true}
+                      buttonClassName="h-8"
+                      showLabel={false}
+                      hideSelectedChips={true}
+                    />
                   </div>
-                )}
+                  {selectedEmailItems.filter(
+                    (item) => item.id !== formState.primary_email_id,
+                  ).length > 0 && (
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      {selectedEmailItems
+                        .filter(
+                          (item) => item.id !== formState.primary_email_id,
+                        )
+                        .map((item) => (
+                          <div
+                            key={item.id}
+                            className={cn(
+                              "relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-all",
+                              item.pending && "bg-success/10 ring-2 ring-success",
+                            )}
+                          >
+                            <Mail className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="truncate text-sm font-medium">
+                                  {item.email}
+                                </span>
+                                {item.pending && (
+                                  <span className="rounded bg-success/20 px-1.5 py-0.5 text-xs font-medium text-success">
+                                    Pending
+                                  </span>
+                                )}
+                                {item.suggested && !item.pending && (
+                                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setFormState((prev) => ({
+                                    ...prev,
+                                    primary_email_id: item.id,
+                                  }))
+                                }
+                                disabled={disabled}
+                              >
+                                Set Primary
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive hover:text-destructive"
+                                onClick={() => removeExistingEmail(item.id)}
+                                disabled={disabled}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
 
                 {formState.new_emails.length > 0 && (
                   <div className="space-y-2">
@@ -1090,7 +1160,7 @@ function ProfileComponent({
       formState.email_ids,
       formState.name_id,
       formState.new_emails,
-      formState.primary_email_index,
+      formState.primary_email_id,
       formState.role_id,
       handleDirectStepGenerate,
       isAutosaveEnabled,
