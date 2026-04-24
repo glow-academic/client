@@ -6,7 +6,6 @@
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -322,8 +321,13 @@ export function Colors({
     return null;
   }
 
-  // Multi-select mode
+  // Multi-select mode — canonical swatch-card grid (matches single-select rendering).
   if (multiSelect) {
+    const pendingColorIds = new Set(
+      (colors ?? [])
+        .filter((c) => c.pending && c.id)
+        .map((c) => c.id as string)
+    );
     return (
       <div className="space-y-2">
         {label && (
@@ -331,67 +335,76 @@ export function Colors({
             <Label htmlFor={id} className="flex items-center gap-1">
               {label}
               {required && <span className="text-destructive">*</span>}
-              {_onSearchChange && (
-                <span className="text-xs text-muted-foreground ml-2">
-                  {_searchPlaceholder}
-                </span>
-              )}
             </Label>
           </div>
         )}
-        <GenericPicker<{ id: string; name: string; description?: string; hex_code?: string }>
+        <SelectableGrid<{ id: string; name: string; description?: string; hex_code?: string }>
           items={displayColorItems}
-          itemIds={colors
-            ?.map((c) => c.id)
-            .filter((id): id is string => id !== null) ?? []}
+          selectedId={null}
           selectedIds={ids}
-          onSelect={handleSelectMulti}
-          multiSelect={true}
+          onSelect={(nextId) => {
+            const toggled = ids.includes(nextId)
+              ? ids.filter((x) => x !== nextId)
+              : [...ids, nextId];
+            void handleSelectMulti(toggled);
+          }}
           getId={(item) => item.id}
-          getLabel={(item) => item.name}
-          renderItem={(item, isSelected) => (
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                {isSuggested(item.id) && !isSelected && (
+          renderItem={(item, isSelected) => {
+            const isPendingColor = pendingColorIds.has(item.id);
+            return (
+              <div
+                className={cn(
+                  "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
+                  "hover:shadow-md hover:bg-accent/50",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  isSelected && !isPendingColor && "ring-2 ring-primary bg-accent",
+                  isPendingColor && "ring-2 ring-success bg-success/10"
+                )}
+              >
+                {isSelected && !isPendingColor && (
+                  <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                    <Check className="h-3 w-3 text-primary-foreground" />
+                  </div>
+                )}
+                {isPendingColor && (
+                  <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                    Pending
+                  </div>
+                )}
+                {!isSelected && !isPendingColor && isSuggested(item.id) && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                        <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
                       </TooltipTrigger>
                       <TooltipContent side="top">Suggested</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 )}
-                {item.hex_code && (
-                  <div
-                    className="w-4 h-4 rounded border shrink-0"
-                    style={{ backgroundColor: item.hex_code }}
-                  />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="truncate">{item.name}</div>
-                  {item.description && (
-                    <div className="text-xs text-muted-foreground truncate">
-                      {item.description}
-                    </div>
+                <div className="flex items-center gap-2 flex-1 overflow-hidden">
+                  {item.hex_code && (
+                    <div
+                      className="w-8 h-8 rounded-lg border-2 border-border shrink-0"
+                      style={{ backgroundColor: item.hex_code }}
+                    />
                   )}
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <h3 className="font-medium text-sm leading-tight truncate">
+                      {item.name}
+                    </h3>
+                    {item.hex_code && (
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                        {item.hex_code}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-              <Check
-                className={cn(
-                  "ml-auto flex-shrink-0 h-4 w-4",
-                  isSelected ? "opacity-100" : "opacity-0"
-                )}
-              />
-            </div>
-          )}
-          placeholder={_searchPlaceholder}
+            );
+          }}
+          emptyMessage="No colors found."
           disabled={disabled}
-          showLabel={false}
-          hideSelectedChips={false}
-          showClearAll={true}
-          searchTerm={searchTerm}
-          onSearchChange={_onSearchChange}
+          horizontal
         />
       </div>
     );
