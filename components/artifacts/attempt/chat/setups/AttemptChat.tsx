@@ -525,22 +525,14 @@ export function AttemptChat({
     if (!group_id) return;
     if (currentRoomRef.current === group_id) return;
 
-    if (currentRoomRef.current) {
-      transport.send("/attempt/leave", { group_id: currentRoomRef.current });
-    }
-
-    transport.send("/attempt/join", { group_id });
     currentRoomRef.current = group_id;
     currentChatIdRef.current = currentChat?.id ?? null;
 
     return () => {
-      if (currentRoomRef.current) {
-        transport.send("/attempt/leave", { group_id: currentRoomRef.current });
-        currentRoomRef.current = null;
-        currentChatIdRef.current = null;
-      }
+      currentRoomRef.current = null;
+      currentChatIdRef.current = null;
     };
-  }, [attemptData?.group_id, currentChat?.id, transport]);
+  }, [attemptData?.group_id, currentChat?.id]);
 
   useEffect(() => {
     const chatId = currentChat?.id ?? null;
@@ -831,13 +823,15 @@ export function AttemptChat({
 
   // Lifecycle events (chat ended, attempt ended, quiz result) — direct transport listeners
   useEffect(() => {
+    const groupId = attemptData?.group_id ?? null;
+    const scope = groupId ? { groupId } : undefined;
     const unsubs = [
       transport.on("attempt.chat.ended", (data: Record<string, unknown>) => {
         const filterChatId = currentChatIdRef.current;
         if (filterChatId && data["chat_id"] !== filterChatId) return;
         freshlyCompletedChatsRef.current.add(data["chat_id"] as string);
         router.refresh();
-      }),
+      }, scope),
       transport.on("attempt.ended", (data: Record<string, unknown>) => {
         if (data["attempt_id"] !== attempt_id) return;
         router.refresh();
@@ -846,17 +840,17 @@ export function AttemptChat({
         } else {
           toast.error(data["message"] as string);
         }
-      }),
+      }, scope),
       transport.on("attempt.chat.response_result", (data: Record<string, unknown>) => {
         if (data["success"]) {
           router.refresh();
         } else {
           toast.error((data["message"] as string) || "Failed to process quiz");
         }
-      }),
+      }, scope),
     ];
     return () => unsubs.forEach((fn) => fn());
-  }, [transport, attempt_id, router]);
+  }, [transport, attempt_id, attemptData?.group_id, router]);
 
   const handleVoiceStart = useCallback(async () => {
     if (!currentChat?.id) {

@@ -140,19 +140,23 @@ export function useArtifactGeneration(
       );
     };
 
+    // Pass groupId via scope so SSE opens /{artifact}/stream?group_id=<id>.
+    // WS mode ignores scope (single multiplexed socket).
+    const scope = groupId ? { groupId } : undefined;
+
     // Subscribe via transport — works for both WebSocket and SSE
     const unsubs = [
-      transport.on(`${prefix}.started`, handleStarted),
-      transport.on(`${prefix}.completed`, handleCompleted),
-      transport.on(`${prefix}.failed`, handleFailed),
-      transport.on(`${prefix}.text.progress`, handleTextProgress),
-      transport.on(`${prefix}.text.complete`, handleTextComplete),
-      transport.on(`${prefix}.call.start`, handleCallStart),
-      transport.on(`${prefix}.call.complete`, handleCallComplete),
+      transport.on(`${prefix}.started`, handleStarted, scope),
+      transport.on(`${prefix}.completed`, handleCompleted, scope),
+      transport.on(`${prefix}.failed`, handleFailed, scope),
+      transport.on(`${prefix}.text.progress`, handleTextProgress, scope),
+      transport.on(`${prefix}.text.complete`, handleTextComplete, scope),
+      transport.on(`${prefix}.call.start`, handleCallStart, scope),
+      transport.on(`${prefix}.call.complete`, handleCallComplete, scope),
     ];
 
     return () => unsubs.forEach((fn) => fn());
-  }, [artifactType, transport]);
+  }, [artifactType, transport, groupId]);
 
   return { messages, isGenerating, clearMessages, setGenerating: setIsGenerating };
 }

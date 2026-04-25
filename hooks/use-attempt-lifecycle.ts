@@ -16,6 +16,13 @@ interface UseAttemptLifecycleConfig {
   attemptId?: string | null;
   chatId?: string | null;
   chatIdRef?: React.RefObject<string | null>;
+  /**
+   * Group id this attempt is scoped to. Used for SSE subscription routing —
+   * the per-(artifact, group_id) stream model needs this to know which
+   * `/attempt/stream?group_id=…` to open. WS mode ignores it.
+   * Falls back to the surrounding GroupProviderClient context if omitted.
+   */
+  groupId?: string | null;
   onStarted?: (data: AttemptStartedEvent) => void;
   onChatStarted?: (data: AttemptChatStartedEvent) => void;
   onChatEnded?: (data: AttemptChatEndedEvent) => void;
@@ -40,6 +47,7 @@ export function useAttemptLifecycle({
   attemptId,
   chatId,
   chatIdRef,
+  groupId: groupIdProp,
   onStarted,
   onChatStarted,
   onChatEnded,
@@ -49,7 +57,7 @@ export function useAttemptLifecycle({
   onResponseResult,
 }: UseAttemptLifecycleConfig): UseAttemptLifecycleReturn {
   const groupCtx = useGroupIdOptional();
-  const groupId = groupCtx?.groupId ?? null;
+  const groupId = groupIdProp ?? groupCtx?.groupId ?? null;
 
   // Store callbacks in refs to avoid re-registering listeners on every render
   const callbacksRef = useRef({
@@ -106,18 +114,19 @@ export function useAttemptLifecycle({
       callbacksRef.current.onResponseResult?.(data);
     };
 
+    const scope = groupId ? { groupId } : undefined;
     const unsubs = [
-      transport.on("attempt.started", handleStarted),
-      transport.on("attempt.chat.started", handleChatStarted),
-      transport.on("attempt.chat.ended", handleChatEnded),
-      transport.on("attempt.ended", handleEnded),
-      transport.on("attempt.chat_grade.completed", handleGradeComplete),
-      transport.on("attempt.error", handleError),
-      transport.on("attempt.chat.response_result", handleResponseResult),
+      transport.on("attempt.started", handleStarted, scope),
+      transport.on("attempt.chat.started", handleChatStarted, scope),
+      transport.on("attempt.chat.ended", handleChatEnded, scope),
+      transport.on("attempt.ended", handleEnded, scope),
+      transport.on("attempt.chat_grade.completed", handleGradeComplete, scope),
+      transport.on("attempt.error", handleError, scope),
+      transport.on("attempt.chat.response_result", handleResponseResult, scope),
     ];
 
     return () => unsubs.forEach((fn) => fn());
-  }, [transport, attemptId, chatId, chatIdRef]);
+  }, [transport, attemptId, chatId, chatIdRef, groupId]);
 
   // --- Emission methods ---
 

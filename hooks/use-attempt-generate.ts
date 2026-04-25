@@ -3,8 +3,19 @@
 import { useCallback, useState } from "react";
 import { useTransport } from "@/lib/transport/context";
 import { useRouter } from "next/navigation";
+import { useGroupIdOptional } from "@/contexts/group-context";
 
 export type GenerateStage = "idle" | "drafting" | "generating" | "ready" | "error";
+
+export interface UseAttemptGenerateConfig {
+  /**
+   * Group id to scope SSE event subscriptions to. Required for the
+   * per-(artifact, group_id) stream model — generation completion events
+   * are routed to `/attempt/stream?group_id=…`. WS mode ignores it.
+   * Falls back to the surrounding GroupProviderClient context if omitted.
+   */
+  groupId?: string | null;
+}
 
 export interface UseAttemptGenerateReturn {
   generate: (params: {
@@ -17,9 +28,13 @@ export interface UseAttemptGenerateReturn {
   error: string | null;
 }
 
-export function useAttemptGenerate(): UseAttemptGenerateReturn {
+export function useAttemptGenerate(
+  config: UseAttemptGenerateConfig = {},
+): UseAttemptGenerateReturn {
   const transport = useTransport();
   const router = useRouter();
+  const groupCtx = useGroupIdOptional();
+  const groupId = config.groupId ?? groupCtx?.groupId ?? null;
   const [stage, setStage] = useState<GenerateStage>("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -61,6 +76,7 @@ export function useAttemptGenerate(): UseAttemptGenerateReturn {
             reject(new Error("Generation timed out"));
           }, 120_000);
 
+          const scope = groupId ? { groupId } : undefined;
           const unsubComplete = transport.on(
             "attempt.generate.completed",
             () => {
@@ -69,6 +85,7 @@ export function useAttemptGenerate(): UseAttemptGenerateReturn {
               unsubFail();
               resolve();
             },
+            scope,
           );
           const unsubFail = transport.on(
             "attempt.generate.failed",
@@ -80,6 +97,7 @@ export function useAttemptGenerate(): UseAttemptGenerateReturn {
                 new Error((data["message"] as string) || "Generation failed"),
               );
             },
+            scope,
           );
 
           transport
@@ -111,7 +129,7 @@ export function useAttemptGenerate(): UseAttemptGenerateReturn {
         setError(err instanceof Error ? err.message : String(err));
       }
     },
-    [transport, router],
+    [transport, router, groupId],
   );
 
   return { generate, stage, error };

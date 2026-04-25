@@ -104,11 +104,16 @@ export function useGenerationDraft({
       onFailedRef.current?.(event.message || "Draft save failed");
     };
 
+    // Pass groupId via scope so the SSE channel opens
+    // /{artifact}/stream?group_id=<id> rather than auto-resolving server-side.
+    // WS mode ignores scope and the matchesGroup defensive filter still applies.
+    const scope = groupId ? { groupId } : undefined;
+
     const unsubs = [
-      transport.on(`${artifactType}.draft.completed`, handleCompleted),
-      transport.on(`${artifactType}.draft.failed`, handleFailed),
+      transport.on(`${artifactType}.draft.completed`, handleCompleted, scope),
+      transport.on(`${artifactType}.draft.failed`, handleFailed, scope),
     ];
 
     return () => unsubs.forEach((fn) => fn());
-  }, [transport, artifactType]);
+  }, [transport, artifactType, groupId]);
 }
