@@ -109,13 +109,20 @@ export default function Rubrics({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    eval_ids: false,
+    simulations: false,
+    departments: false,
+    passPercentage: false,
+  });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
     const filters: ColumnFiltersState = [];
     const deptIds = searchParams?.getAll("departmentIds") ?? [];
     const simIds = searchParams?.getAll("simulationIds") ?? [];
+    const evalIds = searchParams?.getAll("evalIds") ?? [];
     if (deptIds.length > 0) filters.push({ id: "departments", value: deptIds });
     if (simIds.length > 0) filters.push({ id: "simulations", value: simIds });
+    if (evalIds.length > 0) filters.push({ id: "eval_ids", value: evalIds });
     return filters;
   });
   const [sorting, setSorting] = useState<SortingState>([
@@ -210,24 +217,17 @@ export default function Rubrics({
     [rubricsData?.simulation_filter]
   );
 
-  // Filter pass percentage options to only show ranges that have actual data (client-only)
-  const passPercentageOptions = useMemo(() => {
-    const allRanges = [
-      { value: "0-25", label: "0-25%", min: 0, max: 25 },
-      { value: "26-50", label: "26-50%", min: 26, max: 50 },
-      { value: "51-75", label: "51-75%", min: 51, max: 75 },
-      { value: "76-100", label: "76-100%", min: 76, max: 100 },
-    ];
-
-    const rangesWithData = allRanges.filter((range) => {
-      return rubrics.some((rubric) => {
-        const percentage = rubric.pass_percentage ?? 0;
-        return percentage >= range.min && percentage <= range.max;
-      });
-    });
-
-    return rangesWithData.map(({ value, label }) => ({ value, label }));
-  }, [rubrics]);
+  const evalOptions = useMemo(
+    () =>
+      (rubricsData?.eval_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [rubricsData?.eval_filter]
+  );
 
   // Helper to update URL search params
   const updateRubricsParams = useCallback(
@@ -237,6 +237,7 @@ export default function Rubrics({
       search?: string;
       departmentIds?: string[];
       simulationIds?: string[];
+      evalIds?: string[];
       departmentSearch?: string;
       simulationSearch?: string;
     }) => {
@@ -265,6 +266,11 @@ export default function Rubrics({
       if (updates.simulationIds !== undefined) {
         params.delete("simulationIds");
         updates.simulationIds.forEach((id) => params.append("simulationIds", id));
+      }
+
+      if (updates.evalIds !== undefined) {
+        params.delete("evalIds");
+        updates.evalIds.forEach((id) => params.append("evalIds", id));
       }
 
       if (updates.departmentSearch !== undefined) {
@@ -354,20 +360,28 @@ export default function Rubrics({
 
       const departmentFilter = newFilters.find((f) => f.id === "departments");
       const simulationFilter = newFilters.find((f) => f.id === "simulations");
+      const evalFilter = newFilters.find((f) => f.id === "eval_ids");
 
       // Check if any server-driven filter actually changed
       const oldDepartmentFilter = columnFilters.find((f) => f.id === "departments");
       const oldSimulationFilter = columnFilters.find((f) => f.id === "simulations");
+      const oldEvalFilter = columnFilters.find((f) => f.id === "eval_ids");
 
       const serverChanged =
         JSON.stringify(departmentFilter?.value) !== JSON.stringify(oldDepartmentFilter?.value) ||
         JSON.stringify(simulationFilter?.value) !== JSON.stringify(oldSimulationFilter?.value);
+      const evalChanged =
+        JSON.stringify(evalFilter?.value) !== JSON.stringify(oldEvalFilter?.value);
 
-      if (serverChanged) {
+      if (serverChanged || evalChanged) {
+        // We push evalIds into the URL too so deep-links survive a refresh,
+        // even though the eval slot is client-faceted (no `eval_search` in
+        // SearchRubricApiRequest, so server cannot filter on it).
         updateRubricsParams({
           page: 0,
           departmentIds: (departmentFilter?.value as string[]) || [],
           simulationIds: (simulationFilter?.value as string[]) || [],
+          evalIds: (evalFilter?.value as string[]) || [],
         });
       }
     },
@@ -435,15 +449,18 @@ export default function Rubrics({
           });
         },
       },
-      // Hidden faceting column for Simulation (server-driven)
+      // Hidden faceting column for Simulation (server-driven; client filterFn
+      // is harmless second-pass since server-filtered rows already match).
       {
         id: "simulations",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: () => [] as string[],
-        filterFn: () => true,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof rubrics)[number]) => row.simulation_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
       },
       // Hidden faceting column for Departments (server-driven)
       {
@@ -452,8 +469,23 @@ export default function Rubrics({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: () => [] as string[],
-        filterFn: () => true,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof rubrics)[number]) => row.department_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
+      },
+      // Hidden faceting column for Evals (client-faceted; SearchRubricApiRequest
+      // has no eval_search/filter_eval_ids, so we filter purely on the client).
+      {
+        id: "eval_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof rubrics)[number]) => row.eval_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
       },
     ],
     [],
@@ -633,13 +665,23 @@ export default function Rubrics({
         : (rubric.pass_percentage ?? 0);
 
     const isSelected = rubric.rubric_id ? selectedRubricIds.includes(rubric.rubric_id) : false;
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Don't toggle selection if clicking action buttons
+      if ((e.target as HTMLElement).closest("[data-action-button]")) return;
+      if (rubric.rubric_id) {
+        toggleSelection(rubric.rubric_id);
+      }
+    };
     return (
       <Card
         key={rubric.rubric_id}
-        className={`group w-full transition-all ${isSelected ? "ring-2 ring-primary" : ""}`}
+        className={`group w-full hover:shadow-md transition-all cursor-pointer ${isSelected ? "ring-2 ring-primary" : ""}`}
         data-testid="rubric-card"
         data-rubric-id={rubric.rubric_id}
+        role="gridcell"
+        aria-label={`rubric card ${rubric.name || "Unnamed Rubric"}`}
         aria-selected={isSelected}
+        onClick={handleCardClick}
       >
         {/* Header */}
         <CardHeader className="border-b">
@@ -683,7 +725,7 @@ export default function Rubrics({
                 </p>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2" data-action-button>
               {rubric.can_edit ? (
                 <Button
                   variant="outline"
@@ -800,9 +842,9 @@ export default function Rubrics({
   };
 
   // Get column references for toolbar
-  const passPercentageColumn = table.getColumn("passPercentage");
   const departmentsColumn = table.getColumn("departments");
   const simulationsColumn = table.getColumn("simulations");
+  const evalsColumn = table.getColumn("eval_ids");
   const isFiltered =
     table.getState().columnFilters.length > 0 ||
     searchTerm.length > 0;
@@ -873,12 +915,9 @@ export default function Rubrics({
               <ThreePickerFilters
                 slots={[
                   {
-                    column: departmentsColumn,
-                    title: "Department",
-                    options: departmentOptions,
-                    isServerDriven: true,
-                    onSearchChange: handleDepartmentSearchChange,
-                    searchValue: localDepartmentSearch,
+                    column: evalsColumn,
+                    title: "Eval",
+                    options: evalOptions,
                   },
                   {
                     column: simulationsColumn,
@@ -889,9 +928,12 @@ export default function Rubrics({
                     searchValue: localSimulationSearch,
                   },
                   {
-                    column: passPercentageColumn,
-                    title: "Pass %",
-                    options: passPercentageOptions,
+                    column: departmentsColumn,
+                    title: "Department",
+                    options: departmentOptions,
+                    isServerDriven: true,
+                    onSearchChange: handleDepartmentSearchChange,
+                    searchValue: localDepartmentSearch,
                   },
                 ]}
               />
@@ -909,6 +951,7 @@ export default function Rubrics({
                       search: "",
                       departmentIds: [],
                       simulationIds: [],
+                      evalIds: [],
                       departmentSearch: "",
                       simulationSearch: "",
                     });

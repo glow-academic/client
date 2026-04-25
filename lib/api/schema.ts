@@ -7877,6 +7877,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/test/invocation/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Invocation Endpoint
+         * @description Create an invocation within a test.
+         */
+        post: operations["create_invocation_endpoint_test_invocation_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/test/invocation/draft": {
         parameters: {
             query?: never;
@@ -14071,6 +14091,58 @@ export interface components {
              * @default 0
              */
             score: number;
+        };
+        /**
+         * CreateInvocationApiRequest
+         * @description Create a test_invocation_entry on an existing test, optionally with
+         *     multi-select resource selections supplied by the user.
+         */
+        CreateInvocationApiRequest: {
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /**
+             * Use Custom
+             * @default false
+             */
+            use_custom: boolean;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+            /** Quality Ids */
+            quality_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids?: string[] | null;
+            /** Temperature Level Ids */
+            temperature_level_ids?: string[] | null;
+            /** Modality Ids */
+            modality_ids?: string[] | null;
+        };
+        /** CreateInvocationApiResponse */
+        CreateInvocationApiResponse: {
+            /**
+             * Invocation Id
+             * Format: uuid
+             * @description UUID of the created test invocation
+             */
+            invocation_id: string;
         };
         /**
          * CreateModelApiRequest
@@ -29437,6 +29509,8 @@ export interface components {
             permissions?: components["schemas"]["app__infra__tool__types__SectionFilter"] | null;
             /** @description Filter options for instructions */
             instructions?: components["schemas"]["app__infra__tool__types__SectionFilter"] | null;
+            /** @description Filter options for departments */
+            departments?: components["schemas"]["app__infra__tool__types__SectionFilter"] | null;
         };
         /** GetToolApiResponse */
         GetToolApiResponse: {
@@ -29535,6 +29609,11 @@ export interface components {
              * @description Instruction resources (single-select)
              */
             instructions?: components["schemas"]["ToolInstructionResource"][] | null;
+            /**
+             * Departments
+             * @description Department resources
+             */
+            departments?: components["schemas"]["ToolDepartmentResource"][] | null;
         };
         /** GetToolDraftResponse */
         GetToolDraftResponse: {
@@ -32948,6 +33027,16 @@ export interface components {
              */
             department_ids?: string[] | null;
             /**
+             * Setting Ids
+             * @description Setting artifact UUIDs that reference this auth
+             */
+            setting_ids?: string[];
+            /**
+             * Auth Item Key Ids
+             * @description Auth item key resource UUIDs owned by this auth
+             */
+            auth_item_key_ids?: string[];
+            /**
              * Is Inactive
              * @description Whether the auth provider is inactive
              */
@@ -32987,6 +33076,10 @@ export interface components {
             department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Filter options for flags in list UI */
             flag_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for settings in list UI */
+            settings_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for auth item keys in list UI */
+            auth_item_keys_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of auth providers
@@ -33311,6 +33404,21 @@ export interface components {
              */
             staff_count?: number | null;
             /**
+             * Profile Ids
+             * @description Profile artifact UUIDs assigned to this department
+             */
+            profile_ids?: string[];
+            /**
+             * Setting Ids
+             * @description Setting artifact UUIDs scoped to this department
+             */
+            setting_ids?: string[];
+            /**
+             * Login Ids
+             * @description Login resource UUIDs reachable via this department's settings
+             */
+            login_ids?: string[];
+            /**
              * Is Inactive
              * @description Whether the department is inactive
              */
@@ -33350,6 +33458,12 @@ export interface components {
             departments?: components["schemas"]["ListDepartmentApiDepartment"][] | null;
             /** @description Filter options for flags in list UI */
             flag_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for profiles in list UI */
+            profile_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for settings in list UI */
+            settings_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for logins in list UI */
+            logins_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of departments
@@ -33502,6 +33616,16 @@ export interface components {
              */
             department_ids?: string[] | null;
             /**
+             * Model Ids
+             * @description Model resource UUIDs assigned to this eval
+             */
+            model_ids?: string[];
+            /**
+             * Rubric Ids
+             * @description Rubric artifact UUIDs assigned to this eval (via model_rubrics_resource)
+             */
+            rubric_ids?: string[];
+            /**
              * Is Inactive
              * @description Whether the eval is inactive
              */
@@ -33566,6 +33690,10 @@ export interface components {
             department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Filter options for flags in list UI */
             flag_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for models in list UI */
+            model_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for rubrics in list UI */
+            rubric_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of matching records
@@ -34500,6 +34628,11 @@ export interface components {
              */
             primary_department_id?: string | null;
             /**
+             * Permission Ids
+             * @description Permission resource UUIDs granted via the profile's role
+             */
+            permission_ids?: string[];
+            /**
              * Can Edit
              * @description Whether the actor can edit this profile
              */
@@ -34551,6 +34684,8 @@ export interface components {
             role_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Filter options for flags in list UI */
             flag_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for permissions in list UI */
+            permissions_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of profiles
@@ -34770,6 +34905,8 @@ export interface components {
             simulation_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Filter options for flags in list UI */
             flag_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for evals in list UI */
+            eval_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of matching records
@@ -34843,6 +34980,11 @@ export interface components {
              * @description Associated standard group UUIDs
              */
             standard_group_ids?: string[] | null;
+            /**
+             * Eval Ids
+             * @description Eval artifact UUIDs that reference this rubric (via model_rubrics_resource)
+             */
+            eval_ids?: string[];
             /**
              * Is Inactive
              * @description Whether the rubric is inactive
@@ -35269,6 +35411,12 @@ export interface components {
             keys?: components["schemas"]["ListSettingApiKey"][] | null;
             /** @description Filter options for flags in list UI */
             flag_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for providers in list UI */
+            providers_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for auths in list UI */
+            auth_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for systems in list UI */
+            systems_filter?: components["schemas"]["ListFilterSection"] | null;
         };
         /**
          * ListSettingApiSetting
@@ -35310,6 +35458,21 @@ export interface components {
              * @description Associated department IDs
              */
             department_ids?: string[] | null;
+            /**
+             * Provider Ids
+             * @description Provider resource UUIDs assigned to this setting
+             */
+            provider_ids?: string[];
+            /**
+             * Auth Ids
+             * @description Auth resource UUIDs assigned to this setting
+             */
+            auth_ids?: string[];
+            /**
+             * System Ids
+             * @description System resource UUIDs assigned to this setting
+             */
+            system_ids?: string[];
             /**
              * Can Edit
              * @description Whether the actor can edit this setting
@@ -35518,6 +35681,8 @@ export interface components {
             agent_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Filter options for flags in list UI */
             flag_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for permissions in list UI */
+            permissions_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of tools
@@ -35556,6 +35721,21 @@ export interface components {
              * @description Currently selected flag option UUIDs
              */
             flag_ids?: string[] | null;
+            /**
+             * Permission Ids
+             * @description Permission resource UUIDs assigned to this tool
+             */
+            permission_ids?: string[];
+            /**
+             * Agent Ids
+             * @description Agent artifact UUIDs that reference this tool
+             */
+            agent_ids?: string[];
+            /**
+             * Department Ids
+             * @description Department resource UUIDs assigned to this tool
+             */
+            department_ids?: string[];
             /**
              * Updated At
              * @description Timestamp of last update
@@ -49309,6 +49489,8 @@ export interface components {
         StartTestApiResponse: {
             /** Test Id */
             test_id: string;
+            /** Invocation Id */
+            invocation_id?: string | null;
         };
         /**
          * StarterPrompt
@@ -50071,6 +50253,47 @@ export interface components {
             /**
              * Generated
              * @description Whether the argument was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** ToolDepartmentResource */
+        ToolDepartmentResource: {
+            /**
+             * Department Id
+             * @description Department identifier
+             */
+            department_id?: string | null;
+            /**
+             * Name
+             * @description Department name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Department description
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether the department was AI-generated
              */
             generated?: boolean | null;
             /**
@@ -67416,6 +67639,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetSuiteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_invocation_endpoint_test_invocation_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInvocationApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateInvocationApiResponse"];
                 };
             };
             /** @description Validation Error */

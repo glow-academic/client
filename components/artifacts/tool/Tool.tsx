@@ -15,6 +15,7 @@ import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { ArgPositions } from "@/components/resources/ArgPositions";
 import { Args } from "@/components/resources/Args";
 import { ArgsOutputs } from "@/components/resources/ArgsOutputs";
+import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Instructions } from "@/components/resources/Instructions";
@@ -67,6 +68,7 @@ type ToolFormState = {
   name: string | null;
   description_id: string | null;
   description: string | null;
+  department_ids: string[];
   flag_ids: string[];
   args_ids: string[];
   arg_position_ids: string[];
@@ -268,11 +270,23 @@ function ToolComponent({
   const selectedDescription = s?.descriptions?.find((item) => item.selected) ?? null;
 
   const getInitialFormState = useCallback((): ToolFormState => {
+    // Departments may be exposed under the (planned) `departments` field on
+    // the GET response; until the API surfaces them, fall back to an empty
+    // catalog. The picker below renders selected ids regardless.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const departmentResources = ((s as any)?.departments ?? []) as Array<{
+      department_id?: string | null;
+      selected?: boolean | null;
+    }>;
     return {
       name_id: selectedName?.id ?? null,
       name: null,
       description_id: selectedDescription?.id ?? null,
       description: null,
+      department_ids: departmentResources
+        .filter((d) => d.selected && d.department_id)
+        .map((d) => d.department_id!)
+        .filter((id): id is string => !!id),
       flag_ids: (s?.flags?.filter((item) => item.selected) ?? [])
         .map((item) => item.id)
         .filter((id): id is string => !!id),
@@ -507,6 +521,7 @@ function ToolComponent({
       description: formState.description || null,
       name_id: formState.name_id,
       description_id: formState.description_id,
+      department_ids: formState.department_ids,
       flag_ids: formState.flag_ids,
       args_ids: formState.args_ids,
       arg_position_ids: formState.arg_position_ids,
@@ -528,6 +543,7 @@ function ToolComponent({
       !!formState.name ||
       !!formState.description_id ||
       !!formState.description ||
+      formState.department_ids.length > 0 ||
       formState.flag_ids.length > 0 ||
       formState.args_ids.length > 0 ||
       formState.arg_position_ids.length > 0 ||
@@ -546,6 +562,8 @@ function ToolComponent({
         const payload: Record<string, unknown> = {
           draft_id: draftId || null,
           input_draft_id: draftId || null,
+          department_ids:
+            current.department_ids.length > 0 ? current.department_ids : null,
           flag_ids: current.flag_ids.length > 0 ? current.flag_ids : null,
           arg_ids: current.args_ids,
           arg_position_ids: current.arg_position_ids,
@@ -596,6 +614,7 @@ function ToolComponent({
             name: fs.name_id ? null : prev.name,
             description_id: fs.description_id ?? prev.description_id,
             description: fs.description_id ? null : prev.description,
+            department_ids: fs.department_ids ?? prev.department_ids,
             flag_ids: fs.flag_ids ?? prev.flag_ids,
             args_ids: fs.arg_ids ?? prev.args_ids,
             arg_position_ids: fs.arg_position_ids ?? prev.arg_position_ids,
@@ -790,6 +809,9 @@ function ToolComponent({
                   ...(formState.description_id
                     ? { description_id: formState.description_id }
                     : { description: formState.description || null }),
+                  department_ids: formState.department_ids.length
+                    ? formState.department_ids
+                    : null,
                   flag_ids: formState.flag_ids.length ? formState.flag_ids : null,
                   ...argumentsPayload,
                   permission_ids: formState.permission_ids.length
@@ -812,6 +834,9 @@ function ToolComponent({
                   ...(formState.description_id
                     ? { description_id: formState.description_id }
                     : { description: formState.description || null }),
+                  department_ids: formState.department_ids.length
+                    ? formState.department_ids
+                    : null,
                   flag_ids: formState.flag_ids.length ? formState.flag_ids : null,
                   ...argumentsPayload,
                   permission_ids: formState.permission_ids.length
@@ -904,7 +929,7 @@ function ToolComponent({
         id: "basic",
         title: "Basic Information",
         description: "Set the tool name, description, and status.",
-        resetFields: ["name", "description", "flag_ids"],
+        resetFields: ["name", "description", "department_ids", "flag_ids"],
       },
       {
         id: "arguments",
@@ -976,6 +1001,7 @@ function ToolComponent({
             name_id: null,
             description: null,
             description_id: null,
+            department_ids: [],
             flag_ids: [],
           };
         case "arguments":
@@ -1075,7 +1101,7 @@ function ToolComponent({
                   required={true}
                 />
               }
-              resetFields={["name", "description", "flag_ids"]}
+              resetFields={["name", "description", "department_ids", "flag_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
@@ -1088,6 +1114,22 @@ function ToolComponent({
                   disabled={disabled}
                   onDescriptionIdChange={handleDescriptionIdChange}
                   onDescriptionChange={handleDescriptionChange}
+                />
+                {/* Departments — multi-select. Catalog is sourced from
+                    `(toolData as any).departments` once the GET endpoint
+                    surfaces it; the picker simply renders nothing until then.
+                    Form state, draft autosave, and create/update payloads all
+                    already round-trip `department_ids`. */}
+                <Departments
+                  department_ids={formState.department_ids}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  departments={((s as any)?.departments ?? []) as any[]}
+                  show_departments
+                  disabled={disabled}
+                  onChange={(ids: string[]) =>
+                    setFormState((prev) => ({ ...prev, department_ids: ids }))
+                  }
+                  label="Departments"
                 />
                 <Flags
                   values={flagValues}

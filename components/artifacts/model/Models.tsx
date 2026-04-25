@@ -690,10 +690,17 @@ export default function Models({
 
   const renderModelCard = (model: (typeof models)[number]) => {
     const isSelected = model.model_id ? selectedModelIds.includes(model.model_id) : false;
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Don't toggle selection if clicking action buttons
+      if ((e.target as HTMLElement).closest("[data-action-button]")) return;
+      if (model.model_id) {
+        toggleSelection(model.model_id);
+      }
+    };
     return (
     <Card
       key={model.model_id}
-      className={`group hover:shadow-md transition-all flex flex-col h-full min-h-[220px] ${
+      className={`group hover:shadow-md transition-all flex flex-col h-full min-h-[220px] cursor-pointer ${
         isSelected ? "ring-2 ring-primary" : ""
       }`}
       data-testid="model-card"
@@ -701,6 +708,7 @@ export default function Models({
       role="gridcell"
       aria-label={`model card ${model.name || "Unnamed Model"}`}
       aria-selected={isSelected}
+      onClick={handleCardClick}
     >
       <CardHeader className="flex-0">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
@@ -743,7 +751,7 @@ export default function Models({
           </Badge>
         </div>
       </CardHeader>
-      <CardFooter className="mt-auto flex flex-wrap justify-end gap-2">
+      <CardFooter className="mt-auto flex flex-wrap justify-end gap-2" data-action-button>
         {model.can_edit && (
           <Button
             variant="outline"
@@ -873,20 +881,20 @@ export default function Models({
                         searchValue: localProviderSearch,
                       },
                       {
-                        column: departmentsColumn,
-                        title: "Department",
-                        options: departmentOptions,
-                        isServerDriven: true,
-                        onSearchChange: handleDepartmentSearchChange,
-                        searchValue: localDepartmentSearch,
-                      },
-                      {
                         column: agentsColumn,
                         title: "Agent",
                         options: agentOptions,
                         isServerDriven: true,
                         onSearchChange: handleAgentSearchChange,
                         searchValue: localAgentSearch,
+                      },
+                      {
+                        column: departmentsColumn,
+                        title: "Department",
+                        options: departmentOptions,
+                        isServerDriven: true,
+                        onSearchChange: handleDepartmentSearchChange,
+                        searchValue: localDepartmentSearch,
                       },
                     ]}
                   />

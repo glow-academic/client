@@ -486,10 +486,8 @@ export default function Providers({
     setIsDeleting(true);
     try {
       await deleteProviderAction({
-        body: {
-          provider_id: deleteItem.id,
-        },
-      });
+        body: { provider_ids: [deleteItem.id], accept: true },
+      } as DeleteProviderIn);
       toast.success("Provider deleted successfully");
       router.refresh();
     } catch {
@@ -577,16 +575,24 @@ export default function Providers({
     if (!providerId) return null;
     const isSelected = selectedProviderIds.includes(providerId);
 
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Don't toggle selection if clicking action buttons
+      if ((e.target as HTMLElement).closest("[data-action-button]")) return;
+      toggleSelection(providerId);
+    };
+
     return (
       <Card
         key={providerId}
-        aria-label={providerName ?? undefined}
+        aria-label={providerName ? `provider card ${providerName}` : undefined}
         data-testid="provider-card"
         data-provider-id={providerId}
-        className={`group relative flex flex-col h-full transition-all ${
+        className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
           isSelected ? "ring-2 ring-primary" : ""
         }`}
+        role="gridcell"
         aria-selected={isSelected}
+        onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
@@ -618,7 +624,7 @@ export default function Providers({
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" data-action-button>
               {provider.can_edit && providerId && (
                 <Button
                   variant="ghost"
@@ -723,14 +729,6 @@ export default function Providers({
           <ThreePickerFilters
             slots={[
               {
-                column: departmentsColumn,
-                title: "Department",
-                options: departmentOptions,
-                isServerDriven: true,
-                onSearchChange: handleDepartmentSearchChange,
-                searchValue: localDepartmentSearch,
-              },
-              {
                 column: modelsColumn,
                 title: "Model",
                 options: modelOptions,
@@ -743,6 +741,14 @@ export default function Providers({
                 title: "Status",
                 options: statusOptions,
                 isServerDriven: true,
+              },
+              {
+                column: departmentsColumn,
+                title: "Department",
+                options: departmentOptions,
+                isServerDriven: true,
+                onSearchChange: handleDepartmentSearchChange,
+                searchValue: localDepartmentSearch,
               },
             ]}
           />

@@ -459,20 +459,26 @@ export default function Fields({
     setShowBulkEditDialog(true);
   };
 
-  const _handleCreateNew = () => {
-    router.push("/management/fields/new");
-  };
-
   const renderFieldCard = (field: (typeof fields)[number]) => {
     const isSelected = field.field_id ? selectedFieldIds.includes(field.field_id) : false;
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Don't toggle selection if clicking action buttons
+      if ((e.target as HTMLElement).closest("[data-action-button]")) return;
+      if (field.field_id) {
+        toggleSelection(field.field_id);
+      }
+    };
     return (
       <Card
         key={field.field_id}
-        className={`group flex flex-col h-full hover:shadow-md transition-all ${
+        className={`group flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
           isSelected ? "ring-2 ring-primary" : ""
         }`}
         data-testid={`field-card-${field.field_id}`}
+        role="gridcell"
+        aria-label={`field card ${field.name || "Unnamed Field"}`}
         aria-selected={isSelected}
+        onClick={handleCardClick}
       >
         <CardHeader className="pb-4 flex-shrink-0">
           <div className="flex items-start justify-between">
@@ -498,7 +504,7 @@ export default function Fields({
                 {field.name}
               </CardTitle>
             </div>
-            <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+            <div className="flex items-center gap-1 ml-2 flex-shrink-0" data-action-button>
               {field.can_edit && (
                 <Button
                   variant="outline"

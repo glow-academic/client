@@ -37,8 +37,13 @@ interface EventSourceEntry {
 }
 
 function artifactFromEventName(event: string): string {
-  const dot = event.indexOf(".");
-  return dot === -1 ? event : event.slice(0, dot);
+  const segments = event.split(".");
+  // Canonical events are emitted as `artifacts.{artifact}.{...}` — when the
+  // first segment is the literal `artifacts`, the artifact is the second.
+  if (segments[0] === "artifacts" && segments.length > 1) {
+    return segments[1] ?? event;
+  }
+  return segments[0] ?? event;
 }
 
 function sourceKey(artifact: string, groupId: string | null | undefined): string {

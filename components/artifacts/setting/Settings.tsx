@@ -64,7 +64,12 @@ export default function Settings({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    departments: false,
+    provider_ids: false,
+    auth_ids: false,
+    system_ids: false,
+  });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "created_at", desc: true },
@@ -83,6 +88,44 @@ export default function Settings({
       .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
       .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
   }, [settingsData?.flag_filter]);
+
+  // Picker filter options (all client-faceted; SearchSettingApiRequest is a
+  // bare object — no facet search params at all).
+  const providersOptions = useMemo(
+    () =>
+      (settingsData?.providers_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [settingsData?.providers_filter]
+  );
+
+  const authOptions = useMemo(
+    () =>
+      (settingsData?.auth_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [settingsData?.auth_filter]
+  );
+
+  const systemsOptions = useMemo(
+    () =>
+      (settingsData?.systems_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: (opt.name as string) || (opt.id as string),
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value),
+    [settingsData?.systems_filter]
+  );
 
   // Selection state
   const [selectedSettingIds, setSelectedSettingIds] = useState<string[]>([]);
@@ -194,22 +237,6 @@ export default function Settings({
     setShowBulkEditDialog(true);
   };
 
-  // Derive department options from settings (extract unique department IDs)
-  const departmentOptions = useMemo(() => {
-    const deptSet = new Set<string>();
-    settings.forEach((setting) => {
-      (setting.department_ids || []).forEach((deptId) => {
-        if (deptId) deptSet.add(deptId);
-      });
-    });
-    // Note: We'd need department names from a separate API call or include them in list response
-    // For now, just use IDs
-    return Array.from(deptSet).map((deptId) => ({
-      value: deptId,
-      label: deptId, // Would be better to have department names
-    }));
-  }, [settings]);
-
   // Define table columns
   const columns: ColumnDef<(typeof settings)[number]>[] = useMemo(() => {
     return [
@@ -252,6 +279,42 @@ export default function Settings({
           if (rowIds.length === 0) return true; // Show cross-department items when no filter
           return value.some((v) => rowIds.includes(v));
         },
+      },
+      // Hidden faceting column for Providers (client-faceted)
+      {
+        id: "provider_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof settings)[number]) => row.provider_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
+      },
+      // Hidden faceting column for Auths (client-faceted)
+      {
+        id: "auth_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof settings)[number]) => row.auth_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
+      },
+      // Hidden faceting column for Systems (client-faceted)
+      {
+        id: "system_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof settings)[number]) => row.system_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
       },
       {
         accessorKey: "active",
@@ -337,10 +400,17 @@ export default function Settings({
   const renderSettingCard = (setting: (typeof settings)[0]) => {
     const settingsId = setting.settings_id;
     const isSelected = settingsId ? selectedSettingIds.includes(settingsId) : false;
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Don't toggle selection if clicking action buttons
+      if ((e.target as HTMLElement).closest("[data-action-button]")) return;
+      if (settingsId) {
+        toggleSelection(settingsId);
+      }
+    };
     return (
       <Card
         key={setting.settings_id}
-        className={`group hover:shadow-md transition-all ${
+        className={`group hover:shadow-md transition-all cursor-pointer ${
           isSelected ? "ring-2 ring-primary" : ""
         }`}
         data-testid="setting-card"
@@ -348,6 +418,7 @@ export default function Settings({
         role="gridcell"
         aria-label={`setting card ${setting.name || "Unnamed Setting"}`}
         aria-selected={isSelected}
+        onClick={handleCardClick}
       >
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -393,7 +464,7 @@ export default function Settings({
                 </div>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center" data-action-button>
               <Button
                 variant="outline"
                 size="sm"
@@ -440,7 +511,9 @@ export default function Settings({
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
-  const departmentsColumn = table.getColumn("departments");
+  const providersColumn = table.getColumn("provider_ids");
+  const authColumn = table.getColumn("auth_ids");
+  const systemsColumn = table.getColumn("system_ids");
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
@@ -510,18 +583,21 @@ export default function Settings({
             <div className="flex items-center space-x-2 flex-wrap">
               <ThreePickerFilters
                 slots={[
-                  { column: undefined, title: "Flag", options: [] },
                   {
-                    column:
-                      departmentsColumn &&
-                      departmentOptions.length > 0 &&
-                      (departmentIds?.length ?? 0) > 1
-                        ? departmentsColumn
-                        : undefined,
-                    title: "Department",
-                    options: departmentOptions,
+                    column: providersColumn,
+                    title: "Providers",
+                    options: providersOptions,
                   },
-                  { column: undefined, title: "Filter", options: [] },
+                  {
+                    column: authColumn,
+                    title: "Auth",
+                    options: authOptions,
+                  },
+                  {
+                    column: systemsColumn,
+                    title: "Systems",
+                    options: systemsOptions,
+                  },
                 ]}
               />
 

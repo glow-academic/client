@@ -482,16 +482,13 @@ export default function Parameters({
     }
     return (
       <div className="space-y-2">
-        {items.map((item: NonNullable<typeof items>[number]) => (
+        {items.map((item: string, idx: number) => (
           <div
-            key={item.parameter_item_id}
+            key={`${item}-${idx}`}
             className="flex items-center justify-between p-2 bg-muted/50 rounded-md"
           >
             <div>
-              <p className="text-sm font-medium">{item.name}</p>
-              <p className="text-xs text-muted-foreground line-clamp-1">
-                {item.description}
-              </p>
+              <p className="text-sm font-medium">{item}</p>
             </div>
           </div>
         ))}
@@ -510,10 +507,18 @@ export default function Parameters({
       ? selectedParameterIds.includes(parameter.parameter_id)
       : false;
 
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Don't toggle selection if clicking action buttons
+      if ((e.target as HTMLElement).closest("[data-action-button]")) return;
+      if (parameter.parameter_id) {
+        toggleSelection(parameter.parameter_id);
+      }
+    };
+
     return (
       <Card
         key={parameter.parameter_id}
-        className={`group relative flex flex-col h-full transition-all ${
+        className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
           isSelected ? "ring-2 ring-primary" : ""
         }`}
         data-testid="parameter-card"
@@ -521,6 +526,7 @@ export default function Parameters({
         role="gridcell"
         aria-label={`parameter card ${parameter.name}`}
         aria-selected={isSelected}
+        onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -562,7 +568,7 @@ export default function Parameters({
                 )}
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2" data-action-button>
               {parameter.can_edit ? (
                 <Button
                   variant="outline"

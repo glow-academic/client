@@ -3,10 +3,21 @@
  * Auth component showing overview of auth entries
  */
 "use client";
-import { Copy, Edit, Eye, Key, Pencil, Trash2 } from "lucide-react";
+import { Copy, Edit, Eye, Key, Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
 import {
   AlertDialog,
@@ -79,6 +90,120 @@ export default function Auths({
       .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
       .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
   }, [authsData?.flag_filter]);
+
+  // Department filter options (server returns the full catalog; faceting is client-side
+  // because the auth search endpoint is currently call-and-forget without query params).
+  const departmentOptions = useMemo(
+    () =>
+      (authsData?.department_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [authsData?.department_filter]
+  );
+
+  const settingsOptions = useMemo(
+    () =>
+      (authsData?.settings_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [authsData?.settings_filter]
+  );
+
+  // auth_item_keys options sometimes carry no `name` (raw keys); fall back to id.
+  const authItemKeysOptions = useMemo(
+    () =>
+      (authsData?.auth_item_keys_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: (opt.name as string) || (opt.id as string),
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value),
+    [authsData?.auth_item_keys_filter]
+  );
+
+  // Table state — needed so the picker slots have columns to drive.
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    departments: false,
+    setting_ids: false,
+    auth_item_key_ids: false,
+  });
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  // Hidden faceting columns for all three picker slots. All three are
+  // client-faceted (auth search endpoint takes no facet search params today).
+  const columns: ColumnDef<(typeof auths)[number]>[] = useMemo(
+    () => [
+      {
+        id: "departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof auths)[number]) => row.department_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          if (!value?.length) return true;
+          const rowIds = (row.getValue("departments") as string[]) ?? [];
+          if (rowIds.length === 0) return true; // cross-department items always match
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
+      {
+        id: "setting_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof auths)[number]) => row.setting_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
+      },
+      {
+        id: "auth_item_key_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof auths)[number]) => row.auth_item_key_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
+      },
+    ],
+    []
+  );
+
+  const table = useReactTable({
+    data: auths,
+    columns,
+    state: {
+      sorting,
+      columnVisibility,
+      columnFilters,
+    },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+
+  const departmentsColumn = table.getColumn("departments");
+  const settingsColumn = table.getColumn("setting_ids");
+  const authItemKeysColumn = table.getColumn("auth_item_key_ids");
+  const isFiltered = table.getState().columnFilters.length > 0;
 
   // Selection state
   const [selectedAuthIds, setSelectedAuthIds] = useState<string[]>([]);
@@ -250,10 +375,18 @@ export default function Auths({
     const count = auth.item_count ?? 0;
     const isSelected = auth.auth_id ? selectedAuthIds.includes(auth.auth_id) : false;
 
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Don't toggle selection if clicking action buttons
+      if ((e.target as HTMLElement).closest("[data-action-button]")) return;
+      if (auth.auth_id) {
+        toggleSelection(auth.auth_id);
+      }
+    };
+
     return (
       <Card
         key={auth.auth_id}
-        className={`group relative flex flex-col h-full transition-all ${
+        className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
           isSelected ? "ring-2 ring-primary" : ""
         }`}
         data-testid="auth-card"
@@ -261,6 +394,7 @@ export default function Auths({
         role="gridcell"
         aria-label={`auth card ${auth.name}`}
         aria-selected={isSelected}
+        onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -297,7 +431,7 @@ export default function Auths({
                 )}
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2" data-action-button>
               {auth.can_edit ? (
                 <Button
                   variant="outline"
@@ -424,22 +558,46 @@ export default function Auths({
         <div className="flex items-center space-x-2 flex-wrap" data-testid="auths-toolbar">
           <ThreePickerFilters
             slots={[
-              { column: undefined, title: "Flag", options: [] },
-              { column: undefined, title: "Department", options: [] },
-              { column: undefined, title: "Filter", options: [] },
+              {
+                column: settingsColumn,
+                title: "Settings",
+                options: settingsOptions,
+              },
+              {
+                column: authItemKeysColumn,
+                title: "Auth Items",
+                options: authItemKeysOptions,
+              },
+              {
+                column: departmentsColumn,
+                title: "Department",
+                options: departmentOptions,
+              },
             ]}
           />
+          {isFiltered && (
+            <Button
+              variant="ghost"
+              onClick={() => table.resetColumnFilters()}
+              className="h-8 px-2 lg:px-3 hidden md:flex"
+            >
+              Reset
+              <X className="ml-2 h-4 w-4" />
+            </Button>
+          )}
         </div>
       )}
 
       {/* Auth Cards Grid */}
-      {auths.length === 0 ? (
+      {table.getRowModel().rows.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12">
-          <p className="text-muted-foreground">No auth entries found</p>
+          <p className="text-muted-foreground">
+            {auths.length === 0 ? "No auth entries found" : "No auth entries match the current filters."}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {auths.map((auth) => renderAuthCard(auth))}
+          {table.getRowModel().rows.map((row) => renderAuthCard(row.original))}
         </div>
       )}
 

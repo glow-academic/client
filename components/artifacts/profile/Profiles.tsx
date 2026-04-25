@@ -478,6 +478,7 @@ export default function Profiles({
     name: true,
     search: false,
     department_ids: true,
+    permission_ids: false,
   });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
@@ -532,6 +533,17 @@ export default function Profiles({
         }))
         .filter((opt) => opt.value && opt.label),
     [serverListData?.role_filter],
+  );
+  const permissionsOptions = useMemo(
+    () =>
+      (serverListData?.permissions_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? 0,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [serverListData?.permissions_filter],
   );
 
   // Transform mappings for CSV import
@@ -1091,6 +1103,18 @@ export default function Profiles({
         },
       },
       {
+        id: "permission_ids",
+        accessorFn: (row: ProfileListItem) => row.permission_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length ||
+          filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        enableColumnFilter: true,
+      },
+      {
         id: "department_ids",
         accessorFn: (row: ProfileListItem) => row.department_ids ?? [],
         filterFn: (row, _, value: string[]) => {
@@ -1368,6 +1392,7 @@ export default function Profiles({
   const nameColumn = table.getColumn("search");
   const roleColumn = table.getColumn("role");
   const departmentIdsColumn = table.getColumn("department_ids");
+  const permissionIdsColumn = table.getColumn("permission_ids");
   const selectedCount = selectedProfileIds.length;
 
   const deletableCount = useMemo(() => {
@@ -1465,19 +1490,19 @@ export default function Profiles({
                 <ThreePickerFilters
                   slots={[
                     {
-                      column: departmentIdsColumn,
-                      title: "Department",
-                      options: departmentOptions,
-                    },
-                    {
                       column: roleColumn,
                       title: "Role",
                       options: roleOptions,
                     },
                     {
-                      column: undefined,
-                      title: "Flag",
-                      options: [],
+                      column: permissionIdsColumn,
+                      title: "Permissions",
+                      options: permissionsOptions,
+                    },
+                    {
+                      column: departmentIdsColumn,
+                      title: "Department",
+                      options: departmentOptions,
                     },
                   ]}
                 />

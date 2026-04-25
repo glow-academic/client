@@ -1261,20 +1261,20 @@ export function Scenarios({
                 <ThreePickerFilters
                   slots={[
                     {
-                      column: simulationColumn,
-                      title: "Simulation",
-                      options: simulationOptions,
-                      isServerDriven: true,
-                      onSearchChange: handleSimulationSearchChange,
-                      searchValue: simulationSearch,
-                    },
-                    {
                       column: personaColumn,
                       title: "Persona",
                       options: personaOptions,
                       isServerDriven: true,
                       onSearchChange: handlePersonaSearchChange,
                       searchValue: personaSearch,
+                    },
+                    {
+                      column: simulationColumn,
+                      title: "Simulation",
+                      options: simulationOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleSimulationSearchChange,
+                      searchValue: simulationSearch,
                     },
                     {
                       column: departmentsColumn,

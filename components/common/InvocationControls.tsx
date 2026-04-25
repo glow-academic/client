@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { useSocket } from "@/contexts/socket-context";
+import { useTransport } from "@/lib/transport/context";
 import { useTestLifecycle } from "@/hooks/use-test-lifecycle";
 import type { TestErrorEvent } from "@/hooks/use-test-lifecycle";
 import { useCallback, useState } from "react";
@@ -32,58 +32,43 @@ export function InvocationControls({
   currentInvocationId,
   hasRunsOrGroups,
 }: InvocationControlsProps) {
-  // testId available for endTest (needs test_id + run_id) if needed
+  // testId is reserved for future end-with-grade flows
   void testId;
-  const { socket } = useSocket();
+  const transport = useTransport();
 
-  // Confirmation dialog state
   const [confirmStopOpen, setConfirmStopOpen] = useState(false);
-
-  // Loading state for Stop button
   const [stoppingLoading, setStoppingLoading] = useState(false);
 
-  // Listen for WebSocket lifecycle events to reset loading state
-  const { stopTest } = useTestLifecycle({
-    socket,
+  const { stopInvocation } = useTestLifecycle({
+    transport,
     invocationId: currentInvocationId,
-    onStopped: useCallback(() => {
+    onInvocationStopped: useCallback(() => {
       setStoppingLoading(false);
     }, []),
-    onAllComplete: useCallback(() => {
+    onEnded: useCallback(() => {
       setStoppingLoading(false);
     }, []),
     onError: useCallback((data: TestErrorEvent) => {
       setStoppingLoading(false);
-      if (data.message) {
-        toast.error(data.message);
-      }
+      const message = data["message"] as string | undefined;
+      if (message) toast.error(message);
     }, []),
   });
 
-  // Handle Stop button click
   const handleStop = useCallback(() => {
-    // No runs or groups: show confirmation
     if (!hasRunsOrGroups) {
       setConfirmStopOpen(true);
       return;
     }
-
-    // Has runs/groups: stop immediately
     setStoppingLoading(true);
-    stopTest(currentInvocationId);
-  }, [hasRunsOrGroups, currentInvocationId, stopTest]);
+    stopInvocation(currentInvocationId);
+  }, [hasRunsOrGroups, currentInvocationId, stopInvocation]);
 
-  // Confirm stop with no runs or groups
   const handleConfirmStop = useCallback(() => {
-    if (!socket) {
-      toast.error("WebSocket not connected. Please refresh the page.");
-      return;
-    }
-
     setConfirmStopOpen(false);
     setStoppingLoading(true);
-    stopTest(currentInvocationId);
-  }, [currentInvocationId, socket, stopTest]);
+    stopInvocation(currentInvocationId);
+  }, [currentInvocationId, stopInvocation]);
 
   return (
     <>

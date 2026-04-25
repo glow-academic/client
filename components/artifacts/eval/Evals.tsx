@@ -38,7 +38,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useSocket } from "@/contexts/socket-context";
 import { useEvalAi } from "@/hooks/use-eval-ai";
 import {
   ColumnDef,
@@ -46,6 +45,7 @@ import {
   SortingState,
   VisibilityState,
   getCoreRowModel,
+  getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -74,7 +74,6 @@ export default function Evals({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { socket } = useSocket();
 
   useEvalAi({
     onComplete: () => router.refresh(),
@@ -92,13 +91,22 @@ export default function Evals({
   );
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Table state
+  // Table state — hidden faceting columns default to off
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    departments: false,
+    model_ids: false,
+    rubric_ids: false,
+    updated_at: false,
+  });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
     const filters: ColumnFiltersState = [];
     const deptIds = searchParams?.getAll("departmentIds") ?? [];
+    const modelIds = searchParams?.getAll("modelIds") ?? [];
+    const rubricIds = searchParams?.getAll("rubricIds") ?? [];
     if (deptIds.length > 0) filters.push({ id: "departments", value: deptIds });
+    if (modelIds.length > 0) filters.push({ id: "model_ids", value: modelIds });
+    if (rubricIds.length > 0) filters.push({ id: "rubric_ids", value: rubricIds });
     return filters;
   });
   const [sorting, setSorting] = useState<SortingState>([
@@ -129,6 +137,30 @@ export default function Evals({
         }))
         .filter((opt) => opt.value && opt.label),
     [evalsData?.department_filter]
+  );
+
+  const modelOptions = useMemo(
+    () =>
+      (evalsData?.model_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [evalsData?.model_filter]
+  );
+
+  const rubricOptions = useMemo(
+    () =>
+      (evalsData?.rubric_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [evalsData?.rubric_filter]
   );
 
   // Flag catalog (e.g. eval_active) — used to reconstruct flag_ids on bulk edit.
@@ -178,24 +210,8 @@ export default function Evals({
   const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
 
   // WebSocket integration for real-time updates
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleEvalCompleted = (data: {
-      eval_id: string;
-      message: string;
-    }) => {
-      if (data.eval_id) {
-        router.refresh();
-      }
-    };
-
-    socket.on("eval_completed", handleEvalCompleted);
-
-    return () => {
-      socket.off("eval_completed", handleEvalCompleted);
-    };
-  }, [socket, router]);
+  // No `eval_completed` route exists in the OpenAPI socket map; listener
+  // removed until a server-emitted event is canonicalized.
 
   // Helper to update URL search params
   const updateEvalsParams = useCallback(
@@ -204,6 +220,8 @@ export default function Evals({
       pageSize?: number;
       search?: string;
       departmentIds?: string[];
+      modelIds?: string[];
+      rubricIds?: string[];
       departmentSearch?: string;
     }) => {
       const params = new URLSearchParams(searchParams?.toString() || "");
@@ -226,6 +244,16 @@ export default function Evals({
       if (updates.departmentIds !== undefined) {
         params.delete("departmentIds");
         updates.departmentIds.forEach((id) => params.append("departmentIds", id));
+      }
+
+      if (updates.modelIds !== undefined) {
+        params.delete("modelIds");
+        updates.modelIds.forEach((id) => params.append("modelIds", id));
+      }
+
+      if (updates.rubricIds !== undefined) {
+        params.delete("rubricIds");
+        updates.rubricIds.forEach((id) => params.append("rubricIds", id));
       }
 
       if (updates.departmentSearch !== undefined) {
@@ -295,10 +323,14 @@ export default function Evals({
       setColumnFilters(newFilters);
 
       const departmentFilter = newFilters.find((f) => f.id === "departments");
+      const modelFilter = newFilters.find((f) => f.id === "model_ids");
+      const rubricFilter = newFilters.find((f) => f.id === "rubric_ids");
 
       updateEvalsParams({
         page: 0,
         departmentIds: (departmentFilter?.value as string[]) || [],
+        modelIds: (modelFilter?.value as string[]) || [],
+        rubricIds: (rubricFilter?.value as string[]) || [],
       });
     },
     [columnFilters, updateEvalsParams]
@@ -439,15 +471,42 @@ export default function Evals({
           return row.updated_at ?? null;
         },
       },
-      // Hidden faceting column for Departments
+      // Hidden faceting column for Departments (server-driven; client filterFn
+      // is a harmless second pass).
       {
         id: "departments",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: () => [] as string[],
-        filterFn: () => true,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof evalsListArray)[number]) => row.department_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
+      },
+      // Hidden faceting column for Models (client-faceted)
+      {
+        id: "model_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof evalsListArray)[number]) => row.model_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
+      },
+      // Hidden faceting column for Rubrics (client-faceted)
+      {
+        id: "rubric_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof evalsListArray)[number]) => row.rubric_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
       },
     ],
     []
@@ -474,9 +533,14 @@ export default function Evals({
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: handlePaginationChange,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     manualPagination: true,
-    manualFiltering: true,
+    // Client-side filterFns run for slots whose API does not support server-side
+    // filtering (model, rubric). Server-driven slots (departments) get
+    // pre-filtered rows from the server, so client filterFn is a harmless
+    // second pass.
+    manualFiltering: false,
     pageCount,
   });
 
@@ -494,10 +558,16 @@ export default function Evals({
     if (!evalId) return null;
     const isSelected = selectedEvalIds.includes(evalId);
 
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Don't toggle selection if clicking action buttons
+      if ((e.target as HTMLElement).closest("[data-action-button]")) return;
+      toggleSelection(evalId);
+    };
+
     return (
       <Card
         key={evalId}
-        className={`group relative flex flex-col h-full transition-all hover:shadow-md ${
+        className={`group relative flex flex-col h-full transition-all hover:shadow-md cursor-pointer ${
           isSelected ? "ring-2 ring-primary" : ""
         }`}
         data-testid="eval-card"
@@ -505,6 +575,7 @@ export default function Evals({
         role="gridcell"
         aria-label={`eval card ${evalName}`}
         aria-selected={isSelected}
+        onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
@@ -541,7 +612,7 @@ export default function Evals({
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" data-action-button>
               {evalItem.can_edit && evalId ? (
                 <Button
                   variant="outline"
@@ -602,6 +673,8 @@ export default function Evals({
 
   // Get column references for toolbar
   const departmentsColumn = table.getColumn("departments");
+  const modelsColumn = table.getColumn("model_ids");
+  const rubricsColumn = table.getColumn("rubric_ids");
   const isFiltered =
     table.getState().columnFilters.length > 0 ||
     searchTerm.length > 0;
@@ -674,6 +747,16 @@ export default function Evals({
               <ThreePickerFilters
                 slots={[
                   {
+                    column: modelsColumn,
+                    title: "Model",
+                    options: modelOptions,
+                  },
+                  {
+                    column: rubricsColumn,
+                    title: "Rubric",
+                    options: rubricOptions,
+                  },
+                  {
                     column: departmentsColumn,
                     title: "Department",
                     options: departmentOptions,
@@ -681,8 +764,6 @@ export default function Evals({
                     onSearchChange: handleDepartmentSearchChange,
                     searchValue: localDepartmentSearch,
                   },
-                  { column: undefined, title: "Flag", options: [] },
-                  { column: undefined, title: "Filter", options: [] },
                 ]}
               />
 
@@ -697,6 +778,8 @@ export default function Evals({
                       page: 0,
                       search: "",
                       departmentIds: [],
+                      modelIds: [],
+                      rubricIds: [],
                       departmentSearch: "",
                     });
                   }}

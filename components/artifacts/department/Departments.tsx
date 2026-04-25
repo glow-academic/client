@@ -89,7 +89,11 @@ export default function Departments({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    profile_ids: false,
+    setting_ids: false,
+    login_ids: false,
+  });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updated_at", desc: true },
@@ -112,6 +116,44 @@ export default function Departments({
       .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
       .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
   }, [departmentsData?.flag_filter]);
+
+  // Picker filter options (all client-faceted; SearchDepartmentApiRequest
+  // takes only `search`, no per-facet search params).
+  const profileOptions = useMemo(
+    () =>
+      (departmentsData?.profile_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [departmentsData?.profile_filter]
+  );
+
+  const settingsOptions = useMemo(
+    () =>
+      (departmentsData?.settings_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: opt.name as string,
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [departmentsData?.settings_filter]
+  );
+
+  const loginsOptions = useMemo(
+    () =>
+      (departmentsData?.logins_filter?.options || [])
+        .map((opt) => ({
+          value: opt.id as string,
+          label: (opt.name as string) || (opt.id as string),
+          count: opt.count ?? undefined,
+        }))
+        .filter((opt) => opt.value),
+    [departmentsData?.logins_filter]
+  );
 
   // Selection state
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>([]);
@@ -184,6 +226,42 @@ export default function Departments({
             </div>
           );
         },
+      },
+      // Hidden faceting column for Profiles (client-faceted)
+      {
+        id: "profile_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof departments)[number]) => row.profile_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
+      },
+      // Hidden faceting column for Settings (client-faceted)
+      {
+        id: "setting_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof departments)[number]) => row.setting_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
+      },
+      // Hidden faceting column for Logins (client-faceted)
+      {
+        id: "login_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof departments)[number]) => row.login_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
       },
     ],
     [],
@@ -359,10 +437,17 @@ export default function Departments({
     const isSelected = department.department_id
       ? selectedDepartmentIds.includes(department.department_id)
       : false;
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Don't toggle selection if clicking action buttons
+      if ((e.target as HTMLElement).closest("[data-action-button]")) return;
+      if (department.department_id) {
+        toggleSelection(department.department_id);
+      }
+    };
     return (
     <Card
       key={department.department_id}
-      className={`group hover:shadow-md transition-all ${
+      className={`group hover:shadow-md transition-all cursor-pointer ${
         isSelected ? "ring-2 ring-primary" : ""
       }`}
       data-testid="department-card"
@@ -370,6 +455,7 @@ export default function Departments({
       role="gridcell"
       aria-label={`department card ${department.name || "Unnamed Department"}`}
       aria-selected={isSelected}
+      onClick={handleCardClick}
     >
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -413,7 +499,7 @@ export default function Departments({
               {department.description || "No description available"}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex flex-wrap gap-2 items-center" data-action-button>
             {department.can_edit && department.department_id ? (
               <Button
                 variant="outline"
@@ -500,6 +586,9 @@ export default function Departments({
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
+  const profileColumn = table.getColumn("profile_ids");
+  const settingsColumn = table.getColumn("setting_ids");
+  const loginsColumn = table.getColumn("login_ids");
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
@@ -569,9 +658,21 @@ export default function Departments({
               <div className="flex items-center space-x-2 flex-wrap">
                 <ThreePickerFilters
                   slots={[
-                    { column: undefined, title: "Flag", options: [] },
-                    { column: undefined, title: "Department", options: [] },
-                    { column: undefined, title: "Filter", options: [] },
+                    {
+                      column: profileColumn,
+                      title: "Profile",
+                      options: profileOptions,
+                    },
+                    {
+                      column: settingsColumn,
+                      title: "Settings",
+                      options: settingsOptions,
+                    },
+                    {
+                      column: loginsColumn,
+                      title: "Logins",
+                      options: loginsOptions,
+                    },
                   ]}
                 />
                 {isFiltered && (

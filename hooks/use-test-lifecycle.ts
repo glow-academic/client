@@ -1,233 +1,288 @@
+/**
+ * useTestLifecycle — transport-based subscription to canonical test events.
+ *
+ * Mirrors useAttemptLifecycle. Subscribes to the per-(artifact, group_id)
+ * SSE stream via the canonical Transport abstraction — never raw socket.
+ *
+ * Domain mapping (test ↔ attempt):
+ *   test_id           ↔ attempt_id
+ *   test_invocation   ↔ attempt_chat   (chat-equivalent container)
+ *   test_run          ↔ chat replay turn
+ *
+ * Canonical event names (server → client):
+ *   artifacts.test.started
+ *   artifacts.test.invocation.started
+ *   artifacts.test.invocation.ended
+ *   artifacts.test.invocation.stopped
+ *   artifacts.test.invocation.response.saved
+ *   artifacts.test.run.replay_started   (per-run replay inside an invocation)
+ *   artifacts.test.run.progress         (grade/run progress deltas)
+ *   artifacts.test.run.replay_completed
+ *   artifacts.test.ended                (whole test ended)
+ *   artifacts.test.start.failed         (canonical lifecycle error fan-in)
+ *   artifacts.test.run.failed
+ *   artifacts.test.end.failed
+ *   artifacts.test.stop.failed
+ */
 import { useCallback, useEffect, useRef } from "react";
-import type { AppSocket } from "@/contexts/socket-context";
-import type { ServerToClientEvents } from "@/lib/ws/types";
+import type { Transport } from "@/lib/transport/types";
+import { useGroupIdOptional } from "@/contexts/group-context";
 
-// Re-export event types for consumer convenience
-export type TestStartedEvent =
-  Parameters<ServerToClientEvents["test.start.completed"]>[0];
-export type TestRunStartEvent =
-  Parameters<ServerToClientEvents["test_run_start"]>[0];
-export type TestRunCompleteEvent =
-  Parameters<ServerToClientEvents["test.run.completed"]>[0];
-export type TestGradedEvent =
-  Parameters<ServerToClientEvents["test_graded"]>[0];
-export type TestAllCompleteEvent =
-  Parameters<ServerToClientEvents["test_all_complete"]>[0];
-export type TestStoppedEvent =
-  Parameters<ServerToClientEvents["test.stop.completed"]>[0];
-export type TestErrorEvent =
-  Parameters<ServerToClientEvents["test.run.error"]>[0];
+// Loose payload types — the transport delivers Record<string, unknown>.
+export type TestStartedEvent = Record<string, unknown>;
+export type TestInvocationStartedEvent = Record<string, unknown>;
+export type TestInvocationEndedEvent = Record<string, unknown>;
+export type TestInvocationStoppedEvent = Record<string, unknown>;
+export type TestInvocationResponseSavedEvent = Record<string, unknown>;
+export type TestRunReplayStartedEvent = Record<string, unknown>;
+export type TestRunProgressEvent = Record<string, unknown>;
+export type TestRunReplayCompletedEvent = Record<string, unknown>;
+export type TestEndedEvent = Record<string, unknown>;
+export type TestErrorEvent = Record<string, unknown>;
 
 interface UseTestLifecycleConfig {
-  socket: AppSocket | null;
+  transport: Transport;
+  /** Filter invocation-scoped events to a specific invocation. */
   invocationId?: string | null;
+  invocationIdRef?: React.RefObject<string | null>;
+  /** Filter test-scoped events to a specific test. */
+  testId?: string | null;
+  /**
+   * Group id this test is scoped to. Used for SSE subscription routing —
+   * `/test/stream?group_id=…`. Falls back to GroupProviderClient context.
+   */
+  groupId?: string | null;
   onStarted?: (data: TestStartedEvent) => void;
-  onRunStart?: (data: TestRunStartEvent) => void;
-  onRunComplete?: (data: TestRunCompleteEvent) => void;
-  onGraded?: (data: TestGradedEvent) => void;
-  onAllComplete?: (data: TestAllCompleteEvent) => void;
-  onStopped?: (data: TestStoppedEvent) => void;
+  onInvocationStarted?: (data: TestInvocationStartedEvent) => void;
+  onInvocationEnded?: (data: TestInvocationEndedEvent) => void;
+  onInvocationStopped?: (data: TestInvocationStoppedEvent) => void;
+  onInvocationResponseSaved?: (data: TestInvocationResponseSavedEvent) => void;
+  onRunReplayStarted?: (data: TestRunReplayStartedEvent) => void;
+  onRunProgress?: (data: TestRunProgressEvent) => void;
+  onRunReplayCompleted?: (data: TestRunReplayCompletedEvent) => void;
+  onEnded?: (data: TestEndedEvent) => void;
   onError?: (data: TestErrorEvent) => void;
 }
 
 export interface UseTestLifecycleReturn {
-  startTest: (evalId: string, opts?: { infiniteMode?: boolean }) => void;
-  nextTest: (testId: string) => void;
-  runTest: (invocationId: string, testId: string) => void;
-  endTest: (invocationId: string, testId: string, runId: string) => void;
-  stopTest: (invocationId: string) => void;
-  joinRoom: (invocationId: string) => void;
-  leaveRoom: (invocationId: string) => void;
+  startTest: (opts: { benchmarkId: string; infiniteMode?: boolean }) => void;
+  stopInvocation: (invocationId: string) => void;
+  endInvocation: (params: {
+    testId: string;
+    invocationId: string;
+    runId: string;
+    grade?: boolean;
+  }) => void;
+  endAll: (testId: string) => void;
+  nextInvocation: (testId: string) => void;
+  runInvocation: (params: {
+    testId: string;
+    invocationId: string;
+    runId: string;
+  }) => void;
 }
 
 export function useTestLifecycle({
-  socket,
+  transport,
   invocationId,
+  invocationIdRef,
+  testId,
+  groupId: groupIdProp,
   onStarted,
-  onRunStart,
-  onRunComplete,
-  onGraded,
-  onAllComplete,
-  onStopped,
+  onInvocationStarted,
+  onInvocationEnded,
+  onInvocationStopped,
+  onInvocationResponseSaved,
+  onRunReplayStarted,
+  onRunProgress,
+  onRunReplayCompleted,
+  onEnded,
   onError,
 }: UseTestLifecycleConfig): UseTestLifecycleReturn {
-  // Store callbacks in refs to avoid re-registering socket listeners on every render
+  const groupCtx = useGroupIdOptional();
+  const groupId = groupIdProp ?? groupCtx?.groupId ?? null;
+
   const callbacksRef = useRef({
     onStarted,
-    onRunStart,
-    onRunComplete,
-    onGraded,
-    onAllComplete,
-    onStopped,
+    onInvocationStarted,
+    onInvocationEnded,
+    onInvocationStopped,
+    onInvocationResponseSaved,
+    onRunReplayStarted,
+    onRunProgress,
+    onRunReplayCompleted,
+    onEnded,
     onError,
   });
 
-  // Update refs on every render
   callbacksRef.current = {
     onStarted,
-    onRunStart,
-    onRunComplete,
-    onGraded,
-    onAllComplete,
-    onStopped,
+    onInvocationStarted,
+    onInvocationEnded,
+    onInvocationStopped,
+    onInvocationResponseSaved,
+    onRunReplayStarted,
+    onRunProgress,
+    onRunReplayCompleted,
+    onEnded,
     onError,
   };
 
   useEffect(() => {
-    if (!socket) return;
+    const matchInvocation = (data: Record<string, unknown>) => {
+      const filterId = invocationIdRef?.current ?? invocationId;
+      if (!filterId) return true;
+      return data["invocation_id"] === filterId;
+    };
+
+    const matchTest = (data: Record<string, unknown>) => {
+      if (!testId) return true;
+      return data["test_id"] === testId;
+    };
 
     const handleStarted = (data: TestStartedEvent) => {
+      if (!matchTest(data)) return;
       callbacksRef.current.onStarted?.(data);
     };
 
-    const handleRunStart = (data: TestRunStartEvent) => {
-      if (invocationId && data.invocation_id !== invocationId) return;
-      callbacksRef.current.onRunStart?.(data);
+    const handleInvocationStarted = (data: TestInvocationStartedEvent) => {
+      if (!matchTest(data)) return;
+      callbacksRef.current.onInvocationStarted?.(data);
     };
 
-    const handleRunComplete = (data: TestRunCompleteEvent) => {
-      if (invocationId && data.invocation_id !== invocationId) return;
-      callbacksRef.current.onRunComplete?.(data);
+    const handleInvocationEnded = (data: TestInvocationEndedEvent) => {
+      if (!matchInvocation(data)) return;
+      callbacksRef.current.onInvocationEnded?.(data);
     };
 
-    const handleGraded = (data: TestGradedEvent) => {
-      if (invocationId && data.invocation_id !== invocationId) return;
-      callbacksRef.current.onGraded?.(data);
+    const handleInvocationStopped = (data: TestInvocationStoppedEvent) => {
+      if (!matchInvocation(data)) return;
+      callbacksRef.current.onInvocationStopped?.(data);
     };
 
-    const handleAllComplete = (data: TestAllCompleteEvent) => {
-      if (invocationId && data.invocation_id !== invocationId) return;
-      callbacksRef.current.onAllComplete?.(data);
+    const handleInvocationResponseSaved = (
+      data: TestInvocationResponseSavedEvent,
+    ) => {
+      if (!matchInvocation(data)) return;
+      callbacksRef.current.onInvocationResponseSaved?.(data);
     };
 
-    const handleStopped = (data: TestStoppedEvent) => {
-      if (invocationId && data.invocation_id !== invocationId) return;
-      callbacksRef.current.onStopped?.(data);
+    const handleRunReplayStarted = (data: TestRunReplayStartedEvent) => {
+      if (!matchInvocation(data)) return;
+      callbacksRef.current.onRunReplayStarted?.(data);
+    };
+
+    const handleRunProgress = (data: TestRunProgressEvent) => {
+      if (!matchInvocation(data)) return;
+      callbacksRef.current.onRunProgress?.(data);
+    };
+
+    const handleRunReplayCompleted = (data: TestRunReplayCompletedEvent) => {
+      if (!matchInvocation(data)) return;
+      callbacksRef.current.onRunReplayCompleted?.(data);
+    };
+
+    const handleEnded = (data: TestEndedEvent) => {
+      if (!matchTest(data)) return;
+      callbacksRef.current.onEnded?.(data);
     };
 
     const handleError = (data: TestErrorEvent) => {
       callbacksRef.current.onError?.(data);
     };
 
-    socket.on("test.start.completed", handleStarted);
-    socket.on("test_run_start", handleRunStart);
-    socket.on("test.run.completed", handleRunComplete);
-    socket.on("test_graded", handleGraded);
-    socket.on("test_all_complete", handleAllComplete);
-    socket.on("test.stop.completed", handleStopped);
-    // Subscribe to every per-operation error — server-side errors are now scoped.
-    socket.on("test.start.error", handleError);
-    socket.on("test.stop.error", handleError);
-    socket.on("test.end.error", handleError);
-    socket.on("test.end_all.error", handleError);
-    socket.on("test.join.error", handleError);
-    socket.on("test.next.error", handleError);
-    socket.on("test.run.error", handleError);
-    socket.on("test.group.error", handleError);
-    socket.on("test.proceed.error", handleError);
+    const scope = groupId ? { groupId } : undefined;
+    const unsubs = [
+      transport.on("artifacts.test.started", handleStarted, scope),
+      transport.on("artifacts.test.invocation.started", handleInvocationStarted, scope),
+      transport.on("artifacts.test.invocation.ended", handleInvocationEnded, scope),
+      transport.on("artifacts.test.invocation.stopped", handleInvocationStopped, scope),
+      transport.on(
+        "artifacts.test.invocation.response.saved",
+        handleInvocationResponseSaved,
+        scope,
+      ),
+      transport.on("artifacts.test.run.replay_started", handleRunReplayStarted, scope),
+      transport.on("artifacts.test.run.progress", handleRunProgress, scope),
+      transport.on("artifacts.test.run.replay_completed", handleRunReplayCompleted, scope),
+      transport.on("artifacts.test.ended", handleEnded, scope),
+      // Canonical lifecycle error fan-in — every operation's `failed` phase.
+      transport.on("artifacts.test.start.failed", handleError, scope),
+      transport.on("artifacts.test.run.failed", handleError, scope),
+      transport.on("artifacts.test.end.failed", handleError, scope),
+      transport.on("artifacts.test.stop.failed", handleError, scope),
+    ];
 
-    return () => {
-      socket.off("test.start.completed", handleStarted);
-      socket.off("test_run_start", handleRunStart);
-      socket.off("test.run.completed", handleRunComplete);
-      socket.off("test_graded", handleGraded);
-      socket.off("test_all_complete", handleAllComplete);
-      socket.off("test.stop.completed", handleStopped);
-      socket.off("test.start.error", handleError);
-      socket.off("test.stop.error", handleError);
-      socket.off("test.end.error", handleError);
-      socket.off("test.end_all.error", handleError);
-      socket.off("test.join.error", handleError);
-      socket.off("test.next.error", handleError);
-      socket.off("test.run.error", handleError);
-      socket.off("test.group.error", handleError);
-      socket.off("test.proceed.error", handleError);
-    };
-  }, [socket, invocationId]);
+    return () => unsubs.forEach((fn) => fn());
+  }, [transport, invocationId, invocationIdRef, testId, groupId]);
 
   // --- Emission methods ---
 
   const startTest = useCallback(
-    (evalId: string, opts?: { infiniteMode?: boolean }) => {
-      if (!socket) return;
-      socket.emit("test.start", {
-        eval_id: evalId,
-        infinite_mode: opts?.infiniteMode ?? false,
+    (opts: { benchmarkId: string; infiniteMode?: boolean }) => {
+      transport.send("/test/start", {
+        benchmark_id: opts.benchmarkId,
+        infinite_mode: opts.infiniteMode ?? false,
       });
     },
-    [socket],
+    [transport],
   );
 
-  const nextTest = useCallback(
-    (testId: string) => {
-      if (!socket) return;
-      socket.emit("test.next", {
-        test_id: testId,
-      });
-    },
-    [socket],
-  );
-
-  const runTest = useCallback(
-    (invocationIdArg: string, testId: string) => {
-      if (!socket) return;
-      socket.emit("test.run", {
-        invocation_id: invocationIdArg,
-        test_id: testId,
-      });
-    },
-    [socket],
-  );
-
-  const endTest = useCallback(
-    (invocationIdArg: string, testId: string, runId: string) => {
-      if (!socket) return;
-      socket.emit("test.end", {
-        invocation_id: invocationIdArg,
-        test_id: testId,
-        run_id: runId,
-      });
-    },
-    [socket],
-  );
-
-  const stopTest = useCallback(
+  const stopInvocation = useCallback(
     (invocationIdArg: string) => {
-      if (!socket) return;
-      socket.emit("test.stop", {
-        invocation_id: invocationIdArg,
-      });
+      transport.send("/test/stop", { invocation_id: invocationIdArg });
     },
-    [socket],
+    [transport],
   );
 
-  const joinRoom = useCallback(
-    (invocationIdArg: string) => {
-      if (!socket) return;
-      socket.emit("test.join", {
-        invocation_id: invocationIdArg,
+  const endInvocation = useCallback(
+    (params: {
+      testId: string;
+      invocationId: string;
+      runId: string;
+      grade?: boolean;
+    }) => {
+      transport.send("/test/end", {
+        test_id: params.testId,
+        test_invocation_id: params.invocationId,
+        run_id: params.runId,
+        grade: params.grade ?? true,
       });
     },
-    [socket],
+    [transport],
   );
 
-  const leaveRoom = useCallback(
-    (invocationIdArg: string) => {
-      if (!socket) return;
-      socket.emit("test.leave", {
-        invocation_id: invocationIdArg,
+  const endAll = useCallback(
+    (testIdArg: string) => {
+      transport.send("/test/end", { test_id: testIdArg });
+    },
+    [transport],
+  );
+
+  const nextInvocation = useCallback(
+    (testIdArg: string) => {
+      transport.send("/test/next", { test_id: testIdArg });
+    },
+    [transport],
+  );
+
+  const runInvocation = useCallback(
+    (params: { testId: string; invocationId: string; runId: string }) => {
+      transport.send("/test/run", {
+        test_id: params.testId,
+        test_invocation_id: params.invocationId,
+        run_id: params.runId,
       });
     },
-    [socket],
+    [transport],
   );
 
   return {
     startTest,
-    nextTest,
-    runTest,
-    endTest,
-    stopTest,
-    joinRoom,
-    leaveRoom,
+    stopInvocation,
+    endInvocation,
+    endAll,
+    nextInvocation,
+    runInvocation,
   };
 }

@@ -6,14 +6,12 @@
  */
 "use client";
 import type { EvalsListOut } from "@/app/(main)/benchmark/page";
-import { useRouter } from "next/navigation";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useSocket } from "@/contexts/socket-context";
-import { useTestLifecycle } from "@/hooks/use-test-lifecycle";
+import { useTestStart } from "@/hooks/use-test-start";
 import BenchmarkZone, { BenchmarkZoneSkeleton } from "./BenchmarkZone";
 // Rubric mapping types
 type RubricMapping = {
@@ -37,53 +35,41 @@ export default function Benchmark({
   evalsData,
   rubricMappings,
 }: BenchmarkProps) {
-  const router = useRouter();
-
   const { profile } = useProfile();
+  const { start, stage, error } = useTestStart();
 
-  const { socket, isConnected } = useSocket();
   const [startingEvalId, setStartingEvalId] = useState<string | null>(null);
-
-  // Use WebSocket's specific eval ID for precise loading state
-  const loadingEval = startingEvalId;
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
     null
   );
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  const { startTest } = useTestLifecycle({
-    socket,
-    onStarted: (data) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+  const loadingEval =
+    stage === "starting" || stage === "loading" || stage === "running"
+      ? startingEvalId
+      : null;
+
+  // React to terminal stages — dismiss the loading toast and clear state.
+  useEffect(() => {
+    if (stage === "ready" || stage === "lobby") {
       if (loadingToastId) {
         toast.dismiss(loadingToastId);
         setLoadingToastId(null);
       }
       setStartingEvalId(null);
-
       toast.success("Eval started successfully.");
-      router.refresh();
-      router.push(`/test/${data.test_id}`);
-    },
-    onError: (data) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+    } else if (stage === "error") {
       if (loadingToastId) {
         toast.dismiss(loadingToastId);
         setLoadingToastId(null);
       }
       setStartingEvalId(null);
-      toast.error(data.message || "Failed to start eval. Please try again.");
-    },
-  });
+      toast.error(error || "Failed to start eval. Please try again.");
+    }
+  }, [stage, error, loadingToastId]);
 
   // Extract evals list from data
   const evalsList = useMemo(() => {
     const evals = evalsData?.evals || [];
-    // Add missing use_groups property if not present
     return evals.map((evalItem) => ({
       ...evalItem,
       use_groups: (evalItem as { use_groups?: boolean | null }).use_groups ?? false,
@@ -92,52 +78,21 @@ export default function Benchmark({
 
   const handleStartEval = useCallback(
     async (evalId: string, infiniteMode: boolean = false) => {
-      try {
-        if (!profile?.id) {
-          toast.error("Profile not loaded. Please refresh the page.");
-          return;
-        }
-
-        if (!isConnected || !socket) {
-          toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page."
-          );
-          return;
-        }
-
-        const toastId = toast.loading(
-          infiniteMode ? "Starting infinite mode eval..." : "Starting eval...",
-          {
-            dismissible: true,
-          }
-        );
-        setLoadingToastId(toastId);
-        setStartingEvalId(evalId);
-
-        startTest(evalId, { infiniteMode });
-
-        // timeout...
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        timeoutRef.current = setTimeout(() => {
-          toast.dismiss(toastId);
-          toast.error("Eval start timed out. Please try again.");
-          setLoadingToastId(null);
-          setStartingEvalId(null);
-        }, 60000); // 60 seconds timeout for evals
-      } catch {
-        if (loadingToastId) toast.dismiss(loadingToastId);
-        toast.error("Failed to start eval. Please try again.");
-        setLoadingToastId(null);
-        setStartingEvalId(null);
+      if (!profile?.id) {
+        toast.error("Profile not loaded. Please refresh the page.");
+        return;
       }
+
+      const toastId = toast.loading(
+        infiniteMode ? "Starting infinite mode eval..." : "Starting eval...",
+        { dismissible: true },
+      );
+      setLoadingToastId(toastId);
+      setStartingEvalId(evalId);
+
+      await start({ benchmarkId: evalId, infiniteMode });
     },
-    [
-      profile,
-      isConnected,
-      socket,
-      loadingToastId,
-      startTest,
-    ]
+    [profile, start],
   );
 
   const handleStartInfiniteMode = useCallback(

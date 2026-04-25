@@ -6,11 +6,11 @@
  */
 "use client";
 
-import { useSocket } from "@/contexts/socket-context";
+import { useTransport } from "@/lib/transport/context";
 import { useTestLifecycle } from "@/hooks/use-test-lifecycle";
 import type { OutputOf } from "@/lib/api/types";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { GenericChatInterface } from "@/components/artifacts/attempt/chat/generic/GenericChatInterface";
@@ -41,7 +41,7 @@ export default function TestChat({
   // draft_id reserved for future autosave wiring
 }: TestChatProps) {
   const router = useRouter();
-  const { socket, isConnected } = useSocket();
+  const transport = useTransport();
 
   // ---- State ----
   const [runs, setRuns] = useState<RunItem[]>(test_data.runs || []);
@@ -86,113 +86,100 @@ export default function TestChat({
     test_data.status === "pending" &&
     runs.every((r) => r.status === "not_started");
 
-  // ---- Socket lifecycle ----
-  const {
-    runTest,
-    stopTest,
-    joinRoom,
-    leaveRoom,
-  } = useTestLifecycle({
-    socket,
+  // ---- Transport lifecycle ----
+  const { runInvocation, stopInvocation } = useTestLifecycle({
+    transport,
     invocationId,
+    testId: test_id,
     onStarted: () => {
       setIsLobbyStarting(false);
       router.refresh();
     },
-    onRunStart: (data) => {
-      setStartingRunIds((prev) => {
-        const next = new Set(prev);
-        next.delete(data.run_id);
-        return next;
-      });
-      setRuns((prevRuns) =>
-        prevRuns.map((run) =>
-          run.chat_id === data.invocation_id
-            ? { ...run, status: "in_progress" as const }
-            : run,
-        ) as RunItem[],
-      );
-    },
-    onRunComplete: (data) => {
-      setRuns((prevRuns) =>
-        prevRuns.map((run) =>
-          run.chat_id === data.invocation_id
-            ? { ...run, status: "completed" as const }
-            : run,
-        ) as RunItem[],
-      );
-    },
-    onGraded: (data) => {
-      setRuns((prevRuns) =>
-        prevRuns.map((run) =>
-          run.chat_id === data.invocation_id
-            ? {
-                ...run,
-                grade_score: data.score ?? run.grade_score,
-                grade_passed: data.passed ?? run.grade_passed,
-              }
-            : run,
-        ) as RunItem[],
-      );
-    },
-    onAllComplete: () => {
-      toast.success("All test runs complete!");
-    },
-    onStopped: (data) => {
-      setStoppingRunIds(new Set());
-      if (data.success) {
-        setRuns((prevRuns) =>
+    onRunReplayStarted: (data) => {
+      const runId = data["run_id"] as string | undefined;
+      const dataInvocationId = data["invocation_id"] as string | undefined;
+      if (runId) {
+        setStartingRunIds((prev) => {
+          const next = new Set(prev);
+          next.delete(runId);
+          return next;
+        });
+      }
+      setRuns(
+        (prevRuns) =>
           prevRuns.map((run) =>
-            run.chat_id === data.invocation_id
-              ? { ...run, status: "not_started" as const }
+            run.chat_id === dataInvocationId
+              ? { ...run, status: "in_progress" as const }
               : run,
           ) as RunItem[],
+      );
+    },
+    onRunReplayCompleted: (data) => {
+      const dataInvocationId = data["invocation_id"] as string | undefined;
+      setRuns(
+        (prevRuns) =>
+          prevRuns.map((run) =>
+            run.chat_id === dataInvocationId
+              ? { ...run, status: "completed" as const }
+              : run,
+          ) as RunItem[],
+      );
+    },
+    onInvocationEnded: () => {
+      toast.success("All test runs complete!");
+    },
+    onEnded: () => {
+      toast.success("All test runs complete!");
+    },
+    onInvocationStopped: (data) => {
+      const success = (data["success"] as boolean | undefined) ?? true;
+      const message = data["message"] as string | undefined;
+      const dataInvocationId = data["invocation_id"] as string | undefined;
+      setStoppingRunIds(new Set());
+      if (success) {
+        setRuns(
+          (prevRuns) =>
+            prevRuns.map((run) =>
+              run.chat_id === dataInvocationId
+                ? { ...run, status: "not_started" as const }
+                : run,
+            ) as RunItem[],
         );
-        toast.success(data.message || "Test stopped.");
+        toast.success(message || "Test stopped.");
       } else {
-        toast.error(data.message || "Failed to stop test.");
+        toast.error(message || "Failed to stop test.");
       }
     },
     onError: (data) => {
       setStartingRunIds(new Set());
       setStoppingRunIds(new Set());
       setIsLobbyStarting(false);
-      toast.error(data.message);
+      const message = data["message"] as string | undefined;
+      if (message) toast.error(message);
     },
   });
-
-  // Join/leave room
-  useEffect(() => {
-    if (!socket || !isConnected || !invocationId) return;
-    joinRoom(invocationId);
-    return () => {
-      leaveRoom(invocationId);
-    };
-  }, [socket, isConnected, invocationId, joinRoom, leaveRoom]);
 
   // ---- Handlers ----
   const handleStartRun = useCallback(
     (runInvocationId: string) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected. Please wait for connection.");
+      const targetRun = runs.find((r) => r.chat_id === runInvocationId);
+      const runId = targetRun?.run_id;
+      if (!runId) {
+        toast.error("Cannot start run: missing run_id");
         return;
       }
-      setStartingRunIds((prev) => new Set(prev).add(runInvocationId));
-      runTest(runInvocationId, test_id);
+      setStartingRunIds((prev) => new Set(prev).add(runId));
+      runInvocation({ testId: test_id, invocationId: runInvocationId, runId });
     },
-    [socket, isConnected, test_id, runTest],
+    [runs, test_id, runInvocation],
   );
 
   const handleStopRun = useCallback(
     (runInvocationId: string) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected. Please wait for connection.");
-        return;
-      }
       setStoppingRunIds((prev) => new Set(prev).add(runInvocationId));
-      stopTest(runInvocationId);
+      stopInvocation(runInvocationId);
     },
-    [socket, isConnected, stopTest],
+    [stopInvocation],
   );
 
   const handleStartAll = useCallback(() => {
@@ -205,13 +192,9 @@ export default function TestChat({
   }, [runs, handleStartRun]);
 
   const handleLobbyStart = useCallback(() => {
-    if (!socket || !isConnected) {
-      toast.error("WebSocket not connected. Please wait for connection.");
-      return;
-    }
     setIsLobbyStarting(true);
     handleStartAll();
-  }, [socket, isConnected, handleStartAll]);
+  }, [handleStartAll]);
 
   // ---- Lobby rendering ----
   if (isLobby) {
@@ -224,7 +207,7 @@ export default function TestChat({
         infinite_mode={test_data.infinite_mode}
         on_start={handleLobbyStart}
         is_starting={isLobbyStarting}
-        is_connected={isConnected}
+        is_connected={true}
       />
     );
   }
@@ -249,7 +232,7 @@ export default function TestChat({
     stopping_run_ids: stoppingRunIds,
     on_start_run: handleStartRun,
     on_stop_run: handleStopRun,
-    is_connected: isConnected,
+    is_connected: true,
   };
 
   const inputAreaProps: RunSelectorProps = {
@@ -257,7 +240,7 @@ export default function TestChat({
     starting_run_ids: startingRunIds,
     on_start_run: handleStartRun,
     on_start_all: handleStartAll,
-    is_connected: isConnected,
+    is_connected: true,
   };
 
   const documentAreaProps: ResourcePanelProps = {

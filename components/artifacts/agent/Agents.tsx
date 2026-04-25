@@ -640,10 +640,17 @@ export default function Agents({
 
   const renderAgentCard = (agent: (typeof agents)[0]) => {
     const isSelected = agent.agent_id ? selectedAgentIds.includes(agent.agent_id) : false;
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Don't toggle selection if clicking action buttons
+      if ((e.target as HTMLElement).closest("[data-action-button]")) return;
+      if (agent.agent_id) {
+        toggleSelection(agent.agent_id);
+      }
+    };
     return (
     <Card
       key={agent.agent_id}
-      className={`group hover:shadow-md transition-all ${
+      className={`group hover:shadow-md transition-all cursor-pointer ${
         isSelected ? "ring-2 ring-primary" : ""
       }`}
       data-testid="agent-card"
@@ -651,6 +658,7 @@ export default function Agents({
       role="gridcell"
       aria-label={`agent card ${agent.name || "Unnamed Agent"}`}
       aria-selected={isSelected}
+      onClick={handleCardClick}
     >
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -695,7 +703,7 @@ export default function Agents({
               {agent.description || "No description available"}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex flex-wrap gap-2 items-center" data-action-button>
             {agent.can_edit && agent.agent_id ? (
               <Button
                 variant="outline"
@@ -848,12 +856,12 @@ export default function Agents({
                 <ThreePickerFilters
                   slots={[
                     {
-                      column: departmentsColumn,
-                      title: "Department",
-                      options: departmentOptions,
+                      column: toolsColumn,
+                      title: "Tool",
+                      options: toolOptions,
                       isServerDriven: true,
-                      onSearchChange: handleDepartmentSearchChange,
-                      searchValue: localDepartmentSearch,
+                      onSearchChange: handleToolSearchChange,
+                      searchValue: localToolSearch,
                     },
                     {
                       column: modelColumn,
@@ -864,12 +872,12 @@ export default function Agents({
                       searchValue: localModelSearch,
                     },
                     {
-                      column: toolsColumn,
-                      title: "Tool",
-                      options: toolOptions,
+                      column: departmentsColumn,
+                      title: "Department",
+                      options: departmentOptions,
                       isServerDriven: true,
-                      onSearchChange: handleToolSearchChange,
-                      searchValue: localToolSearch,
+                      onSearchChange: handleDepartmentSearchChange,
+                      searchValue: localDepartmentSearch,
                     },
                   ]}
                 />

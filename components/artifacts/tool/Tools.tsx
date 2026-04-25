@@ -14,6 +14,7 @@ import {
   SortingState,
   VisibilityState,
   getCoreRowModel,
+  getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -98,16 +99,23 @@ export default function Tools({
   );
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Table state
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  // Table state — hidden columns default to off so they don't show in DataTableViewOptions
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    departments: false,
+    agents: false,
+    permissions: false,
+    creatable: false,
+  });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
     const filters: ColumnFiltersState = [];
     const deptIds = searchParams?.getAll("departmentIds") ?? [];
     const agIds = searchParams?.getAll("agentIds") ?? [];
     const crIds = searchParams?.getAll("creatableIds") ?? [];
+    const permIds = searchParams?.getAll("permissionIds") ?? [];
     if (deptIds.length > 0) filters.push({ id: "departments", value: deptIds });
     if (agIds.length > 0) filters.push({ id: "agents", value: agIds });
     if (crIds.length > 0) filters.push({ id: "creatable", value: crIds });
+    if (permIds.length > 0) filters.push({ id: "permissions", value: permIds });
     return filters;
   });
   const [sorting, setSorting] = useState<SortingState>([
@@ -195,16 +203,16 @@ export default function Tools({
     [toolsData?.agent_filter]
   );
 
-  const creatableOptions = useMemo(
+  const permissionsOptions = useMemo(
     () =>
-      (toolsData?.creatable_filter?.options || [])
+      (toolsData?.permissions_filter?.options || [])
         .map((opt) => ({
           value: opt.id as string,
           label: opt.name as string,
           count: opt.count ?? undefined,
         }))
         .filter((opt) => opt.value && opt.label),
-    [toolsData?.creatable_filter]
+    [toolsData?.permissions_filter]
   );
 
   // Helper to update URL search params
@@ -216,6 +224,7 @@ export default function Tools({
       departmentIds?: string[];
       agentIds?: string[];
       creatableIds?: string[];
+      permissionIds?: string[];
       departmentSearch?: string;
       agentSearch?: string;
     }) => {
@@ -249,6 +258,11 @@ export default function Tools({
       if (updates.creatableIds !== undefined) {
         params.delete("creatableIds");
         updates.creatableIds.forEach((id) => params.append("creatableIds", id));
+      }
+
+      if (updates.permissionIds !== undefined) {
+        params.delete("permissionIds");
+        updates.permissionIds.forEach((id) => params.append("permissionIds", id));
       }
 
       if (updates.departmentSearch !== undefined) {
@@ -301,12 +315,14 @@ export default function Tools({
     [commitSearch, searchTerm]
   );
 
-  // Handle filter option search changes (debounced)
+  // Handle filter option search changes (debounced) — only departments is
+  // server-driven (department_search is in SearchToolApiRequest). agents and
+  // permissions are client-faceted so no URL/search state is needed for them.
   const departmentSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const agentSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const [localDepartmentSearch, setLocalDepartmentSearch] = useState(departmentSearch);
-  const [localAgentSearch, setLocalAgentSearch] = useState(agentSearch);
+  // Reference unused props so they aren't stripped by lint (page-level wiring
+  // still passes agentSearch even though it's not surfaced as a server search).
+  void agentSearch;
 
   const handleDepartmentSearchChange = useCallback(
     (value: string) => {
@@ -314,17 +330,6 @@ export default function Tools({
       if (departmentSearchTimeoutRef.current) clearTimeout(departmentSearchTimeoutRef.current);
       departmentSearchTimeoutRef.current = setTimeout(() => {
         updateToolsParams({ departmentSearch: value });
-      }, 300);
-    },
-    [updateToolsParams]
-  );
-
-  const handleAgentSearchChange = useCallback(
-    (value: string) => {
-      setLocalAgentSearch(value);
-      if (agentSearchTimeoutRef.current) clearTimeout(agentSearchTimeoutRef.current);
-      agentSearchTimeoutRef.current = setTimeout(() => {
-        updateToolsParams({ agentSearch: value });
       }, 300);
     },
     [updateToolsParams]
@@ -339,12 +344,14 @@ export default function Tools({
       const departmentFilter = newFilters.find((f) => f.id === "departments");
       const agentFilter = newFilters.find((f) => f.id === "agents");
       const creatableFilter = newFilters.find((f) => f.id === "creatable");
+      const permissionsFilter = newFilters.find((f) => f.id === "permissions");
 
       updateToolsParams({
         page: 0,
         departmentIds: (departmentFilter?.value as string[]) || [],
         agentIds: (agentFilter?.value as string[]) || [],
         creatableIds: (creatableFilter?.value as string[]) || [],
+        permissionIds: (permissionsFilter?.value as string[]) || [],
       });
     },
     [columnFilters, updateToolsParams]
@@ -393,8 +400,10 @@ export default function Tools({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: () => [] as string[],
-        filterFn: () => true,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof toolsArray)[number]) => row.department_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
       },
       {
         id: "agents",
@@ -402,8 +411,21 @@ export default function Tools({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: () => [] as string[],
-        filterFn: () => true,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof toolsArray)[number]) => row.agent_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
+      },
+      {
+        id: "permissions",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        enableColumnFilter: true,
+        accessorFn: (row: (typeof toolsArray)[number]) => row.permission_ids ?? [],
+        filterFn: (row, id, filterValue: string[]) =>
+          !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
       },
       {
         id: "creatable",
@@ -436,9 +458,14 @@ export default function Tools({
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: handlePaginationChange,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     manualPagination: true,
-    manualFiltering: true,
+    // Client-side filterFns run for slots whose API does not support server-side
+    // filtering (e.g. permissions). Server-driven slots (departments, agents)
+    // already get pre-filtered rows from the server, so the client filterFn is
+    // a harmless second pass.
+    manualFiltering: false,
     pageCount,
   });
 
@@ -543,10 +570,16 @@ export default function Tools({
 
     const isSelected = selectedToolIds.includes(toolId);
 
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Don't toggle selection if clicking action buttons
+      if ((e.target as HTMLElement).closest("[data-action-button]")) return;
+      toggleSelection(toolId);
+    };
+
     return (
       <Card
         key={toolId}
-        className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
+        className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
           isSelected ? "ring-2 ring-primary" : ""
         }`}
         data-testid="tool-card"
@@ -554,6 +587,7 @@ export default function Tools({
         role="gridcell"
         aria-label={`tool card ${toolName}`}
         aria-selected={isSelected}
+        onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
@@ -587,7 +621,7 @@ export default function Tools({
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" data-action-button>
               {tool.can_edit && toolId ? (
                 <Button
                   variant="outline"
@@ -673,21 +707,13 @@ export default function Tools({
     if (!deleteItem || !deleteToolAction) return;
     setIsDeleting(true);
     try {
-      const result = await deleteToolAction({
+      await deleteToolAction({
         body: { tool_ids: [deleteItem.id], accept: true },
       });
-      if (result.success) {
-        toast.success(
-          result.message || `Tool '${deleteItem.name}' deleted successfully`
-        );
-        setShowDeleteDialog(false);
-        setDeleteItem(null);
-        router.refresh();
-      } else {
-        toast.error(
-          result.message || `Failed to delete tool: ${deleteItem.name}`
-        );
-      }
+      toast.success(`Tool '${deleteItem.name}' deleted successfully`);
+      setShowDeleteDialog(false);
+      setDeleteItem(null);
+      router.refresh();
     } catch (error) {
       toast.error(
         `Failed to delete tool: ${
@@ -702,7 +728,7 @@ export default function Tools({
   // Get column references for toolbar
   const departmentsColumn = table.getColumn("departments");
   const agentsColumn = table.getColumn("agents");
-  const creatableColumn = table.getColumn("creatable");
+  const permissionsColumn = table.getColumn("permissions");
   const isFiltered =
     table.getState().columnFilters.length > 0 ||
     searchTerm.length > 0;
@@ -775,26 +801,22 @@ export default function Tools({
                 <ThreePickerFilters
                   slots={[
                     {
+                      column: permissionsColumn,
+                      title: "Permissions",
+                      options: permissionsOptions,
+                    },
+                    {
+                      column: agentsColumn,
+                      title: "Agent",
+                      options: agentOptions,
+                    },
+                    {
                       column: departmentsColumn,
                       title: "Department",
                       options: departmentOptions,
                       isServerDriven: true,
                       onSearchChange: handleDepartmentSearchChange,
                       searchValue: localDepartmentSearch,
-                    },
-                    {
-                      column: agentsColumn,
-                      title: "Agent",
-                      options: agentOptions,
-                      isServerDriven: true,
-                      onSearchChange: handleAgentSearchChange,
-                      searchValue: localAgentSearch,
-                    },
-                    {
-                      column: creatableColumn,
-                      title: "Type",
-                      options: creatableOptions,
-                      isServerDriven: true,
                     },
                   ]}
                 />
@@ -805,7 +827,6 @@ export default function Tools({
                     onClick={() => {
                       setSearchTerm("");
                       setLocalDepartmentSearch("");
-                      setLocalAgentSearch("");
                       table.resetColumnFilters();
                       updateToolsParams({
                         page: 0,
@@ -813,8 +834,8 @@ export default function Tools({
                         departmentIds: [],
                         agentIds: [],
                         creatableIds: [],
+                        permissionIds: [],
                         departmentSearch: "",
-                        agentSearch: "",
                       });
                     }}
                     className="h-8 px-2 lg:px-3 hidden md:flex"
