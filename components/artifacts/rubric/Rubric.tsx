@@ -30,7 +30,6 @@ import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
   type ResourceConfig,
@@ -388,54 +387,50 @@ function RubricComponent({
     ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>) | undefined
   >(undefined);
 
-  const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
-    null,
-  );
-  const hasResourceIds = checkHasResourceIds(
-    RUBRIC_RESOURCES,
-    formState as unknown as Record<string, unknown>,
-  );
+  const hasResourceIds =
+    checkHasResourceIds(
+      RUBRIC_RESOURCES,
+      formState as unknown as Record<string, unknown>,
+    ) ||
+    !!formState.name ||
+    !!formState.description ||
+    formState.pass_points != null ||
+    (formState.standard_groups?.length ?? 0) > 0 ||
+    (formState.standards?.length ?? 0) > 0 ||
+    formState.pending_ids.length > 0;
 
-  const buildPatchPayload = useCallback(
-    (
-      inputDraftId: string | null,
-      flushResults?: Record<string, unknown>,
-    ): Record<string, unknown> => {
-      const payload: Record<string, unknown> = {
-        input_draft_id: inputDraftId || null,
-        group_id: s?.group_id ?? null,
-        ...buildDraftPayload(RUBRIC_RESOURCES, {
-          formState: formStateRef.current,
-          referenceState: lastPatchedFormStateRef.current,
-          flushResults: flushResults ?? {},
-        }),
-      };
-      const fs = formStateRef.current as unknown as RubricFormState;
-      if (fs.name) {
-        payload["name"] = fs.name;
-        delete payload["name_id"];
-      }
-      if (fs.description) {
-        payload["description"] = fs.description;
-        delete payload["description_id"];
-      }
-      // Inline-created standard groups: send the value array whenever the
-      // user has added any new groups. Server creates rows for id=null
-      // entries and merges resolved IDs into `standard_group_ids`.
-      if (fs.standard_groups && fs.standard_groups.length > 0) {
-        payload["standard_groups"] = fs.standard_groups;
-      }
-      // Grid-editor standards: send the value array whenever the user has
-      // edited any cell. Server creates rows for id=null entries and merges
-      // all resolved IDs into `standard_ids` on the response.
-      if (fs.standards && fs.standards.length > 0) {
-        payload["standards"] = fs.standards;
-      }
-      payload["pending_ids"] = fs.pending_ids;
-      return payload;
-    },
-    [s],
-  );
+  const buildPatchPayload = useCallback((): Record<string, unknown> => {
+    const current = formStateRef.current as unknown as RubricFormState;
+    const payload: Record<string, unknown> = {};
+
+    if (current.name != null) payload["name"] = current.name;
+    else if (current.name_id) payload["name_id"] = current.name_id;
+
+    if (current.description != null) payload["description"] = current.description;
+    else if (current.description_id) payload["description_id"] = current.description_id;
+
+    if (current.flag_ids.length > 0) payload["flag_ids"] = current.flag_ids;
+    if (current.department_ids.length > 0) payload["department_ids"] = current.department_ids;
+
+    if (current.pass_points != null) payload["pass_points"] = current.pass_points;
+    else if (current.pass_points_id) payload["pass_points_id"] = current.pass_points_id;
+
+    if (current.standard_groups && current.standard_groups.length > 0) {
+      payload["standard_groups"] = current.standard_groups;
+    } else if (current.standard_group_ids.length > 0) {
+      payload["standard_group_ids"] = current.standard_group_ids;
+    }
+
+    if (current.standards && current.standards.length > 0) {
+      payload["standards"] = current.standards;
+    } else if (current.standard_ids.length > 0) {
+      payload["standard_ids"] = current.standard_ids;
+    }
+
+    if (current.pending_ids.length > 0) payload["pending_ids"] = current.pending_ids;
+
+    return payload;
+  }, []);
 
   // Hook destructure must come BEFORE the patchActionRef effect so that
   // `serverSyncPendingRef` is lexically in scope at the references inside
@@ -457,9 +452,6 @@ function RubricComponent({
     hasResourceIds,
     flushRegistryRef,
     formStateRef,
-    onPatchSuccess: () => {
-      lastPatchedFormStateRef.current = { ...formStateRef.current };
-    },
   });
 
   useEffect(() => {

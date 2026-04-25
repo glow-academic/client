@@ -41,7 +41,6 @@ import { useDrafts } from "@/contexts/draft-context";
 import { useAgentAi } from "@/hooks/use-agent-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import {
-  buildDraftPayload,
   checkHasResourceIds,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
@@ -549,9 +548,6 @@ export default function Agent({
   ]);
 
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
-  const lastPatchedFormStateRef = useRef<Record<string, unknown>>(
-    initialDraftState as Record<string, unknown>,
-  );
   // Track previous initialDraftState content to avoid unnecessary updates
   const prevInitialDraftStateRef = useRef<string>(
     JSON.stringify(initialDraftState),
@@ -567,9 +563,6 @@ export default function Agent({
     if (currentStateStr !== newStateStr) {
       prevInitialDraftStateRef.current = newStateStr;
       setDraftState(initialDraftState);
-      lastPatchedFormStateRef.current = {
-        ...initialDraftState,
-      } as Record<string, unknown>;
     }
   }, [initialDraftState]);
 
@@ -578,10 +571,14 @@ export default function Agent({
     formStateRef.current = draftState as Record<string, unknown>;
   }, [draftState]);
 
-  const hasResourceIds = checkHasResourceIds(
-    AGENT_RESOURCES,
-    draftState as Record<string, unknown>,
-  );
+  const hasResourceIds =
+    checkHasResourceIds(
+      AGENT_RESOURCES,
+      draftState as unknown as Record<string, unknown>,
+    ) ||
+    !!draftState.name ||
+    !!draftState.description ||
+    draftState.pending_ids.length > 0;
 
   const flushAllResources = useCallback(async (): Promise<Record<string, unknown>> => {
     const results: Record<string, unknown> = {};
@@ -664,62 +661,40 @@ export default function Agent({
     };
   }, [patchAgentDraftAction]);
 
-  const buildPatchPayload = useCallback(
-    (
-      nextDraftId: string | null,
-      flushResults: Record<string, unknown> = {},
-    ) => {
-      const currentDraftState = formStateRef.current as unknown as DraftState;
-      const base: Record<string, unknown> = {
-        draft_id: nextDraftId,
-        input_draft_id: nextDraftId,
-        ...buildDraftPayload(AGENT_RESOURCES, {
-          formState: currentDraftState as unknown as Record<string, unknown>,
-          referenceState: lastPatchedFormStateRef.current,
-          flushResults,
-        }),
-        model_id:
-          (flushResults["model_id"] as string | undefined) ??
-          currentDraftState["modelId"] ??
-          null,
-        department_ids:
-          (flushResults["department_ids"] as string[] | undefined) ??
-          currentDraftState["departmentIds"] ??
-          [],
-        reasoning_level_id:
-          (flushResults["reasoning_level_id"] as string | undefined) ??
-          currentDraftState.reasoning_level_id ??
-          null,
-        temperature_level_id:
-          (flushResults["temperature_level_id"] as string | undefined) ??
-          currentDraftState.temperature_level_id ??
-          null,
-        instructions_id:
-          (flushResults["instructions_id"] as string | undefined) ??
-          currentDraftState.instructions_id ??
-          null,
-        flag_ids: currentDraftState.flag_ids ?? [],
-        pending_ids: currentDraftState.pending_ids ?? [],
-      };
-      delete base["modelId"];
-      delete base["departmentIds"];
+  const buildPatchPayload = useCallback((): Record<string, unknown> => {
+    const current = formStateRef.current as unknown as DraftState;
+    const payload: Record<string, unknown> = {};
 
-      // Overlay value fields (single-select values clear the corresponding ID)
-      if (currentDraftState["name"] != null) {
-        base["name"] = currentDraftState["name"];
-        delete base["name_id"];
-      }
-      if (currentDraftState["description"] != null) {
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        base["description"] = currentDraftState["description"];
-        delete base["description_id"];
-      }
+    // Creatables: value takes precedence over ID
+    if (current.name != null) payload["name"] = current.name;
+    else if (current.name_id) payload["name_id"] = current.name_id;
 
-      return base;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [draftState],
-  );
+    if (current.description != null) payload["description"] = current.description;
+    else if (current.description_id) payload["description_id"] = current.description_id;
+
+    // Single-select IDs: emit only if truthy
+    if (current.modelId) payload["model_id"] = current.modelId;
+    if (current.prompt_id) payload["prompt_id"] = current.prompt_id;
+    if (current.instructions_id) payload["instructions_id"] = current.instructions_id;
+    if (current.temperature_level_id)
+      payload["temperature_level_id"] = current.temperature_level_id;
+    if (current.reasoning_level_id)
+      payload["reasoning_level_id"] = current.reasoning_level_id;
+
+    // Multi-select ID arrays: emit only if non-empty
+    if (current.flag_ids.length > 0) payload["flag_ids"] = current.flag_ids;
+    if (current.departmentIds.length > 0)
+      payload["department_ids"] = current.departmentIds;
+    if (current.tool_ids.length > 0) payload["tool_ids"] = current.tool_ids;
+    if (current.voice_ids.length > 0) payload["voice_ids"] = current.voice_ids;
+    if (current.quality_ids.length > 0) payload["quality_ids"] = current.quality_ids;
+    if (current.rubric_ids.length > 0) payload["rubric_ids"] = current.rubric_ids;
+
+    // Pending state
+    if (current.pending_ids.length > 0) payload["pending_ids"] = current.pending_ids;
+
+    return payload;
+  }, []);
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
   const handleNameIdChange = useCallback((nameId: string | null) => {
@@ -761,9 +736,6 @@ export default function Agent({
     hasResourceIds,
     flushRegistryRef,
     formStateRef,
-    onPatchSuccess: () => {
-      lastPatchedFormStateRef.current = { ...formStateRef.current };
-    },
   });
 
   // No handleSaveAgent needed — Create/Update actions used directly in handleSubmit

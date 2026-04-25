@@ -22,6 +22,10 @@ import { guardPage } from "@/lib/permissions";
 
 /** ---- Strong types from OpenAPI ---- */
 type SettingsListOut = OutputOf<"/setting/search", "post">;
+type DeleteSettingIn = InputOf<"/setting/delete", "post">;
+type DeleteSettingOut = OutputOf<"/setting/delete", "post">;
+type UpdateSettingIn = InputOf<"/setting/update", "post">;
+type UpdateSettingOut = OutputOf<"/setting/update", "post">;
 type GroupSettingIn = InputOf<"/setting/group", "post">;
 type GroupSettingOut = OutputOf<"/setting/group", "post">;
 type GenerateSettingIn = InputOf<"/setting/generate", "post">;
@@ -54,6 +58,20 @@ const getSettingsList = async (): Promise<SettingsListOut> => {
 };
 
 /** ---- Strongly-typed server actions ---- */
+async function deleteSetting(
+  input: DeleteSettingIn
+): Promise<DeleteSettingOut> {
+  "use server";
+  return api.post("/setting/delete", input);
+}
+
+async function updateSetting(
+  input: UpdateSettingIn
+): Promise<UpdateSettingOut> {
+  "use server";
+  return api.post("/setting/update", input);
+}
+
 async function generateSetting(
   input: GenerateSettingIn
 ): Promise<GenerateSettingOut> {
@@ -140,7 +158,11 @@ export default async function SettingsPage() {
         }}
       >
         <div className="space-y-6 px-4" data-page="settings-index">
-          <Settings listData={listData} />
+          <Settings
+            listData={listData}
+            deleteSettingAction={deleteSetting}
+            updateSettingAction={updateSetting}
+          />
         </div>
       </FullPageLayout>
     );
@@ -163,4 +185,10 @@ export default async function SettingsPage() {
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { SettingsListOut };
+export type {
+  SettingsListOut,
+  DeleteSettingIn,
+  DeleteSettingOut,
+  UpdateSettingIn,
+  UpdateSettingOut,
+};

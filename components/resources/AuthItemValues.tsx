@@ -60,7 +60,15 @@ export function AuthItemValues({
   description = "Enter the literal claim value each auth should send for each item.",
   show_auth_item_values = true,
 }: AuthItemValuesProps) {
-  const opts = useMemo(() => options ?? [], [options]);
+  // Plaintext claim values only — the AuthItemKeys component handles
+  // encrypted items (encrypted=true). This split mirrors the server-side
+  // distinction: encrypted items go through `auth_item_keys_resource`
+  // (keys_resource encrypted), plaintext items through
+  // `auth_item_values_resource` (literal value column).
+  const opts = useMemo(
+    () => (options ?? []).filter((o) => o.encrypted !== true),
+    [options],
+  );
   const vals = useMemo(() => values ?? [], [values]);
 
   const valueByPair = useMemo(() => {
@@ -217,7 +225,7 @@ export function AuthItemValues({
       ) : (
         <div className="space-y-3">
           {groups.map(([authId, group]) => (
-            <div key={authId} className="rounded-md border p-3 space-y-2 bg-card">
+            <div key={authId} className="space-y-2">
               <div className="font-medium text-sm">
                 {group.auth_name ?? authId}
               </div>
@@ -227,7 +235,6 @@ export function AuthItemValues({
                   const pk = pairKey(authId, itemId);
                   const current = valueByPair.get(pk);
                   const isPending = pendingPairs.has(pk);
-                  const isEncrypted = opt.encrypted === true;
                   return (
                     <div
                       key={pk}
@@ -243,11 +250,6 @@ export function AuthItemValues({
                           className="text-sm"
                         >
                           {opt.item_name ?? itemId}
-                          {isEncrypted && (
-                            <span className="ml-2 text-[10px] uppercase tracking-wide text-muted-foreground">
-                              Encrypted
-                            </span>
-                          )}
                         </Label>
                         {isPending && (
                           <div className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
@@ -262,7 +264,7 @@ export function AuthItemValues({
                       )}
                       <Input
                         id={`aiv-${pk}`}
-                        type={isEncrypted ? "password" : "text"}
+                        type="text"
                         disabled={disabled}
                         value={current?.value ?? ""}
                         onChange={(e) =>

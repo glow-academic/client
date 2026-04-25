@@ -24,6 +24,8 @@ import { loadEvalsSearchParams } from "@/lib/search-params/evals";
 type EvalsListOut = OutputOf<"/eval/search", "post">;
 type DeleteEvalIn = InputOf<"/eval/delete", "post">;
 type DeleteEvalOut = OutputOf<"/eval/delete", "post">;
+type UpdateEvalIn = InputOf<"/eval/update", "post">;
+type UpdateEvalOut = OutputOf<"/eval/update", "post">;
 type GroupEvalIn = InputOf<"/eval/group", "post">;
 type GroupEvalOut = OutputOf<"/eval/group", "post">;
 type GenerateEvalIn = InputOf<"/eval/generate", "post">;
@@ -65,6 +67,11 @@ const getEvalsList = async (body: EvalsListBody): Promise<EvalsListOut> => {
 async function deleteEval(input: DeleteEvalIn): Promise<DeleteEvalOut> {
   "use server";
   return api.post("/eval/delete", input);
+}
+
+async function updateEval(input: UpdateEvalIn): Promise<UpdateEvalOut> {
+  "use server";
+  return api.post("/eval/update", input);
 }
 
 async function generateEval(
@@ -190,6 +197,7 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
           <Evals
             listData={listData}
             deleteEvalAction={deleteEval}
+            updateEvalAction={updateEval}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}
@@ -217,4 +225,10 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
 }
 
 /** ---- Export types for client component ---- */
-export type { DeleteEvalIn, DeleteEvalOut, EvalsListOut };
+export type {
+  DeleteEvalIn,
+  DeleteEvalOut,
+  EvalsListOut,
+  UpdateEvalIn,
+  UpdateEvalOut,
+};

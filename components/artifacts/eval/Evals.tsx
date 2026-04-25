@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { Edit, Eye, Trash2, X } from "lucide-react";
+import { Edit, Eye, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -15,9 +15,15 @@ import type {
   DeleteEvalIn,
   DeleteEvalOut,
   EvalsListOut,
+  UpdateEvalIn,
+  UpdateEvalOut,
 } from "@/app/(main)/system/evals/page";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +53,7 @@ import {
 export interface EvalsProps {
   listData: EvalsListOut;
   deleteEvalAction?: (input: DeleteEvalIn) => Promise<DeleteEvalOut>;
+  updateEvalAction?: (input: UpdateEvalIn) => Promise<UpdateEvalOut>;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;
@@ -58,6 +65,7 @@ export interface EvalsProps {
 export default function Evals({
   listData: serverListData,
   deleteEvalAction,
+  updateEvalAction,
   pageIndex,
   pageSize,
   totalCount,
@@ -122,6 +130,52 @@ export default function Evals({
         .filter((opt) => opt.value && opt.label),
     [evalsData?.department_filter]
   );
+
+  // Flag catalog (e.g. eval_active) — used to reconstruct flag_ids on bulk edit.
+  const flagOptions = useMemo(() => {
+    return (evalsData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [evalsData?.flag_filter]);
+
+  // Selection state
+  const [selectedEvalIds, setSelectedEvalIds] = useState<string[]>([]);
+  const selectedCount = selectedEvalIds.length;
+  const selectedEvals = useMemo(() => {
+    return (Array.isArray(evalsData?.evals) ? evalsData.evals : []).filter(
+      (e) => e.eval_id && selectedEvalIds.includes(e.eval_id)
+    );
+  }, [evalsData?.evals, selectedEvalIds]);
+  const deletableEvals = useMemo(
+    () => selectedEvals.filter((e) => e.can_delete),
+    [selectedEvals],
+  );
+  const nonDeletableEvals = useMemo(
+    () => selectedEvals.filter((e) => !e.can_delete),
+    [selectedEvals],
+  );
+  const editableEvals = useMemo(
+    () => selectedEvals.filter((e) => e.can_edit ?? true),
+    [selectedEvals],
+  );
+
+  const toggleSelection = useCallback((evalId: string) => {
+    setSelectedEvalIds((prev) =>
+      prev.includes(evalId)
+        ? prev.filter((id) => id !== evalId)
+        : [...prev, evalId]
+    );
+  }, []);
+  const clearSelection = useCallback(() => setSelectedEvalIds([]), []);
+
+  // Bulk delete state
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk edit state
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
 
   // WebSocket integration for real-time updates
   useEffect(() => {
@@ -297,6 +351,76 @@ export default function Evals({
   // Ensure evalsList is always an array for type safety
   const evalsListArray = Array.isArray(evalsList) ? evalsList : [];
 
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = evalsListArray.filter((e) => e.eval_id).map((e) => e.eval_id!);
+    setSelectedEvalIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [evalsListArray]);
+  const allPageSelected = useMemo(() => {
+    const pageIds = evalsListArray.filter((e) => e.eval_id).map((e) => e.eval_id!);
+    return pageIds.length > 0 && pageIds.every((id) => selectedEvalIds.includes(id));
+  }, [evalsListArray, selectedEvalIds]);
+
+  const handleBulkDelete = async () => {
+    if (!deleteEvalAction || deletableEvals.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const ids = deletableEvals.map((e) => e.eval_id!);
+      await deleteEvalAction({ body: { eval_ids: ids, accept: true } } as DeleteEvalIn);
+      toast.success(`${ids.length} eval(s) deleted successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete evals";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to delete evals");
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (!updateEvalAction || editableEvals.length === 0) return;
+
+    const hasActiveChange = bulkEditActiveStatus !== null;
+    if (!hasActiveChange) {
+      toast.error("No changes selected");
+      return;
+    }
+
+    const activeFlagId = flagOptions.find((f) => f.type === "eval_active")?.id;
+
+    setIsBulkEditing(true);
+    try {
+      const items = editableEvals.map((e) => {
+        let flag_ids: string[] | undefined;
+        if (hasActiveChange) {
+          const isActive = bulkEditActiveStatus;
+          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+        }
+        return {
+          id: e.eval_id!,
+          ...(hasActiveChange && { flag_ids }),
+        };
+      });
+
+      await updateEvalAction({ body: { evals: items } } as UpdateEvalIn);
+      toast.success(`${items.length} eval(s) updated successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update evals";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to update evals");
+    } finally {
+      setIsBulkEditing(false);
+      setShowBulkEditDialog(false);
+    }
+  };
+
+  const openBulkEditDialog = () => {
+    setBulkEditActiveStatus(null);
+    setShowBulkEditDialog(true);
+  };
+
   // Define table columns inline
   const columns: ColumnDef<(typeof evalsListArray)[number]>[] = useMemo(
     () => [
@@ -368,26 +492,52 @@ export default function Evals({
     const evalName = evalItem.name ?? "";
 
     if (!evalId) return null;
+    const isSelected = selectedEvalIds.includes(evalId);
 
     return (
       <Card
         key={evalId}
-        className="relative flex flex-col h-full hover:shadow-md transition-shadow"
+        className={`group relative flex flex-col h-full transition-all hover:shadow-md ${
+          isSelected ? "ring-2 ring-primary" : ""
+        }`}
         data-testid="eval-card"
         data-eval-id={evalId}
         role="gridcell"
         aria-label={`eval card ${evalName}`}
+        aria-selected={isSelected}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-lg line-clamp-2">{evalName}</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div
+                  className={`transition-all overflow-hidden flex-shrink-0 ${
+                    selectedCount > 0
+                      ? "w-5 opacity-100"
+                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                  }`}
+                  data-action-button
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => toggleSelection(evalId)}
+                    className="rounded-full h-5 w-5"
+                    aria-label={`Select eval ${evalName || "Unnamed"}`}
+                  />
+                </div>
+                <span className="line-clamp-2">{evalName}</span>
+              </CardTitle>
               <div className="mt-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">
                     {evalItem.num_runs ?? 0}{" "}
                     {(evalItem.num_runs ?? 0) === 1 ? "run" : "runs"}
                   </Badge>
+                  {evalItem.is_inactive && (
+                    <Badge variant="secondary" className="text-xs">
+                      Inactive
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
@@ -459,7 +609,48 @@ export default function Evals({
   return (
     <div className="space-y-6" data-page="evals-index">
       <div className="space-y-4">
-        {/* Toolbar */}
+        {/* Toolbar — swaps between filter bar and selection action bar */}
+        {selectedCount > 0 ? (
+          <div
+            className="flex items-center justify-between gap-2"
+            data-testid="evals-toolbar"
+          >
+            <div className="flex items-center gap-2">
+              {deleteEvalAction && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setShowBulkDeleteDialog(true)}
+                  disabled={deletableEvals.length === 0}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete {deletableEvals.length} of {selectedCount}
+                </Button>
+              )}
+              {updateEvalAction && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={openBulkEditDialog}
+                  disabled={editableEvals.length === 0}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit {editableEvals.length} of {selectedCount}
+                </Button>
+              )}
+              {!allPageSelected && (
+                <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
+                  Select All
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
+                Unselect All
+              </Button>
+            </div>
+          </div>
+        ) : (
         <div
           className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
           data-testid="evals-toolbar"
@@ -480,13 +671,19 @@ export default function Evals({
             </div>
 
             <div className="flex items-center space-x-2 flex-wrap">
-              <DataTableFacetedFilter
-                column={departmentsColumn}
-                title="Department"
-                options={departmentOptions}
-                isServerDriven={true}
-                onSearchChange={handleDepartmentSearchChange}
-                searchValue={localDepartmentSearch}
+              <ThreePickerFilters
+                slots={[
+                  {
+                    column: departmentsColumn,
+                    title: "Department",
+                    options: departmentOptions,
+                    isServerDriven: true,
+                    onSearchChange: handleDepartmentSearchChange,
+                    searchValue: localDepartmentSearch,
+                  },
+                  { column: undefined, title: "Flag", options: [] },
+                  { column: undefined, title: "Filter", options: [] },
+                ]}
               />
 
               {isFiltered && (
@@ -512,6 +709,7 @@ export default function Evals({
             </div>
           </div>
         </div>
+        )}
 
         {/* Cards Grid */}
         <div
@@ -548,6 +746,68 @@ export default function Evals({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <BulkDeleteDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        count={deletableEvals.length}
+        entityLabel="eval"
+        entityLabelPlural="evals"
+        isDeleting={isBulkDeleting}
+        onConfirm={handleBulkDelete}
+        description={
+          <>
+            <p>This action cannot be undone.</p>
+            {deletableEvals.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                <ul className="text-sm space-y-0.5">
+                  {deletableEvals.map((e) => (
+                    <li key={e.eval_id} className="flex items-center gap-1.5">
+                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                      {e.name || "Unnamed Eval"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {nonDeletableEvals.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                  Cannot be deleted (in use):
+                </p>
+                <ul className="text-sm space-y-0.5">
+                  {nonDeletableEvals.map((e) => (
+                    <li
+                      key={e.eval_id}
+                      className="flex items-center gap-1.5 text-muted-foreground"
+                    >
+                      {e.name || "Unnamed Eval"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        }
+      />
+
+      {/* Bulk Edit Modal */}
+      <BulkEditDialog
+        open={showBulkEditDialog}
+        onOpenChange={setShowBulkEditDialog}
+        count={editableEvals.length}
+        entityLabelPlural="evals"
+        isSaving={isBulkEditing}
+        onSave={handleBulkEdit}
+      >
+        <BulkEditFlagField
+          label="Active Status"
+          value={bulkEditActiveStatus}
+          onChange={setBulkEditActiveStatus}
+        />
+      </BulkEditDialog>
 
     </div>
   );

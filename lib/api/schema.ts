@@ -5707,6 +5707,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Auth Stream */
+        get: operations["auth_stream_auth_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tool/search": {
         parameters: {
             query?: never;
@@ -5984,6 +6001,26 @@ export interface paths {
          * @description Resolve or create a tool group with optional naming.
          */
         post: operations["group_tool_tool_group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tool/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Tool
+         * @description Render output templates against mock arg values.
+         */
+        post: operations["preview_tool_tool_preview_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6321,46 +6358,6 @@ export interface paths {
         get: operations["attempt_stream_attempt_stream_get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/join": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Join
-         * @description Subscribe to events for a group.
-         */
-        post: operations["attempt_join_attempt_join_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/leave": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Leave
-         * @description Unsubscribe from events for a group.
-         */
-        post: operations["attempt_leave_attempt_leave_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10083,34 +10080,6 @@ export interface components {
             /** @description Runs list view response */
             runs?: components["schemas"]["GetRunListViewResponse"] | null;
         };
-        /** AttemptJoinRequest */
-        AttemptJoinRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-        };
-        /** AttemptJoinResponse */
-        AttemptJoinResponse: {
-            /** Success */
-            success: boolean;
-            /** Group Id */
-            group_id: string;
-        };
-        /** AttemptLeaveRequest */
-        AttemptLeaveRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-        };
-        /** AttemptLeaveResponse */
-        AttemptLeaveResponse: {
-            /** Success */
-            success: boolean;
-        };
         /**
          * AttemptOptionValue
          * @description Inline option value — nested under a question.
@@ -13696,12 +13665,6 @@ export interface components {
              * @description Sub-department UUIDs to assign
              */
             department_ids?: string[] | null;
-            /**
-             * Is Primary
-             * @description Whether this is the primary department
-             * @default false
-             */
-            is_primary: boolean;
         };
         /**
          * CreateDocumentApiRequest
@@ -14623,6 +14586,11 @@ export interface components {
              * @description Role resource UUID
              */
             role_id?: string | null;
+            /**
+             * Primary Department Id
+             * @description UUID of the department to designate as primary
+             */
+            primary_department_id?: string | null;
         };
         /**
          * CreatePromptInput
@@ -15212,13 +15180,18 @@ export interface components {
              */
             description?: string | null;
             /**
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
+             */
+            flag_ids?: string[] | null;
+            /**
              * Active Flag Id
-             * @description UUID of the active flag option
+             * @description DEPRECATED — use flag_ids. UUID of the active flag option
              */
             active_flag_id?: string | null;
             /**
              * Active Flag
-             * @description Whether the setting is active
+             * @description DEPRECATED — use flag_ids. Whether the setting is active
              */
             active_flag?: boolean | null;
             /**
@@ -15271,6 +15244,16 @@ export interface components {
              * @description Auth item value UUIDs
              */
             auth_item_value_ids?: string[] | null;
+            /**
+             * Auth Ids
+             * @description Auth resource UUIDs to assign
+             */
+            auth_ids?: string[] | null;
+            /**
+             * Provider Ids
+             * @description Provider resource UUIDs to assign
+             */
+            provider_ids?: string[] | null;
             /**
              * Setting Resource Ids
              * @description Setting resource UUIDs
@@ -18649,14 +18632,25 @@ export interface components {
              */
             idempotency_key?: string | null;
         };
-        /** DuplicateProviderApiRequest */
+        /**
+         * DuplicateProviderApiRequest
+         * @description Request model for duplicate provider endpoint.
+         *
+         *     Canonical shape: ``id`` (matches DuplicatePersonaApiRequest). The legacy
+         *     ``provider_id`` field is preserved for backwards compatibility with older
+         *     clients but ``id`` is preferred.
+         */
         DuplicateProviderApiRequest: {
             /**
-             * Provider Id
-             * Format: uuid
-             * @description Provider identifier to duplicate
+             * Id
+             * @description UUID of the provider to duplicate
              */
-            provider_id: string;
+            id?: string | null;
+            /**
+             * Provider Id
+             * @description Legacy alias for id — prefer id
+             */
+            provider_id?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant duplicate
@@ -24134,21 +24128,21 @@ export interface components {
              * @description Cache snapshot key for consistent reads
              */
             snapshot_key?: string | null;
-            names?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
-            descriptions?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
-            flags?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
-            departments?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
-            personas?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
-            documents?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
-            parameter_fields?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
-            scenarios?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
-            fields?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
-            questions?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
-            options?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
-            videos?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
-            images?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
-            problem_statements?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
-            objectives?: components["schemas"]["app__infra__chat__types__SectionFilter"] | null;
+            names?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
+            descriptions?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
+            flags?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
+            departments?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
+            personas?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
+            documents?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
+            parameter_fields?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
+            scenarios?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
+            fields?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
+            questions?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
+            options?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
+            videos?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
+            images?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
+            problem_statements?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
+            objectives?: components["schemas"]["app__infra__attempt__chat__types__SectionFilter"] | null;
         };
         /**
          * GetChatResponse
@@ -27154,6 +27148,16 @@ export interface components {
              * @description Role resources
              */
             roles?: components["schemas"]["ProfileRoleResource"][] | null;
+            /**
+             * Permissions
+             * @description Permission catalog for the role editor
+             */
+            permissions?: components["schemas"]["ProfilePermissionResource"][] | null;
+            /**
+             * Request Limits
+             * @description Request-limit catalog for the role editor
+             */
+            request_limits?: components["schemas"]["ProfileRequestLimitResource"][] | null;
         };
         /** GetProfileDraftResponse */
         GetProfileDraftResponse: {
@@ -27221,6 +27225,11 @@ export interface components {
              */
             role_ids: string[];
             /**
+             * Primary Department Ids
+             * @description Associated primary_departments_resource UUIDs
+             */
+            primary_department_ids?: string[];
+            /**
              * Pending Department Ids
              * @description Pending department UUIDs
              */
@@ -27245,6 +27254,11 @@ export interface components {
              * @description Pending role UUIDs
              */
             pending_role_ids?: string[];
+            /**
+             * Pending Primary Department Ids
+             * @description Pending primary_departments UUIDs
+             */
+            pending_primary_department_ids?: string[];
         };
         /**
          * GetProfileDraftsApiResponse
@@ -28465,10 +28479,10 @@ export interface components {
              */
             name_ids: string[];
             /**
-             * Profile Ids
-             * @description Associated profile UUIDs
+             * Provider Ids
+             * @description Associated provider UUIDs
              */
-            profile_ids: string[];
+            provider_ids: string[];
             /**
              * Provider Key Ids
              * @description Associated provider key UUIDs
@@ -28529,10 +28543,10 @@ export interface components {
              */
             pending_name_ids?: string[];
             /**
-             * Pending Profile Ids
-             * @description Pending profile UUIDs
+             * Pending Provider Ids
+             * @description Pending provider UUIDs
              */
-            pending_profile_ids?: string[];
+            pending_provider_ids?: string[];
             /**
              * Pending Provider Key Ids
              * @description Pending provider key UUIDs
@@ -29421,6 +29435,8 @@ export interface components {
             args_outputs?: components["schemas"]["app__infra__tool__types__SectionFilter"] | null;
             /** @description Filter options for permissions */
             permissions?: components["schemas"]["app__infra__tool__types__SectionFilter"] | null;
+            /** @description Filter options for instructions */
+            instructions?: components["schemas"]["app__infra__tool__types__SectionFilter"] | null;
         };
         /** GetToolApiResponse */
         GetToolApiResponse: {
@@ -29514,6 +29530,11 @@ export interface components {
              * @description Permission resources
              */
             permissions?: components["schemas"]["ToolPermissionResource"][] | null;
+            /**
+             * Instructions
+             * @description Instruction resources (single-select)
+             */
+            instructions?: components["schemas"]["ToolInstructionResource"][] | null;
         };
         /** GetToolDraftResponse */
         GetToolDraftResponse: {
@@ -32837,6 +32858,21 @@ export interface components {
              */
             department_ids?: string[] | null;
             /**
+             * Flag Ids
+             * @description Currently selected flag option UUIDs
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Is Inactive
+             * @description Whether the agent is inactive (derived from agent_active flag)
+             */
+            is_inactive?: boolean | null;
+            /**
+             * Is Mcp
+             * @description Whether the agent is exposed via MCP (derived from mcp flag)
+             */
+            is_mcp?: boolean | null;
+            /**
              * Can Edit
              * @description Whether the current user can edit
              */
@@ -32873,6 +32909,8 @@ export interface components {
             model_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Filter options for tools */
             tool_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for flags in list UI */
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of matching records
@@ -32947,6 +32985,8 @@ export interface components {
             auths?: components["schemas"]["ListAuthApiAuth"][] | null;
             /** @description Filter options for departments */
             department_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for flags in list UI */
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of auth providers
@@ -33308,6 +33348,8 @@ export interface components {
              * @description List of department items
              */
             departments?: components["schemas"]["ListDepartmentApiDepartment"][] | null;
+            /** @description Filter options for flags in list UI */
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of departments
@@ -33350,10 +33392,25 @@ export interface components {
              */
             field_ids?: string[] | null;
             /**
+             * Flag Ids
+             * @description Currently selected flag option UUIDs
+             */
+            flag_ids?: string[] | null;
+            /**
              * Is Inactive
-             * @description Whether the document is inactive
+             * @description Whether the document is inactive (derived from document_active flag)
              */
             is_inactive?: boolean | null;
+            /**
+             * Is Template
+             * @description Whether the document is a template (derived from document_template flag)
+             */
+            is_template?: boolean | null;
+            /**
+             * Extension
+             * @description File extension derived from the primary file (e.g. 'pdf', 'docx', 'txt')
+             */
+            extension?: string | null;
             /**
              * Num Scenarios
              * @description Total number of scenarios
@@ -33411,6 +33468,8 @@ export interface components {
             field_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Filter options for departments in list UI */
             department_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for flags in list UI */
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of matching records
@@ -33505,6 +33564,8 @@ export interface components {
             evals?: components["schemas"]["ListEvalApiEval"][] | null;
             /** @description Filter options for departments in list UI */
             department_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for flags in list UI */
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of matching records
@@ -33592,6 +33653,8 @@ export interface components {
             persona_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Filter options for departments */
             department_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for flags in list UI */
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of fields
@@ -33966,6 +34029,8 @@ export interface components {
             department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Agent filter options */
             agent_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for flags in list UI */
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of models
@@ -33994,6 +34059,11 @@ export interface components {
              * @description Whether this parameter is currently active
              */
             active?: boolean | null;
+            /**
+             * Is Inactive
+             * @description Whether the parameter is inactive
+             */
+            is_inactive?: boolean | null;
             /**
              * Department Ids
              * @description Associated department identifiers
@@ -34058,6 +34128,8 @@ export interface components {
             field_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Department filter options */
             department_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for flags in list UI */
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of parameters
@@ -34184,6 +34256,8 @@ export interface components {
             voice_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Instruction filter options for bulk edit */
             instruction_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Flag filter options for bulk edit */
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of personas matching filters
@@ -34450,6 +34524,11 @@ export interface components {
              * @description Whether this profile is currently being emulated by the actor
              */
             is_emulated?: boolean | null;
+            /**
+             * Is Inactive
+             * @description Whether the profile is inactive
+             */
+            is_inactive?: boolean | null;
         };
         /**
          * ListProfilesApiResponse
@@ -34470,6 +34549,8 @@ export interface components {
             department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Filter options for roles */
             role_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for flags in list UI */
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of profiles
@@ -34506,6 +34587,11 @@ export interface components {
              * @description Whether this provider is currently active
              */
             active?: boolean | null;
+            /**
+             * Is Inactive
+             * @description Whether the provider is inactive
+             */
+            is_inactive?: boolean | null;
             /**
              * Updated At
              * @description Timestamp of last update
@@ -34560,6 +34646,8 @@ export interface components {
             model_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Status filter options */
             status_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for flags in list UI */
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of providers
@@ -34680,6 +34768,8 @@ export interface components {
             department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Filter options for simulations in list UI */
             simulation_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for flags in list UI */
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of matching records
@@ -34753,6 +34843,11 @@ export interface components {
              * @description Associated standard group UUIDs
              */
             standard_group_ids?: string[] | null;
+            /**
+             * Is Inactive
+             * @description Whether the rubric is inactive
+             */
+            is_inactive?: boolean | null;
         };
         /** ListRubricApiStandard */
         ListRubricApiStandard: {
@@ -35172,6 +35267,8 @@ export interface components {
              * @description List of key items
              */
             keys?: components["schemas"]["ListSettingApiKey"][] | null;
+            /** @description Filter options for flags in list UI */
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
         };
         /**
          * ListSettingApiSetting
@@ -35193,6 +35290,11 @@ export interface components {
              * @description Whether the setting is currently active
              */
             active?: boolean | null;
+            /**
+             * Is Inactive
+             * @description Whether the setting is inactive
+             */
+            is_inactive?: boolean | null;
             /**
              * Name
              * @description Setting display name
@@ -35326,13 +35428,23 @@ export interface components {
              */
             department_ids?: string[] | null;
             /**
+             * Flag Ids
+             * @description Currently selected flag option UUIDs
+             */
+            flag_ids?: string[] | null;
+            /**
              * Is Inactive
-             * @description Whether the simulation is inactive
+             * @description Whether the simulation is inactive (derived from simulation_active flag)
              */
             is_inactive?: boolean | null;
             /**
+             * Is Practice
+             * @description Whether this is a practice simulation (derived from practice flag)
+             */
+            is_practice?: boolean | null;
+            /**
              * Practice Simulation
-             * @description Whether this is a practice simulation
+             * @description Legacy alias for is_practice — prefer is_practice
              */
             practice_simulation?: boolean | null;
             /**
@@ -35402,6 +35514,10 @@ export interface components {
             department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Creatable filter options */
             creatable_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for agents that reference these tools */
+            agent_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** @description Filter options for flags in list UI */
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /**
              * Total Count
              * @description Total number of tools
@@ -35430,6 +35546,16 @@ export interface components {
              * @description Whether this tool is currently active
              */
             active?: boolean | null;
+            /**
+             * Is Inactive
+             * @description Whether this tool is inactive (derived from tool_active flag)
+             */
+            is_inactive?: boolean | null;
+            /**
+             * Flag Ids
+             * @description Currently selected flag option UUIDs
+             */
+            flag_ids?: string[] | null;
             /**
              * Updated At
              * @description Timestamp of last update
@@ -37205,19 +37331,19 @@ export interface components {
             /** Objective Ids */
             objective_ids?: string[] | null;
             /** Images */
-            images?: components["schemas"]["app__infra__chat__types__DraftImageValue"][] | null;
+            images?: components["schemas"]["app__infra__attempt__chat__types__DraftImageValue"][] | null;
             /** Image Ids */
             image_ids?: string[] | null;
             /** Videos */
-            videos?: components["schemas"]["app__infra__chat__types__DraftVideoValue"][] | null;
+            videos?: components["schemas"]["app__infra__attempt__chat__types__DraftVideoValue"][] | null;
             /** Video Ids */
             video_ids?: string[] | null;
             /** Questions */
-            questions?: components["schemas"]["app__infra__chat__types__DraftQuestionValue"][] | null;
+            questions?: components["schemas"]["app__infra__attempt__chat__types__DraftQuestionValue"][] | null;
             /** Question Ids */
             question_ids?: string[] | null;
             /** Options */
-            options?: components["schemas"]["app__infra__chat__types__DraftOptionValue"][] | null;
+            options?: components["schemas"]["app__infra__attempt__chat__types__DraftOptionValue"][] | null;
             /** Option Ids */
             option_ids?: string[] | null;
             /** Department Ids */
@@ -38222,9 +38348,9 @@ export interface components {
             modality_ids?: string[] | null;
             /**
              * Pricing
-             * @description Pricing types to match
+             * @description Inline-create pricing entries. Entries without id are created; resulting IDs merge into pricing_ids.
              */
-            pricing?: string[] | null;
+            pricing?: components["schemas"]["PricingDraftValue"][] | null;
             /**
              * Pricing Ids
              * @description Pricing tier identifiers
@@ -38648,7 +38774,7 @@ export interface components {
             email_ids?: string[] | null;
             /**
              * Role
-             * @description Role name to resolve
+             * @description Role name to resolve (single-name shortcut; legacy)
              */
             role?: string | null;
             /**
@@ -38656,6 +38782,13 @@ export interface components {
              * @description Role resource UUID
              */
             role_id?: string | null;
+            /** @description Inline-creatable role; id=null asks server to create with permissions/limits */
+            role_draft?: components["schemas"]["ProfileRoleDraftValue"] | null;
+            /**
+             * Primary Department Id
+             * @description UUID of the department to designate as primary
+             */
+            primary_department_id?: string | null;
             /**
              * Pending Ids
              * @description Resources to keep dormant
@@ -39326,6 +39459,16 @@ export interface components {
              */
             auth_item_value_ids?: string[] | null;
             /**
+             * Auth Ids
+             * @description Auth resource UUIDs to assign
+             */
+            auth_ids?: string[] | null;
+            /**
+             * Provider Ids
+             * @description Provider resource UUIDs to assign
+             */
+            provider_ids?: string[] | null;
+            /**
              * Provider Keys
              * @description Inline-creatable (provider × key) value entries; id=null requests server to resolve or create
              */
@@ -39642,6 +39785,11 @@ export interface components {
              * @description Argument outputs to create inline
              */
             args_outputs?: components["schemas"]["CreateArgsOutputInput"][] | null;
+            /**
+             * Args Drafts
+             * @description Unified per-arg drafts for the Arguments step card. When present, takes precedence over the flat arg_ids/arg_position_ids/args_output_ids triple.
+             */
+            args_drafts?: components["schemas"]["ToolArgDraftValue"][] | null;
             /**
              * Instruction Id
              * @description Instruction resource identifier
@@ -40187,6 +40335,50 @@ export interface components {
             pending: boolean;
         };
         /**
+         * PreviewToolApiRequest
+         * @description Render a tool's outputs against mock arg values.
+         */
+        PreviewToolApiRequest: {
+            /**
+             * Args
+             * @description Args available as Jinja variables
+             */
+            args?: components["schemas"]["ToolPreviewArg"][];
+            /**
+             * Outputs
+             * @description Output templates to render
+             */
+            outputs?: components["schemas"]["ToolPreviewOutput"][];
+            /**
+             * Mock
+             * @description Mock values keyed by arg name
+             */
+            mock?: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * PreviewToolApiResponse
+         * @description Response for the tool preview endpoint.
+         */
+        PreviewToolApiResponse: {
+            /**
+             * Outputs
+             * @description Rendered output blocks
+             */
+            outputs?: components["schemas"]["ToolPreviewOutputResult"][];
+            /**
+             * Type Hints
+             * @description Per-arg usage/filter hints
+             */
+            type_hints?: components["schemas"]["ToolPreviewArgHint"][];
+            /**
+             * Undeclared
+             * @description Variable names referenced by templates but not declared in args
+             */
+            undeclared?: string[];
+        };
+        /**
          * PreviousChatOption
          * @description A single chat_entry's best previous graded attempt_chat.
          */
@@ -40254,6 +40446,47 @@ export interface components {
              * @default 0
              */
             run_count: number;
+        };
+        /**
+         * PricingDraftValue
+         * @description Value-object for inline-creating a pricing_resource row from the model editor.
+         *
+         *     Entries without `id` are created server-side; resulting IDs merge into
+         *     pricing_ids. Mirrors the standard_groups pattern so the model draft can
+         *     accept either existing pricing rows or new authored ones in the same
+         *     request.
+         */
+        PricingDraftValue: {
+            /**
+             * Id
+             * @description Existing pricing UUID, if any
+             */
+            id?: string | null;
+            /**
+             * Pricing Type
+             * @description Pricing role (e.g. 'input_tokens', 'output_tokens')
+             */
+            pricing_type: string;
+            /**
+             * Price
+             * @description Price amount
+             */
+            price: number;
+            /**
+             * Unit Name
+             * @description Display label for the rate unit (e.g. '1M tokens')
+             */
+            unit_name: string;
+            /**
+             * Unit Category
+             * @description Unit category (e.g. 'tokens', 'requests', 'minutes')
+             */
+            unit_category: string;
+            /**
+             * Unit Value
+             * @description Numeric multiplier for the unit (e.g. 1000000 for 1M)
+             */
+            unit_value: number;
         };
         /**
          * PricingGroupItem
@@ -41800,6 +42033,82 @@ export interface components {
             pending: boolean;
         };
         /**
+         * ProfilePermissionResource
+         * @description Permission catalog row — one per (artifact, operation) pair.
+         */
+        ProfilePermissionResource: {
+            /**
+             * Id
+             * @description Permission resource identifier
+             */
+            id?: string | null;
+            /**
+             * Artifact
+             * @description Artifact key (e.g. 'agent', 'profile')
+             */
+            artifact?: string | null;
+            /**
+             * Operation
+             * @description Operation key (e.g. 'create', 'update')
+             */
+            operation?: string | null;
+            /**
+             * Name
+             * @description Display name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Description text
+             */
+            description?: string | null;
+        };
+        /**
+         * ProfileRequestLimitDraftValue
+         * @description Draft value for an inline-creatable request limit (limit, interval).
+         *
+         *     id=null asks the server to create a new request_limits_resource row.
+         *     id present means the caller is re-linking an existing limit.
+         */
+        ProfileRequestLimitDraftValue: {
+            /**
+             * Id
+             * @description Existing request_limits_resource id when known
+             */
+            id?: string | null;
+            /**
+             * Limit
+             * @description Maximum requests per interval
+             */
+            limit: number;
+            /**
+             * Interval
+             * @description Postgres interval string (e.g. '1 day', '30 minutes', '2 hours')
+             */
+            interval: string;
+        };
+        /**
+         * ProfileRequestLimitResource
+         * @description Request-limit catalog/echo row.
+         */
+        ProfileRequestLimitResource: {
+            /**
+             * Id
+             * @description Request limit resource identifier
+             */
+            id?: string | null;
+            /**
+             * Limit
+             * @description Maximum number of requests per interval
+             */
+            limit?: number | null;
+            /**
+             * Interval
+             * @description Postgres interval string (e.g. '1 day', '30 minutes')
+             */
+            interval?: string | null;
+        };
+        /**
          * ProfileResultItem
          * @description Per-item result within a bulk create/update response.
          */
@@ -41824,6 +42133,63 @@ export interface components {
              * @description Per-field validation errors
              */
             errors?: components["schemas"]["ProfileFieldError"][] | null;
+        };
+        /**
+         * ProfileRoleDraftValue
+         * @description Draft value for an inline-creatable role.
+         *
+         *     Roles are immutable on this surface — the user can either re-link an
+         *     existing role (id present) or create a new one (id=null + name + …).
+         *     Nested request_limits with id=null are inline-created first; their
+         *     resolved ids merge into request_limit_ids before role creation.
+         */
+        ProfileRoleDraftValue: {
+            /**
+             * Id
+             * @description Existing roles_resource id when re-linking
+             */
+            id?: string | null;
+            /**
+             * Name
+             * @description Role name (required when creating)
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Role description
+             */
+            description?: string | null;
+            /**
+             * Icon Id
+             * @description Icon resource identifier
+             */
+            icon_id?: string | null;
+            /**
+             * Color Id
+             * @description Color resource identifier
+             */
+            color_id?: string | null;
+            /**
+             * Level
+             * @description Role level for assignment filtering
+             * @default 99
+             */
+            level: number;
+            /**
+             * Permission Ids
+             * @description Permission resource UUIDs to attach
+             */
+            permission_ids?: string[];
+            /**
+             * Request Limit Ids
+             * @description Existing request_limits_resource ids
+             */
+            request_limit_ids?: string[];
+            /**
+             * Request Limits
+             * @description Inline-creatable request limits; id=null entries are created server-side
+             */
+            request_limits?: components["schemas"]["ProfileRequestLimitDraftValue"][];
         };
         /**
          * ProfileRoleResource
@@ -41880,6 +42246,16 @@ export interface components {
              * @description Role level for assignment filtering
              */
             level?: number | null;
+            /**
+             * Permission Ids
+             * @description Permission resource UUIDs attached to this role
+             */
+            permission_ids?: string[];
+            /**
+             * Request Limit Ids
+             * @description Request limit resource UUIDs attached to this role
+             */
+            request_limit_ids?: string[];
             /**
              * Generated
              * @description Whether the role was AI-generated
@@ -43999,11 +44375,6 @@ export interface components {
              * @description Associated setting identifiers
              */
             setting_ids?: string[];
-            /**
-             * Is Primary
-             * @description Whether this is the primary department
-             */
-            is_primary?: boolean | null;
             /**
              * Generated
              * @description Whether this was AI-generated
@@ -46872,8 +47243,13 @@ export interface components {
         /** SettingAuthCatalogResource */
         SettingAuthCatalogResource: {
             /**
+             * Id
+             * @description Auth provider identifier (canonical for picker selection)
+             */
+            id?: string | null;
+            /**
              * Auth Id
-             * @description Auth provider identifier
+             * @description Auth provider identifier (alias for id)
              */
             auth_id?: string | null;
             /**
@@ -46896,10 +47272,36 @@ export interface components {
              * @description Auth protocol
              */
             protocol?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * SettingAuthItemKeyDraftValue
          * @description Draft value object for an inline-creatable (auth × item × key) triple.
+         *
+         *     Same two flows as SettingProviderKeyDraftValue: server encrypts
+         *     `key_value` and creates a fresh `keys_resource` row when supplied.
          */
         SettingAuthItemKeyDraftValue: {
             /**
@@ -46921,10 +47323,19 @@ export interface components {
             item_id: string;
             /**
              * Key Id
-             * Format: uuid
-             * @description Key identifier
+             * @description Existing keys_resource id (optional when key_value provided)
              */
-            key_id: string;
+            key_id?: string | null;
+            /**
+             * Key Value
+             * @description Plaintext key/secret. Server encrypts and creates a keys_resource row.
+             */
+            key_value?: string | null;
+            /**
+             * Key Name
+             * @description Optional display name for the new keys_resource row
+             */
+            key_name?: string | null;
         };
         /**
          * SettingAuthItemKeyOption
@@ -47689,8 +48100,13 @@ export interface components {
         /** SettingProviderCatalogResource */
         SettingProviderCatalogResource: {
             /**
+             * Id
+             * @description Provider identifier (canonical for picker selection)
+             */
+            id?: string | null;
+            /**
              * Provider Id
-             * @description Provider identifier
+             * @description Provider identifier (alias for id)
              */
             provider_id?: string | null;
             /**
@@ -47703,10 +48119,40 @@ export interface components {
              * @description Provider description
              */
             description?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * SettingProviderKeyDraftValue
          * @description Draft value object for an inline-creatable (provider × key) pair.
+         *
+         *     Two flows:
+         *     - Create-by-value: caller supplies `key_value` (and optional `key_name`).
+         *       Server encrypts it, creates a fresh `keys_resource` row, and links a
+         *       `provider_keys_resource` row for (provider_id, new_key_id).
+         *     - Re-link existing: caller supplies `key_id` referencing an existing
+         *       `keys_resource` row. Server upserts the junction.
          */
         SettingProviderKeyDraftValue: {
             /**
@@ -47722,10 +48168,19 @@ export interface components {
             provider_id: string;
             /**
              * Key Id
-             * Format: uuid
-             * @description Key identifier
+             * @description Existing keys_resource id (optional when key_value provided)
              */
-            key_id: string;
+            key_id?: string | null;
+            /**
+             * Key Value
+             * @description Plaintext API key. Server encrypts and creates a keys_resource row.
+             */
+            key_value?: string | null;
+            /**
+             * Key Name
+             * @description Optional display name for the new keys_resource row
+             */
+            key_name?: string | null;
         };
         /**
          * SettingProviderKeyOption
@@ -49417,6 +49872,83 @@ export interface components {
              */
             negative?: boolean | null;
         };
+        /**
+         * ToolArgDraftValue
+         * @description Unified per-arg draft value for the Arguments step card.
+         *
+         *     Each entry maps 1:1 to one row of the Arguments list. Position is the
+         *     *index* of the entry — the resolver creates/finds an arg_positions_resource
+         *     row matching (args_id, value=index). Outputs nest under their owning arg.
+         *     Saved rows (id set) stay immutable; the client surfaces them as chips and
+         *     cloning into a fresh draft to edit (Roles pattern).
+         */
+        ToolArgDraftValue: {
+            /**
+             * Id
+             * @description Existing args_resource id when re-linking
+             */
+            id?: string | null;
+            /**
+             * Name
+             * @description Argument name
+             */
+            name: string;
+            /**
+             * Field Type
+             * @description Argument type (string, number, boolean, array)
+             * @default string
+             */
+            field_type: string;
+            /**
+             * Description
+             * @description Argument description
+             * @default
+             */
+            description: string;
+            /**
+             * Required
+             * @description Whether the argument is required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Default Value
+             * @description Default value
+             * @default
+             */
+            default_value: string;
+            /**
+             * Outputs
+             * @description Per-arg jinja output templates
+             */
+            outputs?: components["schemas"]["ToolArgOutputDraftValue"][];
+        };
+        /**
+         * ToolArgOutputDraftValue
+         * @description Output-template draft value for an inline-creatable args_outputs row.
+         *
+         *     id null → server creates an args_outputs_resource row scoped to the
+         *     enclosing arg's resolved id. id set → row is re-linked unchanged
+         *     (saved rows are immutable on this surface).
+         */
+        ToolArgOutputDraftValue: {
+            /**
+             * Id
+             * @description Existing args_outputs_resource id when re-linking
+             */
+            id?: string | null;
+            /**
+             * Name
+             * @description Output name
+             */
+            name: string;
+            /**
+             * Template
+             * @description Jinja template — variables drawn from the arg's name and any other selected args
+             * @default
+             */
+            template: string;
+        };
         /** ToolArgOutputResource */
         ToolArgOutputResource: {
             /**
@@ -49676,6 +50208,50 @@ export interface components {
              */
             pending: boolean;
         };
+        /**
+         * ToolInstructionResource
+         * @description Instruction resource for a tool.
+         */
+        ToolInstructionResource: {
+            /**
+             * Id
+             * @description Instruction resource identifier
+             */
+            id?: string | null;
+            /**
+             * Template
+             * @description Instruction template body
+             */
+            template?: string | null;
+            /**
+             * Name
+             * @description Instruction display name (when present)
+             */
+            name?: string | null;
+            /**
+             * Generated
+             * @description Whether the instruction was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this item is suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this item is selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this item is pending acceptance
+             * @default false
+             */
+            pending: boolean;
+        };
         /** ToolNameResource */
         ToolNameResource: {
             /**
@@ -49762,6 +50338,89 @@ export interface components {
              * @default false
              */
             pending: boolean;
+        };
+        /**
+         * ToolPreviewArg
+         * @description Per-arg shape for preview rendering.
+         */
+        ToolPreviewArg: {
+            /**
+             * Name
+             * @description Argument name (used as the Jinja variable)
+             */
+            name: string;
+            /**
+             * Field Type
+             * @description Argument type — drives mock-value coercion
+             * @default string
+             */
+            field_type: string;
+            /**
+             * Default Value
+             * @description Fallback if mock value isn't provided
+             * @default
+             */
+            default_value: string;
+        };
+        /**
+         * ToolPreviewArgHint
+         * @description Per-arg type/usage hint inferred from the templates.
+         */
+        ToolPreviewArgHint: {
+            /**
+             * Name
+             * @description Argument name
+             */
+            name: string;
+            /**
+             * Used
+             * @description Whether any template references this arg
+             * @default false
+             */
+            used: boolean;
+            /**
+             * Filters
+             * @description Jinja filters applied to this arg across templates
+             */
+            filters?: string[];
+        };
+        /**
+         * ToolPreviewOutput
+         * @description Per-output shape for preview rendering.
+         */
+        ToolPreviewOutput: {
+            /**
+             * Name
+             * @description Output name (echoed in the response)
+             */
+            name: string;
+            /**
+             * Template
+             * @description Jinja template body
+             * @default
+             */
+            template: string;
+        };
+        /**
+         * ToolPreviewOutputResult
+         * @description Per-output preview result.
+         */
+        ToolPreviewOutputResult: {
+            /**
+             * Name
+             * @description Output name (echoes the request)
+             */
+            name: string;
+            /**
+             * Compiled
+             * @description Rendered template string when successful
+             */
+            compiled?: string | null;
+            /**
+             * Error
+             * @description Jinja error message when rendering or parsing failed
+             */
+            error?: string | null;
         };
         /**
          * ToolResultItem
@@ -51070,6 +51729,11 @@ export interface components {
              * @description Role resource UUID
              */
             role_id?: string | null;
+            /**
+             * Primary Department Id
+             * @description UUID of the department to designate as primary
+             */
+            primary_department_id?: string | null;
         };
         /**
          * UpdateProviderApiRequest
@@ -51378,6 +52042,11 @@ export interface components {
              */
             problem_statement?: string | null;
             /**
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
+             */
+            flag_ids?: string[] | null;
+            /**
              * Active Flag Id
              * @description UUID of the active flag option
              */
@@ -51605,13 +52274,18 @@ export interface components {
              */
             description?: string | null;
             /**
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
+             */
+            flag_ids?: string[] | null;
+            /**
              * Active Flag Id
-             * @description UUID of the active flag option
+             * @description DEPRECATED — use flag_ids. UUID of the active flag option
              */
             active_flag_id?: string | null;
             /**
              * Active Flag
-             * @description Whether the setting is active
+             * @description DEPRECATED — use flag_ids. Whether the setting is active
              */
             active_flag?: boolean | null;
             /**
@@ -51664,6 +52338,16 @@ export interface components {
              * @description Auth item value UUIDs
              */
             auth_item_value_ids?: string[] | null;
+            /**
+             * Auth Ids
+             * @description Auth resource UUIDs to assign
+             */
+            auth_ids?: string[] | null;
+            /**
+             * Provider Ids
+             * @description Provider resource UUIDs to assign
+             */
+            provider_ids?: string[] | null;
             /**
              * Setting Resource Ids
              * @description Setting resource UUIDs
@@ -51904,6 +52588,11 @@ export interface components {
              */
             permission_ids?: string[] | null;
             /**
+             * Instruction Id
+             * @description Response template instruction resource UUID
+             */
+            instruction_id?: string | null;
+            /**
              * Tool Ids
              * @description Related tool identifiers
              */
@@ -52128,6 +52817,123 @@ export interface components {
             include?: boolean | null;
         };
         /**
+         * DraftImageValue
+         * @description Value for creating an image via the draft endpoint.
+         */
+        app__infra__attempt__chat__types__DraftImageValue: {
+            /**
+             * Name
+             * @description Name of the image
+             */
+            name: string;
+            /**
+             * Description
+             * @description Description of the image
+             */
+            description: string;
+            /**
+             * Upload Id
+             * @description UUID of the uploaded file
+             */
+            upload_id?: string | null;
+        };
+        /**
+         * DraftOptionValue
+         * @description Value for creating an option via the draft endpoint.
+         */
+        app__infra__attempt__chat__types__DraftOptionValue: {
+            /**
+             * Option Text
+             * @description Display text for the option
+             */
+            option_text: string;
+            /**
+             * Question Id
+             * @description UUID of the parent question
+             */
+            question_id?: string | null;
+        };
+        /**
+         * DraftQuestionValue
+         * @description Value for creating a question via the draft endpoint.
+         */
+        app__infra__attempt__chat__types__DraftQuestionValue: {
+            /**
+             * Question Text
+             * @description Text of the question
+             */
+            question_text: string;
+            /**
+             * Time
+             * @description Video timestamp in seconds
+             * @default 30
+             */
+            time: number;
+            /**
+             * Allow Multiple
+             * @description Whether multiple answers are allowed
+             * @default false
+             */
+            allow_multiple: boolean;
+        };
+        /**
+         * DraftVideoValue
+         * @description Value for creating a video via the draft endpoint.
+         */
+        app__infra__attempt__chat__types__DraftVideoValue: {
+            /**
+             * Name
+             * @description Name of the video
+             */
+            name: string;
+            /**
+             * Description
+             * @description Description of the video
+             */
+            description: string;
+            /**
+             * Upload Id
+             * @description UUID of the uploaded file
+             */
+            upload_id?: string | null;
+        };
+        /**
+         * SectionFilter
+         * @description Per-section filter options for chat GET requests.
+         */
+        app__infra__attempt__chat__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in the response
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Parameter IDs to filter parameter_fields by
+             */
+            parameter_ids?: string[] | null;
+        };
+        /**
          * DraftFormState
          * @description Server-authoritative form state returned after draft save.
          */
@@ -52221,123 +53027,6 @@ export interface components {
             /**
              * Parameter Ids
              * @description Unused for auth; present for shared request compatibility
-             */
-            parameter_ids?: string[] | null;
-        };
-        /**
-         * DraftImageValue
-         * @description Value for creating an image via the draft endpoint.
-         */
-        app__infra__chat__types__DraftImageValue: {
-            /**
-             * Name
-             * @description Name of the image
-             */
-            name: string;
-            /**
-             * Description
-             * @description Description of the image
-             */
-            description: string;
-            /**
-             * Upload Id
-             * @description UUID of the uploaded file
-             */
-            upload_id?: string | null;
-        };
-        /**
-         * DraftOptionValue
-         * @description Value for creating an option via the draft endpoint.
-         */
-        app__infra__chat__types__DraftOptionValue: {
-            /**
-             * Option Text
-             * @description Display text for the option
-             */
-            option_text: string;
-            /**
-             * Question Id
-             * @description UUID of the parent question
-             */
-            question_id?: string | null;
-        };
-        /**
-         * DraftQuestionValue
-         * @description Value for creating a question via the draft endpoint.
-         */
-        app__infra__chat__types__DraftQuestionValue: {
-            /**
-             * Question Text
-             * @description Text of the question
-             */
-            question_text: string;
-            /**
-             * Time
-             * @description Video timestamp in seconds
-             * @default 30
-             */
-            time: number;
-            /**
-             * Allow Multiple
-             * @description Whether multiple answers are allowed
-             * @default false
-             */
-            allow_multiple: boolean;
-        };
-        /**
-         * DraftVideoValue
-         * @description Value for creating a video via the draft endpoint.
-         */
-        app__infra__chat__types__DraftVideoValue: {
-            /**
-             * Name
-             * @description Name of the video
-             */
-            name: string;
-            /**
-             * Description
-             * @description Description of the video
-             */
-            description: string;
-            /**
-             * Upload Id
-             * @description UUID of the uploaded file
-             */
-            upload_id?: string | null;
-        };
-        /**
-         * SectionFilter
-         * @description Per-section filter options for chat GET requests.
-         */
-        app__infra__chat__types__SectionFilter: {
-            /**
-             * Search
-             * @description Filter options by search text
-             */
-            search?: string | null;
-            /**
-             * Limit
-             * @description Max options to return
-             */
-            limit?: number | null;
-            /**
-             * Selected
-             * @description Only return selected items
-             */
-            selected?: boolean | null;
-            /**
-             * Suggested
-             * @description Only return suggested items
-             */
-            suggested?: boolean | null;
-            /**
-             * Include
-             * @description Include this section in the response
-             */
-            include?: boolean | null;
-            /**
-             * Parameter Ids
-             * @description Parameter IDs to filter parameter_fields by
              */
             parameter_ids?: string[] | null;
         };
@@ -53121,6 +53810,11 @@ export interface components {
              */
             pricing_ids?: string[];
             /**
+             * Pricing
+             * @description Resolved inline-created pricing entries (all ids filled in).
+             */
+            pricing?: components["schemas"]["PricingDraftValue"][];
+            /**
              * Quality Ids
              * @description Quality level identifiers
              */
@@ -53436,6 +54130,13 @@ export interface components {
              * @description Assigned role resource UUID
              */
             role_id?: string | null;
+            /** @description Echoed role draft with resolved request_limit_ids after inline-create */
+            role_draft?: components["schemas"]["ProfileRoleDraftValue"] | null;
+            /**
+             * Primary Department Id
+             * @description Assigned primary department UUID
+             */
+            primary_department_id?: string | null;
             /**
              * Pending Ids
              * @description Pending resource UUIDs
@@ -53904,6 +54605,16 @@ export interface components {
              */
             auth_item_value_ids?: string[];
             /**
+             * Auth Ids
+             * @description Assigned auth resource UUIDs
+             */
+            auth_ids?: string[];
+            /**
+             * Provider Ids
+             * @description Assigned provider resource UUIDs
+             */
+            provider_ids?: string[];
+            /**
              * Provider Keys
              * @description Echoed (provider × key) value entries with resolved ids
              */
@@ -54165,6 +54876,11 @@ export interface components {
              * @description Legacy alias for argument output identifiers
              */
             args_outputs_ids: string[];
+            /**
+             * Args Drafts
+             * @description Echoed unified per-arg drafts after resolution (ids filled in, outputs nested)
+             */
+            args_drafts?: components["schemas"]["ToolArgDraftValue"][];
             /**
              * Instruction Id
              * @description Instruction resource identifier
@@ -54727,7 +55443,9 @@ export interface operations {
     };
     persona_stream_persona_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -54741,6 +55459,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -55262,7 +55989,9 @@ export interface operations {
     };
     scenario_stream_scenario_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -55276,6 +56005,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -56034,7 +56772,9 @@ export interface operations {
     };
     simulation_stream_simulation_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -56048,6 +56788,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -56569,7 +57318,9 @@ export interface operations {
     };
     document_stream_document_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -56583,6 +57334,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -57269,7 +58029,9 @@ export interface operations {
     };
     department_stream_department_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -57283,6 +58045,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -57804,7 +58575,9 @@ export interface operations {
     };
     cohort_stream_cohort_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -57818,6 +58591,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -58339,7 +59121,9 @@ export interface operations {
     };
     eval_stream_eval_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -58353,6 +59137,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -58874,7 +59667,9 @@ export interface operations {
     };
     rubric_stream_rubric_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -58888,6 +59683,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -59442,7 +60246,9 @@ export interface operations {
     };
     setting_stream_setting_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -59456,6 +60262,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -59977,7 +60792,9 @@ export interface operations {
     };
     agent_stream_agent_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -59991,6 +60808,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -60512,7 +61338,9 @@ export interface operations {
     };
     model_stream_model_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -60526,6 +61354,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -61080,7 +61917,9 @@ export interface operations {
     };
     provider_stream_provider_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -61094,6 +61933,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -61615,7 +62463,9 @@ export interface operations {
     };
     parameter_stream_parameter_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -61629,6 +62479,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -62150,7 +63009,9 @@ export interface operations {
     };
     field_stream_field_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -62164,6 +63025,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -62619,7 +63489,9 @@ export interface operations {
     };
     profile_stream_profile_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -62633,6 +63505,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -63218,6 +64099,37 @@ export interface operations {
             };
         };
     };
+    auth_stream_auth_stream_get: {
+        parameters: {
+            query?: {
+                group_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search_tool_tool_search_post: {
         parameters: {
             query?: never;
@@ -63667,6 +64579,39 @@ export interface operations {
             };
         };
     };
+    preview_tool_tool_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewToolApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviewToolApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     problem_tool_tool_problem_post: {
         parameters: {
             query?: never;
@@ -63735,7 +64680,9 @@ export interface operations {
     };
     tool_stream_tool_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -63749,6 +64696,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -64171,7 +65127,9 @@ export interface operations {
     };
     attempt_stream_attempt_stream_get: {
         parameters: {
-            query?: never;
+            query?: {
+                group_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -64185,63 +65143,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-        };
-    };
-    attempt_join_attempt_join_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptJoinRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttemptJoinResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_leave_attempt_leave_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptLeaveRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttemptLeaveResponse"];
                 };
             };
             /** @description Validation Error */

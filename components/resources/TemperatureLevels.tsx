@@ -1,13 +1,20 @@
 /**
- * TemperatureLevels.tsx
- * Resource component for temperature level selection
- * Uses GenericPicker for selection, optionally displays slider for visual feedback
- * Creates resources independently and reports resource IDs to parent
+ * TemperatureLevels.tsx — dual-handle range picker.
+ *
+ * Picks a [lower, upper] pair from the temperature_levels_resource catalog
+ * via a Radix two-handle Slider. The catalog defines bounds (min/max) and
+ * step (tightest spacing between rows). On commit, each handle snaps to
+ * the nearest catalog row's id, and the parent receives a length-2
+ * `temperature_level_ids: [lowerId, upperId]` array sorted ascending by
+ * temperature.
+ *
+ * The DB junction (`model_temperature_levels_junction`) is many-to-many
+ * keyed on (model_id, temperature_levels_id), so persisting two ids is a
+ * native shape — no schema change required.
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -21,145 +28,172 @@ import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface TemperatureLevelResourceItem {
-  id?: string | null;
-  temperature?: number | string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  pending?: boolean | null;
-}
-
-export interface TemperatureLevelItem {
-  id: string;
-  temperature: string;
-  is_upper: boolean;
+  id?: string | null | undefined;
+  temperature?: number | string | null | undefined;
+  generated?: boolean | null | undefined;
+  suggested?: boolean | null | undefined;
+  pending?: boolean | null | undefined;
 }
 
 export interface TemperatureLevelsProps {
-  temperature_level_id?: string | null; // Current temperature_level_id (standardized prop name)
-  temperature_level_resource?: TemperatureLevelResourceItem | null; // Resource data from server
-  show_temperature_levels?: boolean; // Whether to show this resource picker
-  temperature_levels?: TemperatureLevelResourceItem[]; // Array of all available temperature level options
-  temperature_lower?: number | null; // Lower bound for slider (optional)
-  temperature_upper?: number | null; // Upper bound for slider (optional)
-  disabled?: boolean; // Based on can_edit flag
-  onTemperatureLevelIdChange: (
-    temperatureLevelId: string | null
-  ) => void; // Update temperature_level_id in parent form state
+  /** Currently-selected temperature_levels_resource ids. Length 0, 1, or 2. */
+  temperature_level_ids?: string[];
+  show_temperature_levels?: boolean;
+  /** Full catalog. Bounds + step derive from this. */
+  temperature_levels?: TemperatureLevelResourceItem[];
+  disabled?: boolean;
+  /** Emitted as [lowerId, upperId] sorted ascending by temperature. */
+  onChange: (ids: string[]) => void;
   label?: string;
-  placeholder?: string;
   required?: boolean;
   id?: string;
-  "data-testid"?: string;
   helpText?: string;
-  searchTerm?: string;
-  onSearchChange?: (term: string) => void;
-  showSlider?: boolean; // Whether to show slider for visual feedback
+}
+
+interface CatalogRow {
+  id: string;
+  value: number;
+  pending: boolean;
+}
+
+function toNumber(v: number | string | null | undefined): number | null {
+  if (v == null) return null;
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  const parsed = parseFloat(v);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 export function TemperatureLevels({
-  temperature_level_id,
-  temperature_level_resource: _temperature_level_resource,
+  temperature_level_ids,
   show_temperature_levels = true,
   temperature_levels,
-  temperature_lower,
-  temperature_upper,
   disabled = false,
-  onTemperatureLevelIdChange,
-  label = "Temperature Level",
-  placeholder = "Select a temperature level",
+  onChange,
+  label = "Temperature Range",
   required = false,
   id = "temperature_level",
-  "data-testid": dataTestId,
   helpText,
-  searchTerm,
-  onSearchChange,
-  showSlider = false,
 }: TemperatureLevelsProps) {
-  const resourceId = temperature_level_id ?? null;
   const show = show_temperature_levels ?? true;
-  const allTemperatureLevels = useMemo(() => temperature_levels ?? [], [temperature_levels]);
+  const ids = useMemo(() => temperature_level_ids ?? [], [temperature_level_ids]);
 
-  // Pending state: items with pending=true from soft draft connections
-  const pendingItems = useMemo(() => {
-    return allTemperatureLevels.filter((tl) => tl.pending && tl.id);
-  }, [allTemperatureLevels]);
-  const showDiff = pendingItems.length > 0;
-  const pendingIds = useMemo(
-    () => new Set(pendingItems.map((tl) => tl.id).filter(Boolean) as string[]),
-    [pendingItems]
-  );
-
-  // Accept pending — keep pending selection (already selected, no-op)
-  const handleAccept = useCallback(() => {
-    // Pending item is already the selected temperature_level_id
-    // The next draft save will persist it as active
-  }, []);
-
-  // Reject pending — clear the pending selection
-  const handleReject = useCallback(() => {
-    if (resourceId && pendingIds.has(resourceId)) {
-      onTemperatureLevelIdChange(null);
-    }
-  }, [resourceId, pendingIds, onTemperatureLevelIdChange]);
-
-  const filteredTemperatureLevels = useMemo(() => {
-    if (!searchTerm?.trim()) {
-      return temperature_levels ?? [];
-    }
-    const term = searchTerm.toLowerCase();
-    return (temperature_levels ?? []).filter((tl) => {
-      const value = tl.temperature != null ? String(tl.temperature).toLowerCase() : "";
-      return value.includes(term);
-    });
-  }, [temperature_levels, searchTerm]);
-
-  // Convert temperature_levels array to TemperatureLevelItem format for GenericPicker
-  // Only include lower bounds (is_upper = false) for selection
-  const pickerItems = useMemo(() => {
-    if (filteredTemperatureLevels.length > 0) {
-      return filteredTemperatureLevels
-        .filter(
-          (tl) => tl.id && tl.temperature != null
-        ) // Filter out nulls
-        .map((tl) => ({
-          id: tl.id!,
-          temperature: String(tl.temperature!),
-          is_upper: false,
-        }));
-    }
-    return [];
-  }, [filteredTemperatureLevels]);
-
-  // Get current temperature value from selected level
-  const currentTemperature = useMemo(() => {
-    if (!resourceId || !temperature_levels) return null;
-    const selectedLevel = temperature_levels.find((tl) => tl.id === resourceId);
-    if (selectedLevel && selectedLevel.temperature != null) {
-      return typeof selectedLevel.temperature === "number" ? selectedLevel.temperature : parseFloat(selectedLevel.temperature);
-    }
-    return null;
-  }, [resourceId, temperature_levels]);
-
-  // Helper to get temperature level ID from temperature value
-  const getTemperatureLevelId = useMemo(() => {
-    return (temp: number): string | null => {
-      if (!temperature_levels) return null;
-      const matchingLevel = temperature_levels.find(
-        (l) =>
-          l.temperature != null &&
-          Math.abs((typeof l.temperature === "number" ? l.temperature : parseFloat(l.temperature)) - temp) < 0.01
-      );
-      return matchingLevel?.id || null;
-    };
+  // Catalog → sorted-by-value array of usable rows.
+  const catalog = useMemo<CatalogRow[]>(() => {
+    return (temperature_levels ?? [])
+      .map((tl) => {
+        const value = toNumber(tl.temperature ?? null);
+        if (!tl.id || value == null) return null;
+        return { id: tl.id, value, pending: tl.pending === true };
+      })
+      .filter((r): r is CatalogRow => r !== null)
+      .sort((a, b) => a.value - b.value);
   }, [temperature_levels]);
 
-  // Don't render if show_temperature_levels is false (AFTER all hooks)
-  if (!show) {
-    return null;
-  }
+  const byId = useMemo(() => {
+    const m = new Map<string, CatalogRow>();
+    for (const row of catalog) m.set(row.id, row);
+    return m;
+  }, [catalog]);
+
+  // Bounds + step from catalog. If catalog is empty/single, fall back to
+  // a sane [0, 2] / 0.01 default so the slider is still mountable.
+  const min = catalog[0]?.value ?? 0;
+  const max = catalog[catalog.length - 1]?.value ?? 2;
+  const step = useMemo(() => {
+    if (catalog.length < 2) return 0.01;
+    let smallest = Infinity;
+    for (let i = 1; i < catalog.length; i++) {
+      const a = catalog[i - 1]!.value;
+      const b = catalog[i]!.value;
+      const d = b - a;
+      if (d > 0 && d < smallest) smallest = d;
+    }
+    return Number.isFinite(smallest) ? Number(smallest.toFixed(3)) : 0.01;
+  }, [catalog]);
+
+  // Resolve current selection → {lower, upper} numeric values.
+  const { lowerValue, upperValue } = useMemo(() => {
+    const selected = ids
+      .map((selId) => byId.get(selId))
+      .filter((r): r is CatalogRow => !!r)
+      .sort((a, b) => a.value - b.value);
+    if (selected.length === 0) return { lowerValue: min, upperValue: max };
+    if (selected.length === 1) {
+      const only = selected[0]!;
+      return { lowerValue: only.value, upperValue: only.value };
+    }
+    return {
+      lowerValue: selected[0]!.value,
+      upperValue: selected[selected.length - 1]!.value,
+    };
+  }, [ids, byId, min, max]);
+
+  // Snap a numeric slider position to the nearest catalog row id.
+  const snapToCatalog = useCallback(
+    (value: number): CatalogRow | null => {
+      if (catalog.length === 0) return null;
+      let best = catalog[0]!;
+      let bestDist = Math.abs(best.value - value);
+      for (let i = 1; i < catalog.length; i++) {
+        const row = catalog[i]!;
+        const d = Math.abs(row.value - value);
+        if (d < bestDist) {
+          best = row;
+          bestDist = d;
+        }
+      }
+      return best;
+    },
+    [catalog],
+  );
+
+  const handleCommit = useCallback(
+    (values: number[]) => {
+      const a = values[0];
+      const b = values[1];
+      if (a == null || b == null) return;
+      const lo = Math.min(a, b);
+      const hi = Math.max(a, b);
+      const lowerRow = snapToCatalog(lo);
+      const upperRow = snapToCatalog(hi);
+      if (!lowerRow || !upperRow) return;
+      const next =
+        lowerRow.id === upperRow.id
+          ? [lowerRow.id]
+          : [lowerRow.id, upperRow.id];
+      if (
+        next.length === ids.length &&
+        next.every((nid, i) => nid === ids[i])
+      ) {
+        return;
+      }
+      onChange(next);
+    },
+    [snapToCatalog, ids, onChange],
+  );
+
+  // Pending: any selected id is flagged pending.
+  const pendingIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const row of catalog) if (row.pending) set.add(row.id);
+    return set;
+  }, [catalog]);
+  const showDiff = ids.some((selId) => pendingIds.has(selId));
+
+  const handleAccept = useCallback(() => {
+    // Pending ids are already in selection — next save persists them.
+  }, []);
+
+  const handleReject = useCallback(() => {
+    onChange(ids.filter((selId) => !pendingIds.has(selId)));
+  }, [ids, pendingIds, onChange]);
+
+  if (!show) return null;
+
+  const formatValue = (v: number) => v.toFixed(2);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3 min-w-0 w-full">
       <div className="flex items-center gap-2">
         <Label htmlFor={id} className="flex items-center gap-1">
           {label}
@@ -201,61 +235,27 @@ export function TemperatureLevels({
             </TooltipProvider>
           </>
         )}
+        <span className="ml-auto text-sm font-mono tabular-nums text-muted-foreground">
+          {formatValue(lowerValue)} – {formatValue(upperValue)}
+        </span>
       </div>
 
-      {/* Slider for visual feedback (optional) */}
-      {showSlider &&
-        temperature_lower !== null &&
-        temperature_upper !== null &&
-        currentTemperature !== null && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>{temperature_lower}</span>
-              <span className="font-medium">{currentTemperature.toFixed(2)}</span>
-              <span>{temperature_upper}</span>
-            </div>
-            <Slider
-              value={[currentTemperature]}
-              min={temperature_lower}
-              max={temperature_upper}
-              step={0.01}
-              disabled={disabled}
-              onValueChange={(value) => {
-                const tempValue = value[0];
-                const levelId = getTemperatureLevelId(tempValue);
-                onTemperatureLevelIdChange(levelId);
-              }}
-              className="w-full"
-              data-testid={`${dataTestId}-slider`}
-            />
-          </div>
-        )}
+      <div className="px-1 pt-1">
+        <Slider
+          value={[lowerValue, upperValue]}
+          onValueCommit={handleCommit}
+          min={min}
+          max={max}
+          step={step}
+          disabled={disabled || catalog.length === 0}
+        />
+        <div className="flex items-center justify-between text-xs text-muted-foreground mt-2 font-mono tabular-nums">
+          <span>{formatValue(min)}</span>
+          <span>{formatValue(max)}</span>
+        </div>
+      </div>
 
-      <GenericPicker<TemperatureLevelItem>
-        items={pickerItems}
-        selectedIds={resourceId ? [resourceId] : []}
-        onSelect={(ids) => onTemperatureLevelIdChange(ids[0] || null)}
-        multiSelect={false}
-        getId={(item) => item.id}
-        getLabel={(item) => `${item.temperature}`}
-        getSearchText={(item) => item.temperature}
-        renderPreview={(item) => (
-          <div className="space-y-1">
-            <div className="font-medium">Temperature: {item.temperature}</div>
-          </div>
-        )}
-        {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
-        {...(onSearchChange ? { onSearchChange } : {})}
-        placeholder={placeholder}
-        disabled={disabled}
-        showLabel={false}
-        label={label}
-        description={helpText}
-        emptyMessage="No temperature levels available"
-        groupHeading="Temperature Levels"
-        id={id}
-        data-testid={dataTestId}
-      />
+      {helpText && <p className="text-xs text-muted-foreground">{helpText}</p>}
     </div>
   );
 }

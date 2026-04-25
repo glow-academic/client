@@ -42,7 +42,6 @@ import { useDrafts } from "@/contexts/draft-context";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildDraftPayload,
   checkHasResourceIds,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
@@ -57,13 +56,16 @@ import { useModelAi } from "@/hooks/use-model-ai";
 // carries selection as a flat `flag_ids: string[]`.
 
 // Map of flag type → per-feature ids array to clear when the flag turns off.
+// Keys match the raw `flags_resource.type` values returned by the server
+// (no stripping). This mirrors the canonical Setting.tsx pattern: read the
+// type as-is from the catalog, look up everything by the same key.
 const MODEL_FLAG_TYPE_TO_IDS_FIELD: Record<string, string | undefined> = {
-  modalities_enabled: "modality_ids",
-  temperature_enabled: "temperature_level_ids",
-  pricing_enabled: "pricing_ids",
-  voices_enabled: "voice_ids",
-  reasoning_levels_enabled: "reasoning_level_ids",
-  qualities_enabled: "quality_ids",
+  model_modalities_enabled: "modality_ids",
+  model_temperature_enabled: "temperature_level_ids",
+  model_pricing_enabled: "pricing_ids",
+  model_voices_enabled: "voice_ids",
+  model_reasoning_levels_enabled: "reasoning_level_ids",
+  model_qualities_enabled: "quality_ids",
 };
 
 // Types defined inline using InputOf/OutputOf
@@ -300,6 +302,19 @@ function ModelComponent({
         reasoning_level_ids: [] as string[],
         quality_ids: [] as string[],
         pricing_ids: [] as string[],
+        // Inline-create value-objects. Server resolves id=null entries
+        // and merges resulting ids into pricing_ids; we replace this
+        // array with the echoed list on save.
+        pricing: null as
+          | Array<{
+              id: string | null;
+              pricing_type: string;
+              price: number;
+              unit_name: string;
+              unit_category: string;
+              unit_value: number;
+            }>
+          | null,
         voice_ids: [] as string[],
         department_ids: defaultDepartmentIds,
         pending_ids: [] as string[],
@@ -339,6 +354,19 @@ function ModelComponent({
         .filter((item) => item.selected)
         .map((p) => p.id as string)
         .filter(Boolean),
+      // Inline-create list — empty on hydrate; populated only when user
+      // adds new pricing entries locally. Server echoes resolved ids back
+      // on save and we replace the whole array.
+      pricing: null as
+        | Array<{
+            id: string | null;
+            pricing_type: string;
+            price: number;
+            unit_name: string;
+            unit_category: string;
+            unit_value: number;
+          }>
+        | null,
       voice_ids: (data.voices ?? [])
         .filter((item) => item.selected)
         .map((v) => v.id as string)
@@ -356,8 +384,29 @@ function ModelComponent({
 
   const [formState, setFormState] = useState(getInitialFormState);
 
-  // Per-type boolean view of flag_ids, built from the catalog. Used by
-  // getStepStatus and the canonical <Flags> picker.
+  // Pending tracking by section — mirrors Setting.tsx so handleFlagToggle
+  // (and any other section change) can prune stale pending_ids on each save.
+  const pendingFlagIds = useMemo(
+    () =>
+      new Set(
+        (modelData?.flags ?? [])
+          .filter((f: any) => f.pending && f.id)
+          .map((f: any) => f.id as string),
+      ),
+    [modelData?.flags],
+  );
+  const pruneFlagsPending = useCallback(
+    (nextIds: string[]) => {
+      return formState.pending_ids.filter(
+        (id) => !pendingFlagIds.has(id) || nextIds.includes(id),
+      );
+    },
+    [pendingFlagIds, formState.pending_ids],
+  );
+
+  // Per-type boolean view of flag_ids, built from the catalog. Keyed by raw
+  // `flags_resource.type` (e.g. `model_active`, `model_modalities_enabled`).
+  // Used by getStepStatus and the canonical <Flags> picker.
   const flagValues = useMemo<Record<string, boolean | null>>(() => {
     const map: Record<string, boolean | null> = {};
     const byId = new Map(
@@ -368,8 +417,7 @@ function ModelComponent({
     for (const id of formState.flag_ids) {
       const row = byId.get(id) as any;
       if (!row) continue;
-      // Strip the artifact prefix (server returns 'model_active', etc.).
-      const t = (row.type ?? row.name ?? "").replace(/^model_/, "");
+      const t = row.type ?? row.name;
       if (t && row.value != null) map[t] = row.value;
     }
     return map;
@@ -380,9 +428,8 @@ function ModelComponent({
   const flagRowsByType = useMemo(() => {
     const map = new Map<string, FlagRow[]>();
     for (const f of modelData?.flags ?? []) {
-      const raw = (f as any).type ?? (f as any).name;
-      if (!raw) continue;
-      const t = String(raw).replace(/^model_/, "");
+      const t = (f as any).type ?? (f as any).name;
+      if (!t) continue;
       const list = map.get(t) ?? [];
       list.push(f as FlagRow);
       map.set(t, list);
@@ -393,6 +440,9 @@ function ModelComponent({
 
   const handleFlagToggle = useCallback(
     (type: string, next: boolean | null) => {
+      // The Flags catalog rows carry the raw type (`model_active`,
+      // `model_modalities_enabled`, …) and emit it verbatim. Look up rows,
+      // ids field, and pending state by that same raw key — no stripping.
       setFormState((prev) => {
         const rows = (flagRowsByType.get(type) ?? []) as Array<{
           id?: string | null;
@@ -413,10 +463,15 @@ function ModelComponent({
         const idsField = MODEL_FLAG_TYPE_TO_IDS_FIELD[type];
         const cleared: Record<string, string[]> =
           next === false && idsField ? { [idsField]: [] } : {};
-        return { ...prev, flag_ids: nextIds, ...cleared };
+        return {
+          ...prev,
+          flag_ids: nextIds,
+          pending_ids: pruneFlagsPending(nextIds),
+          ...cleared,
+        };
       });
     },
-    [flagRowsByType],
+    [flagRowsByType, pruneFlagsPending],
   );
 
   // AI generation via shared hook
@@ -570,6 +625,13 @@ function ModelComponent({
               temperature_level_ids:
                 fs.temperature_level_ids ?? prev.temperature_level_ids,
               pricing_ids: fs.pricing_ids ?? prev.pricing_ids,
+              // Inline-created pricing entries: server fills in ids for
+              // id=null entries we sent. Replace the whole array so
+              // subsequent saves don't re-create the same rows.
+              pricing:
+                ((fs as Record<string, unknown>)["pricing"] as
+                  | typeof prev.pricing
+                  | undefined) ?? prev.pricing,
               reasoning_level_ids:
                 fs.reasoning_level_ids ?? prev.reasoning_level_ids,
               quality_ids: fs.quality_ids ?? prev.quality_ids,
@@ -607,52 +669,51 @@ function ModelComponent({
     }
   }, [patchModelDraftAction]);
 
-  const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
-    null,
-  );
-
   const hasResourceIds =
     checkHasResourceIds(
       MODEL_RESOURCES,
       formState as unknown as Record<string, unknown>,
     ) ||
+    !!formState.name ||
+    !!formState.description ||
+    !!formState.value ||
     !!formState.value_id ||
-    formState.flag_ids.length > 0;
+    formState.flag_ids.length > 0 ||
+    formState.pending_ids.length > 0;
 
-  const buildPatchPayload = useCallback(
-    (inputDraftId: string | null): Record<string, unknown> => {
-      const effectiveFormState = formStateRef.current as typeof formState;
-      const payload: Record<string, unknown> = {
-        draft_id: inputDraftId || null,
-        input_draft_id: inputDraftId || null,
-        ...buildDraftPayload(MODEL_RESOURCES, {
-          formState: effectiveFormState as unknown as Record<string, unknown>,
-          referenceState: lastPatchedFormStateRef.current,
-          flushResults: {},
-        }),
-        flag_ids: effectiveFormState.flag_ids ?? [],
-        pending_ids: effectiveFormState.pending_ids ?? [],
-      };
+  const buildPatchPayload = useCallback((): Record<string, unknown> => {
+    const current = formStateRef.current as typeof formState;
+    const payload: Record<string, unknown> = {};
 
-      const currentFs = formStateRef.current as typeof formState;
-      if (currentFs["name"]) {
-        payload["name"] = currentFs["name"];
-        delete payload["name_id"];
-      }
-      if (currentFs["description"]) {
-        payload["description"] = currentFs["description"];
-        delete payload["description_id"];
-      }
-      if (currentFs["value"]) {
-        payload["value"] = currentFs["value"];
-        delete payload["value_id"];
-      }
+    if (current.name != null) payload["name"] = current.name;
+    else if (current.name_id) payload["name_id"] = current.name_id;
 
-      return payload;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [s],
-  );
+    if (current.description != null) payload["description"] = current.description;
+    else if (current.description_id) payload["description_id"] = current.description_id;
+
+    if (current.value != null) payload["value"] = current.value;
+    else if (current.value_id) payload["value_id"] = current.value_id;
+
+    if (current.provider_id) payload["provider_id"] = current.provider_id;
+
+    if (current.flag_ids.length > 0) payload["flag_ids"] = current.flag_ids;
+    if (current.department_ids.length > 0) payload["department_ids"] = current.department_ids;
+    if (current.modality_ids.length > 0) payload["modality_ids"] = current.modality_ids;
+    if (current.temperature_level_ids.length > 0) payload["temperature_level_ids"] = current.temperature_level_ids;
+    if (current.pricing_ids.length > 0) payload["pricing_ids"] = current.pricing_ids;
+    // Inline-created pricing value-objects: send the array whenever the user
+    // has authored any new entries. Server creates rows for id=null entries
+    // and merges resolved IDs into pricing_ids on the response.
+    if (current.pricing && current.pricing.length > 0) {
+      payload["pricing"] = current.pricing;
+    }
+    if (current.reasoning_level_ids.length > 0) payload["reasoning_level_ids"] = current.reasoning_level_ids;
+    if (current.quality_ids.length > 0) payload["quality_ids"] = current.quality_ids;
+    if (current.voice_ids.length > 0) payload["voice_ids"] = current.voice_ids;
+
+    if (current.pending_ids.length > 0) payload["pending_ids"] = current.pending_ids;
+    return payload;
+  }, []);
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
   const handleNameIdChange = useCallback((id: string | null) => {
@@ -686,10 +747,6 @@ function ModelComponent({
       hasResourceIds,
       flushRegistryRef: emptyFlushRegistryRef,
       formStateRef: formStateRef as React.MutableRefObject<Record<string, unknown>>,
-      onPatchSuccess: () => {
-        lastPatchedFormStateRef.current =
-          formStateRef.current as unknown as Record<string, unknown>;
-      },
     });
 
   // Generation handler - uses resource_types directly (no domain_ids)
@@ -922,12 +979,12 @@ function ModelComponent({
       const hasDescription = !!formState.description_id;
       const hasProvider = !!formState.provider_id;
       const hasModalities = formState.modality_ids.length > 0;
-      const modalities_enabled_flag_id = !!flagValues["modalities_enabled"];
-      const temperature_enabled_flag_id = !!flagValues["temperature_enabled"];
-      const pricing_enabled_flag_id = !!flagValues["pricing_enabled"];
-      const voices_enabled_flag_id = !!flagValues["voices_enabled"];
-      const reasoning_levels_enabled_flag_id = !!flagValues["reasoning_levels_enabled"];
-      const qualities_enabled_flag_id = !!flagValues["qualities_enabled"];
+      const modalities_enabled_flag_id = !!flagValues["model_modalities_enabled"];
+      const temperature_enabled_flag_id = !!flagValues["model_temperature_enabled"];
+      const pricing_enabled_flag_id = !!flagValues["model_pricing_enabled"];
+      const voices_enabled_flag_id = !!flagValues["model_voices_enabled"];
+      const reasoning_levels_enabled_flag_id = !!flagValues["model_reasoning_levels_enabled"];
+      const qualities_enabled_flag_id = !!flagValues["model_qualities_enabled"];
 
       switch (stepId) {
         case "basic":
@@ -1134,7 +1191,7 @@ function ModelComponent({
         case "temperature":
           return { ...prev, temperature_level_ids: [] };
         case "pricing":
-          return { ...prev, pricing_ids: [] };
+          return { ...prev, pricing_ids: [], pricing: null };
         case "reasoning":
           return { ...prev, reasoning_level_ids: [] };
         case "voices":
@@ -1311,17 +1368,14 @@ function ModelComponent({
                   description="Unique identifier for this model (used in API calls)"
                 />
 
-                {/* Departments: hidden when the profile only has access to
-                    one department (nothing to pick from). Uses the same
-                    <Departments> component as Scenario/Eval/etc. */}
+                {/* Departments: canonical multi-select grid, always shown so
+                    Model parity matches Scenario/Eval/etc. */}
                 <Departments
                   department_ids={formState.department_ids}
                   department_resources={departments.filter(
                     (d) => d.selected,
                   )}
-                  show_departments={
-                    validDepartmentIds && validDepartmentIds.length > 1
-                  }
+                  show_departments={true}
                   departments={departments}
                   disabled={disabled}
                   onChange={(ids) =>
@@ -1384,7 +1438,7 @@ function ModelComponent({
           );
 
         case "modalities":
-          if (!flagValues["modalities_enabled"]) return null;
+          if (!flagValues["model_modalities_enabled"]) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1416,40 +1470,85 @@ function ModelComponent({
                 ) : undefined
               }
             >
-              <Modalities
-                modality_ids={formState.modality_ids}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                modality_resources={((s?.modalities?.current ?? []).map((m) => ({
-                  modality_id: m.id,
-                  name: m.modality,
-                  generated: m.generated,
-                })) as any)}
-                show_modalities={s?.modalities?.show ?? true}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                modalities={((s?.modalities?.resources ?? []).map((m) => ({
-                  modality_id: m.id,
-                  name: m.modality,
-                  generated: m.generated,
-                  suggested: m.suggested,
-                  pending: m.pending,
-                })) as any)}
-                searchTerm={modalitySearch}
-                onSearchChange={(term: string) =>
-                  setFormData({ modalitySearch: term || null })
-                }
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState({ ...formState, modality_ids: ids })
-                }
-                label="Modalities"
-                placeholder="Select modalities"
-                required={s?.modalities?.required ?? true}
-              />
+              {(() => {
+                // Group modalities by `is_input` and render one bucket per
+                // role (Input / Output). Storage stays flat as
+                // `modality_ids: string[]`; each picker emits its bucket's
+                // ids while the parent retains rows from the other bucket.
+                type ModalityRow = NonNullable<
+                  NonNullable<typeof s>["modalities"]
+                >["resources"][number];
+                const allRows: ModalityRow[] = s?.modalities?.resources ?? [];
+                const buckets: Array<{
+                  key: string;
+                  label: string;
+                  rows: ModalityRow[];
+                }> = [
+                  {
+                    key: "input",
+                    label: "Input Modalities",
+                    rows: allRows.filter((m) => m.is_input === true),
+                  },
+                  {
+                    key: "output",
+                    label: "Output Modalities",
+                    rows: allRows.filter((m) => m.is_input === false),
+                  },
+                ];
+
+                return (
+                  <div className="space-y-6">
+                    {buckets.map((bucket) => {
+                      const bucketIds = new Set(
+                        bucket.rows
+                          .map((r) => r.id)
+                          .filter((id): id is string => !!id),
+                      );
+                      const currentIds = formState.modality_ids.filter((id) =>
+                        bucketIds.has(id),
+                      );
+                      return (
+                        <Modalities
+                          key={bucket.key}
+                          modality_ids={currentIds}
+                          show_modalities={s?.modalities?.show ?? true}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          modalities={(bucket.rows.map((m) => ({
+                            modality_id: m.id,
+                            name: m.modality,
+                            generated: m.generated,
+                            suggested: m.suggested,
+                            pending: m.pending,
+                          })) as any)}
+                          disabled={disabled}
+                          onChange={(nextBucketIds) =>
+                            setFormState((prev) => {
+                              const retained = prev.modality_ids.filter(
+                                (id) => !bucketIds.has(id),
+                              );
+                              return {
+                                ...prev,
+                                modality_ids: [...retained, ...nextBucketIds],
+                              };
+                            })
+                          }
+                          label={bucket.label}
+                          required={
+                            bucket.key === "input"
+                              ? (s?.modalities?.required ?? true)
+                              : false
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </StepCard>
           );
 
         case "temperature":
-          if (!flagValues["temperature_enabled"]) return null;
+          if (!flagValues["model_temperature_enabled"]) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1482,55 +1581,32 @@ function ModelComponent({
               }
             >
               <TemperatureLevels
-                temperature_level_id={
-                  formState.temperature_level_ids.length > 0
-                    ? (formState.temperature_level_ids[0] ?? null)
-                    : null
-                }
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                temperature_level_resource={((formState.temperature_level_ids.length > 0 &&
-                  s?.temperature_levels?.current?.[0]
-                    ? {
-                        id: s.temperature_levels.current[0].id,
-                        temperature: String(
-                          s.temperature_levels.current[0].temperature,
-                        ),
-                        is_upper: false,
-                        generated: s.temperature_levels.current[0].generated,
-                      }
-                    : null) as any)}
+                temperature_level_ids={formState.temperature_level_ids}
                 show_temperature_levels={s?.temperature_levels?.show ?? true}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                temperature_levels={((s?.temperature_levels?.resources ?? []).map(
+                temperature_levels={(s?.temperature_levels?.resources ?? []).map(
                   (t) => ({
                     id: t.id,
-                    temperature: String(t.temperature),
-                    is_upper: false,
+                    temperature: t.temperature,
                     generated: t.generated,
                     suggested: t.suggested,
                     pending: t.pending,
                   }),
-                ) as any)}
-                searchTerm={temperatureSearch}
-                onSearchChange={(term: string) =>
-                  setFormData({ temperatureSearch: term || null })
-                }
+                )}
                 disabled={disabled}
-                onTemperatureLevelIdChange={(id) =>
+                onChange={(nextIds) =>
                   setFormState({
                     ...formState,
-                    temperature_level_ids: id ? [id] : [],
+                    temperature_level_ids: nextIds,
                   })
                 }
-                label="Temperature Levels"
-                placeholder="Select temperature levels"
+                label="Temperature Range"
                 required={s?.temperature_levels?.required ?? false}
               />
             </StepCard>
           );
 
         case "pricing":
-          if (!flagValues["pricing_enabled"]) return null;
+          if (!flagValues["model_pricing_enabled"]) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1564,23 +1640,29 @@ function ModelComponent({
             >
               <Pricing
                 pricing_ids={formState.pricing_ids}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                pricing_resources={((s?.pricing?.current ?? []).map((p) => ({
-                  pricing_id: p.id,
-                  name: `${p.pricing_type}`,
-                  description: `${p.price}`,
-                  generated: p.generated,
-                })) as any)}
                 show_pricing={s?.pricing?.show ?? true}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                pricings={((s?.pricing?.resources ?? []).map((p) => ({
-                  pricing_id: p.id,
-                  name: `${p.pricing_type}`,
-                  description: `${p.price}`,
-                  generated: p.generated,
-                  suggested: p.suggested,
-                  pending: p.pending,
-                })) as any)}
+                pricings={(s?.pricing?.resources ?? []).map((p) => ({
+                  pricing_id: p.id ?? null,
+                  pricing_type: p.pricing_type ?? null,
+                  name: `${p.pricing_type ?? ""}${
+                    p.price != null && p.unit_name
+                      ? ` — $${p.price}/${p.unit_name}`
+                      : ""
+                  }`,
+                  description: p.unit_category ?? null,
+                  price: p.price ?? null,
+                  unit_name: p.unit_name ?? null,
+                  unit_category: p.unit_category ?? null,
+                  unit_value:
+                    typeof p.unit_value === "number"
+                      ? p.unit_value
+                      : p.unit_value != null
+                        ? Number(p.unit_value)
+                        : null,
+                  generated: p.generated ?? null,
+                  suggested: p.suggested ?? null,
+                  pending: p.pending ?? null,
+                }))}
                 searchTerm={pricingSearch}
                 onSearchChange={(term: string) =>
                   setFormData({ pricingSearch: term || null })
@@ -1588,6 +1670,15 @@ function ModelComponent({
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState({ ...formState, pricing_ids: ids })
+                }
+                onCreate={(draft) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    pricing: [
+                      ...(prev.pricing ?? []),
+                      { id: null, ...draft },
+                    ],
+                  }))
                 }
                 label="Pricing"
                 placeholder="Select pricing configurations"
@@ -1597,7 +1688,7 @@ function ModelComponent({
           );
 
         case "reasoning":
-          if (!flagValues["reasoning_levels_enabled"]) return null;
+          if (!flagValues["model_reasoning_levels_enabled"]) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1656,10 +1747,6 @@ function ModelComponent({
                     pending: r.pending,
                   }),
                 ) as any)}
-                searchTerm={reasoningSearch}
-                onSearchChange={(term: string) =>
-                  setFormData({ reasoningSearch: term || null })
-                }
                 disabled={disabled}
                 onReasoningLevelIdChange={(id) =>
                   setFormState({
@@ -1667,15 +1754,14 @@ function ModelComponent({
                     reasoning_level_ids: id ? [id] : [],
                   })
                 }
-                label="Reasoning Levels"
-                placeholder="Select reasoning levels"
+                label="Reasoning Level"
                 required={s?.reasoning_levels?.required ?? false}
               />
             </StepCard>
           );
 
         case "voices":
-          if (!flagValues["voices_enabled"]) return null;
+          if (!flagValues["model_voices_enabled"]) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1723,7 +1809,7 @@ function ModelComponent({
           );
 
         case "qualities":
-          if (!flagValues["qualities_enabled"]) return null;
+          if (!flagValues["model_qualities_enabled"]) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1768,16 +1854,11 @@ function ModelComponent({
                   name: q.quality,
                   generated: q.generated,
                 })) as any)}
-                searchTerm={qualitySearch}
-                onSearchChange={(term: string) =>
-                  setFormData({ qualitySearch: term || null })
-                }
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState({ ...formState, quality_ids: ids })
                 }
                 label="Qualities"
-                placeholder="Select quality levels"
                 required={s?.qualities?.required ?? false}
               />
             </StepCard>

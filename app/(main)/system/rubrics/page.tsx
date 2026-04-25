@@ -27,6 +27,8 @@ type DuplicateRubricIn = InputOf<"/rubric/duplicate", "post">;
 type DuplicateRubricOut = OutputOf<"/rubric/duplicate", "post">;
 type DeleteRubricIn = InputOf<"/rubric/delete", "post">;
 type DeleteRubricOut = OutputOf<"/rubric/delete", "post">;
+type UpdateRubricIn = InputOf<"/rubric/update", "post">;
+type UpdateRubricOut = OutputOf<"/rubric/update", "post">;
 type GroupRubricIn = InputOf<"/rubric/group", "post">;
 type GroupRubricOut = OutputOf<"/rubric/group", "post">;
 type GenerateRubricIn = InputOf<"/rubric/generate", "post">;
@@ -77,6 +79,13 @@ async function deleteRubric(
 ): Promise<DeleteRubricOut> {
   "use server";
   return api.post("/rubric/delete", input);
+}
+
+async function updateRubric(
+  input: UpdateRubricIn
+): Promise<UpdateRubricOut> {
+  "use server";
+  return api.post("/rubric/update", input);
 }
 
 async function generateRubric(
@@ -205,6 +214,7 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
             listData={listData}
             duplicateRubricAction={duplicateRubric}
             deleteRubricAction={deleteRubric}
+            updateRubricAction={updateRubric}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}
@@ -239,4 +249,6 @@ export type {
   DuplicateRubricIn,
   DuplicateRubricOut,
   RubricsListOut,
+  UpdateRubricIn,
+  UpdateRubricOut,
 };

@@ -405,7 +405,6 @@ export default async function BenchmarkPage({
                 pageIndex={historyPage}
                 pageSize={historyPageSize}
                 isLoading={false}
-                showCustomize={true}
               />
             </div>
           </div>

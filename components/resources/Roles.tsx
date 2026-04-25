@@ -71,6 +71,24 @@ export interface RolesProps {
       color_hex: string;
     }
   ) => void;
+  /** Permission catalog for the inline-create editor. */
+  permissions?: PermissionCatalogItem[];
+  /** Request-limit catalog (advisory; users can also type custom intervals). */
+  request_limits_catalog?: RequestLimitCatalogItem[];
+  /**
+   * Called when the user finishes creating a new role inline. Shape matches
+   * `ProfileRoleDraftValue` on the server. The parent should stash this on
+   * formState (e.g. role_draft) and ship it with the next save/draft patch.
+   */
+  onCreateRoleDraft?: (draft: {
+    name: string;
+    description: string;
+    icon_value: string;
+    color_hex: string;
+    level: number;
+    permission_ids: string[];
+    request_limits: RoleRequestLimitDraft[];
+  }) => void;
 }
 
 type RoleItem = {
@@ -82,12 +100,37 @@ type RoleItem = {
   color: string;
 };
 
-type RoleDraft = {
+export type RoleRequestLimitDraft = {
+  /** null = inline-create on save; otherwise re-link existing limit. */
+  id: string | null;
+  limit: number;
+  /** Postgres interval string — '1 day', '30 minutes', '2 hours', etc. */
+  interval: string;
+};
+
+export type RoleDraft = {
   name: string;
   description: string;
   iconValue: string;
   color: string;
+  level: number;
+  permission_ids: string[];
+  request_limits: RoleRequestLimitDraft[];
 };
+
+export interface PermissionCatalogItem {
+  id: string;
+  artifact: string;
+  operation: string;
+  name?: string | null;
+  description?: string | null;
+}
+
+export interface RequestLimitCatalogItem {
+  id: string;
+  limit: number;
+  interval: string;
+}
 
 type IconOption = {
   id: RoleIconKey;
@@ -133,14 +176,86 @@ function RoleEditor({
   iconOptions,
   colorSwatches,
   disabled,
+  permissions,
 }: {
   draft: RoleDraft;
   onChange: (next: RoleDraft) => void;
   iconOptions: IconOption[];
   colorSwatches: string[];
   disabled?: boolean;
+  permissions?: PermissionCatalogItem[];
 }) {
   const currentIcon = draft.iconValue || "User";
+
+  const permissionsByArtifact = useMemo(() => {
+    const map = new Map<string, PermissionCatalogItem[]>();
+    for (const p of permissions ?? []) {
+      if (!p.artifact || !p.id) continue;
+      const list = map.get(p.artifact) ?? [];
+      list.push(p);
+      map.set(p.artifact, list);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => (a.operation ?? "").localeCompare(b.operation ?? ""));
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [permissions]);
+
+  const selectedPermissionIds = useMemo(
+    () => new Set(draft.permission_ids ?? []),
+    [draft.permission_ids],
+  );
+
+  const togglePermission = useCallback(
+    (permId: string) => {
+      const next = new Set(selectedPermissionIds);
+      if (next.has(permId)) next.delete(permId);
+      else next.add(permId);
+      onChange({ ...draft, permission_ids: Array.from(next) });
+    },
+    [draft, onChange, selectedPermissionIds],
+  );
+
+  const toggleArtifact = useCallback(
+    (artifact: string) => {
+      const list = permissionsByArtifact.find(([a]) => a === artifact)?.[1] ?? [];
+      const ids = list.map((p) => p.id);
+      const allOn = ids.every((id) => selectedPermissionIds.has(id));
+      const next = new Set(selectedPermissionIds);
+      if (allOn) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      onChange({ ...draft, permission_ids: Array.from(next) });
+    },
+    [draft, onChange, permissionsByArtifact, selectedPermissionIds],
+  );
+
+  const updateRequestLimit = useCallback(
+    (index: number, patch: Partial<RoleRequestLimitDraft>) => {
+      const next = (draft.request_limits ?? []).map((rl, i) =>
+        i === index ? { ...rl, ...patch } : rl,
+      );
+      onChange({ ...draft, request_limits: next });
+    },
+    [draft, onChange],
+  );
+
+  const addRequestLimit = useCallback(() => {
+    onChange({
+      ...draft,
+      request_limits: [
+        ...(draft.request_limits ?? []),
+        { id: null, limit: 100, interval: "1 day" },
+      ],
+    });
+  }, [draft, onChange]);
+
+  const removeRequestLimit = useCallback(
+    (index: number) => {
+      const next = (draft.request_limits ?? []).filter((_, i) => i !== index);
+      onChange({ ...draft, request_limits: next });
+    },
+    [draft, onChange],
+  );
 
   return (
     <div className="space-y-3">
@@ -230,6 +345,168 @@ function RoleEditor({
           </div>
         )}
       </div>
+
+      <div className="space-y-1.5 pt-1 border-t">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+          Level
+        </Label>
+        <Input
+          type="number"
+          value={draft.level}
+          min={0}
+          max={99}
+          onChange={(event) => {
+            const next = Number.parseInt(event.target.value, 10);
+            onChange({
+              ...draft,
+              level: Number.isFinite(next) ? next : 99,
+            });
+          }}
+          className="h-8 w-24"
+          disabled={disabled}
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Lower number = more privileged (0 = Super Administrator).
+        </p>
+      </div>
+
+      <div className="space-y-2 pt-1 border-t">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Permissions ({selectedPermissionIds.size})
+          </Label>
+        </div>
+        {permissionsByArtifact.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            No permission catalog available.
+          </p>
+        ) : (
+          <div className="max-h-[280px] overflow-y-auto space-y-1 pr-1">
+            {permissionsByArtifact.map(([artifact, perms]) => {
+              const allOn = perms.every((p) =>
+                selectedPermissionIds.has(p.id),
+              );
+              const someOn = perms.some((p) =>
+                selectedPermissionIds.has(p.id),
+              );
+              return (
+                <details
+                  key={artifact}
+                  className="rounded border bg-muted/20 px-2 py-1"
+                >
+                  <summary className="flex items-center justify-between cursor-pointer text-xs">
+                    <span className="font-medium">
+                      {artifact}{" "}
+                      <span className="text-muted-foreground">
+                        ({perms.filter((p) => selectedPermissionIds.has(p.id)).length}/{perms.length})
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      className={cn(
+                        "text-[11px] underline",
+                        allOn ? "text-destructive" : "text-primary",
+                      )}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleArtifact(artifact);
+                      }}
+                      disabled={disabled}
+                    >
+                      {allOn ? "clear all" : someOn ? "select all" : "select all"}
+                    </button>
+                  </summary>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-1 pt-2">
+                    {perms.map((p) => (
+                      <label
+                        key={p.id}
+                        className="flex items-center gap-1.5 text-xs cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedPermissionIds.has(p.id)}
+                          onChange={() => togglePermission(p.id)}
+                          disabled={disabled}
+                        />
+                        <span className="truncate">{p.operation}</span>
+                      </label>
+                    ))}
+                  </div>
+                </details>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-2 pt-1 border-t">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Request Limits
+          </Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7"
+            disabled={disabled}
+            onClick={addRequestLimit}
+          >
+            <Plus className="h-3 w-3 mr-1" /> Add limit
+          </Button>
+        </div>
+        {(draft.request_limits ?? []).length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            No request limits. New role will have no rate limiting.
+          </p>
+        ) : (
+          <div className="space-y-1.5">
+            {(draft.request_limits ?? []).map((rl, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={1}
+                  value={rl.limit}
+                  onChange={(e) => {
+                    const next = Number.parseInt(e.target.value, 10);
+                    updateRequestLimit(idx, {
+                      limit: Number.isFinite(next) ? next : 1,
+                    });
+                  }}
+                  className="h-8 w-24"
+                  disabled={disabled}
+                />
+                <span className="text-xs text-muted-foreground">per</span>
+                <Input
+                  value={rl.interval}
+                  onChange={(e) =>
+                    updateRequestLimit(idx, { interval: e.target.value })
+                  }
+                  placeholder="1 day"
+                  className="h-8 flex-1"
+                  disabled={disabled}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive"
+                  onClick={() => removeRequestLimit(idx)}
+                  disabled={disabled}
+                  title="Remove"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+            <p className="text-[11px] text-muted-foreground">
+              Interval accepts Postgres durations: <code>1 day</code>,{" "}
+              <code>30 minutes</code>, <code>2 hours</code>, <code>1 week</code>,
+              etc.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -252,6 +529,9 @@ export function Roles({
   showSelectedFilter = false,
   emptyMessage = "No roles found. Try adjusting your search.",
   onRoleResourceChange,
+  permissions,
+  request_limits_catalog: _request_limits_catalog,
+  onCreateRoleDraft,
 }: RolesProps) {
   // Pending state: items with pending=true from soft draft connections
   const pendingItems = useMemo(() => {
@@ -280,6 +560,9 @@ export function Roles({
     description: "",
     iconValue: "User",
     color: "#64748b",
+    level: 99,
+    permission_ids: [],
+    request_limits: [],
   });
 
   const baseRoles = useMemo(() => {
@@ -367,7 +650,7 @@ export function Roles({
     [availableRoles]
   );
 
-  const defaultCustomRole = useMemo(() => {
+  const defaultCustomRole = useMemo<RoleDraft>(() => {
     const baseCustom = PROFILE_ROLES.find((r) => r.id === "custom");
     if (!baseCustom) {
       return {
@@ -375,6 +658,9 @@ export function Roles({
         description: "Custom role",
         iconValue: "User",
         color: "#64748b",
+        level: 99,
+        permission_ids: [],
+        request_limits: [],
       };
     }
     return {
@@ -382,6 +668,9 @@ export function Roles({
       description: baseCustom.description ?? "",
       iconValue: getIconKeyFromComponent(baseCustom.icon),
       color: baseCustom.color,
+      level: 99,
+      permission_ids: [],
+      request_limits: [],
     };
   }, []);
 
@@ -529,6 +818,9 @@ export function Roles({
                           description: item.description,
                           iconValue: item.iconValue,
                           color: item.color,
+                          level: 99,
+                          permission_ids: [],
+                          request_limits: [],
                         });
                       }}
                     >
@@ -548,6 +840,7 @@ export function Roles({
                           iconOptions={ICON_OPTIONS}
                           colorSwatches={colorSwatches}
                           disabled={disabled}
+                          {...(permissions ? { permissions } : {})}
                         />
                         <div className="flex items-center justify-end gap-2">
                           <Button
@@ -578,6 +871,9 @@ export function Roles({
                                 color:
                                   normalizeHex(editingDraft.color) ||
                                   item.color,
+                                level: editingDraft.level,
+                                permission_ids: editingDraft.permission_ids,
+                                request_limits: editingDraft.request_limits,
                               };
                               setRoleOverrides((prev) => ({
                                 ...prev,
@@ -653,6 +949,7 @@ export function Roles({
                 iconOptions={ICON_OPTIONS}
                 colorSwatches={colorSwatches}
                 disabled={disabled}
+                {...(permissions ? { permissions } : {})}
               />
               <div className="flex items-center justify-end gap-2">
                 <Button
@@ -670,12 +967,15 @@ export function Roles({
                   type="button"
                   size="sm"
                   onClick={() => {
-                    const normalized = {
+                    const normalized: RoleDraft = {
                       name: newCustomDraft.name.trim() || "Custom",
                       description: newCustomDraft.description.trim(),
                       iconValue: newCustomDraft.iconValue || "User",
                       color:
                         normalizeHex(newCustomDraft.color) || "#64748b",
+                      level: newCustomDraft.level,
+                      permission_ids: newCustomDraft.permission_ids,
+                      request_limits: newCustomDraft.request_limits,
                     };
                     setLocalRoles((prev) => [
                       ...prev,
@@ -697,6 +997,18 @@ export function Roles({
                       description: normalized.description,
                       icon_value: normalized.iconValue,
                       color_hex: normalized.color,
+                    });
+                    // New: ship the full creatable shape (level + permissions
+                    // + request_limits) up to the parent so it can flow into
+                    // the role_draft value-array on the next save.
+                    onCreateRoleDraft?.({
+                      name: normalized.name,
+                      description: normalized.description,
+                      icon_value: normalized.iconValue,
+                      color_hex: normalized.color,
+                      level: newCustomDraft.level,
+                      permission_ids: newCustomDraft.permission_ids,
+                      request_limits: newCustomDraft.request_limits,
                     });
                     onRoleChange("custom");
                     setIsAddingCustomRole(false);

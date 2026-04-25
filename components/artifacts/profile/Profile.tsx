@@ -8,7 +8,6 @@ import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
@@ -26,12 +25,11 @@ import { useProfileAi } from "@/hooks/use-profile-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildDraftPayload,
   checkHasResourceIds,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
 import { cn } from "@/lib/utils";
-import { Check, Mail, Trash2, X } from "lucide-react";
+import { Check, Mail, Plus, Trash2, X } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 type CreateProfileIn = InputOf<"/profile/create", "post">;
@@ -57,6 +55,23 @@ type ProfileFormState = {
   // convention picks it up.
   primary_email_id: string | null;
   role_id: string | null;
+  // Inline-create payload for a brand-new role. id=null asks the server to
+  // create a roles_resource row with the supplied permissions/limits, then
+  // thread the new role_id back. When set, takes precedence over role_id.
+  role_draft: {
+    id: string | null;
+    name: string;
+    description: string | null;
+    icon_id: string | null;
+    color_id: string | null;
+    level: number;
+    permission_ids: string[];
+    request_limits: Array<{
+      id: string | null;
+      limit: number;
+      interval: string;
+    }>;
+  } | null;
   pending_ids: string[];
 };
 
@@ -87,6 +102,73 @@ const PROFILE_RESOURCES: ResourceConfig[] = [
   { key: "roles", formKey: "role_id", flushKey: null, type: "single" },
 ];
 
+/**
+ * Ghost-autocomplete email input. Mirrors the pattern in ReorderableList:
+ * value sits in a real <Input>, an absolute-positioned `<span>` overlay
+ * shows the matching suggestion suffix dimmed; pressing Tab accepts.
+ */
+function GhostEmailInput({
+  value,
+  onChange,
+  onSubmit,
+  suggestions,
+  placeholder,
+  disabled,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  onSubmit: () => void;
+  suggestions: string[];
+  placeholder: string;
+  disabled?: boolean;
+}) {
+  const ghostMatch = useMemo(() => {
+    const trimmed = value.trim();
+    if (!trimmed || !suggestions.length) return null;
+    const lower = trimmed.toLowerCase();
+    return (
+      suggestions.find((s) => {
+        const sLower = s.toLowerCase();
+        return sLower.startsWith(lower) && sLower !== lower;
+      }) ?? null
+    );
+  }, [suggestions, value]);
+  const ghostSuffix = ghostMatch ? ghostMatch.slice(value.length) : "";
+
+  return (
+    <div className="relative flex-1">
+      <Input
+        type="email"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Tab" && ghostSuffix) {
+            e.preventDefault();
+            onChange(ghostMatch!);
+            return;
+          }
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onSubmit();
+          }
+        }}
+        placeholder={placeholder}
+        className="h-8"
+        disabled={disabled}
+      />
+      {ghostSuffix && !disabled && (
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none flex items-center px-3 text-sm"
+        >
+          <span className="invisible">{value}</span>
+          <span className="text-muted-foreground/50">{ghostSuffix}</span>
+        </span>
+      )}
+    </div>
+  );
+}
+
 export interface ProfileProps {
   profileId?: string;
   mode?: "create" | "edit";
@@ -114,6 +196,10 @@ function ProfileComponent({
     Map<string, () => Promise<Record<string, unknown> | void>>
   >(new Map());
   const [newEmailInput, setNewEmailInput] = useState("");
+  // Per-section ghost-autocomplete inputs for the contact step. Each
+  // section (Primary, Other) has its own draft string + Add button.
+  const [primaryEmailInput, setPrimaryEmailInput] = useState("");
+  const [otherEmailInput, setOtherEmailInput] = useState("");
 
   const profileDataRef = useRef(profileData);
   useEffect(() => {
@@ -157,6 +243,7 @@ function ProfileComponent({
         new_emails: [],
         primary_email_id: null,
         role_id: null,
+        role_draft: null,
         pending_ids: [],
       };
     }
@@ -184,6 +271,7 @@ function ProfileComponent({
       new_emails: [],
       primary_email_id: primaryFromServer,
       role_id: data.roles?.find((item) => item.selected)?.id ?? null,
+      role_draft: null,
       pending_ids: data.pending_ids?.filter((id): id is string => !!id) ?? [],
     };
   }, []);
@@ -204,7 +292,6 @@ function ProfileComponent({
     formStateRef.current = formState as Record<string, unknown>;
   }, [formState]);
 
-  const lastPatchedFormStateRef = useRef<Record<string, unknown> | null>(null);
   const patchActionRef = useRef<
     | ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>)
     | undefined
@@ -311,47 +398,69 @@ function ProfileComponent({
     [formState],
   );
 
-  const buildPatchPayload = useCallback(
-    (
-      inputDraftId: string | null,
-      flushResults?: Record<string, unknown>,
-    ): Record<string, unknown> => {
-      const currentFormState = formStateRef.current as unknown as ProfileFormState;
-      const payload: Record<string, unknown> = {
-        draft_id: inputDraftId || null,
-        input_draft_id: inputDraftId || null,
-        ...buildDraftPayload(PROFILE_RESOURCES, {
-          formState: {
-            ...currentFormState,
-            email_ids: orderedEmailIds,
-          } as unknown as Record<string, unknown>,
-          referenceState: lastPatchedFormStateRef.current,
-          flushResults: flushResults ?? {},
-        }),
-        pending_ids:
-          currentFormState.pending_ids.length > 0
-            ? currentFormState.pending_ids
-            : null,
-      };
+  // Append-only: always send full current state as a complete snapshot.
+  // Values take precedence over IDs for creatables (server resolves value→id,
+  // echoes id back, local state clears the value on next merge).
+  const buildPatchPayload = useCallback((): Record<string, unknown> => {
+    const current = formStateRef.current as unknown as ProfileFormState;
+    const payload: Record<string, unknown> = {};
 
-      if (currentFormState.name != null) {
-        payload["name"] = currentFormState.name;
-        delete payload["name_id"];
-      }
-      if (currentFormState.new_emails.length > 0) {
-        payload["emails"] = currentFormState.new_emails;
-      }
+    if (current.name != null) {
+      payload["name"] = current.name;
+    } else if (current.name_id) {
+      payload["name_id"] = current.name_id;
+    }
 
-      return payload;
-    },
-    [orderedEmailIds],
-  );
+    // role_draft (inline-create) takes precedence over role_id. Server
+    // resolves the draft, encrypts/creates request_limits, creates the role,
+    // and threads the new role_id back via the echoed DraftFormState.
+    if (current.role_draft) {
+      payload["role_draft"] = current.role_draft;
+    } else if (current.role_id) {
+      payload["role_id"] = current.role_id;
+    }
 
+    if (current.flag_ids.length > 0) {
+      payload["flag_ids"] = current.flag_ids;
+    }
+    if (current.department_ids.length > 0) {
+      payload["department_ids"] = current.department_ids;
+    }
+
+    // Email IDs: ordered so the primary lands at index 0 (legacy server
+    // convention). new_emails ships alongside existing IDs — the server
+    // creates resources for the strings and merges them into email_ids.
+    const orderedIds = (() => {
+      const ids = [...current.email_ids];
+      const primary = current.primary_email_id;
+      if (!primary || !ids.includes(primary)) return ids;
+      return [primary, ...ids.filter((id) => id !== primary)];
+    })();
+    if (orderedIds.length > 0) {
+      payload["email_ids"] = orderedIds;
+    }
+    if (current.new_emails.length > 0) {
+      payload["emails"] = current.new_emails;
+    }
+
+    if (current.pending_ids.length > 0) {
+      payload["pending_ids"] = current.pending_ids;
+    }
+
+    return payload;
+  }, []);
+
+  // Autosave gate: IDs OR any value/pending field present. Without the value
+  // check, typing a name before the picker resolves an ID would never trigger
+  // a save.
   const hasResourceIds =
     checkHasResourceIds(
       PROFILE_RESOURCES,
       formState as unknown as Record<string, unknown>,
-    ) || formState.new_emails.length > 0;
+    ) ||
+    !!formState.name ||
+    formState.new_emails.length > 0 ||
+    formState.pending_ids.length > 0;
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
   const handleNameIdChange = useCallback((nameId: string | null) => {
@@ -377,11 +486,6 @@ function ProfileComponent({
     hasResourceIds,
     flushRegistryRef: emptyFlushRegistryRef,
     formStateRef,
-    onPatchSuccess: () => {
-      lastPatchedFormStateRef.current = {
-        ...(formStateRef.current as Record<string, unknown>),
-      };
-    },
   });
 
   const { isGenerating, generate } = useProfileAi({});
@@ -499,6 +603,68 @@ function ProfileComponent({
     }));
     setNewEmailInput("");
   }, [formState.new_emails, newEmailInput, selectedEmailItems]);
+
+  // Add Primary Email from the ghost input. If the typed value matches an
+  // existing saved email, link by id (set primary_email_id + ensure in
+  // email_ids). Otherwise push to new_emails — the server's index-0 = primary
+  // convention promotes it on save when no other primary is set.
+  const addPrimaryEmail = useCallback(() => {
+    const trimmed = primaryEmailInput.trim();
+    if (!trimmed) return;
+    const lower = trimmed.toLowerCase();
+    const existing = existingEmailItems.find(
+      (item) => item.email.toLowerCase() === lower,
+    );
+    if (existing) {
+      setFormState((prev) => ({
+        ...prev,
+        primary_email_id: existing.id,
+        email_ids: prev.email_ids.includes(existing.id)
+          ? prev.email_ids
+          : [...prev.email_ids, existing.id],
+      }));
+    } else if (
+      !formState.new_emails.some((e) => e.toLowerCase() === lower)
+    ) {
+      setFormState((prev) => ({
+        ...prev,
+        new_emails: [trimmed, ...prev.new_emails],
+      }));
+    }
+    setPrimaryEmailInput("");
+  }, [existingEmailItems, formState.new_emails, primaryEmailInput]);
+
+  // Add Other Email from the ghost input. Existing match → ensure in
+  // email_ids (don't disturb primary). New value → push to new_emails.
+  const addOtherEmail = useCallback(() => {
+    const trimmed = otherEmailInput.trim();
+    if (!trimmed) return;
+    const lower = trimmed.toLowerCase();
+    const existing = existingEmailItems.find(
+      (item) => item.email.toLowerCase() === lower,
+    );
+    if (existing) {
+      setFormState((prev) =>
+        prev.email_ids.includes(existing.id)
+          ? prev
+          : { ...prev, email_ids: [...prev.email_ids, existing.id] },
+      );
+    } else if (
+      !formState.new_emails.some((e) => e.toLowerCase() === lower) &&
+      !selectedEmailItems.some((it) => it.email.toLowerCase() === lower)
+    ) {
+      setFormState((prev) => ({
+        ...prev,
+        new_emails: [...prev.new_emails, trimmed],
+      }));
+    }
+    setOtherEmailInput("");
+  }, [
+    existingEmailItems,
+    formState.new_emails,
+    otherEmailInput,
+    selectedEmailItems,
+  ]);
 
   const removeExistingEmail = useCallback((emailId: string) => {
     setFormState((prev) => {
@@ -724,6 +890,7 @@ function ProfileComponent({
           return {
             ...prev,
             role_id: null,
+            role_draft: null,
           };
         default:
           return prev;
@@ -890,42 +1057,38 @@ function ProfileComponent({
               resetLabel="Reset"
             >
               <div className="space-y-6">
-                {/* Primary Email — single-select. Setting the primary also
-                    ensures that email is part of email_ids. */}
+                {/* Primary Email — input-only with ghost autocomplete from
+                    existing emails. Add button (top-right) submits the typed
+                    value: existing match → set primary_email_id; new value →
+                    push to new_emails (becomes primary at index 0 on save). */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-end justify-between gap-4">
                     <Label className="flex items-center gap-1">
                       Primary Email
                     </Label>
-                    <GenericPicker<EmailPickerItem>
-                      items={existingEmailItems}
-                      selectedIds={
-                        formState.primary_email_id
-                          ? [formState.primary_email_id]
-                          : []
-                      }
-                      onSelect={(ids) => {
-                        const nextPrimary = ids[0] ?? null;
-                        setFormState((prev) => ({
-                          ...prev,
-                          primary_email_id: nextPrimary,
-                          email_ids:
-                            nextPrimary && !prev.email_ids.includes(nextPrimary)
-                              ? [...prev.email_ids, nextPrimary]
-                              : prev.email_ids,
-                        }));
-                      }}
-                      multiSelect={false}
-                      getId={(item) => item.id}
-                      getLabel={(item) => item.email}
-                      getSearchText={(item) => item.email}
-                      placeholder="Select primary email"
-                      disabled={disabled}
-                      compact={true}
-                      buttonClassName="h-8"
-                      showLabel={false}
-                      hideSelectedChips={true}
-                    />
+                    <div className="flex items-center gap-2 flex-1 max-w-md">
+                      <GhostEmailInput
+                        value={primaryEmailInput}
+                        onChange={setPrimaryEmailInput}
+                        onSubmit={addPrimaryEmail}
+                        suggestions={existingEmailItems
+                          .filter(
+                            (it) => it.id !== formState.primary_email_id,
+                          )
+                          .map((it) => it.email)}
+                        placeholder="Type primary email"
+                        disabled={disabled}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={addPrimaryEmail}
+                        disabled={disabled || !primaryEmailInput.trim()}
+                      >
+                        Add <Plus className="h-3.5 w-3.5 ml-1" />
+                      </Button>
+                    </div>
                   </div>
                   {formState.primary_email_id && (
                     <div
@@ -949,40 +1112,38 @@ function ProfileComponent({
                   )}
                 </div>
 
-                {/* Other Emails — multi-select. Excludes whatever is
-                    currently the primary. Selections merge with primary to
-                    form the full email_ids list. */}
+                {/* Other Emails — input-only with ghost autocomplete. Add
+                    appends to email_ids (existing match) or new_emails. */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-end justify-between gap-4">
                     <Label className="flex items-center gap-1">
                       Other Emails
                     </Label>
-                    <GenericPicker<EmailPickerItem>
-                      items={existingEmailItems.filter(
-                        (item) => item.id !== formState.primary_email_id,
-                      )}
-                      selectedIds={formState.email_ids.filter(
-                        (id) => id !== formState.primary_email_id,
-                      )}
-                      onSelect={(otherIds) =>
-                        setFormState((prev) => ({
-                          ...prev,
-                          email_ids: prev.primary_email_id
-                            ? [prev.primary_email_id, ...otherIds]
-                            : otherIds,
-                        }))
-                      }
-                      multiSelect={true}
-                      getId={(item) => item.id}
-                      getLabel={(item) => item.email}
-                      getSearchText={(item) => item.email}
-                      placeholder="Select additional emails"
-                      disabled={disabled}
-                      compact={true}
-                      buttonClassName="h-8"
-                      showLabel={false}
-                      hideSelectedChips={true}
-                    />
+                    <div className="flex items-center gap-2 flex-1 max-w-md">
+                      <GhostEmailInput
+                        value={otherEmailInput}
+                        onChange={setOtherEmailInput}
+                        onSubmit={addOtherEmail}
+                        suggestions={existingEmailItems
+                          .filter(
+                            (it) =>
+                              !formState.email_ids.includes(it.id) &&
+                              it.id !== formState.primary_email_id,
+                          )
+                          .map((it) => it.email)}
+                        placeholder="Type additional email"
+                        disabled={disabled}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={addOtherEmail}
+                        disabled={disabled || !otherEmailInput.trim()}
+                      >
+                        Add <Plus className="h-3.5 w-3.5 ml-1" />
+                      </Button>
+                    </div>
                   </div>
                   {selectedEmailItems.filter(
                     (item) => item.id !== formState.primary_email_id,
@@ -1072,28 +1233,8 @@ function ProfileComponent({
                   </div>
                 )}
 
-                {!disabled && (
-                  <div className="rounded-xl border border-dashed bg-muted/20 px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="email"
-                        value={newEmailInput}
-                        onChange={(event) => setNewEmailInput(event.target.value)}
-                        placeholder="Add email@example.com"
-                        className="h-8"
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            addCustomEmail();
-                          }
-                        }}
-                      />
-                      <Button type="button" size="sm" onClick={addCustomEmail}>
-                        Add
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                {/* Bottom inline-add row removed: each section now has its
+                    own ghost-autocomplete input + Add button in the header. */}
               </div>
             </StepCard>
           );
@@ -1133,9 +1274,75 @@ function ProfileComponent({
                 roles={profileData?.roles ?? []}
                 show_roles={true}
                 disabled={disabled}
-                editable={false}
+                editable={true}
                 onRoleChange={(roleId) =>
-                  setFormState((prev) => ({ ...prev, role_id: roleId }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    role_id: roleId,
+                    // Picking a different existing role discards any
+                    // unsubmitted inline-create draft.
+                    role_draft: roleId === "custom" ? prev.role_draft : null,
+                  }))
+                }
+                {...(() => {
+                  type PermissionRow = {
+                    id?: string | null;
+                    artifact?: string | null;
+                    operation?: string | null;
+                    name?: string | null;
+                    description?: string | null;
+                  };
+                  type LimitRow = {
+                    id?: string | null;
+                    limit?: number | null;
+                    interval?: string | null;
+                  };
+                  const pd = profileData as
+                    | {
+                        permissions?: PermissionRow[] | null;
+                        request_limits?: LimitRow[] | null;
+                      }
+                    | null
+                    | undefined;
+                  const permissions = (pd?.permissions ?? [])
+                    .filter((p) => p.id && p.artifact && p.operation)
+                    .map((p) => ({
+                      id: p.id as string,
+                      artifact: p.artifact as string,
+                      operation: p.operation as string,
+                      name: p.name ?? null,
+                      description: p.description ?? null,
+                    }));
+                  const request_limits_catalog = (pd?.request_limits ?? [])
+                    .filter((rl) => rl.id)
+                    .map((rl) => ({
+                      id: rl.id as string,
+                      limit: rl.limit ?? 0,
+                      interval: rl.interval ?? "1 day",
+                    }));
+                  return {
+                    ...(permissions.length > 0 ? { permissions } : {}),
+                    ...(request_limits_catalog.length > 0
+                      ? { request_limits_catalog }
+                      : {}),
+                  };
+                })()}
+                onCreateRoleDraft={(d) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    // role_id stays "custom" sentinel locally; the server
+                    // will rewrite it once role_draft resolves on save.
+                    role_draft: {
+                      id: null,
+                      name: d.name,
+                      description: d.description || null,
+                      icon_id: null,
+                      color_id: null,
+                      level: d.level,
+                      permission_ids: d.permission_ids,
+                      request_limits: d.request_limits,
+                    },
+                  }))
                 }
                 label="Role"
                 required={false}
@@ -1152,6 +1359,10 @@ function ProfileComponent({
     },
     [
       addCustomEmail,
+      addPrimaryEmail,
+      addOtherEmail,
+      primaryEmailInput,
+      otherEmailInput,
       canRegenerateForStepCard,
       disabled,
       existingEmailItems,

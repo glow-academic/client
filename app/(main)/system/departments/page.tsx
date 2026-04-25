@@ -26,6 +26,8 @@ type DuplicateDepartmentIn = InputOf<"/department/duplicate", "post">;
 type DuplicateDepartmentOut = OutputOf<"/department/duplicate", "post">;
 type DeleteDepartmentIn = InputOf<"/department/delete", "post">;
 type DeleteDepartmentOut = OutputOf<"/department/delete", "post">;
+type UpdateDepartmentIn = InputOf<"/department/update", "post">;
+type UpdateDepartmentOut = OutputOf<"/department/update", "post">;
 type GroupDepartmentIn = InputOf<"/department/group", "post">;
 type GroupDepartmentOut = OutputOf<"/department/group", "post">;
 type GenerateDepartmentIn = InputOf<"/department/generate", "post">;
@@ -72,6 +74,13 @@ async function deleteDepartment(
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/department/delete", input);
+}
+
+async function updateDepartment(
+  input: UpdateDepartmentIn,
+): Promise<UpdateDepartmentOut> {
+  "use server";
+  return api.post("/department/update", input);
 }
 
 async function generateDepartment(
@@ -165,6 +174,7 @@ export default async function DepartmentsPage() {
             listData={listData}
             duplicateDepartmentAction={duplicateDepartment}
             deleteDepartmentAction={deleteDepartment}
+            updateDepartmentAction={updateDepartment}
           />
         </div>
       </FullPageLayout>
@@ -194,4 +204,6 @@ export type {
   DepartmentsListOut,
   DuplicateDepartmentIn,
   DuplicateDepartmentOut,
+  UpdateDepartmentIn,
+  UpdateDepartmentOut,
 };

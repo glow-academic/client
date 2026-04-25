@@ -28,6 +28,8 @@ type DuplicateModelIn = InputOf<"/model/duplicate", "post">;
 type DuplicateModelOut = OutputOf<"/model/duplicate", "post">;
 type DeleteModelIn = InputOf<"/model/delete", "post">;
 type DeleteModelOut = OutputOf<"/model/delete", "post">;
+type UpdateModelIn = InputOf<"/model/update", "post">;
+type UpdateModelOut = OutputOf<"/model/update", "post">;
 type GroupModelIn = InputOf<"/model/group", "post">;
 type GroupModelOut = OutputOf<"/model/group", "post">;
 type GenerateModelIn = InputOf<"/model/generate", "post">;
@@ -78,6 +80,11 @@ async function duplicateModel(
 async function deleteModel(input: DeleteModelIn): Promise<DeleteModelOut> {
   "use server";
   return api.post("/model/delete", input);
+}
+
+async function updateModel(input: UpdateModelIn): Promise<UpdateModelOut> {
+  "use server";
+  return api.post("/model/update", input);
 }
 
 async function generateModel(
@@ -208,6 +215,7 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
             listData={listData}
             duplicateModelAction={duplicateModel}
             deleteModelAction={deleteModel}
+            updateModelAction={updateModel}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}
@@ -243,4 +251,6 @@ export type {
   DuplicateModelIn,
   DuplicateModelOut,
   ModelsListOut,
+  UpdateModelIn,
+  UpdateModelOut,
 };

@@ -23,10 +23,13 @@ import type {
   UpdateCohortOut,
 } from "@/app/(main)/training/cohorts/page";
 import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { Input } from "@/components/ui/input";
 import {
   ColumnDef,
@@ -52,16 +55,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -590,27 +584,31 @@ export default function Cohorts({
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     const hasDeptChange = bulkEditDepartmentIds !== null;
+    const hasAnyFlagChange = hasActiveChange;
 
     if (!hasActiveChange && !hasDeptChange) {
       toast.error("No changes selected");
       return;
     }
 
-    // Find the cohort_active flag ID from lazy-loaded flagOptions
-    const activeFlagId = flagOptions.find((f) => f.type === "cohort_active")?.id;
+    // Resolve flag UUIDs by type from the server-provided catalog.
+    const flagId = (type: string) => flagOptions.find((f) => f.type === type)?.id;
+    const activeFlagId = flagId("cohort_active");
 
     setIsBulkEditing(true);
     try {
       const items = editableCohorts.map((cohort) => {
-        // flag_id is singular: set to the active flag ID when active, null when inactive
-        let flagId: string | null | undefined;
-        if (hasActiveChange) {
-          flagId = bulkEditActiveStatus && activeFlagId ? activeFlagId : null;
+        // Reconstruct flag_ids per-row, preserving flags we aren't toggling.
+        let flag_ids: string[] | undefined;
+        if (hasAnyFlagChange) {
+          const isActive = hasActiveChange ? bulkEditActiveStatus : !cohort.is_inactive;
+          flag_ids = [];
+          if (isActive && activeFlagId) flag_ids.push(activeFlagId);
         }
 
         return {
           id: cohort.cohort_id!,
-          ...(hasActiveChange && { flag_id: flagId }),
+          ...(hasAnyFlagChange && { flag_ids }),
           ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
         };
       });
@@ -945,41 +943,34 @@ export default function Cohorts({
               </div>
 
               <div className="flex items-center space-x-2 flex-wrap">
-                {/* Simulation Filter */}
-                {simulationColumn && (
-                  <DataTableFacetedFilter
-                    column={simulationColumn}
-                    title="Simulation"
-                    options={simulationOptions}
-                    isServerDriven={true}
-                    onSearchChange={handleSimulationSearchChange}
-                    searchValue={simulationSearch}
-                  />
-                )}
-
-                {/* Profile Filter */}
-                {profileColumn && (
-                  <DataTableFacetedFilter
-                    column={profileColumn}
-                    title="Profile"
-                    options={profileOptions}
-                    isServerDriven={true}
-                    onSearchChange={handleProfileSearchChange}
-                    searchValue={profileSearch}
-                  />
-                )}
-
-                {/* Department Filter */}
-                {departmentsColumn && (
-                  <DataTableFacetedFilter
-                    column={departmentsColumn}
-                    title="Department"
-                    options={departmentOptions}
-                    isServerDriven={true}
-                    onSearchChange={handleDepartmentSearchChange}
-                    searchValue={departmentSearch}
-                  />
-                )}
+                <ThreePickerFilters
+                  slots={[
+                    {
+                      column: simulationColumn,
+                      title: "Simulation",
+                      options: simulationOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleSimulationSearchChange,
+                      searchValue: simulationSearch,
+                    },
+                    {
+                      column: profileColumn,
+                      title: "Profile",
+                      options: profileOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleProfileSearchChange,
+                      searchValue: profileSearch,
+                    },
+                    {
+                      column: departmentsColumn,
+                      title: "Department",
+                      options: departmentOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleDepartmentSearchChange,
+                      searchValue: departmentSearch,
+                    },
+                  ]}
+                />
 
                 {isFiltered && (
                   <Button
@@ -1065,170 +1056,105 @@ export default function Cohorts({
         </AlertDialog>
 
         {/* Bulk Delete Confirmation Dialog */}
-        <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
-          <AlertDialogContent
-            aria-labelledby="bulk-delete-cohort-title"
-            data-testid="dialog-bulk-delete-cohort"
-          >
-            <AlertDialogHeader>
-              <AlertDialogTitle id="bulk-delete-cohort-title">
-                Delete {deletableCohorts.length} Cohort(s)
-              </AlertDialogTitle>
-              <AlertDialogDescription asChild>
-                <div className="space-y-3">
-                  <p>This action cannot be undone.</p>
-                  {deletableCohorts.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                      <ul className="text-sm space-y-0.5">
-                        {deletableCohorts.map((c) => (
-                          <li key={c.cohort_id} className="flex items-center gap-1.5">
-                            <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                            {c.name || "Unnamed Cohort"}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {nonDeletableCohorts.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use):</p>
-                      <ul className="text-sm space-y-0.5">
-                        {nonDeletableCohorts.map((c) => (
-                          <li key={c.cohort_id} className="flex items-center gap-1.5 text-muted-foreground">
-                            <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
-                            {c.name || "Unnamed Cohort"}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+        <BulkDeleteDialog
+          open={showBulkDeleteDialog}
+          onOpenChange={setShowBulkDeleteDialog}
+          count={deletableCohorts.length}
+          entityLabel="cohort"
+          entityLabelPlural="cohorts"
+          isDeleting={isBulkDeleting}
+          onConfirm={handleBulkDelete}
+          description={
+            <>
+              <p>This action cannot be undone.</p>
+              {deletableCohorts.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                  <ul className="text-sm space-y-0.5">
+                    {deletableCohorts.map((c) => (
+                      <li key={c.cohort_id} className="flex items-center gap-1.5">
+                        <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                        {c.name || "Unnamed Cohort"}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isBulkDeleting}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleBulkDelete}
-                disabled={isBulkDeleting}
-                variant="destructive"
-              >
-                {isBulkDeleting ? "Deleting..." : `Delete ${deletableCohorts.length}`}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              )}
+              {nonDeletableCohorts.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use):</p>
+                  <ul className="text-sm space-y-0.5">
+                    {nonDeletableCohorts.map((c) => (
+                      <li key={c.cohort_id} className="flex items-center gap-1.5 text-muted-foreground">
+                        <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                        {c.name || "Unnamed Cohort"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          }
+        />
 
         {/* Bulk Edit Modal */}
-        <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Edit {editableCohorts.length} Cohort(s)</DialogTitle>
-              <DialogDescription>
-                Only changed fields will be applied. Unchanged fields keep their current values.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-5 py-4">
-              {/* Active Status — Switch with tri-state */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Active Status</Label>
-                <div className="flex items-center gap-3">
-                  {bulkEditActiveStatus === null ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">No change</span>
-                      <span className="text-xs text-muted-foreground">—</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => setBulkEditActiveStatus(true)}
-                      >
-                        Set Active
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => setBulkEditActiveStatus(false)}
-                      >
-                        Set Inactive
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <Switch
-                        checked={bulkEditActiveStatus}
-                        onCheckedChange={setBulkEditActiveStatus}
-                      />
-                      <span className="text-sm">{bulkEditActiveStatus ? "Active" : "Inactive"}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs text-muted-foreground"
-                        onClick={() => setBulkEditActiveStatus(null)}
-                      >
-                        Reset
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
+        <BulkEditDialog
+          open={showBulkEditDialog}
+          onOpenChange={setShowBulkEditDialog}
+          count={editableCohorts.length}
+          entityLabelPlural="cohorts"
+          isSaving={isBulkEditing}
+          onSave={handleBulkEdit}
+        >
+          <BulkEditFlagField
+            label="Active Status"
+            value={bulkEditActiveStatus}
+            onChange={setBulkEditActiveStatus}
+          />
 
-              {/* Departments — GenericPicker multi-select */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Departments</Label>
-                  {bulkEditDepartmentIds !== null && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2 text-xs"
-                      onClick={() => setBulkEditDepartmentIds(null)}
-                    >
-                      Reset
-                    </Button>
-                  )}
-                </div>
-                {bulkEditDepartmentIds === null ? (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-muted-foreground"
-                    onClick={() => setBulkEditDepartmentIds([])}
-                  >
-                    No change — click to edit departments
-                  </Button>
-                ) : (
-                  <GenericPicker
-                    items={departmentOptions}
-                    selectedIds={bulkEditDepartmentIds}
-                    onSelect={setBulkEditDepartmentIds}
-                    multiSelect
-                    getId={(d) => d.value}
-                    getLabel={(d) => d.label}
-                    placeholder="Select departments..."
-                    showClearAction
-                    clearActionLabel="Clear All"
-                    searchPlaceholder="Search departments..."
-                    emptyMessage="No departments found."
-                    groupHeading="Departments"
-                    hideSelectedChips={false}
-                    showClearAll
-                  />
-                )}
-              </div>
+          {/* Departments — GenericPicker multi-select */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Departments</Label>
+              {bulkEditDepartmentIds !== null && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => setBulkEditDepartmentIds(null)}
+                >
+                  Reset
+                </Button>
+              )}
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowBulkEditDialog(false)} disabled={isBulkEditing}>
-                Cancel
+            {bulkEditDepartmentIds === null ? (
+              <Button
+                variant="outline"
+                className="w-full justify-start text-muted-foreground"
+                onClick={() => setBulkEditDepartmentIds([])}
+              >
+                No change — click to edit departments
               </Button>
-              <Button onClick={handleBulkEdit} disabled={isBulkEditing}>
-                {isBulkEditing ? "Applying..." : "Apply Changes"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            ) : (
+              <GenericPicker
+                items={departmentOptions}
+                selectedIds={bulkEditDepartmentIds}
+                onSelect={setBulkEditDepartmentIds}
+                multiSelect
+                getId={(d) => d.value}
+                getLabel={(d) => d.label}
+                placeholder="Select departments..."
+                showClearAction
+                clearActionLabel="Clear All"
+                searchPlaceholder="Search departments..."
+                emptyMessage="No departments found."
+                groupHeading="Departments"
+                hideSelectedChips={false}
+                showClearAll
+              />
+            )}
+          </div>
+        </BulkEditDialog>
 
         {/* Bulk Import Dialog */}
         {parseCsvAction && importFields && (

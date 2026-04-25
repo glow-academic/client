@@ -39,10 +39,13 @@ import type {
   ScenariosListOut,
 } from "@/app/(main)/training/scenarios/page";
 import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,17 +60,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -628,27 +622,32 @@ export function Scenarios({
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     const hasDeptChange = bulkEditDepartmentIds !== null;
+    const hasAnyFlagChange = hasActiveChange;
 
     if (!hasActiveChange && !hasDeptChange) {
       toast.error("No changes selected");
       return;
     }
 
-    // Find the scenario_active flag ID from lazy-loaded flagOptions
-    const activeFlagId = flagOptions.find((f) => f.type === "scenario_active")?.id;
+    // Resolve flag UUIDs by type from the server-provided catalog.
+    const flagId = (type: string) => flagOptions.find((f) => f.type === type)?.id;
+    const activeFlagId = flagId("scenario_active");
 
     setIsBulkEditing(true);
     try {
       const items = editableScenarios.map((scenario) => {
-        // active_flag_id is a dedicated field: set to the active flag ID when active, null when inactive
-        let activeFlag: string | null | undefined;
-        if (hasActiveChange) {
-          activeFlag = bulkEditActiveStatus && activeFlagId ? activeFlagId : null;
+        // Reconstruct flag_ids per-row, preserving flags we aren't toggling.
+        // Today only `active` is exposed — additional flag types slot in here.
+        let flag_ids: string[] | undefined;
+        if (hasAnyFlagChange) {
+          const isActive = hasActiveChange ? bulkEditActiveStatus : !scenario.is_inactive;
+          flag_ids = [];
+          if (isActive && activeFlagId) flag_ids.push(activeFlagId);
         }
 
         return {
           id: scenario.scenario_id!,
-          ...(hasActiveChange && { active_flag_id: activeFlag }),
+          ...(hasAnyFlagChange && { flag_ids }),
           ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
         };
       });
@@ -1259,41 +1258,34 @@ export function Scenarios({
               </div>
 
               <div className="flex items-center space-x-2 flex-wrap">
-                {/* Simulation Filter */}
-                {simulationColumn && (
-                  <DataTableFacetedFilter
-                    column={simulationColumn}
-                    title="Simulation"
-                    options={simulationOptions}
-                    isServerDriven={true}
-                    onSearchChange={handleSimulationSearchChange}
-                    searchValue={simulationSearch}
-                  />
-                )}
-
-                {/* Persona Filter */}
-                {personaColumn && (
-                  <DataTableFacetedFilter
-                    column={personaColumn}
-                    title="Persona"
-                    options={personaOptions}
-                    isServerDriven={true}
-                    onSearchChange={handlePersonaSearchChange}
-                    searchValue={personaSearch}
-                  />
-                )}
-
-                {/* Department Filter */}
-                {departmentsColumn && (
-                  <DataTableFacetedFilter
-                    column={departmentsColumn}
-                    title="Department"
-                    options={departmentOptions}
-                    isServerDriven={true}
-                    onSearchChange={handleDepartmentSearchChange}
-                    searchValue={departmentSearch}
-                  />
-                )}
+                <ThreePickerFilters
+                  slots={[
+                    {
+                      column: simulationColumn,
+                      title: "Simulation",
+                      options: simulationOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleSimulationSearchChange,
+                      searchValue: simulationSearch,
+                    },
+                    {
+                      column: personaColumn,
+                      title: "Persona",
+                      options: personaOptions,
+                      isServerDriven: true,
+                      onSearchChange: handlePersonaSearchChange,
+                      searchValue: personaSearch,
+                    },
+                    {
+                      column: departmentsColumn,
+                      title: "Department",
+                      options: departmentOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleDepartmentSearchChange,
+                      searchValue: departmentSearch,
+                    },
+                  ]}
+                />
 
                 {isFiltered && (
                   <Button
@@ -1379,170 +1371,106 @@ export function Scenarios({
         </AlertDialog>
 
         {/* Bulk Delete Confirmation Dialog */}
-        <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
-          <AlertDialogContent
-            aria-labelledby="bulk-delete-scenario-title"
-            data-testid="dialog-bulk-delete-scenario"
-          >
-            <AlertDialogHeader>
-              <AlertDialogTitle id="bulk-delete-scenario-title">
-                Delete {deletableScenarios.length} Scenario(s)
-              </AlertDialogTitle>
-              <AlertDialogDescription asChild>
-                <div className="space-y-3">
-                  <p>This action cannot be undone.</p>
-                  {deletableScenarios.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                      <ul className="text-sm space-y-0.5">
-                        {deletableScenarios.map((s) => (
-                          <li key={s.scenario_id} className="flex items-center gap-1.5">
-                            <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                            {s.name || "Unnamed Scenario"}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {nonDeletableScenarios.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by simulations):</p>
-                      <ul className="text-sm space-y-0.5">
-                        {nonDeletableScenarios.map((s) => (
-                          <li key={s.scenario_id} className="flex items-center gap-1.5 text-muted-foreground">
-                            <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
-                            {s.name || "Unnamed Scenario"}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+        <BulkDeleteDialog
+          open={showBulkDeleteDialog}
+          onOpenChange={setShowBulkDeleteDialog}
+          count={deletableScenarios.length}
+          entityLabel="scenario"
+          entityLabelPlural="scenarios"
+          isDeleting={isBulkDeleting}
+          onConfirm={handleBulkDelete}
+          description={
+            <>
+              <p>This action cannot be undone.</p>
+              {deletableScenarios.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                  <ul className="text-sm space-y-0.5">
+                    {deletableScenarios.map((s) => (
+                      <li key={s.scenario_id} className="flex items-center gap-1.5">
+                        <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                        {s.name || "Unnamed Scenario"}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isBulkDeleting}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleBulkDelete}
-                disabled={isBulkDeleting}
-                variant="destructive"
-              >
-                {isBulkDeleting ? "Deleting..." : `Delete ${deletableScenarios.length}`}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              )}
+              {nonDeletableScenarios.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by simulations):</p>
+                  <ul className="text-sm space-y-0.5">
+                    {nonDeletableScenarios.map((s) => (
+                      <li key={s.scenario_id} className="flex items-center gap-1.5 text-muted-foreground">
+                        <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                        {s.name || "Unnamed Scenario"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          }
+        />
 
         {/* Bulk Edit Modal */}
-        <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Edit {editableScenarios.length} Scenario(s)</DialogTitle>
-              <DialogDescription>
-                Only changed fields will be applied. Unchanged fields keep their current values.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-5 py-4">
-              {/* Active Status — Switch with tri-state */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Active Status</Label>
-                <div className="flex items-center gap-3">
-                  {bulkEditActiveStatus === null ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">No change</span>
-                      <span className="text-xs text-muted-foreground">—</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => setBulkEditActiveStatus(true)}
-                      >
-                        Set Active
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => setBulkEditActiveStatus(false)}
-                      >
-                        Set Inactive
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <Switch
-                        checked={bulkEditActiveStatus}
-                        onCheckedChange={setBulkEditActiveStatus}
-                      />
-                      <span className="text-sm">{bulkEditActiveStatus ? "Active" : "Inactive"}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs text-muted-foreground"
-                        onClick={() => setBulkEditActiveStatus(null)}
-                      >
-                        Reset
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
+        <BulkEditDialog
+          open={showBulkEditDialog}
+          onOpenChange={setShowBulkEditDialog}
+          count={editableScenarios.length}
+          entityLabelPlural="scenarios"
+          isSaving={isBulkEditing}
+          onSave={handleBulkEdit}
+        >
+          {/* Active status — tri-state flag field */}
+          <BulkEditFlagField
+            label="Active Status"
+            value={bulkEditActiveStatus}
+            onChange={setBulkEditActiveStatus}
+          />
 
-              {/* Departments — GenericPicker multi-select */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Departments</Label>
-                  {bulkEditDepartmentIds !== null && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2 text-xs"
-                      onClick={() => setBulkEditDepartmentIds(null)}
-                    >
-                      Reset
-                    </Button>
-                  )}
-                </div>
-                {bulkEditDepartmentIds === null ? (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-muted-foreground"
-                    onClick={() => setBulkEditDepartmentIds([])}
-                  >
-                    No change — click to edit departments
-                  </Button>
-                ) : (
-                  <GenericPicker
-                    items={departmentOptions}
-                    selectedIds={bulkEditDepartmentIds}
-                    onSelect={setBulkEditDepartmentIds}
-                    multiSelect
-                    getId={(d) => d.value}
-                    getLabel={(d) => d.label}
-                    placeholder="Select departments..."
-                    showClearAction
-                    clearActionLabel="Clear All"
-                    searchPlaceholder="Search departments..."
-                    emptyMessage="No departments found."
-                    groupHeading="Departments"
-                    hideSelectedChips={false}
-                    showClearAll
-                  />
-                )}
-              </div>
+          {/* Departments — GenericPicker multi-select */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Departments</Label>
+              {bulkEditDepartmentIds !== null && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => setBulkEditDepartmentIds(null)}
+                >
+                  Reset
+                </Button>
+              )}
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowBulkEditDialog(false)} disabled={isBulkEditing}>
-                Cancel
+            {bulkEditDepartmentIds === null ? (
+              <Button
+                variant="outline"
+                className="w-full justify-start text-muted-foreground"
+                onClick={() => setBulkEditDepartmentIds([])}
+              >
+                No change — click to edit departments
               </Button>
-              <Button onClick={handleBulkEdit} disabled={isBulkEditing}>
-                {isBulkEditing ? "Applying..." : "Apply Changes"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            ) : (
+              <GenericPicker
+                items={departmentOptions}
+                selectedIds={bulkEditDepartmentIds}
+                onSelect={setBulkEditDepartmentIds}
+                multiSelect
+                getId={(d) => d.value}
+                getLabel={(d) => d.label}
+                placeholder="Select departments..."
+                showClearAction
+                clearActionLabel="Clear All"
+                searchPlaceholder="Search departments..."
+                emptyMessage="No departments found."
+                groupHeading="Departments"
+                hideSelectedChips={false}
+                showClearAll
+              />
+            )}
+          </div>
+        </BulkEditDialog>
 
       {/* Bulk Import Dialog */}
       {parseCsvAction && importFields && (

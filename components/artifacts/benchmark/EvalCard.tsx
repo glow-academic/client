@@ -29,11 +29,13 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
+  Brain,
+  Infinity,
   Loader2,
   Play,
   Table,
+  Timer,
   User,
-  Infinity,
 } from "lucide-react";
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/contexts/profile-context";
@@ -47,7 +49,8 @@ export interface EvalCardProps {
   completedRuns: number;
   pendingRuns: number;
   rubricName: string;
-  useGroups?: boolean; // Show infinity icon if true
+  /** Number of models attached to this eval (drives the stats row). */
+  numModels?: number;
   onStartEval: (evalId: string) => void;
   onStartInfiniteMode?: ((evalId: string) => void) | undefined;
   loadingEval: string | null;
@@ -73,7 +76,7 @@ export default function EvalCard({
   completedRuns: _completedRuns,
   pendingRuns: _pendingRuns,
   rubricName: _rubricName,
-  useGroups = false,
+  numModels = 0,
   onStartEval,
   onStartInfiniteMode,
   loadingEval,
@@ -196,6 +199,22 @@ export default function EvalCard({
               {description}
             </p>
           </div>
+
+          {/* Stats row — mirrors SimulationCard's "∞ min · N scenario(s)"
+              treatment. For evals: runtime is unbounded (∞) and the
+              second stat is the number of models being benchmarked. */}
+          <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400 mt-2">
+            <div className="flex items-center" data-testid="eval-duration">
+              <Timer className="h-3 w-3 mr-1" />
+              <span>∞ min</span>
+            </div>
+            <div className="flex items-center" data-testid="eval-models">
+              <Brain className="h-3 w-3 mr-1" />
+              <span>
+                {`${numModels} model${numModels !== 1 ? "s" : ""}`}
+              </span>
+            </div>
+          </div>
         </CardContent>
 
         <CardFooter className="pt-0 relative z-10">
@@ -218,7 +237,7 @@ export default function EvalCard({
                   </>
                 )}
               </Button>
-              {onStartInfiniteMode && useGroups && (
+              {onStartInfiniteMode && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button

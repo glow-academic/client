@@ -3,9 +3,9 @@
  * Auth component showing overview of auth entries
  */
 "use client";
-import { Copy, Edit, Eye, Key, Trash2 } from "lucide-react";
+import { Copy, Edit, Eye, Key, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -21,6 +21,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useAuthAi } from "@/hooks/use-auth-ai";
 import { useProfile } from "@/contexts/profile-context";
 
@@ -30,6 +35,8 @@ import type {
   DeleteAuthOut,
   DuplicateAuthIn,
   DuplicateAuthOut,
+  UpdateAuthIn,
+  UpdateAuthOut,
 } from "@/app/(main)/system/auth/page";
 
 export interface AuthsProps {
@@ -38,12 +45,14 @@ export interface AuthsProps {
   // Server actions (replaces useMutation)
   duplicateAuthAction?: (input: DuplicateAuthIn) => Promise<DuplicateAuthOut>;
   deleteAuthAction?: (input: DeleteAuthIn) => Promise<DeleteAuthOut>;
+  updateAuthAction?: (input: UpdateAuthIn) => Promise<UpdateAuthOut>;
 }
 
 export default function Auths({
   listData: serverListData,
   duplicateAuthAction,
   deleteAuthAction,
+  updateAuthAction,
 }: AuthsProps) {
   const router = useRouter();
   const { profile } = useProfile();
@@ -63,6 +72,58 @@ export default function Auths({
   const authsData = serverListData;
 
   const auths = useMemo(() => authsData?.auths || [], [authsData]);
+
+  // Flag catalog (e.g. auth_active) — used to reconstruct flag_ids on bulk edit.
+  const flagOptions = useMemo(() => {
+    return (authsData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [authsData?.flag_filter]);
+
+  // Selection state
+  const [selectedAuthIds, setSelectedAuthIds] = useState<string[]>([]);
+  const selectedCount = selectedAuthIds.length;
+  const selectedAuths = useMemo(() => {
+    return auths.filter((a) => a.auth_id && selectedAuthIds.includes(a.auth_id));
+  }, [auths, selectedAuthIds]);
+  const deletableAuths = useMemo(
+    () => selectedAuths.filter((a) => a.can_delete),
+    [selectedAuths],
+  );
+  const nonDeletableAuths = useMemo(
+    () => selectedAuths.filter((a) => !a.can_delete),
+    [selectedAuths],
+  );
+  const editableAuths = useMemo(
+    () => selectedAuths.filter((a) => a.can_edit ?? true),
+    [selectedAuths],
+  );
+
+  const toggleSelection = useCallback((authId: string) => {
+    setSelectedAuthIds((prev) =>
+      prev.includes(authId)
+        ? prev.filter((id) => id !== authId)
+        : [...prev, authId]
+    );
+  }, []);
+  const clearSelection = useCallback(() => setSelectedAuthIds([]), []);
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = auths.filter((a) => a.auth_id).map((a) => a.auth_id!);
+    setSelectedAuthIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [auths]);
+  const allPageSelected = useMemo(() => {
+    const pageIds = auths.filter((a) => a.auth_id).map((a) => a.auth_id!);
+    return pageIds.length > 0 && pageIds.every((id) => selectedAuthIds.includes(id));
+  }, [auths, selectedAuthIds]);
+
+  // Bulk delete state
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk edit state
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
 
   const handleDuplicate = async (auth: (typeof auths)[number]) => {
     if (!auth.can_duplicate || !duplicateAuthAction) {
@@ -124,22 +185,104 @@ export default function Auths({
     setShowDeleteDialog(true);
   };
 
+  const handleBulkDelete = async () => {
+    if (!deleteAuthAction || deletableAuths.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const ids = deletableAuths.map((a) => a.auth_id!);
+      await deleteAuthAction({ body: { auth_ids: ids, accept: true } });
+      toast.success(`${ids.length} auth(s) deleted successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete auths";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to delete auths");
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (!updateAuthAction || editableAuths.length === 0) return;
+
+    const hasActiveChange = bulkEditActiveStatus !== null;
+    if (!hasActiveChange) {
+      toast.error("No changes selected");
+      return;
+    }
+
+    const activeFlagId = flagOptions.find((f) => f.type === "auth_active")?.id;
+
+    setIsBulkEditing(true);
+    try {
+      const items = editableAuths.map((a) => {
+        let flag_ids: string[] | undefined;
+        if (hasActiveChange) {
+          const isActive = bulkEditActiveStatus;
+          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+        }
+        return {
+          id: a.auth_id!,
+          ...(hasActiveChange && { flag_ids }),
+        };
+      });
+
+      await updateAuthAction({ body: { auths: items } } as UpdateAuthIn);
+      toast.success(`${items.length} auth(s) updated successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update auths";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to update auths");
+    } finally {
+      setIsBulkEditing(false);
+      setShowBulkEditDialog(false);
+    }
+  };
+
+  const openBulkEditDialog = () => {
+    setBulkEditActiveStatus(null);
+    setShowBulkEditDialog(true);
+  };
+
   const renderAuthCard = (auth: (typeof auths)[number]) => {
     const count = auth.item_count ?? 0;
+    const isSelected = auth.auth_id ? selectedAuthIds.includes(auth.auth_id) : false;
 
     return (
       <Card
         key={auth.auth_id}
-        className="relative flex flex-col h-full"
+        className={`group relative flex flex-col h-full transition-all ${
+          isSelected ? "ring-2 ring-primary" : ""
+        }`}
         data-testid="auth-card"
         data-auth-id={auth.auth_id}
         role="gridcell"
         aria-label={`auth card ${auth.name}`}
+        aria-selected={isSelected}
       >
         <CardHeader className="pb-3">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex-1 min-w-0">
               <CardTitle className="text-lg flex items-center gap-2">
+                <div
+                  className={`transition-all overflow-hidden flex-shrink-0 ${
+                    selectedCount > 0
+                      ? "w-5 opacity-100"
+                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                  }`}
+                  data-action-button
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => {
+                      if (auth.auth_id) toggleSelection(auth.auth_id);
+                    }}
+                    className="rounded-full h-5 w-5"
+                    aria-label={`Select auth ${auth.name || "Unnamed"}`}
+                  />
+                </div>
                 <Key className="h-5 w-5" />
                 <span className="truncate">{auth.name}</span>
               </CardTitle>
@@ -236,6 +379,59 @@ export default function Auths({
 
   return (
     <div className="space-y-6">
+      {/* Toolbar — swaps between filter bar and selection action bar */}
+      {selectedCount > 0 ? (
+        <div
+          className="flex items-center justify-between gap-2"
+          data-testid="auths-toolbar"
+        >
+          <div className="flex items-center gap-2">
+            {deleteAuthAction && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-8"
+                onClick={() => setShowBulkDeleteDialog(true)}
+                disabled={deletableAuths.length === 0}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete {deletableAuths.length} of {selectedCount}
+              </Button>
+            )}
+            {updateAuthAction && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={openBulkEditDialog}
+                disabled={editableAuths.length === 0}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit {editableAuths.length} of {selectedCount}
+              </Button>
+            )}
+            {!allPageSelected && (
+              <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
+                Select All
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
+              Unselect All
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center space-x-2 flex-wrap" data-testid="auths-toolbar">
+          <ThreePickerFilters
+            slots={[
+              { column: undefined, title: "Flag", options: [] },
+              { column: undefined, title: "Department", options: [] },
+              { column: undefined, title: "Filter", options: [] },
+            ]}
+          />
+        </div>
+      )}
+
       {/* Auth Cards Grid */}
       {auths.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12">
@@ -270,6 +466,68 @@ export default function Auths({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <BulkDeleteDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        count={deletableAuths.length}
+        entityLabel="auth"
+        entityLabelPlural="auths"
+        isDeleting={isBulkDeleting}
+        onConfirm={handleBulkDelete}
+        description={
+          <>
+            <p>This action cannot be undone.</p>
+            {deletableAuths.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                <ul className="text-sm space-y-0.5">
+                  {deletableAuths.map((a) => (
+                    <li key={a.auth_id} className="flex items-center gap-1.5">
+                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                      {a.name || "Unnamed Auth"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {nonDeletableAuths.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                  Cannot be deleted (in use):
+                </p>
+                <ul className="text-sm space-y-0.5">
+                  {nonDeletableAuths.map((a) => (
+                    <li
+                      key={a.auth_id}
+                      className="flex items-center gap-1.5 text-muted-foreground"
+                    >
+                      {a.name || "Unnamed Auth"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        }
+      />
+
+      {/* Bulk Edit Modal */}
+      <BulkEditDialog
+        open={showBulkEditDialog}
+        onOpenChange={setShowBulkEditDialog}
+        count={editableAuths.length}
+        entityLabelPlural="auths"
+        isSaving={isBulkEditing}
+        onSave={handleBulkEdit}
+      >
+        <BulkEditFlagField
+          label="Active Status"
+          value={bulkEditActiveStatus}
+          onChange={setBulkEditActiveStatus}
+        />
+      </BulkEditDialog>
 
     </div>
   );

@@ -1,11 +1,13 @@
 /**
  * Settings.tsx
- * Resource component for settings selection.
+ * Multi-select settings picker. Card grid (SelectableGrid horizontal) with
+ * suggested dot, pending badge, and accept/reject affordances — mirrors
+ * Departments.tsx.
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -34,13 +36,11 @@ export interface SettingResourceItem {
   pending?: boolean | null;
 }
 
-type SettingPickerItem = {
+interface SettingsGridItem {
   id: string;
   name: string;
   description?: string;
-  suggested: boolean | null | undefined;
-  pending: boolean | null | undefined;
-};
+}
 
 export interface SettingsProps {
   settings_ids?: string[];
@@ -50,7 +50,6 @@ export interface SettingsProps {
   label?: string;
   id?: string;
   required?: boolean;
-  placeholder?: string;
   description?: string;
 }
 
@@ -62,78 +61,81 @@ export function Settings({
   label = "Settings",
   id = "settings",
   required = false,
-  placeholder = "Select settings...",
   description,
 }: SettingsProps) {
   const ids = useMemo(() => settings_ids ?? [], [settings_ids]);
   const allSettings = useMemo(() => settings ?? [], [settings]);
 
-  const hasPending = useMemo(
-    () => allSettings.some((item) => item.pending),
+  const pendingItems = useMemo(
+    () => allSettings.filter((s) => s.pending && s.id),
     [allSettings],
   );
-
+  const showDiff = pendingItems.length > 0;
   const pendingIds = useMemo(
-    () =>
-      allSettings
-        .filter((item) => item.pending && item.id)
-        .map((item) => item.id!) ?? [],
-    [allSettings],
+    () => new Set(pendingItems.map((s) => s.id).filter(Boolean) as string[]),
+    [pendingItems],
   );
 
-  const pickerItems = useMemo<SettingPickerItem[]>(
+  const items = useMemo<SettingsGridItem[]>(
     () =>
       allSettings
-        .filter((item): item is SettingResourceItem & { id: string } => !!item.id)
-        .map((item) => {
-          const itemDescription =
-            item.description ||
-            (item.department_ids?.length
-              ? `${item.department_ids.length} departments`
-              : undefined);
+        .filter((s) => s.id)
+        .map((s) => {
+          const fallbackDescription = s.department_ids?.length
+            ? `${s.department_ids.length} department${
+                s.department_ids.length === 1 ? "" : "s"
+              }`
+            : undefined;
+          const desc = s.description || fallbackDescription;
           return {
-            id: item.id,
-            name: item.name || `Setting ${item.id.slice(0, 8)}...`,
-            ...(itemDescription ? { description: itemDescription } : {}),
-            suggested: item.suggested,
-            pending: item.pending,
+            id: s.id!,
+            name: s.name || `Setting ${s.id!.slice(0, 8)}`,
+            ...(desc ? { description: desc } : {}),
           };
         }),
     [allSettings],
   );
 
-  const itemIds = useMemo(
-    () => pickerItems.map((item) => item.id),
-    [pickerItems],
+  const isSuggested = useCallback(
+    (settingId: string) => {
+      const item = allSettings.find((x) => x.id === settingId);
+      return item?.suggested === true;
+    },
+    [allSettings],
   );
 
-  const handleReject = useCallback(() => {
-    if (pendingIds.length === 0) return;
-    onChange(ids.filter((itemId) => !pendingIds.includes(itemId)));
-  }, [ids, onChange, pendingIds]);
+  const handleSelect = useCallback(
+    (itemId: string) => {
+      onChange(
+        ids.includes(itemId) ? ids.filter((x) => x !== itemId) : [...ids, itemId],
+      );
+    },
+    [ids, onChange],
+  );
 
   const handleAccept = useCallback(() => {
-    // Pending selections are already reflected in selected ids.
-    // The next draft save promotes them.
+    // Pending items are already in selection — next save persists them.
   }, []);
 
-  if (allSettings.length === 0) {
-    return null;
-  }
+  const handleReject = useCallback(() => {
+    onChange(ids.filter((x) => !pendingIds.has(x)));
+  }, [ids, pendingIds, onChange]);
+
+  if (allSettings.length === 0) return null;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3 min-w-0 w-full">
       <div className="flex items-center gap-2">
         <Label htmlFor={id} className="flex items-center gap-1">
           {label}
           {required && <span className="text-destructive">*</span>}
           {description && (
-            <span className="ml-2 text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground ml-2">
               {description}
             </span>
           )}
         </Label>
-        {hasPending && (
+        {showDiff && (
           <>
             <TooltipProvider>
               <Tooltip>
@@ -171,40 +173,58 @@ export function Settings({
         )}
       </div>
 
-      <GenericPicker<SettingPickerItem>
-        items={pickerItems}
-        itemIds={itemIds}
+      <SelectableGrid<SettingsGridItem>
+        horizontal
+        items={items}
+        selectedId={null}
         selectedIds={ids}
-        onSelect={onChange}
-        multiSelect={true}
+        onSelect={handleSelect}
         getId={(item) => item.id}
-        getLabel={(item) => item.name}
-        renderItem={(item, isSelected) => (
-          <div
-            className={cn(
-              "flex w-full items-center justify-between",
-              item.pending && "rounded ring-2 ring-success bg-success/10",
-              item.suggested && !isSelected && "text-primary",
-            )}
-          >
-            <div className="min-w-0 flex-1">
-              <div className="truncate font-medium">{item.name}</div>
-              {item.description && (
-                <div className="truncate text-xs text-muted-foreground">
-                  {item.description}
+        renderItem={(item, isSelected) => {
+          const isPending = pendingIds.has(item.id);
+          return (
+            <div
+              className={cn(
+                "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && !isPending && "ring-2 ring-primary bg-accent",
+                isPending && "ring-2 ring-success bg-success/10",
+              )}
+            >
+              {isSelected && !isPending && (
+                <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3 w-3 text-primary-foreground" />
                 </div>
               )}
-            </div>
-            <div className="ml-2 flex items-center gap-2 text-xs">
-              {item.pending && <span className="text-success">Pending</span>}
-              {item.suggested && !item.pending && (
-                <span className="text-primary">Suggested</span>
+              {isPending && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </div>
               )}
+              {isSuggested(item.id) && !isSelected && !isPending && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Suggested</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              <div className="flex flex-col justify-center flex-1 overflow-hidden">
+                <span className="text-sm font-medium truncate">{item.name}</span>
+                {item.description && (
+                  <span className="text-xs text-muted-foreground line-clamp-2">
+                    {item.description}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        }}
+        emptyMessage="No settings available."
         disabled={disabled}
-        placeholder={placeholder}
       />
     </div>
   );

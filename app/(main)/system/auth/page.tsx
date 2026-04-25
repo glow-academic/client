@@ -26,6 +26,8 @@ type DuplicateAuthIn = InputOf<"/auth/duplicate", "post">;
 type DuplicateAuthOut = OutputOf<"/auth/duplicate", "post">;
 type DeleteAuthIn = InputOf<"/auth/delete", "post">;
 type DeleteAuthOut = OutputOf<"/auth/delete", "post">;
+type UpdateAuthIn = InputOf<"/auth/update", "post">;
+type UpdateAuthOut = OutputOf<"/auth/update", "post">;
 type GroupAuthIn = InputOf<"/auth/group", "post">;
 type GroupAuthOut = OutputOf<"/auth/group", "post">;
 type GenerateAuthIn = InputOf<"/auth/generate", "post">;
@@ -65,6 +67,11 @@ async function duplicateAuth(
 async function deleteAuth(input: DeleteAuthIn): Promise<DeleteAuthOut> {
   "use server";
   return api.post("/auth/delete", input);
+}
+
+async function updateAuth(input: UpdateAuthIn): Promise<UpdateAuthOut> {
+  "use server";
+  return api.post("/auth/update", input);
 }
 
 async function generateAuth(
@@ -158,6 +165,7 @@ export default async function AuthPage() {
             listData={listData}
             duplicateAuthAction={duplicateAuth}
             deleteAuthAction={deleteAuth}
+            updateAuthAction={updateAuth}
           />
         </div>
       </FullPageLayout>
@@ -187,4 +195,6 @@ export type {
   DeleteAuthOut,
   DuplicateAuthIn,
   DuplicateAuthOut,
+  UpdateAuthIn,
+  UpdateAuthOut,
 };

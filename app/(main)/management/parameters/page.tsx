@@ -26,6 +26,8 @@ type DuplicateParameterIn = InputOf<"/parameter/duplicate", "post">;
 type DuplicateParameterOut = OutputOf<"/parameter/duplicate", "post">;
 type DeleteParameterIn = InputOf<"/parameter/delete", "post">;
 type DeleteParameterOut = OutputOf<"/parameter/delete", "post">;
+type UpdateParameterIn = InputOf<"/parameter/update", "post">;
+type UpdateParameterOut = OutputOf<"/parameter/update", "post">;
 type GroupParameterIn = InputOf<"/parameter/group", "post">;
 type GroupParameterOut = OutputOf<"/parameter/group", "post">;
 type GenerateParameterIn = InputOf<"/parameter/generate", "post">;
@@ -70,6 +72,13 @@ async function deleteParameter(
 ): Promise<DeleteParameterOut> {
   "use server";
   return api.post("/parameter/delete", input);
+}
+
+async function updateParameter(
+  input: UpdateParameterIn,
+): Promise<UpdateParameterOut> {
+  "use server";
+  return api.post("/parameter/update", input);
 }
 
 async function generateParameter(
@@ -163,6 +172,7 @@ export default async function ContextPage() {
             listData={listData}
             duplicateParameterAction={duplicateParameter}
             deleteParameterAction={deleteParameter}
+            updateParameterAction={updateParameter}
           />
         </div>
       </FullPageLayout>
@@ -192,4 +202,6 @@ export type {
   DuplicateParameterIn,
   DuplicateParameterOut,
   ParametersListOut,
+  UpdateParameterIn,
+  UpdateParameterOut,
 };

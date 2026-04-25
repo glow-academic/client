@@ -5,7 +5,7 @@
  * 07/20/2025
  */
 "use client";
-import { Brain, Copy, Edit, Eye, Thermometer, Trash2, X } from "lucide-react";
+import { Brain, Copy, Edit, Eye, Pencil, Thermometer, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -16,8 +16,10 @@ import type {
   DeleteAgentOut,
   DuplicateAgentIn,
   DuplicateAgentOut,
+  UpdateAgentIn,
+  UpdateAgentOut,
 } from "@/app/(main)/intelligence/agents/page";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import {
   AlertDialog,
@@ -32,7 +34,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -53,6 +59,7 @@ export interface AgentsProps {
     input: DuplicateAgentIn,
   ) => Promise<DuplicateAgentOut>;
   deleteAgentAction?: (input: DeleteAgentIn) => Promise<DeleteAgentOut>;
+  updateAgentAction?: (input: UpdateAgentIn) => Promise<UpdateAgentOut>;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;
@@ -67,6 +74,7 @@ export default function Agents({
   listData: serverListData,
   duplicateAgentAction,
   deleteAgentAction,
+  updateAgentAction,
   pageIndex,
   pageSize,
   totalCount,
@@ -144,6 +152,56 @@ export default function Agents({
     });
     return mapping;
   }, [agentsData]);
+
+  // Flag catalog (e.g. agent_active, agent_mcp) — used to reconstruct flag_ids on bulk edit.
+  const flagOptions = useMemo(() => {
+    return (agentsData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [agentsData?.flag_filter]);
+
+  // Selection state
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
+  const selectedCount = selectedAgentIds.length;
+  const selectedAgents = useMemo(() => {
+    return agents.filter((a) => a.agent_id && selectedAgentIds.includes(a.agent_id));
+  }, [agents, selectedAgentIds]);
+  const deletableAgents = useMemo(
+    () => selectedAgents.filter((a) => a.can_delete),
+    [selectedAgents],
+  );
+  const nonDeletableAgents = useMemo(
+    () => selectedAgents.filter((a) => !a.can_delete),
+    [selectedAgents],
+  );
+  const editableAgents = useMemo(
+    () => selectedAgents.filter((a) => a.can_edit ?? true),
+    [selectedAgents],
+  );
+  const toggleSelection = useCallback((agentId: string) => {
+    setSelectedAgentIds((prev) =>
+      prev.includes(agentId) ? prev.filter((id) => id !== agentId) : [...prev, agentId]
+    );
+  }, []);
+  const clearSelection = useCallback(() => setSelectedAgentIds([]), []);
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = agents.filter((a) => a.agent_id).map((a) => a.agent_id!);
+    setSelectedAgentIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [agents]);
+  const allPageSelected = useMemo(() => {
+    const pageIds = agents.filter((a) => a.agent_id).map((a) => a.agent_id!);
+    return pageIds.length > 0 && pageIds.every((id) => selectedAgentIds.includes(id));
+  }, [agents, selectedAgentIds]);
+
+  // Bulk delete state
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk edit state
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
+  const [bulkEditMcpStatus, setBulkEditMcpStatus] = useState<boolean | null>(null);
 
   // Filter options from server-provided ListFilterSection
   const departmentOptions = useMemo(
@@ -511,20 +569,111 @@ export default function Agents({
     return new Date(dateString).toLocaleDateString();
   };
 
-  const renderAgentCard = (agent: (typeof agents)[0]) => (
+  const handleBulkDelete = async () => {
+    if (!deleteAgentAction || deletableAgents.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const ids = deletableAgents.map((a) => a.agent_id!);
+      await deleteAgentAction({ body: { agent_ids: ids, accept: true } });
+      toast.success(`${ids.length} agent(s) deleted successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete agents";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to delete agents");
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (!updateAgentAction || editableAgents.length === 0) return;
+
+    const hasActiveChange = bulkEditActiveStatus !== null;
+    const hasMcpChange = bulkEditMcpStatus !== null;
+    const hasAnyFlagChange = hasActiveChange || hasMcpChange;
+
+    if (!hasAnyFlagChange) {
+      toast.error("No changes selected");
+      return;
+    }
+
+    const activeFlagId = flagOptions.find((f) => f.type === "agent_active")?.id;
+    const mcpFlagId = flagOptions.find((f) => f.type === "agent_mcp")?.id;
+
+    setIsBulkEditing(true);
+    try {
+      const items = editableAgents.map((row) => {
+        let flag_ids: string[] | undefined;
+        if (hasAnyFlagChange) {
+          const isActive = hasActiveChange ? bulkEditActiveStatus : !row.is_inactive;
+          const isMcp = hasMcpChange ? bulkEditMcpStatus : !!row.is_mcp;
+          flag_ids = [];
+          if (isActive && activeFlagId) flag_ids.push(activeFlagId);
+          if (isMcp && mcpFlagId) flag_ids.push(mcpFlagId);
+        }
+        return {
+          id: row.agent_id!,
+          ...(hasAnyFlagChange && { flag_ids }),
+        };
+      });
+
+      await updateAgentAction({ body: { agents: items } } as UpdateAgentIn);
+      toast.success(`${items.length} agent(s) updated successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update agents";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to update agents");
+    } finally {
+      setIsBulkEditing(false);
+      setShowBulkEditDialog(false);
+    }
+  };
+
+  const openBulkEditDialog = () => {
+    setBulkEditActiveStatus(null);
+    setBulkEditMcpStatus(null);
+    setShowBulkEditDialog(true);
+  };
+
+  const renderAgentCard = (agent: (typeof agents)[0]) => {
+    const isSelected = agent.agent_id ? selectedAgentIds.includes(agent.agent_id) : false;
+    return (
     <Card
       key={agent.agent_id}
-      className="hover:shadow-md transition-shadow"
+      className={`group hover:shadow-md transition-all ${
+        isSelected ? "ring-2 ring-primary" : ""
+      }`}
       data-testid="agent-card"
       data-agent-id={agent.agent_id}
       role="gridcell"
       aria-label={`agent card ${agent.name || "Unnamed Agent"}`}
+      aria-selected={isSelected}
     >
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="space-y-2 flex-1 min-w-0">
-            <CardTitle className="text-base truncate">
-              {agent.name || "Unnamed Agent"}
+            <CardTitle className="text-base truncate flex items-center gap-2">
+              <div
+                className={`transition-all overflow-hidden flex-shrink-0 ${
+                  selectedCount > 0
+                    ? "w-5 opacity-100"
+                    : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                }`}
+                data-action-button
+              >
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => {
+                    if (agent.agent_id) toggleSelection(agent.agent_id);
+                  }}
+                  className="rounded-full h-5 w-5"
+                  aria-label={`Select agent ${agent.name || "Unnamed"}`}
+                />
+              </div>
+              <span className="truncate">{agent.name || "Unnamed Agent"}</span>
             </CardTitle>
             <div className="mt-1 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
@@ -620,7 +769,8 @@ export default function Agents({
         </div>
       </CardContent>
     </Card>
-  );
+    );
+  };
 
   // Get column references for toolbar
   const modelColumn = table.getColumn("model_id");
@@ -633,86 +783,127 @@ export default function Agents({
   return (
     <div className="space-y-8">
       <div className="space-y-4">
-        {/* Toolbar */}
-        <div
-          className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
-          data-testid="agents-toolbar"
-        >
-          <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
-            <div className="w-full md:w-auto">
-              <Input
-                data-testid="agents-search"
-                placeholder="Search system agents..."
-                value={searchTerm}
-                onChange={(event) => handleSearchChange(event.target.value)}
-                onBlur={handleSearchBlur}
-                onKeyDown={handleSearchKeyDown}
-                className="h-8 w-full md:w-[150px] lg:w-[250px]"
-                aria-label="Search agents by name"
-                aria-controls="agents-grid"
-              />
-            </div>
-
-            <div className="flex items-center space-x-2 flex-wrap">
-              {/* Department Filter */}
-              <DataTableFacetedFilter
-                column={departmentsColumn}
-                title="Department"
-                options={departmentOptions}
-                isServerDriven={true}
-                onSearchChange={handleDepartmentSearchChange}
-                searchValue={localDepartmentSearch}
-              />
-
-              {/* Model Filter */}
-              <DataTableFacetedFilter
-                column={modelColumn}
-                title="Model"
-                options={modelOptions}
-                isServerDriven={true}
-                onSearchChange={handleModelSearchChange}
-                searchValue={localModelSearch}
-              />
-
-              {/* Tool Filter */}
-              <DataTableFacetedFilter
-                column={toolsColumn}
-                title="Tool"
-                options={toolOptions}
-                isServerDriven={true}
-                onSearchChange={handleToolSearchChange}
-                searchValue={localToolSearch}
-              />
-
-              {isFiltered && (
+        {/* Toolbar — swaps between filter bar and selection action bar */}
+        {selectedCount > 0 ? (
+          <div
+            className="flex items-center justify-between gap-2"
+            data-testid="agents-toolbar"
+          >
+            <div className="flex items-center gap-2">
+              {deleteAgentAction && (
                 <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setLocalDepartmentSearch("");
-                    setLocalModelSearch("");
-                    setLocalToolSearch("");
-                    table.resetColumnFilters();
-                    updateAgentsParams({
-                      page: 0,
-                      search: "",
-                      departmentIds: [],
-                      modelIds: [],
-                      toolIds: [],
-                      departmentSearch: "",
-                      modelSearch: "",
-                      toolSearch: "",
-                    });
-                  }}
-                  className="h-8 px-2 lg:px-3 hidden md:flex"
+                  variant="destructive"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setShowBulkDeleteDialog(true)}
+                  disabled={deletableAgents.length === 0}
                 >
-                  Reset
-                  <X className="ml-2 h-4 w-4" />
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete {deletableAgents.length} of {selectedCount}
                 </Button>
               )}
+              {updateAgentAction && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={openBulkEditDialog}
+                  disabled={editableAgents.length === 0}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit {editableAgents.length} of {selectedCount}
+                </Button>
+              )}
+              {!allPageSelected && (
+                <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
+                  Select All
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
+                Unselect All
+              </Button>
             </div>
           </div>
-        </div>
+        ) : (
+          <div
+            className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+            data-testid="agents-toolbar"
+          >
+            <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+              <div className="w-full md:w-auto">
+                <Input
+                  data-testid="agents-search"
+                  placeholder="Search system agents..."
+                  value={searchTerm}
+                  onChange={(event) => handleSearchChange(event.target.value)}
+                  onBlur={handleSearchBlur}
+                  onKeyDown={handleSearchKeyDown}
+                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                  aria-label="Search agents by name"
+                  aria-controls="agents-grid"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 flex-wrap">
+                <ThreePickerFilters
+                  slots={[
+                    {
+                      column: departmentsColumn,
+                      title: "Department",
+                      options: departmentOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleDepartmentSearchChange,
+                      searchValue: localDepartmentSearch,
+                    },
+                    {
+                      column: modelColumn,
+                      title: "Model",
+                      options: modelOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleModelSearchChange,
+                      searchValue: localModelSearch,
+                    },
+                    {
+                      column: toolsColumn,
+                      title: "Tool",
+                      options: toolOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleToolSearchChange,
+                      searchValue: localToolSearch,
+                    },
+                  ]}
+                />
+
+                {isFiltered && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setLocalDepartmentSearch("");
+                      setLocalModelSearch("");
+                      setLocalToolSearch("");
+                      table.resetColumnFilters();
+                      updateAgentsParams({
+                        page: 0,
+                        search: "",
+                        departmentIds: [],
+                        modelIds: [],
+                        toolIds: [],
+                        departmentSearch: "",
+                        modelSearch: "",
+                        toolSearch: "",
+                      });
+                    }}
+                    className="h-8 px-2 lg:px-3 hidden md:flex"
+                  >
+                    Reset
+                    <X className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Cards Grid */}
         <div
@@ -769,6 +960,75 @@ export default function Agents({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <BulkDeleteDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        count={deletableAgents.length}
+        entityLabel="agent"
+        entityLabelPlural="agents"
+        isDeleting={isBulkDeleting}
+        onConfirm={handleBulkDelete}
+        description={
+          <>
+            <p>This action cannot be undone.</p>
+            {deletableAgents.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                <ul className="text-sm space-y-0.5">
+                  {deletableAgents.map((a) => (
+                    <li key={a.agent_id} className="flex items-center gap-1.5">
+                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                      {a.name || "Unnamed Agent"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {nonDeletableAgents.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                  Cannot be deleted (in use):
+                </p>
+                <ul className="text-sm space-y-0.5">
+                  {nonDeletableAgents.map((a) => (
+                    <li
+                      key={a.agent_id}
+                      className="flex items-center gap-1.5 text-muted-foreground"
+                    >
+                      {a.name || "Unnamed Agent"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        }
+      />
+
+      {/* Bulk Edit Modal */}
+      <BulkEditDialog
+        open={showBulkEditDialog}
+        onOpenChange={setShowBulkEditDialog}
+        count={editableAgents.length}
+        entityLabelPlural="agents"
+        isSaving={isBulkEditing}
+        onSave={handleBulkEdit}
+      >
+        <BulkEditFlagField
+          label="Active status"
+          value={bulkEditActiveStatus}
+          onChange={setBulkEditActiveStatus}
+        />
+        <BulkEditFlagField
+          label="MCP"
+          trueLabel="Enabled"
+          falseLabel="Disabled"
+          value={bulkEditMcpStatus}
+          onChange={setBulkEditMcpStatus}
+        />
+      </BulkEditDialog>
 
     </div>
   );

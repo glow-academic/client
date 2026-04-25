@@ -40,6 +40,8 @@ type ProblemSettingIn = InputOf<"/setting/problem", "post">;
 type ProblemSettingOut = OutputOf<"/setting/problem", "post">;
 type ContextIn = InputOf<"/setting/context", "post">;
 type ContextOut = OutputOf<"/setting/context", "post">;
+type DecryptSettingIn = InputOf<"/setting/decrypt", "post">;
+type DecryptSettingOut = OutputOf<"/setting/decrypt", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -91,6 +93,11 @@ async function searchSettingGroups(query: string): Promise<GenerationsOut> {
 async function createSettingProblem(input: ProblemSettingIn): Promise<ProblemSettingOut> {
   "use server";
   return api.post("/setting/problem", input);
+}
+
+async function decryptSetting(input: DecryptSettingIn): Promise<DecryptSettingOut> {
+  "use server";
+  return api.post("/setting/decrypt", input);
 }
 
 /** ---- Page metadata ---- */
@@ -213,6 +220,7 @@ export default async function SettingEditPage({
               createSettingAction={createSetting}
               updateSettingAction={updateSetting}
               patchSettingDraftAction={patchSettingDraft}
+              decryptSettingKeyAction={decryptSetting}
             />
           </div>
         </FullPageLayout>

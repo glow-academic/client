@@ -48,6 +48,8 @@ import {
   ProviderKeys,
   type ProviderKeyValue,
 } from "@/components/resources/ProviderKeys";
+import { Providers } from "@/components/resources/Providers";
+import { Auths } from "@/components/resources/Auths";
 import { Systems, type SystemDraft } from "@/components/resources/Systems";
 
 // Matches SettingSystemDraftValue on the server. id=null = inline-create.
@@ -80,7 +82,6 @@ import { useSettingAi } from "@/hooks/use-setting-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildDraftPayload,
   checkHasResourceIds,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
@@ -93,6 +94,8 @@ type UpdateSettingIn = InputOf<"/setting/update", "post">;
 type UpdateSettingOut = OutputOf<"/setting/update", "post">;
 type PatchSettingDraftIn = InputOf<"/setting/draft", "patch">;
 type PatchSettingDraftOut = OutputOf<"/setting/draft", "patch">;
+type DecryptSettingIn = InputOf<"/setting/decrypt", "post">;
+type DecryptSettingOut = OutputOf<"/setting/decrypt", "post">;
 type SettingData = OutputOf<"/setting/get", "post">;
 
 type CanonicalSettingData = SettingData;
@@ -127,6 +130,8 @@ type SettingFormState = {
   auth_item_keys: AuthItemKeyValue[];
   auth_item_value_ids: string[];
   auth_item_values: AuthItemValueValue[];
+  auth_ids: string[];
+  provider_ids: string[];
   pending_ids: string[];
 };
 
@@ -143,6 +148,8 @@ const SETTING_RESOURCES: ResourceConfig[] = [
   { key: "provider_keys", formKey: "provider_key_ids", flushKey: null, type: "multi" },
   { key: "auth_item_keys", formKey: "auth_item_key_ids", flushKey: null, type: "multi" },
   { key: "auth_item_values", formKey: "auth_item_value_ids", flushKey: null, type: "multi" },
+  { key: "auths", formKey: "auth_ids", flushKey: null, type: "multi" },
+  { key: "providers", formKey: "provider_ids", flushKey: null, type: "multi" },
 ];
 
 const VALID_RESOURCE_TYPES: ResourceType[] = [
@@ -161,6 +168,9 @@ export interface SettingProps {
   patchSettingDraftAction?: (
     input: PatchSettingDraftIn
   ) => Promise<PatchSettingDraftOut>;
+  decryptSettingKeyAction?: (
+    input: DecryptSettingIn
+  ) => Promise<DecryptSettingOut>;
 }
 
 function Setting({
@@ -169,6 +179,7 @@ function Setting({
   createSettingAction,
   updateSettingAction,
   patchSettingDraftAction,
+  decryptSettingKeyAction,
 }: SettingProps) {
   const router = useRouter();
   const isEditMode = !!settingId;
@@ -257,12 +268,19 @@ function Setting({
           item_id: item.item_id as string,
           value: item.value as string,
         })),
+      auth_ids: (s?.auths ?? [])
+        .filter((item) => item.selected)
+        .map((item) => (item.id ?? item.auth_id) as string)
+        .filter((id): id is string => !!id),
+      provider_ids: (s?.providers ?? [])
+        .filter((item) => item.selected)
+        .map((item) => (item.id ?? item.provider_id) as string)
+        .filter((id): id is string => !!id),
       pending_ids: (s?.pending_ids ?? []).filter((id): id is string => !!id),
     };
   }, [s]);
 
   const [formState, setFormState] = useState<SettingFormState>(getInitialFormState);
-  const referenceStateRef = useRef<SettingFormState>(getInitialFormState());
   const formStateRef = useRef(formState);
   const serverSyncPendingRef = useRef(false);
 
@@ -273,7 +291,6 @@ function Setting({
   useEffect(() => {
     const initial = getInitialFormState();
     setFormState(initial);
-    referenceStateRef.current = initial;
   }, [getInitialFormState]);
 
   const patchActionRef = useRef<
@@ -302,6 +319,8 @@ function Setting({
       provider_keys: new Set((s?.provider_keys ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
       auth_item_keys: new Set((s?.auth_item_keys ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
       auth_item_values: new Set((s?.auth_item_values ?? []).filter((item) => item.pending && item.id).map((item) => item.id as string)),
+      auths: new Set((s?.auths ?? []).filter((item) => item.pending && (item.id ?? item.auth_id)).map((item) => (item.id ?? item.auth_id) as string)),
+      providers: new Set((s?.providers ?? []).filter((item) => item.pending && (item.id ?? item.provider_id)).map((item) => (item.id ?? item.provider_id) as string)),
     }),
     [s]
   );
@@ -470,10 +489,13 @@ function Setting({
             auth_item_values:
               (fs["auth_item_values"] as AuthItemValueValue[] | null) ??
               prev.auth_item_values,
+            auth_ids:
+              (fs["auth_ids"] as string[] | null) ?? prev.auth_ids,
+            provider_ids:
+              (fs["provider_ids"] as string[] | null) ?? prev.provider_ids,
             pending_ids:
               (fs["pending_ids"] as string[] | null) ?? prev.pending_ids,
           };
-          referenceStateRef.current = next;
           return next;
         });
         requestAnimationFrame(() => {
@@ -484,46 +506,61 @@ function Setting({
     };
   }, [patchSettingDraftAction]);
 
-  const buildPatchPayload = useCallback((draftId: string | null) => {
-    const currentFormState = formStateRef.current;
-    const payload: Record<string, unknown> = {
-      draft_id: draftId,
-      input_draft_id: draftId,
-      ...buildDraftPayload(SETTING_RESOURCES, {
-        formState: currentFormState as unknown as Record<string, unknown>,
-        referenceState: referenceStateRef.current as unknown as Record<string, unknown>,
-        flushResults: {},
-      }),
-      pending_ids: currentFormState.pending_ids,
-    };
+  const buildPatchPayload = useCallback((): Record<string, unknown> => {
+    const current = formStateRef.current as unknown as SettingFormState;
+    const payload: Record<string, unknown> = {};
 
-    if (currentFormState.name && !currentFormState.name_id) {
-      payload["name"] = currentFormState.name;
-      delete payload["name_id"];
-    }
-    if (currentFormState.description && !currentFormState.description_id) {
-      payload["description"] = currentFormState.description;
-      delete payload["description_id"];
-    }
+    if (current.name != null) payload["name"] = current.name;
+    else if (current.name_id) payload["name_id"] = current.name_id;
 
-    payload["provider_keys"] = currentFormState.provider_keys;
-    payload["auth_item_keys"] = currentFormState.auth_item_keys;
-    payload["auth_item_values"] = currentFormState.auth_item_values;
-    payload["logins"] = currentFormState.logins;
-    payload["mcp_values"] = currentFormState.mcp_values;
-    payload["system_values"] = currentFormState.system_values;
-    payload["threshold_values"] = currentFormState.threshold_values;
+    if (current.description != null) payload["description"] = current.description;
+    else if (current.description_id) payload["description_id"] = current.description_id;
 
+    if (current.flag_ids.length > 0) payload["flag_ids"] = current.flag_ids;
+
+    if (current.color_ids.length > 0) payload["color_ids"] = current.color_ids;
+    if (current.department_ids.length > 0) payload["department_ids"] = current.department_ids;
+
+    // Compound value arrays take precedence over their ID counterpart.
+    if (current.logins.length > 0) payload["logins"] = current.logins;
+    else if (current.logins_ids.length > 0) payload["logins_ids"] = current.logins_ids;
+
+    if (current.system_values.length > 0) payload["system_values"] = current.system_values;
+    else if (current.system_ids.length > 0) payload["system_ids"] = current.system_ids;
+
+    if (current.mcp_values.length > 0) payload["mcp_values"] = current.mcp_values;
+    else if (current.mcp_id) payload["mcp_id"] = current.mcp_id;
+
+    if (current.threshold_values.length > 0) payload["threshold_values"] = current.threshold_values;
+    else if (current.threshold_ids.length > 0) payload["threshold_ids"] = current.threshold_ids;
+
+    if (current.provider_keys.length > 0) payload["provider_keys"] = current.provider_keys;
+    else if (current.provider_key_ids.length > 0) payload["provider_key_ids"] = current.provider_key_ids;
+
+    if (current.auth_item_keys.length > 0) payload["auth_item_keys"] = current.auth_item_keys;
+    else if (current.auth_item_key_ids.length > 0) payload["auth_item_key_ids"] = current.auth_item_key_ids;
+
+    if (current.auth_item_values.length > 0) payload["auth_item_values"] = current.auth_item_values;
+    else if (current.auth_item_value_ids.length > 0) payload["auth_item_value_ids"] = current.auth_item_value_ids;
+
+    if (current.auth_ids.length > 0) payload["auth_ids"] = current.auth_ids;
+    if (current.provider_ids.length > 0) payload["provider_ids"] = current.provider_ids;
+
+    if (current.pending_ids.length > 0) payload["pending_ids"] = current.pending_ids;
     return payload;
   }, []);
 
   const hasResourceIds =
-    checkHasResourceIds(
-      SETTING_RESOURCES,
-      formState as unknown as Record<string, unknown>
-    ) ||
+    checkHasResourceIds(SETTING_RESOURCES, formState as unknown as Record<string, unknown>) ||
     !!formState.name ||
     !!formState.description ||
+    formState.logins.length > 0 ||
+    formState.system_values.length > 0 ||
+    formState.mcp_values.length > 0 ||
+    formState.threshold_values.length > 0 ||
+    formState.provider_keys.length > 0 ||
+    formState.auth_item_keys.length > 0 ||
+    formState.auth_item_values.length > 0 ||
     formState.pending_ids.length > 0;
 
   const {
@@ -533,7 +570,7 @@ function Setting({
     formDataRef,
   } = useDraftLifecycle({
     formStateKey: JSON.stringify(
-      serverSyncPendingRef.current ? referenceStateRef.current : formState
+      serverSyncPendingRef.current ? formStateRef.current : formState
     ),
     patchActionRef,
     isAutosaveEnabled,
@@ -596,8 +633,8 @@ function Setting({
       { id: "systems", title: "Systems", description: "Agent routing" },
       { id: "mcp", title: "MCP", description: "Agent exposed as this setting's MCP server" },
       { id: "thresholds", title: "Thresholds", description: "Scoring cutoffs" },
-      { id: "provider", title: "Provider", description: "Provider API keys" },
-      { id: "auth", title: "Auth", description: "OIDC/SAML claim keys and values" },
+      { id: "provider", title: "Providers", description: "Providers and their API keys" },
+      { id: "auth", title: "Auths", description: "Auth providers and their OIDC/SAML claim keys and values" },
     ],
     []
   );
@@ -618,17 +655,39 @@ function Setting({
         case "thresholds":
           return formState.threshold_ids.length > 0 ? "completed" : "pending";
         case "provider":
-          return formState.provider_key_ids.length > 0 ? "completed" : "pending";
+          if (formState.provider_ids.length === 0) return "pending";
+          return formState.provider_key_ids.length > 0 ? "completed" : "active";
         case "auth":
+          if (formState.auth_ids.length === 0) return "pending";
           return formState.auth_item_key_ids.length > 0 ||
             formState.auth_item_value_ids.length > 0
             ? "completed"
-            : "pending";
+            : "active";
         default:
           return "pending";
       }
     },
     [formState]
+  );
+
+  // Decrypt callback for ProviderKeys / AuthItemKeys "Reveal" buttons.
+  // Calls /setting/decrypt server action, which audits the access.
+  const decryptKey = useCallback(
+    async (key_id: string): Promise<string | null> => {
+      if (!decryptSettingKeyAction || !settingId) return null;
+      try {
+        const result = await decryptSettingKeyAction({
+          body: { setting_id: settingId, key_id },
+        } as DecryptSettingIn);
+        const decrypted = (result as DecryptSettingOut & { key?: string | null })
+          .key;
+        return decrypted ?? null;
+      } catch (err) {
+        console.error("decrypt failed", err);
+        return null;
+      }
+    },
+    [decryptSettingKeyAction, settingId],
   );
 
   const handleSubmit = useCallback(async () => {
@@ -659,6 +718,8 @@ function Setting({
       provider_key_ids: effectiveState.provider_key_ids.length > 0 ? effectiveState.provider_key_ids : null,
       auth_item_key_ids: effectiveState.auth_item_key_ids.length > 0 ? effectiveState.auth_item_key_ids : null,
       auth_item_value_ids: effectiveState.auth_item_value_ids.length > 0 ? effectiveState.auth_item_value_ids : null,
+      auth_ids: effectiveState.auth_ids.length > 0 ? effectiveState.auth_ids : null,
+      provider_ids: effectiveState.provider_ids.length > 0 ? effectiveState.provider_ids : null,
     };
 
     if (isEditMode && settingId && updateSettingAction) {
@@ -1046,26 +1107,74 @@ function Setting({
             stepStatus={stepStatus}
             isReadonly={disabled}
           >
-            <ProviderKeys
-              options={s?.provider_key_options ?? []}
-              values={formState.provider_keys}
-              existing={s?.provider_keys ?? []}
-              disabled={disabled}
-              onChange={(values) =>
-                setFormState((prev) => {
-                  const ids = values
-                    .map((v) => v.id)
-                    .filter((id): id is string => !!id);
-                  return {
+            <div className="space-y-6">
+              <Providers
+                provider_ids={formState.provider_ids}
+                providers={(s?.providers ?? []).map((p) => ({
+                  id: (p.id ?? p.provider_id) as string | null,
+                  name: p.name ?? null,
+                  description: p.description ?? null,
+                  generated: p.generated ?? null,
+                  suggested: p.suggested ?? null,
+                  pending: p.pending ?? null,
+                }))}
+                disabled={disabled}
+                onIdsChange={(ids) =>
+                  setFormState((prev) => ({
                     ...prev,
-                    provider_keys: values,
-                    provider_key_ids: ids,
-                    pending_ids: pruneSectionPending("provider_keys", ids),
-                  };
-                })
-              }
-              show_provider_keys={true}
-            />
+                    provider_ids: ids,
+                    pending_ids: pruneSectionPending("providers", ids),
+                  }))
+                }
+                show_providers={true}
+                label="Providers"
+              />
+              {formState.provider_ids.length > 0 && (
+                <ProviderKeys
+                  selected_providers={(s?.providers ?? [])
+                    .filter((p) =>
+                      formState.provider_ids.includes(
+                        (p.id ?? p.provider_id) as string,
+                      ),
+                    )
+                    .map((p) => ({
+                      id: (p.id ?? p.provider_id) as string,
+                      name: p.name ?? null,
+                      description: p.description ?? null,
+                    }))}
+                  values={formState.provider_keys}
+                  // Only show rows actually linked to *this* setting via
+                  // setting_provider_keys_junction. The catalog also includes
+                  // suggestion rows; we don't want those rendered as "saved
+                  // for this setting" with a Reveal button.
+                  existing={(s?.provider_keys ?? [])
+                    .filter((row) => row.selected)
+                    .map((row) => ({
+                      id: row.id ?? null,
+                      provider_id: row.provider_id ?? null,
+                      key_id: row.key_id ?? null,
+                      name: row.name ?? null,
+                      pending: row.pending ?? null,
+                    }))}
+                  disabled={disabled}
+                  onChange={(values) =>
+                    setFormState((prev) => {
+                      const ids = values
+                        .map((v) => v.id)
+                        .filter((id): id is string => !!id);
+                      return {
+                        ...prev,
+                        provider_keys: values,
+                        provider_key_ids: ids,
+                        pending_ids: pruneSectionPending("provider_keys", ids),
+                      };
+                    })
+                  }
+                  onReveal={decryptKey}
+                  show_provider_keys={true}
+                />
+              )}
+            </div>
           </StepCard>
         );
       }
@@ -1079,51 +1188,102 @@ function Setting({
           stepStatus={stepStatus}
           isReadonly={disabled}
         >
-          <AuthItemKeys
-            options={s?.auth_item_key_options ?? []}
-            values={formState.auth_item_keys}
-            existing={s?.auth_item_keys ?? []}
-            disabled={disabled}
-            onChange={(values) =>
-              setFormState((prev) => {
-                const ids = values
-                  .map((v) => v.id)
-                  .filter((id): id is string => !!id);
-                return {
+          <div className="space-y-6">
+            <Auths
+              auth_ids={formState.auth_ids}
+              auths={(s?.auths ?? []).map((a) => ({
+                id: (a.id ?? a.auth_id) as string | null,
+                name: a.name ?? null,
+                description: a.description ?? null,
+                slug: a.slug ?? null,
+                generated: a.generated ?? null,
+                suggested: a.suggested ?? null,
+                pending: a.pending ?? null,
+              }))}
+              disabled={disabled}
+              onIdsChange={(ids) =>
+                setFormState((prev) => ({
                   ...prev,
-                  auth_item_keys: values,
-                  auth_item_key_ids: ids,
-                  pending_ids: pruneSectionPending("auth_item_keys", ids),
-                };
-              })
-            }
-            show_auth_item_keys={true}
-          />
-          <AuthItemValues
-            options={s?.auth_item_value_options ?? []}
-            values={formState.auth_item_values}
-            existing={s?.auth_item_values ?? []}
-            disabled={disabled}
-            onChange={(values) =>
-              setFormState((prev) => {
-                const ids = values
-                  .map((v) => v.id)
-                  .filter((id): id is string => !!id);
-                return {
-                  ...prev,
-                  auth_item_values: values,
-                  auth_item_value_ids: ids,
-                  pending_ids: pruneSectionPending("auth_item_values", ids),
-                };
-              })
-            }
-            show_auth_item_values={true}
-          />
+                  auth_ids: ids,
+                  pending_ids: pruneSectionPending("auths", ids),
+                }))
+              }
+              show_auths={true}
+              label="Auths"
+            />
+            {formState.auth_ids.length > 0 && (
+              <>
+                <AuthItemKeys
+                  options={(s?.auth_item_value_options ?? []).filter((opt) =>
+                    opt.auth_id
+                      ? formState.auth_ids.includes(opt.auth_id as string)
+                      : false,
+                  )}
+                  values={formState.auth_item_keys}
+                  // Only rows actually linked to this setting via
+                  // setting_auth_item_keys_junction (suggestions excluded).
+                  existing={(s?.auth_item_keys ?? [])
+                    .filter((row) => row.selected)
+                    .map((row) => ({
+                      id: row.id ?? null,
+                      auth_id: row.auth_id ?? null,
+                      item_id: row.item_id ?? null,
+                      key_id: row.key_id ?? null,
+                      pending: row.pending ?? null,
+                    }))}
+                  disabled={disabled}
+                  onChange={(values) =>
+                    setFormState((prev) => {
+                      const ids = values
+                        .map((v) => v.id)
+                        .filter((id): id is string => !!id);
+                      return {
+                        ...prev,
+                        auth_item_keys: values,
+                        auth_item_key_ids: ids,
+                        pending_ids: pruneSectionPending("auth_item_keys", ids),
+                      };
+                    })
+                  }
+                  onReveal={decryptKey}
+                  show_auth_item_keys={true}
+                />
+                <AuthItemValues
+                  options={(s?.auth_item_value_options ?? []).filter((opt) =>
+                    opt.auth_id
+                      ? formState.auth_ids.includes(opt.auth_id as string)
+                      : false,
+                  )}
+                  values={formState.auth_item_values}
+                  existing={s?.auth_item_values ?? []}
+                  disabled={disabled}
+                  onChange={(values) =>
+                    setFormState((prev) => {
+                      const ids = values
+                        .map((v) => v.id)
+                        .filter((id): id is string => !!id);
+                      return {
+                        ...prev,
+                        auth_item_values: values,
+                        auth_item_value_ids: ids,
+                        pending_ids: pruneSectionPending(
+                          "auth_item_values",
+                          ids,
+                        ),
+                      };
+                    })
+                  }
+                  show_auth_item_values={true}
+                />
+              </>
+            )}
+          </div>
         </StepCard>
       );
     },
     [
       canRegenerate,
+      decryptKey,
       disabled,
       formState,
       handleDescriptionChange,

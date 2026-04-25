@@ -26,6 +26,8 @@ type DuplicateFieldIn = InputOf<"/field/duplicate", "post">;
 type DuplicateFieldOut = OutputOf<"/field/duplicate", "post">;
 type DeleteFieldIn = InputOf<"/field/delete", "post">;
 type DeleteFieldOut = OutputOf<"/field/delete", "post">;
+type UpdateFieldIn = InputOf<"/field/update", "post">;
+type UpdateFieldOut = OutputOf<"/field/update", "post">;
 type GroupFieldIn = InputOf<"/field/group", "post">;
 type GroupFieldOut = OutputOf<"/field/group", "post">;
 type GenerateFieldIn = InputOf<"/field/generate", "post">;
@@ -65,6 +67,11 @@ async function duplicateField(
 async function deleteField(input: DeleteFieldIn): Promise<DeleteFieldOut> {
   "use server";
   return api.post("/field/delete", input);
+}
+
+async function updateField(input: UpdateFieldIn): Promise<UpdateFieldOut> {
+  "use server";
+  return api.post("/field/update", input);
 }
 
 async function generateField(
@@ -158,6 +165,7 @@ export default async function FieldsPage() {
             listData={listData}
             duplicateFieldAction={duplicateField}
             deleteFieldAction={deleteField}
+            updateFieldAction={updateField}
           />
         </div>
       </FullPageLayout>
@@ -187,4 +195,6 @@ export type {
   DeleteFieldOut,
   DuplicateFieldIn,
   DuplicateFieldOut,
+  UpdateFieldIn,
+  UpdateFieldOut,
 };

@@ -35,7 +35,6 @@ import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
   type ResourceConfig,
@@ -700,55 +699,50 @@ function SimulationComponent({
     || (formState.scenario_rubrics?.length ?? 0) > 0
     || (formState.scenario_time_limits?.length ?? 0) > 0;
 
-  const buildPatchPayload = useCallback(
-    (
-      draftId: string | null,
-      flushResults?: Record<string, unknown>,
-    ): Record<string, unknown> => {
-      const current =
-        formStateRef.current as unknown as SimulationFormState;
-      const fr = (flushResults ?? {}) as Record<string, unknown>;
-      const idPayload = buildDraftPayload(SIMULATION_RESOURCES, {
-        formState: current as unknown as Record<string, unknown>,
-        referenceState: null,
-        flushResults: fr,
-      });
+  const buildPatchPayload = useCallback((): Record<string, unknown> => {
+    const current = formStateRef.current as unknown as SimulationFormState;
+    const payload: Record<string, unknown> = {};
 
-      // Value fields for single-select creatables (value takes precedence over ID)
-      if (current.name != null) {
-        idPayload["name"] = current.name;
-        delete idPayload["name_id"];
-      }
-      if (current.description != null) {
-        idPayload["description"] = current.description;
-        delete idPayload["description_id"];
-      }
+    if (current.name != null) payload["name"] = current.name;
+    else if (current.name_id) payload["name_id"] = current.name_id;
 
-      // Multi-select creatable value fields (merged with IDs on server)
-      if (current.scenario_flags && current.scenario_flags.length > 0) {
-        idPayload["scenario_flags"] = current.scenario_flags;
-      }
-      if (current.scenario_positions && current.scenario_positions.length > 0) {
-        idPayload["scenario_positions"] = current.scenario_positions;
-      }
-      if (current.scenario_rubrics && current.scenario_rubrics.length > 0) {
-        idPayload["scenario_rubrics"] = current.scenario_rubrics;
-      }
-      if (current.scenario_time_limits && current.scenario_time_limits.length > 0) {
-        idPayload["scenario_time_limits"] = current.scenario_time_limits;
-      }
-      if (current.pending_ids.length > 0) {
-        idPayload["pending_ids"] = current.pending_ids;
-      }
+    if (current.description != null) payload["description"] = current.description;
+    else if (current.description_id) payload["description_id"] = current.description_id;
 
-      return {
-        draft_id: draftId || null,
-        ...idPayload,
-      };
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [stableSimulationDataFields],
-  );
+    if (current.flag_ids.length > 0) payload["flag_ids"] = current.flag_ids;
+    if (current.department_ids.length > 0) payload["department_ids"] = current.department_ids;
+    if (current.scenario_ids.length > 0) payload["scenario_ids"] = current.scenario_ids;
+
+    if (current.scenario_flags && current.scenario_flags.length > 0) {
+      payload["scenario_flags"] = current.scenario_flags;
+    } else if (current.scenario_flag_ids.length > 0) {
+      payload["scenario_flag_ids"] = current.scenario_flag_ids;
+    }
+    if (current.scenario_flag_values && current.scenario_flag_values.length > 0) {
+      payload["scenario_flag_values"] = current.scenario_flag_values;
+    }
+
+    if (current.scenario_positions && current.scenario_positions.length > 0) {
+      payload["scenario_positions"] = current.scenario_positions;
+    } else if (current.scenario_position_ids.length > 0) {
+      payload["scenario_position_ids"] = current.scenario_position_ids;
+    }
+
+    if (current.scenario_rubrics && current.scenario_rubrics.length > 0) {
+      payload["scenario_rubrics"] = current.scenario_rubrics;
+    } else if (current.scenario_rubric_ids.length > 0) {
+      payload["scenario_rubric_ids"] = current.scenario_rubric_ids;
+    }
+
+    if (current.scenario_time_limits && current.scenario_time_limits.length > 0) {
+      payload["scenario_time_limits"] = current.scenario_time_limits;
+    } else if (current.scenario_time_limit_ids.length > 0) {
+      payload["scenario_time_limit_ids"] = current.scenario_time_limit_ids;
+    }
+
+    if (current.pending_ids.length > 0) payload["pending_ids"] = current.pending_ids;
+    return payload;
+  }, []);
 
   const {
     setUrlFormDataRef,

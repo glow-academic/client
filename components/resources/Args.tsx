@@ -51,6 +51,8 @@ export interface ArgsProps {
   disabled: boolean; // Based on can_edit flag from Tool.tsx
   /** Callback to update args_ids selection (used for reject pending) */
   onChange?: (ids: string[]) => void;
+  /** Hide the "Args Fields" header label — orchestrator owns it. */
+  hideHeader?: boolean;
 }
 
 export function Args({
@@ -58,6 +60,7 @@ export function Args({
   input_args_fields,
   disabled = false,
   onChange,
+  hideHeader = false,
 }: ArgsProps) {
   const sortedFields = useMemo(() => {
     return [...input_args_fields].sort((a, b) => a.name.localeCompare(b.name));
@@ -193,7 +196,7 @@ export function Args({
   return (
     <div className="space-y-6">
       {/* Header with pending diff controls */}
-      {showDiff && (
+      {showDiff && !hideHeader && (
         <div className="flex items-center gap-2">
           <Label className="flex items-center gap-1">Args Fields</Label>
           <TooltipProvider>

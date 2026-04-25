@@ -33,9 +33,9 @@ import type {
   UpdatePersonaOut,
 } from "@/app/(main)/training/personas/page";
 import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,18 +50,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import {
   Tooltip,
   TooltipContent,
@@ -304,6 +298,13 @@ export default function Personas({
       .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
       .map((opt) => ({ id: opt.id!, voice: opt.name! }));
   }, [personasData?.voice_filter]);
+
+  // Flag catalog (e.g. persona_active) — used to reconstruct flag_ids on bulk edit.
+  const flagOptions = useMemo(() => {
+    return (personasData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [personasData?.flag_filter]);
 
   // Helper to update URL search params
   const updatePersonasParams = useCallback(
@@ -846,22 +847,38 @@ export default function Personas({
     const hasIconChange = bulkEditIconIds.length > 0;
     const hasDeptChange = bulkEditDepartmentIds !== null;
     const hasVoiceChange = bulkEditVoiceIds !== null;
+    const hasAnyFlagChange = hasActiveChange;
 
     if (!hasActiveChange && !hasColorChange && !hasIconChange && !hasDeptChange && !hasVoiceChange) {
       toast.error("No changes selected");
       return;
     }
 
+    // Resolve flag UUIDs by type from the server-provided catalog.
+    const flagId = (type: string) => flagOptions.find((f) => f.type === type)?.id;
+    const activeFlagId = flagId("persona_active");
+
     setIsBulkEditing(true);
     try {
-      const items = editablePersonas.map((p) => ({
-        persona_id: p.persona_id!,
-        ...(hasActiveChange && { active: bulkEditActiveStatus }),
-        ...(hasColorChange && { color_id: bulkEditColorIds[0] }),
-        ...(hasIconChange && { icon_id: bulkEditIconIds[0] }),
-        ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
-        ...(hasVoiceChange && { voice_ids: bulkEditVoiceIds }),
-      }));
+      const items = editablePersonas.map((p) => {
+        // Reconstruct flag_ids per-row, preserving flags we aren't toggling.
+        // Today only `active` is exposed — additional flag types slot in here.
+        let flag_ids: string[] | undefined;
+        if (hasAnyFlagChange) {
+          const isActive = hasActiveChange ? bulkEditActiveStatus : !p.is_inactive;
+          flag_ids = [];
+          if (isActive && activeFlagId) flag_ids.push(activeFlagId);
+        }
+
+        return {
+          id: p.persona_id!,
+          ...(hasAnyFlagChange && { flag_ids }),
+          ...(hasColorChange && { color_id: bulkEditColorIds[0] }),
+          ...(hasIconChange && { icon_id: bulkEditIconIds[0] }),
+          ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
+          ...(hasVoiceChange && { voice_ids: bulkEditVoiceIds }),
+        };
+      });
 
       await updatePersonaAction({
         body: {
@@ -1244,34 +1261,33 @@ export default function Personas({
               </div>
 
               <div className="flex items-center space-x-2 flex-wrap">
-                {/* Scenario Filter */}
-                <DataTableFacetedFilter
-                  column={scenarioColumn}
-                  title="Scenario"
-                  options={scenarioOptions}
-                  isServerDriven={true}
-                  onSearchChange={handleScenarioSearchChange}
-                  searchValue={localScenarioSearch}
-                />
-
-                {/* Field Filter */}
-                <DataTableFacetedFilter
-                  column={fieldColumn}
-                  title="Field"
-                  options={fieldOptions}
-                  isServerDriven={true}
-                  onSearchChange={handleFieldSearchChange}
-                  searchValue={localFieldSearch}
-                />
-
-                {/* Department Filter */}
-                <DataTableFacetedFilter
-                  column={departmentsColumn}
-                  title="Department"
-                  options={departmentOptions}
-                  isServerDriven={true}
-                  onSearchChange={handleDepartmentSearchChange}
-                  searchValue={localDepartmentSearch}
+                <ThreePickerFilters
+                  slots={[
+                    {
+                      column: scenarioColumn,
+                      title: "Scenario",
+                      options: scenarioOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleScenarioSearchChange,
+                      searchValue: localScenarioSearch,
+                    },
+                    {
+                      column: fieldColumn,
+                      title: "Field",
+                      options: fieldOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleFieldSearchChange,
+                      searchValue: localFieldSearch,
+                    },
+                    {
+                      column: departmentsColumn,
+                      title: "Department",
+                      options: departmentOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleDepartmentSearchChange,
+                      searchValue: localDepartmentSearch,
+                    },
+                  ]}
                 />
 
                 {isFiltered && (
@@ -1386,118 +1402,64 @@ export default function Personas({
       </AlertDialog>
 
       {/* Bulk Delete Confirmation Dialog */}
-      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
-        <AlertDialogContent
-          aria-labelledby="bulk-delete-persona-title"
-          data-testid="dialog-bulk-delete-persona"
-        >
-          <AlertDialogHeader>
-            <AlertDialogTitle id="bulk-delete-persona-title">
-              Delete {deletablePersonas.length} Persona(s)
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>This action cannot be undone.</p>
-                {deletablePersonas.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                    <ul className="text-sm space-y-0.5">
-                      {deletablePersonas.map((p) => (
-                        <li key={p.persona_id} className="flex items-center gap-1.5">
-                          <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                          {p.name || "Unnamed Persona"}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {nonDeletablePersonas.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by scenarios):</p>
-                    <ul className="text-sm space-y-0.5">
-                      {nonDeletablePersonas.map((p) => (
-                        <li key={p.persona_id} className="flex items-center gap-1.5 text-muted-foreground">
-                          <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
-                          {p.name || "Unnamed Persona"}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+      <BulkDeleteDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        count={deletablePersonas.length}
+        entityLabel="persona"
+        entityLabelPlural="personas"
+        isDeleting={isBulkDeleting}
+        onConfirm={handleBulkDelete}
+        description={
+          <>
+            <p>This action cannot be undone.</p>
+            {deletablePersonas.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                <ul className="text-sm space-y-0.5">
+                  {deletablePersonas.map((p) => (
+                    <li key={p.persona_id} className="flex items-center gap-1.5">
+                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                      {p.name || "Unnamed Persona"}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isBulkDeleting}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBulkDelete}
-              disabled={isBulkDeleting}
-              variant="destructive"
-            >
-              {isBulkDeleting ? "Deleting..." : `Delete ${deletablePersonas.length}`}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            )}
+            {nonDeletablePersonas.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by scenarios):</p>
+                <ul className="text-sm space-y-0.5">
+                  {nonDeletablePersonas.map((p) => (
+                    <li key={p.persona_id} className="flex items-center gap-1.5 text-muted-foreground">
+                      <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                      {p.name || "Unnamed Persona"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        }
+      />
 
       {/* Bulk Edit Modal */}
-      <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Edit {editablePersonas.length} Persona(s)</DialogTitle>
-            <DialogDescription>
-              Only changed fields will be applied. Unchanged fields keep their current values.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-5 py-4">
-            {/* Active Status — Switch with tri-state */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Active Status</Label>
-              <div className="flex items-center gap-3">
-                {bulkEditActiveStatus === null ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">No change</span>
-                    <span className="text-xs text-muted-foreground">—</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 px-2 text-xs"
-                      onClick={() => setBulkEditActiveStatus(true)}
-                    >
-                      Set Active
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 px-2 text-xs"
-                      onClick={() => setBulkEditActiveStatus(false)}
-                    >
-                      Set Inactive
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      checked={bulkEditActiveStatus}
-                      onCheckedChange={setBulkEditActiveStatus}
-                    />
-                    <span className="text-sm">{bulkEditActiveStatus ? "Active" : "Inactive"}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2 text-xs text-muted-foreground"
-                      onClick={() => setBulkEditActiveStatus(null)}
-                    >
-                      Reset
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
+      <BulkEditDialog
+        open={showBulkEditDialog}
+        onOpenChange={setShowBulkEditDialog}
+        count={editablePersonas.length}
+        entityLabelPlural="personas"
+        isSaving={isBulkEditing}
+        onSave={handleBulkEdit}
+      >
+        {/* Active status — tri-state flag field */}
+        <BulkEditFlagField
+          label="Active Status"
+          value={bulkEditActiveStatus}
+          onChange={setBulkEditActiveStatus}
+        />
 
-            {/* Color — GenericPicker single-select */}
+        {/* Color — GenericPicker single-select */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Color</Label>
               <GenericPicker
@@ -1643,17 +1605,7 @@ export default function Personas({
                 />
               )}
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBulkEditDialog(false)} disabled={isBulkEditing}>
-              Cancel
-            </Button>
-            <Button onClick={handleBulkEdit} disabled={isBulkEditing}>
-              {isBulkEditing ? "Applying..." : "Apply Changes"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </BulkEditDialog>
 
       {/* Bulk Import Dialog */}
       {parseCsvAction && importFields && (

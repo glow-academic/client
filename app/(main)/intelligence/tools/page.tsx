@@ -29,6 +29,8 @@ type DeleteToolIn = InputOf<"/tool/delete", "post">;
 type DeleteToolOut = OutputOf<"/tool/delete", "post">;
 type DuplicateToolIn = InputOf<"/tool/duplicate", "post">;
 type DuplicateToolOut = OutputOf<"/tool/duplicate", "post">;
+type UpdateToolIn = InputOf<"/tool/update", "post">;
+type UpdateToolOut = OutputOf<"/tool/update", "post">;
 type GroupToolIn = InputOf<"/tool/group", "post">;
 type GroupToolOut = OutputOf<"/tool/group", "post">;
 type GenerateToolIn = InputOf<"/tool/generate", "post">;
@@ -83,6 +85,11 @@ async function duplicateTool(
 ): Promise<DuplicateToolOut> {
   "use server";
   return api.post("/tool/duplicate", input);
+}
+
+async function updateTool(input: UpdateToolIn): Promise<UpdateToolOut> {
+  "use server";
+  return api.post("/tool/update", input);
 }
 
 async function generateTool(
@@ -212,6 +219,7 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
             listData={listData}
             deleteToolAction={deleteTool}
             duplicateToolAction={duplicateTool}
+            updateToolAction={updateTool}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}
@@ -246,4 +254,6 @@ export type {
   DuplicateToolIn,
   DuplicateToolOut,
   ToolsListOut,
+  UpdateToolIn,
+  UpdateToolOut,
 };

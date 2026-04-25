@@ -27,6 +27,8 @@ type DeleteProfileIn = InputOf<"/profile/delete", "post">;
 type DeleteProfileOut = OutputOf<"/profile/delete", "post">;
 type BulkDeleteProfileIn = InputOf<"/profile/bulk/delete", "post">;
 type BulkDeleteProfileOut = OutputOf<"/profile/bulk/delete", "post">;
+type UpdateProfileIn = InputOf<"/profile/update", "post">;
+type UpdateProfileOut = OutputOf<"/profile/update", "post">;
 type SearchProfileIn = InputOf<"/profile/bulk/search", "post">;
 type SearchProfileOut = OutputOf<"/profile/bulk/search", "post">;
 type GetProfileIn = InputOf<"/profile/get", "post">;
@@ -76,6 +78,13 @@ async function bulkDeleteProfile(
 ): Promise<BulkDeleteProfileOut> {
   "use server";
   return api.post("/profile/bulk/delete", input);
+}
+
+async function updateProfile(
+  input: UpdateProfileIn
+): Promise<UpdateProfileOut> {
+  "use server";
+  return api.post("/profile/update", input);
 }
 
 async function getCreateProfileData(
@@ -228,6 +237,7 @@ export default async function ProfilesPage() {
             initialCreateProfileData={initialCreateProfileData}
             deleteProfileAction={deleteProfile}
             bulkDeleteProfileAction={bulkDeleteProfile}
+            updateProfileAction={updateProfile}
             processCSVAction={processCSV}
             emulateProfileAction={emulateProfile}
             unemulateProfileAction={unemulateProfile}
@@ -273,4 +283,6 @@ export type {
   SearchProfileIn,
   SearchProfileItem,
   SearchProfileOut,
+  UpdateProfileIn,
+  UpdateProfileOut,
 };

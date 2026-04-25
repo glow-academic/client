@@ -26,6 +26,8 @@ import { loadProvidersSearchParams } from "@/lib/search-params/providers";
 type ProvidersListOut = OutputOf<"/provider/search", "post">;
 type DeleteProviderIn = InputOf<"/provider/delete", "post">;
 type DeleteProviderOut = OutputOf<"/provider/delete", "post">;
+type UpdateProviderIn = InputOf<"/provider/update", "post">;
+type UpdateProviderOut = OutputOf<"/provider/update", "post">;
 type GroupProviderIn = InputOf<"/provider/group", "post">;
 type GroupProviderOut = OutputOf<"/provider/group", "post">;
 type GenerateProviderIn = InputOf<"/provider/generate", "post">;
@@ -79,6 +81,13 @@ async function deleteProvider(
     ...input,
     body: { ...input.body },
   });
+}
+
+async function updateProvider(
+  input: UpdateProviderIn
+): Promise<UpdateProviderOut> {
+  "use server";
+  return api.post("/provider/update", input);
 }
 
 async function generateProvider(
@@ -207,6 +216,7 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
           <Providers
             listData={listData}
             deleteProviderAction={deleteProvider}
+            updateProviderAction={updateProvider}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}
@@ -235,4 +245,10 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { DeleteProviderIn, DeleteProviderOut, ProvidersListOut };
+export type {
+  DeleteProviderIn,
+  DeleteProviderOut,
+  ProvidersListOut,
+  UpdateProviderIn,
+  UpdateProviderOut,
+};

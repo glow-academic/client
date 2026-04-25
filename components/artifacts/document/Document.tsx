@@ -32,7 +32,6 @@ import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildDraftPayload,
   checkHasResourceIds,
   computeEffectiveFormState,
   type ResourceConfig,
@@ -315,10 +314,6 @@ function DocumentComponent({
   const formStateRef = useRef<Record<string, unknown>>(
     formState as unknown as Record<string, unknown>,
   );
-  const lastPatchedFormStateRef = useRef<DocumentFormState | null>(
-    getInitialFormState(),
-  );
-
   useEffect(() => {
     formStateRef.current = formState as unknown as Record<string, unknown>;
   }, [formState]);
@@ -392,60 +387,39 @@ function DocumentComponent({
     formState.pending_text_contents.length > 0 ||
     formState.pending_images.length > 0;
 
-  const buildPatchPayload = useCallback(
-    (
-      draftId: string | null,
-      flushResults?: Record<string, unknown>,
-    ): Record<string, unknown> => {
-      const current = formStateRef.current as unknown as DocumentFormState;
-      const ref = lastPatchedFormStateRef.current;
+  // Append-only: always send the full current state as a complete snapshot.
+  // Values take precedence over IDs for creatables; compound value arrays
+  // (pending_text_contents, pending_images) travel alongside IDs — the server
+  // resolves value → id and echoes the id back so the value can clear.
+  const buildPatchPayload = useCallback((): Record<string, unknown> => {
+    const current = formStateRef.current as unknown as DocumentFormState;
+    const payload: Record<string, unknown> = {};
 
-      const idPayload = buildDraftPayload(DOCUMENT_RESOURCES, {
-        formState: formStateRef.current,
-        referenceState: lastPatchedFormStateRef.current as unknown as Record<
-          string,
-          unknown
-        > | null,
-        flushResults: (flushResults ?? {}) as Record<string, unknown>,
-      });
+    if (current.name != null) payload["name"] = current.name;
+    else if (current.name_id) payload["name_id"] = current.name_id;
 
-      if (current.name != null) {
-        if (!ref || current.name !== ref.name) {
-          idPayload["name"] = current.name;
-          delete idPayload["name_id"];
-        }
-      }
+    if (current.description != null) payload["description"] = current.description;
+    else if (current.description_id) payload["description_id"] = current.description_id;
 
-      if (current.description != null) {
-        if (!ref || current.description !== ref.description) {
-          idPayload["description"] = current.description;
-          delete idPayload["description_id"];
-        }
-      }
+    if (current.flag_ids.length > 0) payload["flag_ids"] = current.flag_ids;
+    if (current.department_ids.length > 0) payload["department_ids"] = current.department_ids;
+    if (current.parameter_field_ids.length > 0) payload["parameter_field_ids"] = current.parameter_field_ids;
+    if (current.file_ids.length > 0) payload["file_ids"] = current.file_ids;
 
-      if (current.pending_text_contents.length > 0) {
-        idPayload["texts"] = current.pending_text_contents.map((content) => ({
-          content,
-        }));
-      }
+    // Images: compound value creates new image_resource rows; ids reference
+    // existing rows. Send both — server merges.
+    if (current.pending_images.length > 0) payload["images"] = current.pending_images;
+    if (current.image_ids.length > 0) payload["image_ids"] = current.image_ids;
 
-      if (current.pending_images.length > 0) {
-        idPayload["images"] = current.pending_images;
-      }
+    // Texts: compound value creates new text rows from pending content strings.
+    if (current.pending_text_contents.length > 0) {
+      payload["texts"] = current.pending_text_contents.map((content) => ({ content }));
+    }
+    if (current.text_ids.length > 0) payload["text_ids"] = current.text_ids;
 
-      return {
-        draft_id: draftId || null,
-        ...idPayload,
-        ...(current.pending_ids.length ? { pending_ids: current.pending_ids } : {}),
-      };
-    },
-    [],
-  );
+    if (current.pending_ids.length > 0) payload["pending_ids"] = current.pending_ids;
 
-  const onPatchSuccess = useCallback(() => {
-    lastPatchedFormStateRef.current = {
-      ...(formStateRef.current as unknown as DocumentFormState),
-    };
+    return payload;
   }, []);
 
   const patchActionRef = useRef<
@@ -470,7 +444,6 @@ function DocumentComponent({
     hasResourceIds,
     flushRegistryRef,
     formStateRef,
-    onPatchSuccess,
   });
 
   // --- Stable value-change handlers (extracted from inline arrows) ---
@@ -522,7 +495,6 @@ function DocumentComponent({
         JSON.stringify(prev.pending_ids) !== JSON.stringify(newState.pending_ids)
       ) {
         serverSyncPendingRef.current = true;
-        lastPatchedFormStateRef.current = newState;
         return newState;
       }
       return prev;
@@ -599,7 +571,6 @@ function DocumentComponent({
               JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
             if (!changed) return prev;
             serverSyncPendingRef.current = true;
-            lastPatchedFormStateRef.current = next;
             return next;
           });
         }

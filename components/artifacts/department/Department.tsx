@@ -27,7 +27,6 @@ import { useDepartmentAi } from "@/hooks/use-department-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildDraftPayload,
   checkHasResourceIds,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
@@ -188,7 +187,6 @@ function DepartmentComponent({
     formStateRef.current = formState as Record<string, unknown>;
   }, [formState]);
 
-  const lastPatchedFormStateRef = useRef<Record<string, unknown> | null>(null);
   const patchActionRef = useRef<
     | ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>)
     | undefined
@@ -247,45 +245,44 @@ function DepartmentComponent({
 
   const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
 
-  const buildPatchPayload = useCallback(
-    (
-      inputDraftId: string | null,
-      flushResults?: Record<string, unknown>,
-    ): Record<string, unknown> => {
-      const currentFormState =
-        formStateRef.current as unknown as DepartmentFormState;
-      const payload: Record<string, unknown> = {
-        draft_id: inputDraftId || null,
-        input_draft_id: inputDraftId || null,
-        ...buildDraftPayload(DEPARTMENT_RESOURCES, {
-          formState: currentFormState as unknown as Record<string, unknown>,
-          referenceState: lastPatchedFormStateRef.current,
-          flushResults: flushResults ?? {},
-        }),
-        pending_ids:
-          currentFormState.pending_ids.length > 0
-            ? currentFormState.pending_ids
-            : null,
-      };
+  // Append-only: always send full current state as a complete snapshot.
+  const buildPatchPayload = useCallback((): Record<string, unknown> => {
+    const current = formStateRef.current as unknown as DepartmentFormState;
+    const payload: Record<string, unknown> = {};
 
-      if (currentFormState.name != null) {
-        payload["name"] = currentFormState.name;
-        delete payload["name_id"];
-      }
-      if (currentFormState.description != null) {
-        payload["description"] = currentFormState.description;
-        delete payload["description_id"];
-      }
+    if (current.name != null) {
+      payload["name"] = current.name;
+    } else if (current.name_id) {
+      payload["name_id"] = current.name_id;
+    }
 
-      return payload;
-    },
-    [],
-  );
+    if (current.description != null) {
+      payload["description"] = current.description;
+    } else if (current.description_id) {
+      payload["description_id"] = current.description_id;
+    }
 
-  const hasResourceIds = checkHasResourceIds(
-    DEPARTMENT_RESOURCES,
-    formState as unknown as Record<string, unknown>,
-  );
+    if (current.flag_ids.length > 0) {
+      payload["flag_ids"] = current.flag_ids;
+    }
+    if (current.setting_ids.length > 0) {
+      payload["setting_ids"] = current.setting_ids;
+    }
+    if (current.pending_ids.length > 0) {
+      payload["pending_ids"] = current.pending_ids;
+    }
+
+    return payload;
+  }, []);
+
+  const hasResourceIds =
+    checkHasResourceIds(
+      DEPARTMENT_RESOURCES,
+      formState as unknown as Record<string, unknown>,
+    ) ||
+    !!formState.name ||
+    !!formState.description ||
+    formState.pending_ids.length > 0;
 
   // Per-type boolean view of flag_ids, built from the catalog. Rendered by Flags.
   const flagValues = useMemo<Record<string, boolean | null>>(() => {
@@ -370,11 +367,6 @@ function DepartmentComponent({
     hasResourceIds,
     flushRegistryRef: emptyFlushRegistryRef,
     formStateRef,
-    onPatchSuccess: () => {
-      lastPatchedFormStateRef.current = {
-        ...(formStateRef.current as Record<string, unknown>),
-      };
-    },
   });
 
   const { isGenerating, generate } = useDepartmentAi({});
@@ -438,7 +430,8 @@ function DepartmentComponent({
 
   const stepResources: Record<string, DepartmentResourceType[]> = useMemo(
     () => ({
-      basic: ["names", "descriptions", "flags", "settings"],
+      basic: ["names", "descriptions", "flags"],
+      settings: ["settings"],
       all: ["names", "descriptions", "flags", "settings"],
     }),
     [],
@@ -529,10 +522,18 @@ function DepartmentComponent({
   );
 
   const getStepStatus = useCallback(
-    (_stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      return formState.name_id ? "completed" : "active";
+    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
+      switch (stepId) {
+        case "basic":
+          return formState.name_id ? "completed" : "active";
+        case "settings":
+          if (!formState.name_id) return "pending";
+          return formState.setting_ids.length > 0 ? "completed" : "active";
+        default:
+          return "pending";
+      }
     },
-    [formState.name_id],
+    [formState.name_id, formState.setting_ids],
   );
 
   const steps = useMemo(
@@ -540,13 +541,14 @@ function DepartmentComponent({
       {
         id: "basic",
         title: "Basic Information",
-        description: "Set the department name, description, active status, and settings.",
-        resetFields: [
-          "name_id",
-          "description_id",
-          "flag_ids",
-          "setting_ids",
-        ],
+        description: "Set the department name, description, and active status.",
+        resetFields: ["name_id", "description_id", "flag_ids"],
+      },
+      {
+        id: "settings",
+        title: "Settings",
+        description: "Pick which settings apply to this department.",
+        resetFields: ["setting_ids"],
       },
     ],
     [],
@@ -557,8 +559,33 @@ function DepartmentComponent({
     [],
   );
 
+  // Per-step reset handler — clear only the fields relevant to that step.
+  const handleStepReset = useCallback(
+    (stepId: string) => {
+      switch (stepId) {
+        case "basic":
+          setFormState((prev) => ({
+            ...prev,
+            name_id: null,
+            name: null,
+            description_id: null,
+            description: null,
+            flag_ids: [],
+          }));
+          break;
+        case "settings":
+          setFormState((prev) => ({ ...prev, setting_ids: [] }));
+          break;
+        default:
+          break;
+      }
+    },
+    [],
+  );
+
   const renderStep = useCallback(
     ({
+      stepId,
       stepStatus,
       stepTitle,
       stepDescription,
@@ -574,84 +601,118 @@ function DepartmentComponent({
       formData: Record<string, unknown>;
       setFormData: (updates: Partial<Record<string, unknown>>) => void;
       onReset?: () => void;
-    }) => (
-      <StepCard
-        stepStatus={stepStatus}
-        stepNumber={stepNumber}
-        stepTitle={stepTitle}
-        stepDescription={stepDescription}
-        isReadonly={disabled}
-        isEditMode={isEditMode}
-        customHeader={
-          <Names
-            name_id={formState.name_id}
-            name_resource={
-              department?.names?.find((item) => item.selected) ?? null
-            }
-            show_name={true}
-            names={department?.names ?? []}
-            disabled={disabled}
-            onNameIdChange={handleNameIdChange}
-            onNameChange={handleNameChange}
-            placeholder="e.g., Customer Success"
-            defaultName="New Department"
-            required={true}
-            hideDescription={true}
-            isAutosaveEnabled={isAutosaveEnabled}
-          />
-        }
-        resetFields={["name_id", "description_id", "flag_ids", "setting_ids"]}
-        actions={
-          stableDepartmentData?.basic_show_ai_generate ? (
-            <StepCardAiButton
-              stepId="basic"
-              resourceTypes={(stepResources["basic"] ?? []) as string[]}
-              canRegenerate={canRegenerateForStepCard}
-              isGenerating={isGeneratingForStepCard}
-              onOpenModal={handleDirectStepGenerate}
-              disabled={disabled}
-            />
-          ) : undefined
-        }
-        {...(onReset ? { onReset } : {})}
-      >
-        <div className="space-y-4">
-          <Descriptions
-            description_id={formState.description_id}
-            description_resource={
-              department?.descriptions?.find((item) => item.selected) ?? null
-            }
-            show_description={true}
-            descriptions={department?.descriptions ?? []}
-            disabled={disabled}
-            onDescriptionIdChange={handleDescriptionIdChange}
-            onDescriptionChange={handleDescriptionChange}
-            required={false}
-            isAutosaveEnabled={isAutosaveEnabled}
-          />
+    }) => {
+      switch (stepId) {
+        case "basic":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              customHeader={
+                <Names
+                  name_id={formState.name_id}
+                  name_resource={
+                    department?.names?.find((item) => item.selected) ?? null
+                  }
+                  show_name={true}
+                  names={department?.names ?? []}
+                  disabled={disabled}
+                  onNameIdChange={handleNameIdChange}
+                  onNameChange={handleNameChange}
+                  placeholder="e.g., Customer Success"
+                  defaultName="New Department"
+                  required={true}
+                  hideDescription={true}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                />
+              }
+              resetFields={["name_id", "description_id", "flag_ids"]}
+              actions={
+                stableDepartmentData?.basic_show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="basic"
+                    resourceTypes={(stepResources["basic"] ?? []) as string[]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGeneratingForStepCard}
+                    onOpenModal={handleDirectStepGenerate}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
+              {...(onReset ? { onReset } : {})}
+            >
+              <div className="space-y-4">
+                <Descriptions
+                  description_id={formState.description_id}
+                  description_resource={
+                    department?.descriptions?.find((item) => item.selected) ?? null
+                  }
+                  show_description={true}
+                  descriptions={department?.descriptions ?? []}
+                  disabled={disabled}
+                  onDescriptionIdChange={handleDescriptionIdChange}
+                  onDescriptionChange={handleDescriptionChange}
+                  required={false}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                />
 
-          <Flags
-            flags={department?.flags ?? []}
-            values={flagValues}
-            show_flags={(department?.flags?.length ?? 0) > 0}
-            columns={1}
-            label="Flags"
-            disabled={disabled}
-            onChange={handleFlagToggle}
-          />
+                <Flags
+                  flags={department?.flags ?? []}
+                  values={flagValues}
+                  show_flags={(department?.flags?.length ?? 0) > 0}
+                  columns={1}
+                  label="Flags"
+                  disabled={disabled}
+                  onChange={handleFlagToggle}
+                />
+              </div>
+            </StepCard>
+          );
 
-          <Settings
-            settings_ids={formState.setting_ids}
-            settings={department?.settings ?? []}
-            disabled={disabled}
-            onChange={(ids) =>
-              setFormState((prev) => ({ ...prev, setting_ids: ids }))
-            }
-            required={false}
-          />
-        </div>
-      </StepCard>
-    ),
+        case "settings":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["setting_ids"]}
+              actions={
+                stableDepartmentData?.show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="settings"
+                    resourceTypes={(stepResources["settings"] ?? []) as string[]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGeneratingForStepCard}
+                    onOpenModal={handleDirectStepGenerate}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
+              {...(onReset ? { onReset } : {})}
+            >
+              <Settings
+                settings_ids={formState.setting_ids}
+                settings={department?.settings ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, setting_ids: ids }))
+                }
+                required={false}
+              />
+            </StepCard>
+          );
+
+        default:
+          return null;
+      }
+    },
     [
       department?.descriptions,
       department?.flags,
@@ -700,20 +761,10 @@ function DepartmentComponent({
           getStepStatus={getStepStatus}
           serverData={departmentData as unknown as Record<string, unknown> | undefined}
           formFieldKeys={formFieldKeys}
-          resetSuccessMessage={() => "Basic information reset"}
-          onReset={(stepId) => {
-            if (stepId === "basic") {
-              setFormState({
-                name_id: null,
-                name: null,
-                description_id: null,
-                description: null,
-                flag_ids: [],
-                setting_ids: [],
-                pending_ids: [],
-              });
-            }
-          }}
+          resetSuccessMessage={(stepId) =>
+            stepId === "settings" ? "Settings reset" : "Basic information reset"
+          }
+          onReset={handleStepReset}
           onSubmit={handleSubmit}
           submitButton={{
             backUrl: "/system/departments",

@@ -30,11 +30,14 @@ import type {
 } from "@/app/(main)/training/simulations/page";
 import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useSimulationAi } from "@/hooks/use-simulation-ai";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,17 +52,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -1023,41 +1017,34 @@ export function Simulations({
               </div>
 
               <div className="flex items-center space-x-2 flex-wrap">
-                {/* Scenario Filter */}
-                {scenarioColumn && (
-                  <DataTableFacetedFilter
-                    column={scenarioColumn}
-                    title="Scenario"
-                    options={scenarioOptions}
-                    isServerDriven={true}
-                    onSearchChange={handleScenarioSearchChange}
-                    searchValue={scenarioSearch}
-                  />
-                )}
-
-                {/* Cohort Filter */}
-                {cohortColumn && (
-                  <DataTableFacetedFilter
-                    column={cohortColumn}
-                    title="Cohort"
-                    options={cohortOptions}
-                    isServerDriven={true}
-                    onSearchChange={handleCohortSearchChange}
-                    searchValue={cohortSearch}
-                  />
-                )}
-
-                {/* Department Filter */}
-                {departmentsColumn && (
-                  <DataTableFacetedFilter
-                    column={departmentsColumn}
-                    title="Department"
-                    options={departmentOptions}
-                    isServerDriven={true}
-                    onSearchChange={handleDepartmentSearchChange}
-                    searchValue={departmentSearch}
-                  />
-                )}
+                <ThreePickerFilters
+                  slots={[
+                    {
+                      column: scenarioColumn,
+                      title: "Scenario",
+                      options: scenarioOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleScenarioSearchChange,
+                      searchValue: scenarioSearch,
+                    },
+                    {
+                      column: cohortColumn,
+                      title: "Cohort",
+                      options: cohortOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleCohortSearchChange,
+                      searchValue: cohortSearch,
+                    },
+                    {
+                      column: departmentsColumn,
+                      title: "Department",
+                      options: departmentOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleDepartmentSearchChange,
+                      searchValue: departmentSearch,
+                    },
+                  ]}
+                />
 
                 {isFiltered && (
                   <Button
@@ -1146,215 +1133,113 @@ export function Simulations({
         </AlertDialog>
 
         {/* Bulk Delete Confirmation Dialog */}
-        <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
-          <AlertDialogContent
-            aria-labelledby="bulk-delete-simulation-title"
-            data-testid="dialog-bulk-delete-simulation"
-          >
-            <AlertDialogHeader>
-              <AlertDialogTitle id="bulk-delete-simulation-title">
-                Delete {deletableSimulations.length} Simulation(s)
-              </AlertDialogTitle>
-              <AlertDialogDescription asChild>
-                <div className="space-y-3">
-                  <p>This action cannot be undone.</p>
-                  {deletableSimulations.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                      <ul className="text-sm space-y-0.5">
-                        {deletableSimulations.map((s) => (
-                          <li key={s.simulation_id} className="flex items-center gap-1.5">
-                            <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                            {s.name || "Unnamed Simulation"}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {nonDeletableSimulations.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by cohorts):</p>
-                      <ul className="text-sm space-y-0.5">
-                        {nonDeletableSimulations.map((s) => (
-                          <li key={s.simulation_id} className="flex items-center gap-1.5 text-muted-foreground">
-                            <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
-                            {s.name || "Unnamed Simulation"}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+        <BulkDeleteDialog
+          open={showBulkDeleteDialog}
+          onOpenChange={setShowBulkDeleteDialog}
+          count={deletableSimulations.length}
+          entityLabel="simulation"
+          entityLabelPlural="simulations"
+          isDeleting={isBulkDeleting}
+          onConfirm={handleBulkDelete}
+          description={
+            <>
+              <p>This action cannot be undone.</p>
+              {deletableSimulations.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                  <ul className="text-sm space-y-0.5">
+                    {deletableSimulations.map((s) => (
+                      <li key={s.simulation_id} className="flex items-center gap-1.5">
+                        <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                        {s.name || "Unnamed Simulation"}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isBulkDeleting}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleBulkDelete}
-                disabled={isBulkDeleting}
-                variant="destructive"
-              >
-                {isBulkDeleting ? "Deleting..." : `Delete ${deletableSimulations.length}`}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              )}
+              {nonDeletableSimulations.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by cohorts):</p>
+                  <ul className="text-sm space-y-0.5">
+                    {nonDeletableSimulations.map((s) => (
+                      <li key={s.simulation_id} className="flex items-center gap-1.5 text-muted-foreground">
+                        <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                        {s.name || "Unnamed Simulation"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          }
+        />
 
         {/* Bulk Edit Modal */}
-        <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Edit {editableSimulations.length} Simulation(s)</DialogTitle>
-              <DialogDescription>
-                Only changed fields will be applied. Unchanged fields keep their current values.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-5 py-4">
-              {/* Active Status — Switch with tri-state */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Active Status</Label>
-                <div className="flex items-center gap-3">
-                  {bulkEditActiveStatus === null ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">No change</span>
-                      <span className="text-xs text-muted-foreground">—</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => setBulkEditActiveStatus(true)}
-                      >
-                        Set Active
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => setBulkEditActiveStatus(false)}
-                      >
-                        Set Inactive
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <Switch
-                        checked={bulkEditActiveStatus}
-                        onCheckedChange={setBulkEditActiveStatus}
-                      />
-                      <span className="text-sm">{bulkEditActiveStatus ? "Active" : "Inactive"}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs text-muted-foreground"
-                        onClick={() => setBulkEditActiveStatus(null)}
-                      >
-                        Reset
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
+        <BulkEditDialog
+          open={showBulkEditDialog}
+          onOpenChange={setShowBulkEditDialog}
+          count={editableSimulations.length}
+          entityLabelPlural="simulations"
+          isSaving={isBulkEditing}
+          onSave={handleBulkEdit}
+        >
+          <BulkEditFlagField
+            label="Active Status"
+            value={bulkEditActiveStatus}
+            onChange={setBulkEditActiveStatus}
+          />
 
-              {/* Practice Mode — Switch with tri-state */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Practice Mode</Label>
-                <div className="flex items-center gap-3">
-                  {bulkEditPracticeMode === null ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">No change</span>
-                      <span className="text-xs text-muted-foreground">—</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => setBulkEditPracticeMode(true)}
-                      >
-                        Enable
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => setBulkEditPracticeMode(false)}
-                      >
-                        Disable
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <Switch
-                        checked={bulkEditPracticeMode}
-                        onCheckedChange={setBulkEditPracticeMode}
-                      />
-                      <span className="text-sm">{bulkEditPracticeMode ? "Enabled" : "Disabled"}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs text-muted-foreground"
-                        onClick={() => setBulkEditPracticeMode(null)}
-                      >
-                        Reset
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
+          <BulkEditFlagField
+            label="Practice Mode"
+            trueLabel="Enabled"
+            falseLabel="Disabled"
+            value={bulkEditPracticeMode}
+            onChange={setBulkEditPracticeMode}
+          />
 
-              {/* Departments — GenericPicker multi-select */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Departments</Label>
-                  {bulkEditDepartmentIds !== null && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2 text-xs"
-                      onClick={() => setBulkEditDepartmentIds(null)}
-                    >
-                      Reset
-                    </Button>
-                  )}
-                </div>
-                {bulkEditDepartmentIds === null ? (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-muted-foreground"
-                    onClick={() => setBulkEditDepartmentIds([])}
-                  >
-                    No change — click to edit departments
-                  </Button>
-                ) : (
-                  <GenericPicker
-                    items={departmentOptions}
-                    selectedIds={bulkEditDepartmentIds}
-                    onSelect={setBulkEditDepartmentIds}
-                    multiSelect
-                    getId={(d) => d.value}
-                    getLabel={(d) => d.label}
-                    placeholder="Select departments..."
-                    showClearAction
-                    clearActionLabel="Clear All"
-                    searchPlaceholder="Search departments..."
-                    emptyMessage="No departments found."
-                    groupHeading="Departments"
-                    hideSelectedChips={false}
-                    showClearAll
-                  />
-                )}
-              </div>
+          {/* Departments — GenericPicker multi-select */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Departments</Label>
+              {bulkEditDepartmentIds !== null && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => setBulkEditDepartmentIds(null)}
+                >
+                  Reset
+                </Button>
+              )}
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowBulkEditDialog(false)} disabled={isBulkEditing}>
-                Cancel
+            {bulkEditDepartmentIds === null ? (
+              <Button
+                variant="outline"
+                className="w-full justify-start text-muted-foreground"
+                onClick={() => setBulkEditDepartmentIds([])}
+              >
+                No change — click to edit departments
               </Button>
-              <Button onClick={handleBulkEdit} disabled={isBulkEditing}>
-                {isBulkEditing ? "Applying..." : "Apply Changes"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            ) : (
+              <GenericPicker
+                items={departmentOptions}
+                selectedIds={bulkEditDepartmentIds}
+                onSelect={setBulkEditDepartmentIds}
+                multiSelect
+                getId={(d) => d.value}
+                getLabel={(d) => d.label}
+                placeholder="Select departments..."
+                showClearAction
+                clearActionLabel="Clear All"
+                searchPlaceholder="Search departments..."
+                emptyMessage="No departments found."
+                groupHeading="Departments"
+                hideSelectedChips={false}
+                showClearAll
+              />
+            )}
+          </div>
+        </BulkEditDialog>
 
       {/* Bulk Import Dialog */}
       {parseCsvAction && importFields && (

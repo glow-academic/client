@@ -7,7 +7,7 @@
  * 06/18/2025
  */
 "use client";
-import { Copy, Cpu, Edit, Trash2, X } from "lucide-react";
+import { Copy, Cpu, Edit, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -31,7 +31,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useModelAi } from "@/hooks/use-model-ai";
 import { useProfile } from "@/contexts/profile-context";
 import {
@@ -51,8 +55,10 @@ import type {
   DuplicateModelIn,
   DuplicateModelOut,
   ModelsListOut,
+  UpdateModelIn,
+  UpdateModelOut,
 } from "@/app/(main)/intelligence/models/page";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Input } from "@/components/ui/input";
 
@@ -64,6 +70,7 @@ export interface ModelsProps {
     input: DuplicateModelIn
   ) => Promise<DuplicateModelOut>;
   deleteModelAction?: (input: DeleteModelIn) => Promise<DeleteModelOut>;
+  updateModelAction?: (input: UpdateModelIn) => Promise<UpdateModelOut>;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;
@@ -78,6 +85,7 @@ export default function Models({
   listData: serverListData,
   duplicateModelAction,
   deleteModelAction,
+  updateModelAction,
   pageIndex,
   pageSize,
   totalCount,
@@ -111,6 +119,55 @@ export default function Models({
   // Use server-provided data directly
   const modelsData = serverListData;
   const models = useMemo(() => modelsData?.models || [], [modelsData?.models]);
+
+  // Flag catalog (e.g. model_active) — used to reconstruct flag_ids on bulk edit.
+  const flagOptions = useMemo(() => {
+    return (modelsData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [modelsData?.flag_filter]);
+
+  // Selection state
+  const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
+  const selectedCount = selectedModelIds.length;
+  const selectedModels = useMemo(() => {
+    return models.filter((m) => m.model_id && selectedModelIds.includes(m.model_id));
+  }, [models, selectedModelIds]);
+  const deletableModels = useMemo(
+    () => selectedModels.filter((m) => m.can_delete),
+    [selectedModels],
+  );
+  const nonDeletableModels = useMemo(
+    () => selectedModels.filter((m) => !m.can_delete),
+    [selectedModels],
+  );
+  const editableModels = useMemo(
+    () => selectedModels.filter((m) => m.can_edit ?? true),
+    [selectedModels],
+  );
+  const toggleSelection = useCallback((modelId: string) => {
+    setSelectedModelIds((prev) =>
+      prev.includes(modelId) ? prev.filter((id) => id !== modelId) : [...prev, modelId]
+    );
+  }, []);
+  const clearSelection = useCallback(() => setSelectedModelIds([]), []);
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = models.filter((m) => m.model_id).map((m) => m.model_id!);
+    setSelectedModelIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [models]);
+  const allPageSelected = useMemo(() => {
+    const pageIds = models.filter((m) => m.model_id).map((m) => m.model_id!);
+    return pageIds.length > 0 && pageIds.every((id) => selectedModelIds.includes(id));
+  }, [models, selectedModelIds]);
+
+  // Bulk delete state
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk edit state
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
 
   // Filter options from server-provided ListFilterSection
   const providerOptions = useMemo(
@@ -147,14 +204,6 @@ export default function Models({
         }))
         .filter((opt) => opt.value && opt.label),
     [modelsData?.agent_filter]
-  );
-
-  const statusOptions = useMemo(
-    () => [
-      { value: "true", label: "Active" },
-      { value: "false", label: "Inactive" },
-    ],
-    []
   );
 
   // Table state - initialize server-driven filters from URL, client-only filters start empty
@@ -503,8 +552,6 @@ export default function Models({
 
   // Get column references for toolbar
   const providerColumn = table.getColumn("provider");
-  const customModelColumn = table.getColumn("is_custom");
-  const activeColumn = table.getColumn("active");
   const departmentsColumn = table.getColumn("departments");
   const agentsColumn = table.getColumn("agents");
   const isFiltered =
@@ -580,19 +627,102 @@ export default function Models({
     router.push(`/intelligence/models/${modelId}`);
   };
 
-  const renderModelCard = (model: (typeof models)[number]) => (
+  const handleBulkDelete = async () => {
+    if (!deleteModelAction || deletableModels.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const ids = deletableModels.map((m) => m.model_id!);
+      await deleteModelAction({ body: { model_ids: ids, accept: true } });
+      toast.success(`${ids.length} model(s) deleted successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete models";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to delete models");
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (!updateModelAction || editableModels.length === 0) return;
+
+    const hasActiveChange = bulkEditActiveStatus !== null;
+    if (!hasActiveChange) {
+      toast.error("No changes selected");
+      return;
+    }
+
+    const activeFlagId = flagOptions.find((f) => f.type === "model_active")?.id;
+
+    setIsBulkEditing(true);
+    try {
+      const items = editableModels.map((m) => {
+        let flag_ids: string[] | undefined;
+        if (hasActiveChange) {
+          const isActive = bulkEditActiveStatus;
+          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+        }
+        return {
+          id: m.model_id!,
+          ...(hasActiveChange && { flag_ids }),
+        };
+      });
+
+      await updateModelAction({ body: { models: items } } as UpdateModelIn);
+      toast.success(`${items.length} model(s) updated successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update models";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to update models");
+    } finally {
+      setIsBulkEditing(false);
+      setShowBulkEditDialog(false);
+    }
+  };
+
+  const openBulkEditDialog = () => {
+    setBulkEditActiveStatus(null);
+    setShowBulkEditDialog(true);
+  };
+
+  const renderModelCard = (model: (typeof models)[number]) => {
+    const isSelected = model.model_id ? selectedModelIds.includes(model.model_id) : false;
+    return (
     <Card
       key={model.model_id}
-      className="hover:shadow-md transition-shadow flex flex-col h-full min-h-[220px]"
+      className={`group hover:shadow-md transition-all flex flex-col h-full min-h-[220px] ${
+        isSelected ? "ring-2 ring-primary" : ""
+      }`}
       data-testid="model-card"
       data-model-id={model.model_id}
       role="gridcell"
       aria-label={`model card ${model.name || "Unnamed Model"}`}
+      aria-selected={isSelected}
     >
       <CardHeader className="flex-0">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
           <div className="space-y-1 flex-1 min-w-0">
             <CardTitle className="text-base flex items-center gap-2">
+              <div
+                className={`transition-all overflow-hidden flex-shrink-0 ${
+                  selectedCount > 0
+                    ? "w-5 opacity-100"
+                    : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                }`}
+                data-action-button
+              >
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => {
+                    if (model.model_id) toggleSelection(model.model_id);
+                  }}
+                  className="rounded-full h-5 w-5"
+                  aria-label={`Select model ${model.name || "Unnamed"}`}
+                />
+              </div>
               <Cpu className="h-4 w-4 flex-shrink-0" />
               <span className="truncate">{model.name}</span>
             </CardTitle>
@@ -663,108 +793,134 @@ export default function Models({
         )}
       </CardFooter>
     </Card>
-  );
+    );
+  };
 
   return (
     <TooltipProvider>
       <div className="space-y-6">
         <div className="space-y-4">
-          {/* Toolbar */}
-          <div
-            className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
-            data-testid="models-toolbar"
-          >
-            <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
-              <div className="w-full md:w-auto">
-                <Input
-                  data-testid="models-search"
-                  placeholder="Search models..."
-                  value={searchTerm}
-                  onChange={(event) => handleSearchChange(event.target.value)}
-                  onBlur={handleSearchBlur}
-                  onKeyDown={handleSearchKeyDown}
-                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
-                  aria-label="Search models by name"
-                  aria-controls="models-grid"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2 flex-wrap">
-                <DataTableFacetedFilter
-                  column={providerColumn}
-                  title="Provider"
-                  options={providerOptions}
-                  isServerDriven={true}
-                  onSearchChange={handleProviderSearchChange}
-                  searchValue={localProviderSearch}
-                />
-
-                <DataTableFacetedFilter
-                  column={departmentsColumn}
-                  title="Department"
-                  options={departmentOptions}
-                  isServerDriven={true}
-                  onSearchChange={handleDepartmentSearchChange}
-                  searchValue={localDepartmentSearch}
-                />
-
-                <DataTableFacetedFilter
-                  column={agentsColumn}
-                  title="Agent"
-                  options={agentOptions}
-                  isServerDriven={true}
-                  onSearchChange={handleAgentSearchChange}
-                  searchValue={localAgentSearch}
-                />
-
-                {customModelColumn && (
-                  <DataTableFacetedFilter
-                    column={customModelColumn}
-                    title="Type"
-                    options={[
-                      { value: "true", label: "Custom Models" },
-                      { value: "false", label: "Standard Models" },
-                    ]}
-                  />
-                )}
-
-                {activeColumn && statusOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={activeColumn}
-                    title="Status"
-                    options={statusOptions}
-                  />
-                )}
-
-                {isFiltered && (
+          {/* Toolbar — swaps between filter bar and selection action bar */}
+          {selectedCount > 0 ? (
+            <div
+              className="flex items-center justify-between gap-2"
+              data-testid="models-toolbar"
+            >
+              <div className="flex items-center gap-2">
+                {deleteModelAction && (
                   <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setSearchTerm("");
-                      setLocalProviderSearch("");
-                      setLocalDepartmentSearch("");
-                      setLocalAgentSearch("");
-                      table.resetColumnFilters();
-                      updateModelsParams({
-                        page: 0,
-                        search: "",
-                        providerIds: [],
-                        departmentIds: [],
-                        agentIds: [],
-                        providerSearch: "",
-                        departmentSearch: "",
-                        agentSearch: "",
-                      });
-                    }}
-                    className="h-8 px-2 lg:px-3 hidden md:flex"
+                    variant="destructive"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setShowBulkDeleteDialog(true)}
+                    disabled={deletableModels.length === 0}
                   >
-                    Reset
-                    <X className="ml-2 h-4 w-4" />
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete {deletableModels.length} of {selectedCount}
                   </Button>
                 )}
+                {updateModelAction && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={openBulkEditDialog}
+                    disabled={editableModels.length === 0}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit {editableModels.length} of {selectedCount}
+                  </Button>
+                )}
+                {!allPageSelected && (
+                  <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
+                    Select All
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
+                  Unselect All
+                </Button>
               </div>
             </div>
-          </div>
+          ) : (
+            <div
+              className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+              data-testid="models-toolbar"
+            >
+              <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+                <div className="w-full md:w-auto">
+                  <Input
+                    data-testid="models-search"
+                    placeholder="Search models..."
+                    value={searchTerm}
+                    onChange={(event) => handleSearchChange(event.target.value)}
+                    onBlur={handleSearchBlur}
+                    onKeyDown={handleSearchKeyDown}
+                    className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                    aria-label="Search models by name"
+                    aria-controls="models-grid"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2 flex-wrap">
+                  <ThreePickerFilters
+                    slots={[
+                      {
+                        column: providerColumn,
+                        title: "Provider",
+                        options: providerOptions,
+                        isServerDriven: true,
+                        onSearchChange: handleProviderSearchChange,
+                        searchValue: localProviderSearch,
+                      },
+                      {
+                        column: departmentsColumn,
+                        title: "Department",
+                        options: departmentOptions,
+                        isServerDriven: true,
+                        onSearchChange: handleDepartmentSearchChange,
+                        searchValue: localDepartmentSearch,
+                      },
+                      {
+                        column: agentsColumn,
+                        title: "Agent",
+                        options: agentOptions,
+                        isServerDriven: true,
+                        onSearchChange: handleAgentSearchChange,
+                        searchValue: localAgentSearch,
+                      },
+                    ]}
+                  />
+
+                  {isFiltered && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setLocalProviderSearch("");
+                        setLocalDepartmentSearch("");
+                        setLocalAgentSearch("");
+                        table.resetColumnFilters();
+                        updateModelsParams({
+                          page: 0,
+                          search: "",
+                          providerIds: [],
+                          departmentIds: [],
+                          agentIds: [],
+                          providerSearch: "",
+                          departmentSearch: "",
+                          agentSearch: "",
+                        });
+                      }}
+                      className="h-8 px-2 lg:px-3 hidden md:flex"
+                    >
+                      Reset
+                      <X className="ml-2 h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Cards Grid */}
           <div
@@ -819,6 +975,68 @@ export default function Models({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <BulkDeleteDialog
+          open={showBulkDeleteDialog}
+          onOpenChange={setShowBulkDeleteDialog}
+          count={deletableModels.length}
+          entityLabel="model"
+          entityLabelPlural="models"
+          isDeleting={isBulkDeleting}
+          onConfirm={handleBulkDelete}
+          description={
+            <>
+              <p>This action cannot be undone.</p>
+              {deletableModels.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                  <ul className="text-sm space-y-0.5">
+                    {deletableModels.map((m) => (
+                      <li key={m.model_id} className="flex items-center gap-1.5">
+                        <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                        {m.name || "Unnamed Model"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {nonDeletableModels.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                    Cannot be deleted (in use):
+                  </p>
+                  <ul className="text-sm space-y-0.5">
+                    {nonDeletableModels.map((m) => (
+                      <li
+                        key={m.model_id}
+                        className="flex items-center gap-1.5 text-muted-foreground"
+                      >
+                        {m.name || "Unnamed Model"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          }
+        />
+
+        {/* Bulk Edit Modal */}
+        <BulkEditDialog
+          open={showBulkEditDialog}
+          onOpenChange={setShowBulkEditDialog}
+          count={editableModels.length}
+          entityLabelPlural="models"
+          isSaving={isBulkEditing}
+          onSave={handleBulkEdit}
+        >
+          <BulkEditFlagField
+            label="Active Status"
+            value={bulkEditActiveStatus}
+            onChange={setBulkEditActiveStatus}
+          />
+        </BulkEditDialog>
 
       </div>
     </TooltipProvider>

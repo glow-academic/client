@@ -7,7 +7,7 @@
  * 06/18/2025
  */
 "use client";
-import { Copy, Edit, Eye, FileCheck, Star, Trash2, X } from "lucide-react";
+import { Copy, Edit, Eye, FileCheck, Pencil, Star, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -29,10 +29,15 @@ import type {
   DuplicateRubricIn,
   DuplicateRubricOut,
   RubricsListOut,
+  UpdateRubricIn,
+  UpdateRubricOut,
 } from "@/app/(main)/system/rubrics/page";
 import TableRubric from "@/components/artifacts/rubric/TableRubric";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useProfile } from "@/contexts/profile-context";
 import {
   AlertDialog,
@@ -46,6 +51,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { useRubricAi } from "@/hooks/use-rubric-ai";
 
@@ -57,6 +63,7 @@ export interface RubricsProps {
     input: DuplicateRubricIn,
   ) => Promise<DuplicateRubricOut>;
   deleteRubricAction?: (input: DeleteRubricIn) => Promise<DeleteRubricOut>;
+  updateRubricAction?: (input: UpdateRubricIn) => Promise<UpdateRubricOut>;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;
@@ -70,6 +77,7 @@ export default function Rubrics({
   listData: serverListData,
   duplicateRubricAction,
   deleteRubricAction,
+  updateRubricAction,
   pageIndex,
   pageSize,
   totalCount,
@@ -126,6 +134,56 @@ export default function Rubrics({
     () => rubricsData?.standards || [],
     [rubricsData],
   );
+
+  // Flag catalog (e.g. rubric_active) — used to reconstruct flag_ids on bulk edit.
+  const flagOptions = useMemo(() => {
+    return (rubricsData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [rubricsData?.flag_filter]);
+
+  // Selection state
+  const [selectedRubricIds, setSelectedRubricIds] = useState<string[]>([]);
+  const selectedCount = selectedRubricIds.length;
+  const selectedRubrics = useMemo(() => {
+    return rubrics.filter((r) => r.rubric_id && selectedRubricIds.includes(r.rubric_id));
+  }, [rubrics, selectedRubricIds]);
+  const deletableRubrics = useMemo(
+    () => selectedRubrics.filter((r) => r.can_delete),
+    [selectedRubrics],
+  );
+  const nonDeletableRubrics = useMemo(
+    () => selectedRubrics.filter((r) => !r.can_delete),
+    [selectedRubrics],
+  );
+  const editableRubrics = useMemo(
+    () => selectedRubrics.filter((r) => r.can_edit ?? true),
+    [selectedRubrics],
+  );
+
+  const toggleSelection = useCallback((rubricId: string) => {
+    setSelectedRubricIds((prev) =>
+      prev.includes(rubricId) ? prev.filter((id) => id !== rubricId) : [...prev, rubricId]
+    );
+  }, []);
+  const clearBulkSelection = useCallback(() => setSelectedRubricIds([]), []);
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = rubrics.filter((r) => r.rubric_id).map((r) => r.rubric_id!);
+    setSelectedRubricIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [rubrics]);
+  const allPageSelected = useMemo(() => {
+    const pageIds = rubrics.filter((r) => r.rubric_id).map((r) => r.rubric_id!);
+    return pageIds.length > 0 && pageIds.every((id) => selectedRubricIds.includes(id));
+  }, [rubrics, selectedRubricIds]);
+
+  // Bulk delete state
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk edit state
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
 
   // Filter options from server-provided ListFilterSection
   const departmentOptions = useMemo(
@@ -495,6 +553,67 @@ export default function Rubrics({
     router.push(`/system/rubrics/${id}`);
   };
 
+  const handleBulkDelete = async () => {
+    if (!deleteRubricAction || deletableRubrics.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const ids = deletableRubrics.map((r) => r.rubric_id!);
+      await deleteRubricAction({ body: { rubric_ids: ids, accept: true } });
+      toast.success(`${ids.length} rubric(s) deleted successfully`);
+      clearBulkSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete rubrics";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to delete rubrics");
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (!updateRubricAction || editableRubrics.length === 0) return;
+
+    const hasActiveChange = bulkEditActiveStatus !== null;
+    if (!hasActiveChange) {
+      toast.error("No changes selected");
+      return;
+    }
+
+    const activeFlagId = flagOptions.find((f) => f.type === "rubric_active")?.id;
+
+    setIsBulkEditing(true);
+    try {
+      const items = editableRubrics.map((r) => {
+        let flag_ids: string[] | undefined;
+        if (hasActiveChange) {
+          const isActive = bulkEditActiveStatus;
+          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+        }
+        return {
+          id: r.rubric_id!,
+          ...(hasActiveChange && { flag_ids }),
+        };
+      });
+
+      await updateRubricAction({ body: { rubrics: items } } as UpdateRubricIn);
+      toast.success(`${items.length} rubric(s) updated successfully`);
+      clearBulkSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update rubrics";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to update rubrics");
+    } finally {
+      setIsBulkEditing(false);
+      setShowBulkEditDialog(false);
+    }
+  };
+
+  const openBulkEditDialog = () => {
+    setBulkEditActiveStatus(null);
+    setShowBulkEditDialog(true);
+  };
+
   const renderRubricCard = (rubric: (typeof rubrics)[number]) => {
     const groupIds = rubric.standard_group_ids || [];
     let totalPoints = 0;
@@ -513,20 +632,41 @@ export default function Rubrics({
         ? Math.round((totalPassPoints / totalPoints) * 100)
         : (rubric.pass_percentage ?? 0);
 
+    const isSelected = rubric.rubric_id ? selectedRubricIds.includes(rubric.rubric_id) : false;
     return (
       <Card
         key={rubric.rubric_id}
-        className="w-full"
+        className={`group w-full transition-all ${isSelected ? "ring-2 ring-primary" : ""}`}
         data-testid="rubric-card"
         data-rubric-id={rubric.rubric_id}
+        aria-selected={isSelected}
       >
         {/* Header */}
         <CardHeader className="border-b">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="space-y-2 flex-1">
-              <CardTitle className="text-2xl font-bold">
-                {rubric.name}
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <div
+                  className={`transition-all overflow-hidden flex-shrink-0 ${
+                    selectedCount > 0
+                      ? "w-5 opacity-100"
+                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                  }`}
+                  data-action-button
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => {
+                      if (rubric.rubric_id) toggleSelection(rubric.rubric_id);
+                    }}
+                    className="rounded-full h-5 w-5"
+                    aria-label={`Select rubric ${rubric.name || "Unnamed"}`}
+                  />
+                </div>
+                <CardTitle className="text-2xl font-bold">
+                  {rubric.name}
+                </CardTitle>
+              </div>
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Star className="h-4 w-4" />
@@ -670,7 +810,48 @@ export default function Rubrics({
   return (
     <div className="space-y-6">
       <div className="space-y-4" data-testid="rubrics-data-table">
-        {/* Toolbar */}
+        {/* Toolbar — swaps between filter bar and selection action bar */}
+        {selectedCount > 0 ? (
+          <div
+            className="flex items-center justify-between gap-2"
+            data-testid="rubrics-toolbar"
+          >
+            <div className="flex items-center gap-2">
+              {deleteRubricAction && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setShowBulkDeleteDialog(true)}
+                  disabled={deletableRubrics.length === 0}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete {deletableRubrics.length} of {selectedCount}
+                </Button>
+              )}
+              {updateRubricAction && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={openBulkEditDialog}
+                  disabled={editableRubrics.length === 0}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit {editableRubrics.length} of {selectedCount}
+                </Button>
+              )}
+              {!allPageSelected && (
+                <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
+                  Select All
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" className="h-8" onClick={clearBulkSelection}>
+                Unselect All
+              </Button>
+            </div>
+          </div>
+        ) : (
         <div
           className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
           data-testid="rubrics-toolbar"
@@ -689,30 +870,30 @@ export default function Rubrics({
             </div>
 
             <div className="flex items-center space-x-2 flex-wrap">
-              {passPercentageColumn && passPercentageOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={passPercentageColumn}
-                  title="Pass %"
-                  options={passPercentageOptions}
-                />
-              )}
-
-              <DataTableFacetedFilter
-                column={departmentsColumn}
-                title="Department"
-                options={departmentOptions}
-                isServerDriven={true}
-                onSearchChange={handleDepartmentSearchChange}
-                searchValue={localDepartmentSearch}
-              />
-
-              <DataTableFacetedFilter
-                column={simulationsColumn}
-                title="Simulation"
-                options={simulationOptions}
-                isServerDriven={true}
-                onSearchChange={handleSimulationSearchChange}
-                searchValue={localSimulationSearch}
+              <ThreePickerFilters
+                slots={[
+                  {
+                    column: departmentsColumn,
+                    title: "Department",
+                    options: departmentOptions,
+                    isServerDriven: true,
+                    onSearchChange: handleDepartmentSearchChange,
+                    searchValue: localDepartmentSearch,
+                  },
+                  {
+                    column: simulationsColumn,
+                    title: "Simulation",
+                    options: simulationOptions,
+                    isServerDriven: true,
+                    onSearchChange: handleSimulationSearchChange,
+                    searchValue: localSimulationSearch,
+                  },
+                  {
+                    column: passPercentageColumn,
+                    title: "Pass %",
+                    options: passPercentageOptions,
+                  },
+                ]}
               />
 
               {isFiltered && (
@@ -741,6 +922,7 @@ export default function Rubrics({
             </div>
           </div>
         </div>
+        )}
 
         {/* Rubrics cards */}
         <div className="space-y-4" data-testid="rubrics-grid">
@@ -787,6 +969,68 @@ export default function Rubrics({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <BulkDeleteDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        count={deletableRubrics.length}
+        entityLabel="rubric"
+        entityLabelPlural="rubrics"
+        isDeleting={isBulkDeleting}
+        onConfirm={handleBulkDelete}
+        description={
+          <>
+            <p>This action cannot be undone.</p>
+            {deletableRubrics.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                <ul className="text-sm space-y-0.5">
+                  {deletableRubrics.map((r) => (
+                    <li key={r.rubric_id} className="flex items-center gap-1.5">
+                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                      {r.name || "Unnamed Rubric"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {nonDeletableRubrics.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                  Cannot be deleted (in use):
+                </p>
+                <ul className="text-sm space-y-0.5">
+                  {nonDeletableRubrics.map((r) => (
+                    <li
+                      key={r.rubric_id}
+                      className="flex items-center gap-1.5 text-muted-foreground"
+                    >
+                      {r.name || "Unnamed Rubric"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        }
+      />
+
+      {/* Bulk Edit Modal */}
+      <BulkEditDialog
+        open={showBulkEditDialog}
+        onOpenChange={setShowBulkEditDialog}
+        count={editableRubrics.length}
+        entityLabelPlural="rubrics"
+        isSaving={isBulkEditing}
+        onSave={handleBulkEdit}
+      >
+        <BulkEditFlagField
+          label="Active Status"
+          value={bulkEditActiveStatus}
+          onChange={setBulkEditActiveStatus}
+        />
+      </BulkEditDialog>
 
     </div>
   );

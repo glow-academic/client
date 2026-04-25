@@ -9,7 +9,6 @@
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -24,7 +23,6 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  SlidersHorizontal,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -59,7 +57,6 @@ export interface EvalHistoryProps {
   pageIndex: number;
   pageSize: number;
   isLoading?: boolean;
-  showCustomize?: boolean;
 }
 
 export default function EvalHistory({
@@ -68,7 +65,6 @@ export default function EvalHistory({
   pageIndex,
   pageSize,
   isLoading = false,
-  showCustomize = false,
 }: EvalHistoryProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -284,16 +280,6 @@ export default function EvalHistory({
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
         />
-        {showCustomize && (
-          <Button
-            onClick={() => router.push("/test/benchmark/custom")}
-            size="sm"
-            data-testid="benchmark-customize-button"
-          >
-            <SlidersHorizontal className="h-4 w-4 mr-2" />
-            Customize
-          </Button>
-        )}
       </div>
 
       {/* Table */}

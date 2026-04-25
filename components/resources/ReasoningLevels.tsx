@@ -1,13 +1,13 @@
 /**
  * ReasoningLevels.tsx
- * Resource component for reasoning level selection
- * Uses GenericPicker for selection
- * Creates resources independently and reports resource IDs to parent
+ * Single-select reasoning level picker. Card grid (SelectableGrid horizontal)
+ * with click-to-toggle, suggested dot, pending badge, and accept/reject —
+ * mirrors Providers.tsx.
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -28,32 +28,26 @@ export interface ReasoningLevelResourceItem {
   pending?: boolean | null;
 }
 
-export interface ReasoningLevelItem {
+interface ReasoningLevelGridItem {
   id: string;
-  reasoning_level: string;
+  name: string;
 }
 
 export interface ReasoningLevelsProps {
-  reasoning_level_id?: string | null; // Current reasoning_level_id (standardized prop name)
-  reasoning_level_resource?: ReasoningLevelResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
-  show_reasoning_levels?: boolean; // Whether to show this resource picker
-  reasoning_levels?: ReasoningLevelResourceItem[]; // Array of all available reasoning level options
-  disabled?: boolean; // Based on can_edit flag
-  onReasoningLevelIdChange: (
-    reasoningLevelId: string | null
-  ) => void; // Update reasoning_level_id in parent form state
+  reasoning_level_id?: string | null;
+  reasoning_level_resource?: ReasoningLevelResourceItem | null;
+  show_reasoning_levels?: boolean;
+  reasoning_levels?: ReasoningLevelResourceItem[];
+  disabled?: boolean;
+  onReasoningLevelIdChange: (reasoningLevelId: string | null) => void;
   label?: string;
-  placeholder?: string;
   required?: boolean;
   id?: string;
-  "data-testid"?: string;
   helpText?: string;
-  searchTerm?: string;
-  onSearchChange?: (term: string) => void;
-  aiReasoningLevelResources?: Array<{
-    reasoning_level_id?: string | null;
-    reasoning_level?: string | null;
-  }> | null;
+}
+
+function titleCase(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 export function ReasoningLevels({
@@ -64,196 +58,152 @@ export function ReasoningLevels({
   disabled = false,
   onReasoningLevelIdChange,
   label = "Reasoning Level",
-  placeholder = "Select a reasoning level",
   required = false,
   id = "reasoning_level",
-  "data-testid": dataTestId,
   helpText,
-  searchTerm,
-  onSearchChange,
-  aiReasoningLevelResources: _aiReasoningLevelResources,
 }: ReasoningLevelsProps) {
   const resourceId = reasoning_level_id ?? null;
   const show = show_reasoning_levels ?? true;
-  const allReasoningLevels = useMemo(() => reasoning_levels ?? [], [reasoning_levels]);
+  const allLevels = useMemo(() => reasoning_levels ?? [], [reasoning_levels]);
 
-  // Pending state: items with pending=true from soft draft connections
-  const pendingItems = useMemo(() => {
-    return allReasoningLevels.filter((rl) => rl.pending && rl.id);
-  }, [allReasoningLevels]);
+  const pendingItems = useMemo(
+    () => allLevels.filter((rl) => rl.pending && rl.id),
+    [allLevels],
+  );
   const showDiff = pendingItems.length > 0;
   const pendingIds = useMemo(
     () => new Set(pendingItems.map((rl) => rl.id).filter(Boolean) as string[]),
-    [pendingItems]
+    [pendingItems],
   );
 
-  // Check if a reasoning level is suggested (derived from item.suggested field)
+  const items = useMemo<ReasoningLevelGridItem[]>(
+    () =>
+      allLevels
+        .filter((rl) => rl.id && rl.reasoning_level)
+        .map((rl) => ({ id: rl.id!, name: titleCase(rl.reasoning_level!) })),
+    [allLevels],
+  );
+
   const isSuggested = useCallback(
-    (reasoningLevelId: string) => {
-      const rl = allReasoningLevels.find((r) => r.id === reasoningLevelId);
+    (levelId: string) => {
+      const rl = allLevels.find((x) => x.id === levelId);
       return rl?.suggested === true;
     },
-    [allReasoningLevels]
+    [allLevels],
   );
 
-  const filteredReasoningLevels = useMemo(() => {
-    if (!searchTerm?.trim()) {
-      return allReasoningLevels;
-    }
-    const term = searchTerm.toLowerCase();
-    return allReasoningLevels.filter((level) => {
-      const value = level.reasoning_level?.toLowerCase() ?? "";
-      return value.includes(term);
-    });
-  }, [allReasoningLevels, searchTerm]);
+  const handleSelect = useCallback(
+    (itemId: string) => {
+      onReasoningLevelIdChange(itemId === resourceId ? null : itemId);
+    },
+    [resourceId, onReasoningLevelIdChange],
+  );
 
-  // Convert reasoning_levels array to ReasoningLevelItem format for GenericPicker
-  const pickerItems = useMemo(() => {
-    if (filteredReasoningLevels.length > 0) {
-      return filteredReasoningLevels
-        .filter((rl) => rl.id && rl.reasoning_level) // Filter out nulls
-        .map((rl) => ({
-          id: rl.id!,
-          reasoning_level: rl.reasoning_level!,
-        }));
-    }
-    return [];
-  }, [filteredReasoningLevels]);
-
-  // Accept pending — keep pending selection (already in selection, no-op)
   const handleAccept = useCallback(() => {
-    // Pending items are already selected, just confirm
-    // The next draft save will persist them as active
-    // Nothing to change in form state — they're already included
+    // Pending item is already selected — next save persists it.
   }, []);
 
-  // Reject pending — clear pending selection
   const handleReject = useCallback(() => {
     if (resourceId && pendingIds.has(resourceId)) {
       onReasoningLevelIdChange(null);
     }
   }, [resourceId, pendingIds, onReasoningLevelIdChange]);
 
-  // Don't render if show_reasoning_levels is false (AFTER all hooks)
-  if (!show) {
-    return null;
-  }
+  if (!show) return null;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-end justify-between">
-        <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1">
-            {label}
-            {required && <span className="text-destructive">*</span>}
-          </Label>
-          {showDiff && (
-            <>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-success hover:text-success"
-                      onClick={handleAccept}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Accept</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-destructive hover:text-destructive"
-                      onClick={handleReject}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Reject</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </>
-          )}
-        </div>
+    <div className="space-y-3 min-w-0 w-full">
+      <div className="flex items-center gap-2">
+        <Label htmlFor={id} className="flex items-center gap-1">
+          {label}
+          {required && <span className="text-destructive">*</span>}
+        </Label>
+        {showDiff && (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-success hover:text-success"
+                    onClick={handleAccept}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Accept</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
+        )}
       </div>
-      <GenericPicker<ReasoningLevelItem>
-        items={pickerItems}
-        selectedIds={resourceId ? [resourceId] : []}
-        onSelect={(ids) => onReasoningLevelIdChange(ids[0] || null)}
-        multiSelect={false}
+
+      <SelectableGrid<ReasoningLevelGridItem>
+        horizontal
+        items={items}
+        selectedId={resourceId}
+        onSelect={handleSelect}
         getId={(item) => item.id}
-        getLabel={(item) =>
-          item.reasoning_level.charAt(0).toUpperCase() +
-          item.reasoning_level.slice(1)
-        }
-        getSearchText={(item) => item.reasoning_level}
         renderItem={(item, isSelected) => {
           const isPending = pendingIds.has(item.id);
-
           return (
-            <div className={cn(
-              "flex items-center justify-between w-full",
-              isPending && "ring-2 ring-success bg-success/10 rounded px-2 py-1 -mx-2 -my-1"
-            )}>
-              <div className="flex items-center gap-2">
-                {isPending && (
-                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                    Pending
-                  </span>
-                )}
-                {isSuggested(item.id) && !isSelected && !isPending && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top">Suggested</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-                <span>
-                  {item.reasoning_level.charAt(0).toUpperCase() +
-                    item.reasoning_level.slice(1)}
-                </span>
+            <div
+              className={cn(
+                "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[72px]",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && !isPending && "ring-2 ring-primary bg-accent",
+                isPending && "ring-2 ring-success bg-success/10",
+              )}
+            >
+              {isSelected && !isPending && (
+                <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3 w-3 text-primary-foreground" />
+                </div>
+              )}
+              {isPending && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </div>
+              )}
+              {isSuggested(item.id) && !isSelected && !isPending && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Suggested</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              <div className="flex flex-col justify-center flex-1 overflow-hidden">
+                <span className="text-sm font-medium truncate">{item.name}</span>
               </div>
-              <Check
-                className={cn(
-                  "ml-auto flex-shrink-0 h-4 w-4",
-                  isSelected && !isPending ? "opacity-100" : "opacity-0"
-                )}
-              />
             </div>
           );
         }}
-        renderPreview={(item) => (
-          <div className="space-y-1">
-            <div className="font-medium">
-              {item.reasoning_level.charAt(0).toUpperCase() +
-                item.reasoning_level.slice(1)}
-            </div>
-          </div>
-        )}
-        {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
-        {...(onSearchChange ? { onSearchChange } : {})}
-        placeholder={placeholder}
+        emptyMessage="No reasoning levels available."
         disabled={disabled}
-        showLabel={false}
-        label={label}
-        description={helpText}
-        emptyMessage="No reasoning levels available"
-        groupHeading="Reasoning Levels"
-        id={id}
-        data-testid={dataTestId}
       />
+      {helpText && <p className="text-xs text-muted-foreground">{helpText}</p>}
     </div>
   );
 }

@@ -252,9 +252,6 @@ function AuthComponent({
     };
   }, [patchAuthDraftAction]);
 
-  const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
-    null,
-  );
   const hasResourceIds =
     !!formState.name_id ||
     !!formState.description_id ||
@@ -265,7 +262,10 @@ function AuthComponent({
     formState.slug_ids.length > 0 ||
     formState.slug_values.length > 0 ||
     formState.item_ids.length > 0 ||
-    formState.items.length > 0;
+    formState.items.length > 0 ||
+    !!formState.name ||
+    !!formState.description ||
+    formState.pending_ids.length > 0;
 
   const buildPatchPayload = useCallback(
     (inputDraftId: string | null): Record<string, unknown> => {
@@ -315,9 +315,6 @@ function AuthComponent({
       hasResourceIds,
       flushRegistryRef,
       formStateRef,
-      onPatchSuccess: () => {
-        lastPatchedFormStateRef.current = { ...formStateRef.current };
-      },
     });
 
   const handleGenerateResources = useCallback(

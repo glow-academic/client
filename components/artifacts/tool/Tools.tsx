@@ -3,7 +3,7 @@
  * Used to display the tools page with server-side filtering.
  */
 "use client";
-import { Copy, Edit, Eye, Trash2, X } from "lucide-react";
+import { Copy, Edit, Eye, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -24,8 +24,10 @@ import type {
   DuplicateToolIn,
   DuplicateToolOut,
   ToolsListOut,
+  UpdateToolIn,
+  UpdateToolOut,
 } from "@/app/(main)/intelligence/tools/page";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import {
   AlertDialog,
@@ -40,7 +42,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useToolAi } from "@/hooks/use-tool-ai";
 
 export interface ToolsProps {
@@ -49,6 +55,7 @@ export interface ToolsProps {
   // Server actions (replaces useMutation)
   duplicateToolAction?: (input: DuplicateToolIn) => Promise<DuplicateToolOut>;
   deleteToolAction?: (input: DeleteToolIn) => Promise<DeleteToolOut>;
+  updateToolAction?: (input: UpdateToolIn) => Promise<UpdateToolOut>;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;
@@ -62,6 +69,7 @@ export default function Tools({
   listData: serverListData,
   duplicateToolAction,
   deleteToolAction,
+  updateToolAction,
   pageIndex,
   pageSize,
   totalCount,
@@ -112,6 +120,55 @@ export default function Tools({
   // Extract data from response
   const tools = toolsData?.tools || [];
   const toolsArray = Array.isArray(tools) ? tools : [];
+
+  // Flag catalog (e.g. tool_active) — used to reconstruct flag_ids on bulk edit.
+  const flagOptions = useMemo(() => {
+    return (toolsData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [toolsData?.flag_filter]);
+
+  // Selection state
+  const [selectedToolIds, setSelectedToolIds] = useState<string[]>([]);
+  const selectedCount = selectedToolIds.length;
+  const selectedTools = useMemo(() => {
+    return toolsArray.filter((t) => t.tool_id && selectedToolIds.includes(t.tool_id));
+  }, [toolsArray, selectedToolIds]);
+  const deletableTools = useMemo(
+    () => selectedTools.filter((t) => t.can_delete),
+    [selectedTools],
+  );
+  const nonDeletableTools = useMemo(
+    () => selectedTools.filter((t) => !t.can_delete),
+    [selectedTools],
+  );
+  const editableTools = useMemo(
+    () => selectedTools.filter((t) => t.can_edit ?? true),
+    [selectedTools],
+  );
+  const toggleSelection = useCallback((toolId: string) => {
+    setSelectedToolIds((prev) =>
+      prev.includes(toolId) ? prev.filter((id) => id !== toolId) : [...prev, toolId]
+    );
+  }, []);
+  const clearSelection = useCallback(() => setSelectedToolIds([]), []);
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = toolsArray.filter((t) => t.tool_id).map((t) => t.tool_id!);
+    setSelectedToolIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [toolsArray]);
+  const allPageSelected = useMemo(() => {
+    const pageIds = toolsArray.filter((t) => t.tool_id).map((t) => t.tool_id!);
+    return pageIds.length > 0 && pageIds.every((id) => selectedToolIds.includes(id));
+  }, [toolsArray, selectedToolIds]);
+
+  // Bulk delete state
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk edit state
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
 
   // Filter options from server-provided ListFilterSection
   const departmentOptions = useMemo(
@@ -417,25 +474,108 @@ export default function Tools({
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (!deleteToolAction || deletableTools.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const ids = deletableTools.map((t) => t.tool_id!);
+      await deleteToolAction({ body: { tool_ids: ids, accept: true } });
+      toast.success(`${ids.length} tool(s) deleted successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete tools";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to delete tools");
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (!updateToolAction || editableTools.length === 0) return;
+
+    const hasActiveChange = bulkEditActiveStatus !== null;
+    if (!hasActiveChange) {
+      toast.error("No changes selected");
+      return;
+    }
+
+    const activeFlagId = flagOptions.find((f) => f.type === "tool_active")?.id;
+
+    setIsBulkEditing(true);
+    try {
+      const items = editableTools.map((t) => {
+        let flag_ids: string[] | undefined;
+        if (hasActiveChange) {
+          const isActive = bulkEditActiveStatus;
+          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+        }
+        return {
+          id: t.tool_id!,
+          ...(hasActiveChange && { flag_ids }),
+        };
+      });
+
+      await updateToolAction({ body: { tools: items } } as UpdateToolIn);
+      toast.success(`${items.length} tool(s) updated successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update tools";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to update tools");
+    } finally {
+      setIsBulkEditing(false);
+      setShowBulkEditDialog(false);
+    }
+  };
+
+  const openBulkEditDialog = () => {
+    setBulkEditActiveStatus(null);
+    setShowBulkEditDialog(true);
+  };
+
   const renderToolCard = (tool: (typeof toolsArray)[number]) => {
     const toolId = tool.tool_id ?? "";
     const toolName = tool.name ?? "";
 
     if (!toolId) return null;
 
+    const isSelected = selectedToolIds.includes(toolId);
+
     return (
       <Card
         key={toolId}
-        className="relative flex flex-col h-full hover:shadow-md transition-shadow"
+        className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
+          isSelected ? "ring-2 ring-primary" : ""
+        }`}
         data-testid="tool-card"
         data-tool-id={toolId}
         role="gridcell"
         aria-label={`tool card ${toolName}`}
+        aria-selected={isSelected}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-lg line-clamp-2">{toolName}</CardTitle>
+              <CardTitle className="text-lg line-clamp-2 flex items-center gap-2">
+                <div
+                  className={`transition-all overflow-hidden flex-shrink-0 ${
+                    selectedCount > 0
+                      ? "w-5 opacity-100"
+                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                  }`}
+                  data-action-button
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => toggleSelection(toolId)}
+                    className="rounded-full h-5 w-5"
+                    aria-label={`Select tool ${toolName || "Unnamed"}`}
+                  />
+                </div>
+                <span className="truncate">{toolName}</span>
+              </CardTitle>
               <div className="mt-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge
@@ -570,81 +710,123 @@ export default function Tools({
   return (
     <div className="space-y-6" data-page="tools-index">
       <div className="space-y-4">
-        {/* Toolbar */}
-        <div
-          className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
-          data-testid="tools-toolbar"
-        >
-          <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
-            <div className="w-full md:w-auto">
-              <Input
-                data-testid="tools-search"
-                placeholder="Search tools..."
-                value={searchTerm}
-                onChange={(event) => handleSearchChange(event.target.value)}
-                onBlur={handleSearchBlur}
-                onKeyDown={handleSearchKeyDown}
-                className="h-8 w-full md:w-[150px] lg:w-[250px]"
-                aria-label="Search tools by name"
-                aria-controls="tools-grid"
-              />
-            </div>
-
-            <div className="flex items-center space-x-2 flex-wrap">
-              <DataTableFacetedFilter
-                column={departmentsColumn}
-                title="Department"
-                options={departmentOptions}
-                isServerDriven={true}
-                onSearchChange={handleDepartmentSearchChange}
-                searchValue={localDepartmentSearch}
-              />
-
-              <DataTableFacetedFilter
-                column={agentsColumn}
-                title="Agent"
-                options={agentOptions}
-                isServerDriven={true}
-                onSearchChange={handleAgentSearchChange}
-                searchValue={localAgentSearch}
-              />
-
-              {creatableOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={creatableColumn}
-                  title="Type"
-                  options={creatableOptions}
-                  isServerDriven={true}
-                />
-              )}
-
-              {isFiltered && (
+        {/* Toolbar — swaps between filter bar and selection action bar */}
+        {selectedCount > 0 ? (
+          <div
+            className="flex items-center justify-between gap-2"
+            data-testid="tools-toolbar"
+          >
+            <div className="flex items-center gap-2">
+              {deleteToolAction && (
                 <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setLocalDepartmentSearch("");
-                    setLocalAgentSearch("");
-                    table.resetColumnFilters();
-                    updateToolsParams({
-                      page: 0,
-                      search: "",
-                      departmentIds: [],
-                      agentIds: [],
-                      creatableIds: [],
-                      departmentSearch: "",
-                      agentSearch: "",
-                    });
-                  }}
-                  className="h-8 px-2 lg:px-3 hidden md:flex"
+                  variant="destructive"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setShowBulkDeleteDialog(true)}
+                  disabled={deletableTools.length === 0}
                 >
-                  Reset
-                  <X className="ml-2 h-4 w-4" />
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete {deletableTools.length} of {selectedCount}
                 </Button>
               )}
+              {updateToolAction && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={openBulkEditDialog}
+                  disabled={editableTools.length === 0}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit {editableTools.length} of {selectedCount}
+                </Button>
+              )}
+              {!allPageSelected && (
+                <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
+                  Select All
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
+                Unselect All
+              </Button>
             </div>
           </div>
-        </div>
+        ) : (
+          <div
+            className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+            data-testid="tools-toolbar"
+          >
+            <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+              <div className="w-full md:w-auto">
+                <Input
+                  data-testid="tools-search"
+                  placeholder="Search tools..."
+                  value={searchTerm}
+                  onChange={(event) => handleSearchChange(event.target.value)}
+                  onBlur={handleSearchBlur}
+                  onKeyDown={handleSearchKeyDown}
+                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                  aria-label="Search tools by name"
+                  aria-controls="tools-grid"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 flex-wrap">
+                <ThreePickerFilters
+                  slots={[
+                    {
+                      column: departmentsColumn,
+                      title: "Department",
+                      options: departmentOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleDepartmentSearchChange,
+                      searchValue: localDepartmentSearch,
+                    },
+                    {
+                      column: agentsColumn,
+                      title: "Agent",
+                      options: agentOptions,
+                      isServerDriven: true,
+                      onSearchChange: handleAgentSearchChange,
+                      searchValue: localAgentSearch,
+                    },
+                    {
+                      column: creatableColumn,
+                      title: "Type",
+                      options: creatableOptions,
+                      isServerDriven: true,
+                    },
+                  ]}
+                />
+
+                {isFiltered && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setLocalDepartmentSearch("");
+                      setLocalAgentSearch("");
+                      table.resetColumnFilters();
+                      updateToolsParams({
+                        page: 0,
+                        search: "",
+                        departmentIds: [],
+                        agentIds: [],
+                        creatableIds: [],
+                        departmentSearch: "",
+                        agentSearch: "",
+                      });
+                    }}
+                    className="h-8 px-2 lg:px-3 hidden md:flex"
+                  >
+                    Reset
+                    <X className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Cards Grid */}
         <div
@@ -688,6 +870,68 @@ export default function Tools({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <BulkDeleteDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        count={deletableTools.length}
+        entityLabel="tool"
+        entityLabelPlural="tools"
+        isDeleting={isBulkDeleting}
+        onConfirm={handleBulkDelete}
+        description={
+          <>
+            <p>This action cannot be undone.</p>
+            {deletableTools.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                <ul className="text-sm space-y-0.5">
+                  {deletableTools.map((t) => (
+                    <li key={t.tool_id} className="flex items-center gap-1.5">
+                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                      {t.name || "Unnamed Tool"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {nonDeletableTools.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                  Cannot be deleted (in use):
+                </p>
+                <ul className="text-sm space-y-0.5">
+                  {nonDeletableTools.map((t) => (
+                    <li
+                      key={t.tool_id}
+                      className="flex items-center gap-1.5 text-muted-foreground"
+                    >
+                      {t.name || "Unnamed Tool"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        }
+      />
+
+      {/* Bulk Edit Modal */}
+      <BulkEditDialog
+        open={showBulkEditDialog}
+        onOpenChange={setShowBulkEditDialog}
+        count={editableTools.length}
+        entityLabelPlural="tools"
+        isSaving={isBulkEditing}
+        onSave={handleBulkEdit}
+      >
+        <BulkEditFlagField
+          label="Active Status"
+          value={bulkEditActiveStatus}
+          onChange={setBulkEditActiveStatus}
+        />
+      </BulkEditDialog>
 
     </div>
   );

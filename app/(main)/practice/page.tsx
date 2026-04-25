@@ -251,7 +251,6 @@ export default async function PracticePage({
               simulationOptions={simulationOptions}
               scenarioOptions={scenarioOptions}
               showModeFilter={true}
-              showCustomize={true}
               initialColumnVisibility={await readViewCookie("history")}
             />
           </div>

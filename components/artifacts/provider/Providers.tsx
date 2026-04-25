@@ -3,7 +3,7 @@
  * Used to display the providers page with server-side filtering.
  */
 "use client";
-import { Edit, Trash2, X } from "lucide-react";
+import { Edit, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -12,9 +12,15 @@ import type {
   DeleteProviderIn,
   DeleteProviderOut,
   ProvidersListOut,
+  UpdateProviderIn,
+  UpdateProviderOut,
 } from "@/app/(main)/intelligence/providers/page";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   ColumnDef,
@@ -48,6 +54,9 @@ export interface ProvidersProps {
   deleteProviderAction?: (
     input: DeleteProviderIn
   ) => Promise<DeleteProviderOut>;
+  updateProviderAction?: (
+    input: UpdateProviderIn
+  ) => Promise<UpdateProviderOut>;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;
@@ -60,6 +69,7 @@ export interface ProvidersProps {
 export default function Providers({
   listData: serverListData,
   deleteProviderAction,
+  updateProviderAction,
   pageIndex,
   pageSize,
   totalCount,
@@ -149,6 +159,58 @@ export default function Providers({
         .filter((opt) => opt.value && opt.label),
     [providersData?.status_filter]
   );
+
+  // Flag catalog (e.g. provider_active) — used to reconstruct flag_ids on bulk edit.
+  const flagOptions = useMemo(() => {
+    return (providersData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [providersData?.flag_filter]);
+
+  // Selection state
+  const [selectedProviderIds, setSelectedProviderIds] = useState<string[]>([]);
+  const selectedCount = selectedProviderIds.length;
+  const selectedProviders = useMemo(() => {
+    return providers.filter((p) => p.provider_id && selectedProviderIds.includes(p.provider_id));
+  }, [providers, selectedProviderIds]);
+  const deletableProviders = useMemo(
+    () => selectedProviders.filter((p) => p.can_delete),
+    [selectedProviders],
+  );
+  const nonDeletableProviders = useMemo(
+    () => selectedProviders.filter((p) => !p.can_delete),
+    [selectedProviders],
+  );
+  const editableProviders = useMemo(
+    () => selectedProviders.filter((p) => p.can_edit ?? true),
+    [selectedProviders],
+  );
+
+  const toggleSelection = useCallback((providerId: string) => {
+    setSelectedProviderIds((prev) =>
+      prev.includes(providerId)
+        ? prev.filter((id) => id !== providerId)
+        : [...prev, providerId]
+    );
+  }, []);
+  const clearSelection = useCallback(() => setSelectedProviderIds([]), []);
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = providers.filter((p) => p.provider_id).map((p) => p.provider_id!);
+    setSelectedProviderIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [providers]);
+  const allPageSelected = useMemo(() => {
+    const pageIds = providers.filter((p) => p.provider_id).map((p) => p.provider_id!);
+    return pageIds.length > 0 && pageIds.every((id) => selectedProviderIds.includes(id));
+  }, [providers, selectedProviderIds]);
+
+  // Bulk delete state
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk edit state
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
 
   // Helper to update URL search params
   const updateProvidersParams = useCallback(
@@ -444,6 +506,67 @@ export default function Providers({
     setShowDeleteDialog(true);
   };
 
+  const handleBulkDelete = async () => {
+    if (!deleteProviderAction || deletableProviders.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const ids = deletableProviders.map((p) => p.provider_id!);
+      await deleteProviderAction({ body: { provider_ids: ids, accept: true } } as DeleteProviderIn);
+      toast.success(`${ids.length} provider(s) deleted successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete providers";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to delete providers");
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (!updateProviderAction || editableProviders.length === 0) return;
+
+    const hasActiveChange = bulkEditActiveStatus !== null;
+    if (!hasActiveChange) {
+      toast.error("No changes selected");
+      return;
+    }
+
+    const activeFlagId = flagOptions.find((f) => f.type === "provider_active")?.id;
+
+    setIsBulkEditing(true);
+    try {
+      const items = editableProviders.map((p) => {
+        let flag_ids: string[] | undefined;
+        if (hasActiveChange) {
+          const isActive = bulkEditActiveStatus;
+          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+        }
+        return {
+          id: p.provider_id!,
+          ...(hasActiveChange && { flag_ids }),
+        };
+      });
+
+      await updateProviderAction({ body: { providers: items } } as UpdateProviderIn);
+      toast.success(`${items.length} provider(s) updated successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update providers";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to update providers");
+    } finally {
+      setIsBulkEditing(false);
+      setShowBulkEditDialog(false);
+    }
+  };
+
+  const openBulkEditDialog = () => {
+    setBulkEditActiveStatus(null);
+    setShowBulkEditDialog(true);
+  };
+
   const handleEdit = (id: string) => {
     router.push(`/intelligence/providers/${id}`);
   };
@@ -452,6 +575,7 @@ export default function Providers({
     const providerId = provider.provider_id;
     const providerName = provider.name;
     if (!providerId) return null;
+    const isSelected = selectedProviderIds.includes(providerId);
 
     return (
       <Card
@@ -459,12 +583,32 @@ export default function Providers({
         aria-label={providerName ?? undefined}
         data-testid="provider-card"
         data-provider-id={providerId}
-        className="relative flex flex-col h-full"
+        className={`group relative flex flex-col h-full transition-all ${
+          isSelected ? "ring-2 ring-primary" : ""
+        }`}
+        aria-selected={isSelected}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <CardTitle className="text-lg">{provider.name}</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div
+                  className={`transition-all overflow-hidden flex-shrink-0 ${
+                    selectedCount > 0
+                      ? "w-5 opacity-100"
+                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                  }`}
+                  data-action-button
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => toggleSelection(providerId)}
+                    className="rounded-full h-5 w-5"
+                    aria-label={`Select provider ${providerName || "Unnamed"}`}
+                  />
+                </div>
+                <span className="truncate">{provider.name}</span>
+              </CardTitle>
               <div className="mt-1 space-y-2">
                 <div className="flex items-center gap-2">
                   {!provider.active && (
@@ -523,8 +667,49 @@ export default function Providers({
 
   return (
     <div className="space-y-6" data-page="providers-index">
-      {/* Toolbar */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+      {/* Toolbar — swaps between filter bar and selection action bar */}
+      {selectedCount > 0 ? (
+        <div
+          className="flex items-center justify-between gap-2"
+          data-testid="providers-toolbar"
+        >
+          <div className="flex items-center gap-2">
+            {deleteProviderAction && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-8"
+                onClick={() => setShowBulkDeleteDialog(true)}
+                disabled={deletableProviders.length === 0}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete {deletableProviders.length} of {selectedCount}
+              </Button>
+            )}
+            {updateProviderAction && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={openBulkEditDialog}
+                disabled={editableProviders.length === 0}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit {editableProviders.length} of {selectedCount}
+              </Button>
+            )}
+            {!allPageSelected && (
+              <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
+                Select All
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
+              Unselect All
+            </Button>
+          </div>
+        </div>
+      ) : (
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2" data-testid="providers-toolbar">
         <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
           <Input
             placeholder="Search providers..."
@@ -535,30 +720,32 @@ export default function Providers({
             className="h-8 w-full md:w-[150px] lg:w-[250px]"
             data-testid="input-search-providers"
           />
-          <DataTableFacetedFilter
-            column={departmentsColumn}
-            title="Department"
-            options={departmentOptions}
-            isServerDriven={true}
-            onSearchChange={handleDepartmentSearchChange}
-            searchValue={localDepartmentSearch}
+          <ThreePickerFilters
+            slots={[
+              {
+                column: departmentsColumn,
+                title: "Department",
+                options: departmentOptions,
+                isServerDriven: true,
+                onSearchChange: handleDepartmentSearchChange,
+                searchValue: localDepartmentSearch,
+              },
+              {
+                column: modelsColumn,
+                title: "Model",
+                options: modelOptions,
+                isServerDriven: true,
+                onSearchChange: handleModelSearchChange,
+                searchValue: localModelSearch,
+              },
+              {
+                column: statusColumn,
+                title: "Status",
+                options: statusOptions,
+                isServerDriven: true,
+              },
+            ]}
           />
-          <DataTableFacetedFilter
-            column={modelsColumn}
-            title="Model"
-            options={modelOptions}
-            isServerDriven={true}
-            onSearchChange={handleModelSearchChange}
-            searchValue={localModelSearch}
-          />
-          {statusColumn && statusOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={statusColumn}
-              title="Status"
-              options={statusOptions}
-              isServerDriven={true}
-            />
-          )}
           {isFiltered && (
             <Button
               variant="ghost"
@@ -585,6 +772,7 @@ export default function Providers({
           )}
         </div>
       </div>
+      )}
 
       {/* Providers Grid */}
       {tableRows.length === 0 ? (
@@ -628,6 +816,68 @@ export default function Providers({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <BulkDeleteDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        count={deletableProviders.length}
+        entityLabel="provider"
+        entityLabelPlural="providers"
+        isDeleting={isBulkDeleting}
+        onConfirm={handleBulkDelete}
+        description={
+          <>
+            <p>This action cannot be undone.</p>
+            {deletableProviders.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                <ul className="text-sm space-y-0.5">
+                  {deletableProviders.map((p) => (
+                    <li key={p.provider_id} className="flex items-center gap-1.5">
+                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                      {p.name || "Unnamed Provider"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {nonDeletableProviders.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                  Cannot be deleted (in use):
+                </p>
+                <ul className="text-sm space-y-0.5">
+                  {nonDeletableProviders.map((p) => (
+                    <li
+                      key={p.provider_id}
+                      className="flex items-center gap-1.5 text-muted-foreground"
+                    >
+                      {p.name || "Unnamed Provider"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        }
+      />
+
+      {/* Bulk Edit Modal */}
+      <BulkEditDialog
+        open={showBulkEditDialog}
+        onOpenChange={setShowBulkEditDialog}
+        count={editableProviders.length}
+        entityLabelPlural="providers"
+        isSaving={isBulkEditing}
+        onSave={handleBulkEdit}
+      >
+        <BulkEditFlagField
+          label="Active Status"
+          value={bulkEditActiveStatus}
+          onChange={setBulkEditActiveStatus}
+        />
+      </BulkEditDialog>
 
     </div>
   );

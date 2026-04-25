@@ -38,6 +38,8 @@ interface ArgPositionsProps {
   disabled?: boolean;
   onPositionIdsChange?: (ids: string[]) => void;
   onOrderChange?: (orderedArgsIds: string[]) => void;
+  /** Hide the "Argument Positions" header label — the orchestrator owns it. */
+  hideHeader?: boolean;
 }
 
 export function ArgPositions({
@@ -47,6 +49,7 @@ export function ArgPositions({
   disabled = false,
   onPositionIdsChange,
   onOrderChange,
+  hideHeader = false,
 }: ArgPositionsProps) {
 
   const [orderedArgs, setOrderedArgs] = useState<string[]>(args_ids);
@@ -165,6 +168,7 @@ export function ArgPositions({
 
   return (
     <div className="space-y-3" data-resource="arg_positions">
+      {!hideHeader && (
       <div className="flex items-center gap-2">
         <Label>Argument Positions</Label>
         {showDiff && (
@@ -204,6 +208,7 @@ export function ArgPositions({
           </>
         )}
       </div>
+      )}
       <div className="space-y-2">
         {orderedArgs.map((argId, index) => {
           const isPending = pendingArgsIds.has(argId);

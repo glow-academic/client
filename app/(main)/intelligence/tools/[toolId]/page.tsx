@@ -39,6 +39,8 @@ type ProblemToolIn = InputOf<"/tool/problem", "post">;
 type ProblemToolOut = OutputOf<"/tool/problem", "post">;
 type ContextIn = InputOf<"/tool/context", "post">;
 type ContextOut = OutputOf<"/tool/context", "post">;
+type PreviewToolIn = InputOf<"/tool/preview", "post">;
+type PreviewToolOut = OutputOf<"/tool/preview", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -94,6 +96,11 @@ async function searchToolGroups(query: string): Promise<GenerationsOut> {
 async function createToolProblem(input: ProblemToolIn): Promise<ProblemToolOut> {
   "use server";
   return api.post("/tool/problem", input);
+}
+
+async function previewTool(input: PreviewToolIn): Promise<PreviewToolOut> {
+  "use server";
+  return api.post("/tool/preview", input);
 }
 
 /** ---- Page metadata ---- */
@@ -256,6 +263,7 @@ export default async function ToolDetailPage({
               createToolAction={createTool}
               updateToolAction={updateTool}
               patchToolDraftAction={patchToolDraft}
+              previewToolAction={previewTool}
             />
           </div>
         </FullPageLayout>

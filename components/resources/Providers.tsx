@@ -1,8 +1,8 @@
 /**
  * Providers.tsx
- * Resource component for single-select provider pick.
- * Mirrors Models.tsx / Modalities.tsx shape: SelectableGrid card layout
- * with search, suggested dot, pending badge, accept/reject affordances.
+ * Resource component for provider selection. Supports both single-select
+ * (`provider_id` + `onChange`) and multi-select (`provider_ids` +
+ * `onIdsChange`) modes — caller picks one. Mirrors Models.tsx shape.
  */
 
 "use client";
@@ -31,12 +31,18 @@ export interface ProviderResourceItem {
 }
 
 export interface ProvidersProps {
+  /** Single-select mode. Omit when using multi-select (`provider_ids`). */
   provider_id?: string | null;
+  /** Multi-select mode. When provided, the picker toggles membership. */
+  provider_ids?: string[];
   provider_resource?: ProviderResourceItem | null;
   show_providers?: boolean;
   providers?: ProviderResourceItem[];
   disabled?: boolean;
-  onChange: (providerId: string | null) => void;
+  /** Required in single-select mode. */
+  onChange?: (providerId: string | null) => void;
+  /** Required in multi-select mode. */
+  onIdsChange?: (providerIds: string[]) => void;
   label?: string;
   required?: boolean;
   id?: string;
@@ -47,11 +53,13 @@ export interface ProvidersProps {
 
 export function Providers({
   provider_id,
+  provider_ids,
   provider_resource: _provider_resource,
   show_providers = true,
   providers,
   disabled = false,
   onChange,
+  onIdsChange,
   label = "Provider",
   required = false,
   id = "provider",
@@ -59,14 +67,19 @@ export function Providers({
   searchTerm = "",
   onSearchChange: _onSearchChange,
 }: ProvidersProps) {
+  const isMulti = provider_ids !== undefined;
   const show = show_providers ?? true;
   const resourceId = provider_id ?? null;
+  const selectedSet = useMemo(
+    () => new Set(provider_ids ?? []),
+    [provider_ids],
+  );
   const allProviders = useMemo(() => providers ?? [], [providers]);
 
-  // Pending state: items with pending=true from soft draft connections.
-  const pendingItems = useMemo(() => {
-    return allProviders.filter((p) => p.pending && p.id);
-  }, [allProviders]);
+  const pendingItems = useMemo(
+    () => allProviders.filter((p) => p.pending && p.id),
+    [allProviders],
+  );
   const showDiff = pendingItems.length > 0;
   const pendingIds = useMemo(
     () => new Set(pendingItems.map((p) => p.id).filter(Boolean) as string[]),
@@ -104,11 +117,19 @@ export function Providers({
 
   const handleSelect = useCallback(
     (providerId: string) => {
-      // Click-to-toggle: selecting the current card clears selection.
-      if (providerId === resourceId) onChange(null);
-      else onChange(providerId);
+      if (isMulti) {
+        const current = provider_ids ?? [];
+        const next = current.includes(providerId)
+          ? current.filter((x) => x !== providerId)
+          : [...current, providerId];
+        onIdsChange?.(next);
+        return;
+      }
+      // Single-select: click-to-toggle.
+      if (providerId === resourceId) onChange?.(null);
+      else onChange?.(providerId);
     },
-    [resourceId, onChange],
+    [isMulti, provider_ids, resourceId, onChange, onIdsChange],
   );
 
   const handleAccept = useCallback(() => {
@@ -116,8 +137,14 @@ export function Providers({
   }, []);
 
   const handleReject = useCallback(() => {
-    if (resourceId && pendingIds.has(resourceId)) onChange(null);
-  }, [resourceId, pendingIds, onChange]);
+    if (isMulti) {
+      const current = provider_ids ?? [];
+      const next = current.filter((x) => !pendingIds.has(x));
+      if (next.length !== current.length) onIdsChange?.(next);
+      return;
+    }
+    if (resourceId && pendingIds.has(resourceId)) onChange?.(null);
+  }, [isMulti, provider_ids, resourceId, pendingIds, onChange, onIdsChange]);
 
   if (!show) return null;
 
@@ -169,7 +196,8 @@ export function Providers({
       <SelectableGrid<(typeof providerItems)[0]>
         horizontal
         items={filteredProviders}
-        selectedId={resourceId || null}
+        selectedId={isMulti ? null : (resourceId || null)}
+        {...(isMulti ? { selectedIds: Array.from(selectedSet) } : {})}
         onSelect={handleSelect}
         getId={(item) => item.id}
         renderItem={(provider, isSelected) => {

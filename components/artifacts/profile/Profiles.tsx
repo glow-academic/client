@@ -33,10 +33,13 @@ import {
   PROFILE_ROLES,
   generateGradientFromHex,
 } from "@/components/common/forms/profile-roles";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -98,6 +101,7 @@ import {
   Eye,
   FileUp,
   Map,
+  Pencil,
   Play,
   RefreshCw,
   Shield,
@@ -125,6 +129,8 @@ import type {
   SearchProfileIn,
   SearchProfileOut,
   ProfilesListOut,
+  UpdateProfileIn,
+  UpdateProfileOut,
 } from "@/app/(main)/management/profiles/page";
 
 // Explicitly define server action types (matching the page exports)
@@ -134,6 +140,9 @@ export type DeleteProfileAction = (
 export type BulkDeleteProfileAction = (
   input: BulkDeleteProfileIn
 ) => Promise<BulkDeleteProfileOut>;
+export type UpdateProfileAction = (
+  input: UpdateProfileIn
+) => Promise<UpdateProfileOut>;
 export type SearchProfileAction = (
   input: SearchProfileIn
 ) => Promise<SearchProfileOut>;
@@ -148,6 +157,7 @@ export interface ProfilesProps {
   // Server actions (pure server actions, no client-side mutations)
   deleteProfileAction?: DeleteProfileAction;
   bulkDeleteProfileAction?: BulkDeleteProfileAction;
+  updateProfileAction?: UpdateProfileAction;
   processCSVAction?: ProcessCSVAction;
   emulateProfileAction?: EmulateProfileAction;
   unemulateProfileAction?: EmulateProfileAction;
@@ -367,6 +377,7 @@ export default function Profiles({
   initialCreateProfileData,
   deleteProfileAction,
   bulkDeleteProfileAction,
+  updateProfileAction,
   processCSVAction,
   emulateProfileAction,
   unemulateProfileAction,
@@ -387,6 +398,11 @@ export default function Profiles({
 
   // Bulk delete dialog
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+
+  // Bulk edit dialog
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
 
   // Single delete dialog
   const [showSingleDeleteDialog, setShowSingleDeleteDialog] = useState(false);
@@ -1361,6 +1377,67 @@ export default function Profiles({
     }).length;
   }, [selectedProfileIds, profiles]);
 
+  // Flag catalog (e.g. profile_active) — used to reconstruct flag_ids on bulk edit.
+  const flagOptions = useMemo(() => {
+    return (serverListData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [serverListData?.flag_filter]);
+
+  const editableProfiles = useMemo(() => {
+    return profiles.filter(
+      (p) => p.profile_id && selectedProfileIds.includes(p.profile_id) && (p.can_edit ?? true)
+    );
+  }, [profiles, selectedProfileIds]);
+  const editableCount = editableProfiles.length;
+
+  const openBulkEditDialog = () => {
+    setBulkEditActiveStatus(null);
+    setShowBulkEditDialog(true);
+  };
+
+  const handleBulkEdit = async () => {
+    if (!updateProfileAction || editableProfiles.length === 0) return;
+
+    const hasActiveChange = bulkEditActiveStatus !== null;
+    if (!hasActiveChange) {
+      toast.error("No changes selected");
+      return;
+    }
+
+    // Resolve canonical profile_active flag id (so server doesn't have to look it up).
+    const activeFlagId = flagOptions.find((f) => f.type === "profile_active")?.id;
+
+    setIsBulkEditing(true);
+    try {
+      // Canonical flag shape: ship `flag_ids` per item. With a single flag type
+      // (profile_active), the array is either [activeFlagId] or [] — no
+      // preservation of other flag types is needed.
+      const items = editableProfiles.map((p) => {
+        let flag_ids: string[] | undefined;
+        if (hasActiveChange) {
+          const isActive = bulkEditActiveStatus;
+          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+        }
+        return {
+          profile_id: p.profile_id!,
+          ...(hasActiveChange && { flag_ids }),
+        };
+      });
+
+      await updateProfileAction({ body: { profiles: items } } as UpdateProfileIn);
+      toast.success(`${items.length} profile(s) updated successfully`);
+      setSelectedProfileIds([]);
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update profiles";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to update profiles");
+    } finally {
+      setIsBulkEditing(false);
+      setShowBulkEditDialog(false);
+    }
+  };
+
   return (
     <TooltipProvider>
       <div className="space-y-6" data-page="profiles-index">
@@ -1385,23 +1462,25 @@ export default function Profiles({
               </div>
 
               <div className="flex items-center space-x-2 flex-wrap mb-2">
-                {/* Role Filter */}
-                {roleColumn && roleOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={roleColumn}
-                    title="Role"
-                    options={roleOptions}
-                  />
-                )}
-
-                {/* Departments Filter */}
-                {departmentIdsColumn && departmentOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={departmentIdsColumn}
-                    title="Department"
-                    options={departmentOptions}
-                  />
-                )}
+                <ThreePickerFilters
+                  slots={[
+                    {
+                      column: departmentIdsColumn,
+                      title: "Department",
+                      options: departmentOptions,
+                    },
+                    {
+                      column: roleColumn,
+                      title: "Role",
+                      options: roleOptions,
+                    },
+                    {
+                      column: undefined,
+                      title: "Flag",
+                      options: [],
+                    },
+                  ]}
+                />
 
                 {isFiltered && (
                   <Button
@@ -1444,6 +1523,22 @@ export default function Profiles({
                   disabled={deletableCount === 0}
                 >
                   Delete {deletableCount} of {selectedCount}
+                </Button>
+              )}
+
+              {/* Bulk edit if any selected */}
+              {selectedCount > 0 && updateProfileAction && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={openBulkEditDialog}
+                  className="h-8"
+                  data-testid="btn-bulk-edit-profiles"
+                  disabled={editableCount === 0}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit {editableCount} of {selectedCount}
                 </Button>
               )}
 
@@ -2129,124 +2224,109 @@ export default function Profiles({
         )}
 
         {/* Bulk Delete Confirmation */}
-        <AlertDialog
-          open={showBulkDeleteDialog}
-          onOpenChange={setShowBulkDeleteDialog}
-        >
-          <AlertDialogContent data-testid="dialog-bulk-delete-profiles">
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                Delete {selectedProfileIds.length} profile
-                {selectedProfileIds.length !== 1 ? "s" : ""}?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete the selected accounts. Default
-                profiles and your own account will not be deleted.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            {(() => {
-              const selected = profiles.filter(
-                (s) => s.profile_id && selectedProfileIds.includes(s.profile_id)
-              );
-              const nonDeletable = selected.filter((s) => !s.can_delete);
-              const deletable = selected.filter((s) => s.can_delete);
-              return (
-                <div className="space-y-3">
+        {(() => {
+          const selected = profiles.filter(
+            (s) => s.profile_id && selectedProfileIds.includes(s.profile_id)
+          );
+          const nonDeletable = selected.filter((s) => !s.can_delete);
+          const deletable = selected.filter((s) => s.can_delete);
+          return (
+            <BulkDeleteDialog
+              open={showBulkDeleteDialog}
+              onOpenChange={setShowBulkDeleteDialog}
+              count={deletable.length}
+              entityLabel="profile"
+              entityLabelPlural="profiles"
+              isDeleting={false}
+              onConfirm={async () => {
+                try {
+                  const deletableIds = deletable
+                    .map((s) => s.profile_id!)
+                    .filter((id): id is string => id !== null && id !== undefined);
+                  if (deletableIds.length === 0) {
+                    setShowBulkDeleteDialog(false);
+                    return;
+                  }
+                  if (!bulkDeleteProfileAction) return;
+                  await bulkDeleteProfileAction({
+                    body: { profile_ids: deletableIds },
+                  });
+                  router.refresh();
+                  toast.success("Selected profiles deleted");
+                  setSelectedProfileIds([]);
+                  setShowBulkDeleteDialog(false);
+                } catch {
+                  toast.error("Failed to delete selected profiles");
+                }
+              }}
+              description={
+                <>
+                  <p>
+                    This will permanently delete the selected accounts. Default
+                    profiles and your own account will not be deleted.
+                  </p>
                   {deletable.length > 0 && (
                     <div>
-                      <p className="font-medium text-red-700 dark:text-red-400">
+                      <p className="text-sm font-medium text-destructive mb-1">
                         The following accounts will be removed:
                       </p>
-                      <div className="mt-1 ml-4 max-h-32 overflow-y-auto border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
-                        <ul className="text-sm space-y-2">
-                          {deletable.map((s) => (
-                            <li
-                              key={s.profile_id}
-                              className="text-red-600 dark:text-red-300"
-                            >
-                              • {s.name} (
-                              {s.primary_email ||
-                                (s.emails && s.emails.length > 0
-                                  ? s.emails[0]
-                                  : "")}
-                              )
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                      <ul className="text-sm space-y-0.5 max-h-32 overflow-y-auto">
+                        {deletable.map((s) => (
+                          <li key={s.profile_id} className="flex items-center gap-1.5">
+                            <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                            {s.name} (
+                            {s.primary_email ||
+                              (s.emails && s.emails.length > 0 ? s.emails[0] : "")}
+                            )
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                   {nonDeletable.length > 0 && (
                     <div>
-                      <p className="font-medium text-yellow-700 dark:text-yellow-400">
-                        The following accounts cannot be deleted and will be
-                        skipped:
+                      <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                        Cannot be deleted (skipped):
                       </p>
-                      <div className="mt-1 ml-4 max-h-24 overflow-y-auto border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
-                        <ul className="text-sm space-y-1">
-                          {nonDeletable.map((s) => (
-                            <li
-                              key={s.profile_id}
-                              className="text-yellow-700 dark:text-yellow-300"
-                            >
-                              • {s.name} (
-                              {s.primary_email ||
-                                (s.emails && s.emails.length > 0
-                                  ? s.emails[0]
-                                  : "")}
-                              )
-                              {s.profile_id === profile?.id
-                                ? " – your account"
-                                : " – cannot delete"}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                      <ul className="text-sm space-y-0.5 max-h-24 overflow-y-auto">
+                        {nonDeletable.map((s) => (
+                          <li
+                            key={s.profile_id}
+                            className="flex items-center gap-1.5 text-muted-foreground"
+                          >
+                            {s.name} (
+                            {s.primary_email ||
+                              (s.emails && s.emails.length > 0 ? s.emails[0] : "")}
+                            )
+                            {s.profile_id === profile?.id
+                              ? " – your account"
+                              : ""}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
-                </div>
-              );
-            })()}
-            <AlertDialogFooter>
-              <AlertDialogCancel data-testid="btn-cancel-delete">
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                variant="destructive"
-                data-testid="btn-confirm-delete"
-                onClick={async () => {
-                  try {
-                    const deletableIds = profiles
-                      .filter(
-                        (s) =>
-                          s.profile_id &&
-                          selectedProfileIds.includes(s.profile_id) &&
-                          s.can_delete
-                      )
-                      .map((s) => s.profile_id!)
-                      .filter((id): id is string => id !== null);
-                    if (deletableIds.length === 0) {
-                      setShowBulkDeleteDialog(false);
-                      return;
-                    }
-                    if (!bulkDeleteProfileAction) return;
-                    await bulkDeleteProfileAction({
-                      body: { profile_ids: deletableIds },
-                    });
-                    router.refresh();
-                    toast.success("Selected profiles deleted");
-                    setSelectedProfileIds([]);
-                    setShowBulkDeleteDialog(false);
-                  } catch {
-                    toast.error("Failed to delete selected profiles");
-                  }
-                }}
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                </>
+              }
+            />
+          );
+        })()}
+
+        {/* Bulk Edit Modal */}
+        <BulkEditDialog
+          open={showBulkEditDialog}
+          onOpenChange={setShowBulkEditDialog}
+          count={editableCount}
+          entityLabelPlural="profiles"
+          isSaving={isBulkEditing}
+          onSave={handleBulkEdit}
+        >
+          <BulkEditFlagField
+            label="Active status"
+            value={bulkEditActiveStatus}
+            onChange={setBulkEditActiveStatus}
+          />
+        </BulkEditDialog>
 
         {/* Single Delete Confirmation */}
         <AlertDialog

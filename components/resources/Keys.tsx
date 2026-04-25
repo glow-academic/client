@@ -17,8 +17,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { Check, Eye, EyeOff, X } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 
 export interface KeyResourceItem {
   id?: string | null;
@@ -56,6 +56,13 @@ export interface KeysProps {
   id?: string;
   required?: boolean;
   placeholder?: string;
+  /**
+   * Canonical decrypt callback. When provided, each saved-key row in the
+   * picker grows a Reveal/Hide button that calls `onReveal(key_id)` and
+   * displays the plaintext for as long as the user keeps it open.
+   * Implementation typically calls `POST /provider/decrypt` (audited).
+   */
+  onReveal?: (key_id: string) => Promise<string | null>;
 }
 
 export function Keys({
@@ -72,7 +79,36 @@ export function Keys({
   id = "key",
   required = false,
   placeholder = "Select a key...",
+  onReveal,
 }: KeysProps) {
+  const [revealed, setRevealed] = useState<Record<string, string>>({});
+  const [revealing, setRevealing] = useState<Record<string, boolean>>({});
+
+  const handleReveal = useCallback(
+    async (rowId: string) => {
+      if (!onReveal) return;
+      if (revealed[rowId]) {
+        setRevealed((prev) => {
+          const { [rowId]: _drop, ...rest } = prev;
+          return rest;
+        });
+        return;
+      }
+      setRevealing((prev) => ({ ...prev, [rowId]: true }));
+      try {
+        const plaintext = await onReveal(rowId);
+        if (plaintext != null) {
+          setRevealed((prev) => ({ ...prev, [rowId]: plaintext }));
+        }
+      } finally {
+        setRevealing((prev) => {
+          const { [rowId]: _drop, ...rest } = prev;
+          return rest;
+        });
+      }
+    },
+    [onReveal, revealed],
+  );
   const resourceId = key_id ?? null;
   const show = show_key ?? false;
 
@@ -216,7 +252,7 @@ export function Keys({
           ? handleSelectMulti
           : (selectedIds) => {
               if (onKeyIdChange) {
-                onKeyIdChange(selectedIds.length > 0 ? selectedIds[0] : null);
+                onKeyIdChange(selectedIds.length > 0 ? (selectedIds[0] ?? null) : null);
               }
             }}
         multiSelect={multiSelect}
@@ -224,6 +260,11 @@ export function Keys({
         getLabel={(item) => item.name}
         renderItem={(item, isSelected) => {
           const isPending = pendingIds.has(item.id);
+          const isRevealed = !!revealed[item.id];
+          const isLoadingReveal = !!revealing[item.id];
+          const displayKey = isRevealed
+            ? revealed[item.id]
+            : item.key_masked;
 
           return (
             <div className="flex items-center justify-between w-full">
@@ -252,13 +293,41 @@ export function Keys({
                       {item.description}
                     </div>
                   )}
-                  {item.key_masked && (
-                    <div className="text-xs text-muted-foreground truncate font-mono">
-                      {item.key_masked}
+                  {displayKey && (
+                    <div
+                      className={cn(
+                        "text-xs truncate font-mono",
+                        isRevealed
+                          ? "text-foreground"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      {displayKey}
                     </div>
                   )}
                 </div>
               </div>
+              {onReveal && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="ml-2 h-7 w-7"
+                  disabled={disabled || isLoadingReveal}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleReveal(item.id);
+                  }}
+                  title={isRevealed ? "Hide" : "Reveal"}
+                >
+                  {isRevealed ? (
+                    <EyeOff className="h-3.5 w-3.5" />
+                  ) : (
+                    <Eye className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              )}
               {isSelected && !isPending && (
                 <Check
                   className="ml-auto flex-shrink-0 h-4 w-4 opacity-100"

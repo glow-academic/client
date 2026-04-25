@@ -14,11 +14,12 @@ import {
   Eye,
   List,
   MapPin,
+  Pencil,
   Trash2,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -34,6 +35,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useParameterAi } from "@/hooks/use-parameter-ai";
 import { useProfile } from "@/contexts/profile-context";
 
@@ -57,9 +62,11 @@ import type {
   DuplicateParameterIn,
   DuplicateParameterOut,
   ParametersListOut,
+  UpdateParameterIn,
+  UpdateParameterOut,
 } from "@/app/(main)/management/parameters/page";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { Input } from "@/components/ui/input";
 
 export interface ParametersProps {
@@ -72,12 +79,16 @@ export interface ParametersProps {
   deleteParameterAction?: (
     input: DeleteParameterIn
   ) => Promise<DeleteParameterOut>;
+  updateParameterAction?: (
+    input: UpdateParameterIn
+  ) => Promise<UpdateParameterOut>;
 }
 
 export default function Parameters({
   listData: serverListData,
   duplicateParameterAction,
   deleteParameterAction,
+  updateParameterAction,
 }: ParametersProps) {
   const router = useRouter();
   const { profile } = useProfile();
@@ -107,6 +118,58 @@ export default function Parameters({
     () => parametersData?.parameters || [],
     [parametersData]
   );
+
+  // Flag catalog (e.g. parameter_active) — used to reconstruct flag_ids on bulk edit.
+  const flagOptions = useMemo(() => {
+    return (parametersData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [parametersData?.flag_filter]);
+
+  // Selection state
+  const [selectedParameterIds, setSelectedParameterIds] = useState<string[]>([]);
+  const selectedCount = selectedParameterIds.length;
+  const selectedParameters = useMemo(() => {
+    return parameters.filter((p) => p.parameter_id && selectedParameterIds.includes(p.parameter_id));
+  }, [parameters, selectedParameterIds]);
+  const deletableParameters = useMemo(
+    () => selectedParameters.filter((p) => p.can_delete),
+    [selectedParameters],
+  );
+  const nonDeletableParameters = useMemo(
+    () => selectedParameters.filter((p) => !p.can_delete),
+    [selectedParameters],
+  );
+  const editableParameters = useMemo(
+    () => selectedParameters.filter((p) => p.can_edit ?? true),
+    [selectedParameters],
+  );
+
+  const toggleSelection = useCallback((parameterId: string) => {
+    setSelectedParameterIds((prev) =>
+      prev.includes(parameterId)
+        ? prev.filter((id) => id !== parameterId)
+        : [...prev, parameterId]
+    );
+  }, []);
+  const clearSelection = useCallback(() => setSelectedParameterIds([]), []);
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = parameters.filter((p) => p.parameter_id).map((p) => p.parameter_id!);
+    setSelectedParameterIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [parameters]);
+  const allPageSelected = useMemo(() => {
+    const pageIds = parameters.filter((p) => p.parameter_id).map((p) => p.parameter_id!);
+    return pageIds.length > 0 && pageIds.every((id) => selectedParameterIds.includes(id));
+  }, [parameters, selectedParameterIds]);
+
+  // Bulk delete state
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk edit state
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
 
   // Use server-provided facet options directly (ListFilterSection pattern)
   const scenarioOptions = useMemo(
@@ -334,6 +397,67 @@ export default function Parameters({
     setShowDeleteDialog(true);
   };
 
+  const handleBulkDelete = async () => {
+    if (!deleteParameterAction || deletableParameters.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const ids = deletableParameters.map((p) => p.parameter_id!);
+      await deleteParameterAction({ body: { parameter_ids: ids, accept: true } });
+      toast.success(`${ids.length} parameter(s) deleted successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete parameters";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to delete parameters");
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (!updateParameterAction || editableParameters.length === 0) return;
+
+    const hasActiveChange = bulkEditActiveStatus !== null;
+    if (!hasActiveChange) {
+      toast.error("No changes selected");
+      return;
+    }
+
+    const activeFlagId = flagOptions.find((f) => f.type === "parameter_active")?.id;
+
+    setIsBulkEditing(true);
+    try {
+      const items = editableParameters.map((p) => {
+        let flag_ids: string[] | undefined;
+        if (hasActiveChange) {
+          const isActive = bulkEditActiveStatus;
+          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+        }
+        return {
+          id: p.parameter_id!,
+          ...(hasActiveChange && { flag_ids }),
+        };
+      });
+
+      await updateParameterAction({ body: { parameters: items } } as UpdateParameterIn);
+      toast.success(`${items.length} parameter(s) updated successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update parameters";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to update parameters");
+    } finally {
+      setIsBulkEditing(false);
+      setShowBulkEditDialog(false);
+    }
+  };
+
+  const openBulkEditDialog = () => {
+    setBulkEditActiveStatus(null);
+    setShowBulkEditDialog(true);
+  };
+
   const getParameterIcon = (parameter: (typeof parameters)[number]) => {
     // Return different icons based on parameter name or type
     const name = (parameter.name || "").toLowerCase();
@@ -382,20 +506,43 @@ export default function Parameters({
 
   const renderParameterCard = (parameter: (typeof parameters)[number]) => {
     const count = parameter.num_items; // Pre-calculated from server
+    const isSelected = parameter.parameter_id
+      ? selectedParameterIds.includes(parameter.parameter_id)
+      : false;
 
     return (
       <Card
         key={parameter.parameter_id}
-        className="relative flex flex-col h-full"
+        className={`group relative flex flex-col h-full transition-all ${
+          isSelected ? "ring-2 ring-primary" : ""
+        }`}
         data-testid="parameter-card"
         data-parameter-id={parameter.parameter_id}
         role="gridcell"
         aria-label={`parameter card ${parameter.name}`}
+        aria-selected={isSelected}
       >
         <CardHeader className="pb-3">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex-1 min-w-0">
               <CardTitle className="text-lg flex items-center gap-2">
+                <div
+                  className={`transition-all overflow-hidden flex-shrink-0 ${
+                    selectedCount > 0
+                      ? "w-5 opacity-100"
+                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                  }`}
+                  data-action-button
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => {
+                      if (parameter.parameter_id) toggleSelection(parameter.parameter_id);
+                    }}
+                    className="rounded-full h-5 w-5"
+                    aria-label={`Select parameter ${parameter.name || "Unnamed"}`}
+                  />
+                </div>
                 {getParameterIcon(parameter)}
                 <span className="truncate">{parameter.name}</span>
               </CardTitle>
@@ -529,67 +676,102 @@ export default function Parameters({
         </div>
       ) : (
         <div className="space-y-4">
-          {/* Toolbar */}
-          <div
-            className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
-            data-testid="parameters-toolbar"
-          >
-            <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
-              <div className="w-full md:w-auto">
-                <Input
-                  data-testid="parameters-search"
-                  placeholder="Search parameters..."
-                  value={(nameColumn?.getFilterValue() as string) ?? ""}
-                  onChange={(event) =>
-                    nameColumn?.setFilterValue(event.target.value)
-                  }
-                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
-                  aria-label="Search parameters by name"
-                  aria-controls="parameters-grid"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2 flex-wrap">
-                {/* Scenario Filter */}
-                {scenarioColumn && scenarioOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={scenarioColumn}
-                    title="Scenario"
-                    options={scenarioOptions}
-                  />
-                )}
-
-                {/* Field Filter */}
-                {fieldsColumn && fieldOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={fieldsColumn}
-                    title="Field"
-                    options={fieldOptions}
-                  />
-                )}
-
-                {/* Department Filter */}
-                {departmentsColumn && departmentOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={departmentsColumn}
-                    title="Department"
-                    options={departmentOptions}
-                  />
-                )}
-
-                {isFiltered && (
+          {/* Toolbar — swaps between filter bar and selection action bar */}
+          {selectedCount > 0 ? (
+            <div
+              className="flex items-center justify-between gap-2"
+              data-testid="parameters-toolbar"
+            >
+              <div className="flex items-center gap-2">
+                {deleteParameterAction && (
                   <Button
-                    variant="ghost"
-                    onClick={() => table.resetColumnFilters()}
-                    className="h-8 px-2 lg:px-3 hidden md:flex"
+                    variant="destructive"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setShowBulkDeleteDialog(true)}
+                    disabled={deletableParameters.length === 0}
                   >
-                    Reset
-                    <X className="ml-2 h-4 w-4" />
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete {deletableParameters.length} of {selectedCount}
                   </Button>
                 )}
+                {updateParameterAction && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={openBulkEditDialog}
+                    disabled={editableParameters.length === 0}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit {editableParameters.length} of {selectedCount}
+                  </Button>
+                )}
+                {!allPageSelected && (
+                  <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
+                    Select All
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
+                  Unselect All
+                </Button>
               </div>
             </div>
-          </div>
+          ) : (
+            <div
+              className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+              data-testid="parameters-toolbar"
+            >
+              <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+                <div className="w-full md:w-auto">
+                  <Input
+                    data-testid="parameters-search"
+                    placeholder="Search parameters..."
+                    value={(nameColumn?.getFilterValue() as string) ?? ""}
+                    onChange={(event) =>
+                      nameColumn?.setFilterValue(event.target.value)
+                    }
+                    className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                    aria-label="Search parameters by name"
+                    aria-controls="parameters-grid"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2 flex-wrap">
+                  <ThreePickerFilters
+                    slots={[
+                      {
+                        column: scenarioColumn,
+                        title: "Scenario",
+                        options: scenarioOptions,
+                      },
+                      {
+                        column: fieldsColumn,
+                        title: "Field",
+                        options: fieldOptions,
+                      },
+                      {
+                        column: departmentsColumn,
+                        title: "Department",
+                        options: departmentOptions,
+                      },
+                    ]}
+                  />
+
+                  {isFiltered && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => table.resetColumnFilters()}
+                      className="h-8 px-2 lg:px-3 hidden md:flex"
+                    >
+                      Reset
+                      <X className="ml-2 h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Cards Grid */}
           <div
@@ -643,6 +825,68 @@ export default function Parameters({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <BulkDeleteDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        count={deletableParameters.length}
+        entityLabel="parameter"
+        entityLabelPlural="parameters"
+        isDeleting={isBulkDeleting}
+        onConfirm={handleBulkDelete}
+        description={
+          <>
+            <p>This action cannot be undone.</p>
+            {deletableParameters.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                <ul className="text-sm space-y-0.5">
+                  {deletableParameters.map((p) => (
+                    <li key={p.parameter_id} className="flex items-center gap-1.5">
+                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                      {p.name || "Unnamed Parameter"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {nonDeletableParameters.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                  Cannot be deleted (in use):
+                </p>
+                <ul className="text-sm space-y-0.5">
+                  {nonDeletableParameters.map((p) => (
+                    <li
+                      key={p.parameter_id}
+                      className="flex items-center gap-1.5 text-muted-foreground"
+                    >
+                      {p.name || "Unnamed Parameter"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        }
+      />
+
+      {/* Bulk Edit Modal */}
+      <BulkEditDialog
+        open={showBulkEditDialog}
+        onOpenChange={setShowBulkEditDialog}
+        count={editableParameters.length}
+        entityLabelPlural="parameters"
+        isSaving={isBulkEditing}
+        onSave={handleBulkEdit}
+      >
+        <BulkEditFlagField
+          label="Active Status"
+          value={bulkEditActiveStatus}
+          onChange={setBulkEditActiveStatus}
+        />
+      </BulkEditDialog>
 
     </div>
   );

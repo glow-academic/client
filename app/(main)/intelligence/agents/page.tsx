@@ -28,6 +28,8 @@ type DuplicateAgentIn = InputOf<"/agent/duplicate", "post">;
 type DuplicateAgentOut = OutputOf<"/agent/duplicate", "post">;
 type DeleteAgentIn = InputOf<"/agent/delete", "post">;
 type DeleteAgentOut = OutputOf<"/agent/delete", "post">;
+type UpdateAgentIn = InputOf<"/agent/update", "post">;
+type UpdateAgentOut = OutputOf<"/agent/update", "post">;
 type GroupAgentIn = InputOf<"/agent/group", "post">;
 type GroupAgentOut = OutputOf<"/agent/group", "post">;
 type GenerateAgentIn = InputOf<"/agent/generate", "post">;
@@ -78,6 +80,11 @@ async function duplicateAgent(
 async function deleteAgent(input: DeleteAgentIn): Promise<DeleteAgentOut> {
   "use server";
   return api.post("/agent/delete", input);
+}
+
+async function updateAgent(input: UpdateAgentIn): Promise<UpdateAgentOut> {
+  "use server";
+  return api.post("/agent/update", input);
 }
 
 async function generateAgent(
@@ -208,6 +215,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
             listData={listData}
             duplicateAgentAction={duplicateAgent}
             deleteAgentAction={deleteAgent}
+            updateAgentAction={updateAgent}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}
@@ -243,4 +251,6 @@ export type {
   DeleteAgentOut,
   DuplicateAgentIn,
   DuplicateAgentOut,
+  UpdateAgentIn,
+  UpdateAgentOut,
 };

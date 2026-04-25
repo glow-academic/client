@@ -17,14 +17,18 @@ import { Args } from "@/components/resources/Args";
 import { ArgsOutputs } from "@/components/resources/ArgsOutputs";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
+import { Instructions } from "@/components/resources/Instructions";
 import { Names } from "@/components/resources/Names";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDrafts } from "@/contexts/draft-context";
 import { useToolAi } from "@/hooks/use-tool-ai";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 type CreateToolIn = InputOf<"/tool/create", "post">;
@@ -33,9 +37,30 @@ type UpdateToolIn = InputOf<"/tool/update", "post">;
 type UpdateToolOut = OutputOf<"/tool/update", "post">;
 type PatchToolDraftIn = InputOf<"/tool/draft", "patch">;
 type PatchToolDraftOut = OutputOf<"/tool/draft", "patch">;
+type PreviewToolIn = InputOf<"/tool/preview", "post">;
+type PreviewToolOut = OutputOf<"/tool/preview", "post">;
 type ToolData = OutputOf<"/tool/get", "post">;
 
-type ToolResourceType = "args" | "arg_positions" | "args_outputs";
+// Per-row drafts for the unified Arguments step card. Saved rows (id !== null)
+// are surfaced as immutable chips; new rows (id === null) render the full
+// editor. Outputs nest under their owning arg row.
+export type ToolArgOutputRowDraft = {
+  id: string | null;
+  name: string;
+  template: string;
+};
+
+export type ToolArgRowDraft = {
+  id: string | null;
+  name: string;
+  description: string;
+  field_type: string;
+  required: boolean;
+  default_value: string;
+  outputs: ToolArgOutputRowDraft[];
+};
+
+type ToolResourceType = "args" | "arg_positions" | "args_outputs" | "instructions";
 
 type ToolFormState = {
   name_id: string | null;
@@ -46,7 +71,11 @@ type ToolFormState = {
   args_ids: string[];
   arg_position_ids: string[];
   args_outputs_ids: string[];
+  // Unified per-arg drafts — when non-null, takes precedence over the three
+  // legacy id arrays on save (server resolver mirrors this precedence).
+  args_drafts: ToolArgRowDraft[] | null;
   permission_ids: string[];
+  instruction_id: string | null;
   pending_ids: string[];
 };
 
@@ -56,6 +85,147 @@ export interface ToolProps {
   createToolAction?: (input: CreateToolIn) => Promise<CreateToolOut>;
   updateToolAction?: (input: UpdateToolIn) => Promise<UpdateToolOut>;
   patchToolDraftAction?: (input: PatchToolDraftIn) => Promise<PatchToolDraftOut>;
+  /**
+   * Renders the configured args+outputs against the supplied mock values via
+   * the audited `/tool/preview` endpoint. Powers the Live Preview panel
+   * inside the Arguments step.
+   */
+  previewToolAction?: (input: PreviewToolIn) => Promise<PreviewToolOut>;
+}
+
+/**
+ * Live preview panel for the Arguments step card.
+ *
+ * Collects mock values for each declared arg, debounces, and renders the
+ * outputs server-side via `/tool/preview` (real Jinja env). Surfaces:
+ *   - per-output compiled text or syntax/render errors
+ *   - per-arg "used" flag + filter list discovered in the AST
+ *   - undeclared variables referenced by templates but not declared as args
+ */
+function ArgumentsPreviewPanel({
+  args,
+  runPreview,
+  disabled,
+}: {
+  args: ToolArgRowDraft[];
+  runPreview: (
+    args: ToolArgRowDraft[],
+    mock: Record<string, string>,
+  ) => Promise<PreviewToolOut | null>;
+  disabled: boolean;
+}) {
+  const [mock, setMock] = useState<Record<string, string>>({});
+  const [result, setResult] = useState<PreviewToolOut | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Debounced preview — re-renders ~300ms after the user stops typing.
+  useEffect(() => {
+    const handle = setTimeout(async () => {
+      const hasOutputs = args.some((a) => a.outputs.length > 0);
+      if (!hasOutputs) {
+        setResult(null);
+        return;
+      }
+      setLoading(true);
+      try {
+        const r = await runPreview(args, mock);
+        setResult(r);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [args, mock, runPreview]);
+
+  const declaredArgNames = useMemo(
+    () => args.map((a) => a.name).filter((n) => n.trim()),
+    [args],
+  );
+  const hasOutputs = args.some((a) => a.outputs.length > 0);
+
+  if (!hasOutputs) return null;
+
+  return (
+    <div className="rounded-md border bg-muted/20 p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+          Live Preview
+        </Label>
+        {loading && (
+          <span className="text-[10px] text-muted-foreground">rendering…</span>
+        )}
+      </div>
+
+      {/* Mock value inputs — one per declared arg name. */}
+      {declaredArgNames.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {args
+            .filter((a) => a.name.trim())
+            .map((a) => {
+              const hint = result?.type_hints?.find((h) => h.name === a.name);
+              return (
+                <div key={a.name} className="space-y-1">
+                  <Label className="text-xs">{a.name}</Label>
+                  <Input
+                    value={mock[a.name] ?? ""}
+                    onChange={(e) =>
+                      setMock((prev) => ({ ...prev, [a.name]: e.target.value }))
+                    }
+                    placeholder={a.default_value || `Mock ${a.field_type}`}
+                    className="h-8"
+                    disabled={disabled}
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    {a.field_type}
+                    {hint?.used === false && " · unused in templates"}
+                    {hint?.filters && hint.filters.length > 0 &&
+                      ` · filters: ${hint.filters.join(", ")}`}
+                  </p>
+                </div>
+              );
+            })}
+        </div>
+      )}
+
+      {/* Compiled outputs. */}
+      {result?.outputs && result.outputs.length > 0 && (
+        <div className="space-y-1.5">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Compiled
+          </Label>
+          {result.outputs.map((o, i) => (
+            <div
+              key={`${o.name}-${i}`}
+              className={cn(
+                "rounded border px-2 py-1.5 text-xs",
+                o.error
+                  ? "border-destructive/50 bg-destructive/5"
+                  : "bg-background",
+              )}
+            >
+              <div className="font-medium">{o.name || "(unnamed)"}</div>
+              {o.error ? (
+                <div className="font-mono text-destructive">{o.error}</div>
+              ) : (
+                <div className="font-mono whitespace-pre-wrap">
+                  {o.compiled || "(empty)"}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Undeclared variable warning — templates reference these but no arg
+          declares them. Hint to fix the template or add the missing arg. */}
+      {result?.undeclared && result.undeclared.length > 0 && (
+        <p className="text-xs text-amber-600">
+          Undeclared variables referenced by templates:{" "}
+          <code>{result.undeclared.join(", ")}</code>
+        </p>
+      )}
+    </div>
+  );
 }
 
 function ToolComponent({
@@ -64,6 +234,7 @@ function ToolComponent({
   createToolAction,
   updateToolAction,
   patchToolDraftAction,
+  previewToolAction,
 }: ToolProps) {
   const router = useRouter();
   const isEditMode = !!toolId;
@@ -117,6 +288,43 @@ function ToolComponent({
       permission_ids: (s?.permissions?.filter((item) => item.selected) ?? [])
         .map((item) => item.id)
         .filter((id): id is string => !!id),
+      // Hydrate saved args as immutable chip rows ordered by their position
+      // value, with each row's outputs nested. The user adds/edits rows via
+      // the Arguments step; saved rows can only be replaced (cloned to a
+      // fresh draft + the saved id removed from args_ids).
+      args_drafts: (() => {
+        const selectedArgs = (s?.args ?? []).filter((a) => a.selected && a.id);
+        if (selectedArgs.length === 0) return null;
+        const positionByArgId = new Map<string, number>();
+        (s?.arg_positions ?? []).forEach((p) => {
+          if (p.args_id && p.value != null) {
+            positionByArgId.set(p.args_id, p.value);
+          }
+        });
+        return selectedArgs
+          .map((a) => ({
+            id: a.id as string,
+            name: a.name ?? "",
+            description: a.description ?? "",
+            field_type: a.field_type ?? "string",
+            required: a.required ?? false,
+            default_value: "",
+            outputs: (s?.args_outputs ?? [])
+              .filter((o) => o.selected && o.args_id === a.id && o.id)
+              .map((o) => ({
+                id: o.id as string,
+                name: o.name ?? "",
+                template: o.template ?? "",
+              })),
+          }))
+          .sort((x, y) => {
+            const xv = positionByArgId.get(x.id ?? "") ?? Number.MAX_SAFE_INTEGER;
+            const yv = positionByArgId.get(y.id ?? "") ?? Number.MAX_SAFE_INTEGER;
+            return xv - yv;
+          });
+      })(),
+      instruction_id:
+        s?.instructions?.find((item) => item.selected)?.id ?? null,
       pending_ids: (s?.pending_ids ?? []) as string[],
     };
   }, [s, selectedDescription, selectedName]);
@@ -325,6 +533,7 @@ function ToolComponent({
       formState.arg_position_ids.length > 0 ||
       formState.args_outputs_ids.length > 0 ||
       formState.permission_ids.length > 0 ||
+      !!formState.instruction_id ||
       formState.pending_ids.length > 0;
 
     if (!hasContent || lastPatchedKeyRef.current === draftPatchKey) {
@@ -343,6 +552,7 @@ function ToolComponent({
           args_output_ids: current.args_outputs_ids,
           args_outputs_ids: current.args_outputs_ids,
           permission_ids: current.permission_ids,
+          instruction_id: current.instruction_id,
           pending_ids: current.pending_ids,
         };
 
@@ -391,6 +601,10 @@ function ToolComponent({
             arg_position_ids: fs.arg_position_ids ?? prev.arg_position_ids,
             args_outputs_ids: fs.args_outputs_ids ?? fs.args_output_ids ?? prev.args_outputs_ids,
             permission_ids: fs.permission_ids ?? prev.permission_ids,
+            instruction_id:
+              (fs as { instruction_id?: string | null }).instruction_id ??
+              ((fs as { instruction_ids?: string[] | null }).instruction_ids?.[0] ??
+                prev.instruction_id),
             pending_ids: fs.pending_ids ?? prev.pending_ids,
           }));
           requestAnimationFrame(() => {
@@ -485,6 +699,43 @@ function ToolComponent({
     }));
   }, []);
 
+  // Live preview against /tool/preview — renders each output template with
+  // mock arg values, returns compiled text + per-arg type/filter hints +
+  // undeclared variable list. Audited like decrypt.
+  const runToolPreview = useCallback(
+    async (
+      args: ToolArgRowDraft[],
+      mock: Record<string, string>,
+    ): Promise<PreviewToolOut | null> => {
+      if (!previewToolAction) return null;
+      const previewArgs = args
+        .filter((a) => a.name.trim())
+        .map((a) => ({
+          name: a.name,
+          field_type: a.field_type || "string",
+          default_value: a.default_value || "",
+        }));
+      const previewOutputs: Array<{ name: string; template: string }> = [];
+      args.forEach((a) =>
+        a.outputs.forEach((o) => {
+          if (o.name.trim() || o.template.trim()) {
+            previewOutputs.push({ name: o.name, template: o.template });
+          }
+        }),
+      );
+      if (previewOutputs.length === 0) return null;
+      try {
+        return await previewToolAction({
+          body: { args: previewArgs, outputs: previewOutputs, mock },
+        } as PreviewToolIn);
+      } catch (err) {
+        console.error("tool preview failed", err);
+        return null;
+      }
+    },
+    [previewToolAction],
+  );
+
   const handleGenerateResources = useCallback(
     async (resourceTypes: ToolResourceType[]) => {
       const currentDraftId =
@@ -510,6 +761,22 @@ function ToolComponent({
         throw new Error("Tool name is required");
       }
 
+      // args_drafts is the canonical source of truth when present — the
+      // server resolver creates/links each row + nested outputs + position.
+      // Fall back to the legacy id triple for backwards-compat callers.
+      const argumentsPayload: Record<string, unknown> =
+        formState.args_drafts && formState.args_drafts.length > 0
+          ? { args_drafts: formState.args_drafts }
+          : {
+              args_ids: formState.args_ids.length ? formState.args_ids : null,
+              arg_positions_ids: formState.arg_position_ids.length
+                ? formState.arg_position_ids
+                : null,
+              args_outputs_ids: formState.args_outputs_ids.length
+                ? formState.args_outputs_ids
+                : null,
+            };
+
       try {
         if (isEditMode && toolId && updateToolAction) {
           await updateToolAction({
@@ -524,16 +791,11 @@ function ToolComponent({
                     ? { description_id: formState.description_id }
                     : { description: formState.description || null }),
                   flag_ids: formState.flag_ids.length ? formState.flag_ids : null,
-                  args_ids: formState.args_ids.length ? formState.args_ids : null,
-                  arg_positions_ids: formState.arg_position_ids.length
-                    ? formState.arg_position_ids
-                    : null,
-                  args_outputs_ids: formState.args_outputs_ids.length
-                    ? formState.args_outputs_ids
-                    : null,
+                  ...argumentsPayload,
                   permission_ids: formState.permission_ids.length
                     ? formState.permission_ids
                     : null,
+                  instruction_id: formState.instruction_id ?? null,
                 },
               ],
               group_id: toolData?.group_id ?? null,
@@ -551,16 +813,11 @@ function ToolComponent({
                     ? { description_id: formState.description_id }
                     : { description: formState.description || null }),
                   flag_ids: formState.flag_ids.length ? formState.flag_ids : null,
-                  args_ids: formState.args_ids.length ? formState.args_ids : null,
-                  arg_positions_ids: formState.arg_position_ids.length
-                    ? formState.arg_position_ids
-                    : null,
-                  args_outputs_ids: formState.args_outputs_ids.length
-                    ? formState.args_outputs_ids
-                    : null,
+                  ...argumentsPayload,
                   permission_ids: formState.permission_ids.length
                     ? formState.permission_ids
                     : null,
+                  instruction_id: formState.instruction_id ?? null,
                 },
               ],
               group_id: toolData?.group_id ?? null,
@@ -603,18 +860,18 @@ function ToolComponent({
       switch (stepId) {
         case "basic":
           return hasName && hasDescription ? "completed" : "active";
-        case "args":
+        case "arguments":
           if (!hasName) return "pending";
-          return formState.args_ids.length > 0 ? "completed" : "active";
-        case "arg_positions":
-          if (!hasName) return "pending";
-          return formState.arg_position_ids.length > 0 ? "completed" : "active";
-        case "args_outputs":
-          if (!hasName) return "pending";
-          return formState.args_outputs_ids.length > 0 ? "completed" : "active";
+          return (formState.args_drafts?.length ?? 0) > 0 ||
+            formState.args_ids.length > 0
+            ? "completed"
+            : "active";
         case "permissions":
           if (!hasName) return "pending";
           return formState.permission_ids.length > 0 ? "completed" : "active";
+        case "instructions":
+          if (!hasName) return "pending";
+          return formState.instruction_id ? "completed" : "active";
         default:
           return "pending";
       }
@@ -624,10 +881,9 @@ function ToolComponent({
 
   const stepResources: Record<string, ToolResourceType[]> = useMemo(
     () => ({
-      args: ["args"],
-      arg_positions: ["arg_positions"],
-      args_outputs: ["args_outputs"],
-      all: ["args", "arg_positions", "args_outputs"],
+      arguments: ["args", "arg_positions", "args_outputs"],
+      instructions: ["instructions"],
+      all: ["args", "arg_positions", "args_outputs", "instructions"],
     }),
     []
   );
@@ -651,25 +907,16 @@ function ToolComponent({
         resetFields: ["name", "description", "flag_ids"],
       },
       {
-        id: "args",
-        title: "Args",
-        description: "Select and edit args for this tool.",
-        filters: [{ key: "argsShowSelected", label: "Show selected" }],
-        resetFields: ["args_ids"],
-      },
-      {
-        id: "arg_positions",
-        title: "Arg Positions",
-        description: "Arrange argument ordering for this tool.",
-        filters: [{ key: "argPositionsShowSelected", label: "Show selected" }],
-        resetFields: ["arg_position_ids"],
-      },
-      {
-        id: "args_outputs",
-        title: "Args Outputs",
-        description: "Select and edit output templates for this tool.",
-        filters: [{ key: "argsOutputsShowSelected", label: "Show selected" }],
-        resetFields: ["args_outputs_ids"],
+        id: "arguments",
+        title: "Arguments",
+        description:
+          "Define each argument, its position, and the output templates it feeds.",
+        resetFields: [
+          "args_ids",
+          "arg_position_ids",
+          "args_outputs_ids",
+          "args_drafts",
+        ],
       },
       {
         id: "permissions",
@@ -677,6 +924,13 @@ function ToolComponent({
         description: "Select the permissions this tool can use.",
         filters: [{ key: "permissionsShowSelected", label: "Show selected" }],
         resetFields: ["permission_ids"],
+      },
+      {
+        id: "instructions",
+        title: "Instructions",
+        description:
+          "Optional response template applied when the tool returns results.",
+        resetFields: ["instruction_id"],
       },
     ],
     []
@@ -701,14 +955,12 @@ function ToolComponent({
     switch (stepId) {
       case "basic":
         return "Basic information reset";
-      case "args":
-        return "Args reset";
-      case "arg_positions":
-        return "Arg positions reset";
-      case "args_outputs":
-        return "Args outputs reset";
+      case "arguments":
+        return "Arguments reset";
       case "permissions":
         return "Permissions reset";
+      case "instructions":
+        return "Instructions reset";
       default:
         return "Reset";
     }
@@ -726,14 +978,18 @@ function ToolComponent({
             description_id: null,
             flag_ids: [],
           };
-        case "args":
-          return { ...prev, args_ids: [] };
-        case "arg_positions":
-          return { ...prev, arg_position_ids: [] };
-        case "args_outputs":
-          return { ...prev, args_outputs_ids: [] };
+        case "arguments":
+          return {
+            ...prev,
+            args_ids: [],
+            arg_position_ids: [],
+            args_outputs_ids: [],
+            args_drafts: null,
+          };
         case "permissions":
           return { ...prev, permission_ids: [] };
+        case "instructions":
+          return { ...prev, instruction_id: null };
         default:
           return prev;
       }
@@ -846,7 +1102,432 @@ function ToolComponent({
             </StepCard>
           );
 
-        case "args": {
+        case "arguments": {
+          const argsDrafts = formState.args_drafts ?? [];
+          const setArgsDrafts = (
+            updater:
+              | ToolArgRowDraft[]
+              | ((prev: ToolArgRowDraft[]) => ToolArgRowDraft[]),
+          ) =>
+            setFormState((prev) => {
+              const next =
+                typeof updater === "function"
+                  ? updater(prev.args_drafts ?? [])
+                  : updater;
+              const nextArgIds = next
+                .map((r) => r.id)
+                .filter((id): id is string => !!id);
+              const nextOutputIds = next.flatMap((r) =>
+                r.outputs.map((o) => o.id).filter((id): id is string => !!id),
+              );
+              return {
+                ...prev,
+                args_drafts: next,
+                args_ids: nextArgIds,
+                args_outputs_ids: nextOutputIds,
+              };
+            });
+
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={[
+                "args_ids",
+                "arg_position_ids",
+                "args_outputs_ids",
+                "args_drafts",
+              ]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+              actions={
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  disabled={disabled}
+                  onClick={() =>
+                    setArgsDrafts((prev) => [
+                      ...prev,
+                      {
+                        id: null,
+                        name: "",
+                        description: "",
+                        field_type: "string",
+                        required: false,
+                        default_value: "",
+                        outputs: [],
+                      },
+                    ])
+                  }
+                >
+                  <Check className="h-3.5 w-3.5 mr-1" /> Add Argument
+                </Button>
+              }
+            >
+              <div className="space-y-6">
+                {argsDrafts.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No arguments yet. Click <strong>Add Argument</strong> to
+                    define what comes in, where it sits in the call signature,
+                    and which jinja outputs it feeds.
+                  </p>
+                )}
+
+                {argsDrafts.map((row, rowIdx) => {
+                  const isSaved = row.id !== null;
+                  const moveRow = (direction: -1 | 1) => {
+                    const target = rowIdx + direction;
+                    if (target < 0 || target >= argsDrafts.length) return;
+                    setArgsDrafts((prev) => {
+                      const next = [...prev];
+                      const tmp = next[rowIdx];
+                      next[rowIdx] = next[target]!;
+                      next[target] = tmp!;
+                      return next;
+                    });
+                  };
+                  const removeRow = () =>
+                    setArgsDrafts((prev) =>
+                      prev.filter((_, i) => i !== rowIdx),
+                    );
+                  const replaceWithDraft = () =>
+                    setArgsDrafts((prev) =>
+                      prev.map((r, i) =>
+                        i === rowIdx
+                          ? {
+                              ...r,
+                              id: null,
+                              outputs: r.outputs.map((o) => ({
+                                ...o,
+                                id: null,
+                              })),
+                            }
+                          : r,
+                      ),
+                    );
+                  const editRow = (patch: Partial<ToolArgRowDraft>) =>
+                    setArgsDrafts((prev) =>
+                      prev.map((r, i) =>
+                        i === rowIdx ? { ...r, ...patch } : r,
+                      ),
+                    );
+                  const addOutput = () =>
+                    setArgsDrafts((prev) =>
+                      prev.map((r, i) =>
+                        i === rowIdx
+                          ? {
+                              ...r,
+                              outputs: [
+                                ...r.outputs,
+                                { id: null, name: "", template: "" },
+                              ],
+                            }
+                          : r,
+                      ),
+                    );
+                  const editOutput = (
+                    outIdx: number,
+                    patch: Partial<ToolArgOutputRowDraft>,
+                  ) =>
+                    setArgsDrafts((prev) =>
+                      prev.map((r, i) =>
+                        i === rowIdx
+                          ? {
+                              ...r,
+                              outputs: r.outputs.map((o, j) =>
+                                j === outIdx ? { ...o, ...patch } : o,
+                              ),
+                            }
+                          : r,
+                      ),
+                    );
+                  const removeOutput = (outIdx: number) =>
+                    setArgsDrafts((prev) =>
+                      prev.map((r, i) =>
+                        i === rowIdx
+                          ? {
+                              ...r,
+                              outputs: r.outputs.filter(
+                                (_, j) => j !== outIdx,
+                              ),
+                            }
+                          : r,
+                      ),
+                    );
+
+                  return (
+                    <div
+                      key={`${row.id ?? "new"}-${rowIdx}`}
+                      className={cn(
+                        "rounded-md border p-4 space-y-3 bg-card",
+                        isSaved && "bg-muted/30",
+                      )}
+                    >
+                      {/* Row header — position, name (or chip), reorder, remove */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-xs font-mono text-muted-foreground w-6">
+                            #{rowIdx + 1}
+                          </span>
+                          {isSaved ? (
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium truncate">
+                                {row.name || argsNameById.get(row.id!) || "Saved arg"}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {row.field_type}
+                                {row.required ? " · required" : ""} ·{" "}
+                                {row.outputs.length} output
+                                {row.outputs.length === 1 ? "" : "s"}
+                              </div>
+                            </div>
+                          ) : (
+                            <Input
+                              value={row.name}
+                              onChange={(e) => editRow({ name: e.target.value })}
+                              placeholder="Argument name"
+                              className="h-8 max-w-xs"
+                              disabled={disabled}
+                            />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            disabled={disabled || rowIdx === 0}
+                            onClick={() => moveRow(-1)}
+                            title="Move up"
+                          >
+                            ↑
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            disabled={disabled || rowIdx === argsDrafts.length - 1}
+                            onClick={() => moveRow(1)}
+                            title="Move down"
+                          >
+                            ↓
+                          </Button>
+                          {isSaved && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7"
+                              disabled={disabled}
+                              onClick={replaceWithDraft}
+                              title="Replace this saved arg with an editable draft"
+                            >
+                              Replace
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive"
+                            disabled={disabled}
+                            onClick={removeRow}
+                            title="Remove"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Editable card body — only for new rows. Saved rows
+                          stay immutable; the user clones via Replace. */}
+                      {!isSaved && (
+                        <div className="space-y-3 pt-2 border-t">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            <div>
+                              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                                Type
+                              </Label>
+                              <select
+                                value={row.field_type}
+                                onChange={(e) =>
+                                  editRow({ field_type: e.target.value })
+                                }
+                                disabled={disabled}
+                                className="mt-1 h-8 w-full rounded border bg-background px-2 text-sm"
+                              >
+                                <option value="string">string</option>
+                                <option value="number">number</option>
+                                <option value="boolean">boolean</option>
+                                <option value="array">array</option>
+                              </select>
+                            </div>
+                            <div className="flex items-center gap-2 pt-5">
+                              <input
+                                id={`req-${rowIdx}`}
+                                type="checkbox"
+                                checked={row.required}
+                                onChange={(e) =>
+                                  editRow({ required: e.target.checked })
+                                }
+                                disabled={disabled}
+                              />
+                              <Label
+                                htmlFor={`req-${rowIdx}`}
+                                className="text-sm cursor-pointer"
+                              >
+                                Required
+                              </Label>
+                            </div>
+                            <div>
+                              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                                Default
+                              </Label>
+                              <Input
+                                value={row.default_value}
+                                onChange={(e) =>
+                                  editRow({ default_value: e.target.value })
+                                }
+                                disabled={disabled}
+                                className="mt-1 h-8"
+                                placeholder="(none)"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                              Description
+                            </Label>
+                            <Input
+                              value={row.description}
+                              onChange={(e) =>
+                                editRow({ description: e.target.value })
+                              }
+                              disabled={disabled}
+                              className="mt-1 h-8"
+                              placeholder="What this argument is used for"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Per-arg outputs — jinja templates that consume this
+                          arg (and any other declared args). Saved outputs
+                          stay immutable; new outputs are editable. */}
+                      <div className="space-y-2 pt-2 border-t">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                            Outputs
+                          </Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7"
+                            disabled={disabled}
+                            onClick={addOutput}
+                          >
+                            <Check className="h-3 w-3 mr-1" /> Add output
+                          </Button>
+                        </div>
+                        {row.outputs.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">
+                            No outputs. The arg will be available to other
+                            outputs but emit nothing on its own.
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            {row.outputs.map((output, oIdx) => {
+                              const outputSaved = output.id !== null;
+                              return (
+                                <div
+                                  key={`${output.id ?? "new"}-${oIdx}`}
+                                  className={cn(
+                                    "rounded border px-2 py-2 space-y-1.5",
+                                    outputSaved && "bg-muted/30",
+                                  )}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Input
+                                      value={output.name}
+                                      onChange={(e) =>
+                                        editOutput(oIdx, {
+                                          name: e.target.value,
+                                        })
+                                      }
+                                      placeholder="Output name"
+                                      className="h-8 flex-1"
+                                      disabled={disabled || outputSaved}
+                                    />
+                                    {outputSaved && (
+                                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                        Saved
+                                      </span>
+                                    )}
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-destructive"
+                                      disabled={disabled}
+                                      onClick={() => removeOutput(oIdx)}
+                                      title="Remove output"
+                                    >
+                                      <X className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                  <textarea
+                                    value={output.template}
+                                    onChange={(e) =>
+                                      editOutput(oIdx, {
+                                        template: e.target.value,
+                                      })
+                                    }
+                                    placeholder={`Jinja template — e.g. {{ ${row.name || "arg_name"} }}`}
+                                    className="min-h-[60px] w-full rounded border bg-background p-2 text-xs font-mono"
+                                    disabled={disabled || outputSaved}
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Live Preview panel — calls /tool/preview against the
+                    current draft args + outputs with the user-supplied mock
+                    values. Renders compiled output blocks + per-arg type/
+                    filter hints + undeclared variable warnings. */}
+                <ArgumentsPreviewPanel
+                  args={argsDrafts}
+                  runPreview={runToolPreview}
+                  disabled={disabled}
+                />
+              </div>
+            </StepCard>
+          );
+        }
+
+        // Legacy paths — retained empty switch arms so existing logic doesn't
+        // need to know the steps were collapsed. The unified `arguments` case
+        // above is the canonical entry point.
+        case "args":
+        case "arg_positions":
+        case "args_outputs": {
+          return null;
+        }
+        case "_legacy_args_unused": {
           const argsSearch = ((formData["argsSearch"] as string | undefined) ?? "").trim().toLowerCase();
           const argsShowSelected = Boolean(formData["argsShowSelected"]);
           let filteredArgs = argsItems;
@@ -1298,6 +1979,73 @@ function ToolComponent({
                     : "No permissions available yet."
                 }
                 disabled={disabled}
+              />
+            </StepCard>
+          );
+        }
+
+        case "instructions": {
+          const selectedInstruction =
+            (s?.instructions ?? []).find(
+              (item) => item.id === formState.instruction_id,
+            ) ?? null;
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["instruction_id"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+              actions={
+                stepResources["instructions"] &&
+                stepResources["instructions"].length > 0 ? (
+                  <StepCardAiButton
+                    stepId="instructions"
+                    resourceTypes={stepResources["instructions"] ?? []}
+                    canRegenerate={(rt) =>
+                      canRegenerate(rt as ToolResourceType)
+                    }
+                    isGenerating={(rt) => isGenerating(rt as ToolResourceType)}
+                    onOpenModal={handleDirectStepGenerate}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
+            >
+              <Instructions
+                instructions_id={formState.instruction_id}
+                instructions_resource={
+                  selectedInstruction
+                    ? {
+                        id: selectedInstruction.id ?? null,
+                        template: selectedInstruction.template ?? "",
+                        generated: selectedInstruction.generated ?? null,
+                      }
+                    : null
+                }
+                show_instructions={true}
+                instructions={(s?.instructions ?? []).map((item) => ({
+                  id: item.id ?? null,
+                  template: item.template ?? "",
+                  generated: item.generated ?? null,
+                  suggested: item.suggested ?? false,
+                  pending: item.pending ?? false,
+                }))}
+                disabled={disabled}
+                onInstructionsIdChange={(nextId) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    instruction_id: nextId,
+                  }))
+                }
+                label="Response Template"
+                placeholder="Enter the response template body…"
+                required={false}
+                isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>
           );

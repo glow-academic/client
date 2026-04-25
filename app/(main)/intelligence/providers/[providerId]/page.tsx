@@ -38,6 +38,8 @@ type ProblemProviderIn = InputOf<"/provider/problem", "post">;
 type ProblemProviderOut = OutputOf<"/provider/problem", "post">;
 type ContextIn = InputOf<"/provider/context", "post">;
 type ContextOut = OutputOf<"/provider/context", "post">;
+type DecryptProviderIn = InputOf<"/provider/decrypt", "post">;
+type DecryptProviderOut = OutputOf<"/provider/decrypt", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -99,6 +101,11 @@ async function searchProviderGroups(query: string): Promise<GenerationsOut> {
 async function createProviderProblem(input: ProblemProviderIn): Promise<ProblemProviderOut> {
   "use server";
   return api.post("/provider/problem", input);
+}
+
+async function decryptProvider(input: DecryptProviderIn): Promise<DecryptProviderOut> {
+  "use server";
+  return api.post("/provider/decrypt", input);
 }
 
 /** ---- Page metadata ---- */
@@ -255,6 +262,7 @@ export default async function EditProviderPage({
               createProviderAction={createProvider}
               updateProviderAction={updateProvider}
               patchProviderDraftAction={patchProviderDraft}
+              decryptProviderKeyAction={decryptProvider}
             />
           </div>
         </FullPageLayout>

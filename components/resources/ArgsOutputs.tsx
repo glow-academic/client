@@ -51,6 +51,8 @@ export interface ArgsOutputsProps {
   disabled: boolean; // Based on can_edit flag from Tool.tsx
   /** Callback to update args_outputs_ids in parent (used for reject pending) */
   onArgsOutputsIdsChange?: (ids: string[]) => void;
+  /** Hide the "Args Outputs" header label — orchestrator owns it. */
+  hideHeader?: boolean;
 }
 
 export function ArgsOutputs({
@@ -59,6 +61,7 @@ export function ArgsOutputs({
   input_args_fields,
   disabled = false,
   onArgsOutputsIdsChange,
+  hideHeader = false,
 }: ArgsOutputsProps) {
   // Get available Jinja variables from input args fields
   const availableVariables = useMemo(() => {
@@ -248,7 +251,7 @@ export function ArgsOutputs({
   return (
     <div className="space-y-6">
       {/* Header with pending accept/reject controls */}
-      {showDiff && (
+      {showDiff && !hideHeader && (
         <div className="flex items-center gap-2">
           <Label className="flex items-center gap-1">Args Outputs</Label>
           <TooltipProvider>

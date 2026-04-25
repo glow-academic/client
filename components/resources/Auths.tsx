@@ -1,13 +1,15 @@
 /**
  * Auths.tsx
- * Resource component for auth selection
- * Uses GenericPicker to select existing auth resources
- * Manages auth_ids array and reports to parent
+ * Resource component for auth provider selection. Supports both single-select
+ * (`auth_id` + `onChange`) and multi-select (`auth_ids` + `onIdsChange`)
+ * modes — caller picks one. Mirrors Providers.tsx / Models.tsx shape:
+ * SelectableGrid card layout with search, suggested dot, pending badge,
+ * accept/reject affordances.
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -25,222 +27,238 @@ export interface AuthsResourceItem {
   name?: string | null;
   description?: string | null;
   slug?: string | null;
+  protocol?: string | null;
   generated?: boolean | null;
   suggested?: boolean | null;
+  selected?: boolean | null;
   pending?: boolean | null;
 }
 
-export interface AuthItem {
-  id: string;
-  name: string;
-  description?: string;
-  slug?: string;
-  active?: boolean;
-}
-
 export interface AuthsProps {
-  auth_ids?: string[]; // Current auth resource IDs (standardized prop name)
-  auth_resources?: AuthsResourceItem[]; // Selected auth resources
-  show_auths?: boolean; // Whether to show this resource picker
-  auths?: AuthsResourceItem[]; // All available auths from API (each includes generated and suggested fields)
-  disabled?: boolean; // Based on can_edit flag
-  onChange: (ids: string[]) => void; // Update auth_ids in form state
+  /** Single-select mode. Omit when using multi-select (`auth_ids`). */
+  auth_id?: string | null;
+  /** Multi-select mode. When provided, the picker toggles membership. */
+  auth_ids?: string[];
+  auth_resource?: AuthsResourceItem | null;
+  show_auths?: boolean;
+  auths?: AuthsResourceItem[];
+  disabled?: boolean;
+  /** Required in single-select mode. */
+  onChange?: (authId: string | null) => void;
+  /** Required in multi-select mode. */
+  onIdsChange?: (authIds: string[]) => void;
   label?: string;
-  id?: string;
   required?: boolean;
-  placeholder?: string;
-  description?: string;
-  aiAuthResources?: Pick<AuthsResourceItem, "id" | "name">[] | null;
+  id?: string;
+  helpText?: string;
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
 }
 
 export function Auths({
+  auth_id,
   auth_ids,
-  auth_resources: _auth_resources,
-  show_auths = false,
+  auth_resource: _auth_resource,
+  show_auths = true,
   auths,
   disabled = false,
   onChange,
+  onIdsChange,
   label = "Auths",
-  id = "auths",
   required = false,
-  placeholder = "Select auths...",
-  description,
-  aiAuthResources: _aiAuthResources,
+  id = "auths",
+  helpText,
+  searchTerm = "",
+  onSearchChange: _onSearchChange,
 }: AuthsProps) {
-  const ids = useMemo(() => auth_ids ?? [], [auth_ids]);
-  const show = show_auths ?? false;
+  const isMulti = auth_ids !== undefined;
+  const show = show_auths ?? true;
+  const resourceId = auth_id ?? null;
+  const selectedSet = useMemo(() => new Set(auth_ids ?? []), [auth_ids]);
   const allAuths = useMemo(() => auths ?? [], [auths]);
 
-  // Pending state: items with pending=true from soft draft connections
-  const pendingItems = useMemo(() => {
-    return allAuths.filter((a) => a.pending && a.id);
-  }, [allAuths]);
+  const pendingItems = useMemo(
+    () => allAuths.filter((a) => a.pending && a.id),
+    [allAuths],
+  );
   const showDiff = pendingItems.length > 0;
   const pendingIds = useMemo(
     () => new Set(pendingItems.map((a) => a.id).filter(Boolean) as string[]),
-    [pendingItems]
+    [pendingItems],
   );
 
-  // Convert auths array to AuthItem format for GenericPicker
   const authItems = useMemo(() => {
+    if (allAuths.length === 0) return [];
     return allAuths
-      .filter((a) => a.id && a.name) // Filter out nulls
+      .filter((a) => a.id && a.name)
       .map((a) => ({
         id: a.id!,
         name: a.name!,
-        ...(a.description ? { description: a.description } : {}),
-        ...(a.slug ? { slug: a.slug } : {}),
+        description: a.description ?? null,
+        slug: a.slug ?? null,
+        protocol: a.protocol ?? null,
       }));
   }, [allAuths]);
 
-  // Check if an auth is suggested (derived from item.suggested field)
+  const filteredAuths = useMemo(() => {
+    if (!searchTerm.trim()) return authItems;
+    const q = searchTerm.toLowerCase();
+    return authItems.filter(
+      (a) =>
+        a.name.toLowerCase().includes(q) ||
+        (a.description && a.description.toLowerCase().includes(q)) ||
+        (a.slug && a.slug.toLowerCase().includes(q)),
+    );
+  }, [authItems, searchTerm]);
+
   const isSuggested = useCallback(
     (authId: string) => {
-      const auth = allAuths.find((a) => a.id === authId);
-      return auth?.suggested === true;
+      const a = allAuths.find((x) => x.id === authId);
+      return a?.suggested === true;
     },
-    [allAuths]
+    [allAuths],
   );
 
   const handleSelect = useCallback(
-    (selectedIds: string[]) => {
-      onChange(selectedIds);
+    (authId: string) => {
+      if (isMulti) {
+        const current = auth_ids ?? [];
+        const next = current.includes(authId)
+          ? current.filter((x) => x !== authId)
+          : [...current, authId];
+        onIdsChange?.(next);
+        return;
+      }
+      if (authId === resourceId) onChange?.(null);
+      else onChange?.(authId);
     },
-    [onChange]
+    [isMulti, auth_ids, resourceId, onChange, onIdsChange],
   );
 
-  // Accept pending — keep pending auths in selection
   const handleAccept = useCallback(() => {
-    // Pending items are already in ids (selected=true), just confirm
-    // The next draft save will persist them as active
-    // Nothing to change in form state — they're already included
+    // Pending items already in selection — next save persists them.
   }, []);
 
-  // Reject pending — remove pending auths from selection
   const handleReject = useCallback(() => {
-    const newIds = ids.filter((id) => !pendingIds.has(id));
-    onChange(newIds);
-  }, [ids, pendingIds, onChange]);
+    if (isMulti) {
+      const current = auth_ids ?? [];
+      const next = current.filter((x) => !pendingIds.has(x));
+      if (next.length !== current.length) onIdsChange?.(next);
+      return;
+    }
+    if (resourceId && pendingIds.has(resourceId)) onChange?.(null);
+  }, [isMulti, auth_ids, resourceId, pendingIds, onChange, onIdsChange]);
 
-  // Don't render if show_auths is false (AFTER all hooks)
-  if (!show) {
-    return null;
-  }
+  if (!show) return null;
 
   return (
-    <div className="space-y-2">
-      {label && (
-        <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1">
-            {label}
-            {required && <span className="text-destructive">*</span>}
-            {description && (
-              <span className="text-xs text-muted-foreground ml-2">
-                {description}
-              </span>
-            )}
-          </Label>
-          {showDiff && (
-            <>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-success hover:text-success"
-                      onClick={handleAccept}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Accept</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-destructive hover:text-destructive"
-                      onClick={handleReject}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Reject</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </>
-          )}
-        </div>
-      )}
-      <GenericPicker<AuthItem>
-        items={authItems}
-        itemIds={allAuths
-          .map((a) => a.id)
-          .filter((id): id is string => id !== null)} // All auth IDs from array, filter nulls
-        selectedIds={ids}
-        onSelect={handleSelect}
-        multiSelect={true}
-        getId={(item) => item.id}
-        getLabel={(item) => item.name}
-        renderItem={(item, isSelected) => {
-          const isPending = pendingIds.has(item.id);
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Label htmlFor={id} className="flex items-center gap-1">
+          {label}
+          {required && <span className="text-destructive">*</span>}
+        </Label>
+        {showDiff && (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-success hover:text-success"
+                    onClick={handleAccept}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Accept</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
+        )}
+      </div>
 
+      <SelectableGrid<(typeof authItems)[0]>
+        horizontal
+        items={filteredAuths}
+        selectedId={isMulti ? null : (resourceId || null)}
+        {...(isMulti ? { selectedIds: Array.from(selectedSet) } : {})}
+        onSelect={handleSelect}
+        getId={(item) => item.id}
+        renderItem={(auth, isSelected) => {
+          const isPending = pendingIds.has(auth.id);
           return (
-            <div className={cn(
-              "flex items-center justify-between w-full",
-              isPending && "ring-2 ring-success bg-success/10 rounded"
-            )}>
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                {isPending && (
-                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium shrink-0">
-                    Pending
-                  </span>
-                )}
-                {isSuggested(item.id) && !isSelected && !isPending && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top">Suggested</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
+            <div
+              className={cn(
+                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && !isPending && "ring-2 ring-primary bg-accent",
+                isPending && "ring-2 ring-success bg-success/10",
+              )}
+            >
+              {isSelected && !isPending && (
+                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                </div>
+              )}
+              {isPending && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </div>
+              )}
+              {isSuggested(auth.id) && !isSelected && !isPending && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Suggested</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              <div className="flex items-start gap-3">
                 <div className="flex-1 min-w-0">
-                  <div className="truncate">{item.name}</div>
-                  {item.description && (
-                    <div className="text-xs text-muted-foreground truncate">
-                      {item.description}
-                    </div>
+                  <h3 className="font-medium text-sm leading-tight">
+                    {auth.name || "Unnamed Auth"}
+                  </h3>
+                  {auth.description && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      {auth.description}
+                    </p>
                   )}
-                  {item.slug && (
-                    <div className="text-xs text-muted-foreground truncate">
-                      {item.slug}
-                    </div>
+                  {auth.slug && (
+                    <p className="text-xs text-muted-foreground mt-1 truncate">
+                      {auth.slug}
+                    </p>
                   )}
                 </div>
               </div>
-              <Check
-                className={cn(
-                  "ml-auto flex-shrink-0 h-4 w-4",
-                  isSelected && !isPending ? "opacity-100" : "opacity-0"
-                )}
-              />
             </div>
           );
         }}
-        placeholder={placeholder}
+        emptyMessage="No auths found. Try adjusting your search."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
       />
+      {helpText && <p className="text-sm text-muted-foreground">{helpText}</p>}
     </div>
   );
 }

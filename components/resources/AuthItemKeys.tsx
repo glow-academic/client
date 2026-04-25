@@ -1,8 +1,20 @@
+/**
+ * AuthItemKeys.tsx
+ * Per-(auth × item) secret editor for **encrypted** claim items.
+ * Mirrors AuthItemValues.tsx shape: one inline password input per
+ * (auth × item) pair. The user types a fresh secret; the server
+ * encrypts and creates a `keys_resource` row plus an
+ * `auth_item_keys_resource` linking row.
+ *
+ * Existing saved rows surface as masked entries with a Reveal button
+ * (calls `onReveal(key_id)` which hits `/setting/decrypt`).
+ */
+
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -10,24 +22,25 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { Check, Eye, EyeOff, X } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 
 export interface AuthItemKeyOption {
   auth_id?: string | null;
   item_id?: string | null;
-  key_id?: string | null;
   auth_name?: string | null;
   item_name?: string | null;
-  key_name?: string | null;
-  masked_key?: string | null;
+  item_description?: string | null;
+  encrypted?: boolean | null;
 }
 
 export interface AuthItemKeyValue {
   id: string | null;
   auth_id: string;
   item_id: string;
-  key_id: string;
+  key_id?: string | null;
+  key_value?: string | null;
+  key_name?: string | null;
 }
 
 export interface AuthItemKeyExisting {
@@ -39,18 +52,19 @@ export interface AuthItemKeyExisting {
 }
 
 export interface AuthItemKeysProps {
+  /** Cross-product (auth × item) options from the server. */
   options?: AuthItemKeyOption[];
   values?: AuthItemKeyValue[];
   existing?: AuthItemKeyExisting[];
   disabled?: boolean;
   onChange: (values: AuthItemKeyValue[]) => void;
+  onReveal?: (key_id: string) => Promise<string | null>;
+  show_auth_item_keys?: boolean;
   label?: string;
   description?: string;
-  show_auth_item_keys?: boolean;
 }
 
-const tripleKey = (authId: string, itemId: string, keyId: string) =>
-  `${authId}:${itemId}:${keyId}`;
+const pairKey = (authId: string, itemId: string) => `${authId}:${itemId}`;
 
 export function AuthItemKeys({
   options,
@@ -58,49 +72,55 @@ export function AuthItemKeys({
   existing,
   disabled = false,
   onChange,
-  label = "Auth Item Keys",
-  description = "Select which keys are available for each auth claim item.",
+  onReveal,
   show_auth_item_keys = true,
+  label = "Auth Item Keys",
+  description = "Add a key/secret for each auth claim item. Values are encrypted server-side.",
 }: AuthItemKeysProps) {
-  const opts = useMemo(() => options ?? [], [options]);
+  // Encrypted claim items only — plaintext items are owned by AuthItemValues.
+  const opts = useMemo(
+    () => (options ?? []).filter((o) => o.encrypted === true),
+    [options],
+  );
   const vals = useMemo(() => values ?? [], [values]);
+  const existingRows = useMemo(() => existing ?? [], [existing]);
 
-  const valueByTriple = useMemo(() => {
+  // (auth_id, item_id) -> the in-flight value (id=null means freshly typed).
+  const valueByPair = useMemo(() => {
     const map = new Map<string, AuthItemKeyValue>();
-    for (const v of vals) {
-      map.set(tripleKey(v.auth_id, v.item_id, v.key_id), v);
-    }
+    for (const v of vals) map.set(pairKey(v.auth_id, v.item_id), v);
     return map;
   }, [vals]);
 
-  const existingIdByTriple = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const e of existing ?? []) {
-      if (e.auth_id && e.item_id && e.key_id && e.id) {
-        map.set(tripleKey(e.auth_id, e.item_id, e.key_id), e.id);
-      }
+  // (auth_id, item_id) -> saved row from the server.
+  const existingByPair = useMemo(() => {
+    const map = new Map<string, AuthItemKeyExisting>();
+    for (const e of existingRows) {
+      if (e.auth_id && e.item_id) map.set(pairKey(e.auth_id, e.item_id), e);
     }
     return map;
-  }, [existing]);
+  }, [existingRows]);
 
-  const pendingTriples = useMemo(() => {
+  const pendingPairs = useMemo(() => {
     const set = new Set<string>();
-    for (const e of existing ?? []) {
-      if (e.pending && e.auth_id && e.item_id && e.key_id) {
-        set.add(tripleKey(e.auth_id, e.item_id, e.key_id));
+    for (const e of existingRows) {
+      if (e.pending && e.auth_id && e.item_id) {
+        set.add(pairKey(e.auth_id, e.item_id));
       }
     }
     return set;
-  }, [existing]);
-  const showDiff = pendingTriples.size > 0;
+  }, [existingRows]);
+  const showDiff = pendingPairs.size > 0;
 
+  // Group options by auth_id so we render one card per auth, with the items
+  // scoped to that auth's catalog (no global dedup — items belong to auths).
   const byAuth = useMemo(() => {
     const groups = new Map<
       string,
       { auth_name: string | null; options: AuthItemKeyOption[] }
     >();
     for (const o of opts) {
-      if (!o.auth_id || !o.item_id || !o.key_id) continue;
+      if (!o.auth_id || !o.item_id) continue;
       const entry = groups.get(o.auth_id) ?? {
         auth_name: o.auth_name ?? null,
         options: [],
@@ -111,43 +131,88 @@ export function AuthItemKeys({
     return groups;
   }, [opts]);
 
-  const toggle = useCallback(
-    (authId: string, itemId: string, keyId: string, checked: boolean) => {
-      const tk = tripleKey(authId, itemId, keyId);
-      if (checked) {
-        if (valueByTriple.has(tk)) return;
-        const existingId = existingIdByTriple.get(tk) ?? null;
-        onChange([
-          ...vals,
-          { id: existingId, auth_id: authId, item_id: itemId, key_id: keyId },
-        ]);
-      } else {
+  const updateValue = useCallback(
+    (authId: string, itemId: string, nextValue: string) => {
+      const pk = pairKey(authId, itemId);
+      const existingValue = valueByPair.get(pk);
+
+      // Empty input → drop the in-flight value entirely. Existing saved
+      // rows stay (delete is a separate action).
+      if (nextValue === "") {
+        if (!existingValue) return;
         onChange(
           vals.filter(
-            (v) =>
-              !(
-                v.auth_id === authId &&
-                v.item_id === itemId &&
-                v.key_id === keyId
-              )
-          )
+            (v) => !(v.auth_id === authId && v.item_id === itemId && v.id === null),
+          ),
         );
+        return;
+      }
+
+      if (existingValue && existingValue.id === null) {
+        // Replace the in-flight plaintext.
+        onChange(
+          vals.map((v) =>
+            v.auth_id === authId && v.item_id === itemId && v.id === null
+              ? { ...v, key_value: nextValue }
+              : v,
+          ),
+        );
+      } else {
+        // New entry. id=null tells the server to encrypt + create.
+        onChange([
+          ...vals,
+          {
+            id: null,
+            auth_id: authId,
+            item_id: itemId,
+            key_value: nextValue,
+            key_name: null,
+          },
+        ]);
       }
     },
-    [valueByTriple, existingIdByTriple, vals, onChange]
+    [valueByPair, vals, onChange],
+  );
+
+  const [revealed, setRevealed] = useState<Record<string, string>>({});
+  const [revealing, setRevealing] = useState<Record<string, boolean>>({});
+
+  const handleReveal = useCallback(
+    async (existingId: string, keyId: string) => {
+      if (!onReveal) return;
+      if (revealed[existingId]) {
+        setRevealed((prev) => {
+          const { [existingId]: _drop, ...rest } = prev;
+          return rest;
+        });
+        return;
+      }
+      setRevealing((prev) => ({ ...prev, [existingId]: true }));
+      try {
+        const plaintext = await onReveal(keyId);
+        if (plaintext != null) {
+          setRevealed((prev) => ({ ...prev, [existingId]: plaintext }));
+        }
+      } finally {
+        setRevealing((prev) => {
+          const { [existingId]: _drop, ...rest } = prev;
+          return rest;
+        });
+      }
+    },
+    [onReveal, revealed],
   );
 
   const handleAccept = useCallback(() => {
-    // Pending triples remain selected; next non-pending save confirms them.
+    // Pending entries remain; next save confirms them.
   }, []);
-
   const handleReject = useCallback(() => {
     onChange(
       vals.filter(
-        (v) => !pendingTriples.has(tripleKey(v.auth_id, v.item_id, v.key_id))
-      )
+        (v) => !(v.id && pendingPairs.has(pairKey(v.auth_id, v.item_id))),
+      ),
     );
-  }, [onChange, pendingTriples, vals]);
+  }, [onChange, pendingPairs, vals]);
 
   if (!show_auth_item_keys) return null;
 
@@ -156,7 +221,7 @@ export function AuthItemKeys({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <Label className="flex items-center gap-1">{label}</Label>
+        <Label>{label}</Label>
         {showDiff && (
           <>
             <TooltipProvider>
@@ -194,57 +259,102 @@ export function AuthItemKeys({
           </>
         )}
       </div>
-      <p className="text-xs text-muted-foreground">{description}</p>
+      {description && (
+        <p className="text-xs text-muted-foreground">{description}</p>
+      )}
+
       {groups.length === 0 ? (
         <div className="text-sm text-muted-foreground py-2">
-          No auth/item/key options available.
+          No encrypted claim items available.
         </div>
       ) : (
         <div className="space-y-3">
           {groups.map(([authId, group]) => (
-            <div key={authId} className="rounded-md border p-3 space-y-2 bg-card">
+            <div key={authId} className="space-y-2">
               <div className="font-medium text-sm">
                 {group.auth_name ?? authId}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 {group.options.map((opt) => {
                   const itemId = opt.item_id!;
-                  const keyId = opt.key_id!;
-                  const tk = tripleKey(authId, itemId, keyId);
-                  const checked = valueByTriple.has(tk);
-                  const isPending = pendingTriples.has(tk);
+                  const pk = pairKey(authId, itemId);
+                  const inflight = valueByPair.get(pk);
+                  const saved = existingByPair.get(pk);
+                  const isPending = pendingPairs.has(pk);
+                  const savedId = saved?.id ?? null;
+                  const isRevealed = !!(savedId && revealed[savedId]);
+                  const isLoadingReveal = !!(savedId && revealing[savedId]);
                   return (
                     <div
-                      key={tk}
+                      key={pk}
                       className={cn(
-                        "relative flex items-center justify-between rounded border px-2 py-1.5",
-                        checked && !isPending && "border-primary bg-primary/5",
-                        isPending && "ring-2 ring-success bg-success/10"
+                        "rounded border px-2 py-2 space-y-1",
+                        inflight && !isPending && "border-primary bg-primary/5",
+                        isPending && "ring-2 ring-success bg-success/10",
                       )}
                     >
-                      {isPending && (
-                        <div className="absolute top-1 right-1 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                          Pending
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <div className="truncate text-sm">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor={`aik-${pk}`} className="text-sm">
                           {opt.item_name ?? itemId}
-                          {opt.key_name ? ` → ${opt.key_name}` : ""}
-                        </div>
-                        {opt.masked_key && (
-                          <div className="text-xs text-muted-foreground truncate">
-                            {opt.masked_key}
+                          <span className="ml-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+                            Encrypted
+                          </span>
+                        </Label>
+                        {isPending && (
+                          <div className="px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                            Pending
                           </div>
                         )}
                       </div>
-                      <Switch
-                        checked={checked}
-                        disabled={disabled}
-                        onCheckedChange={(value) =>
-                          toggle(authId, itemId, keyId, value)
-                        }
-                      />
+                      {opt.item_description && (
+                        <div className="text-xs text-muted-foreground">
+                          {opt.item_description}
+                        </div>
+                      )}
+                      {savedId && saved?.key_id && !inflight ? (
+                        // Saved row: masked + reveal button.
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0 text-xs text-muted-foreground font-mono truncate">
+                            {isRevealed ? revealed[savedId] : "••••••••••••••••"}
+                          </div>
+                          {onReveal && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              disabled={disabled || isLoadingReveal}
+                              onClick={() =>
+                                handleReveal(
+                                  savedId,
+                                  saved.key_id as string,
+                                )
+                              }
+                              title={isRevealed ? "Hide" : "Reveal"}
+                            >
+                              {isRevealed ? (
+                                <EyeOff className="h-3.5 w-3.5" />
+                              ) : (
+                                <Eye className="h-3.5 w-3.5" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        // No saved row yet (or user is replacing): plain input.
+                        <Input
+                          id={`aik-${pk}`}
+                          type="password"
+                          disabled={disabled}
+                          value={inflight?.key_value ?? ""}
+                          onChange={(e) =>
+                            updateValue(authId, itemId, e.target.value)
+                          }
+                          placeholder={`Value for ${opt.item_name ?? "item"}`}
+                          className="h-8"
+                          autoComplete="new-password"
+                        />
+                      )}
                     </div>
                   );
                 })}

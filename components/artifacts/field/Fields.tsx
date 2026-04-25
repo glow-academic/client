@@ -5,9 +5,9 @@
  * 12/05/2025
  */
 "use client";
-import { Copy, Edit, Trash2, X } from "lucide-react";
+import { Copy, Edit, Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import type {
@@ -16,9 +16,11 @@ import type {
   DuplicateFieldIn,
   DuplicateFieldOut,
   FieldsListOut,
+  UpdateFieldIn,
+  UpdateFieldOut,
 } from "@/app/(main)/management/fields/page";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { Input } from "@/components/ui/input";
 import {
   ColumnDef,
@@ -47,7 +49,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useFieldAi } from "@/hooks/use-field-ai";
 
 export interface FieldsProps {
@@ -58,12 +64,14 @@ export interface FieldsProps {
     input: DuplicateFieldIn
   ) => Promise<DuplicateFieldOut>;
   deleteFieldAction?: (input: DeleteFieldIn) => Promise<DeleteFieldOut>;
+  updateFieldAction?: (input: UpdateFieldIn) => Promise<UpdateFieldOut>;
 }
 
 export default function Fields({
   listData: serverListData,
   duplicateFieldAction,
   deleteFieldAction,
+  updateFieldAction,
 }: FieldsProps) {
   const router = useRouter();
 
@@ -93,6 +101,56 @@ export default function Fields({
 
   // Extract data from response
   const fields = useMemo(() => fieldsData?.fields || [], [fieldsData?.fields]);
+
+  // Flag catalog (e.g. field_active) — used to reconstruct flag_ids on bulk edit.
+  const flagOptions = useMemo(() => {
+    return (fieldsData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [fieldsData?.flag_filter]);
+
+  // Selection state
+  const [selectedFieldIds, setSelectedFieldIds] = useState<string[]>([]);
+  const selectedCount = selectedFieldIds.length;
+  const selectedFields = useMemo(() => {
+    return fields.filter((f) => f.field_id && selectedFieldIds.includes(f.field_id));
+  }, [fields, selectedFieldIds]);
+  const deletableFields = useMemo(
+    () => selectedFields.filter((f) => f.can_delete),
+    [selectedFields],
+  );
+  const nonDeletableFields = useMemo(
+    () => selectedFields.filter((f) => !f.can_delete),
+    [selectedFields],
+  );
+  const editableFields = useMemo(
+    () => selectedFields.filter((f) => f.can_edit ?? true),
+    [selectedFields],
+  );
+
+  const toggleSelection = useCallback((fieldId: string) => {
+    setSelectedFieldIds((prev) =>
+      prev.includes(fieldId) ? prev.filter((id) => id !== fieldId) : [...prev, fieldId]
+    );
+  }, []);
+  const clearSelection = useCallback(() => setSelectedFieldIds([]), []);
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = fields.filter((f) => f.field_id).map((f) => f.field_id!);
+    setSelectedFieldIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [fields]);
+  const allPageSelected = useMemo(() => {
+    const pageIds = fields.filter((f) => f.field_id).map((f) => f.field_id!);
+    return pageIds.length > 0 && pageIds.every((id) => selectedFieldIds.includes(id));
+  }, [fields, selectedFieldIds]);
+
+  // Bulk delete state
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk edit state
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
 
   // Use server-provided facet options directly (ListFilterSection pattern)
   const parameterOptions = useMemo(
@@ -340,20 +398,102 @@ export default function Fields({
     router.push(`/management/fields/${fieldId}`);
   };
 
+  const handleBulkDelete = async () => {
+    if (!deleteFieldAction || deletableFields.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const ids = deletableFields.map((f) => f.field_id!);
+      await deleteFieldAction({ body: { field_ids: ids, accept: true } });
+      toast.success(`${ids.length} field(s) deleted successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete fields";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to delete fields");
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (!updateFieldAction || editableFields.length === 0) return;
+
+    const hasActiveChange = bulkEditActiveStatus !== null;
+    if (!hasActiveChange) {
+      toast.error("No changes selected");
+      return;
+    }
+
+    const activeFlagId = flagOptions.find((f) => f.type === "field_active")?.id;
+
+    setIsBulkEditing(true);
+    try {
+      const items = editableFields.map((f) => {
+        let flag_ids: string[] | undefined;
+        if (hasActiveChange) {
+          const isActive = bulkEditActiveStatus;
+          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+        }
+        return {
+          id: f.field_id!,
+          ...(hasActiveChange && { flag_ids }),
+        };
+      });
+
+      await updateFieldAction({ body: { fields: items } } as UpdateFieldIn);
+      toast.success(`${items.length} field(s) updated successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update fields";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to update fields");
+    } finally {
+      setIsBulkEditing(false);
+      setShowBulkEditDialog(false);
+    }
+  };
+
+  const openBulkEditDialog = () => {
+    setBulkEditActiveStatus(null);
+    setShowBulkEditDialog(true);
+  };
+
   const _handleCreateNew = () => {
     router.push("/management/fields/new");
   };
 
   const renderFieldCard = (field: (typeof fields)[number]) => {
+    const isSelected = field.field_id ? selectedFieldIds.includes(field.field_id) : false;
     return (
       <Card
         key={field.field_id}
-        className="flex flex-col h-full hover:shadow-md transition-shadow"
+        className={`group flex flex-col h-full hover:shadow-md transition-all ${
+          isSelected ? "ring-2 ring-primary" : ""
+        }`}
         data-testid={`field-card-${field.field_id}`}
+        aria-selected={isSelected}
       >
         <CardHeader className="pb-4 flex-shrink-0">
           <div className="flex items-start justify-between">
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 flex items-center gap-2">
+              <div
+                className={`transition-all overflow-hidden flex-shrink-0 ${
+                  selectedCount > 0
+                    ? "w-5 opacity-100"
+                    : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                }`}
+                data-action-button
+              >
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => {
+                    if (field.field_id) toggleSelection(field.field_id);
+                  }}
+                  className="rounded-full h-5 w-5"
+                  aria-label={`Select field ${field.name || "Unnamed"}`}
+                />
+              </div>
               <CardTitle className="text-lg font-semibold truncate">
                 {field.name}
               </CardTitle>
@@ -468,67 +608,102 @@ export default function Fields({
         </div>
       ) : (
         <div className="space-y-4">
-          {/* Toolbar */}
-          <div
-            className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
-            data-testid="fields-toolbar"
-          >
-            <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
-              <div className="w-full md:w-auto">
-                <Input
-                  data-testid="fields-search"
-                  placeholder="Search fields..."
-                  value={(nameColumn?.getFilterValue() as string) ?? ""}
-                  onChange={(event) =>
-                    nameColumn?.setFilterValue(event.target.value)
-                  }
-                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
-                  aria-label="Search fields by name"
-                  aria-controls="fields-grid"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2 flex-wrap">
-                {/* Parameter Filter */}
-                {parameterColumn && parameterOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={parameterColumn}
-                    title="Parameter"
-                    options={parameterOptions}
-                  />
-                )}
-
-                {/* Persona Filter */}
-                {personaColumn && personaOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={personaColumn}
-                    title="Persona"
-                    options={personaOptions}
-                  />
-                )}
-
-                {/* Department Filter */}
-                {departmentsColumn && departmentOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={departmentsColumn}
-                    title="Department"
-                    options={departmentOptions}
-                  />
-                )}
-
-                {isFiltered && (
+          {/* Toolbar — swaps between filter bar and selection action bar */}
+          {selectedCount > 0 ? (
+            <div
+              className="flex items-center justify-between gap-2"
+              data-testid="fields-toolbar"
+            >
+              <div className="flex items-center gap-2">
+                {deleteFieldAction && (
                   <Button
-                    variant="ghost"
-                    onClick={() => table.resetColumnFilters()}
-                    className="h-8 px-2 lg:px-3 hidden md:flex"
+                    variant="destructive"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setShowBulkDeleteDialog(true)}
+                    disabled={deletableFields.length === 0}
                   >
-                    Reset
-                    <X className="ml-2 h-4 w-4" />
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete {deletableFields.length} of {selectedCount}
                   </Button>
                 )}
+                {updateFieldAction && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={openBulkEditDialog}
+                    disabled={editableFields.length === 0}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit {editableFields.length} of {selectedCount}
+                  </Button>
+                )}
+                {!allPageSelected && (
+                  <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
+                    Select All
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
+                  Unselect All
+                </Button>
               </div>
             </div>
-          </div>
+          ) : (
+            <div
+              className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+              data-testid="fields-toolbar"
+            >
+              <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+                <div className="w-full md:w-auto">
+                  <Input
+                    data-testid="fields-search"
+                    placeholder="Search fields..."
+                    value={(nameColumn?.getFilterValue() as string) ?? ""}
+                    onChange={(event) =>
+                      nameColumn?.setFilterValue(event.target.value)
+                    }
+                    className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                    aria-label="Search fields by name"
+                    aria-controls="fields-grid"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2 flex-wrap">
+                  <ThreePickerFilters
+                    slots={[
+                      {
+                        column: parameterColumn,
+                        title: "Parameter",
+                        options: parameterOptions,
+                      },
+                      {
+                        column: personaColumn,
+                        title: "Persona",
+                        options: personaOptions,
+                      },
+                      {
+                        column: departmentsColumn,
+                        title: "Department",
+                        options: departmentOptions,
+                      },
+                    ]}
+                  />
+
+                  {isFiltered && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => table.resetColumnFilters()}
+                      className="h-8 px-2 lg:px-3 hidden md:flex"
+                    >
+                      Reset
+                      <X className="ml-2 h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Cards Grid */}
           <div
@@ -587,6 +762,68 @@ export default function Fields({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <BulkDeleteDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        count={deletableFields.length}
+        entityLabel="field"
+        entityLabelPlural="fields"
+        isDeleting={isBulkDeleting}
+        onConfirm={handleBulkDelete}
+        description={
+          <>
+            <p>This action cannot be undone.</p>
+            {deletableFields.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                <ul className="text-sm space-y-0.5">
+                  {deletableFields.map((f) => (
+                    <li key={f.field_id} className="flex items-center gap-1.5">
+                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                      {f.name || "Unnamed Field"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {nonDeletableFields.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                  Cannot be deleted (in use):
+                </p>
+                <ul className="text-sm space-y-0.5">
+                  {nonDeletableFields.map((f) => (
+                    <li
+                      key={f.field_id}
+                      className="flex items-center gap-1.5 text-muted-foreground"
+                    >
+                      {f.name || "Unnamed Field"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        }
+      />
+
+      {/* Bulk Edit Modal */}
+      <BulkEditDialog
+        open={showBulkEditDialog}
+        onOpenChange={setShowBulkEditDialog}
+        count={editableFields.length}
+        entityLabelPlural="fields"
+        isSaving={isBulkEditing}
+        onSave={handleBulkEdit}
+      >
+        <BulkEditFlagField
+          label="Active Status"
+          value={bulkEditActiveStatus}
+          onChange={setBulkEditActiveStatus}
+        />
+      </BulkEditDialog>
 
     </div>
   );

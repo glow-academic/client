@@ -110,22 +110,33 @@ export default function BenchmarkZone({
         data-testid="benchmark-eval-grid"
       >
         {visibleEvals.map((evalItem) => {
-          const rubricMapping = evalItem.rubric_id
-            ? rubricMappings?.[evalItem.rubric_id]
+          // Server returns `rubric_ids: list[str]` (plural) — each eval is
+          // 1:1 with a rubric in the seed, so the first id is the lookup
+          // key. Falls back to undefined when none attached.
+          const primaryRubricId =
+            (evalItem.rubric_ids ?? [])[0] ?? null;
+          const rubricMapping = primaryRubricId
+            ? rubricMappings?.[primaryRubricId]
             : undefined;
+          const totalInvocations = evalItem.total_invocations ?? 0;
+          const completedInvocations = evalItem.completed_invocations ?? 0;
+          const pendingInvocations = Math.max(
+            0,
+            totalInvocations - completedInvocations,
+          );
           return (
             profile && (
               <EvalCard
                 key={evalItem.eval_id ?? ""}
                 evalId={evalItem.eval_id ?? ""}
-                name={evalItem.name ?? ""}
-                description={evalItem.description ?? ""}
+                name={evalItem.eval_name ?? ""}
+                description={evalItem.eval_description ?? ""}
                 status={evalItem.status ?? "unknown"}
-                totalRuns={evalItem.total_runs ?? 0}
-                completedRuns={evalItem.completed_runs ?? 0}
-                pendingRuns={evalItem.pending_runs ?? 0}
-                rubricName={evalItem.rubric_name ?? ""}
-                useGroups={(evalItem as { use_groups?: boolean | null }).use_groups ?? false}
+                totalRuns={totalInvocations}
+                completedRuns={completedInvocations}
+                pendingRuns={pendingInvocations}
+                rubricName=""
+                numModels={(evalItem.model_ids ?? []).length}
                 onStartEval={onStartEval}
                 {...(onStartInfiniteMode && { onStartInfiniteMode })}
                 loadingEval={loadingEval}

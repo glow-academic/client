@@ -23,7 +23,6 @@ import { useProviderAi } from "@/hooks/use-provider-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildDraftPayload,
   checkHasResourceIds,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
@@ -36,6 +35,8 @@ type UpdateProviderIn = InputOf<"/provider/update", "post">;
 type UpdateProviderOut = OutputOf<"/provider/update", "post">;
 type PatchProviderDraftIn = InputOf<"/provider/draft", "patch">;
 type PatchProviderDraftOut = OutputOf<"/provider/draft", "patch">;
+type DecryptProviderIn = InputOf<"/provider/decrypt", "post">;
+type DecryptProviderOut = OutputOf<"/provider/decrypt", "post">;
 type ProviderData = OutputOf<"/provider/get", "post">;
 
 type ProviderFormState = {
@@ -71,6 +72,9 @@ export interface ProviderProps {
   patchProviderDraftAction?: (
     input: PatchProviderDraftIn
   ) => Promise<PatchProviderDraftOut>;
+  decryptProviderKeyAction?: (
+    input: DecryptProviderIn
+  ) => Promise<DecryptProviderOut>;
 }
 
 export default function Provider({
@@ -79,6 +83,7 @@ export default function Provider({
   createProviderAction,
   updateProviderAction,
   patchProviderDraftAction,
+  decryptProviderKeyAction,
 }: ProviderProps) {
   const router = useRouter();
   const isEditMode = !!providerId;
@@ -117,9 +122,7 @@ export default function Provider({
   }, [s]);
 
   const [formState, setFormState] = useState<ProviderFormState>(getInitialFormState);
-  const referenceStateRef = useRef<ProviderFormState>(getInitialFormState());
   const formStateRef = useRef(formState);
-  const serverSyncPendingRef = useRef(false);
 
   useEffect(() => {
     formStateRef.current = formState;
@@ -128,7 +131,6 @@ export default function Provider({
   useEffect(() => {
     const initial = getInitialFormState();
     setFormState(initial);
-    referenceStateRef.current = initial;
   }, [getInitialFormState]);
 
   const { isGenerating, generate } = useProviderAi({});
@@ -138,110 +140,38 @@ export default function Provider({
     []
   );
 
-  const formStateKey = useMemo(() => {
-    if (serverSyncPendingRef.current) {
-      return JSON.stringify(referenceStateRef.current);
-    }
-    return JSON.stringify(formState);
-  }, [formState]);
+  const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
 
   const patchActionRef = useRef<
     | ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>)
     | undefined
   >(undefined);
 
-  useEffect(() => {
-    if (!patchProviderDraftAction) {
-      patchActionRef.current = undefined;
-      return;
-    }
+  const buildPatchPayload = useCallback((): Record<string, unknown> => {
+    const current = formStateRef.current as unknown as ProviderFormState;
+    const payload: Record<string, unknown> = {};
 
-    patchActionRef.current = async (payload: Record<string, unknown>) => {
-      const result = await patchProviderDraftAction({
-        body: payload,
-      } as PatchProviderDraftIn);
-      const fs = (result as Record<string, unknown>)?.["form_state"] as
-        | Record<string, unknown>
-        | undefined;
-      if (fs) {
-        serverSyncPendingRef.current = true;
-        setFormState((prev) => {
-          const nextNameId = (fs["name_id"] as string | null) ?? prev.name_id;
-          const nextDescriptionId =
-            (fs["description_id"] as string | null) ?? prev.description_id;
-          const nextValueId = (fs["value_id"] as string | null) ?? prev.value_id;
-          const nextEndpointId =
-            (fs["endpoint_id"] as string | null) ??
-            (fs["endpoint_ids"] as string[] | null)?.[0] ??
-            prev.endpoint_id;
-          const nextKeyId =
-            (fs["key_id"] as string | null) ??
-            (fs["key_ids"] as string[] | null)?.[0] ??
-            prev.key_id;
-          return {
-            ...prev,
-            name_id: nextNameId,
-            // Clear value fields only once the server has resolved them to
-            // IDs — keeping the value would cause infinite re-saves (value
-            // takes precedence → new resource → new id → repeat).
-            name: nextNameId ? null : prev.name,
-            description_id: nextDescriptionId,
-            description: nextDescriptionId ? null : prev.description,
-            flag_ids: (fs["flag_ids"] as string[] | null) ?? prev.flag_ids,
-            department_ids:
-              (fs["department_ids"] as string[] | null) ?? prev.department_ids,
-            value_id: nextValueId,
-            value: nextValueId ? null : prev.value,
-            endpoint_id: nextEndpointId,
-            endpoint: nextEndpointId ? null : prev.endpoint,
-            key_id: nextKeyId,
-            pending_ids:
-              (fs["pending_ids"] as string[] | null) ?? prev.pending_ids,
-          };
-        });
-        requestAnimationFrame(() => {
-          serverSyncPendingRef.current = false;
-        });
-      }
-      return result;
-    };
-  }, [patchProviderDraftAction]);
+    if (current.name != null) payload["name"] = current.name;
+    else if (current.name_id) payload["name_id"] = current.name_id;
 
-  const buildPatchPayload = useCallback(
-    (draftId: string | null) => {
-      const currentFormState = formStateRef.current;
-      const payload: Record<string, unknown> = {
-        draft_id: draftId,
-        input_draft_id: draftId,
-        ...buildDraftPayload(PROVIDER_RESOURCES, {
-          formState: currentFormState as unknown as Record<string, unknown>,
-          referenceState: referenceStateRef.current as unknown as Record<string, unknown>,
-          flushResults: {},
-        }),
-      };
+    if (current.description != null) payload["description"] = current.description;
+    else if (current.description_id) payload["description_id"] = current.description_id;
 
-      if (currentFormState["name"] && !currentFormState["name_id"]) {
-        payload["name"] = currentFormState["name"];
-        delete payload["name_id"];
-      }
-      if (currentFormState["description"] && !currentFormState["description_id"]) {
-        payload["description"] = currentFormState["description"];
-        delete payload["description_id"];
-      }
-      if (currentFormState["value"] && !currentFormState["value_id"]) {
-        payload["value"] = currentFormState["value"];
-        delete payload["value_id"];
-      }
-      if (currentFormState["endpoint"] && !currentFormState["endpoint_id"]) {
-        payload["endpoint"] = currentFormState["endpoint"];
-        delete payload["endpoint_id"];
-      }
-      payload["pending_ids"] = currentFormState["pending_ids"];
+    if (current.value != null) payload["value"] = current.value;
+    else if (current.value_id) payload["value_id"] = current.value_id;
 
-      return payload;
-    },
-    []
-  );
+    if (current.endpoint != null) payload["endpoint"] = current.endpoint;
+    else if (current.endpoint_id) payload["endpoint_id"] = current.endpoint_id;
+
+    if (current.key_id) payload["key_id"] = current.key_id;
+
+    if (current.flag_ids.length > 0) payload["flag_ids"] = current.flag_ids;
+    if (current.department_ids.length > 0) payload["department_ids"] = current.department_ids;
+
+    if (current.pending_ids.length > 0) payload["pending_ids"] = current.pending_ids;
+
+    return payload;
+  }, []);
 
   const hasResourceIds =
     checkHasResourceIds(
@@ -330,6 +260,27 @@ export default function Provider({
     }));
   }, []);
 
+  // Canonical decrypt callback for the Keys picker. Mirrors the Setting
+  // page pattern: hits `POST /provider/decrypt`, which is audited via
+  // run_artifact_operation_with_audit. Returns plaintext or null.
+  const decryptKey = useCallback(
+    async (key_id: string): Promise<string | null> => {
+      if (!decryptProviderKeyAction || !providerId) return null;
+      try {
+        const result = await decryptProviderKeyAction({
+          body: { provider_id: providerId, key_id },
+        } as DecryptProviderIn);
+        const decrypted = (result as DecryptProviderOut & { key?: string | null })
+          .key;
+        return decrypted ?? null;
+      } catch (err) {
+        console.error("provider decrypt failed", err);
+        return null;
+      }
+    },
+    [decryptProviderKeyAction, providerId],
+  );
+
   const handleDescriptionChange = useCallback((description: string) => {
     setFormState((prev) => ({
       ...prev,
@@ -342,6 +293,7 @@ export default function Provider({
     setUrlFormDataRef,
     onFormDataChange,
     flushAllAndSave,
+    serverSyncPendingRef,
     formDataRef,
   } = useDraftLifecycle({
     formStateKey,
@@ -353,6 +305,69 @@ export default function Provider({
     flushRegistryRef: emptyFlushRegistryRef,
     formStateRef: formStateRef as React.MutableRefObject<Record<string, unknown>>,
   });
+
+  useEffect(() => {
+    if (!patchProviderDraftAction) {
+      patchActionRef.current = undefined;
+      return;
+    }
+
+    patchActionRef.current = async (payload: Record<string, unknown>) => {
+      const result = await patchProviderDraftAction({
+        body: payload,
+      } as PatchProviderDraftIn);
+      const fs = (result as Record<string, unknown>)?.["form_state"] as
+        | Record<string, unknown>
+        | undefined;
+      if (fs) {
+        setFormState((prev) => {
+          const nextNameId = (fs["name_id"] as string | null) ?? prev.name_id;
+          const nextDescriptionId = (fs["description_id"] as string | null) ?? prev.description_id;
+          const nextValueId = (fs["value_id"] as string | null) ?? prev.value_id;
+          const nextEndpointId =
+            (fs["endpoint_id"] as string | null) ??
+            (fs["endpoint_ids"] as string[] | null)?.[0] ??
+            prev.endpoint_id;
+          const nextKeyId =
+            (fs["key_id"] as string | null) ??
+            (fs["key_ids"] as string[] | null)?.[0] ??
+            prev.key_id;
+          const next: ProviderFormState = {
+            ...prev,
+            name_id: nextNameId,
+            name: nextNameId ? null : prev.name,
+            description_id: nextDescriptionId,
+            description: nextDescriptionId ? null : prev.description,
+            flag_ids: (fs["flag_ids"] as string[] | null) ?? prev.flag_ids,
+            department_ids: (fs["department_ids"] as string[] | null) ?? prev.department_ids,
+            value_id: nextValueId,
+            value: nextValueId ? null : prev.value,
+            endpoint_id: nextEndpointId,
+            endpoint: nextEndpointId ? null : prev.endpoint,
+            key_id: nextKeyId,
+            pending_ids: (fs["pending_ids"] as string[] | null) ?? prev.pending_ids,
+          };
+          const changed =
+            prev.name_id !== next.name_id ||
+            prev.name !== next.name ||
+            prev.description_id !== next.description_id ||
+            prev.description !== next.description ||
+            prev.value_id !== next.value_id ||
+            prev.value !== next.value ||
+            prev.endpoint_id !== next.endpoint_id ||
+            prev.endpoint !== next.endpoint ||
+            prev.key_id !== next.key_id ||
+            JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
+            JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
+            JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
+          if (!changed) return prev;
+          serverSyncPendingRef.current = true;
+          return next;
+        });
+      }
+      return result;
+    };
+  }, [patchProviderDraftAction, serverSyncPendingRef]);
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: ResourceType[]) => {
@@ -373,8 +388,9 @@ export default function Provider({
 
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({
-      basic: ["names", "descriptions", "flags", "departments"],
-      integrations: ["values", "endpoints", "keys"],
+      basic: ["names", "descriptions", "values", "flags", "departments"],
+      endpoint: ["endpoints"],
+      key: ["keys"],
       all: ["names", "descriptions", "flags", "departments", "values", "endpoints", "keys"],
     }),
     []
@@ -422,7 +438,6 @@ export default function Provider({
 
     if (hasRawFields) {
       await flushAllAndSave();
-      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
     }
 
     const effectiveState = formStateRef.current;
@@ -502,12 +517,17 @@ export default function Provider({
       {
         id: "basic",
         title: "Basic",
-        description: "Name, description, status, and departments",
+        description: "Name, value, description, status, and departments",
       },
       {
-        id: "integrations",
-        title: "Integrations",
-        description: "Value, endpoint, and key",
+        id: "endpoint",
+        title: "Endpoint",
+        description: "API endpoint URL for this provider",
+      },
+      {
+        id: "key",
+        title: "Key",
+        description: "API key used to authenticate requests",
       },
     ],
     []
@@ -515,15 +535,29 @@ export default function Provider({
 
   const getStepStatus = useCallback(
     (stepId: string): StepStatus => {
-      if (stepId === "basic") {
-        return formState.name_id || formState.name ? "completed" : "active";
+      const hasName = !!(formState.name_id || formState.name);
+      switch (stepId) {
+        case "basic":
+          return hasName ? "completed" : "active";
+        case "endpoint":
+          if (!hasName) return "pending";
+          return formState.endpoint_id || formState.endpoint
+            ? "completed"
+            : "active";
+        case "key":
+          if (!hasName) return "pending";
+          return formState.key_id ? "completed" : "active";
+        default:
+          return "pending";
       }
-      if (stepId === "integrations") {
-        return formState.value_id || formState.value ? "completed" : "pending";
-      }
-      return "pending";
     },
-    [formState.name, formState.name_id, formState.value, formState.value_id]
+    [
+      formState.name,
+      formState.name_id,
+      formState.endpoint,
+      formState.endpoint_id,
+      formState.key_id,
+    ]
   );
 
   const renderStep = useCallback(
@@ -541,169 +575,205 @@ export default function Provider({
       stepStatus: StepStatus;
       isOptional: boolean;
     }) => {
-      if (stepId === "basic") {
-        return (
-          <StepCard
-            stepTitle={stepTitle}
-            stepDescription={stepDescription}
-            stepNumber={stepNumber}
-            stepStatus={stepStatus}
-            isReadonly={disabled}
-            customHeader={
-              <Names
-                name_id={formState.name_id}
-                name_resource={s?.names?.find((item: any) => item.selected) ?? null}
-                show_name={true}
-                names={s?.names ?? []}
-                disabled={disabled}
-                onNameIdChange={handleNameIdChange}
-                onNameChange={handleNameChange}
-                placeholder="e.g., OpenAI"
-                defaultName="New Provider"
-                hideDescription={true}
-                required={true}
-              />
-            }
-            actions={
-              <StepCardAiButton
-                stepId="basic"
-                resourceTypes={stepResources["basic"] ?? []}
-                canRegenerate={canRegenerate as (rt: string) => boolean}
-                isGenerating={isGenerating as (rt: string) => boolean}
-                onOpenModal={(id) => {
-                  const resources = stepResources[id];
-                  if (resources) {
-                    void handleGenerateResources(resources);
-                  }
-                }}
-                disabled={disabled || !s?.basic_show_ai_generate}
-              />
-            }
-          >
-            <Descriptions
-              description_id={formState.description_id}
-              description_resource={
-                s?.descriptions?.find((item: any) => item.selected) ?? null
+      switch (stepId) {
+        case "basic":
+          return (
+            <StepCard
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              stepNumber={stepNumber}
+              stepStatus={stepStatus}
+              isReadonly={disabled}
+              customHeader={
+                <Names
+                  name_id={formState.name_id}
+                  name_resource={s?.names?.find((item: any) => item.selected) ?? null}
+                  show_name={true}
+                  names={s?.names ?? []}
+                  disabled={disabled}
+                  onNameIdChange={handleNameIdChange}
+                  onNameChange={handleNameChange}
+                  placeholder="e.g., OpenAI"
+                  defaultName="New Provider"
+                  hideDescription={true}
+                  required={true}
+                />
               }
-              show_description={true}
-              descriptions={s?.descriptions ?? []}
-              disabled={disabled}
-              onDescriptionIdChange={handleDescriptionIdChange}
-              onDescriptionChange={handleDescriptionChange}
-              required={false}
-            />
-            <Flags
-              flags={s?.flags ?? []}
-              values={flagValues}
-              columns={1}
-              label="Flags"
-              disabled={disabled}
-              show_flags={true}
-              onChange={handleFlagToggle}
-            />
-            <Departments
-              department_ids={formState.department_ids}
-              department_resources={s?.departments?.filter((item: any) => item.selected) ?? []}
-              show_departments={true}
-              departments={s?.departments ?? []}
-              disabled={disabled}
-              onChange={(ids) =>
-                setFormState((prev) => ({ ...prev, department_ids: ids }))
+              actions={
+                <StepCardAiButton
+                  stepId="basic"
+                  resourceTypes={stepResources["basic"] ?? []}
+                  canRegenerate={canRegenerate as (rt: string) => boolean}
+                  isGenerating={isGenerating as (rt: string) => boolean}
+                  onOpenModal={(id) => {
+                    const resources = stepResources[id];
+                    if (resources) {
+                      void handleGenerateResources(resources);
+                    }
+                  }}
+                  disabled={disabled || !s?.basic_show_ai_generate}
+                />
               }
-            />
-          </StepCard>
-        );
-      }
-
-      return (
-        <StepCard
-          stepTitle={stepTitle}
-          stepDescription={stepDescription}
-          stepNumber={stepNumber}
-          stepStatus={stepStatus}
-          isReadonly={disabled}
-          actions={
-            <StepCardAiButton
-              stepId="integrations"
-                resourceTypes={stepResources["integrations"] ?? []}
-              canRegenerate={canRegenerate as (rt: string) => boolean}
-              isGenerating={isGenerating as (rt: string) => boolean}
-              onOpenModal={(id) => {
-                const resources = stepResources[id];
-                if (resources) {
-                  void handleGenerateResources(resources);
+            >
+              {/* Value lives at the top of basic info, mirroring Model.tsx — it
+                  identifies the provider variant and naturally pairs with the
+                  name in the header. */}
+              <Values
+                value_ids={formState.value_id ? [formState.value_id] : []}
+                value_resources={s?.values?.filter((item: any) => item.selected) ?? []}
+                values={s?.values ?? []}
+                value={formState.value}
+                onValueChange={(value) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    value_id: value ? null : prev.value_id,
+                    value,
+                  }))
                 }
-              }}
-              disabled={disabled || !s?.integrations_show_ai_generate}
-            />
-          }
-        >
-          <Values
-            value_ids={formState.value_id ? [formState.value_id] : []}
-            value_resources={s?.values?.filter((item: any) => item.selected) ?? []}
-            values={s?.values ?? []}
-            value={formState.value}
-            onValueChange={(value) =>
-              setFormState((prev) => ({
-                ...prev,
-                value_id: value ? null : prev.value_id,
-                value,
-              }))
-            }
-            show_values={true}
-            disabled={disabled}
-            required={true}
-            onChange={(ids) =>
-              setFormState((prev) => ({
-                ...prev,
-                value_id: ids[0] ?? null,
-                value: null,
-              }))
-            }
-          />
-          <Endpoints
-            endpoint_ids={formState.endpoint_id ? [formState.endpoint_id] : []}
-            endpoint_resources={s?.endpoints?.filter((item: any) => item.selected) ?? []}
-            endpoints={s?.endpoints ?? []}
-            endpoint={formState.endpoint}
-            onEndpointChange={(endpoint) =>
-              setFormState((prev) => ({
-                ...prev,
-                endpoint_id: endpoint ? null : prev.endpoint_id,
-                endpoint,
-              }))
-            }
-            show_endpoints={true}
-            disabled={disabled}
-            onChange={(ids) =>
-              setFormState((prev) => ({
-                ...prev,
-                endpoint_id: ids[0] ?? null,
-                endpoint: null,
-              }))
-            }
-          />
-          <Keys
-            key_id={formState.key_id}
-            key_resource={s?.keys?.find((item: any) => item.selected) ?? null}
-            keys={
-              (s?.keys ?? []).map((item: any) => ({
-                id: item.id,
-                name: item.name,
-                description: item.description,
-                key_masked: item.key,
-                active: true,
-                generated: item.generated,
-              }))
-            }
-            show_key={true}
-            disabled={disabled}
-            onKeyIdChange={(id) =>
-              setFormState((prev) => ({ ...prev, key_id: id }))
-            }
-          />
-        </StepCard>
-      );
+                show_values={true}
+                disabled={disabled}
+                required={true}
+                onChange={(ids) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    value_id: ids[0] ?? null,
+                    value: null,
+                  }))
+                }
+              />
+              <Descriptions
+                description_id={formState.description_id}
+                description_resource={
+                  s?.descriptions?.find((item: any) => item.selected) ?? null
+                }
+                show_description={true}
+                descriptions={s?.descriptions ?? []}
+                disabled={disabled}
+                onDescriptionIdChange={handleDescriptionIdChange}
+                onDescriptionChange={handleDescriptionChange}
+                required={false}
+              />
+              <Flags
+                flags={s?.flags ?? []}
+                values={flagValues}
+                columns={1}
+                label="Flags"
+                disabled={disabled}
+                show_flags={true}
+                onChange={handleFlagToggle}
+              />
+              <Departments
+                department_ids={formState.department_ids}
+                department_resources={s?.departments?.filter((item: any) => item.selected) ?? []}
+                show_departments={true}
+                departments={s?.departments ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, department_ids: ids }))
+                }
+              />
+            </StepCard>
+          );
+
+        case "endpoint":
+          return (
+            <StepCard
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              stepNumber={stepNumber}
+              stepStatus={stepStatus}
+              isReadonly={disabled}
+              actions={
+                <StepCardAiButton
+                  stepId="endpoint"
+                  resourceTypes={stepResources["endpoint"] ?? []}
+                  canRegenerate={canRegenerate as (rt: string) => boolean}
+                  isGenerating={isGenerating as (rt: string) => boolean}
+                  onOpenModal={(id) => {
+                    const resources = stepResources[id];
+                    if (resources) {
+                      void handleGenerateResources(resources);
+                    }
+                  }}
+                  disabled={disabled || !s?.integrations_show_ai_generate}
+                />
+              }
+            >
+              <Endpoints
+                endpoint_ids={formState.endpoint_id ? [formState.endpoint_id] : []}
+                endpoint_resources={s?.endpoints?.filter((item: any) => item.selected) ?? []}
+                endpoints={s?.endpoints ?? []}
+                endpoint={formState.endpoint}
+                onEndpointChange={(endpoint) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    endpoint_id: endpoint ? null : prev.endpoint_id,
+                    endpoint,
+                  }))
+                }
+                show_endpoints={true}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    endpoint_id: ids[0] ?? null,
+                    endpoint: null,
+                  }))
+                }
+              />
+            </StepCard>
+          );
+
+        case "key":
+          return (
+            <StepCard
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              stepNumber={stepNumber}
+              stepStatus={stepStatus}
+              isReadonly={disabled}
+              actions={
+                <StepCardAiButton
+                  stepId="key"
+                  resourceTypes={stepResources["key"] ?? []}
+                  canRegenerate={canRegenerate as (rt: string) => boolean}
+                  isGenerating={isGenerating as (rt: string) => boolean}
+                  onOpenModal={(id) => {
+                    const resources = stepResources[id];
+                    if (resources) {
+                      void handleGenerateResources(resources);
+                    }
+                  }}
+                  disabled={disabled || !s?.integrations_show_ai_generate}
+                />
+              }
+            >
+              <Keys
+                key_id={formState.key_id}
+                key_resource={s?.keys?.find((item: any) => item.selected) ?? null}
+                keys={
+                  (s?.keys ?? []).map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                    description: item.description,
+                    key_masked: item.key,
+                    active: true,
+                    generated: item.generated,
+                  }))
+                }
+                show_key={true}
+                disabled={disabled}
+                onKeyIdChange={(id) =>
+                  setFormState((prev) => ({ ...prev, key_id: id }))
+                }
+                onReveal={decryptKey}
+              />
+            </StepCard>
+          );
+
+        default:
+          return null;
+      }
     },
     [
       canRegenerate,
@@ -722,6 +792,7 @@ export default function Provider({
       formState.value_id,
       handleGenerateResources,
       isGenerating,
+      decryptKey,
       s,
       stepResources,
     ]

@@ -23,7 +23,6 @@ import { useParameterAi } from "@/hooks/use-parameter-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  buildDraftPayload,
   checkHasResourceIds,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
@@ -190,8 +189,6 @@ function ParameterComponent({
     | ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>)
     | undefined
   >(undefined);
-  const lastPatchedFormStateRef = useRef<Record<string, unknown> | null>(null);
-
   useEffect(() => {
     if (!patchParameterDraftAction) {
       patchActionRef.current = undefined;
@@ -247,50 +244,46 @@ function ParameterComponent({
 
   const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
 
-  const buildPatchPayload = useCallback(
-    (
-      inputDraftId: string | null,
-      flushResults?: Record<string, unknown>
-    ): Record<string, unknown> => {
-      const currentFormState: ParameterFormState =
-        formStateRef.current as unknown as ParameterFormState;
-      const referenceState = lastPatchedFormStateRef.current as
-        | (ParameterFormState & Record<string, unknown>)
-        | null;
+  const buildPatchPayload = useCallback((): Record<string, unknown> => {
+    const current = formStateRef.current as unknown as ParameterFormState;
+    const payload: Record<string, unknown> = {};
 
-      const payload: Record<string, unknown> = {
-        draft_id: inputDraftId || null,
-        input_draft_id: inputDraftId || null,
-        ...buildDraftPayload(PARAMETER_RESOURCES, {
-          formState: currentFormState as unknown as Record<string, unknown>,
-          referenceState,
-          flushResults: flushResults ?? {},
-        }),
-        pending_ids:
-          currentFormState.pending_ids.length > 0
-            ? currentFormState.pending_ids
-            : null,
-      };
+    if (current.name != null) {
+      payload["name"] = current.name;
+    } else if (current.name_id) {
+      payload["name_id"] = current.name_id;
+    }
 
-      if (currentFormState.name != null) {
-        payload["name"] = currentFormState.name;
-        delete payload["name_id"];
-      }
-      if (currentFormState.description != null) {
-        payload["description"] = currentFormState.description;
-        delete payload["description_id"];
-      }
+    if (current.description != null) {
+      payload["description"] = current.description;
+    } else if (current.description_id) {
+      payload["description_id"] = current.description_id;
+    }
 
-      return payload;
-    },
-    []
-  );
+    if (current.flag_ids.length > 0) {
+      payload["flag_ids"] = current.flag_ids;
+    }
+    if (current.department_ids.length > 0) {
+      payload["department_ids"] = current.department_ids;
+    }
+    if (current.field_ids.length > 0) {
+      payload["field_ids"] = current.field_ids;
+    }
+    if (current.pending_ids.length > 0) {
+      payload["pending_ids"] = current.pending_ids;
+    }
+
+    return payload;
+  }, []);
 
   const hasResourceIds =
     checkHasResourceIds(
       PARAMETER_RESOURCES,
-      formState as unknown as Record<string, unknown>
-    ) || formState.flag_ids.length > 0;
+      formState as unknown as Record<string, unknown>,
+    ) ||
+    !!formState.name ||
+    !!formState.description ||
+    formState.pending_ids.length > 0;
 
   // Per-type boolean view of flag_ids, built from the catalog. Rendered by Flags.
   const flagValues = useMemo<Record<string, boolean | null>>(() => {
@@ -388,11 +381,6 @@ function ParameterComponent({
     hasResourceIds,
     flushRegistryRef: emptyFlushRegistryRef,
     formStateRef,
-    onPatchSuccess: () => {
-      lastPatchedFormStateRef.current = {
-        ...(formStateRef.current as Record<string, unknown>),
-      };
-    },
   });
 
   const { isGenerating, generate } = useParameterAi({});

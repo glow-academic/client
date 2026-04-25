@@ -25,6 +25,8 @@ type DocumentsListIn = InputOf<"/document/search", "post">;
 type DocumentsListOut = OutputOf<"/document/search", "post">;
 type DeleteDocumentIn = InputOf<"/document/delete", "post">;
 type DeleteDocumentOut = OutputOf<"/document/delete", "post">;
+type UpdateDocumentIn = InputOf<"/document/update", "post">;
+type UpdateDocumentOut = OutputOf<"/document/update", "post">;
 // GenerateTemplate types removed - now using WebSocket
 type GenerateTemplateIn = never;
 type GenerateTemplateOut = never;
@@ -62,6 +64,13 @@ async function deleteDocument(
 ): Promise<DeleteDocumentOut> {
   "use server";
   return api.post("/document/delete", input);
+}
+
+async function updateDocument(
+  input: UpdateDocumentIn,
+): Promise<UpdateDocumentOut> {
+  "use server";
+  return api.post("/document/update", input);
 }
 
 async function generateDocument(
@@ -151,7 +160,7 @@ export default async function DocumentsPage() {
         }}
       >
         <div className="space-y-6 px-4" data-page="documents-index">
-          <Documents listData={listData} deleteDocumentAction={deleteDocument} />
+          <Documents listData={listData} deleteDocumentAction={deleteDocument} updateDocumentAction={updateDocument} />
         </div>
       </FullPageLayout>
     );
@@ -181,4 +190,6 @@ export type {
   DocumentsListOut,
   GenerateTemplateIn,
   GenerateTemplateOut,
+  UpdateDocumentIn,
+  UpdateDocumentOut,
 };

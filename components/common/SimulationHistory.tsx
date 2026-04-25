@@ -350,9 +350,6 @@ export interface SimulationHistoryProps {
   // Optional: whether to show the infinite/standard mode filter
   showModeFilter?: boolean;
 
-  // Optional: whether to show the customize button (for practice mode)
-  showCustomize?: boolean;
-
   // Optional: Server-driven filter search terms (for faceted filter dropdowns)
   profileSearch?: string;
   simulationSearch?: string;
@@ -378,7 +375,6 @@ export default function SimulationHistory({
   simulationOptions,
   scenarioOptions,
   showModeFilter = true,
-  _showCustomize = false,
   profileSearch = "",
   simulationSearch = "",
   scenarioSearch = "",

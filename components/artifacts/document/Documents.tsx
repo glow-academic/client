@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -45,11 +46,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Building2,
   Edit,
   Eye,
   FileText,
+  Pencil,
   Trash2,
   X,
 } from "lucide-react";
@@ -58,9 +61,15 @@ import type {
   DeleteDocumentIn,
   DeleteDocumentOut,
   DocumentsListOut,
+  UpdateDocumentIn,
+  UpdateDocumentOut,
 } from "@/app/(main)/management/documents/page";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
+import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
+import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import {
   Table,
   TableBody,
@@ -86,6 +95,9 @@ export interface DocumentsProps {
   deleteDocumentAction?: (
     input: DeleteDocumentIn
   ) => Promise<DeleteDocumentOut>;
+  updateDocumentAction?: (
+    input: UpdateDocumentIn
+  ) => Promise<UpdateDocumentOut>;
 }
 
 type DocumentRow = NonNullable<DocumentsListOut["documents"]>[number];
@@ -122,6 +134,7 @@ const DocumentPreviewThumb = ({ document }: { document: DocumentRow }) => {
 export default function Documents({
   listData: serverListData,
   deleteDocumentAction,
+  updateDocumentAction,
 }: DocumentsProps) {
   const router = useRouter();
 
@@ -243,6 +256,56 @@ export default function Documents({
     [documentsData?.department_filter],
   );
 
+  // Flag catalog (e.g. document_active) — used to reconstruct flag_ids on bulk edit.
+  const flagOptions = useMemo(() => {
+    return (documentsData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [documentsData?.flag_filter]);
+
+  // Selection state
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const selectedCount = selectedDocumentIds.length;
+  const selectedDocuments = useMemo(() => {
+    return documents.filter((d) => d.document_id && selectedDocumentIds.includes(d.document_id));
+  }, [documents, selectedDocumentIds]);
+  const deletableDocuments = useMemo(
+    () => selectedDocuments.filter((d) => d.can_delete),
+    [selectedDocuments],
+  );
+  const nonDeletableDocuments = useMemo(
+    () => selectedDocuments.filter((d) => !d.can_delete),
+    [selectedDocuments],
+  );
+  const editableDocuments = useMemo(
+    () => selectedDocuments.filter((d) => d.can_edit ?? true),
+    [selectedDocuments],
+  );
+
+  const toggleSelection = useCallback((documentId: string) => {
+    setSelectedDocumentIds((prev) =>
+      prev.includes(documentId)
+        ? prev.filter((id) => id !== documentId)
+        : [...prev, documentId]
+    );
+  }, []);
+  const clearSelection = useCallback(() => setSelectedDocumentIds([]), []);
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = documents.filter((d) => d.document_id).map((d) => d.document_id!);
+    setSelectedDocumentIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [documents]);
+
+  // Bulk delete state
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk edit state
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
+  const [bulkEditTemplateStatus, setBulkEditTemplateStatus] = useState<boolean | null>(null);
+  const [bulkEditDepartmentIds, setBulkEditDepartmentIds] = useState<string[] | null>(null);
+
   // Permission checking using server-provided flags
   const canDeleteDocument = useCallback(
     (documentId: string) => {
@@ -278,6 +341,24 @@ export default function Documents({
   // Define table columns inline using useMemo
   const columns = useMemo<ColumnDef<(typeof documents)[number]>[]>(
     () => [
+      {
+        id: "select",
+        header: () => null,
+        cell: ({ row }) => {
+          const docId = row.original.document_id;
+          if (!docId) return null;
+          const isSelected = selectedDocumentIds.includes(docId);
+          return (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => toggleSelection(docId)}
+              aria-label={`Select document ${row.original.name || "Unnamed"}`}
+            />
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
+      },
       {
         accessorKey: "name",
         header: ({ column }) => (
@@ -506,6 +587,8 @@ export default function Documents({
       handleEdit,
       handlePreview,
       handleSingleDelete,
+      selectedDocumentIds,
+      toggleSelection,
     ]
   );
 
@@ -555,6 +638,90 @@ export default function Documents({
     pageSize,
   ]);
 
+  const handleBulkDelete = async () => {
+    if (!deleteDocumentAction || deletableDocuments.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const ids = deletableDocuments.map((d) => d.document_id!);
+      await deleteDocumentAction({ body: { document_ids: ids, accept: true } });
+      toast.success(`${ids.length} document(s) deleted successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete documents";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to delete documents");
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (!updateDocumentAction || editableDocuments.length === 0) return;
+
+    const hasActiveChange = bulkEditActiveStatus !== null;
+    const hasTemplateChange = bulkEditTemplateStatus !== null;
+    const hasDeptChange = bulkEditDepartmentIds !== null;
+    const hasAnyFlagChange = hasActiveChange || hasTemplateChange;
+
+    if (!hasActiveChange && !hasTemplateChange && !hasDeptChange) {
+      toast.error("No changes selected");
+      return;
+    }
+
+    const flagId = (type: string) => flagOptions.find((f) => f.type === type)?.id;
+    const activeFlagId = flagId("document_active");
+    const templateFlagId = flagId("document_template");
+
+    setIsBulkEditing(true);
+    try {
+      const items = editableDocuments.map((doc) => {
+        let flag_ids: string[] | undefined;
+        if (hasAnyFlagChange) {
+          const isActive = hasActiveChange ? bulkEditActiveStatus : !doc.is_inactive;
+          // Document type doesn't expose is_template on list rows yet — preserve nothing for it.
+          const isTemplate = hasTemplateChange ? bulkEditTemplateStatus : false;
+          flag_ids = [];
+          if (isActive && activeFlagId) flag_ids.push(activeFlagId);
+          if (isTemplate && templateFlagId) flag_ids.push(templateFlagId);
+        }
+        return {
+          id: doc.document_id!,
+          ...(hasAnyFlagChange && { flag_ids }),
+          ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
+        };
+      });
+
+      await updateDocumentAction({ body: { documents: items } } as UpdateDocumentIn);
+      toast.success(`${items.length} document(s) updated successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update documents";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to update documents");
+    } finally {
+      setIsBulkEditing(false);
+      setShowBulkEditDialog(false);
+    }
+  };
+
+  const openBulkEditDialog = () => {
+    setBulkEditActiveStatus(null);
+    setBulkEditTemplateStatus(null);
+    setBulkEditDepartmentIds(null);
+    setShowBulkEditDialog(true);
+  };
+
+  const allPageSelected = useMemo(() => {
+    const pageIds = documents.filter((d) => d.document_id).map((d) => d.document_id!);
+    return pageIds.length > 0 && pageIds.every((id) => selectedDocumentIds.includes(id));
+  }, [documents, selectedDocumentIds]);
+
+  const departmentPickerOptions = useMemo(
+    () => departmentOptions.map((opt) => ({ value: opt.value, label: opt.label })),
+    [departmentOptions],
+  );
+
   // Handle document delete
   const handleDelete = async () => {
     if (!deletingDocument || !deletingDocument.document_id) return;
@@ -596,64 +763,103 @@ export default function Documents({
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Toolbar */}
-            <div
-              className="flex items-center justify-between"
-              data-testid="documents-toolbar"
-            >
-              <div className="flex flex-1 items-center space-x-2 flex-wrap">
-                <div className="w-full md:w-auto mb-2 md:mb-0">
-                  <Input
-                    data-testid="documents-search"
-                    placeholder="Filter documents..."
-                    value={
-                      (table.getColumn("name")?.getFilterValue() as string) ??
-                      ""
-                    }
-                    onChange={(event) =>
-                      table
-                        .getColumn("name")
-                        ?.setFilterValue(event.target.value)
-                    }
-                    className="h-8 w-full md:w-[150px] lg:w-[250px]"
-                    aria-label="Search documents by name"
-                    aria-controls="documents-list"
-                  />
-                </div>
-                {table.getColumn("scenario_ids") && scenarioOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={table.getColumn("scenario_ids")!}
-                    title="Scenarios"
-                    options={scenarioOptions}
-                  />
-                )}
-                {table.getColumn("field_ids") && fieldFilterOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={table.getColumn("field_ids")!}
-                    title="Fields"
-                    options={fieldFilterOptions}
-                  />
-                )}
-                {table.getColumn("departments") &&
-                  departmentOptions.length > 0 && (
-                    <DataTableFacetedFilter
-                      column={table.getColumn("departments")!}
-                      title="Department"
-                      options={departmentOptions}
-                    />
+            {/* Toolbar — swaps between filter bar and selection action bar */}
+            {selectedCount > 0 ? (
+              <div
+                className="flex items-center justify-between gap-2"
+                data-testid="documents-toolbar"
+              >
+                <div className="flex items-center gap-2">
+                  {deleteDocumentAction && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => setShowBulkDeleteDialog(true)}
+                      disabled={deletableDocuments.length === 0}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete {deletableDocuments.length} of {selectedCount}
+                    </Button>
                   )}
-                {table.getState().columnFilters.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => table.resetColumnFilters()}
-                    className="h-8 px-2 lg:px-3 hidden md:flex"
-                  >
-                    Reset
-                    <X className="ml-2 h-4 w-4" />
+                  {updateDocumentAction && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8"
+                      onClick={openBulkEditDialog}
+                      disabled={editableDocuments.length === 0}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit {editableDocuments.length} of {selectedCount}
+                    </Button>
+                  )}
+                  {!allPageSelected && (
+                    <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
+                      Select All
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
+                    Unselect All
                   </Button>
-                )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div
+                className="flex items-center justify-between"
+                data-testid="documents-toolbar"
+              >
+                <div className="flex flex-1 items-center space-x-2 flex-wrap">
+                  <div className="w-full md:w-auto mb-2 md:mb-0">
+                    <Input
+                      data-testid="documents-search"
+                      placeholder="Filter documents..."
+                      value={
+                        (table.getColumn("name")?.getFilterValue() as string) ??
+                        ""
+                      }
+                      onChange={(event) =>
+                        table
+                          .getColumn("name")
+                          ?.setFilterValue(event.target.value)
+                      }
+                      className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                      aria-label="Search documents by name"
+                      aria-controls="documents-list"
+                    />
+                  </div>
+                  <ThreePickerFilters
+                    slots={[
+                      {
+                        column: table.getColumn("scenario_ids"),
+                        title: "Scenarios",
+                        options: scenarioOptions,
+                      },
+                      {
+                        column: table.getColumn("field_ids"),
+                        title: "Fields",
+                        options: fieldFilterOptions,
+                      },
+                      {
+                        column: table.getColumn("departments"),
+                        title: "Department",
+                        options: departmentOptions,
+                      },
+                    ]}
+                  />
+                  {table.getState().columnFilters.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => table.resetColumnFilters()}
+                      className="h-8 px-2 lg:px-3 hidden md:flex"
+                    >
+                      Reset
+                      <X className="ml-2 h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Table */}
             <div
@@ -780,6 +986,113 @@ export default function Documents({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <BulkDeleteDialog
+          open={showBulkDeleteDialog}
+          onOpenChange={setShowBulkDeleteDialog}
+          count={deletableDocuments.length}
+          entityLabel="document"
+          entityLabelPlural="documents"
+          isDeleting={isBulkDeleting}
+          onConfirm={handleBulkDelete}
+          description={
+            <>
+              <p>This action cannot be undone.</p>
+              {deletableDocuments.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                  <ul className="text-sm space-y-0.5">
+                    {deletableDocuments.map((d) => (
+                      <li key={d.document_id} className="flex items-center gap-1.5">
+                        <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                        {d.name || "Unnamed Document"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {nonDeletableDocuments.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use):</p>
+                  <ul className="text-sm space-y-0.5">
+                    {nonDeletableDocuments.map((d) => (
+                      <li key={d.document_id} className="flex items-center gap-1.5 text-muted-foreground">
+                        {d.name || "Unnamed Document"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          }
+        />
+
+        {/* Bulk Edit Modal */}
+        <BulkEditDialog
+          open={showBulkEditDialog}
+          onOpenChange={setShowBulkEditDialog}
+          count={editableDocuments.length}
+          entityLabelPlural="documents"
+          isSaving={isBulkEditing}
+          onSave={handleBulkEdit}
+        >
+          <BulkEditFlagField
+            label="Active Status"
+            value={bulkEditActiveStatus}
+            onChange={setBulkEditActiveStatus}
+          />
+
+          <BulkEditFlagField
+            label="Template"
+            trueLabel="Template"
+            falseLabel="Not Template"
+            value={bulkEditTemplateStatus}
+            onChange={setBulkEditTemplateStatus}
+          />
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Departments</Label>
+              {bulkEditDepartmentIds !== null && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => setBulkEditDepartmentIds(null)}
+                >
+                  Reset
+                </Button>
+              )}
+            </div>
+            {bulkEditDepartmentIds === null ? (
+              <Button
+                variant="outline"
+                className="w-full justify-start text-muted-foreground"
+                onClick={() => setBulkEditDepartmentIds([])}
+              >
+                No change — click to edit departments
+              </Button>
+            ) : (
+              <GenericPicker
+                items={departmentPickerOptions}
+                selectedIds={bulkEditDepartmentIds}
+                onSelect={setBulkEditDepartmentIds}
+                multiSelect
+                getId={(d) => d.value}
+                getLabel={(d) => d.label}
+                placeholder="Select departments..."
+                showClearAction
+                clearActionLabel="Clear All"
+                searchPlaceholder="Search departments..."
+                emptyMessage="No departments found."
+                groupHeading="Departments"
+                hideSelectedChips={false}
+                showClearAll
+              />
+            )}
+          </div>
+        </BulkEditDialog>
 
         {/* Preview Document Dialog */}
         <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
