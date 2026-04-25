@@ -23,6 +23,15 @@ export type TransportMode = "ws" | "http-ws" | "http-sse" | "ws-sse";
 
 export type EventHandler = (data: Record<string, unknown>) => void;
 
+/**
+ * Optional scope for an event subscription. Only meaningful for SSE — it
+ * determines which `/{artifact}/stream?group_id=…` connection to open.
+ * WS mode ignores it (single multiplexed socket).
+ */
+export interface EventScope {
+  groupId?: string | null;
+}
+
 export interface CommandChannel {
   send(
     endpoint: string,
@@ -31,7 +40,7 @@ export interface CommandChannel {
 }
 
 export interface EventChannel {
-  on(event: string, handler: EventHandler): () => void;
+  on(event: string, handler: EventHandler, scope?: EventScope): () => void;
 }
 
 export interface Transport {

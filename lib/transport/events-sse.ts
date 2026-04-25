@@ -1,27 +1,29 @@
 /**
- * SSE event channel — one EventSource per artifact, opened lazily.
+ * SSE event channel — one EventSource per (artifact, group_id), opened lazily.
  *
  * Topology:
- *   Consumer calls `transport.on("persona.draft.progress", handler)`.
+ *   Consumer calls `transport.on("persona.generate.completed", handler, { groupId })`.
  *   The first `.`-segment ("persona") is the artifact.
- *   The channel lazily opens `GET /{artifact}/stream` if no EventSource
- *   exists for that artifact, then registers the handler for that event type.
- *   When the last handler for an artifact unsubscribes, its EventSource closes.
+ *   The channel lazily opens `GET /{artifact}/stream?group_id={groupId}` if no
+ *   EventSource exists for that (artifact, groupId) key, then registers the
+ *   handler for that event type. When the last handler unsubscribes, the
+ *   matching EventSource closes.
  *
- * Server-side the stream emits SSE named events:
- *   event: artifacts.persona.draft.progress
+ * If `groupId` is omitted the server-side route auto-resolves a time-windowed
+ * group via `group_{artifact}_impl()` — the per-(artifact, undefined) entry
+ * subscribes to that.
+ *
+ * Server emits SSE named events:
+ *   event: persona.generate.completed
  *   data: {...json...}
+ * So we subscribe via `source.addEventListener(eventType, …)` not `onmessage`.
  *
- * So we subscribe via `source.addEventListener(eventType, …)` rather than
- * `onmessage`.
- *
- * Auth: token appended as `?token=…` query string (temporary — matches the
- * current cross-origin EventSource limitation where headers can't be set).
+ * Auth: token appended as `?token=…` (cross-origin EventSource can't set headers).
  *
  * Used by `http-sse` and `ws-sse` transport modes.
  */
 import { INTERNAL_HTTP_BASE } from "@/lib/api/config";
-import type { EventChannel } from "./types";
+import type { EventChannel, EventScope } from "./types";
 
 type Handler = (data: Record<string, unknown>) => void;
 
@@ -39,6 +41,10 @@ function artifactFromEventName(event: string): string {
   return dot === -1 ? event : event.slice(0, dot);
 }
 
+function sourceKey(artifact: string, groupId: string | null | undefined): string {
+  return `${artifact}::${groupId ?? ""}`;
+}
+
 class PerArtifactSseMultiplexer {
   private sources = new Map<string, EventSourceEntry>();
   private authToken: string | null = null;
@@ -47,9 +53,11 @@ class PerArtifactSseMultiplexer {
     this.authToken = token;
   }
 
-  on(event: string, handler: Handler): () => void {
+  on(event: string, handler: Handler, scope?: EventScope): () => void {
     const artifact = artifactFromEventName(event);
-    const entry = this.ensureSource(artifact);
+    const groupId = scope?.groupId ?? null;
+    const key = sourceKey(artifact, groupId);
+    const entry = this.ensureSource(key, artifact, groupId);
     if (!entry) {
       // SSR / no EventSource — return a no-op unsubscribe.
       return () => {};
@@ -83,7 +91,7 @@ class PerArtifactSseMultiplexer {
       }
       if (entry.listeners.size === 0) {
         entry.source.close();
-        this.sources.delete(artifact);
+        this.sources.delete(key);
       }
     };
   }
@@ -95,8 +103,12 @@ class PerArtifactSseMultiplexer {
     this.sources.clear();
   }
 
-  private ensureSource(artifact: string): EventSourceEntry | null {
-    const existing = this.sources.get(artifact);
+  private ensureSource(
+    key: string,
+    artifact: string,
+    groupId: string | null,
+  ): EventSourceEntry | null {
+    const existing = this.sources.get(key);
     if (existing) return existing;
 
     if (typeof window === "undefined" || typeof EventSource === "undefined") {
@@ -104,12 +116,13 @@ class PerArtifactSseMultiplexer {
     }
 
     const url = new URL(`/${artifact}/stream`, INTERNAL_HTTP_BASE);
+    if (groupId) url.searchParams.set("group_id", groupId);
     if (this.authToken) url.searchParams.set("token", this.authToken);
 
     const source = new EventSource(url.toString());
     // EventSource auto-reconnects; no onerror action needed.
     const entry: EventSourceEntry = { source, listeners: new Map() };
-    this.sources.set(artifact, entry);
+    this.sources.set(key, entry);
     return entry;
   }
 }
@@ -119,8 +132,8 @@ const sseMultiplexer = new PerArtifactSseMultiplexer();
 export function createSseEvents(authToken: string | null): EventChannel {
   sseMultiplexer.setAuth(authToken);
   return {
-    on(event, handler) {
-      return sseMultiplexer.on(event, handler);
+    on(event, handler, scope) {
+      return sseMultiplexer.on(event, handler, scope);
     },
   };
 }

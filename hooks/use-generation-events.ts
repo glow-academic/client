@@ -119,6 +119,12 @@ export function useGenerationEvents<T = Record<string, unknown>>(
   useEffect(() => {
     const unsubs: Array<() => void> = [];
 
+    // Scope passed to transport.on doubles as: (a) routing hint for SSE
+    // (which /{artifact}/stream?group_id=… connection to open), and (b)
+    // server-side filter knowledge. Client-side scopeMatches() is a defensive
+    // re-check for cases where multiple groups share an EventSource.
+    const onScope = scope?.groupId ? { groupId: scope.groupId } : undefined;
+
     if (events.started) {
       unsubs.push(
         transport.on(events.started, (raw) => {
@@ -128,7 +134,7 @@ export function useGenerationEvents<T = Record<string, unknown>>(
           setLast(payload);
           setPartial(null);
           setIsGenerating(true);
-        }),
+        }, onScope),
       );
     }
 
@@ -141,7 +147,7 @@ export function useGenerationEvents<T = Record<string, unknown>>(
           setPartial(payload);
           setLast(payload);
           setIsGenerating(true);
-        }),
+        }, onScope),
       );
     }
 
@@ -158,7 +164,7 @@ export function useGenerationEvents<T = Record<string, unknown>>(
         if (accumulateRef.current) {
           setHistory((prev) => [...prev, payload]);
         }
-      }),
+      }, onScope),
     );
 
     if (events.error) {
@@ -170,7 +176,7 @@ export function useGenerationEvents<T = Record<string, unknown>>(
           setLast(payload);
           setPartial(null);
           setIsGenerating(false);
-        }),
+        }, onScope),
       );
     }
 
@@ -183,6 +189,7 @@ export function useGenerationEvents<T = Record<string, unknown>>(
     events.progress,
     events.complete,
     events.error,
+    scope?.groupId,
   ]);
 
   const clear = useCallback(() => {

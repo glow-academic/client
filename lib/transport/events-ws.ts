@@ -12,7 +12,9 @@ export function createWsEvents(socket: AppSocket): EventChannel {
   };
 
   return {
-    on(event, handler) {
+    // `scope` is ignored — WS uses one multiplexed socket; group filtering
+    // happens server-side via the publish path's group_id.
+    on(event, handler, _scope) {
       s.on(event, handler);
       return () => s.off(event, handler);
     },
