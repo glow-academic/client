@@ -70,6 +70,8 @@ type AttemptResources = {
 /** Attempt data from server - strongly typed from OpenAPI */
 type AttemptData = OutputOf<"/attempt/get", "post"> & {
   resources?: AttemptResources;
+  /** Group_id for the attempt's stream subscription. */
+  group_id?: string | null;
 };
 
 /** Message data from OpenAPI schema - used for optimistic messages */
@@ -150,7 +152,6 @@ export function AttemptChat({
   );
 
   // Refs
-  const currentRoomRef = useRef<string | null>(null);
   const currentChatIdRef = useRef<string | null>(null);
   const prevChatIdRef = useRef<string | null>(null);
   const hasInitializedFromServerRef = useRef(false);
@@ -515,24 +516,6 @@ export function AttemptChat({
   useEffect(() => {
     currentChatIdRef.current = currentChat?.id ?? null;
   }, [currentChat?.id]);
-
-  // ---------------------------------------------------------------------------
-  // ROOM MANAGEMENT
-  // ---------------------------------------------------------------------------
-
-  useEffect(() => {
-    const group_id = attemptData?.group_id;
-    if (!group_id) return;
-    if (currentRoomRef.current === group_id) return;
-
-    currentRoomRef.current = group_id;
-    currentChatIdRef.current = currentChat?.id ?? null;
-
-    return () => {
-      currentRoomRef.current = null;
-      currentChatIdRef.current = null;
-    };
-  }, [attemptData?.group_id, currentChat?.id]);
 
   useEffect(() => {
     const chatId = currentChat?.id ?? null;
