@@ -21,6 +21,7 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { loadModelsSearchParams } from "@/lib/search-params/models";
+import { readViewCookie } from "@/lib/view-cookie";
 
 /** ---- Strong types from OpenAPI ---- */
 type ModelsListOut = OutputOf<"/model/search", "post">;
@@ -179,9 +180,10 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
       page_offset: offset,
     };
 
-    // Fetch list data and group in parallel
-    const [listData, groupResult] = await Promise.all([
+    // Fetch list data, view cookie, and group in parallel
+    const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getModelsList(body),
+      readViewCookie("models"),
       api.post("/model/group", { body: {} } as GroupModelIn),
     ]);
 
@@ -213,6 +215,7 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
         <div className="space-y-6 px-4" data-page="models-index">
           <Models
             listData={listData}
+            initialColumnVisibility={initialColumnVisibility}
             duplicateModelAction={duplicateModel}
             deleteModelAction={deleteModel}
             updateModelAction={updateModel}

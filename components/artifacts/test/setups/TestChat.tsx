@@ -125,10 +125,10 @@ export default function TestChat({
           ) as RunItem[],
       );
     },
-    onInvocationEnded: () => {
+    onInvocationCompleted: () => {
       toast.success("All test runs complete!");
     },
-    onEnded: () => {
+    onCompleted: () => {
       toast.success("All test runs complete!");
     },
     onInvocationStopped: (data) => {
@@ -239,7 +239,6 @@ export default function TestChat({
     runs,
     starting_run_ids: startingRunIds,
     on_start_run: handleStartRun,
-    on_start_all: handleStartAll,
     is_connected: true,
   };
 

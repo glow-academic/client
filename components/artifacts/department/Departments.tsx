@@ -28,6 +28,7 @@ import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useDepartmentAi } from "@/hooks/use-department-ai";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
 import type {
   DeleteDepartmentIn,
@@ -39,6 +40,7 @@ import type {
   UpdateDepartmentOut,
 } from "@/app/(main)/system/departments/page";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { Input } from "@/components/ui/input";
 import {
@@ -56,6 +58,8 @@ import {
 export interface DepartmentsProps {
   // Server-provided data (for server-side rendering)
   listData: DepartmentsListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (replaces useMutation)
   duplicateDepartmentAction?: (
     input: DuplicateDepartmentIn,
@@ -68,8 +72,21 @@ export interface DepartmentsProps {
   ) => Promise<UpdateDepartmentOut>;
 }
 
+const DEPARTMENTS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
+  // Hidden faceting columns
+  profile_ids: false,
+  setting_ids: false,
+  login_ids: false,
+  // Toggleable card sections
+  staff_count: true,
+  status_badge: true,
+  card_description: true,
+  card_updated_at: true,
+};
+
 export default function Departments({
   listData: serverListData,
+  initialColumnVisibility,
   duplicateDepartmentAction,
   deleteDepartmentAction,
   updateDepartmentAction,
@@ -89,11 +106,10 @@ export default function Departments({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    profile_ids: false,
-    setting_ids: false,
-    login_ids: false,
-  });
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility(
+    "departments",
+    initialColumnVisibility ?? DEPARTMENTS_INITIAL_COLUMN_VISIBILITY,
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updated_at", desc: true },
@@ -262,6 +278,39 @@ export default function Departments({
         accessorFn: (row: (typeof departments)[number]) => row.login_ids ?? [],
         filterFn: (row, id, filterValue: string[]) =>
           !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
+      },
+      // Virtual columns for card view toggles
+      {
+        id: "staff_count",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof departments)[number]) => row.staff_count ?? 0,
+      },
+      {
+        id: "status_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof departments)[number]) => row.is_inactive ?? false,
+      },
+      {
+        id: "card_description",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof departments)[number]) => row.description ?? "",
+      },
+      {
+        id: "card_updated_at",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof departments)[number]) => row.updated_at ?? "",
       },
     ],
     [],
@@ -484,20 +533,24 @@ export default function Departments({
             </div>
             <div className="mt-1 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className="text-xs">
-                  <Users className="h-3 w-3 mr-1" />
-                  {department.staff_count} staff
-                </Badge>
-                {department.is_inactive && (
+                {columnVisibility["staff_count"] !== false && (
+                  <Badge variant="outline" className="text-xs">
+                    <Users className="h-3 w-3 mr-1" />
+                    {department.staff_count} staff
+                  </Badge>
+                )}
+                {columnVisibility["status_badge"] !== false && department.is_inactive && (
                   <Badge variant="secondary" className="text-xs">
                     Inactive
                   </Badge>
                 )}
               </div>
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              {department.description || "No description available"}
-            </p>
+            {columnVisibility["card_description"] !== false && (
+              <p className="text-sm text-muted-foreground mt-2">
+                {department.description || "No description available"}
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap gap-2 items-center" data-action-button>
             {department.can_edit && department.department_id ? (
@@ -572,14 +625,16 @@ export default function Departments({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="text-sm">
-          <span className="text-muted-foreground">Updated:</span>
-          <span className="font-medium ml-2">
-            {department.updated_at ? formatDate(department.updated_at) : "-"}
-          </span>
-        </div>
-      </CardContent>
+      {columnVisibility["card_updated_at"] !== false && (
+        <CardContent>
+          <div className="text-sm">
+            <span className="text-muted-foreground">Updated:</span>
+            <span className="font-medium ml-2">
+              {department.updated_at ? formatDate(department.updated_at) : "-"}
+            </span>
+          </div>
+        </CardContent>
+      )}
     </Card>
     );
   };
@@ -634,6 +689,10 @@ export default function Departments({
                 Unselect All
               </Button>
             </div>
+            <DataTableViewOptions
+              table={table}
+              hiddenColumns={["name", "updated_at", "profile_ids", "setting_ids", "login_ids"]}
+            />
           </div>
         ) : (
           <div
@@ -686,6 +745,12 @@ export default function Departments({
                   </Button>
                 )}
               </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <DataTableViewOptions
+                table={table}
+                hiddenColumns={["name", "updated_at", "profile_ids", "setting_ids", "login_ids"]}
+              />
             </div>
           </div>
         )}

@@ -1,9 +1,13 @@
 /**
- * useTestEnd — end a single invocation or the entire test, then route.
+ * useTestComplete — complete a single invocation or the entire test, then route.
  *
  * Mirrors useAttemptEnd (without the use-previous variant — test has no
  * previous-invocation flow). Composes useTestRoute for next-invocation
  * handoff.
+ *
+ * API mapping (canonical, mirrors attempt):
+ *   completeInvocation → POST /test/invocation/complete   (↔ /attempt/chat/complete)
+ *   completeTest       → POST /test/complete              (↔ /attempt/complete)
  */
 "use client";
 
@@ -12,30 +16,29 @@ import { useRouter } from "next/navigation";
 import { useTransport } from "@/lib/transport/context";
 import { useTestRoute, type RouteStage } from "./use-test-route";
 
-export type EndStage =
+export type CompleteStage =
   | "idle"
-  | "ending"
-  | "ending_test"
+  | "completing_invocation"
+  | "completing_test"
   | RouteStage
   | "done"
   | "error";
 
-export interface UseTestEndReturn {
-  endInvocation: (params: {
+export interface UseTestCompleteReturn {
+  completeInvocation: (params: {
     testId: string;
     invocationId: string;
-    runId: string;
-    grade?: boolean;
+    message?: string;
   }) => Promise<void>;
-  endTest: (testId: string) => Promise<void>;
-  stage: EndStage;
+  completeTest: (testId: string) => Promise<void>;
+  stage: CompleteStage;
   error: string | null;
 }
 
-export function useTestEnd(): UseTestEndReturn {
+export function useTestComplete(): UseTestCompleteReturn {
   const transport = useTransport();
   const router = useRouter();
-  const [stage, setStage] = useState<EndStage>("idle");
+  const [stage, setStage] = useState<CompleteStage>("idle");
   const [error, setError] = useState<string | null>(null);
   const routeHook = useTestRoute();
 
@@ -62,21 +65,19 @@ export function useTestEnd(): UseTestEndReturn {
     [transport, router, routeHook],
   );
 
-  const endInvocation = useCallback(
+  const completeInvocation = useCallback(
     async (params: {
       testId: string;
       invocationId: string;
-      runId: string;
-      grade?: boolean;
+      message?: string;
     }) => {
       try {
         setError(null);
-        setStage("ending");
-        await transport.send("/test/end", {
+        setStage("completing_invocation");
+        await transport.send("/test/invocation/complete", {
           test_id: params.testId,
           test_invocation_id: params.invocationId,
-          run_id: params.runId,
-          grade: params.grade ?? true,
+          ...(params.message !== undefined && { message: params.message }),
         });
         await findNextAndRoute(params.testId);
       } catch (err) {
@@ -87,12 +88,12 @@ export function useTestEnd(): UseTestEndReturn {
     [transport, findNextAndRoute],
   );
 
-  const endTest = useCallback(
+  const completeTest = useCallback(
     async (testId: string) => {
       try {
         setError(null);
-        setStage("ending_test");
-        await transport.send("/test/end", { test_id: testId });
+        setStage("completing_test");
+        await transport.send("/test/complete", { test_id: testId });
         setStage("done");
         router.push(`/test/${testId}`);
         router.refresh();
@@ -104,5 +105,5 @@ export function useTestEnd(): UseTestEndReturn {
     [transport, router],
   );
 
-  return { endInvocation, endTest, stage, error };
+  return { completeInvocation, completeTest, stage, error };
 }

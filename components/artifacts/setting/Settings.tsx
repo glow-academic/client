@@ -32,9 +32,11 @@ import type {
 } from "@/app/(main)/settings/page";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,12 +48,27 @@ import { useProfile } from "@/contexts/profile-context";
 export interface SettingsProps {
   // Server-provided data (for server-side rendering)
   listData: SettingsListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   deleteSettingAction?: (input: DeleteSettingIn) => Promise<DeleteSettingOut>;
   updateSettingAction?: (input: UpdateSettingIn) => Promise<UpdateSettingOut>;
 }
 
+const SETTINGS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
+  // Hidden faceting columns
+  departments: false,
+  provider_ids: false,
+  auth_ids: false,
+  system_ids: false,
+  // Toggleable card sections
+  status_badge: true,
+  departments_count: true,
+  card_description: true,
+};
+
 export default function Settings({
   listData: serverListData,
+  initialColumnVisibility,
   deleteSettingAction,
   updateSettingAction,
 }: SettingsProps) {
@@ -64,12 +81,10 @@ export default function Settings({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    departments: false,
-    provider_ids: false,
-    auth_ids: false,
-    system_ids: false,
-  });
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility(
+    "settings",
+    initialColumnVisibility ?? SETTINGS_INITIAL_COLUMN_VISIBILITY,
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "created_at", desc: true },
@@ -348,6 +363,31 @@ export default function Settings({
           );
         },
       },
+      // Virtual columns for card view toggles
+      {
+        id: "status_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof settings)[number]) => row.active ?? false,
+      },
+      {
+        id: "departments_count",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof settings)[number]) => row.department_ids?.length ?? 0,
+      },
+      {
+        id: "card_description",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof settings)[number]) => row.description ?? "",
+      },
     ];
   }, []);
 
@@ -450,12 +490,14 @@ export default function Settings({
               </div>
               <div className="mt-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  {setting.active ? (
-                    <Badge variant="default">Active</Badge>
-                  ) : (
-                    <Badge variant="secondary">Inactive</Badge>
+                  {columnVisibility["status_badge"] !== false && (
+                    setting.active ? (
+                      <Badge variant="default">Active</Badge>
+                    ) : (
+                      <Badge variant="secondary">Inactive</Badge>
+                    )
                   )}
-                  {setting.department_ids && setting.department_ids.length > 0 && (
+                  {columnVisibility["departments_count"] !== false && setting.department_ids && setting.department_ids.length > 0 && (
                     <Badge variant="outline" className="text-xs">
                       {setting.department_ids.length} department
                       {setting.department_ids.length !== 1 ? "s" : ""}
@@ -500,11 +542,13 @@ export default function Settings({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0 flex-grow flex flex-col">
-          <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
-            {setting.description || "No description available"}
-          </p>
-        </CardContent>
+        {columnVisibility["card_description"] !== false && (
+          <CardContent className="pt-0 flex-grow flex flex-col">
+            <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
+              {setting.description || "No description available"}
+            </p>
+          </CardContent>
+        )}
       </Card>
     );
   };
@@ -559,6 +603,10 @@ export default function Settings({
                 Unselect All
               </Button>
             </div>
+            <DataTableViewOptions
+              table={table}
+              hiddenColumns={["name", "description", "active", "created_at", "departments", "provider_ids", "auth_ids", "system_ids"]}
+            />
           </div>
         ) : (
         <div
@@ -612,6 +660,12 @@ export default function Settings({
                 </Button>
               )}
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <DataTableViewOptions
+              table={table}
+              hiddenColumns={["name", "description", "active", "created_at", "departments", "provider_ids", "auth_ids", "system_ids"]}
+            />
           </div>
         </div>
         )}

@@ -65,7 +65,10 @@ import type {
   UpdateDocumentOut,
 } from "@/app/(main)/management/documents/page";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
+import type { VisibilityState } from "@tanstack/react-table";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
@@ -91,6 +94,8 @@ const truncateText = (text: string, maxLength: number = 30): string => {
 export interface DocumentsProps {
   // Server-provided data (for server-side rendering)
   listData: DocumentsListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (replaces useMutation)
   deleteDocumentAction?: (
     input: DeleteDocumentIn
@@ -99,6 +104,15 @@ export interface DocumentsProps {
     input: UpdateDocumentIn
   ) => Promise<UpdateDocumentOut>;
 }
+
+const DOCUMENTS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
+  field_ids: true,
+  scenario_ids: true,
+  department_ids: true,
+  updatedAt: true,
+  // Hidden facet column — always off
+  departments: false,
+};
 
 type DocumentRow = NonNullable<DocumentsListOut["documents"]>[number];
 
@@ -133,9 +147,14 @@ const DocumentPreviewThumb = ({ document }: { document: DocumentRow }) => {
 
 export default function Documents({
   listData: serverListData,
+  initialColumnVisibility,
   deleteDocumentAction,
   updateDocumentAction,
 }: DocumentsProps) {
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility(
+    "documents",
+    initialColumnVisibility ?? DOCUMENTS_INITIAL_COLUMN_VISIBILITY,
+  );
   const router = useRouter();
 
   useDocumentAi({
@@ -598,6 +617,7 @@ export default function Documents({
     columns: columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -607,13 +627,11 @@ export default function Documents({
     state: {
       sorting,
       columnFilters,
+      columnVisibility,
     },
     initialState: {
       pagination: {
         pageSize: 20,
-      },
-      columnVisibility: {
-        departments: false,
       },
     },
   });
@@ -803,6 +821,10 @@ export default function Documents({
                     Unselect All
                   </Button>
                 </div>
+                <DataTableViewOptions
+                  table={table}
+                  hiddenColumns={["select", "name", "actions", "departments"]}
+                />
               </div>
             ) : (
               <div
@@ -857,6 +879,12 @@ export default function Documents({
                       <X className="ml-2 h-4 w-4" />
                     </Button>
                   )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <DataTableViewOptions
+                    table={table}
+                    hiddenColumns={["select", "name", "actions", "departments"]}
+                  />
                 </div>
               </div>
             )}

@@ -7371,46 +7371,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/test/join": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Test Join
-         * @description Join a test invocation room for real-time updates.
-         */
-        post: operations["test_join_test_join_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/leave": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Test Leave
-         * @description Leave a test invocation room, stopping real-time updates.
-         */
-        post: operations["test_leave_test_leave_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/test/archive": {
         parameters: {
             query?: never;
@@ -7554,7 +7514,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/test/end": {
+    "/test/complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -7563,14 +7523,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * End Test
-         * @description End a single invocation within a test.
-         *
-         *     Browser client: sends grade=True, internal AI generates grade + feedback.
-         *     Agent: can optionally provide score, passed, feedback to skip AI.
-         */
-        post: operations["end_test_test_end_post"];
+        /** Complete Test */
+        post: operations["complete_test_test_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7891,6 +7845,23 @@ export interface paths {
          * @description Create an invocation within a test.
          */
         post: operations["create_invocation_endpoint_test_invocation_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/test/invocation/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete Invocation */
+        post: operations["complete_invocation_test_invocation_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -14230,16 +14201,6 @@ export interface components {
              */
             departments?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether this model is active
-             */
-            active_flag?: boolean | null;
-            /**
-             * Active Flag Id
-             * @description Active flag resource UUID
-             */
-            active_flag_id?: string | null;
-            /**
              * Flag Ids
              * @description Flag option identifiers
              */
@@ -15021,35 +14982,10 @@ export interface components {
              */
             problem_statement?: string | null;
             /**
-             * Active Flag Id
-             * @description UUID of the active flag option
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
              */
-            active_flag_id?: string | null;
-            /**
-             * Objectives Enabled Flag Id
-             * @description UUID of the objectives enabled flag option
-             */
-            objectives_enabled_flag_id?: string | null;
-            /**
-             * Images Enabled Flag Id
-             * @description UUID of the images enabled flag option
-             */
-            images_enabled_flag_id?: string | null;
-            /**
-             * Video Enabled Flag Id
-             * @description UUID of the video enabled flag option
-             */
-            video_enabled_flag_id?: string | null;
-            /**
-             * Questions Enabled Flag Id
-             * @description UUID of the questions enabled flag option
-             */
-            questions_enabled_flag_id?: string | null;
-            /**
-             * Problem Statement Enabled Flag Id
-             * @description UUID of the problem statement enabled flag option
-             */
-            problem_statement_enabled_flag_id?: string | null;
+            flag_ids?: string[] | null;
             /**
              * Department Ids
              * @description Associated department UUIDs
@@ -15100,36 +15036,6 @@ export interface components {
              * @description Associated option UUIDs
              */
             option_ids?: string[] | null;
-            /**
-             * Active Flag
-             * @description Active flag boolean value
-             */
-            active_flag?: boolean | null;
-            /**
-             * Images Enabled Flag
-             * @description Whether images are enabled
-             */
-            images_enabled_flag?: boolean | null;
-            /**
-             * Objectives Enabled Flag
-             * @description Whether objectives are enabled
-             */
-            objectives_enabled_flag?: boolean | null;
-            /**
-             * Problem Statement Enabled Flag
-             * @description Whether problem statement is enabled
-             */
-            problem_statement_enabled_flag?: boolean | null;
-            /**
-             * Questions Enabled Flag
-             * @description Whether questions are enabled
-             */
-            questions_enabled_flag?: boolean | null;
-            /**
-             * Video Enabled Flag
-             * @description Whether video is enabled
-             */
-            video_enabled_flag?: boolean | null;
             /**
              * Departments
              * @description Department names for matching
@@ -15408,6 +15314,11 @@ export interface components {
              */
             description?: string | null;
             /**
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
+             */
+            flag_ids?: string[] | null;
+            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -15437,26 +15348,6 @@ export interface components {
              * @description Associated scenario time limit UUIDs
              */
             scenario_time_limit_ids?: string[] | null;
-            /**
-             * Active Flag Id
-             * @description UUID of the flag option to set active status
-             */
-            active_flag_id?: string | null;
-            /**
-             * Active Flag
-             * @description Whether the simulation is active (resolved to flag_id)
-             */
-            active_flag?: boolean | null;
-            /**
-             * Practice Flag
-             * @description Whether this is a practice simulation
-             */
-            practice_flag?: boolean | null;
-            /**
-             * Practice Flag Id
-             * @description Practice flag resource UUID
-             */
-            practice_flag_id?: string | null;
             /**
              * Departments
              * @description Department names for matching
@@ -15583,16 +15474,6 @@ export interface components {
              * @description Related tool identifiers
              */
             tool_ids?: string[] | null;
-            /**
-             * Active Flag
-             * @description Whether this tool is active
-             */
-            active_flag?: boolean | null;
-            /**
-             * Active Flag Id
-             * @description Active flag resource UUID
-             */
-            active_flag_id?: string | null;
         };
         /**
          * DashboardBundleResponse
@@ -19081,48 +18962,6 @@ export interface components {
              * @description When the emulation grant expires
              */
             expires_at?: string | null;
-        };
-        /** EndTestApiRequest */
-        EndTestApiRequest: {
-            /**
-             * Test Id
-             * Format: uuid
-             */
-            test_id: string;
-            /**
-             * Test Invocation Id
-             * Format: uuid
-             */
-            test_invocation_id: string;
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /**
-             * Grade
-             * @default true
-             */
-            grade: boolean;
-            /** Score */
-            score?: number | null;
-            /** Passed */
-            passed?: boolean | null;
-            /** Feedback */
-            feedback?: string | null;
-        };
-        /** EndTestApiResponse */
-        EndTestApiResponse: {
-            /** Invocation Id */
-            invocation_id: string;
-            /** Grade Id */
-            grade_id?: string | null;
-            /** Score */
-            score?: number | null;
-            /** Passed */
-            passed?: boolean | null;
-            /** Feedback */
-            feedback?: string | null;
         };
         /** EvalDepartmentResource */
         EvalDepartmentResource: {
@@ -49530,6 +49369,30 @@ export interface components {
              */
             columns: components["schemas"]["ColumnInfo"][];
         };
+        /** TestCompleteInternalResult */
+        TestCompleteInternalResult: {
+            /** Test Id */
+            test_id: string;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+        };
+        /**
+         * TestCompletePayload
+         * @description Client-to-server: complete the entire test.
+         *
+         *     Mirrors AttemptCompletePayload.
+         */
+        TestCompletePayload: {
+            /**
+             * Test Id
+             * Format: uuid
+             * @description UUID of the test
+             */
+            test_id: string;
+        };
         /**
          * TestEntries
          * @description Entry payloads grouped by type.
@@ -49576,35 +49439,43 @@ export interface components {
              */
             calls?: unknown[] | null;
         };
-        /** TestJoinRequest */
-        TestJoinRequest: {
-            /** Sid */
-            sid: string;
-            /**
-             * Invocation Id
-             * Format: uuid
-             */
+        /** TestInvocationCompleteInternalResult */
+        TestInvocationCompleteInternalResult: {
+            /** Invocation Id */
             invocation_id: string;
-        };
-        /** TestJoinResponse */
-        TestJoinResponse: {
-            /** Success */
+            /**
+             * Success
+             * @default true
+             */
             success: boolean;
         };
-        /** TestLeaveRequest */
-        TestLeaveRequest: {
-            /** Sid */
-            sid: string;
+        /**
+         * TestInvocationCompletePayload
+         * @description Client-to-server: complete a single invocation within a test.
+         *
+         *     Mirrors ``ChatCompleteRequest`` (/attempt/chat/complete) — completion is
+         *     a state transition only, not a grading operation. Grading is a separate
+         *     surface (``/test/grade``); call it before completion if needed.
+         */
+        TestInvocationCompletePayload: {
             /**
-             * Invocation Id
+             * Test Id
              * Format: uuid
+             * @description UUID of the test
              */
-            invocation_id: string;
-        };
-        /** TestLeaveResponse */
-        TestLeaveResponse: {
-            /** Success */
-            success: boolean;
+            test_id: string;
+            /**
+             * Test Invocation Id
+             * Format: uuid
+             * @description UUID of the test invocation
+             */
+            test_invocation_id: string;
+            /**
+             * Message
+             * @description Optional completion message
+             * @default
+             */
+            message: string;
         };
         /**
          * TestNextPayload
@@ -51561,16 +51432,6 @@ export interface components {
              */
             departments?: string[] | null;
             /**
-             * Active Flag
-             * @description Whether this model is active
-             */
-            active_flag?: boolean | null;
-            /**
-             * Active Flag Id
-             * @description Active flag resource UUID
-             */
-            active_flag_id?: string | null;
-            /**
              * Flag Ids
              * @description Flag option identifiers
              */
@@ -52270,36 +52131,6 @@ export interface components {
              */
             flag_ids?: string[] | null;
             /**
-             * Active Flag Id
-             * @description UUID of the active flag option
-             */
-            active_flag_id?: string | null;
-            /**
-             * Objectives Enabled Flag Id
-             * @description UUID of the objectives enabled flag option
-             */
-            objectives_enabled_flag_id?: string | null;
-            /**
-             * Images Enabled Flag Id
-             * @description UUID of the images enabled flag option
-             */
-            images_enabled_flag_id?: string | null;
-            /**
-             * Video Enabled Flag Id
-             * @description UUID of the video enabled flag option
-             */
-            video_enabled_flag_id?: string | null;
-            /**
-             * Questions Enabled Flag Id
-             * @description UUID of the questions enabled flag option
-             */
-            questions_enabled_flag_id?: string | null;
-            /**
-             * Problem Statement Enabled Flag Id
-             * @description UUID of the problem statement enabled flag option
-             */
-            problem_statement_enabled_flag_id?: string | null;
-            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -52349,36 +52180,6 @@ export interface components {
              * @description Associated option UUIDs
              */
             option_ids?: string[] | null;
-            /**
-             * Active Flag
-             * @description Active flag boolean value
-             */
-            active_flag?: boolean | null;
-            /**
-             * Images Enabled Flag
-             * @description Whether images are enabled
-             */
-            images_enabled_flag?: boolean | null;
-            /**
-             * Objectives Enabled Flag
-             * @description Whether objectives are enabled
-             */
-            objectives_enabled_flag?: boolean | null;
-            /**
-             * Problem Statement Enabled Flag
-             * @description Whether problem statement is enabled
-             */
-            problem_statement_enabled_flag?: boolean | null;
-            /**
-             * Questions Enabled Flag
-             * @description Whether questions are enabled
-             */
-            questions_enabled_flag?: boolean | null;
-            /**
-             * Video Enabled Flag
-             * @description Whether video is enabled
-             */
-            video_enabled_flag?: boolean | null;
             /**
              * Departments
              * @description Department names for matching
@@ -52649,6 +52450,11 @@ export interface components {
              */
             description?: string | null;
             /**
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
+             */
+            flag_ids?: string[] | null;
+            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -52678,26 +52484,6 @@ export interface components {
              * @description Associated scenario time limit UUIDs
              */
             scenario_time_limit_ids?: string[] | null;
-            /**
-             * Active Flag Id
-             * @description UUID of the flag option to set active status
-             */
-            active_flag_id?: string | null;
-            /**
-             * Active Flag
-             * @description Whether the simulation is active (resolved to flag_id)
-             */
-            active_flag?: boolean | null;
-            /**
-             * Practice Flag
-             * @description Whether this is a practice simulation
-             */
-            practice_flag?: boolean | null;
-            /**
-             * Practice Flag Id
-             * @description Practice flag resource UUID
-             */
-            practice_flag_id?: string | null;
             /**
              * Departments
              * @description Department names for matching
@@ -52820,16 +52606,6 @@ export interface components {
              * @description Related tool identifiers
              */
             tool_ids?: string[] | null;
-            /**
-             * Active Flag
-             * @description Whether this tool is active
-             */
-            active_flag?: boolean | null;
-            /**
-             * Active Flag Id
-             * @description Active flag resource UUID
-             */
-            active_flag_id?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -66862,72 +66638,6 @@ export interface operations {
             };
         };
     };
-    test_join_test_join_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TestJoinRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestJoinResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    test_leave_test_leave_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TestLeaveRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestLeaveResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     archive_test_artifacts_test_archive_post: {
         parameters: {
             query?: never;
@@ -67146,7 +66856,7 @@ export interface operations {
             };
         };
     };
-    end_test_test_end_post: {
+    complete_test_test_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67155,7 +66865,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EndTestApiRequest"];
+                "application/json": components["schemas"]["TestCompletePayload"];
             };
         };
         responses: {
@@ -67165,7 +66875,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EndTestApiResponse"];
+                    "application/json": components["schemas"]["TestCompleteInternalResult"];
                 };
             };
             /** @description Validation Error */
@@ -67672,6 +67382,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateInvocationApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_invocation_test_invocation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestInvocationCompletePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestInvocationCompleteInternalResult"];
                 };
             };
             /** @description Validation Error */

@@ -190,7 +190,7 @@ export default async function NewProviderPage({
     } as GetProviderIn;
     const [providerDetailDefault, draftsResult, groupResult] = await Promise.all([
       getProviderDefault(input),
-      api.post("/provider/drafts", { path: undefined } as InputOf<"/provider/drafts", "post">),
+      api.post("/provider/drafts", {}),
       api.post("/provider/group", { body: {} } as GroupProviderIn),
     ]);
 

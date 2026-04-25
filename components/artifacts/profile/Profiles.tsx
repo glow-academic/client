@@ -89,6 +89,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfileAi } from "@/hooks/use-profile-ai";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
 import { SvgIcon } from "@/components/common/SvgIcon";
@@ -154,6 +155,8 @@ export interface ProfilesProps {
   // Server-provided data (fetched server-side, no client fetching)
   listData: ProfilesListOut;
   initialCreateProfileData?: GetProfileOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (pure server actions, no client-side mutations)
   deleteProfileAction?: DeleteProfileAction;
   bulkDeleteProfileAction?: BulkDeleteProfileAction;
@@ -162,6 +165,13 @@ export interface ProfilesProps {
   emulateProfileAction?: EmulateProfileAction;
   unemulateProfileAction?: EmulateProfileAction;
 }
+
+const PROFILES_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
+  name: true,
+  search: false,
+  department_ids: true,
+  permission_ids: false,
+};
 
 // Helper functions
 const getInitials = (name: string): string => {
@@ -375,6 +385,7 @@ function ColumnPicker({
 export default function Profiles({
   listData: serverListData,
   initialCreateProfileData,
+  initialColumnVisibility,
   deleteProfileAction,
   bulkDeleteProfileAction,
   updateProfileAction,
@@ -474,12 +485,10 @@ export default function Profiles({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    name: true,
-    search: false,
-    department_ids: true,
-    permission_ids: false,
-  });
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility(
+    "profiles",
+    initialColumnVisibility ?? PROFILES_INITIAL_COLUMN_VISIBILITY,
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "name", desc: false },

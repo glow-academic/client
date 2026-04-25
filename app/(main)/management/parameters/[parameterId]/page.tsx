@@ -178,10 +178,7 @@ export default async function ParameterEditPage({
     const [parameterDetail, context, draftsResult, groupResult] = await Promise.all([
       getParameter(input),
       api.post("/parameter/context", { body: { entity_id: parameterId } } as ContextIn) as Promise<ContextOut>,
-      api.post(
-        "/parameter/drafts",
-        { path: undefined } as InputOf<"/parameter/drafts", "post">,
-      ),
+      api.post("/parameter/drafts", {}),
       api.post("/parameter/group", { body: {} } as GroupParameterIn),
     ]);
 

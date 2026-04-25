@@ -211,7 +211,7 @@ export default async function EditProviderPage({
     const [providerDetail, context, draftsResult, groupResult] = await Promise.all([
       getProvider(input).catch(() => null),
       api.post("/provider/context", { body: { entity_id: providerId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/provider/drafts", { path: undefined } as InputOf<"/provider/drafts", "post">),
+      api.post("/provider/drafts", {}),
       api.post("/provider/group", { body: {} } as GroupProviderIn),
     ]);
 

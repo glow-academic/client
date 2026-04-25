@@ -35,6 +35,8 @@ import type {
 import TableRubric from "@/components/artifacts/rubric/TableRubric";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
@@ -58,6 +60,8 @@ import { useRubricAi } from "@/hooks/use-rubric-ai";
 export interface RubricsProps {
   // Server-provided data (for server-side rendering)
   listData: RubricsListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (replaces useMutation)
   duplicateRubricAction?: (
     input: DuplicateRubricIn,
@@ -73,8 +77,22 @@ export interface RubricsProps {
   simulationSearch: string;
 }
 
+const RUBRICS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
+  // Hidden faceting columns
+  eval_ids: false,
+  simulations: false,
+  departments: false,
+  passPercentage: false,
+  // Toggleable card sections
+  points_summary: true,
+  pass_summary: true,
+  card_description: true,
+  rubric_table: true,
+};
+
 export default function Rubrics({
   listData: serverListData,
+  initialColumnVisibility,
   duplicateRubricAction,
   deleteRubricAction,
   updateRubricAction,
@@ -109,12 +127,10 @@ export default function Rubrics({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    eval_ids: false,
-    simulations: false,
-    departments: false,
-    passPercentage: false,
-  });
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility(
+    "rubrics",
+    initialColumnVisibility ?? RUBRICS_INITIAL_COLUMN_VISIBILITY,
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
     const filters: ColumnFiltersState = [];
     const deptIds = searchParams?.getAll("departmentIds") ?? [];
@@ -487,6 +503,39 @@ export default function Rubrics({
         filterFn: (row, id, filterValue: string[]) =>
           !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
       },
+      // Virtual columns for card view toggles
+      {
+        id: "points_summary",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof rubrics)[number]) => row.points ?? 0,
+      },
+      {
+        id: "pass_summary",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof rubrics)[number]) => row.pass_points ?? 0,
+      },
+      {
+        id: "card_description",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof rubrics)[number]) => row.description ?? "",
+      },
+      {
+        id: "rubric_table",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof rubrics)[number]) => row.standard_group_ids ?? [],
+      },
     ],
     [],
   );
@@ -710,16 +759,20 @@ export default function Rubrics({
                 </CardTitle>
               </div>
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Star className="h-4 w-4" />
-                  {rubric.points} total points
-                </div>
-                <div className="flex items-center gap-2">
-                  <FileCheck className="h-4 w-4" />
-                  Pass: {rubric.pass_points ?? 0} pts ({passPercentage}%)
-                </div>
+                {columnVisibility["points_summary"] !== false && (
+                  <div className="flex items-center gap-2">
+                    <Star className="h-4 w-4" />
+                    {rubric.points} total points
+                  </div>
+                )}
+                {columnVisibility["pass_summary"] !== false && (
+                  <div className="flex items-center gap-2">
+                    <FileCheck className="h-4 w-4" />
+                    Pass: {rubric.pass_points ?? 0} pts ({passPercentage}%)
+                  </div>
+                )}
               </div>
-              {rubric.description && (
+              {columnVisibility["card_description"] !== false && rubric.description && (
                 <p className="text-sm text-muted-foreground max-w-2xl">
                   {rubric.description}
                 </p>
@@ -792,6 +845,7 @@ export default function Rubrics({
         </CardHeader>
 
         {/* Rubric Table */}
+        {columnVisibility["rubric_table"] !== false && (
         <CardContent className="p-6">
           <TableRubric
             standardGroups={(() => {
@@ -837,6 +891,7 @@ export default function Rubrics({
             showFullStandardsOnMobile={true}
           />
         </CardContent>
+        )}
       </Card>
     );
   };
@@ -892,6 +947,10 @@ export default function Rubrics({
                 Unselect All
               </Button>
             </div>
+            <DataTableViewOptions
+              table={table}
+              hiddenColumns={["name", "passPercentage", "simulations", "departments", "eval_ids"]}
+            />
           </div>
         ) : (
         <div
@@ -963,6 +1022,12 @@ export default function Rubrics({
                 </Button>
               )}
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <DataTableViewOptions
+              table={table}
+              hiddenColumns={["name", "passPercentage", "simulations", "departments", "eval_ids"]}
+            />
           </div>
         </div>
         )}

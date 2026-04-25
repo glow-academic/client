@@ -7,7 +7,7 @@
  * 06/18/2025
  */
 "use client";
-import { Copy, Cpu, Edit, Pencil, Trash2, X } from "lucide-react";
+import { Copy, Cpu, Edit, Eye, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -60,11 +60,15 @@ import type {
 } from "@/app/(main)/intelligence/models/page";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { Input } from "@/components/ui/input";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
 export interface ModelsProps {
   // Server-provided data (for server-side rendering)
   listData: ModelsListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (replaces useMutation)
   duplicateModelAction?: (
     input: DuplicateModelIn
@@ -81,8 +85,16 @@ export interface ModelsProps {
   agentSearch: string;
 }
 
+const MODELS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
+  custom_badge: true,
+  status_badge: true,
+  card_description: true,
+  provider_badge: true,
+};
+
 export default function Models({
   listData: serverListData,
+  initialColumnVisibility,
   duplicateModelAction,
   deleteModelAction,
   updateModelAction,
@@ -208,7 +220,10 @@ export default function Models({
 
   // Table state - initialize server-driven filters from URL, client-only filters start empty
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility(
+    "models",
+    initialColumnVisibility ?? MODELS_INITIAL_COLUMN_VISIBILITY,
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
     const filters: ColumnFiltersState = [];
     const provIds = searchParams?.getAll("providerIds") ?? [];
@@ -510,6 +525,39 @@ export default function Models({
           );
         },
       },
+      // Virtual columns for card view toggles
+      {
+        id: "custom_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof models)[number]) => !!row.base_url,
+      },
+      {
+        id: "status_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof models)[number]) => !row.active,
+      },
+      {
+        id: "card_description",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof models)[number]) => row.description ?? "",
+      },
+      {
+        id: "provider_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof models)[number]) => row.provider_name ?? "",
+      },
     ],
     []
   );
@@ -734,24 +782,40 @@ export default function Models({
               <Cpu className="h-4 w-4 flex-shrink-0" />
               <span className="truncate">{model.name}</span>
             </CardTitle>
-            <CardDescription className="text-xs line-clamp-2">
-              {model.description}
-            </CardDescription>
+            {columnVisibility["card_description"] !== false && (
+              <CardDescription className="text-xs line-clamp-2">
+                {model.description}
+              </CardDescription>
+            )}
           </div>
           <div className="flex flex-wrap gap-1 flex-shrink-0">
-            {model.base_url && model.base_url !== "" && (
+            {columnVisibility["custom_badge"] !== false && model.base_url && model.base_url !== "" && (
               <Badge variant="default">Custom</Badge>
             )}
-            {!model.active && <Badge variant="secondary">Inactive</Badge>}
+            {columnVisibility["status_badge"] !== false && !model.active && <Badge variant="secondary">Inactive</Badge>}
           </div>
         </div>
-        <div className="mt-2">
-          <Badge variant="outline" className="text-xs">
-            {model.provider_name || "Custom"}
-          </Badge>
-        </div>
+        {columnVisibility["provider_badge"] !== false && (
+          <div className="mt-2">
+            <Badge variant="outline" className="text-xs">
+              {model.provider_name || "Custom"}
+            </Badge>
+          </div>
+        )}
       </CardHeader>
       <CardFooter className="mt-auto flex flex-wrap justify-end gap-2" data-action-button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => model.model_id && router.push(`/intelligence/models/${model.model_id}`)}
+          aria-label={`View model ${model.name || "Unknown Model"}`}
+          data-testid="btn-view-model"
+          title={`View model ${model.name || "Unknown Model"}`}
+          className="h-9 px-3"
+        >
+          <Eye className="h-4 w-4 md:mr-0 mr-2" />
+          <span className="md:hidden">View</span>
+        </Button>
         {model.can_edit && (
           <Button
             variant="outline"
@@ -848,6 +912,10 @@ export default function Models({
                   Unselect All
                 </Button>
               </div>
+              <DataTableViewOptions
+                table={table}
+                hiddenColumns={["name", "provider", "is_custom", "active", "departments", "agents", "updated_at"]}
+              />
             </div>
           ) : (
             <div
@@ -926,6 +994,12 @@ export default function Models({
                     </Button>
                   )}
                 </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <DataTableViewOptions
+                  table={table}
+                  hiddenColumns={["name", "provider", "is_custom", "active", "departments", "agents", "updated_at"]}
+                />
               </div>
             </div>
           )}

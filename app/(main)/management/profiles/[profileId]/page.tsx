@@ -164,10 +164,7 @@ export default async function ProfileEditPage({
     const [profileDetail, context, draftsResult, groupResult] = await Promise.all([
       getProfile(input),
       api.post("/profile/context", { body: { entity_id: profileId } } as ContextIn) as Promise<ContextOut>,
-      api.post(
-        "/profile/drafts",
-        { path: undefined } as InputOf<"/profile/drafts", "post">,
-      ),
+      api.post("/profile/drafts", {}),
       api.post("/profile/group", { body: {} } as GroupProfileIn),
     ]);
     const snapshot = buildSnapshot(session, context.profile);

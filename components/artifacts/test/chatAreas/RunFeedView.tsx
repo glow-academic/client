@@ -86,7 +86,7 @@ export function RunFeedView({
   }
 
   return (
-    <div className="flex flex-col gap-3 p-4">
+    <div className="flex flex-col gap-3 p-4 h-full overflow-y-auto">
       {runs.map((run) => {
         const isStarting = run.chat_id ? starting_run_ids.has(run.chat_id) : false;
         const isStopping = run.chat_id ? stopping_run_ids.has(run.chat_id) : false;

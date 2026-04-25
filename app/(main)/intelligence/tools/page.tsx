@@ -21,6 +21,7 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { loadToolsSearchParams } from "@/lib/search-params/tools";
+import { readViewCookie } from "@/lib/view-cookie";
 
 /** ---- Strong types from OpenAPI ---- */
 type ToolsListIn = InputOf<"/tool/search", "post">;
@@ -183,9 +184,10 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
       page_offset: offset,
     };
 
-    // Fetch list data, and group in parallel
-    const [listData, groupResult] = await Promise.all([
+    // Fetch list data, view cookie, and group in parallel
+    const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getToolsList(body),
+      readViewCookie("tools"),
       api.post("/tool/group", { body: {} } as GroupToolIn),
     ]);
 
@@ -217,6 +219,7 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
         <div className="space-y-6 px-4" data-page="tools-index">
           <Tools
             listData={listData}
+            initialColumnVisibility={initialColumnVisibility}
             deleteToolAction={deleteTool}
             duplicateToolAction={duplicateTool}
             updateToolAction={updateTool}

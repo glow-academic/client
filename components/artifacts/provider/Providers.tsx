@@ -3,7 +3,7 @@
  * Used to display the providers page with server-side filtering.
  */
 "use client";
-import { Edit, Pencil, Trash2, X } from "lucide-react";
+import { Edit, Eye, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -17,11 +17,13 @@ import type {
 } from "@/app/(main)/intelligence/providers/page";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -50,6 +52,8 @@ import { useProviderAi } from "@/hooks/use-provider-ai";
 export interface ProvidersProps {
   // Server-provided data (for server-side rendering)
   listData: ProvidersListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (replaces useMutation)
   deleteProviderAction?: (
     input: DeleteProviderIn
@@ -66,8 +70,15 @@ export interface ProvidersProps {
   modelSearch: string;
 }
 
+const PROVIDERS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
+  status_badge: true,
+  value_badge: true,
+  card_description: true,
+};
+
 export default function Providers({
   listData: serverListData,
+  initialColumnVisibility,
   deleteProviderAction,
   updateProviderAction,
   pageIndex,
@@ -99,7 +110,10 @@ export default function Providers({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility(
+    "providers",
+    initialColumnVisibility ?? PROVIDERS_INITIAL_COLUMN_VISIBILITY,
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
     const filters: ColumnFiltersState = [];
     const deptIds = searchParams?.getAll("departmentIds") ?? [];
@@ -442,6 +456,31 @@ export default function Providers({
           );
         },
       },
+      // Virtual columns for card view toggles
+      {
+        id: "status_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof providers)[number]) => !row.active,
+      },
+      {
+        id: "value_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof providers)[number]) => row.value ?? "",
+      },
+      {
+        id: "card_description",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof providers)[number]) => row.description ?? "",
+      },
     ],
     []
   );
@@ -617,14 +656,28 @@ export default function Providers({
               </CardTitle>
               <div className="mt-1 space-y-2">
                 <div className="flex items-center gap-2">
-                  {!provider.active && (
+                  {columnVisibility["status_badge"] !== false && !provider.active && (
                     <Badge variant="secondary">Inactive</Badge>
                   )}
-                  <Badge variant="outline">{provider.value}</Badge>
+                  {columnVisibility["value_badge"] !== false && (
+                    <Badge variant="outline">{provider.value}</Badge>
+                  )}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2" data-action-button>
+              {providerId && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => router.push(`/intelligence/providers/${providerId}`)}
+                  aria-label={providerName ? `View ${providerName}` : undefined}
+                  data-testid={`btn-view-provider-${providerId}`}
+                  title="View"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              )}
               {provider.can_edit && providerId && (
                 <Button
                   variant="ghost"
@@ -654,11 +707,13 @@ export default function Providers({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0 flex-1 flex flex-col">
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-            {provider.description || "No description"}
-          </p>
-        </CardContent>
+        {columnVisibility["card_description"] !== false && (
+          <CardContent className="pt-0 flex-1 flex flex-col">
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+              {provider.description || "No description"}
+            </p>
+          </CardContent>
+        )}
       </Card>
     );
   };
@@ -713,6 +768,10 @@ export default function Providers({
               Unselect All
             </Button>
           </div>
+          <DataTableViewOptions
+            table={table}
+            hiddenColumns={["name", "description", "value", "departments", "models", "status", "updated_at"]}
+          />
         </div>
       ) : (
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2" data-testid="providers-toolbar">
@@ -776,6 +835,12 @@ export default function Providers({
               <X className="ml-2 h-4 w-4" />
             </Button>
           )}
+        </div>
+        <div className="flex items-center gap-2">
+          <DataTableViewOptions
+            table={table}
+            hiddenColumns={["name", "description", "value", "departments", "models", "status", "updated_at"]}
+          />
         </div>
       </div>
       )}

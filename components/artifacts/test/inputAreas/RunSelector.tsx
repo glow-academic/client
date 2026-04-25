@@ -24,7 +24,6 @@ export interface RunSelectorProps {
   runs: RunItem[];
   starting_run_ids: Set<string>;
   on_start_run: (invocationId: string) => void;
-  on_start_all: () => void;
   is_connected: boolean;
   disabled?: boolean;
 }
@@ -33,7 +32,6 @@ export function RunSelector({
   runs,
   starting_run_ids,
   on_start_run,
-  on_start_all,
   is_connected,
   disabled,
 }: RunSelectorProps) {
@@ -41,7 +39,6 @@ export function RunSelector({
 
   const runnableRuns = runs.filter((r) => r.status === "not_started" && r.chat_id);
   const hasAnyRunnable = runnableRuns.length > 0;
-  const isAnyStarting = starting_run_ids.size > 0;
 
   const handleRunSelected = () => {
     if (selectedRunChatId) {
@@ -87,21 +84,6 @@ export function RunSelector({
           <Play className="h-3 w-3 mr-1" />
         )}
         Run
-      </Button>
-
-      {/* Run All */}
-      <Button
-        onClick={on_start_all}
-        variant="outline"
-        size="sm"
-        disabled={disabled || !is_connected || !hasAnyRunnable || isAnyStarting}
-      >
-        {isAnyStarting ? (
-          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-        ) : (
-          <Play className="h-3 w-3 mr-1" />
-        )}
-        Run All
       </Button>
     </div>
   );

@@ -195,10 +195,7 @@ export default async function FieldEditPage({
     const [fieldData, context, draftsResult, groupResult] = await Promise.all([
       getField(input),
       api.post("/field/context", { body: { entity_id: fieldId } } as ContextIn) as Promise<ContextOut>,
-      api.post(
-        "/field/drafts",
-        { path: undefined } as InputOf<"/field/drafts", "post">,
-      ),
+      api.post("/field/drafts", {}),
       api.post("/field/group", { body: {} } as GroupFieldIn),
     ]);
     const snapshot = buildSnapshot(session, context.profile);

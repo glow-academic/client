@@ -14,7 +14,7 @@ export type StartStage = "idle" | "starting" | RouteStage | "error";
 
 export interface UseTestStartReturn {
   start: (opts: {
-    benchmarkId: string;
+    evalId: string;
     infiniteMode?: boolean;
   }) => Promise<void>;
   stage: StartStage;
@@ -33,13 +33,13 @@ export function useTestStart(): UseTestStartReturn {
   }, [routeHook.stage, routeHook.error]);
 
   const start = useCallback(
-    async (opts: { benchmarkId: string; infiniteMode?: boolean }) => {
+    async (opts: { evalId: string; infiniteMode?: boolean }) => {
       try {
         setError(null);
         setStage("starting");
 
         const result = (await transport.send("/test/start", {
-          benchmark_id: opts.benchmarkId,
+          eval_id: opts.evalId,
           infinite_mode: opts.infiniteMode ?? false,
         })) as Record<string, unknown>;
 

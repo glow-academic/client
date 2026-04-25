@@ -5,7 +5,7 @@
  * 12/05/2025
  */
 "use client";
-import { Copy, Edit, Pencil, Trash2, X } from "lucide-react";
+import { Copy, Edit, Eye, Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ import type {
   UpdateFieldOut,
 } from "@/app/(main)/management/fields/page";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { Input } from "@/components/ui/input";
 import {
@@ -55,10 +56,13 @@ import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useFieldAi } from "@/hooks/use-field-ai";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
 export interface FieldsProps {
   // Server-provided data (for server-side rendering)
   listData: FieldsListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (replaces useMutation)
   duplicateFieldAction?: (
     input: DuplicateFieldIn
@@ -67,8 +71,15 @@ export interface FieldsProps {
   updateFieldAction?: (input: UpdateFieldIn) => Promise<UpdateFieldOut>;
 }
 
+const FIELDS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
+  card_description: true,
+  card_parameters: true,
+  card_departments: true,
+};
+
 export default function Fields({
   listData: serverListData,
+  initialColumnVisibility,
   duplicateFieldAction,
   deleteFieldAction,
   updateFieldAction,
@@ -89,7 +100,10 @@ export default function Fields({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility(
+    "fields",
+    initialColumnVisibility ?? FIELDS_INITIAL_COLUMN_VISIBILITY,
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "name", desc: false },
@@ -246,6 +260,31 @@ export default function Fields({
           if (rowIds.length === 0) return true;
           return value.some((v) => rowIds.includes(v));
         },
+      },
+      // Virtual columns for card view toggles
+      {
+        id: "card_description",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof fields)[number]) => row.description ?? "",
+      },
+      {
+        id: "card_parameters",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof fields)[number]) => row.conditional_parameter_ids ?? [],
+      },
+      {
+        id: "card_departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof fields)[number]) => row.department_ids ?? [],
       },
     ],
     []
@@ -505,6 +544,19 @@ export default function Fields({
               </CardTitle>
             </div>
             <div className="flex items-center gap-1 ml-2 flex-shrink-0" data-action-button>
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid={`view-${field.field_id}`}
+                onClick={() => {
+                  const fieldId = field.field_id;
+                  if (fieldId) router.push(`/management/fields/${fieldId}`);
+                }}
+                aria-label={`View ${field.name ?? ""}`}
+                title="View"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
               {field.can_edit && (
                 <Button
                   variant="outline"
@@ -558,12 +610,14 @@ export default function Fields({
           </div>
         </CardHeader>
         <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-            {field.description || "No description available"}
-          </p>
+          {columnVisibility["card_description"] !== false && (
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+              {field.description || "No description available"}
+            </p>
+          )}
           {/* Parameters and Departments */}
           <div className="flex flex-col gap-2 text-xs text-muted-foreground">
-            {field.conditional_parameter_ids && field.conditional_parameter_ids.length > 0 && (
+            {columnVisibility["card_parameters"] !== false && field.conditional_parameter_ids && field.conditional_parameter_ids.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 <span className="font-medium">Parameters:</span>
                 {field.conditional_parameter_ids.slice(0, 3).map((pid) => (
@@ -578,7 +632,7 @@ export default function Fields({
                 )}
               </div>
             )}
-            {field.department_ids && field.department_ids.length > 0 && (
+            {columnVisibility["card_departments"] !== false && field.department_ids && field.department_ids.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 <span className="font-medium">Departments:</span>
                 {field.department_ids.slice(0, 2).map((did) => (
@@ -654,6 +708,10 @@ export default function Fields({
                   Unselect All
                 </Button>
               </div>
+              <DataTableViewOptions
+                table={table}
+                hiddenColumns={["name", "description", "value", "parameters", "personas", "departments"]}
+              />
             </div>
           ) : (
             <div
@@ -707,6 +765,12 @@ export default function Fields({
                     </Button>
                   )}
                 </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <DataTableViewOptions
+                  table={table}
+                  hiddenColumns={["name", "description", "value", "parameters", "personas", "departments"]}
+                />
               </div>
             </div>
           )}

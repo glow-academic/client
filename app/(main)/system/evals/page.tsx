@@ -19,6 +19,7 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { loadEvalsSearchParams } from "@/lib/search-params/evals";
+import { readViewCookie } from "@/lib/view-cookie";
 
 /** ---- Strong types from OpenAPI ---- */
 type EvalsListOut = OutputOf<"/eval/search", "post">;
@@ -162,9 +163,10 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
       page_offset: offset,
     };
 
-    // Fetch list data and group in parallel
-    const [listData, groupResult] = await Promise.all([
+    // Fetch list data, view cookie, and group in parallel
+    const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getEvalsList(body),
+      readViewCookie("evals"),
       api.post("/eval/group", { body: {} } as GroupEvalIn),
     ]);
 
@@ -196,6 +198,7 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
         <div className="space-y-6 px-4" data-page="evals-index">
           <Evals
             listData={listData}
+            initialColumnVisibility={initialColumnVisibility}
             deleteEvalAction={deleteEval}
             updateEvalAction={updateEval}
             pageIndex={pageIndex}

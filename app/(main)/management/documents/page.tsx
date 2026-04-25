@@ -19,6 +19,7 @@ import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
+import { readViewCookie } from "@/lib/view-cookie";
 
 /** ---- Strong types from OpenAPI ---- */
 type DocumentsListIn = InputOf<"/document/search", "post">;
@@ -128,9 +129,10 @@ export default async function DocumentsPage() {
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/management/documents", context.profile.role_permissions);
 
-    // Fetch list data and group in parallel
-    const [listData, groupResult] = await Promise.all([
+    // Fetch list data, view cookie, and group in parallel
+    const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getDocumentsList(),
+      readViewCookie("documents"),
       api.post("/document/group", { body: {} } as GroupDocumentIn),
     ]);
 
@@ -160,7 +162,7 @@ export default async function DocumentsPage() {
         }}
       >
         <div className="space-y-6 px-4" data-page="documents-index">
-          <Documents listData={listData} deleteDocumentAction={deleteDocument} updateDocumentAction={updateDocument} />
+          <Documents listData={listData} initialColumnVisibility={initialColumnVisibility} deleteDocumentAction={deleteDocument} updateDocumentAction={updateDocument} />
         </div>
       </FullPageLayout>
     );

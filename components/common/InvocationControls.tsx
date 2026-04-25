@@ -45,7 +45,7 @@ export function InvocationControls({
     onInvocationStopped: useCallback(() => {
       setStoppingLoading(false);
     }, []),
-    onEnded: useCallback(() => {
+    onCompleted: useCallback(() => {
       setStoppingLoading(false);
     }, []),
     onError: useCallback((data: TestErrorEvent) => {

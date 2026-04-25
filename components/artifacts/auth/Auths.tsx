@@ -34,10 +34,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useAuthAi } from "@/hooks/use-auth-ai";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { useProfile } from "@/contexts/profile-context";
 
 import type {
@@ -53,14 +55,28 @@ import type {
 export interface AuthsProps {
   // Server-provided data (for server-side rendering)
   listData: AuthListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (replaces useMutation)
   duplicateAuthAction?: (input: DuplicateAuthIn) => Promise<DuplicateAuthOut>;
   deleteAuthAction?: (input: DeleteAuthIn) => Promise<DeleteAuthOut>;
   updateAuthAction?: (input: UpdateAuthIn) => Promise<UpdateAuthOut>;
 }
 
+const AUTHS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
+  // Hidden faceting columns — always off
+  departments: false,
+  setting_ids: false,
+  auth_item_key_ids: false,
+  // Toggleable card sections — default on
+  num_items: true,
+  status_badge: true,
+  card_description: true,
+};
+
 export default function Auths({
   listData: serverListData,
+  initialColumnVisibility,
   duplicateAuthAction,
   deleteAuthAction,
   updateAuthAction,
@@ -131,11 +147,10 @@ export default function Auths({
   );
 
   // Table state — needed so the picker slots have columns to drive.
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    departments: false,
-    setting_ids: false,
-    auth_item_key_ids: false,
-  });
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility(
+    "auths",
+    initialColumnVisibility ?? AUTHS_INITIAL_COLUMN_VISIBILITY,
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -179,6 +194,31 @@ export default function Auths({
         accessorFn: (row: (typeof auths)[number]) => row.auth_item_key_ids ?? [],
         filterFn: (row, id, filterValue: string[]) =>
           !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
+      },
+      // Virtual columns for card view toggles
+      {
+        id: "num_items",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof auths)[number]) => row.item_count ?? 0,
+      },
+      {
+        id: "status_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof auths)[number]) => row.is_inactive ?? false,
+      },
+      {
+        id: "card_description",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof auths)[number]) => row.description ?? "",
       },
     ],
     []
@@ -421,10 +461,12 @@ export default function Auths({
                 <span className="truncate">{auth.name}</span>
               </CardTitle>
               <div className="flex flex-wrap items-center gap-2 mt-1">
-                <Badge variant="outline">
-                  {count} {count === 1 ? "item" : "items"}
-                </Badge>
-                {auth.is_inactive && (
+                {columnVisibility["num_items"] !== false && (
+                  <Badge variant="outline">
+                    {count} {count === 1 ? "item" : "items"}
+                  </Badge>
+                )}
+                {columnVisibility["status_badge"] !== false && auth.is_inactive && (
                   <Badge variant="secondary" className="text-xs">
                     Inactive
                   </Badge>
@@ -502,11 +544,13 @@ export default function Auths({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="flex-1">
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-            {auth.description}
-          </p>
-        </CardContent>
+        {columnVisibility["card_description"] !== false && (
+          <CardContent className="flex-1">
+            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+              {auth.description}
+            </p>
+          </CardContent>
+        )}
       </Card>
     );
   };
@@ -553,9 +597,14 @@ export default function Auths({
               Unselect All
             </Button>
           </div>
+          <DataTableViewOptions
+            table={table}
+            hiddenColumns={["departments", "setting_ids", "auth_item_key_ids"]}
+          />
         </div>
       ) : (
-        <div className="flex items-center space-x-2 flex-wrap" data-testid="auths-toolbar">
+        <div className="flex items-center justify-between flex-wrap gap-2" data-testid="auths-toolbar">
+          <div className="flex items-center space-x-2 flex-wrap">
           <ThreePickerFilters
             slots={[
               {
@@ -585,6 +634,13 @@ export default function Auths({
               <X className="ml-2 h-4 w-4" />
             </Button>
           )}
+          </div>
+          <div className="flex items-center gap-2">
+            <DataTableViewOptions
+              table={table}
+              hiddenColumns={["departments", "setting_ids", "auth_item_key_ids"]}
+            />
+          </div>
         </div>
       )}
 

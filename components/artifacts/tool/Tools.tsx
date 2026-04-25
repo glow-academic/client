@@ -30,6 +30,7 @@ import type {
 } from "@/app/(main)/intelligence/tools/page";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,10 +50,13 @@ import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useToolAi } from "@/hooks/use-tool-ai";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
 export interface ToolsProps {
   // Server-provided data (for server-side rendering)
   listData: ToolsListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (replaces useMutation)
   duplicateToolAction?: (input: DuplicateToolIn) => Promise<DuplicateToolOut>;
   deleteToolAction?: (input: DeleteToolIn) => Promise<DeleteToolOut>;
@@ -66,8 +70,20 @@ export interface ToolsProps {
   agentSearch: string;
 }
 
+const TOOLS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
+  // Hidden faceting columns — always off
+  departments: false,
+  agents: false,
+  permissions: false,
+  creatable: false,
+  // Toggleable card sections — default on
+  status_badge: true,
+  card_description: true,
+};
+
 export default function Tools({
   listData: serverListData,
+  initialColumnVisibility,
   duplicateToolAction,
   deleteToolAction,
   updateToolAction,
@@ -100,12 +116,10 @@ export default function Tools({
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Table state — hidden columns default to off so they don't show in DataTableViewOptions
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    departments: false,
-    agents: false,
-    permissions: false,
-    creatable: false,
-  });
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility(
+    "tools",
+    initialColumnVisibility ?? TOOLS_INITIAL_COLUMN_VISIBILITY,
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
     const filters: ColumnFiltersState = [];
     const deptIds = searchParams?.getAll("departmentIds") ?? [];
@@ -436,6 +450,23 @@ export default function Tools({
         accessorFn: () => "" as string,
         filterFn: () => true,
       },
+      // Virtual columns for card view toggles
+      {
+        id: "status_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof toolsArray)[number]) => row.active ?? false,
+      },
+      {
+        id: "card_description",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof toolsArray)[number]) => row.description ?? "",
+      },
     ],
     []
   );
@@ -610,16 +641,18 @@ export default function Tools({
                 </div>
                 <span className="truncate">{toolName}</span>
               </CardTitle>
-              <div className="mt-1 space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge
-                    variant={tool.active ? "default" : "secondary"}
-                    className="text-xs"
-                  >
-                    {tool.active ? "Active" : "Inactive"}
-                  </Badge>
+              {columnVisibility["status_badge"] !== false && (
+                <div className="mt-1 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge
+                      variant={tool.active ? "default" : "secondary"}
+                      className="text-xs"
+                    >
+                      {tool.active ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             <div className="flex items-center gap-2" data-action-button>
               {tool.can_edit && toolId ? (
@@ -694,11 +727,13 @@ export default function Tools({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0 flex-1 flex flex-col">
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {tool.description || "No description"}
-          </p>
-        </CardContent>
+        {columnVisibility["card_description"] !== false && (
+          <CardContent className="pt-0 flex-1 flex flex-col">
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {tool.description || "No description"}
+            </p>
+          </CardContent>
+        )}
       </Card>
     );
   };
@@ -776,6 +811,10 @@ export default function Tools({
                 Unselect All
               </Button>
             </div>
+            <DataTableViewOptions
+              table={table}
+              hiddenColumns={["name", "departments", "agents", "permissions", "creatable", "updated_at"]}
+            />
           </div>
         ) : (
           <div
@@ -845,6 +884,12 @@ export default function Tools({
                   </Button>
                 )}
               </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <DataTableViewOptions
+                table={table}
+                hiddenColumns={["name", "departments", "agents", "permissions", "creatable", "updated_at"]}
+              />
             </div>
           </div>
         )}

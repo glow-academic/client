@@ -40,6 +40,7 @@ import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useParameterAi } from "@/hooks/use-parameter-ai";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { useProfile } from "@/contexts/profile-context";
 
 import {
@@ -66,12 +67,15 @@ import type {
   UpdateParameterOut,
 } from "@/app/(main)/management/parameters/page";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { Input } from "@/components/ui/input";
 
 export interface ParametersProps {
   // Server-provided data (for server-side rendering)
   listData: ParametersListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (replaces useMutation)
   duplicateParameterAction?: (
     input: DuplicateParameterIn
@@ -84,8 +88,16 @@ export interface ParametersProps {
   ) => Promise<UpdateParameterOut>;
 }
 
+const PARAMETERS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
+  status_badge: true,
+  card_description: true,
+  num_items: true,
+  default_badge: true,
+};
+
 export default function Parameters({
   listData: serverListData,
+  initialColumnVisibility,
   duplicateParameterAction,
   deleteParameterAction,
   updateParameterAction,
@@ -105,7 +117,10 @@ export default function Parameters({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility(
+    "parameters",
+    initialColumnVisibility ?? PARAMETERS_INITIAL_COLUMN_VISIBILITY,
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updated_at", desc: true },
@@ -278,6 +293,31 @@ export default function Parameters({
           if (rowIds.length === 0) return true; // Show cross-department items when no filter
           return value.some((v) => rowIds.includes(v));
         },
+      },
+      // Virtual columns for card view toggles
+      {
+        id: "status_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof parameters)[number]) => !row.active,
+      },
+      {
+        id: "default_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof parameters)[number]) => (row.department_ids?.length ?? 0) === 0,
+      },
+      {
+        id: "card_description",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof parameters)[number]) => row.sample_items ?? [],
       },
     ],
     []
@@ -553,15 +593,17 @@ export default function Parameters({
                 <span className="truncate">{parameter.name}</span>
               </CardTitle>
               <div className="flex flex-wrap items-center gap-2 mt-1">
-                <Badge variant="outline">
-                  {count} {count === 1 ? "item" : "items"}
-                </Badge>
-                {parameter.department_ids?.length === 0 && (
+                {columnVisibility["num_items"] !== false && (
+                  <Badge variant="outline">
+                    {count} {count === 1 ? "item" : "items"}
+                  </Badge>
+                )}
+                {columnVisibility["default_badge"] !== false && parameter.department_ids?.length === 0 && (
                   <Badge variant="secondary" className="text-xs">
                     Default
                   </Badge>
                 )}
-                {!parameter.active && (
+                {columnVisibility["status_badge"] !== false && !parameter.active && (
                   <Badge variant="secondary" className="text-xs">
                     Inactive
                   </Badge>
@@ -656,13 +698,15 @@ export default function Parameters({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0 flex-grow flex flex-col">
-          {!parameter.sample_items || parameter.sample_items.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No items yet</p>
-          ) : (
-            renderPreview(parameter.sample_items, parameter.num_items ?? 0)
-          )}
-        </CardContent>
+        {columnVisibility["card_description"] !== false && (
+          <CardContent className="pt-0 flex-grow flex flex-col">
+            {!parameter.sample_items || parameter.sample_items.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No items yet</p>
+            ) : (
+              renderPreview(parameter.sample_items, parameter.num_items ?? 0)
+            )}
+          </CardContent>
+        )}
       </Card>
     );
   };
@@ -722,6 +766,10 @@ export default function Parameters({
                   Unselect All
                 </Button>
               </div>
+              <DataTableViewOptions
+                table={table}
+                hiddenColumns={["name", "updated_at", "scenarios", "fields", "departments"]}
+              />
             </div>
           ) : (
             <div
@@ -775,6 +823,12 @@ export default function Parameters({
                     </Button>
                   )}
                 </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <DataTableViewOptions
+                  table={table}
+                  hiddenColumns={["name", "updated_at", "scenarios", "fields", "departments"]}
+                />
               </div>
             </div>
           )}

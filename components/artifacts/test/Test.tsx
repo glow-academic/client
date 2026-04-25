@@ -86,10 +86,10 @@ export default function Test({
         ),
       );
     },
-    onInvocationEnded: () => {
+    onInvocationCompleted: () => {
       toast.success("All test runs complete!");
     },
-    onEnded: () => {
+    onCompleted: () => {
       toast.success("All test runs complete!");
     },
     onInvocationStopped: (data) => {

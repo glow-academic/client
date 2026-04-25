@@ -21,6 +21,7 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { loadAgentsSearchParams } from "@/lib/search-params/agents";
+import { readViewCookie } from "@/lib/view-cookie";
 
 /** ---- Strong types from OpenAPI ---- */
 type AgentsListOut = OutputOf<"/agent/search", "post">;
@@ -179,9 +180,10 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
       page_offset: offset,
     };
 
-    // Fetch list data and group in parallel
-    const [listData, groupResult] = await Promise.all([
+    // Fetch list data, view cookie, and group in parallel
+    const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getAgentsList(body),
+      readViewCookie("agents"),
       api.post("/agent/group", { body: {} } as GroupAgentIn),
     ]);
 
@@ -213,6 +215,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
         <div className="space-y-6 px-4" data-page="agents-index">
           <Agents
             listData={listData}
+            initialColumnVisibility={initialColumnVisibility}
             duplicateAgentAction={duplicateAgent}
             deleteAgentAction={deleteAgent}
             updateAgentAction={updateAgent}

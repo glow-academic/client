@@ -19,6 +19,7 @@ import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
+import { readViewCookie } from "@/lib/view-cookie";
 
 /** ---- Strong types from OpenAPI ---- */
 type FieldsListOut = OutputOf<"/field/search", "post">;
@@ -129,9 +130,10 @@ export default async function FieldsPage() {
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/management/fields", context.profile.role_permissions);
 
-    // Fetch list data and group in parallel
-    const [listData, groupResult] = await Promise.all([
+    // Fetch list data, view cookie, and group in parallel
+    const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getFieldsList(),
+      readViewCookie("fields"),
       api.post("/field/group", { body: {} } as GroupFieldIn),
     ]);
 
@@ -163,6 +165,7 @@ export default async function FieldsPage() {
         <div className="space-y-6 px-4" data-page="fields-index">
           <Fields
             listData={listData}
+            initialColumnVisibility={initialColumnVisibility}
             duplicateFieldAction={duplicateField}
             deleteFieldAction={deleteField}
             updateFieldAction={updateField}

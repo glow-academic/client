@@ -14,11 +14,24 @@ type Op<P extends PathKey, Meth extends M> = P extends keyof paths
     : undefined
   : undefined;
 
-// ---- helpers to make a field disappear when its type is never ----
-
+// ---- helpers to make a field disappear when its type is never/undefined ----
+//
+// When the OpenAPI schema has e.g. `path?: never` for a route with no path
+// params, matching against `path?: infer PP` resolves PP to `undefined` (not
+// `never`), because the optional modifier on the source widens the inferred
+// type. Under `exactOptionalPropertyTypes: true`, the previous `& object`
+// shim was insufficient for that case: PP fell through to the `{ path: PP }`
+// branch, so callers were forced to pass `path` (typically `undefined`) on
+// every body-only call.
+//
+// Treat both `never` and `undefined` as "field absent" and emit a bare
+// `object` shim — at the intersection level this contributes nothing, so
+// callers can omit the field entirely.
 type OptField<K extends string, T> = [T] extends [never]
   ? object
-  : { [P in K]: T };
+  : [T] extends [undefined]
+    ? object
+    : { [P in K]: T };
 
 // ---------- InputOf (fields omitted if not present in OpenAPI) ----------
 export type InputOf<P extends PathKey, Meth extends M> =

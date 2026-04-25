@@ -190,10 +190,7 @@ export default async function NewFieldPage({
     } as GetFieldIn;
     const [fieldData, draftsResult, groupResult] = await Promise.all([
       getFieldDefault(input),
-      api.post(
-        "/field/drafts",
-        { path: undefined } as InputOf<"/field/drafts", "post">,
-      ),
+      api.post("/field/drafts", {}),
       api.post("/field/group", { body: {} } as GroupFieldIn),
     ]);
 

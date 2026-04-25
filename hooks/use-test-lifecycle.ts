@@ -12,16 +12,17 @@
  * Canonical event names (server → client):
  *   artifacts.test.started
  *   artifacts.test.invocation.started
- *   artifacts.test.invocation.ended
+ *   artifacts.test.invocation.completed
  *   artifacts.test.invocation.stopped
  *   artifacts.test.invocation.response.saved
  *   artifacts.test.run.replay_started   (per-run replay inside an invocation)
  *   artifacts.test.run.progress         (grade/run progress deltas)
  *   artifacts.test.run.replay_completed
- *   artifacts.test.ended                (whole test ended)
+ *   artifacts.test.completed            (whole test completed)
  *   artifacts.test.start.failed         (canonical lifecycle error fan-in)
  *   artifacts.test.run.failed
- *   artifacts.test.end.failed
+ *   artifacts.test.complete.failed
+ *   artifacts.test.invocation_complete.failed
  *   artifacts.test.stop.failed
  */
 import { useCallback, useEffect, useRef } from "react";
@@ -54,26 +55,25 @@ interface UseTestLifecycleConfig {
   groupId?: string | null;
   onStarted?: (data: TestStartedEvent) => void;
   onInvocationStarted?: (data: TestInvocationStartedEvent) => void;
-  onInvocationEnded?: (data: TestInvocationEndedEvent) => void;
+  onInvocationCompleted?: (data: TestInvocationEndedEvent) => void;
   onInvocationStopped?: (data: TestInvocationStoppedEvent) => void;
   onInvocationResponseSaved?: (data: TestInvocationResponseSavedEvent) => void;
   onRunReplayStarted?: (data: TestRunReplayStartedEvent) => void;
   onRunProgress?: (data: TestRunProgressEvent) => void;
   onRunReplayCompleted?: (data: TestRunReplayCompletedEvent) => void;
-  onEnded?: (data: TestEndedEvent) => void;
+  onCompleted?: (data: TestEndedEvent) => void;
   onError?: (data: TestErrorEvent) => void;
 }
 
 export interface UseTestLifecycleReturn {
-  startTest: (opts: { benchmarkId: string; infiniteMode?: boolean }) => void;
+  startTest: (opts: { evalId: string; infiniteMode?: boolean }) => void;
   stopInvocation: (invocationId: string) => void;
-  endInvocation: (params: {
+  completeInvocation: (params: {
     testId: string;
     invocationId: string;
-    runId: string;
-    grade?: boolean;
+    message?: string;
   }) => void;
-  endAll: (testId: string) => void;
+  completeTest: (testId: string) => void;
   nextInvocation: (testId: string) => void;
   runInvocation: (params: {
     testId: string;
@@ -90,13 +90,13 @@ export function useTestLifecycle({
   groupId: groupIdProp,
   onStarted,
   onInvocationStarted,
-  onInvocationEnded,
+  onInvocationCompleted,
   onInvocationStopped,
   onInvocationResponseSaved,
   onRunReplayStarted,
   onRunProgress,
   onRunReplayCompleted,
-  onEnded,
+  onCompleted,
   onError,
 }: UseTestLifecycleConfig): UseTestLifecycleReturn {
   const groupCtx = useGroupIdOptional();
@@ -105,26 +105,26 @@ export function useTestLifecycle({
   const callbacksRef = useRef({
     onStarted,
     onInvocationStarted,
-    onInvocationEnded,
+    onInvocationCompleted,
     onInvocationStopped,
     onInvocationResponseSaved,
     onRunReplayStarted,
     onRunProgress,
     onRunReplayCompleted,
-    onEnded,
+    onCompleted,
     onError,
   });
 
   callbacksRef.current = {
     onStarted,
     onInvocationStarted,
-    onInvocationEnded,
+    onInvocationCompleted,
     onInvocationStopped,
     onInvocationResponseSaved,
     onRunReplayStarted,
     onRunProgress,
     onRunReplayCompleted,
-    onEnded,
+    onCompleted,
     onError,
   };
 
@@ -150,9 +150,9 @@ export function useTestLifecycle({
       callbacksRef.current.onInvocationStarted?.(data);
     };
 
-    const handleInvocationEnded = (data: TestInvocationEndedEvent) => {
+    const handleInvocationCompleted = (data: TestInvocationEndedEvent) => {
       if (!matchInvocation(data)) return;
-      callbacksRef.current.onInvocationEnded?.(data);
+      callbacksRef.current.onInvocationCompleted?.(data);
     };
 
     const handleInvocationStopped = (data: TestInvocationStoppedEvent) => {
@@ -182,9 +182,9 @@ export function useTestLifecycle({
       callbacksRef.current.onRunReplayCompleted?.(data);
     };
 
-    const handleEnded = (data: TestEndedEvent) => {
+    const handleCompleted = (data: TestEndedEvent) => {
       if (!matchTest(data)) return;
-      callbacksRef.current.onEnded?.(data);
+      callbacksRef.current.onCompleted?.(data);
     };
 
     const handleError = (data: TestErrorEvent) => {
@@ -195,7 +195,7 @@ export function useTestLifecycle({
     const unsubs = [
       transport.on("artifacts.test.started", handleStarted, scope),
       transport.on("artifacts.test.invocation.started", handleInvocationStarted, scope),
-      transport.on("artifacts.test.invocation.ended", handleInvocationEnded, scope),
+      transport.on("artifacts.test.invocation.completed", handleInvocationCompleted, scope),
       transport.on("artifacts.test.invocation.stopped", handleInvocationStopped, scope),
       transport.on(
         "artifacts.test.invocation.response.saved",
@@ -205,11 +205,12 @@ export function useTestLifecycle({
       transport.on("artifacts.test.run.replay_started", handleRunReplayStarted, scope),
       transport.on("artifacts.test.run.progress", handleRunProgress, scope),
       transport.on("artifacts.test.run.replay_completed", handleRunReplayCompleted, scope),
-      transport.on("artifacts.test.ended", handleEnded, scope),
+      transport.on("artifacts.test.completed", handleCompleted, scope),
       // Canonical lifecycle error fan-in — every operation's `failed` phase.
       transport.on("artifacts.test.start.failed", handleError, scope),
       transport.on("artifacts.test.run.failed", handleError, scope),
-      transport.on("artifacts.test.end.failed", handleError, scope),
+      transport.on("artifacts.test.complete.failed", handleError, scope),
+      transport.on("artifacts.test.invocation_complete.failed", handleError, scope),
       transport.on("artifacts.test.stop.failed", handleError, scope),
     ];
 
@@ -219,9 +220,9 @@ export function useTestLifecycle({
   // --- Emission methods ---
 
   const startTest = useCallback(
-    (opts: { benchmarkId: string; infiniteMode?: boolean }) => {
+    (opts: { evalId: string; infiniteMode?: boolean }) => {
       transport.send("/test/start", {
-        benchmark_id: opts.benchmarkId,
+        eval_id: opts.evalId,
         infinite_mode: opts.infiniteMode ?? false,
       });
     },
@@ -235,26 +236,24 @@ export function useTestLifecycle({
     [transport],
   );
 
-  const endInvocation = useCallback(
+  const completeInvocation = useCallback(
     (params: {
       testId: string;
       invocationId: string;
-      runId: string;
-      grade?: boolean;
+      message?: string;
     }) => {
-      transport.send("/test/end", {
+      transport.send("/test/invocation/complete", {
         test_id: params.testId,
         test_invocation_id: params.invocationId,
-        run_id: params.runId,
-        grade: params.grade ?? true,
+        ...(params.message !== undefined && { message: params.message }),
       });
     },
     [transport],
   );
 
-  const endAll = useCallback(
+  const completeTest = useCallback(
     (testIdArg: string) => {
-      transport.send("/test/end", { test_id: testIdArg });
+      transport.send("/test/complete", { test_id: testIdArg });
     },
     [transport],
   );
@@ -280,8 +279,8 @@ export function useTestLifecycle({
   return {
     startTest,
     stopInvocation,
-    endInvocation,
-    endAll,
+    completeInvocation,
+    completeTest,
     nextInvocation,
     runInvocation,
   };

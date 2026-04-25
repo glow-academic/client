@@ -19,6 +19,7 @@ import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
+import { readViewCookie } from "@/lib/view-cookie";
 
 /** ---- Strong types from OpenAPI ---- */
 type ProfilesListIn = InputOf<"/profile/search", "post">;
@@ -199,10 +200,11 @@ export default async function ProfilesPage() {
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/management/profiles", context.profile.role_permissions);
 
-    // Fetch list data, create profile data, and group in parallel
-    const [listData, initialCreateProfileData, groupResult] = await Promise.all([
+    // Fetch list data, create profile data, view cookie, and group in parallel
+    const [listData, initialCreateProfileData, initialColumnVisibility, groupResult] = await Promise.all([
       getProfilesList({ body: {} }),
       getCreateProfileData({ body: { department_ids: [] } }),
+      readViewCookie("profiles"),
       api.post("/profile/group", { body: {} } as GroupProfileIn),
     ]);
 
@@ -235,6 +237,7 @@ export default async function ProfilesPage() {
           <Profiles
             listData={listData}
             initialCreateProfileData={initialCreateProfileData}
+            initialColumnVisibility={initialColumnVisibility}
             deleteProfileAction={deleteProfile}
             bulkDeleteProfileAction={bulkDeleteProfile}
             updateProfileAction={updateProfile}

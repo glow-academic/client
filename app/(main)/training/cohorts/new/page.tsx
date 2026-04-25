@@ -186,10 +186,7 @@ export default async function NewCohortPage({
 
     const [cohortData, draftsResult, groupResult] = await Promise.all([
       getCohortDefault(input),
-      api.post(
-        "/cohort/drafts",
-        { path: undefined } as InputOf<"/cohort/drafts", "post">,
-      ),
+      api.post("/cohort/drafts", {}),
       api.post("/cohort/group", { body: {} } as GroupCohortIn),
     ]);
 

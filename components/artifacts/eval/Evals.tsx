@@ -20,6 +20,8 @@ import type {
 } from "@/app/(main)/system/evals/page";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
@@ -52,6 +54,8 @@ import {
 
 export interface EvalsProps {
   listData: EvalsListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   deleteEvalAction?: (input: DeleteEvalIn) => Promise<DeleteEvalOut>;
   updateEvalAction?: (input: UpdateEvalIn) => Promise<UpdateEvalOut>;
   // Server-side pagination
@@ -62,8 +66,21 @@ export interface EvalsProps {
   departmentSearch: string;
 }
 
+const EVALS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
+  // Hidden faceting columns
+  departments: false,
+  model_ids: false,
+  rubric_ids: false,
+  updated_at: false,
+  // Toggleable card sections
+  num_runs: true,
+  status_badge: true,
+  card_description: true,
+};
+
 export default function Evals({
   listData: serverListData,
+  initialColumnVisibility,
   deleteEvalAction,
   updateEvalAction,
   pageIndex,
@@ -93,12 +110,10 @@ export default function Evals({
 
   // Table state — hidden faceting columns default to off
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    departments: false,
-    model_ids: false,
-    rubric_ids: false,
-    updated_at: false,
-  });
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility(
+    "evals",
+    initialColumnVisibility ?? EVALS_INITIAL_COLUMN_VISIBILITY,
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
     const filters: ColumnFiltersState = [];
     const deptIds = searchParams?.getAll("departmentIds") ?? [];
@@ -508,6 +523,31 @@ export default function Evals({
         filterFn: (row, id, filterValue: string[]) =>
           !filterValue?.length || filterValue.some((v) => ((row.getValue(id) as string[]) ?? []).includes(v)),
       },
+      // Virtual columns for card view toggles
+      {
+        id: "num_runs",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof evalsListArray)[number]) => row.num_runs ?? 0,
+      },
+      {
+        id: "status_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof evalsListArray)[number]) => row.is_inactive ?? false,
+      },
+      {
+        id: "card_description",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof evalsListArray)[number]) => row.description ?? "",
+      },
     ],
     []
   );
@@ -600,11 +640,13 @@ export default function Evals({
               </CardTitle>
               <div className="mt-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline">
-                    {evalItem.num_runs ?? 0}{" "}
-                    {(evalItem.num_runs ?? 0) === 1 ? "run" : "runs"}
-                  </Badge>
-                  {evalItem.is_inactive && (
+                  {columnVisibility["num_runs"] !== false && (
+                    <Badge variant="outline">
+                      {evalItem.num_runs ?? 0}{" "}
+                      {(evalItem.num_runs ?? 0) === 1 ? "run" : "runs"}
+                    </Badge>
+                  )}
+                  {columnVisibility["status_badge"] !== false && evalItem.is_inactive && (
                     <Badge variant="secondary" className="text-xs">
                       Inactive
                     </Badge>
@@ -662,11 +704,13 @@ export default function Evals({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0 flex-1 flex flex-col">
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {evalItem.description || "No description"}
-          </p>
-        </CardContent>
+        {columnVisibility["card_description"] !== false && (
+          <CardContent className="pt-0 flex-1 flex flex-col">
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {evalItem.description || "No description"}
+            </p>
+          </CardContent>
+        )}
       </Card>
     );
   };
@@ -722,6 +766,10 @@ export default function Evals({
                 Unselect All
               </Button>
             </div>
+            <DataTableViewOptions
+              table={table}
+              hiddenColumns={["name", "departments", "model_ids", "rubric_ids", "updated_at"]}
+            />
           </div>
         ) : (
         <div
@@ -790,6 +838,12 @@ export default function Evals({
                 </Button>
               )}
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <DataTableViewOptions
+              table={table}
+              hiddenColumns={["name", "departments", "model_ids", "rubric_ids", "updated_at"]}
+            />
           </div>
         </div>
         )}

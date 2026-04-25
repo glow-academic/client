@@ -90,7 +90,7 @@ export default function Benchmark({
       setLoadingToastId(toastId);
       setStartingEvalId(evalId);
 
-      await start({ benchmarkId: evalId, infiniteMode });
+      await start({ evalId, infiniteMode });
     },
     [profile, start],
   );

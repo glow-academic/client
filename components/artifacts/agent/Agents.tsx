@@ -21,6 +21,7 @@ import type {
 } from "@/app/(main)/intelligence/agents/page";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,11 +50,14 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useAgentAi } from "@/hooks/use-agent-ai";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { useProfile } from "@/contexts/profile-context";
 
 export interface AgentsProps {
   // Server-provided data (for server-side rendering)
   listData: AgentsListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (replaces useMutation)
   duplicateAgentAction?: (
     input: DuplicateAgentIn,
@@ -70,8 +74,16 @@ export interface AgentsProps {
   toolSearch: string;
 }
 
+const AGENTS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
+  reasoning_badge: true,
+  temperature_badge: true,
+  card_description: true,
+  card_updated_at: true,
+};
+
 export default function Agents({
   listData: serverListData,
+  initialColumnVisibility,
   duplicateAgentAction,
   deleteAgentAction,
   updateAgentAction,
@@ -107,7 +119,10 @@ export default function Agents({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility(
+    "agents",
+    initialColumnVisibility ?? AGENTS_INITIAL_COLUMN_VISIBILITY,
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
     const filters: ColumnFiltersState = [];
     const deptIds = searchParams?.getAll("departmentIds") ?? [];
@@ -481,6 +496,39 @@ export default function Agents({
           );
         },
       },
+      // Virtual columns for card view toggles
+      {
+        id: "reasoning_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof agents)[number]) => row.reasoning ?? "",
+      },
+      {
+        id: "temperature_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof agents)[number]) => row.temperature ?? null,
+      },
+      {
+        id: "card_description",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof agents)[number]) => row.description ?? "",
+      },
+      {
+        id: "card_updated_at",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof agents)[number]) => row.updated_at ?? "",
+      },
     ],
     [modelMapping],
   );
@@ -685,13 +733,13 @@ export default function Agents({
             </CardTitle>
             <div className="mt-1 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                {agent.reasoning && (
+                {columnVisibility["reasoning_badge"] !== false && agent.reasoning && (
                   <Badge variant="outline" className="text-xs">
                     <Brain className="h-3 w-3 mr-1" />
                     {agent.reasoning}
                   </Badge>
                 )}
-                {agent.temperature !== null && agent.temperature !== undefined && (
+                {columnVisibility["temperature_badge"] !== false && agent.temperature !== null && agent.temperature !== undefined && (
                   <Badge variant="outline" className="text-xs">
                     <Thermometer className="h-3 w-3 mr-1" />
                     {formatTemperature(agent.temperature)}
@@ -699,9 +747,11 @@ export default function Agents({
                 )}
               </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {agent.description || "No description available"}
-            </p>
+            {columnVisibility["card_description"] !== false && (
+              <p className="text-sm text-muted-foreground">
+                {agent.description || "No description available"}
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap gap-2 items-center" data-action-button>
             {agent.can_edit && agent.agent_id ? (
@@ -768,14 +818,16 @@ export default function Agents({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="text-sm">
-          <span className="text-muted-foreground">Updated:</span>
-          <span className="font-medium ml-2">
-            {agent.updated_at ? formatDate(agent.updated_at) : "N/A"}
-          </span>
-        </div>
-      </CardContent>
+      {columnVisibility["card_updated_at"] !== false && (
+        <CardContent>
+          <div className="text-sm">
+            <span className="text-muted-foreground">Updated:</span>
+            <span className="font-medium ml-2">
+              {agent.updated_at ? formatDate(agent.updated_at) : "N/A"}
+            </span>
+          </div>
+        </CardContent>
+      )}
     </Card>
     );
   };
@@ -831,6 +883,10 @@ export default function Agents({
                 Unselect All
               </Button>
             </div>
+            <DataTableViewOptions
+              table={table}
+              hiddenColumns={["name", "model_id", "departments", "tools", "updated_at"]}
+            />
           </div>
         ) : (
           <div
@@ -909,6 +965,12 @@ export default function Agents({
                   </Button>
                 )}
               </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <DataTableViewOptions
+                table={table}
+                hiddenColumns={["name", "model_id", "departments", "tools", "updated_at"]}
+              />
             </div>
           </div>
         )}

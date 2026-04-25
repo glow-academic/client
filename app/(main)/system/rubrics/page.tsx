@@ -20,6 +20,7 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { loadRubricsSearchParams } from "@/lib/search-params/rubrics";
+import { readViewCookie } from "@/lib/view-cookie";
 
 /** ---- Strong types from OpenAPI ---- */
 type RubricsListOut = OutputOf<"/rubric/search", "post">;
@@ -178,9 +179,10 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
       page_offset: offset,
     };
 
-    // Fetch list data and group in parallel
-    const [listData, groupResult] = await Promise.all([
+    // Fetch list data, view cookie, and group in parallel
+    const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getRubricsList(body),
+      readViewCookie("rubrics"),
       api.post("/rubric/group", { body: {} } as GroupRubricIn),
     ]);
 
@@ -212,6 +214,7 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
         <div className="space-y-6 px-4" data-page="rubrics-index">
           <Rubrics
             listData={listData}
+            initialColumnVisibility={initialColumnVisibility}
             duplicateRubricAction={duplicateRubric}
             deleteRubricAction={deleteRubric}
             updateRubricAction={updateRubric}

@@ -19,6 +19,7 @@ import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
+import { readViewCookie } from "@/lib/view-cookie";
 
 /** ---- Strong types from OpenAPI ---- */
 type ParametersListOut = OutputOf<"/parameter/search", "post">;
@@ -136,9 +137,10 @@ export default async function ContextPage() {
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/management/parameters", context.profile.role_permissions);
 
-    // Fetch list data and group in parallel
-    const [listData, groupResult] = await Promise.all([
+    // Fetch list data, view cookie, and group in parallel
+    const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getParametersList(),
+      readViewCookie("parameters"),
       api.post("/parameter/group", { body: {} } as GroupParameterIn),
     ]);
 
@@ -170,6 +172,7 @@ export default async function ContextPage() {
         <div className="space-y-6 px-4" data-page="parameters-index">
           <Parameters
             listData={listData}
+            initialColumnVisibility={initialColumnVisibility}
             duplicateParameterAction={duplicateParameter}
             deleteParameterAction={deleteParameter}
             updateParameterAction={updateParameter}

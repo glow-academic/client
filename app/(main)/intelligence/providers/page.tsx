@@ -21,6 +21,7 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { loadProvidersSearchParams } from "@/lib/search-params/providers";
+import { readViewCookie } from "@/lib/view-cookie";
 
 /** ---- Strong types from OpenAPI ---- */
 type ProvidersListOut = OutputOf<"/provider/search", "post">;
@@ -181,9 +182,10 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
       page_offset: offset,
     };
 
-    // Fetch list data, and group in parallel
-    const [listData, groupResult] = await Promise.all([
+    // Fetch list data, view cookie, and group in parallel
+    const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getProvidersList(body),
+      readViewCookie("providers"),
       api.post("/provider/group", { body: {} } as GroupProviderIn),
     ]);
 
@@ -215,6 +217,7 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
         <div className="space-y-6 px-4" data-page="providers-index">
           <Providers
             listData={listData}
+            initialColumnVisibility={initialColumnVisibility}
             deleteProviderAction={deleteProvider}
             updateProviderAction={updateProvider}
             pageIndex={pageIndex}

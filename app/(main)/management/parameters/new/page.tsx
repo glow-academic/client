@@ -169,10 +169,7 @@ export default async function NewParameterPage({
     } as ParameterGetIn;
     const [parameterDetailDefault, draftsResult, groupResult] = await Promise.all([
       getParameterDefault(input),
-      api.post(
-        "/parameter/drafts",
-        { path: undefined } as InputOf<"/parameter/drafts", "post">,
-      ),
+      api.post("/parameter/drafts", {}),
       api.post("/parameter/group", { body: {} } as GroupParameterIn),
     ]);
 

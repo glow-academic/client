@@ -19,6 +19,7 @@ import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
+import { readViewCookie } from "@/lib/view-cookie";
 
 /** ---- Strong types from OpenAPI ---- */
 type SettingsListOut = OutputOf<"/setting/search", "post">;
@@ -127,9 +128,10 @@ export default async function SettingsPage() {
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/settings", context.profile.role_permissions);
 
-    // Fetch list data and group in parallel
-    const [listData, groupResult] = await Promise.all([
+    // Fetch list data, view cookie, and group in parallel
+    const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getSettingsList(),
+      readViewCookie("settings"),
       api.post("/setting/group", { body: {} } as GroupSettingIn),
     ]);
 
@@ -160,6 +162,7 @@ export default async function SettingsPage() {
         <div className="space-y-6 px-4" data-page="settings-index">
           <Settings
             listData={listData}
+            initialColumnVisibility={initialColumnVisibility}
             deleteSettingAction={deleteSetting}
             updateSettingAction={updateSetting}
           />

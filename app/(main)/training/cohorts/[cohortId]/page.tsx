@@ -192,10 +192,7 @@ export default async function CohortEditPage({
     const [cohortData, context, draftsResult, groupResult] = await Promise.all([
       getCohort(input),
       api.post("/cohort/context", { body: { entity_id: cohortId } } as ContextIn) as Promise<ContextOut>,
-      api.post(
-        "/cohort/drafts",
-        { path: undefined } as InputOf<"/cohort/drafts", "post">,
-      ),
+      api.post("/cohort/drafts", {}),
       api.post("/cohort/group", { body: {} } as GroupCohortIn),
     ]);
 
