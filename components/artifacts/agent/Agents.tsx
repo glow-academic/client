@@ -975,20 +975,22 @@ export default function Agents({
           </div>
         )}
 
-        {/* Cards Grid */}
-        <div
-          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-          role="grid"
-          aria-label="agents grid"
-          data-testid="agents-grid"
-        >
-          {tableRows.length ? (
-            tableRows.map((row) => renderAgentCard(row.original))
-          ) : (
-            <div className="col-span-full text-center py-8 text-muted-foreground">
-              No system agents match the current filters.
-            </div>
-          )}
+        {/* Cards Grid — container-query driven; scales with content area width */}
+        <div className="@container">
+          <div
+            className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4"
+            role="grid"
+            aria-label="agents grid"
+            data-testid="agents-grid"
+          >
+            {tableRows.length ? (
+              tableRows.map((row) => renderAgentCard(row.original))
+            ) : (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                No system agents match the current filters.
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Pagination */}

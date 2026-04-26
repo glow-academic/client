@@ -80,13 +80,22 @@ export function useGenerate({
       // User message will arrive via generate_text_complete event from server
       setIsGenerating(true);
 
+      // Merge artifactId into params so the server's prepare pipeline can read
+      // it via payload_params.get("artifact_id"). Without this the LLM is
+      // never told about an existing artifact and treats every generation as
+      // a fresh-create flow.
+      const mergedParams: Record<string, string> = {
+        ...(options?.params ?? {}),
+        ...(options?.artifactId ? { artifact_id: options.artifactId } : {}),
+      };
+
       socket.emit("generate", {
         artifact: artifactType,
         instructions: [instructions],
         operations: operationsRef.current,
         group_id: groupIdRef.current,
         modality: "call",
-        ...(options?.params && { params: options.params }),
+        ...(Object.keys(mergedParams).length > 0 && { params: mergedParams }),
       });
     },
     [socket, isConnected, artifactType],

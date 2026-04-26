@@ -1,109 +1,167 @@
 /**
- * useTestRun — kick off test execution for an invocation and await completion.
+ * useTestRun — drive one test turn end-to-end.
  *
- * Mirrors useAttemptGenerate. Sends /test/next to find the next pending run
- * within the invocation, then /test/run to execute it. Resolves on
- * `artifacts.test.run.replay_completed`, rejects on `artifacts.test.run.failed`.
+ * Canonical client-orchestrated sequence (mirrors /attempt's chat→message→generate
+ * pattern):
+ *
+ *   1. POST /test/trace      { test_invocation_id, run_id (historical),
+ *                              panel form state (tool_ids, prompt_text,
+ *                              instructions, modality_ids, voice_ids,
+ *                              temperature_level_ids, reasoning_level_ids,
+ *                              quality_ids) } → trace_id
+ *   2. POST /test/generate   { trace_id }                                  → run_id
+ *      - When the eval is_dynamic=False, server skips the LLM call and
+ *        returns the historical run_id verbatim.
+ *      - When is_dynamic=True, server runs the model and returns the new
+ *        run_id holding the assistant output.
+ *   3. POST /test/run        { test_id, test_invocation_id,
+ *                              test_invocation_trace_id, run_id }          → test_invocation_run_id
+ *
+ * No SSE wait — every step is a synchronous request/response.
  */
 "use client";
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTransport } from "@/lib/transport/context";
-import { useGroupIdOptional } from "@/contexts/group-context";
 
-export type RunStage = "idle" | "queueing" | "running" | "ready" | "error";
+export type RunStage =
+  | "idle"
+  | "tracing"
+  | "generating"
+  | "binding"
+  | "ready"
+  | "error";
 
-export interface UseTestRunConfig {
-  groupId?: string | null;
+/**
+ * Per-turn bundle the user assembles in the resource panel. All fields
+ * are optional — the server stores exactly what's passed (no inheritance
+ * fallback). Free-text fields are minted as resources server-side.
+ */
+export interface RunPanelState {
+  tool_ids?: string[];
+  prompt_text?: string;
+  instructions?: string[];
+  modality_ids?: string[];
+  voice_ids?: string[];
+  temperature_level_ids?: string[];
+  reasoning_level_ids?: string[];
+  quality_ids?: string[];
+  /** Pre-minted prompt ids the caller already has (combined with prompt_text). */
+  prompt_ids?: string[];
+  /** Pre-minted instruction ids (combined with instructions text). */
+  instruction_ids?: string[];
 }
 
 export interface UseTestRunReturn {
-  run: (params: { testId: string; invocationId: string }) => Promise<void>;
+  run: (params: {
+    testId: string;
+    testInvocationId: string;
+    historicalRunId?: string;
+    panel?: RunPanelState;
+  }) => Promise<{
+    traceId: string;
+    runId: string;
+    testInvocationRunId: string;
+  } | null>;
   stage: RunStage;
   error: string | null;
 }
 
-export function useTestRun(config: UseTestRunConfig = {}): UseTestRunReturn {
+export function useTestRun(): UseTestRunReturn {
   const transport = useTransport();
   const router = useRouter();
-  const groupCtx = useGroupIdOptional();
-  const groupId = config.groupId ?? groupCtx?.groupId ?? null;
   const [stage, setStage] = useState<RunStage>("idle");
   const [error, setError] = useState<string | null>(null);
 
   const run = useCallback(
-    async (params: { testId: string; invocationId: string }) => {
+    async (params: {
+      testId: string;
+      testInvocationId: string;
+      historicalRunId?: string;
+      panel?: RunPanelState;
+    }) => {
       try {
         setError(null);
-        setStage("queueing");
 
-        const next = (await transport.send("/test/next", {
+        // 1. Open the trace with the panel state.
+        setStage("tracing");
+        const tracePayload: Record<string, unknown> = {
           test_id: params.testId,
+          test_invocation_id: params.testInvocationId,
+          ...(params.historicalRunId && { run_id: params.historicalRunId }),
+          // Bundle overrides — server stores verbatim (no inheritance).
+          ...(params.panel?.tool_ids && { tool_ids: params.panel.tool_ids }),
+          ...(params.panel?.modality_ids && {
+            modality_ids: params.panel.modality_ids,
+          }),
+          ...(params.panel?.voice_ids && { voice_ids: params.panel.voice_ids }),
+          ...(params.panel?.temperature_level_ids && {
+            temperature_level_ids: params.panel.temperature_level_ids,
+          }),
+          ...(params.panel?.reasoning_level_ids && {
+            reasoning_level_ids: params.panel.reasoning_level_ids,
+          }),
+          ...(params.panel?.quality_ids && {
+            quality_ids: params.panel.quality_ids,
+          }),
+          // Pre-minted ids (combined with text-minted on the server).
+          ...(params.panel?.prompt_ids && {
+            prompt_ids: params.panel.prompt_ids,
+          }),
+          ...(params.panel?.instruction_ids && {
+            instruction_ids: params.panel.instruction_ids,
+          }),
+          // Free-text — server mints resources via canonical black boxes.
+          ...(params.panel?.prompt_text && {
+            prompt_text: params.panel.prompt_text,
+          }),
+          ...(params.panel?.instructions &&
+            params.panel.instructions.length > 0 && {
+              instructions: params.panel.instructions.filter(
+                (s) => s.trim() !== "",
+              ),
+            }),
+        };
+
+        const traceResp = (await transport.send(
+          "/test/trace",
+          tracePayload,
+        )) as Record<string, unknown>;
+        const traceId = traceResp["test_invocation_trace_id"] as string;
+        if (!traceId) throw new Error("trace creation returned no id");
+
+        // 2. Generate (or skip when is_dynamic=False — server decides).
+        setStage("generating");
+        const genResp = (await transport.send("/test/generate", {
+          trace_id: traceId,
         })) as Record<string, unknown>;
-        const runId = next["run_id"] as string | undefined;
+        const runId = genResp["run_id"] as string | undefined;
         if (!runId) {
-          // Nothing to run — leave the test page to handle empty state.
-          setStage("ready");
-          router.push(`/test/${params.testId}`);
-          router.refresh();
-          return;
+          throw new Error("generate returned no run_id");
         }
 
-        setStage("running");
-        await new Promise<void>((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            unsubComplete();
-            unsubFail();
-            reject(new Error("Run timed out"));
-          }, 120_000);
-
-          const scope = groupId ? { groupId } : undefined;
-          const unsubComplete = transport.on(
-            "artifacts.test.run.replay_completed",
-            (data) => {
-              if (data["run_id"] !== runId) return;
-              clearTimeout(timeout);
-              unsubComplete();
-              unsubFail();
-              resolve();
-            },
-            scope,
-          );
-          const unsubFail = transport.on(
-            "artifacts.test.run.failed",
-            (data) => {
-              clearTimeout(timeout);
-              unsubComplete();
-              unsubFail();
-              reject(new Error((data["message"] as string) || "Run failed"));
-            },
-            scope,
-          );
-
-          transport
-            .send("/test/run", {
-              test_id: params.testId,
-              test_invocation_id: params.invocationId,
-              run_id: runId,
-            })
-            .catch((err) => {
-              clearTimeout(timeout);
-              unsubComplete();
-              unsubFail();
-              reject(err);
-            });
-        });
+        // 3. Bind the run to the invocation.
+        setStage("binding");
+        const runResp = (await transport.send("/test/run", {
+          test_id: params.testId,
+          test_invocation_id: params.testInvocationId,
+          test_invocation_trace_id: traceId,
+          run_id: runId,
+        })) as Record<string, unknown>;
+        const testInvocationRunId =
+          (runResp["test_invocation_run_id"] as string) ?? "";
 
         setStage("ready");
-        router.push(`/test/${params.testId}`);
         router.refresh();
+        return { traceId, runId, testInvocationRunId };
       } catch (err) {
         setStage("error");
         setError(err instanceof Error ? err.message : String(err));
+        return null;
       }
     },
-    [transport, router, groupId],
+    [transport, router],
   );
 
   return { run, stage, error };

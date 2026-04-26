@@ -852,8 +852,10 @@ export default function Providers({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tableRows.map((row) => renderProviderCard(row.original))}
+          <div className="@container">
+            <div className="grid grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4 gap-6">
+              {tableRows.map((row) => renderProviderCard(row.original))}
+            </div>
           </div>
           <DataTablePagination table={table} />
         </>

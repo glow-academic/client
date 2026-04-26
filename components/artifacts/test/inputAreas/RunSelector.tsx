@@ -1,92 +1,86 @@
 /**
  * RunSelector.tsx
- * Run/group dropdown + Run All button — plugs into the input_area slot of GenericChatInterface.
- * Implements TextInputProps interface shape for type compatibility.
+ * Bottom input bar for the test chat — free-form textarea + Run button.
+ * Pressing Run fans out to the parent's selected_run_ids set; the textarea
+ * value is treated as one-shot extra instructions for the next press.
  */
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { OutputOf } from "@/lib/api/types";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Play } from "lucide-react";
-import { useState } from "react";
-
-type TestArtifactOut = OutputOf<"/test/get", "post">;
-type RunItem = NonNullable<TestArtifactOut["runs"]>[number];
+import { useCallback, useState } from "react";
 
 export interface RunSelectorProps {
-  runs: RunItem[];
-  starting_run_ids: Set<string>;
-  on_start_run: (invocationId: string) => void;
+  /** True while at least one of the selected runs is starting. */
+  is_starting: boolean;
+  /** Whether the parent has any selected runs to fire on. */
+  has_selection: boolean;
+  on_run: (extra_instructions: string) => void;
   is_connected: boolean;
   disabled?: boolean;
-  /** Whether the parent benchmark groups runs into agent groups. */
-  use_groups?: boolean;
 }
 
 export function RunSelector({
-  runs,
-  starting_run_ids,
-  on_start_run,
+  is_starting,
+  has_selection,
+  on_run,
   is_connected,
   disabled,
-  use_groups,
 }: RunSelectorProps) {
-  const [selectedRunChatId, setSelectedRunChatId] = useState<string | null>(null);
+  const [text, setText] = useState("");
 
-  const runnableRuns = runs.filter((r) => r.status === "not_started" && r.chat_id);
-  const hasAnyRunnable = runnableRuns.length > 0;
+  const handleRun = useCallback(() => {
+    on_run(text);
+    setText("");
+  }, [on_run, text]);
 
-  const handleRunSelected = () => {
-    if (selectedRunChatId) {
-      on_start_run(selectedRunChatId);
-    }
-  };
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        if (!disabled && is_connected && has_selection && !is_starting) {
+          handleRun();
+        }
+      }
+    },
+    [disabled, is_connected, has_selection, is_starting, handleRun],
+  );
+
+  const runDisabled =
+    disabled || !is_connected || !has_selection || is_starting;
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 border-t bg-card">
-      {/* Run selector dropdown */}
-      <Select
-        value={selectedRunChatId ?? ""}
-        onValueChange={(val) => setSelectedRunChatId(val || null)}
-        disabled={disabled || !hasAnyRunnable}
-      >
-        <SelectTrigger className="flex-1 h-9">
-          <SelectValue placeholder="Select a run..." />
-        </SelectTrigger>
-        <SelectContent>
-          {runnableRuns.map((run) => (
-            <SelectItem key={run.chat_id} value={run.chat_id!}>
-              {run.agent_name || "Agent"} — {run.model_name || "No model"}
-              {use_groups && run.group_id ? ` (Group)` : ""}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Run selected */}
-      <Button
-        onClick={handleRunSelected}
-        size="sm"
-        disabled={
-          disabled ||
-          !is_connected ||
-          !selectedRunChatId ||
-          starting_run_ids.has(selectedRunChatId)
+    <div className="flex items-end gap-2 px-4 py-2 border-t bg-card">
+      <Textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={
+          has_selection
+            ? "Optional extra instructions for this run… (Cmd/Ctrl+Enter to run)"
+            : "Pick at least one run from the top-left to begin."
         }
+        disabled={disabled || !has_selection}
+        className="min-h-[44px] max-h-[140px] text-sm resize-none flex-1"
+      />
+      <Button
+        onClick={handleRun}
+        size="sm"
+        disabled={runDisabled}
+        className="h-[44px]"
       >
-        {selectedRunChatId && starting_run_ids.has(selectedRunChatId) ? (
-          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+        {is_starting ? (
+          <>
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            Running…
+          </>
         ) : (
-          <Play className="h-3 w-3 mr-1" />
+          <>
+            <Play className="h-3 w-3 mr-1" />
+            Run
+          </>
         )}
-        Run
       </Button>
     </div>
   );

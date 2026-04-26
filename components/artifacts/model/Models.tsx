@@ -1004,20 +1004,22 @@ export default function Models({
             </div>
           )}
 
-          {/* Cards Grid */}
-          <div
-            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-            role="grid"
-            aria-label="models grid"
-            data-testid="models-grid"
-          >
-            {tableRows.length ? (
-              tableRows.map((row) => renderModelCard(row.original))
-            ) : (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
-                No models match the current filters.
-              </div>
-            )}
+          {/* Cards Grid — container-query driven; scales with content area width */}
+          <div className="@container">
+            <div
+              className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4"
+              role="grid"
+              aria-label="models grid"
+              data-testid="models-grid"
+            >
+              {tableRows.length ? (
+                tableRows.map((row) => renderModelCard(row.original))
+              ) : (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  No models match the current filters.
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Pagination */}

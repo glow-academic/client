@@ -848,20 +848,22 @@ export default function Evals({
         </div>
         )}
 
-        {/* Cards Grid */}
-        <div
-          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-          role="grid"
-          aria-label="evals grid"
-          data-testid="evals-grid"
-        >
-          {tableRows.length ? (
-            tableRows.map((row) => renderEvalCard(row.original))
-          ) : (
-            <div className="col-span-full text-center py-8 text-muted-foreground">
-              No evals match the current filters.
-            </div>
-          )}
+        {/* Cards Grid — container-query driven; scales with content area width */}
+        <div className="@container">
+          <div
+            className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4"
+            role="grid"
+            aria-label="evals grid"
+            data-testid="evals-grid"
+          >
+            {tableRows.length ? (
+              tableRows.map((row) => renderEvalCard(row.original))
+            ) : (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                No evals match the current filters.
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Pagination */}

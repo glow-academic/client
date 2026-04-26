@@ -737,11 +737,24 @@ export function AttemptChat({
     attemptIdRef.current = attempt_id;
   }, [attempt_id]);
 
+  // Mirror attemptIdRef for the user's persona entry id. The voice hook
+  // reads this on every post-STT /attempt/chat/message persistence so
+  // the server can satisfy attempt_content_entry.persona_id FK without
+  // a server-side fallback. Same value text-mode sendMessage already
+  // passes via attemptData.attempt.user_persona_id.
+  const userPersonaIdRef = useRef<string | null>(
+    attemptData?.attempt?.user_persona_id ?? null,
+  );
+  useEffect(() => {
+    userPersonaIdRef.current = attemptData?.attempt?.user_persona_id ?? null;
+  }, [attemptData?.attempt?.user_persona_id]);
+
   // Voice streaming events + promise-based audio session lifecycle
   const { startAudio, stopAudio, sendFrame, setMicMute } = useAttemptVoice({
     transport,
     chatIdRef: currentChatIdRef,
     attemptIdRef,
+    userPersonaIdRef,
     // Same hints gate as the text reply path — keep the two surfaces
     // aligned so turning hints off silences them everywhere.
     hintsEnabled:

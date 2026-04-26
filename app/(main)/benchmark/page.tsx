@@ -81,6 +81,16 @@ async function refreshBenchmark(): Promise<void> {
   await api.post("/test/benchmark/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
+/** Bulk archive/unarchive benchmark tests by IDs. */
+type BulkArchiveTestsIn = InputOf<"/test/archive", "post">;
+type BulkArchiveTestsOut = OutputOf<"/test/archive", "post">;
+async function bulkArchiveTestsAction(
+  input: BulkArchiveTestsIn,
+): Promise<BulkArchiveTestsOut> {
+  "use server";
+  return api.post("/test/archive", input);
+}
+
 async function generateBenchmark(
   input: GenerateBenchmarkIn
 ): Promise<GenerateBenchmarkOut> {
@@ -119,6 +129,23 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Cookies ---- */
 const SIDEBAR_COOKIE = "glow_sidebar";
 const PANEL_COOKIE = "glow_panel";
+const EVAL_HISTORY_VIEW_COOKIE = "glow_view_eval-history-columns";
+
+function readEvalHistoryViewCookie(
+  raw: string | undefined,
+): Record<string, boolean> | undefined {
+  if (!raw) return undefined;
+  try {
+    const decoded = decodeURIComponent(raw);
+    const parsed = JSON.parse(decoded);
+    if (parsed && typeof parsed === "object") {
+      return parsed as Record<string, boolean>;
+    }
+  } catch {
+    /* ignore malformed cookie */
+  }
+  return undefined;
+}
 
 interface BenchmarkPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -135,6 +162,10 @@ export default async function BenchmarkPage({
   const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+  const evalHistoryViewCookie = cookieStore.get(EVAL_HISTORY_VIEW_COOKIE);
+  const initialEvalHistoryColumnVisibility = readEvalHistoryViewCookie(
+    evalHistoryViewCookie?.value,
+  );
 
   try {
     // Profile data for providers
@@ -361,6 +392,20 @@ export default async function BenchmarkPage({
     const historyData = overviewData.history;
     const dataArray = historyData?.data || [];
 
+    // Faceted filter search terms from URL (server-driven)
+    const sp = await searchParams;
+    const readStr = (k: string): string => {
+      const v = sp[k];
+      if (typeof v === "string") return v;
+      if (Array.isArray(v) && v.length > 0 && typeof v[0] === "string")
+        return v[0];
+      return "";
+    };
+    const evalSearchTerm = readStr("historyEvalSearch");
+    const modelSearchTerm = readStr("historyModelSearch");
+    const profileSearchTerm = readStr("historyProfileSearch");
+    const rubricSearchTerm = readStr("historyRubricSearch");
+
     return (
       <FullPageLayout
         profileData={context.profile}
@@ -405,6 +450,17 @@ export default async function BenchmarkPage({
                 pageIndex={historyPage}
                 pageSize={historyPageSize}
                 isLoading={false}
+                showArchive={true}
+                evalOptions={historyData?.eval_options || []}
+                modelOptions={historyData?.model_options || []}
+                profileOptions={historyData?.profile_options || []}
+                rubricOptions={historyData?.rubric_options || []}
+                evalSearch={evalSearchTerm}
+                modelSearch={modelSearchTerm}
+                profileSearch={profileSearchTerm}
+                rubricSearch={rubricSearchTerm}
+                initialColumnVisibility={initialEvalHistoryColumnVisibility}
+                bulkArchiveTestsAction={bulkArchiveTestsAction}
               />
             </div>
           </div>

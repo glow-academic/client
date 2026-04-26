@@ -5,16 +5,35 @@
  * artifact-specific props. Replaces the layout-level sidebar/panel rendering.
  *
  * Interface: sidebarProps (left), breadcrumbs+toolbar (middle header), panelProps (right), children (content).
+ *
+ * Sidebar provider composition:
+ *   <SidebarProvider> (LEFT)
+ *     <UnifiedSidebar />
+ *     <SidebarInset>
+ *       <SidebarProvider> (RIGHT, nested — gives PageHeader's toggle access via useSidebar())
+ *         <SidebarInset>
+ *           <PageHeader ... />  ← inner provider context = right panel
+ *           {children}
+ *         </SidebarInset>
+ *         {panelProps && <GenerationPanel />}
+ *       </SidebarProvider>
+ *     </SidebarInset>
+ *   </SidebarProvider>
+ *
+ * The left trigger lives in PageHeader (inside the right provider's tree) so we
+ * bridge the LEFT context across via a small render-prop component below.
  */
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 import {
   SidebarInset,
   SidebarProvider,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import { useIsNarrow } from "@/hooks/use-mobile";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { PageHeader, type BreadcrumbItem } from "@/components/common/layout/PageHeader";
 import { GenerationPanel } from "@/components/common/ai/GenerationPanel";
@@ -67,6 +86,22 @@ export interface FullPageLayoutProps {
 }
 
 // ---------------------------------------------------------------------------
+// Left context bridge
+// ---------------------------------------------------------------------------
+
+// Captures the LEFT SidebarProvider context (it's the closest at this mount
+// point) and exposes its toggleSidebar via render prop, so children mounted
+// further down (inside the RIGHT provider) can still trigger the left side.
+function LeftSidebarBridge({
+  children,
+}: {
+  children: (ctx: { toggleSidebar: () => void }) => React.ReactNode;
+}) {
+  const { toggleSidebar } = useSidebar();
+  return <>{children({ toggleSidebar })}</>;
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -83,16 +118,10 @@ export function FullPageLayout({
   children,
 }: FullPageLayoutProps) {
   const router = useRouter();
-
-  // Panel toggle state (initial from SSR cookie, persisted on change)
-  const [panelOpen, setPanelOpen] = useState(initialPanelOpen ?? false);
-  const togglePanel = useCallback(() => {
-    setPanelOpen((prev) => {
-      const next = !prev;
-      document.cookie = `glow_panel=${next}; path=/; max-age=31536000; SameSite=Lax`;
-      return next;
-    });
-  }, []);
+  // When the viewport is narrow (e.g. ≤ 1280px), the right AI panel renders as
+  // an overlay drawer instead of taking layout space. Left navigation keeps its
+  // own mobile threshold (768px).
+  const rightPanelIsMobile = useIsNarrow();
 
   // Sidebar section change — navigate to artifact page
   const handleSectionChange = useCallback(
@@ -133,33 +162,44 @@ export function FullPageLayout({
             sessionSnapshot={sessionSnapshot}
           >
             <GroupProviderClient initialGroupId={profileData?.group_id ?? null}>
-              <div className="flex min-h-svh w-full">
-                <SidebarProvider defaultOpen={initialSidebarOpen ?? true}>
-                  <UnifiedSidebar
-                    activeSection={sidebarProps.activeSection}
-                    onSectionChange={handleSectionChange}
-                    createFeedback={sidebarProps.createFeedback}
-                  />
-                  <SidebarInset>
-                    <PageHeader
-                      breadcrumbs={breadcrumbs}
-                      toolbar={toolbar}
-                      onTogglePanel={panelProps ? togglePanel : undefined}
-                    />
-                    <div className="flex flex-1 flex-col gap-4">{children}</div>
-                  </SidebarInset>
-                </SidebarProvider>
-                {panelProps && (
-                  <GenerationPanel
-                    panelOpen={panelOpen}
-                    onToggle={togglePanel}
-                    artifactType={panelProps.artifactType}
-                    groupId={panelProps.groupId}
-                    operations={panelProps.operations}
-                    prompts={panelProps.prompts}
-                  />
-                )}
-              </div>
+              <SidebarProvider defaultOpen={initialSidebarOpen ?? true}>
+                <UnifiedSidebar
+                  activeSection={sidebarProps.activeSection}
+                  onSectionChange={handleSectionChange}
+                  createFeedback={sidebarProps.createFeedback}
+                />
+                <SidebarInset>
+                  <LeftSidebarBridge>
+                    {({ toggleSidebar: toggleLeftSidebar }) => (
+                      <SidebarProvider
+                        defaultOpen={initialPanelOpen ?? false}
+                        cookieName="glow_panel"
+                        isMobile={rightPanelIsMobile}
+                        className="!min-h-0"
+                        style={{ "--sidebar-width": "18rem" } as React.CSSProperties}
+                      >
+                        <SidebarInset>
+                          <PageHeader
+                            breadcrumbs={breadcrumbs}
+                            toolbar={toolbar}
+                            onToggleLeftSidebar={toggleLeftSidebar}
+                            hasPanel={!!panelProps}
+                          />
+                          <div className="flex flex-1 flex-col gap-4">{children}</div>
+                        </SidebarInset>
+                        {panelProps && (
+                          <GenerationPanel
+                            artifactType={panelProps.artifactType}
+                            groupId={panelProps.groupId}
+                            operations={panelProps.operations}
+                            prompts={panelProps.prompts}
+                          />
+                        )}
+                      </SidebarProvider>
+                    )}
+                  </LeftSidebarBridge>
+                </SidebarInset>
+              </SidebarProvider>
             </GroupProviderClient>
           </ProfileProviderClient>
         </TransportProvider>

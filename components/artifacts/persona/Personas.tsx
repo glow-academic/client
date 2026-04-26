@@ -1341,13 +1341,18 @@ export default function Personas({
           </div>
         )}
 
-        {/* Cards Grid */}
-        <div
-          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-          role="grid"
-          aria-label="personas grid"
-          data-testid="personas-grid"
-        >
+        {/* Cards Grid — container-query driven so it scales to available width
+            (e.g. when the right AI panel opens, the grid drops a column smoothly
+            rather than waiting on a viewport breakpoint).
+            Note: @container must be on a PARENT — the @ modifiers query the
+            nearest ancestor with container-type, not the element itself. */}
+        <div className="@container">
+          <div
+            className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4"
+            role="grid"
+            aria-label="personas grid"
+            data-testid="personas-grid"
+          >
           {tableRows.length ? (
             tableRows.map((row) => {
               const persona = row.original;
@@ -1359,6 +1364,7 @@ export default function Personas({
               No personas match the current filters.
             </div>
           )}
+          </div>
         </div>
 
         {/* Pagination */}

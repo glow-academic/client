@@ -22,7 +22,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarProvider,
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useTransport } from "@/lib/transport";
@@ -53,8 +52,6 @@ interface HistoricalMessage {
 }
 
 interface GenerationPanelProps {
-  panelOpen: boolean;
-  onToggle: () => void;
   /** Artifact type — used for both event namespacing and route prefix (e.g. "persona" → /persona/*) */
   artifactType: string;
   groupId: string | null;
@@ -114,7 +111,6 @@ function flattenMessages(res: GroupMessagesOut | Record<string, unknown>): Histo
 // ---------------------------------------------------------------------------
 
 export function GenerationPanel({
-  panelOpen, onToggle,
   artifactType, groupId: groupIdProp, operations, prompts,
 }: GenerationPanelProps) {
   const [instructions, setInstructions] = useState("");
@@ -332,7 +328,6 @@ export function GenerationPanel({
     if (!instructions.trim()) return;
     const text = instructions.trim();
     setInstructions("");
-    const socketId = (socket as unknown as { id?: string })?.id;
 
     listener.setGenerating(true);
     await transport.send(`/${artifactType}/generate`, {
@@ -497,14 +492,7 @@ export function GenerationPanel({
   };
 
   return (
-    <SidebarProvider
-      open={panelOpen}
-      onOpenChange={onToggle}
-      cookieName="glow_panel"
-      className="!min-h-0 !w-auto flex-none"
-      style={{ "--sidebar-width": "18rem" } as React.CSSProperties}
-    >
-      <Sidebar side="right" variant="sidebar" collapsible="offcanvas">
+    <Sidebar side="right" variant="sidebar" collapsible="offcanvas">
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -671,6 +659,5 @@ export function GenerationPanel({
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>
-    </SidebarProvider>
   );
 }

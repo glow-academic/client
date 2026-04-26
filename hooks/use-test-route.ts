@@ -50,7 +50,10 @@ export function useTestRoute(): UseTestRouteReturn {
           return;
         }
 
-        await runner.run({ testId: params.testId, invocationId: params.invocationId });
+        await runner.run({
+          testId: params.testId,
+          testInvocationId: params.invocationId,
+        });
       } catch (err) {
         setStage("error");
         setError(err instanceof Error ? err.message : String(err));

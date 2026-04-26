@@ -7474,7 +7474,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/test/next": {
+    "/test/trace": {
         parameters: {
             query?: never;
             header?: never;
@@ -7483,18 +7483,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Next Test
-         * @description Find next pending run in an existing test.
-         */
-        post: operations["next_test_test_next_post"];
+        /** Test Trace */
+        post: operations["test_trace_test_trace_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/test/run": {
+    "/test/run/": {
         parameters: {
             query?: never;
             header?: never;
@@ -7503,11 +7500,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Run Test
-         * @description Run one auto-regressive replay. Returns immediately; progress via socket.
-         */
-        post: operations["run_test_test_run_post"];
+        /** Run Test */
+        post: operations["run_test_test_run__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/test/run/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run Test End */
+        post: operations["run_test_end_test_run_end_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9906,6 +9917,8 @@ export interface components {
             audios_id?: string | null;
             /** Conversation Id */
             conversation_id?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
             /** Idempotency Key */
             idempotency_key?: string | null;
             /**
@@ -10804,7 +10817,7 @@ export interface components {
         };
         /**
          * BenchmarkHistoryItem
-         * @description History row for a test — analogous to TestHistoryItem.
+         * @description Single test row in benchmark history list — mirrors HistoryItem shape.
          */
         BenchmarkHistoryItem: {
             /**
@@ -10812,6 +10825,21 @@ export interface components {
              * @description Test identifier
              */
             test_id: string;
+            /**
+             * Date
+             * @description Formatted date string of the test
+             */
+            date?: string | null;
+            /**
+             * Profile Id
+             * @description UUID of the profile who owns the test
+             */
+            profile_id?: string | null;
+            /**
+             * Profile Name
+             * @description Display name of the profile
+             */
+            profile_name?: string | null;
             /**
              * Eval Id
              * @description Parent eval ID
@@ -10823,62 +10851,75 @@ export interface components {
              */
             eval_name?: string | null;
             /**
-             * Eval Description
-             * @description Parent eval description
+             * Rubric Id
+             * @description Rubric ID for this test
              */
-            eval_description?: string | null;
+            rubric_id?: string | null;
             /**
-             * Created At
-             * @description Test creation timestamp
+             * Rubric Name
+             * @description Rubric display name
              */
-            created_at?: string | null;
+            rubric_name?: string | null;
             /**
-             * Archived
-             * @description Whether test is archived
-             * @default false
+             * Num Models
+             * @description Total number of models in the test
              */
-            archived: boolean;
+            num_models?: number | null;
+            /**
+             * Num Models Completed
+             * @description Number of models completed
+             */
+            num_models_completed?: number | null;
+            /**
+             * Model Ids
+             * @description UUIDs of associated models
+             */
+            model_ids?: string[] | null;
+            /**
+             * Model Names
+             * @description Display names of associated models
+             */
+            model_names?: string[] | null;
+            /**
+             * Score
+             * @description Overall test score (0-100)
+             */
+            score?: number | null;
+            /**
+             * Score Status
+             * @description Score status label (e.g. high, medium, low)
+             */
+            score_status?: string | null;
+            /**
+             * Pass Pct
+             * @description Pass percentage threshold from rubric
+             */
+            pass_pct?: number | null;
+            /**
+             * Show View
+             * @description Whether the view action is available
+             */
+            show_view?: boolean | null;
+            /**
+             * Show Continue
+             * @description Whether the continue action is available
+             */
+            show_continue?: boolean | null;
+            /**
+             * Is Archived
+             * @description Whether the test is archived
+             */
+            is_archived?: boolean | null;
             /**
              * Infinite Mode
-             * @description Whether test uses infinite mode
-             * @default false
+             * @description Whether the test uses infinite mode
              */
-            infinite_mode: boolean;
+            infinite_mode?: boolean | null;
             /**
-             * Total Invocations
-             * @description Total number of invocations
-             * @default 0
+             * Department Ids
+             * @description Associated department IDs
              */
-            total_invocations: number;
-            /**
-             * Completed Invocations
-             * @description Number of completed invocations
-             * @default 0
-             */
-            completed_invocations: number;
-            /**
-             * Pending Invocations
-             * @description Number of pending invocations
-             * @default 0
-             */
-            pending_invocations: number;
-            /**
-             * Best Score
-             * @description Best score across invocations
-             */
-            best_score?: number | null;
-            /**
-             * Has Passed
-             * @description Whether test has been passed
-             * @default false
-             */
-            has_passed: boolean;
-            /**
-             * Status
-             * @description Test status
-             * @default pending
-             */
-            status: string;
+            department_ids?: string[] | null;
         };
         /**
          * BenchmarkHistoryResponse
@@ -10913,6 +10954,21 @@ export interface components {
              * @description Eval filter options
              */
             eval_options?: components["schemas"]["FilterOption"][];
+            /**
+             * Model Options
+             * @description Model filter options
+             */
+            model_options?: components["schemas"]["FilterOption"][];
+            /**
+             * Profile Options
+             * @description Profile filter options
+             */
+            profile_options?: components["schemas"]["FilterOption"][];
+            /**
+             * Rubric Options
+             * @description Rubric filter options
+             */
+            rubric_options?: components["schemas"]["FilterOption"][];
         };
         /**
          * BenchmarkRequest
@@ -28960,12 +29016,6 @@ export interface components {
              */
             infinite_mode: boolean;
             /**
-             * Use Groups
-             * @description Whether the parent benchmark groups runs into agent groups. Sourced from benchmark_entry.use_groups via the benchmark_test junction.
-             * @default false
-             */
-            use_groups: boolean;
-            /**
              * Runs
              * @description Run items derived from invocations
              */
@@ -28989,6 +29039,11 @@ export interface components {
              * @default false
              */
             has_runs_or_groups: boolean;
+            /**
+             * Next Invocation Id
+             * @description UUID of the next uncompleted invocation, or null if all are done
+             */
+            next_invocation_id?: string | null;
             /** @description Entry payloads by type */
             entries?: components["schemas"]["TestEntries"] | null;
             /** @description Resource maps keyed by ID */
@@ -29066,80 +29121,6 @@ export interface components {
             active: boolean;
             /** Call Id */
             call_id: string | null;
-        };
-        /** GetTestInvocationGroupsResponse */
-        GetTestInvocationGroupsResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Test Invocation Id
-             * Format: uuid
-             */
-            test_invocation_id: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            /** Generated */
-            generated: boolean;
-            /** Mcp */
-            mcp: boolean;
-            /** Active */
-            active: boolean;
-            /**
-             * Agent Ids
-             * @default []
-             */
-            agent_ids: string[];
-            /**
-             * Reasoning Level Ids
-             * @default []
-             */
-            reasoning_level_ids: string[];
-            /**
-             * Temperature Level Ids
-             * @default []
-             */
-            temperature_level_ids: string[];
-            /**
-             * Voice Ids
-             * @default []
-             */
-            voice_ids: string[];
-            /**
-             * Prompt Ids
-             * @default []
-             */
-            prompt_ids: string[];
-            /**
-             * Instruction Ids
-             * @default []
-             */
-            instruction_ids: string[];
-            /**
-             * Tool Ids
-             * @default []
-             */
-            tool_ids: string[];
-            /**
-             * Quality Ids
-             * @default []
-             */
-            quality_ids: string[];
-            /**
-             * Modality Ids
-             * @default []
-             */
-            modality_ids: string[];
         };
         /** GetTestInvocationResponse */
         GetTestInvocationResponse: {
@@ -29221,6 +29202,10 @@ export interface components {
              * Format: uuid
              */
             test_invocation_id: string;
+            /** Test Invocation Traces Id */
+            test_invocation_traces_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -29237,11 +29222,37 @@ export interface components {
             mcp: boolean;
             /** Active */
             active: boolean;
+        };
+        /** GetTestInvocationTracesResponse */
+        GetTestInvocationTracesResponse: {
             /**
-             * Agent Ids
-             * @default []
+             * Id
+             * Format: uuid
              */
-            agent_ids: string[];
+            id: string;
+            /**
+             * Test Invocation Id
+             * Format: uuid
+             */
+            test_invocation_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
             /**
              * Reasoning Level Ids
              * @default []
@@ -36316,17 +36327,6 @@ export interface components {
              * @description The name that was set
              */
             name: string;
-        };
-        /** NextTestApiResponse */
-        NextTestApiResponse: {
-            /** Invocation Id */
-            invocation_id: string;
-            /** Run Id */
-            run_id: string;
-            /** Current Run */
-            current_run: number;
-            /** Total Runs */
-            total_runs: number;
         };
         /**
          * ObjectiveEntry
@@ -45049,15 +45049,6 @@ export interface components {
              */
             pricing_id?: string | null;
         };
-        /** RunTestApiResponse */
-        RunTestApiResponse: {
-            /** Test Id */
-            test_id: string;
-            /** Invocation Id */
-            invocation_id: string;
-            /** Run Id */
-            run_id: string;
-        };
         /**
          * RunViewItem
          * @description Single run from the run list.
@@ -49384,6 +49375,11 @@ export interface components {
              * @default true
              */
             success: boolean;
+            /**
+             * Completed Count
+             * @default 0
+             */
+            completed_count: number;
         };
         /**
          * TestCompletePayload
@@ -49423,7 +49419,7 @@ export interface components {
              * Groups
              * @description Group entry payloads
              */
-            groups?: components["schemas"]["GetTestInvocationGroupsResponse"][] | null;
+            groups?: components["schemas"]["GetTestInvocationTracesResponse"][] | null;
             /**
              * Grades
              * @description Grade entry payloads
@@ -49449,6 +49445,8 @@ export interface components {
         TestInvocationCompleteInternalResult: {
             /** Invocation Id */
             invocation_id: string;
+            /** Completion Id */
+            completion_id?: string | null;
             /**
              * Success
              * @default true
@@ -49482,18 +49480,6 @@ export interface components {
              * @default
              */
             message: string;
-        };
-        /**
-         * TestNextPayload
-         * @description Client-to-server: find next pending run in an existing test.
-         */
-        TestNextPayload: {
-            /**
-             * Test Id
-             * Format: uuid
-             * @description UUID of the test
-             */
-            test_id: string;
         };
         /**
          * TestResources
@@ -49618,6 +49604,52 @@ export interface components {
                 };
             } | null;
         };
+        /** TestRunEndPayload */
+        TestRunEndPayload: {
+            /**
+             * Test Invocation Run Id
+             * Format: uuid
+             * @description UUID of the test_invocation_runs_entry to finalize
+             */
+            test_invocation_run_id: string;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Error
+             * @default false
+             */
+            error: boolean;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+        };
+        /** TestRunEndResponse */
+        TestRunEndResponse: {
+            /** Test Invocation Run Id */
+            test_invocation_run_id: string;
+            /** Completion Id */
+            completion_id: string;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+        };
+        /** TestRunInternalResult */
+        TestRunInternalResult: {
+            /** Test Invocation Run Id */
+            test_invocation_run_id: string;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+        };
         /**
          * TestRunItem
          * @description A single run row for the UI table, derived from a benchmark invocation.
@@ -49677,7 +49709,10 @@ export interface components {
         };
         /**
          * TestRunPayload
-         * @description Client-to-server: run one replay against an original run.
+         * @description Client-to-server: bind a runs_entry (produced by /test/generate)
+         *     to a test_invocation. Pure binding row — no model invocation.
+         *
+         *     Mirrors /attempt/chat/message — primitive, sequential, no orchestration.
          */
         TestRunPayload: {
             /**
@@ -49693,9 +49728,14 @@ export interface components {
              */
             test_invocation_id: string;
             /**
+             * Test Invocation Trace Id
+             * @description UUID of the parent trace (test_invocation_traces_entry)
+             */
+            test_invocation_trace_id?: string | null;
+            /**
              * Run Id
              * Format: uuid
-             * @description Original run to replay
+             * @description UUID of the runs_entry to bind
              */
             run_id: string;
         };
@@ -49759,6 +49799,74 @@ export interface components {
              * @description UUID of the test invocation to stop
              */
             invocation_id: string;
+        };
+        /** TestTraceInternalResult */
+        TestTraceInternalResult: {
+            /** Test Invocation Trace Id */
+            test_invocation_trace_id: string;
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+        };
+        /**
+         * TestTracePayload
+         * @description Client-to-server: open a trace on a test invocation.
+         *
+         *     Bundle fields are stored verbatim on the trace's connection tables.
+         *     No auto-inheritance from the parent test_invocation — caller passes
+         *     whatever it wants the trace to record.
+         *
+         *     Free-text fields are minted as new resource rows server-side and
+         *     their ids are attached. Pre-minted ids can also be passed directly
+         *     via ``prompt_ids`` / ``instruction_ids`` (combined with any minted
+         *     from text).
+         */
+        TestTracePayload: {
+            /**
+             * Test Id
+             * Format: uuid
+             * @description UUID of the test
+             */
+            test_id: string;
+            /**
+             * Test Invocation Id
+             * Format: uuid
+             * @description UUID of the test invocation
+             */
+            test_invocation_id: string;
+            /**
+             * Run Id
+             * @description Historical run_id we're replaying against (optional)
+             */
+            run_id?: string | null;
+            /** Tool Ids */
+            tool_ids?: string[] | null;
+            /** Modality Ids */
+            modality_ids?: string[] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
+            /** Temperature Level Ids */
+            temperature_level_ids?: string[] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids?: string[] | null;
+            /** Quality Ids */
+            quality_ids?: string[] | null;
+            /** Prompt Ids */
+            prompt_ids?: string[] | null;
+            /** Instruction Ids */
+            instruction_ids?: string[] | null;
+            /**
+             * Prompt Text
+             * @description User-typed system prompt; minted as a prompts_resource
+             */
+            prompt_text?: string | null;
+            /**
+             * Instructions
+             * @description User-typed instruction templates; each minted separately
+             */
+            instructions?: string[] | null;
         };
         /**
          * TextDownloadAttemptApiRequest
@@ -66800,7 +66908,7 @@ export interface operations {
             };
         };
     };
-    next_test_test_next_post: {
+    test_trace_test_trace_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66809,7 +66917,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TestNextPayload"];
+                "application/json": components["schemas"]["TestTracePayload"];
             };
         };
         responses: {
@@ -66819,7 +66927,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NextTestApiResponse"];
+                    "application/json": components["schemas"]["TestTraceInternalResult"];
                 };
             };
             /** @description Validation Error */
@@ -66833,7 +66941,7 @@ export interface operations {
             };
         };
     };
-    run_test_test_run_post: {
+    run_test_test_run__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66852,7 +66960,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RunTestApiResponse"];
+                    "application/json": components["schemas"]["TestRunInternalResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_test_end_test_run_end_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestRunEndPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestRunEndResponse"];
                 };
             };
             /** @description Validation Error */

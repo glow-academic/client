@@ -58,6 +58,7 @@ function SidebarProvider({
   open: openProp,
   onOpenChange: setOpenProp,
   cookieName,
+  isMobile: isMobileProp,
   className,
   style,
   children,
@@ -67,8 +68,15 @@ function SidebarProvider({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   cookieName?: string;
+  /**
+   * Override the internal mobile-detection. When true, the sidebar renders as
+   * an overlay Sheet and toggling acts on `openMobile`. Useful for secondary
+   * panels that should drawer-out at wider thresholds than true mobile.
+   */
+  isMobile?: boolean;
 }) {
-  const isMobile = useIsMobile();
+  const internalIsMobile = useIsMobile();
+  const isMobile = isMobileProp ?? internalIsMobile;
   const [openMobile, setOpenMobile] = React.useState(false);
 
   // This is the internal state of the sidebar.

@@ -13,6 +13,12 @@ interface UseAttemptVoiceConfig {
   transport: Transport;
   chatIdRef: React.RefObject<string | null>;
   attemptIdRef?: React.RefObject<string | null>;
+  /** User's persona entry id (attempt.user_persona_id). Sent on the
+   *  post-STT /attempt/chat/message persistence so the server can
+   *  satisfy the attempt_content_entry.persona_id FK. Without this the
+   *  impl falls back to the zero UUID and the FK violates. Mirrors how
+   *  text-mode useAttemptMessages already passes persona_id. */
+  userPersonaIdRef?: React.RefObject<string | null>;
   onUserStart?: (data: AttemptUserStartEvent) => void;
   /** Per-frame assistant PCM16 — push to AudioContext for realtime playback. */
   onAudioChunk?: (data: AttemptAssistantAudioEvent) => void;
@@ -48,6 +54,7 @@ export function useAttemptVoice({
   transport,
   chatIdRef,
   attemptIdRef,
+  userPersonaIdRef,
   onUserStart,
   onAudioChunk,
   onAssistantAudioComplete,
@@ -144,10 +151,16 @@ export function useAttemptVoice({
         const transcript = (await waitForTranscript(groupId)).trim();
         if (!transcript) return;
 
-        // (2) Persist as a chat message (text only).
+        // (2) Persist as a chat message (text only). Pass persona_id so
+        // the impl can satisfy attempt_content_entry.persona_id FK —
+        // mirrors how text-mode useAttemptMessages.sendMessage threads
+        // persona_id through. Without this the server falls back to the
+        // zero UUID and the FK violates.
+        const userPersonaId = userPersonaIdRef?.current ?? null;
         const msgResult = await transport.send("/attempt/chat/message", {
           chat_id: chatId,
           text: transcript,
+          ...(userPersonaId ? { persona_id: userPersonaId } : {}),
         });
         const messageId = msgResult.message_id as string | undefined;
         if (!messageId) {

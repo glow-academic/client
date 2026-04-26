@@ -1075,22 +1075,24 @@ export function Simulations({
           </div>
           )}
 
-          {/* Cards Grid */}
-          <div
-            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-            role="grid"
-            aria-label="simulations grid"
-            data-testid="simulations-grid"
-          >
-            {simulations.length ? (
-              simulations.map((simulation) => (
-                <div key={simulation.simulation_id}>{renderSimulationCard(simulation)}</div>
-              ))
-            ) : (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
-                No simulations match the current filters.
-              </div>
-            )}
+          {/* Cards Grid — container-query driven; scales with content area width */}
+          <div className="@container">
+            <div
+              className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4"
+              role="grid"
+              aria-label="simulations grid"
+              data-testid="simulations-grid"
+            >
+              {simulations.length ? (
+                simulations.map((simulation) => (
+                  <div key={simulation.simulation_id}>{renderSimulationCard(simulation)}</div>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  No simulations match the current filters.
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Pagination */}

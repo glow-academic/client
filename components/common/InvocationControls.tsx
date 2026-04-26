@@ -32,14 +32,12 @@ export function InvocationControls({
   currentInvocationId,
   hasRunsOrGroups,
 }: InvocationControlsProps) {
-  // testId is reserved for future end-with-grade flows
-  void testId;
   const transport = useTransport();
 
   const [confirmStopOpen, setConfirmStopOpen] = useState(false);
   const [stoppingLoading, setStoppingLoading] = useState(false);
 
-  const { stopInvocation } = useTestLifecycle({
+  const { completeTest } = useTestLifecycle({
     transport,
     invocationId: currentInvocationId,
     onInvocationStopped: useCallback(() => {
@@ -55,20 +53,25 @@ export function InvocationControls({
     }, []),
   });
 
+  // Stop Test = canonical whole-test completion (test.complete →
+  // test_proceed with complete_all=True on the server, which runs the
+  // remaining invocations/groups through their grading path and emits
+  // artifacts.test.completed when done). The page-level TestChat picks
+  // up the completed event and flips into rubric/graded view.
   const handleStop = useCallback(() => {
     if (!hasRunsOrGroups) {
       setConfirmStopOpen(true);
       return;
     }
     setStoppingLoading(true);
-    stopInvocation(currentInvocationId);
-  }, [hasRunsOrGroups, currentInvocationId, stopInvocation]);
+    completeTest(testId);
+  }, [hasRunsOrGroups, testId, completeTest]);
 
   const handleConfirmStop = useCallback(() => {
     setConfirmStopOpen(false);
     setStoppingLoading(true);
-    stopInvocation(currentInvocationId);
-  }, [currentInvocationId, stopInvocation]);
+    completeTest(testId);
+  }, [testId, completeTest]);
 
   return (
     <>
