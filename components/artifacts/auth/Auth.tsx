@@ -763,6 +763,7 @@ function AuthComponent({
                 ) : undefined
               }
               {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
             >
               <div className="space-y-4">
                 <Descriptions
@@ -839,6 +840,7 @@ function AuthComponent({
                 ) : undefined
               }
               {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
             >
               <Protocols
                 protocol_ids={formState.protocol_ids}
@@ -885,6 +887,7 @@ function AuthComponent({
                 ) : undefined
               }
               {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
             >
               <Slugs
                 slug_ids={formState.slug_ids}
@@ -931,6 +934,7 @@ function AuthComponent({
                 ) : undefined
               }
               {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
             >
               <Items
                 item_ids={formState.item_ids}

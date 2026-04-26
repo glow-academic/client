@@ -722,6 +722,7 @@ function FieldComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
               }
+              resetFields={["name_id", "description_id", "flag_ids", "department_ids"]}
               actions={
                 stepResources["basic"]?.length &&
                 fieldData?.basic_show_ai_generate ? (
@@ -818,6 +819,11 @@ function FieldComponent({
                   onChange: (value: boolean) =>
                     setFormData({ conditionalParameterShowSelected: value || null }),
                 },
+              ]}
+              resetFields={[
+                "conditional_parameter_ids",
+                "conditionalParameterSearch",
+                "conditionalParameterShowSelected",
               ]}
               actions={
                 stepResources["conditional"]?.length &&

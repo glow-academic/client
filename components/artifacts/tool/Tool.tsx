@@ -61,7 +61,16 @@ export type ToolArgRowDraft = {
   outputs: ToolArgOutputRowDraft[];
 };
 
-type ToolResourceType = "args" | "arg_positions" | "args_outputs" | "instructions";
+type ToolResourceType =
+  | "names"
+  | "descriptions"
+  | "flags"
+  | "departments"
+  | "args"
+  | "arg_positions"
+  | "args_outputs"
+  | "instructions"
+  | "permissions";
 
 type ToolFormState = {
   name_id: string | null;
@@ -906,9 +915,21 @@ function ToolComponent({
 
   const stepResources: Record<string, ToolResourceType[]> = useMemo(
     () => ({
+      basic: ["names", "descriptions", "flags", "departments"],
       arguments: ["args", "arg_positions", "args_outputs"],
+      permissions: ["permissions"],
       instructions: ["instructions"],
-      all: ["args", "arg_positions", "args_outputs", "instructions"],
+      all: [
+        "names",
+        "descriptions",
+        "flags",
+        "departments",
+        "args",
+        "arg_positions",
+        "args_outputs",
+        "permissions",
+        "instructions",
+      ],
     }),
     []
   );
@@ -1041,11 +1062,30 @@ function ToolComponent({
           return (s?.arg_positions ?? []).some((item) => item.selected && item.generated);
         case "args_outputs":
           return (s?.args_outputs ?? []).some((item) => item.selected && item.generated);
+        case "names":
+          return (s?.names ?? []).some((item) => item.generated);
+        case "descriptions":
+          return (s?.descriptions ?? []).some((item) => item.generated);
+        case "flags":
+          return (s?.flags ?? []).some((item) => item.generated);
+        case "permissions":
+          return (s?.permissions ?? []).some((item) => item.generated);
+        case "instructions":
+          return (s?.instructions ?? []).some((item) => item.generated);
         default:
           return false;
       }
     },
-    [s?.arg_positions, s?.args, s?.args_outputs]
+    [
+      s?.arg_positions,
+      s?.args,
+      s?.args_outputs,
+      s?.names,
+      s?.descriptions,
+      s?.flags,
+      s?.permissions,
+      s?.instructions,
+    ]
   );
 
   const renderStep = useCallback(
@@ -1104,6 +1144,20 @@ function ToolComponent({
               resetFields={["name", "description", "department_ids", "flag_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["basic"] &&
+                stepResources["basic"].length > 0 &&
+                toolData?.basic_show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="basic"
+                    resourceTypes={stepResources["basic"]}
+                    canRegenerate={(rt) => canRegenerate(rt as ToolResourceType)}
+                    isGenerating={(rt) => isGenerating(rt as ToolResourceType)}
+                    onOpenModal={(step) => handleDirectStepGenerate(step)}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
             >
               <div className="space-y-4">
                 <Descriptions
@@ -1187,29 +1241,43 @@ function ToolComponent({
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-8"
-                  disabled={disabled}
-                  onClick={() =>
-                    setArgsDrafts((prev) => [
-                      ...prev,
-                      {
-                        id: null,
-                        name: "",
-                        description: "",
-                        field_type: "string",
-                        required: false,
-                        default_value: "",
-                        outputs: [],
-                      },
-                    ])
-                  }
-                >
-                  <Check className="h-3.5 w-3.5 mr-1" /> Add Argument
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8"
+                    disabled={disabled}
+                    onClick={() =>
+                      setArgsDrafts((prev) => [
+                        ...prev,
+                        {
+                          id: null,
+                          name: "",
+                          description: "",
+                          field_type: "string",
+                          required: false,
+                          default_value: "",
+                          outputs: [],
+                        },
+                      ])
+                    }
+                  >
+                    <Check className="h-3.5 w-3.5 mr-1" /> Add Argument
+                  </Button>
+                  {stepResources["arguments"] &&
+                  stepResources["arguments"].length > 0 &&
+                  toolData?.args_show_ai_generate ? (
+                    <StepCardAiButton
+                      stepId="arguments"
+                      resourceTypes={stepResources["arguments"]}
+                      canRegenerate={(rt) => canRegenerate(rt as ToolResourceType)}
+                      isGenerating={(rt) => isGenerating(rt as ToolResourceType)}
+                      onOpenModal={(step) => handleDirectStepGenerate(step)}
+                      disabled={disabled}
+                    />
+                  ) : null}
+                </div>
               }
             >
               <div className="space-y-6">
@@ -1962,6 +2030,20 @@ function ToolComponent({
               onSearchChange={(term) => setFormData({ permissionsSearch: term || null })}
               searchPlaceholder="Search permissions..."
               {...(filters ? { filters } : {})}
+              actions={
+                stepResources["permissions"] &&
+                stepResources["permissions"].length > 0 &&
+                toolData?.permissions_show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="permissions"
+                    resourceTypes={stepResources["permissions"]}
+                    canRegenerate={(rt) => canRegenerate(rt as ToolResourceType)}
+                    isGenerating={(rt) => isGenerating(rt as ToolResourceType)}
+                    onOpenModal={(step) => handleDirectStepGenerate(step)}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
             >
               <SelectableGrid
                 items={filteredPermissions}

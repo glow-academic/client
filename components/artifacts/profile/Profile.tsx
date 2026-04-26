@@ -41,7 +41,7 @@ type PatchProfileDraftOut = OutputOf<"/profile/draft", "patch">;
 
 type ProfileData = OutputOf<"/profile/get", "post">;
 
-type ProfileResourceType = "names" | "flags" | "departments" | "emails";
+type ProfileResourceType = "names" | "flags" | "departments" | "emails" | "roles";
 
 type ProfileFormState = {
   name_id: string | null;
@@ -87,6 +87,7 @@ const VALID_RESOURCE_TYPES: ProfileResourceType[] = [
   "flags",
   "departments",
   "emails",
+  "roles",
 ];
 
 const PROFILE_RESOURCES: ResourceConfig[] = [
@@ -534,6 +535,12 @@ function ProfileComponent({
               (item) => item.generated,
             ) ?? false
           );
+        case "roles":
+          return (
+            (stableProfileData as any).roles?.some(
+              (item: any) => item.generated,
+            ) ?? false
+          );
       }
     },
     [stableProfileData],
@@ -803,6 +810,7 @@ function ProfileComponent({
     () => ({
       basic: ["names", "flags", "departments"],
       contact: ["emails"],
+      roles: ["roles"],
       all: VALID_RESOURCE_TYPES,
     }),
     [],
@@ -955,6 +963,7 @@ function ProfileComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
               }
+              resetFields={["name_id", "flag_ids", "department_ids"]}
               actions={
                 stepResources["basic"]?.length &&
                 profileData?.basic_show_ai_generate ? (
@@ -1040,6 +1049,7 @@ function ProfileComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              resetFields={["email_ids", "new_emails"]}
               actions={
                 stepResources["contact"]?.length &&
                 profileData?.contact_show_ai_generate ? (
@@ -1266,6 +1276,20 @@ function ProfileComponent({
                     setFormData({ roleShowSelected: value || null }),
                 },
               ]}
+              resetFields={["role_id", "roleSearch", "roleShowSelected"]}
+              actions={
+                stepResources["roles"]?.length &&
+                profileData?.show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="roles"
+                    resourceTypes={stepResources["roles"]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGeneratingForStepCard}
+                    onOpenModal={handleDirectStepGenerate}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >

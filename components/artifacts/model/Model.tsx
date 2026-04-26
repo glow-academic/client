@@ -811,7 +811,7 @@ function ModelComponent({
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({
       basic: ["names", "descriptions", "flags"],
-      provider: [],
+      provider: ["providers"],
       modalities: ["modalities"],
       temperature: ["temperature_levels"],
       pricing: ["pricing"],
@@ -822,6 +822,7 @@ function ModelComponent({
         "names",
         "descriptions",
         "flags",
+        "providers",
         "modalities",
         "temperature_levels",
         "pricing",
@@ -843,6 +844,8 @@ function ModelComponent({
           return s.descriptions?.resource?.generated ?? false;
         case "flags":
           return s.flags?.resources?.some((f) => f.generated) ?? false;
+        case "providers":
+          return s.providers?.resources?.some((p) => p.generated) ?? false;
         case "modalities":
           return s.modalities?.current?.some((m) => m.generated) ?? false;
         case "temperature_levels":
@@ -1417,6 +1420,20 @@ function ModelComponent({
               resetFields={["provider_id"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["provider"] &&
+                stepResources["provider"].length > 0 &&
+                s?.providers?.show_ai_generate ? (
+                  <StepCardAiButton
+                    stepId="provider"
+                    resourceTypes={stepResources["provider"]}
+                    canRegenerate={canRegenerateForStepCard}
+                    isGenerating={isGenerating}
+                    onOpenModal={handleDirectStepGenerate}
+                    disabled={disabled}
+                  />
+                ) : undefined
+              }
             >
               <Providers
                 provider_id={formState.provider_id}

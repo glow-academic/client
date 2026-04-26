@@ -28960,6 +28960,12 @@ export interface components {
              */
             infinite_mode: boolean;
             /**
+             * Use Groups
+             * @description Whether the parent benchmark groups runs into agent groups. Sourced from benchmark_entry.use_groups via the benchmark_test junction.
+             * @default false
+             */
+            use_groups: boolean;
+            /**
              * Runs
              * @description Run items derived from invocations
              */
@@ -49696,14 +49702,18 @@ export interface components {
         /**
          * TestStartPayload
          * @description Client-to-server: create a new test.
+         *
+         *     Surface field is the eval the user picks; the server resolves the
+         *     underlying benchmark via ``search_benchmarks(eval_ids=[eval_id])``.
+         *     Mirrors how /attempt/start accepts ``home_id``/``practice_id``.
          */
         TestStartPayload: {
             /**
-             * Benchmark Id
+             * Eval Id
              * Format: uuid
-             * @description UUID of the benchmark to test against
+             * @description UUID of the eval to test
              */
-            benchmark_id: string;
+            eval_id: string;
             /**
              * Infinite Mode
              * @description Whether to run in infinite mode

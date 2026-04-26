@@ -627,17 +627,139 @@ function Setting({
 
   const steps = useMemo(
     () => [
-      { id: "basic", title: "Basic", description: "Name, description, departments, and status" },
-      { id: "color", title: "Color", description: "Theme color" },
-      { id: "logins", title: "Logins", description: "Login buttons on the sign-in page" },
-      { id: "systems", title: "Systems", description: "Agent routing" },
-      { id: "mcp", title: "MCP", description: "Agent exposed as this setting's MCP server" },
-      { id: "thresholds", title: "Thresholds", description: "Scoring cutoffs" },
-      { id: "provider", title: "Providers", description: "Providers and their API keys" },
-      { id: "auth", title: "Auths", description: "Auth providers and their OIDC/SAML claim keys and values" },
+      {
+        id: "basic",
+        title: "Basic",
+        description: "Name, description, departments, and status",
+        resetFields: [
+          "name_id",
+          "description_id",
+          "department_ids",
+          "flag_ids",
+        ],
+      },
+      {
+        id: "color",
+        title: "Color",
+        description: "Theme color",
+        resetFields: ["color_ids"],
+      },
+      {
+        id: "logins",
+        title: "Logins",
+        description: "Login buttons on the sign-in page",
+        resetFields: ["logins_ids"],
+      },
+      {
+        id: "systems",
+        title: "Systems",
+        description: "Agent routing",
+        resetFields: ["system_ids"],
+      },
+      {
+        id: "mcp",
+        title: "MCP",
+        description: "Agent exposed as this setting's MCP server",
+        resetFields: ["mcp_id"],
+      },
+      {
+        id: "thresholds",
+        title: "Thresholds",
+        description: "Scoring cutoffs",
+        resetFields: ["threshold_ids", "threshold_values"],
+      },
+      {
+        id: "provider",
+        title: "Providers",
+        description: "Providers and their API keys",
+        resetFields: ["provider_ids", "provider_key_ids", "provider_keys"],
+      },
+      {
+        id: "auth",
+        title: "Auths",
+        description:
+          "Auth providers and their OIDC/SAML claim keys and values",
+        resetFields: [
+          "auth_ids",
+          "auth_item_key_ids",
+          "auth_item_keys",
+          "auth_item_value_ids",
+          "auth_item_values",
+        ],
+      },
     ],
     []
   );
+
+  const stepResources = useMemo<Record<string, string[]>>(
+    () => ({
+      basic: ["names", "descriptions", "departments", "flags"],
+      color: ["colors"],
+      logins: ["logins"],
+      systems: ["systems"],
+      mcp: ["mcp"],
+      thresholds: ["thresholds"],
+      provider: ["providers", "provider_keys"],
+      auth: ["auths", "auth_item_keys", "auth_item_values"],
+      all: VALID_RESOURCE_TYPES,
+    }),
+    []
+  );
+
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources && resources.length > 0) {
+        void handleGenerateResources(resources as ResourceType[]);
+      }
+    },
+    [stepResources, handleGenerateResources]
+  );
+
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            name_id: null,
+            name: null,
+            description_id: null,
+            description: null,
+            department_ids: [],
+            flag_ids: [],
+          };
+        case "color":
+          return { ...prev, color_ids: [] };
+        case "logins":
+          return { ...prev, logins_ids: [], logins: [] };
+        case "systems":
+          return { ...prev, system_ids: [], system_values: [] };
+        case "mcp":
+          return { ...prev, mcp_id: null, mcp_values: [] };
+        case "thresholds":
+          return { ...prev, threshold_ids: [], threshold_values: [] };
+        case "provider":
+          return {
+            ...prev,
+            provider_ids: [],
+            provider_key_ids: [],
+            provider_keys: [],
+          };
+        case "auth":
+          return {
+            ...prev,
+            auth_ids: [],
+            auth_item_key_ids: [],
+            auth_item_keys: [],
+            auth_item_value_ids: [],
+            auth_item_values: [],
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
 
   const getStepStatus = useCallback(
     (stepId: string): StepStatus => {
@@ -758,6 +880,7 @@ function Setting({
       stepDescription,
       stepNumber,
       stepStatus,
+      onReset,
     }: {
       stepId: string;
       stepTitle: string;
@@ -765,6 +888,7 @@ function Setting({
       stepNumber: number;
       stepStatus: StepStatus;
       isOptional: boolean;
+      onReset?: () => void;
     }) => {
       if (stepId === "basic") {
         return (
@@ -774,6 +898,7 @@ function Setting({
             stepNumber={stepNumber}
             stepStatus={stepStatus}
             isReadonly={disabled}
+            isEditMode={isEditMode}
             customHeader={
               <Names
                 name_id={formState.name_id}
@@ -789,18 +914,24 @@ function Setting({
                 required={true}
               />
             }
+            resetFields={[
+              "name_id",
+              "description_id",
+              "department_ids",
+              "flag_ids",
+            ]}
             actions={
               <StepCardAiButton
                 stepId="basic"
-                resourceTypes={VALID_RESOURCE_TYPES}
+                resourceTypes={stepResources["basic"] ?? []}
                 canRegenerate={canRegenerate as (rt: string) => boolean}
                 isGenerating={isGenerating as (rt: string) => boolean}
-                onOpenModal={() => {
-                  void handleGenerateResources(VALID_RESOURCE_TYPES);
-                }}
+                onOpenModal={handleDirectStepGenerate}
                 disabled={disabled || !s?.basic_show_ai_generate}
               />
             }
+            {...(onReset ? { onReset } : {})}
+            resetLabel="Reset"
           >
             <Descriptions
               description_id={formState.description_id}
@@ -846,6 +977,20 @@ function Setting({
             stepNumber={stepNumber}
             stepStatus={stepStatus}
             isReadonly={disabled}
+            isEditMode={isEditMode}
+            resetFields={["color_ids"]}
+            actions={
+              <StepCardAiButton
+                stepId="color"
+                resourceTypes={stepResources["color"] ?? []}
+                canRegenerate={canRegenerate as (rt: string) => boolean}
+                isGenerating={isGenerating as (rt: string) => boolean}
+                onOpenModal={handleDirectStepGenerate}
+                disabled={disabled || !s?.show_ai_generate}
+              />
+            }
+            {...(onReset ? { onReset } : {})}
+            resetLabel="Reset"
           >
             {(() => {
               // Group colors by their `type` role and render one
@@ -933,6 +1078,20 @@ function Setting({
             stepNumber={stepNumber}
             stepStatus={stepStatus}
             isReadonly={disabled}
+            isEditMode={isEditMode}
+            resetFields={["logins_ids"]}
+            actions={
+              <StepCardAiButton
+                stepId="logins"
+                resourceTypes={stepResources["logins"] ?? []}
+                canRegenerate={canRegenerate as (rt: string) => boolean}
+                isGenerating={isGenerating as (rt: string) => boolean}
+                onOpenModal={handleDirectStepGenerate}
+                disabled={disabled || !s?.show_ai_generate}
+              />
+            }
+            {...(onReset ? { onReset } : {})}
+            resetLabel="Reset"
           >
             <Logins
               logins_ids={formState.logins_ids}
@@ -968,6 +1127,20 @@ function Setting({
             stepNumber={stepNumber}
             stepStatus={stepStatus}
             isReadonly={disabled}
+            isEditMode={isEditMode}
+            resetFields={["system_ids"]}
+            actions={
+              <StepCardAiButton
+                stepId="systems"
+                resourceTypes={stepResources["systems"] ?? []}
+                canRegenerate={canRegenerate as (rt: string) => boolean}
+                isGenerating={isGenerating as (rt: string) => boolean}
+                onOpenModal={handleDirectStepGenerate}
+                disabled={disabled || !s?.show_ai_generate}
+              />
+            }
+            {...(onReset ? { onReset } : {})}
+            resetLabel="Reset"
           >
             <Systems
               system_ids={formState.system_ids}
@@ -1011,6 +1184,20 @@ function Setting({
             stepNumber={stepNumber}
             stepStatus={stepStatus}
             isReadonly={disabled}
+            isEditMode={isEditMode}
+            resetFields={["mcp_id"]}
+            actions={
+              <StepCardAiButton
+                stepId="mcp"
+                resourceTypes={stepResources["mcp"] ?? []}
+                canRegenerate={canRegenerate as (rt: string) => boolean}
+                isGenerating={isGenerating as (rt: string) => boolean}
+                onOpenModal={handleDirectStepGenerate}
+                disabled={disabled || !s?.show_ai_generate}
+              />
+            }
+            {...(onReset ? { onReset } : {})}
+            resetLabel="Reset"
           >
             <Mcp
               mcp_id={formState.mcp_id}
@@ -1052,6 +1239,20 @@ function Setting({
             stepNumber={stepNumber}
             stepStatus={stepStatus}
             isReadonly={disabled}
+            isEditMode={isEditMode}
+            resetFields={["threshold_ids", "threshold_values"]}
+            actions={
+              <StepCardAiButton
+                stepId="thresholds"
+                resourceTypes={stepResources["thresholds"] ?? []}
+                canRegenerate={canRegenerate as (rt: string) => boolean}
+                isGenerating={isGenerating as (rt: string) => boolean}
+                onOpenModal={handleDirectStepGenerate}
+                disabled={disabled || !s?.show_ai_generate}
+              />
+            }
+            {...(onReset ? { onReset } : {})}
+            resetLabel="Reset"
           >
             <div className="space-y-6">
               {SETTING_THRESHOLD_TYPES.map(({ type, label, default: dflt }) => {
@@ -1106,6 +1307,20 @@ function Setting({
             stepNumber={stepNumber}
             stepStatus={stepStatus}
             isReadonly={disabled}
+            isEditMode={isEditMode}
+            resetFields={["provider_ids", "provider_key_ids", "provider_keys"]}
+            actions={
+              <StepCardAiButton
+                stepId="provider"
+                resourceTypes={stepResources["provider"] ?? []}
+                canRegenerate={canRegenerate as (rt: string) => boolean}
+                isGenerating={isGenerating as (rt: string) => boolean}
+                onOpenModal={handleDirectStepGenerate}
+                disabled={disabled || !s?.show_ai_generate}
+              />
+            }
+            {...(onReset ? { onReset } : {})}
+            resetLabel="Reset"
           >
             <div className="space-y-6">
               <Providers
@@ -1187,6 +1402,26 @@ function Setting({
           stepNumber={stepNumber}
           stepStatus={stepStatus}
           isReadonly={disabled}
+          isEditMode={isEditMode}
+          resetFields={[
+            "auth_ids",
+            "auth_item_key_ids",
+            "auth_item_keys",
+            "auth_item_value_ids",
+            "auth_item_values",
+          ]}
+          actions={
+            <StepCardAiButton
+              stepId="auth"
+              resourceTypes={stepResources["auth"] ?? []}
+              canRegenerate={canRegenerate as (rt: string) => boolean}
+              isGenerating={isGenerating as (rt: string) => boolean}
+              onOpenModal={handleDirectStepGenerate}
+              disabled={disabled || !s?.show_ai_generate}
+            />
+          }
+          {...(onReset ? { onReset } : {})}
+          resetLabel="Reset"
         >
           <div className="space-y-6">
             <Auths
@@ -1288,12 +1523,15 @@ function Setting({
       formState,
       handleDescriptionChange,
       handleDescriptionIdChange,
+      handleDirectStepGenerate,
       handleGenerateResources,
       handleNameChange,
       handleNameIdChange,
+      isEditMode,
       isGenerating,
       pruneSectionPending,
       s,
+      stepResources,
     ]
   );
 
@@ -1317,6 +1555,7 @@ function Setting({
         isReadonly={disabled}
         isEditMode={isEditMode}
         renderStep={renderStep}
+        onReset={handleReset}
         onFormDataChange={onFormDataChange}
         registerSetFormData={(setter) => {
           setUrlFormDataRef.current = setter;

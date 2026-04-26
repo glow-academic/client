@@ -952,6 +952,7 @@ function RubricComponent({
               ) : undefined
             }
             {...(onReset ? { onReset } : {})}
+            resetLabel="Reset"
           >
             <div className="space-y-4">
               <Descriptions
@@ -1047,6 +1048,7 @@ function RubricComponent({
               ) : undefined
             }
             {...(onReset ? { onReset } : {})}
+            resetLabel="Reset"
           >
             <StandardGroups
               standard_group_ids={formState.standard_group_ids}
@@ -1098,6 +1100,7 @@ function RubricComponent({
             ) : undefined
           }
           {...(onReset ? { onReset } : {})}
+          resetLabel="Reset"
         >
           <Standards
             values={standardGridValues}

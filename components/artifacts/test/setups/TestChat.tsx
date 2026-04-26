@@ -86,6 +86,10 @@ export default function TestChat({
     test_data.status === "pending" &&
     runs.every((r) => r.status === "not_started");
 
+  // Whether the parent benchmark groups runs (sourced from benchmark_entry.use_groups
+  // via the benchmark_test junction — see /test/get response).
+  const useGroups = test_data.use_groups ?? false;
+
   // ---- Transport lifecycle ----
   const { runInvocation, stopInvocation } = useTestLifecycle({
     transport,
@@ -240,6 +244,7 @@ export default function TestChat({
     starting_run_ids: startingRunIds,
     on_start_run: handleStartRun,
     is_connected: true,
+    use_groups: useGroups,
   };
 
   const documentAreaProps: ResourcePanelProps = {

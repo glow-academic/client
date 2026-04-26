@@ -512,22 +512,64 @@ export default function Provider({
   ]);
 
   const disabled = !s?.can_edit;
+
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            name_id: null,
+            name: null,
+            value_id: null,
+            value: null,
+            description_id: null,
+            description: null,
+            flag_ids: [],
+            department_ids: [],
+          };
+        case "endpoint":
+          return {
+            ...prev,
+            endpoint_id: null,
+            endpoint: null,
+          };
+        case "key":
+          return {
+            ...prev,
+            key_id: null,
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
+
   const steps = useMemo(
     () => [
       {
         id: "basic",
         title: "Basic",
         description: "Name, value, description, status, and departments",
+        resetFields: [
+          "name_id",
+          "value_id",
+          "description_id",
+          "flag_ids",
+          "department_ids",
+        ],
       },
       {
         id: "endpoint",
         title: "Endpoint",
         description: "API endpoint URL for this provider",
+        resetFields: ["endpoint_id"],
       },
       {
         id: "key",
         title: "Key",
         description: "API key used to authenticate requests",
+        resetFields: ["key_id"],
       },
     ],
     []
@@ -567,6 +609,7 @@ export default function Provider({
       stepDescription,
       stepNumber,
       stepStatus,
+      onReset,
     }: {
       stepId: string;
       stepTitle: string;
@@ -574,6 +617,7 @@ export default function Provider({
       stepNumber: number;
       stepStatus: StepStatus;
       isOptional: boolean;
+      onReset?: () => void;
     }) => {
       switch (stepId) {
         case "basic":
@@ -584,6 +628,7 @@ export default function Provider({
               stepNumber={stepNumber}
               stepStatus={stepStatus}
               isReadonly={disabled}
+              isEditMode={isEditMode}
               customHeader={
                 <Names
                   name_id={formState.name_id}
@@ -599,6 +644,13 @@ export default function Provider({
                   required={true}
                 />
               }
+              resetFields={[
+                "name_id",
+                "value_id",
+                "description_id",
+                "flag_ids",
+                "department_ids",
+              ]}
               actions={
                 <StepCardAiButton
                   stepId="basic"
@@ -614,6 +666,8 @@ export default function Provider({
                   disabled={disabled || !s?.basic_show_ai_generate}
                 />
               }
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
             >
               {/* Value lives at the top of basic info, mirroring Model.tsx — it
                   identifies the provider variant and naturally pairs with the
@@ -683,6 +737,8 @@ export default function Provider({
               stepNumber={stepNumber}
               stepStatus={stepStatus}
               isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["endpoint_id"]}
               actions={
                 <StepCardAiButton
                   stepId="endpoint"
@@ -698,6 +754,8 @@ export default function Provider({
                   disabled={disabled || !s?.integrations_show_ai_generate}
                 />
               }
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
             >
               <Endpoints
                 endpoint_ids={formState.endpoint_id ? [formState.endpoint_id] : []}
@@ -732,6 +790,8 @@ export default function Provider({
               stepNumber={stepNumber}
               stepStatus={stepStatus}
               isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["key_id"]}
               actions={
                 <StepCardAiButton
                   stepId="key"
@@ -747,6 +807,8 @@ export default function Provider({
                   disabled={disabled || !s?.integrations_show_ai_generate}
                 />
               }
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
             >
               <Keys
                 key_id={formState.key_id}
@@ -818,6 +880,7 @@ export default function Provider({
         isReadonly={disabled}
         isEditMode={isEditMode}
         renderStep={renderStep}
+        onReset={handleReset}
         onFormDataChange={onFormDataChange}
         registerSetFormData={(setter) => {
           setUrlFormDataRef.current = setter;

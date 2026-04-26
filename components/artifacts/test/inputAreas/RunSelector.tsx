@@ -26,6 +26,8 @@ export interface RunSelectorProps {
   on_start_run: (invocationId: string) => void;
   is_connected: boolean;
   disabled?: boolean;
+  /** Whether the parent benchmark groups runs into agent groups. */
+  use_groups?: boolean;
 }
 
 export function RunSelector({
@@ -34,6 +36,7 @@ export function RunSelector({
   on_start_run,
   is_connected,
   disabled,
+  use_groups,
 }: RunSelectorProps) {
   const [selectedRunChatId, setSelectedRunChatId] = useState<string | null>(null);
 
@@ -61,7 +64,7 @@ export function RunSelector({
           {runnableRuns.map((run) => (
             <SelectItem key={run.chat_id} value={run.chat_id!}>
               {run.agent_name || "Agent"} — {run.model_name || "No model"}
-              {run.group_id ? ` (Group)` : ""}
+              {use_groups && run.group_id ? ` (Group)` : ""}
             </SelectItem>
           ))}
         </SelectContent>

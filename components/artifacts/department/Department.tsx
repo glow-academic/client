@@ -644,6 +644,7 @@ function DepartmentComponent({
                 ) : undefined
               }
               {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
             >
               <div className="space-y-4">
                 <Descriptions
@@ -696,6 +697,7 @@ function DepartmentComponent({
                 ) : undefined
               }
               {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
             >
               <Settings
                 settings_ids={formState.setting_ids}
