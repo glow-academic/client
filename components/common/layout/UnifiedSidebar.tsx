@@ -377,8 +377,9 @@ export function UnifiedSidebar({
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                  align="start"
+                  className="w-[15rem] rounded-lg"
+                  align="end"
+                  sideOffset={4}
                 >
                   <ThemeOptions />
                   <DropdownMenuSeparator />

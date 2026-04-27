@@ -20,6 +20,8 @@ export const providersSearchParams = {
   modelSearch: parseAsString,
   page: parseAsInteger,
   pageSize: parseAsInteger,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadProvidersSearchParams = createLoader(providersSearchParams);

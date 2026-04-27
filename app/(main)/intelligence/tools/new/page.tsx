@@ -7,7 +7,7 @@
  */
 
 import { getSession } from "@/auth";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Tool from "@/components/artifacts/tool/Tool";
@@ -90,6 +90,22 @@ async function createToolProblem(input: ProblemToolIn): Promise<ProblemToolOut> 
   return api.post("/tool/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getToolGroup(input: GroupToolIn): Promise<GroupToolOut> {
+  "use server";
+  return api.post("/tool/group", input);
+}
+
+async function searchToolGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/tool/generations", input);
+}
+
+async function runToolGenerate(input: GenerateToolIn): Promise<GenerateToolOut> {
+  "use server";
+  return api.post("/tool/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -151,6 +167,8 @@ export default async function NewToolPage({
       argPositionsShowSelected: parseAsBoolean,
       argsOutputsShowSelected: parseAsBoolean,
       permissionsShowSelected: parseAsBoolean,
+      groupId: parseAsString,
+      groupSearch: parseAsString,
     };
     const loadToolSearchParams = createLoader(toolSearchParams);
     const q = loadToolSearchParams(searchParamsObj);
@@ -193,7 +211,10 @@ export default async function NewToolPage({
     const [toolDetailDefault, draftsResult, groupResult] = await Promise.all([
       getToolDefault(input),
       api.post("/tool/drafts", { body: {} } as any),
-      api.post("/tool/group", { body: {} } as GroupToolIn),
+      api.post(
+        "/tool/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupToolIn,
+      ),
     ]);
 
     const layoutProps = {
@@ -214,11 +235,17 @@ export default async function NewToolPage({
       panelProps: {
         artifactType: "tool",
         groupId: (groupResult as GroupToolOut & { group_id?: string })?.group_id ?? null,
+        groupName:
+          (groupResult as GroupToolOut & { name?: string | null })?.name ?? null,
         generateAction: generateTool,
         operations: ["draft", "get", "group"],
         getGroupHistory: getToolGroupHistory,
         searchGroups: searchToolGroups,
         prompts: context.prompts?.prompts,
+        getGroupAction: getToolGroup as PanelProps["getGroupAction"],
+        searchGenerationsAction:
+          searchToolGenerations as PanelProps["searchGenerationsAction"],
+        runGenerateAction: runToolGenerate as PanelProps["runGenerateAction"],
       },
     } as any;
 

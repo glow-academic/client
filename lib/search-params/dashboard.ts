@@ -16,6 +16,8 @@ export const dashboardSearchParams = {
   ...historySearchParams,
   ...dashboardSectionSearchParams,
   _refresh: parseAsString,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadDashboardSearchParams = createLoader(dashboardSearchParams);

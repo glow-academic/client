@@ -72,6 +72,9 @@ export const scenarioSearchParams = {
   fieldShowSelected: parseAsString, // JSON: Record<string, boolean>
   fieldRanges: parseAsString, // JSON: Record<string, { min: number; max: number }>
   randomizeParameterItems: parseAsString, // JSON: Record<string, string>
+
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 // Server-side loaders

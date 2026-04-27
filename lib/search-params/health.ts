@@ -5,10 +5,12 @@
  */
 
 import { analyticsSearchParams } from "@/lib/search-params/analytics";
-import { createLoader } from "nuqs/server";
+import { createLoader, parseAsString } from "nuqs/server";
 
 export const healthSearchParams = {
   ...analyticsSearchParams,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadHealthSearchParams = createLoader(healthSearchParams);

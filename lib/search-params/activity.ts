@@ -12,6 +12,8 @@ export const activitySearchParams = {
   activityPage: parseAsInteger,
   activityPageSize: parseAsInteger,
   activitySearch: parseAsString,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadActivitySearchParams = createLoader(activitySearchParams);

@@ -6,7 +6,7 @@
  */
 
 import { getSession } from "@/auth";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { PricingRunsClient } from "@/components/artifacts/pricing/PricingRunsClient";
 import { PricingSummary } from "@/components/artifacts/pricing/PricingSummary";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
@@ -30,12 +30,12 @@ type PricingRunsOut = NonNullable<PricingOut["history"]>;
 /** ---- Generation types ---- */
 type ContextIn = InputOf<"/system/context", "post">;
 type ContextOut = OutputOf<"/system/context", "post">;
-type GeneratePricingIn = InputOf<"/system/generate", "post">;
-type GeneratePricingOut = OutputOf<"/system/generate", "post">;
-type GenerationsIn = InputOf<"/system/generations", "post">;
-type GenerationsOut = OutputOf<"/system/generations", "post">;
-type GroupPricingIn = InputOf<"/system/group", "post">;
-type GroupPricingOut = OutputOf<"/system/group", "post">;
+type SystemGroupIn = InputOf<"/system/group", "post">;
+type SystemGroupOut = OutputOf<"/system/group", "post">;
+type SystemGenerationsIn = InputOf<"/system/generations", "post">;
+type SystemGenerationsOut = OutputOf<"/system/generations", "post">;
+type SystemGenerateIn = InputOf<"/system/generate", "post">;
+type SystemGenerateOut = OutputOf<"/system/generate", "post">;
 type ProblemPricingIn = InputOf<"/system/problem", "post">;
 type ProblemPricingOut = OutputOf<"/system/problem", "post">;
 
@@ -125,7 +125,10 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
         },
       }),
       readViewCookie("pricing"),
-      api.post("/system/group", { body: {} } as GroupPricingIn),
+      api.post(
+        "/system/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as SystemGroupIn,
+      ),
     ]);
 
     // Extract inline analytics facets
@@ -159,12 +162,19 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
         }
         panelProps={{
           artifactType: "pricing",
-          groupId: (groupResult as GroupPricingOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generatePricing,
+          groupId: (groupResult as SystemGroupOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as SystemGroupOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "group"],
-          getGroupHistory: getPricingGroupHistory,
-          searchGroups: searchPricingGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getSystemGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction: searchSystemGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runSystemGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="pricing-index">
@@ -197,21 +207,19 @@ async function refreshPricing(): Promise<void> {
   await api.post("/system/pricing/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
-async function generatePricing(
-  input: GeneratePricingIn
-): Promise<GeneratePricingOut> {
+async function getSystemGroup(input: SystemGroupIn): Promise<SystemGroupOut> {
+  "use server";
+  return api.post("/system/group", input);
+}
+
+async function searchSystemGenerations(input: SystemGenerationsIn): Promise<SystemGenerationsOut> {
+  "use server";
+  return api.post("/system/generations", input);
+}
+
+async function runSystemGenerate(input: SystemGenerateIn): Promise<SystemGenerateOut> {
   "use server";
   return api.post("/system/generate", input);
-}
-
-async function getPricingGroupHistory(groupId: string): Promise<GroupPricingOut> {
-  "use server";
-  return api.post("/system/group", { body: { group_id: groupId } } as GroupPricingIn);
-}
-
-async function searchPricingGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/system/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createPricingProblem(input: ProblemPricingIn): Promise<ProblemPricingOut> {

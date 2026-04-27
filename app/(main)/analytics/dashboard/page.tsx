@@ -7,7 +7,7 @@
  */
 
 import { getSession } from "@/auth";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import Dashboard from "@/components/artifacts/dashboard/Dashboard";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { buildSnapshot } from "@/lib/auth";
@@ -170,7 +170,10 @@ export default async function DashboardPage({
         },
       } as SearchIn) as SearchOut,
       readViewCookie("history"),
-      api.post("/attempt/group", { body: {} } as GroupDashboardIn),
+      api.post(
+        "/attempt/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupDashboardIn,
+      ),
     ]);
     // Inject history into data so Dashboard component can read it
     (data as Record<string, unknown>).history = historyResult;
@@ -226,11 +229,19 @@ export default async function DashboardPage({
         panelProps={{
           artifactType: "dashboard",
           groupId: (groupResult as GroupDashboardOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateDashboard,
+          groupName:
+            (groupResult as GroupDashboardOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "group"],
-          getGroupHistory: getDashboardGroupHistory,
-          searchGroups: searchDashboardGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction:
+            searchAttemptGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runAttemptGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="px-4">
@@ -291,26 +302,29 @@ async function bulkArchiveAttempts(
   return api.post("/attempts/simulation/archive", input);
 }
 
-async function generateDashboard(
-  input: GenerateDashboardIn
-): Promise<GenerateDashboardOut> {
-  "use server";
-  return api.post("/attempt/generate", input);
-}
-
-async function getDashboardGroupHistory(groupId: string): Promise<GroupDashboardOut> {
-  "use server";
-  return api.post("/attempt/group", { body: { group_id: groupId } } as GroupDashboardIn);
-}
-
-async function searchDashboardGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/attempt/generations", { body: { search: query || null } } as GenerationsIn);
-}
-
 async function createDashboardProblem(input: ProblemDashboardIn): Promise<ProblemDashboardOut> {
   "use server";
   return api.post("/attempt/problem", input);
+}
+
+/** ---- GenerationPanel server actions ---- */
+async function getAttemptGroup(input: GroupDashboardIn): Promise<GroupDashboardOut> {
+  "use server";
+  return api.post("/attempt/group", input);
+}
+
+async function searchAttemptGenerations(
+  input: GenerationsIn,
+): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/attempt/generations", input);
+}
+
+async function runAttemptGenerate(
+  input: GenerateDashboardIn,
+): Promise<GenerateDashboardOut> {
+  "use server";
+  return api.post("/attempt/generate", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

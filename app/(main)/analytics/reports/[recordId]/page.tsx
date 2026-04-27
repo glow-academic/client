@@ -10,7 +10,7 @@
 import { getSession } from "@/auth";
 import Record from "@/components/artifacts/record/Record";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { buildSnapshot } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -52,21 +52,23 @@ async function refreshReports(): Promise<void> {
   await api.post("/attempt/report/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
-async function generateRecord(
-  input: GenerateRecordIn
+async function getAttemptGroup(input: GroupRecordIn): Promise<GroupRecordOut> {
+  "use server";
+  return api.post("/attempt/group", input);
+}
+
+async function searchAttemptGenerations(
+  input: GenerationsIn,
+): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/attempt/generations", input);
+}
+
+async function runAttemptGenerate(
+  input: GenerateRecordIn,
 ): Promise<GenerateRecordOut> {
   "use server";
   return api.post("/attempt/generate", input);
-}
-
-async function getRecordGroupHistory(groupId: string): Promise<GroupRecordOut> {
-  "use server";
-  return api.post("/attempt/group", { body: { group_id: groupId } } as GroupRecordIn);
-}
-
-async function searchRecordGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/attempt/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createRecordProblem(input: ProblemRecordIn): Promise<ProblemRecordOut> {
@@ -195,7 +197,10 @@ export default async function RecordPage({
         },
       }),
       api.post("/attempt/context", { body: { entity_id: recordId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/attempt/group", { body: {} } as GroupRecordIn),
+      api.post(
+        "/attempt/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupRecordIn,
+      ),
     ]);
 
     const _entityName = context.page_metadata?.detail.title;
@@ -242,11 +247,20 @@ export default async function RecordPage({
         panelProps={{
           artifactType: "record",
           groupId: (groupResult as GroupRecordOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateRecord,
+          groupName:
+            (groupResult as GroupRecordOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "group"],
-          getGroupHistory: getRecordGroupHistory,
-          searchGroups: searchRecordGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction:
+            searchAttemptGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction:
+            runAttemptGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="px-4">

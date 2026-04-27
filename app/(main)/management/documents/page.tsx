@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Documents from "@/components/artifacts/document/Documents";
 
@@ -20,6 +20,7 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
+import { loadDocumentsSearchParams } from "@/lib/search-params/documents";
 
 /** ---- Strong types from OpenAPI ---- */
 type DocumentsListIn = InputOf<"/document/search", "post">;
@@ -96,6 +97,22 @@ async function createDocumentProblem(input: ProblemDocumentIn): Promise<ProblemD
   return api.post("/document/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getDocumentGroup(input: GroupDocumentIn): Promise<GroupDocumentOut> {
+  "use server";
+  return api.post("/document/group", input);
+}
+
+async function searchDocumentGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/document/generations", input);
+}
+
+async function runDocumentGenerate(input: GenerateDocumentIn): Promise<GenerateDocumentOut> {
+  "use server";
+  return api.post("/document/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -113,8 +130,13 @@ export async function generateMetadata(): Promise<Metadata> {
 const SIDEBAR_COOKIE = "glow_sidebar";
 const PANEL_COOKIE = "glow_panel";
 
-export default async function DocumentsPage() {
+interface DocumentsPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function DocumentsPage({ searchParams }: DocumentsPageProps) {
   const session = await getSession();
+  const q = loadDocumentsSearchParams(await searchParams);
 
   // Read UI preferences from cookies for SSR
   const cookieStore = await cookies();
@@ -133,7 +155,10 @@ export default async function DocumentsPage() {
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getDocumentsList(),
       readViewCookie("documents"),
-      api.post("/document/group", { body: {} } as GroupDocumentIn),
+      api.post(
+        "/document/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupDocumentIn,
+      ),
     ]);
 
     return (
@@ -154,11 +179,22 @@ export default async function DocumentsPage() {
         panelProps={{
           artifactType: "document",
           groupId: (groupResult as GroupDocumentOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as GroupDocumentOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           generateAction: generateDocument,
           operations: ["draft", "get", "group"],
           getGroupHistory: getDocumentGroupHistory,
           searchGroups: searchDocumentGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getDocumentGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction:
+            searchDocumentGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runDocumentGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="documents-index">

@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Departments from "@/components/artifacts/department/Departments";
 
@@ -20,6 +20,7 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
+import { loadDepartmentsSearchParams } from "@/lib/search-params/departments";
 
 /** ---- Strong types from OpenAPI ---- */
 type DepartmentsListOut = OutputOf<"/department/search", "post">;
@@ -106,6 +107,22 @@ async function createDepartmentProblem(input: ProblemDepartmentIn): Promise<Prob
   return api.post("/department/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getDepartmentGroup(input: GroupDepartmentIn): Promise<GroupDepartmentOut> {
+  "use server";
+  return api.post("/department/group", input);
+}
+
+async function searchDepartmentGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/department/generations", input);
+}
+
+async function runDepartmentGenerate(input: GenerateDepartmentIn): Promise<GenerateDepartmentOut> {
+  "use server";
+  return api.post("/department/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -123,8 +140,13 @@ export async function generateMetadata(): Promise<Metadata> {
 const SIDEBAR_COOKIE = "glow_sidebar";
 const PANEL_COOKIE = "glow_panel";
 
-export default async function DepartmentsPage() {
+interface DepartmentsPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function DepartmentsPage({ searchParams }: DepartmentsPageProps) {
   const session = await getSession();
+  const q = loadDepartmentsSearchParams(await searchParams);
 
   // Read UI preferences from cookies for SSR
   const cookieStore = await cookies();
@@ -143,7 +165,10 @@ export default async function DepartmentsPage() {
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getDepartmentsList(),
       readViewCookie("departments"),
-      api.post("/department/group", { body: {} } as GroupDepartmentIn),
+      api.post(
+        "/department/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupDepartmentIn,
+      ),
     ]);
 
     return (
@@ -164,11 +189,22 @@ export default async function DepartmentsPage() {
         panelProps={{
           artifactType: "department",
           groupId: (groupResult as GroupDepartmentOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as GroupDepartmentOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           generateAction: generateDepartment,
           operations: ["draft", "get", "group"],
           getGroupHistory: getDepartmentGroupHistory,
           searchGroups: searchDepartmentGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getDepartmentGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction:
+            searchDepartmentGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runDepartmentGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="departments-index">

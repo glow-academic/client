@@ -8,7 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Provider from "@/components/artifacts/provider/Provider";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -108,6 +108,22 @@ async function decryptProvider(input: DecryptProviderIn): Promise<DecryptProvide
   return api.post("/provider/decrypt", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getProviderGroup(input: GroupProviderIn): Promise<GroupProviderOut> {
+  "use server";
+  return api.post("/provider/group", input);
+}
+
+async function searchProviderGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/provider/generations", input);
+}
+
+async function runProviderGenerate(input: GenerateProviderIn): Promise<GenerateProviderOut> {
+  "use server";
+  return api.post("/provider/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata({
   params,
@@ -172,6 +188,8 @@ export default async function EditProviderPage({
     valueShowSelected: parseAsBoolean,
     endpointShowSelected: parseAsBoolean,
     keyShowSelected: parseAsBoolean,
+    groupId: parseAsString,
+    groupSearch: parseAsString,
   };
   const loadProviderSearchParams = createLoader(providerSearchParams);
   const q = loadProviderSearchParams(searchParamsObj);
@@ -212,7 +230,10 @@ export default async function EditProviderPage({
       getProvider(input).catch(() => null),
       api.post("/provider/context", { body: { entity_id: providerId } } as ContextIn) as Promise<ContextOut>,
       api.post("/provider/drafts", {}),
-      api.post("/provider/group", { body: {} } as GroupProviderIn),
+      api.post(
+        "/provider/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupProviderIn,
+      ),
     ]);
 
     if (!providerDetail) {
@@ -243,11 +264,17 @@ export default async function EditProviderPage({
             panelProps: {
               artifactType: "provider",
               groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
+              groupName:
+                (groupResult as GroupProviderOut & { name?: string | null })?.name ?? null,
               generateAction: generateProvider,
               operations: ["draft", "get", "group"],
               getGroupHistory: getProviderGroupHistory,
               searchGroups: searchProviderGroups,
               prompts: context.prompts?.prompts,
+              getGroupAction: getProviderGroup as PanelProps["getGroupAction"],
+              searchGenerationsAction:
+                searchProviderGenerations as PanelProps["searchGenerationsAction"],
+              runGenerateAction: runProviderGenerate as PanelProps["runGenerateAction"],
             },
           } as any)}
         >

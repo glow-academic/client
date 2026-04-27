@@ -8,7 +8,7 @@
 
 import { getSession } from "@/auth";
 import Session from "@/components/artifacts/session/Session";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -17,18 +17,19 @@ import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { loadSessionSearchParams } from "@/lib/search-params/session";
 
 /** ---- Strong types from OpenAPI ---- */
 type SessionDetailIn = InputOf<"/system/session/get", "post">;
 type SessionDetailOut = OutputOf<"/system/session/get", "post">;
 type ContextIn = InputOf<"/system/context", "post">;
 type ContextOut = OutputOf<"/system/context", "post">;
-type GenerateSessionIn = InputOf<"/system/generate", "post">;
-type GenerateSessionOut = OutputOf<"/system/generate", "post">;
-type GenerationsIn = InputOf<"/system/generations", "post">;
-type GenerationsOut = OutputOf<"/system/generations", "post">;
-type GroupSessionIn = InputOf<"/system/group", "post">;
-type GroupSessionOut = OutputOf<"/system/group", "post">;
+type SystemGroupIn = InputOf<"/system/group", "post">;
+type SystemGroupOut = OutputOf<"/system/group", "post">;
+type SystemGenerationsIn = InputOf<"/system/generations", "post">;
+type SystemGenerationsOut = OutputOf<"/system/generations", "post">;
+type SystemGenerateIn = InputOf<"/system/generate", "post">;
+type SystemGenerateOut = OutputOf<"/system/generate", "post">;
 type ProblemSessionIn = InputOf<"/system/problem", "post">;
 type ProblemSessionOut = OutputOf<"/system/problem", "post">;
 
@@ -52,21 +53,19 @@ const getSessionDetail = async (
 };
 
 /** ---- Strongly-typed server actions ---- */
-async function generateSession(
-  input: GenerateSessionIn
-): Promise<GenerateSessionOut> {
+async function getSystemGroup(input: SystemGroupIn): Promise<SystemGroupOut> {
+  "use server";
+  return api.post("/system/group", input);
+}
+
+async function searchSystemGenerations(input: SystemGenerationsIn): Promise<SystemGenerationsOut> {
+  "use server";
+  return api.post("/system/generations", input);
+}
+
+async function runSystemGenerate(input: SystemGenerateIn): Promise<SystemGenerateOut> {
   "use server";
   return api.post("/system/generate", input);
-}
-
-async function getSessionGroupHistory(groupId: string): Promise<GroupSessionOut> {
-  "use server";
-  return api.post("/system/group", { body: { group_id: groupId } } as GroupSessionIn);
-}
-
-async function searchSessionGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/system/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createSessionProblem(input: ProblemSessionIn): Promise<ProblemSessionOut> {
@@ -95,10 +94,13 @@ const PANEL_COOKIE = "glow_panel";
 
 export default async function SessionDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { sessionId } = await params;
+  const q = loadSessionSearchParams(await searchParams);
   const session = await getSession();
 
   if (!sessionId) {
@@ -124,7 +126,10 @@ export default async function SessionDetailPage({
         },
       }),
       api.post("/system/context", { body: { entity_id: sessionId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/system/group", { body: {} } as GroupSessionIn),
+      api.post(
+        "/system/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as SystemGroupIn,
+      ),
     ]);
 
     const _entityName = context.page_metadata?.detail.title;
@@ -146,12 +151,19 @@ export default async function SessionDetailPage({
         ]}
         panelProps={{
           artifactType: "session",
-          groupId: (groupResult as GroupSessionOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateSession,
+          groupId: (groupResult as SystemGroupOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as SystemGroupOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "group"],
-          getGroupHistory: getSessionGroupHistory,
-          searchGroups: searchSessionGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getSystemGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction: searchSystemGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runSystemGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">

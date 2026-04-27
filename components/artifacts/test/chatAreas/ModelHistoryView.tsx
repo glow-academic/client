@@ -132,7 +132,7 @@ export function ModelHistoryView({
     <div className="flex flex-col gap-3 p-4 h-full overflow-y-auto">
       {runs.map((run) => (
         <RunRow
-          key={run.chat_id ?? run.run_id ?? Math.random().toString()}
+          key={`${run.chat_id ?? ""}::${run.run_id ?? "none"}`}
           run={run}
           run_messages={
             run.run_id ? messagesByRun[run.run_id] ?? [] : []

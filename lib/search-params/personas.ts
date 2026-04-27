@@ -24,6 +24,8 @@ export const personasSearchParams = {
   voiceSearch: parseAsString,
   page: parseAsInteger,
   pageSize: parseAsInteger,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadPersonasSearchParams = createLoader(personasSearchParams);

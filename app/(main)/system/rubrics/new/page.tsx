@@ -8,7 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Rubric from "@/components/artifacts/rubric/Rubric";
@@ -118,6 +118,22 @@ async function createRubricProblem(input: ProblemRubricIn): Promise<ProblemRubri
   return api.post("/rubric/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getRubricGroup(input: GroupRubricIn): Promise<GroupRubricOut> {
+  "use server";
+  return api.post("/rubric/group", input);
+}
+
+async function searchRubricGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/rubric/generations", input);
+}
+
+async function runRubricGenerate(input: GenerateRubricIn): Promise<GenerateRubricOut> {
+  "use server";
+  return api.post("/rubric/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -175,6 +191,8 @@ export default async function NewRubricPage({
       pointsSearch: parseAsString,
       pointsShowSelected: parseAsBoolean,
       standardGroupShowSelected: parseAsBoolean,
+      groupId: parseAsString,
+      groupSearch: parseAsString,
     };
     const loadRubricSearchParams = createLoader(rubricSearchParams);
     const q = loadRubricSearchParams(searchParamsObj);
@@ -190,7 +208,10 @@ export default async function NewRubricPage({
         q.standardGroupShowSelected ?? null,
       ),
       api.post("/rubric/drafts", {} as InputOf<"/rubric/drafts", "post">),
-      api.post("/rubric/group", { body: {} } as GroupRubricIn),
+      api.post(
+        "/rubric/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupRubricIn,
+      ),
     ]);
 
     return (
@@ -218,6 +239,8 @@ export default async function NewRubricPage({
               groupId:
                 (groupResult as GroupRubricOut & { group_id?: string | null })
                   ?.group_id ?? "",
+              groupName:
+                (groupResult as GroupRubricOut & { name?: string | null })?.name ?? null,
               generateAction: generateRubric,
               operations: ["draft", "get", "group"],
               getGroupHistory: getRubricGroupHistory,
@@ -225,6 +248,10 @@ export default async function NewRubricPage({
               ...(context.prompts?.prompts
                 ? { prompts: context.prompts.prompts }
                 : {}),
+              getGroupAction: getRubricGroup as PanelProps["getGroupAction"],
+              searchGenerationsAction:
+                searchRubricGenerations as PanelProps["searchGenerationsAction"],
+              runGenerateAction: runRubricGenerate as PanelProps["runGenerateAction"],
             },
           } as any)}
         >

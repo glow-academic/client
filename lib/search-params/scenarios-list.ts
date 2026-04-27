@@ -22,6 +22,8 @@ export const scenariosListSearchParams = {
   flagSearch: parseAsString,
   page: parseAsInteger,
   pageSize: parseAsInteger,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadScenariosListSearchParams = createLoader(scenariosListSearchParams);

@@ -8,7 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Agent from "@/components/artifacts/agent/Agent";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -32,6 +32,10 @@ type PatchAgentDraftIn = InputOf<"/agent/draft", "patch">;
 type PatchAgentDraftOut = OutputOf<"/agent/draft", "patch">;
 type GroupAgentIn = InputOf<"/agent/group", "post">;
 type GroupAgentOut = OutputOf<"/agent/group", "post">;
+type GenerationsIn = InputOf<"/agent/generations", "post">;
+type GenerationsOut = OutputOf<"/agent/generations", "post">;
+type GenerateIn = InputOf<"/agent/generate", "post">;
+type GenerateOut = OutputOf<"/agent/generate", "post">;
 type ProblemAgentIn = InputOf<"/agent/problem", "post">;
 type ProblemAgentOut = OutputOf<"/agent/problem", "post">;
 type ContextIn = InputOf<"/agent/context", "post">;
@@ -67,6 +71,22 @@ async function patchAgentDraft(
 async function createAgentProblem(input: ProblemAgentIn): Promise<ProblemAgentOut> {
   "use server";
   return api.post("/agent/problem", input);
+}
+
+/** ---- GenerationPanel server actions ---- */
+async function getAgentGroup(input: GroupAgentIn): Promise<GroupAgentOut> {
+  "use server";
+  return api.post("/agent/group", input);
+}
+
+async function searchAgentGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/agent/generations", input);
+}
+
+async function runAgentGenerate(input: GenerateIn): Promise<GenerateOut> {
+  "use server";
+  return api.post("/agent/generate", input);
 }
 
 /** ---- Page metadata ---- */
@@ -133,6 +153,8 @@ export default async function AgentEditPage({
     descriptionSearch: parseAsString,
     promptSearch: parseAsString,
     instructionsSearch: parseAsString,
+    groupId: parseAsString,
+    groupSearch: parseAsString,
   };
   const loadAgentSearchParams = createLoader(agentSearchParams);
   const q = loadAgentSearchParams(searchParamsObj);
@@ -168,7 +190,10 @@ export default async function AgentEditPage({
       getAgent(input),
       api.post("/agent/context", { body: { entity_id: agentId } } as ContextIn) as Promise<ContextOut>,
       api.post("/agent/drafts", {} as any),
-      api.post("/agent/group", { body: {} } as GroupAgentIn),
+      api.post(
+        "/agent/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupAgentIn,
+      ),
     ]);
 
     const snapshot = buildSnapshot(session, context.profile);
@@ -195,10 +220,16 @@ export default async function AgentEditPage({
             {
               artifactType: "agent",
               groupId: (groupResult as GroupAgentOut & { group_id?: string })?.group_id ?? null,
+              groupName:
+                (groupResult as GroupAgentOut & { name?: string | null })?.name ?? null,
               operations: ["draft", "get", "group"],
               ...(context.prompts?.prompts
                 ? { prompts: context.prompts.prompts }
                 : {}),
+              getGroupAction: getAgentGroup as PanelProps["getGroupAction"],
+              searchGenerationsAction:
+                searchAgentGenerations as PanelProps["searchGenerationsAction"],
+              runGenerateAction: runAgentGenerate as PanelProps["runGenerateAction"],
             } as any
           }
         >

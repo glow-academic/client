@@ -12,6 +12,12 @@
  *   {type}.generate.text.complete → text done
  *   {type}.generate.call.start    → tool call started (spinner)
  *   {type}.generate.call.complete → tool call done (check/X)
+ *
+ * Safety primitives:
+ *   - 120s timeout: if `setGenerating(true)` is called and `completed`/`failed`
+ *     does not fire within 120s, transitions to `stage = "error"`.
+ *   - `stage` enum: idle | generating | error
+ *   - `error` string: surface failure reason (from `failed` event or caller)
  */
 "use client";
 
@@ -21,6 +27,8 @@ import { useTransport } from "@/lib/transport";
 // ---------------------------------------------------------------------------
 // Primitive interface — any artifact generation hook implements this
 // ---------------------------------------------------------------------------
+
+export type GenerationStage = "idle" | "generating" | "error";
 
 export interface GenerationMessage {
   id: string;
@@ -34,9 +42,37 @@ export interface GenerationMessage {
 export interface GenerationListener {
   messages: GenerationMessage[];
   isGenerating: boolean;
+  stage: GenerationStage;
+  error: string | null;
   clearMessages: () => void;
   setGenerating: (value: boolean) => void;
+  setError: (msg: string | null) => void;
+  /** URL-backed currently-selected group id. Mirrors the URL's
+   *  ``?groupId=`` (via nuqs) for the active panel scope. ``null`` when
+   *  the user is on the SSR-resolved default group (clean URL).
+   *  Populated by the provider, not the bare hook — the bare hook has
+   *  no URL access and returns ``null`` here. */
+  selectedGroupId: string | null;
+  /** URL-write helper for the active group. Call this BEFORE firing a
+   *  generate so the URL pins to the group the request is targeting —
+   *  same pattern as ``draftId``. Refresh-during-generate then lands
+   *  back on this same group (SSR resolves it from ``?groupId=``).
+   *  Pass ``null`` to clear the URL ("new chat"). Provider-supplied;
+   *  the bare hook returns a no-op. */
+  latchGroupId: (id: string | null) => void;
+  /** Transient "user explicitly wants a fresh chat" flag. Empty URL
+   *  + ``forceNewChat=false`` ⇒ panel shows the windowed-default
+   *  group (auto-resume, the "magic" of the app). Empty URL +
+   *  ``forceNewChat=true`` ⇒ panel renders empty regardless of
+   *  ``initialGroupHistory``. Resets to false on first generate
+   *  (since the server then allocates a real group and the URL gets
+   *  pinned). Lives in memory only — refresh during a fresh-chat
+   *  intent reverts to windowed default. Provider-supplied. */
+  forceNewChat: boolean;
+  setForceNewChat: (value: boolean) => void;
 }
+
+const GENERATION_TIMEOUT_MS = 120_000;
 
 export function useArtifactGeneration(
   artifactType: string | null,
@@ -44,29 +80,173 @@ export function useArtifactGeneration(
 ): GenerationListener {
   const transport = useTransport();
   const [messages, setMessages] = useState<GenerationMessage[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGenerating, setIsGeneratingState] = useState(false);
+  const [stage, setStage] = useState<GenerationStage>("idle");
+  const [error, setErrorState] = useState<string | null>(null);
   const groupIdRef = useRef(groupId);
   groupIdRef.current = groupId;
 
-  const clearMessages = useCallback(() => setMessages([]), []);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearTimer = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  const setGenerating = useCallback(
+    (value: boolean) => {
+      setIsGeneratingState(value);
+      if (value) {
+        setStage("generating");
+        setErrorState(null);
+        clearTimer();
+        timeoutRef.current = setTimeout(() => {
+          setIsGeneratingState(false);
+          setStage("error");
+          setErrorState("Generation timed out");
+          timeoutRef.current = null;
+        }, GENERATION_TIMEOUT_MS);
+      } else {
+        // Caller flipped off without explicit error; if we're not in error,
+        // settle into idle. (Errors are set via setError or `failed` event.)
+        clearTimer();
+        setStage((prev) => (prev === "error" ? prev : "idle"));
+      }
+    },
+    [clearTimer],
+  );
+
+  const setError = useCallback(
+    (msg: string | null) => {
+      if (msg) {
+        clearTimer();
+        setErrorState(msg);
+        setStage("error");
+        setIsGeneratingState(false);
+      } else {
+        setErrorState(null);
+        setStage((prev) => (prev === "error" ? "idle" : prev));
+      }
+    },
+    [clearTimer],
+  );
+
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+    clearTimer();
+    setIsGeneratingState(false);
+    setStage("idle");
+    setErrorState(null);
+  }, [clearTimer]);
 
   useEffect(() => {
     if (!artifactType) return;
 
     const prefix = `${artifactType}.generate`;
 
-    const handleStarted = () => setIsGenerating(true);
-    const handleCompleted = () => setIsGenerating(false);
+    // ── generate-loop lifecycle ────────────────────────────────────
+    // Reserved op name — these mark the LLM run, not a tool call.
+    const handleGenerateStarted = () => {
+      setIsGeneratingState(true);
+      setStage("generating");
+      setErrorState(null);
+      clearTimer();
+      timeoutRef.current = setTimeout(() => {
+        setIsGeneratingState(false);
+        setStage("error");
+        setErrorState("Generation timed out");
+        timeoutRef.current = null;
+      }, GENERATION_TIMEOUT_MS);
+    };
 
-    const handleFailed = (data: Record<string, unknown>) => {
-      setIsGenerating(false);
+    const handleGenerateCompleted = () => {
+      clearTimer();
+      setIsGeneratingState(false);
+      setStage("idle");
+    };
+
+    const handleGenerateFailed = (data: Record<string, unknown>) => {
+      clearTimer();
+      setIsGeneratingState(false);
       const message = (data.message as string) || "Generation failed";
+      setStage("error");
+      setErrorState(message);
       setMessages((prev) => [
         ...prev,
         { id: crypto.randomUUID(), role: "assistant", text: message, type: "text" },
       ]);
     };
 
+    // ── audited-op lifecycle (HTTP/socket-driven) ─────────────────
+    // Each ${artifact}.${op}.{started|completed|failed} pair where op
+    // is not "generate" renders as a tool-call bubble. Role is on the
+    // payload (we threaded it through the audit layer). The operation
+    // name is parsed out of `event_type` so a single wildcard covers
+    // all current and future ops without per-op wiring.
+    const titleCase = (s: string) =>
+      s
+        .split(/[_\s]+/)
+        .filter(Boolean)
+        .map((w) => w[0]?.toUpperCase() + w.slice(1))
+        .join(" ");
+
+    const parseEventType = (
+      data: Record<string, unknown>,
+    ): { artifact: string; operation: string; phase: string } | null => {
+      const eventType = data.event_type;
+      if (typeof eventType !== "string") return null;
+      const parts = eventType.split(".");
+      // started/completed/failed live at depth 3; deeper events
+      // (e.g. ${a}.generate.text.progress) are routed below by their
+      // own exact subscriptions, so we early-return on those.
+      if (parts.length !== 3) return null;
+      const [a, operation, phase] = parts as [string, string, string];
+      return { artifact: a, operation, phase };
+    };
+
+    const handleLifecycle = (
+      phase: "started" | "completed" | "failed",
+    ) => (data: Record<string, unknown>) => {
+      const parsed = parseEventType(data);
+      if (!parsed) return;
+      const { operation } = parsed;
+
+      if (operation === "generate") {
+        if (phase === "started") return handleGenerateStarted();
+        if (phase === "completed") return handleGenerateCompleted();
+        return handleGenerateFailed(data);
+      }
+
+      const callId = (data.call_id as string) || "";
+      if (!callId) return;
+      // SSE delivers role inside `payload`; WS delivers it at the
+      // top level. Read both — consumers don't need to care which
+      // transport delivered the event.
+      const payload = (data.payload as Record<string, unknown> | undefined) ?? {};
+      const rawRole = data.role ?? payload.role;
+      const role = rawRole === "user" ? "user" : "assistant";
+      const toolName = titleCase(`${parsed.artifact} ${operation}`);
+
+      if (phase === "started") {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === callId)) return prev;
+          return [
+            ...prev,
+            { id: callId, role, text: "", type: "tool", toolName, toolStatus: "pending" },
+          ];
+        });
+        return;
+      }
+
+      const nextStatus = phase === "completed" ? "success" : "error";
+      setMessages((prev) =>
+        prev.map((m) => (m.id === callId ? { ...m, toolStatus: nextStatus } : m)),
+      );
+    };
+
+    // ── generate-internal sub-events ───────────────────────────────
     const handleTextProgress = (data: Record<string, unknown>) => {
       const delta = data.delta as string;
       if (!delta) return;
@@ -114,11 +294,12 @@ export function useArtifactGeneration(
       const toolCallId = data.tool_call_id as string;
       const toolName = data.tool_name as string;
       if (!toolCallId) return;
+      const role = data.role === "user" ? "user" : "assistant";
       setMessages((prev) => [
         ...prev,
         {
           id: toolCallId,
-          role: "assistant",
+          role,
           text: "",
           type: "tool",
           toolName: toolName || "tool_call",
@@ -141,22 +322,47 @@ export function useArtifactGeneration(
     };
 
     // Pass groupId via scope so SSE opens /{artifact}/stream?group_id=<id>.
-    // WS mode ignores scope (single multiplexed socket).
     const scope = groupId ? { groupId } : undefined;
 
-    // Subscribe via transport — works for both WebSocket and SSE
     const unsubs = [
-      transport.on(`${prefix}.started`, handleStarted, scope),
-      transport.on(`${prefix}.completed`, handleCompleted, scope),
-      transport.on(`${prefix}.failed`, handleFailed, scope),
+      // One wildcard per phase — covers `generate` AND every audited op
+      // (persona.group, persona.context, etc.) without per-op wiring.
+      transport.on(`${artifactType}.*.started`, handleLifecycle("started"), scope),
+      transport.on(`${artifactType}.*.completed`, handleLifecycle("completed"), scope),
+      transport.on(`${artifactType}.*.failed`, handleLifecycle("failed"), scope),
+      // Generate-internal sub-events stay exact.
       transport.on(`${prefix}.text.progress`, handleTextProgress, scope),
       transport.on(`${prefix}.text.complete`, handleTextComplete, scope),
       transport.on(`${prefix}.call.start`, handleCallStart, scope),
       transport.on(`${prefix}.call.complete`, handleCallComplete, scope),
     ];
 
-    return () => unsubs.forEach((fn) => fn());
-  }, [artifactType, transport, groupId]);
+    return () => {
+      unsubs.forEach((fn) => fn());
+      clearTimer();
+    };
+  }, [artifactType, transport, groupId, clearTimer]);
 
-  return { messages, isGenerating, clearMessages, setGenerating: setIsGenerating };
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      clearTimer();
+    };
+  }, [clearTimer]);
+
+  return {
+    messages,
+    isGenerating,
+    stage,
+    error,
+    clearMessages,
+    setGenerating,
+    setError,
+    // The bare hook has no URL access — these are no-op stubs
+    // overridden by `GenerationListenerProvider`.
+    selectedGroupId: null,
+    latchGroupId: () => {},
+    forceNewChat: false,
+    setForceNewChat: () => {},
+  };
 }

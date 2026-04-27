@@ -6,7 +6,7 @@
  */
 
 import { getSession } from "@/auth";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import Activity from "@/components/artifacts/activity/Activity";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { buildSnapshot } from "@/lib/auth";
@@ -33,12 +33,12 @@ export type ActivityOut = {
 /** ---- Generation types ---- */
 type ContextIn = InputOf<"/system/context", "post">;
 type ContextOut = OutputOf<"/system/context", "post">;
-type GenerateActivityIn = InputOf<"/system/generate", "post">;
-type GenerateActivityOut = OutputOf<"/system/generate", "post">;
-type GenerationsIn = InputOf<"/system/generations", "post">;
-type GenerationsOut = OutputOf<"/system/generations", "post">;
-type GroupActivityIn = InputOf<"/system/group", "post">;
-type GroupActivityOut = OutputOf<"/system/group", "post">;
+type SystemGroupIn = InputOf<"/system/group", "post">;
+type SystemGroupOut = OutputOf<"/system/group", "post">;
+type SystemGenerationsIn = InputOf<"/system/generations", "post">;
+type SystemGenerationsOut = OutputOf<"/system/generations", "post">;
+type SystemGenerateIn = InputOf<"/system/generate", "post">;
+type SystemGenerateOut = OutputOf<"/system/generate", "post">;
 type ProblemActivityIn = InputOf<"/system/problem", "post">;
 type ProblemActivityOut = OutputOf<"/system/problem", "post">;
 
@@ -128,7 +128,10 @@ export default async function ActivityPage({
           history_sort_order: "desc",
         },
       }),
-      api.post("/system/group", { body: {} } as GroupActivityIn),
+      api.post(
+        "/system/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as SystemGroupIn,
+      ),
     ]);
 
     // Extract inline analytics facets from response
@@ -165,12 +168,19 @@ export default async function ActivityPage({
         }
         panelProps={{
           artifactType: "activity",
-          groupId: (groupResult as GroupActivityOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateActivity,
+          groupId: (groupResult as SystemGroupOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as SystemGroupOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "group"],
-          getGroupHistory: getActivityGroupHistory,
-          searchGroups: searchActivityGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getSystemGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction: searchSystemGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runSystemGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="activity-index">
@@ -208,21 +218,19 @@ async function refreshActivity(): Promise<void> {
   await api.post("/system/activity/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
-async function generateActivity(
-  input: GenerateActivityIn
-): Promise<GenerateActivityOut> {
+async function getSystemGroup(input: SystemGroupIn): Promise<SystemGroupOut> {
+  "use server";
+  return api.post("/system/group", input);
+}
+
+async function searchSystemGenerations(input: SystemGenerationsIn): Promise<SystemGenerationsOut> {
+  "use server";
+  return api.post("/system/generations", input);
+}
+
+async function runSystemGenerate(input: SystemGenerateIn): Promise<SystemGenerateOut> {
   "use server";
   return api.post("/system/generate", input);
-}
-
-async function getActivityGroupHistory(groupId: string): Promise<GroupActivityOut> {
-  "use server";
-  return api.post("/system/group", { body: { group_id: groupId } } as GroupActivityIn);
-}
-
-async function searchActivityGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/system/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createActivityProblem(input: ProblemActivityIn): Promise<ProblemActivityOut> {

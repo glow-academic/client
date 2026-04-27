@@ -6,7 +6,7 @@
  */
 
 import { getSession } from "@/auth";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import Benchmark from "@/components/artifacts/benchmark/Benchmark";
 import EvalHistory from "@/components/artifacts/benchmark/EvalHistory";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
@@ -49,12 +49,12 @@ type EvalsListOut = {
 /** ---- Generation types from OpenAPI ---- */
 type ContextIn = InputOf<"/test/context", "post">;
 type ContextOut = OutputOf<"/test/context", "post">;
-type GenerateBenchmarkIn = InputOf<"/test/generate", "post">;
-type GenerateBenchmarkOut = OutputOf<"/test/generate", "post">;
-type GenerationsIn = InputOf<"/test/generations", "post">;
-type GenerationsOut = OutputOf<"/test/generations", "post">;
-type GroupBenchmarkIn = InputOf<"/test/group", "post">;
-type GroupBenchmarkOut = OutputOf<"/test/group", "post">;
+type TestGenerateIn = InputOf<"/test/generate", "post">;
+type TestGenerateOut = OutputOf<"/test/generate", "post">;
+type TestGenerationsIn = InputOf<"/test/generations", "post">;
+type TestGenerationsOut = OutputOf<"/test/generations", "post">;
+type TestGroupIn = InputOf<"/test/group", "post">;
+type TestGroupOut = OutputOf<"/test/group", "post">;
 type ProblemBenchmarkIn = InputOf<"/test/problem", "post">;
 type ProblemBenchmarkOut = OutputOf<"/test/problem", "post">;
 
@@ -91,26 +91,27 @@ async function bulkArchiveTestsAction(
   return api.post("/test/archive", input);
 }
 
-async function generateBenchmark(
-  input: GenerateBenchmarkIn
-): Promise<GenerateBenchmarkOut> {
-  "use server";
-  return api.post("/test/generate", input);
-}
-
-async function getBenchmarkGroupHistory(groupId: string): Promise<GroupBenchmarkOut> {
-  "use server";
-  return api.post("/test/group", { body: { group_id: groupId } } as GroupBenchmarkIn);
-}
-
-async function searchBenchmarkGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/test/generations", { body: { search: query || null } } as GenerationsIn);
-}
-
 async function createBenchmarkProblem(input: ProblemBenchmarkIn): Promise<ProblemBenchmarkOut> {
   "use server";
   return api.post("/test/problem", input);
+}
+
+/** ---- GenerationPanel server actions ---- */
+async function getTestGroup(input: TestGroupIn): Promise<TestGroupOut> {
+  "use server";
+  return api.post("/test/group", input);
+}
+
+async function searchTestGenerations(
+  input: TestGenerationsIn,
+): Promise<TestGenerationsOut> {
+  "use server";
+  return api.post("/test/generations", input);
+}
+
+async function runTestGenerate(input: TestGenerateIn): Promise<TestGenerateOut> {
+  "use server";
+  return api.post("/test/generate", input);
 }
 
 /** ---- Page metadata ---- */
@@ -209,7 +210,10 @@ export default async function BenchmarkPage({
     // Fetch benchmark overview and group in parallel
     const [overviewData, groupResult] = await Promise.all([
       getBenchmarkOverview(overviewFilters),
-      api.post("/test/group", { body: {} } as GroupBenchmarkIn),
+      api.post(
+        "/test/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as TestGroupIn,
+      ),
     ]);
 
     // Extract inline analytics facets
@@ -426,13 +430,21 @@ export default async function BenchmarkPage({
           />
         }
         panelProps={{
-          artifactType: "benchmark",
-          groupId: (groupResult as GroupBenchmarkOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateBenchmark,
+          artifactType: "test",
+          groupId: (groupResult as TestGroupOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as TestGroupOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "group"],
-          getGroupHistory: getBenchmarkGroupHistory,
-          searchGroups: searchBenchmarkGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getTestGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction:
+            searchTestGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runTestGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4">

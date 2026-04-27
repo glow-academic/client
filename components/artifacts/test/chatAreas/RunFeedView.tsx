@@ -92,7 +92,7 @@ export function RunFeedView({
         const isStopping = run.chat_id ? stopping_run_ids.has(run.chat_id) : false;
 
         return (
-          <Card key={run.chat_id} className="border">
+          <Card key={`${run.chat_id ?? ""}::${run.run_id ?? "none"}`} className="border">
             <CardHeader className="py-3 px-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0">

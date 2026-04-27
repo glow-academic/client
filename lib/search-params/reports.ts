@@ -19,6 +19,8 @@ export const reportsSearchParams = {
   reportsScenarioIds: parseAsCommaSeparatedArray,
   reportsSortBy: parseAsString,
   reportsSortOrder: parseAsString,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadReportsSearchParams = createLoader(reportsSearchParams);

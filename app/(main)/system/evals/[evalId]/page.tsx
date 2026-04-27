@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Eval from "@/components/artifacts/eval/Eval";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -91,6 +91,22 @@ async function createEvalProblem(input: ProblemEvalIn): Promise<ProblemEvalOut> 
   return api.post("/eval/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getEvalGroup(input: GroupEvalIn): Promise<GroupEvalOut> {
+  "use server";
+  return api.post("/eval/group", input);
+}
+
+async function searchEvalGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/eval/generations", input);
+}
+
+async function runEvalGenerate(input: GenerateEvalIn): Promise<GenerateEvalOut> {
+  "use server";
+  return api.post("/eval/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata({
   params,
@@ -149,6 +165,8 @@ export default async function EvalDetailPage({
     draftId: parseAsString,
     modelSearch: parseAsString,
     modelShowSelected: parseAsBoolean,
+    groupId: parseAsString,
+    groupSearch: parseAsString,
   };
   const loadEvalSearchParams = createLoader(evalSearchParams);
   const q = loadEvalSearchParams(searchParamsObj);
@@ -172,7 +190,10 @@ export default async function EvalDetailPage({
       getEvalDetail(input),
       api.post("/eval/context", { body: { entity_id: evalId } } as ContextIn) as Promise<ContextOut>,
       api.post("/eval/drafts", {} as never),
-      api.post("/eval/group", { body: {} } as GroupEvalIn),
+      api.post(
+        "/eval/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupEvalIn,
+      ),
     ]);
     const snapshot = buildSnapshot(session, context.profile);
 
@@ -200,6 +221,13 @@ export default async function EvalDetailPage({
             groupId:
               (groupResult as GroupEvalOut & { group_id?: string })?.group_id ??
               "",
+            groupName:
+              (groupResult as GroupEvalOut & { name?: string | null })?.name ?? null,
+            // Forward the full SSR-fetched group payload — the panel
+            // seeds historicalMessages from this synchronously and
+            // skips the duplicate client-side /<art>/group refetch
+            // on first paint, eliminating the hydration flicker.
+            initialGroupHistory: groupResult as Record<string, unknown>,
             generateAction: generateEval,
             operations: ["draft", "get", "group"],
             getGroupHistory: getEvalGroupHistory,
@@ -207,6 +235,10 @@ export default async function EvalDetailPage({
             ...(context.prompts?.prompts
               ? { prompts: context.prompts.prompts }
               : {}),
+            getGroupAction: getEvalGroup as PanelProps["getGroupAction"],
+            searchGenerationsAction:
+              searchEvalGenerations as PanelProps["searchGenerationsAction"],
+            runGenerateAction: runEvalGenerate as PanelProps["runGenerateAction"],
           } as never}
         >
           <div

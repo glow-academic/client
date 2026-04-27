@@ -6,7 +6,7 @@
  */
 
 import { getSession } from "@/auth";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Agents from "@/components/artifacts/agent/Agents";
 
@@ -110,6 +110,22 @@ async function createAgentProblem(input: ProblemAgentIn): Promise<ProblemAgentOu
   return api.post("/agent/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getAgentGroup(input: GroupAgentIn): Promise<GroupAgentOut> {
+  "use server";
+  return api.post("/agent/group", input);
+}
+
+async function searchAgentGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/agent/generations", input);
+}
+
+async function runAgentGenerate(input: GenerateAgentIn): Promise<GenerateAgentOut> {
+  "use server";
+  return api.post("/agent/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -184,7 +200,10 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getAgentsList(body),
       readViewCookie("agents"),
-      api.post("/agent/group", { body: {} } as GroupAgentIn),
+      api.post(
+        "/agent/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupAgentIn,
+      ),
     ]);
 
     return (
@@ -205,11 +224,22 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
         panelProps={{
           artifactType: "agent",
           groupId: (groupResult as GroupAgentOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as GroupAgentOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           generateAction: generateAgent,
           operations: ["draft", "get", "group"],
           getGroupHistory: getAgentGroupHistory,
           searchGroups: searchAgentGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getAgentGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction:
+            searchAgentGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runAgentGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="agents-index">

@@ -8,7 +8,7 @@
 
 import { getSession } from "@/auth";
 import Group from "@/components/artifacts/group/Group";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -17,18 +17,19 @@ import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { loadPricingGroupSearchParams } from "@/lib/search-params/pricing-group";
 
 /** ---- Strong types from OpenAPI ---- */
 type PricingGroupDetailIn = InputOf<"/system/group/get", "post">;
 type PricingGroupDetailOut = OutputOf<"/system/group/get", "post">;
 type ContextIn = InputOf<"/system/context", "post">;
 type ContextOut = OutputOf<"/system/context", "post">;
-type GenerateGroupIn = InputOf<"/system/generate", "post">;
-type GenerateGroupOut = OutputOf<"/system/generate", "post">;
-type GenerationsIn = InputOf<"/system/generations", "post">;
-type GenerationsOut = OutputOf<"/system/generations", "post">;
-type GroupGroupIn = InputOf<"/system/group", "post">;
-type GroupGroupOut = OutputOf<"/system/group", "post">;
+type SystemGroupIn = InputOf<"/system/group", "post">;
+type SystemGroupOut = OutputOf<"/system/group", "post">;
+type SystemGenerationsIn = InputOf<"/system/generations", "post">;
+type SystemGenerationsOut = OutputOf<"/system/generations", "post">;
+type SystemGenerateIn = InputOf<"/system/generate", "post">;
+type SystemGenerateOut = OutputOf<"/system/generate", "post">;
 type ProblemGroupIn = InputOf<"/system/problem", "post">;
 type ProblemGroupOut = OutputOf<"/system/problem", "post">;
 
@@ -49,21 +50,19 @@ const getPricingGroupDetail = async (
 };
 
 /** ---- Strongly-typed server actions ---- */
-async function generateGroup(
-  input: GenerateGroupIn
-): Promise<GenerateGroupOut> {
+async function getSystemGroup(input: SystemGroupIn): Promise<SystemGroupOut> {
+  "use server";
+  return api.post("/system/group", input);
+}
+
+async function searchSystemGenerations(input: SystemGenerationsIn): Promise<SystemGenerationsOut> {
+  "use server";
+  return api.post("/system/generations", input);
+}
+
+async function runSystemGenerate(input: SystemGenerateIn): Promise<SystemGenerateOut> {
   "use server";
   return api.post("/system/generate", input);
-}
-
-async function getGroupGroupHistory(groupId: string): Promise<GroupGroupOut> {
-  "use server";
-  return api.post("/system/group", { body: { group_id: groupId } } as GroupGroupIn);
-}
-
-async function searchGroupGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/system/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createGroupProblem(input: ProblemGroupIn): Promise<ProblemGroupOut> {
@@ -92,10 +91,16 @@ const PANEL_COOKIE = "glow_panel";
 
 export default async function PricingGroupPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ groupId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { groupId } = await params;
+  // `q.groupId` is the panel's user-picked generation group (URL query),
+  // distinct from the route's `groupId` param which identifies the
+  // pricing group entity being viewed.
+  const q = loadPricingGroupSearchParams(await searchParams);
   const session = await getSession();
 
   if (!groupId) {
@@ -121,7 +126,10 @@ export default async function PricingGroupPage({
         },
       }),
       api.post("/system/context", { body: { entity_id: groupId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/system/group", { body: {} } as GroupGroupIn),
+      api.post(
+        "/system/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as SystemGroupIn,
+      ),
     ]);
 
     const _entityName = context.page_metadata?.detail.title;
@@ -143,12 +151,19 @@ export default async function PricingGroupPage({
         ]}
         panelProps={{
           artifactType: "group",
-          groupId: (genGroupResult as GroupGroupOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateGroup,
+          groupId: (genGroupResult as SystemGroupOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (genGroupResult as SystemGroupOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: genGroupResult as Record<string, unknown>,
           operations: ["draft", "get", "group"],
-          getGroupHistory: getGroupGroupHistory,
-          searchGroups: searchGroupGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getSystemGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction: searchSystemGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runSystemGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">

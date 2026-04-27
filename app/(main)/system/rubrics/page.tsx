@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Rubrics from "@/components/artifacts/rubric/Rubrics";
 
@@ -111,6 +111,22 @@ async function createRubricProblem(input: ProblemRubricIn): Promise<ProblemRubri
   return api.post("/rubric/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getRubricGroup(input: GroupRubricIn): Promise<GroupRubricOut> {
+  "use server";
+  return api.post("/rubric/group", input);
+}
+
+async function searchRubricGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/rubric/generations", input);
+}
+
+async function runRubricGenerate(input: GenerateRubricIn): Promise<GenerateRubricOut> {
+  "use server";
+  return api.post("/rubric/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -183,7 +199,10 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getRubricsList(body),
       readViewCookie("rubrics"),
-      api.post("/rubric/group", { body: {} } as GroupRubricIn),
+      api.post(
+        "/rubric/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupRubricIn,
+      ),
     ]);
 
     return (
@@ -204,11 +223,22 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
         panelProps={{
           artifactType: "rubric",
           groupId: (groupResult as GroupRubricOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as GroupRubricOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           generateAction: generateRubric,
           operations: ["draft", "get", "group"],
           getGroupHistory: getRubricGroupHistory,
           searchGroups: searchRubricGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getRubricGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction:
+            searchRubricGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runRubricGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="rubrics-index">

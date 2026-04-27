@@ -116,23 +116,97 @@ export function useAttemptVoice({
       const chatId = data.chat_id as string | undefined;
       const audiosId = data.audios_id as string | undefined;
       const attemptId = attemptIdRef?.current ?? null;
-      if (!chatId || !audiosId || chatId !== chatIdRef.current) return;
-
-      const waitForTranscript = (groupId: string, timeoutMs = 15000) =>
-        new Promise<string>((resolve, reject) => {
-          const timer = setTimeout(() => {
-            unsub();
-            reject(new Error("STT timed out"));
-          }, timeoutMs);
-          const unsub = transport.on("attempt.generate.text.complete", (ev) => {
-            if (ev.group_id !== groupId) return;
-            clearTimeout(timer);
-            unsub();
-            resolve((ev.text as string) ?? "");
-          });
+      // eslint-disable-next-line no-console
+      console.log("[VOICE_CLIENT_TRACE A] handleUserAudio fired", {
+        evt_chat_id: chatId,
+        ref_chat_id: chatIdRef.current,
+        audios_id: audiosId,
+        attempt_id: attemptId,
+        match: chatId === chatIdRef.current,
+      });
+      if (!chatId || !audiosId || chatId !== chatIdRef.current) {
+        // eslint-disable-next-line no-console
+        console.warn("[VOICE_CLIENT_TRACE A.bail] gating early-return", {
+          missing_chat_id: !chatId,
+          missing_audios_id: !audiosId,
+          chat_mismatch: chatId !== chatIdRef.current,
         });
+        return;
+      }
+
+      // Subscribe BEFORE dispatching /attempt/generate. The route blocks
+      // until the STT executor has run and emitted ``text.complete``, so
+      // by the time ``transport.send`` resolves the event has already
+      // been broadcast — registering after would miss it. Filter on
+      // ``run_id`` (not ``group_id``): the realtime adapter ALSO emits
+      // ``attempt.generate.text.complete`` for the assistant's own
+      // audio transcript on the same group, so group_id alone is
+      // ambiguous. run_id is per-dispatch and uniquely identifies our
+      // STT request.
+      const armTranscript = (
+        timeoutMs = 15000,
+      ): {
+        promise: Promise<string>;
+        setRunId: (rid: string) => void;
+      } => {
+        let runIdLocal: string | null = null;
+        const buffer: Array<{ run_id: string; text: string }> = [];
+        let resolveFn!: (s: string) => void;
+        let rejectFn!: (e: unknown) => void;
+        const promise = new Promise<string>((resolve, reject) => {
+          resolveFn = resolve;
+          rejectFn = reject;
+        });
+        const timer = setTimeout(() => {
+          unsub();
+          rejectFn(new Error("STT timed out"));
+        }, timeoutMs);
+        const unsub = transport.on("attempt.generate.text.complete", (ev) => {
+          const rid = (ev.run_id as string) ?? "";
+          const text = (ev.text as string) ?? "";
+          // eslint-disable-next-line no-console
+          console.log("[VOICE_CLIENT_TRACE C] text.complete received", {
+            ev_run_id: rid,
+            ev_group_id: ev.group_id,
+            await_run_id: runIdLocal,
+            text_preview: text.slice(0, 60),
+            buffered: runIdLocal === null,
+          });
+          if (runIdLocal === null) {
+            buffer.push({ run_id: rid, text });
+            return;
+          }
+          if (rid !== runIdLocal) return;
+          clearTimeout(timer);
+          unsub();
+          resolveFn(text);
+        });
+        return {
+          promise,
+          setRunId: (rid: string) => {
+            runIdLocal = rid;
+            const match = buffer.find((e) => e.run_id === rid);
+            if (match) {
+              clearTimeout(timer);
+              unsub();
+              resolveFn(match.text);
+            }
+          },
+        };
+      };
 
       try {
+        // Arm the transcript listener *before* dispatching, so we don't
+        // miss the ``text.complete`` event that fires before transport
+        // .send resolves.
+        const { promise: transcriptPromise, setRunId } = armTranscript();
+
+        // eslint-disable-next-line no-console
+        console.log("[VOICE_CLIENT_TRACE B] sending /attempt/generate", {
+          audios_id: audiosId,
+          chat_id: chatId,
+          attempt_id: attemptId,
+        });
         // (1) Transcribe via the canonical STT dispatch.
         const generateResult = await transport.send("/attempt/generate", {
           modalities: ["text"],
@@ -144,11 +218,23 @@ export function useAttemptVoice({
             },
           },
         });
-        const groupId = generateResult.group_id as string | undefined;
-        if (!groupId) {
-          throw new Error("STT generate did not return group_id");
+        // eslint-disable-next-line no-console
+        console.log(
+          "[VOICE_CLIENT_TRACE B.resp] /attempt/generate response",
+          generateResult,
+        );
+        const runId = generateResult.run_id as string | undefined;
+        if (!runId) {
+          throw new Error("STT generate did not return run_id");
         }
-        const transcript = (await waitForTranscript(groupId)).trim();
+        setRunId(runId);
+        const transcript = (await transcriptPromise).trim();
+        // eslint-disable-next-line no-console
+        console.log("[VOICE_CLIENT_TRACE D] transcript resolved", {
+          run_id: runId,
+          transcript_preview: transcript.slice(0, 80),
+          empty: !transcript,
+        });
         if (!transcript) return;
 
         // (2) Persist as a chat message (text only). Pass persona_id so
@@ -157,11 +243,22 @@ export function useAttemptVoice({
         // persona_id through. Without this the server falls back to the
         // zero UUID and the FK violates.
         const userPersonaId = userPersonaIdRef?.current ?? null;
+        // eslint-disable-next-line no-console
+        console.log("[VOICE_CLIENT_TRACE E] sending /attempt/chat/message", {
+          chat_id: chatId,
+          text_preview: transcript.slice(0, 60),
+          persona_id: userPersonaId,
+        });
         const msgResult = await transport.send("/attempt/chat/message", {
           chat_id: chatId,
           text: transcript,
           ...(userPersonaId ? { persona_id: userPersonaId } : {}),
         });
+        // eslint-disable-next-line no-console
+        console.log(
+          "[VOICE_CLIENT_TRACE E.resp] /attempt/chat/message response",
+          msgResult,
+        );
         const messageId = msgResult.message_id as string | undefined;
         if (!messageId) {
           throw new Error("chat/message did not return message_id");
@@ -181,7 +278,11 @@ export function useAttemptVoice({
         });
       } catch (err) {
         // eslint-disable-next-line no-console
-        console.error("[Voice] Failed to persist + attach user speech:", err);
+        console.error("[VOICE_CLIENT_TRACE X] persist chain threw", {
+          name: (err as Error)?.name,
+          message: (err as Error)?.message,
+          stack: (err as Error)?.stack,
+        });
       }
     };
 

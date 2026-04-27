@@ -19,6 +19,8 @@ export const rubricsSearchParams = {
   simulationSearch: parseAsString,
   page: parseAsInteger,
   pageSize: parseAsInteger,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadRubricsSearchParams = createLoader(rubricsSearchParams);

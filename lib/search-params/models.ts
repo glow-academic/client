@@ -21,6 +21,8 @@ export const modelsSearchParams = {
   agentSearch: parseAsString,
   page: parseAsInteger,
   pageSize: parseAsInteger,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadModelsSearchParams = createLoader(modelsSearchParams);

@@ -8,7 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Scenario from "@/components/artifacts/scenario/Scenario";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -123,6 +123,22 @@ async function searchScenarioGroups(query: string): Promise<GenerationsOut> {
   return api.post("/scenario/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getScenarioGroup(input: GroupScenarioIn): Promise<GroupScenarioOut> {
+  "use server";
+  return api.post("/scenario/group", input);
+}
+
+async function searchScenarioGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/scenario/generations", input);
+}
+
+async function runScenarioGenerate(input: GenerateScenarioIn): Promise<GenerateScenarioOut> {
+  "use server";
+  return api.post("/scenario/generate", input);
+}
+
 async function createScenarioProblem(input: ProblemScenarioIn): Promise<ProblemScenarioOut> {
   "use server";
   return api.post("/scenario/problem", input);
@@ -234,7 +250,10 @@ export default async function EditScenarioPage({
       getScenario(input),
       api.post("/scenario/context", { body: { entity_id: scenarioId } } as ContextIn) as Promise<ContextOut>,
       api.post("/scenario/drafts", {}),
-      api.post("/scenario/group", { body: {} } as GroupScenarioIn),
+      api.post(
+        "/scenario/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupScenarioIn,
+      ),
     ]);
 
     // Entity name from context (already resolved server-side)
@@ -261,11 +280,22 @@ export default async function EditScenarioPage({
           panelProps={{
             artifactType: "scenario",
             groupId: (groupResult as GroupScenarioOut & { group_id?: string })?.group_id ?? null,
+            groupName:
+              (groupResult as GroupScenarioOut & { name?: string | null })?.name ?? null,
+            // Forward the full SSR-fetched group payload — the panel
+            // seeds historicalMessages from this synchronously and
+            // skips the duplicate client-side /<art>/group refetch
+            // on first paint, eliminating the hydration flicker.
+            initialGroupHistory: groupResult as Record<string, unknown>,
             generateAction: generateScenario,
             operations: ["draft", "get", "group"],
             getGroupHistory: getScenarioGroupHistory,
             searchGroups: searchScenarioGroups,
             prompts: context.prompts?.prompts,
+            getGroupAction: getScenarioGroup as PanelProps["getGroupAction"],
+            searchGenerationsAction:
+              searchScenarioGenerations as PanelProps["searchGenerationsAction"],
+            runGenerateAction: runScenarioGenerate as PanelProps["runGenerateAction"],
           }}
         >
           <div

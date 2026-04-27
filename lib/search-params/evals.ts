@@ -17,6 +17,8 @@ export const evalsSearchParams = {
   departmentSearch: parseAsString,
   page: parseAsInteger,
   pageSize: parseAsInteger,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadEvalsSearchParams = createLoader(evalsSearchParams);

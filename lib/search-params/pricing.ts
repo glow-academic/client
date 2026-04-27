@@ -19,6 +19,8 @@ export const pricingSearchParams = {
   pricingActorIds: parseAsCommaSeparatedArray,
   pricingSortBy: parseAsString,
   pricingSortOrder: parseAsString,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadPricingSearchParams = createLoader(pricingSearchParams);

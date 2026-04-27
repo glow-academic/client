@@ -9,7 +9,7 @@
 import { getSession } from "@/auth";
 import { AttemptChat } from "@/components/artifacts/attempt/chat/setups/AttemptChat";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SimulationControls } from "@/components/common/SimulationControls";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -17,6 +17,7 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { cookies } from "next/headers";
 
 import { buildSnapshot } from "@/lib/auth";
+import { loadAttemptSearchParams } from "@/lib/search-params/attempt";
 
 /** ---- Strong types from OpenAPI ---- */
 type AttemptDetailIn = InputOf<"/attempt/get", "post">;
@@ -50,26 +51,29 @@ const getAttemptDetail = async (
 };
 
 /** ---- Strongly-typed server actions ---- */
-async function generateAttempt(
-  input: GenerateAttemptIn
-): Promise<GenerateAttemptOut> {
-  "use server";
-  return api.post("/attempt/generate", input);
-}
-
-async function getAttemptGroupHistory(groupId: string): Promise<GroupAttemptOut> {
-  "use server";
-  return api.post("/attempt/group", { body: { group_id: groupId } } as GroupAttemptIn);
-}
-
-async function searchAttemptGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/attempt/generations", { body: { search: query || null } } as GenerationsIn);
-}
-
 async function createAttemptProblem(input: ProblemAttemptIn): Promise<ProblemAttemptOut> {
   "use server";
   return api.post("/attempt/problem", input);
+}
+
+/** ---- GenerationPanel server actions ---- */
+async function getAttemptGroup(input: GroupAttemptIn): Promise<GroupAttemptOut> {
+  "use server";
+  return api.post("/attempt/group", input);
+}
+
+async function searchAttemptGenerations(
+  input: GenerationsIn,
+): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/attempt/generations", input);
+}
+
+async function runAttemptGenerate(
+  input: GenerateAttemptIn,
+): Promise<GenerateAttemptOut> {
+  "use server";
+  return api.post("/attempt/generate", input);
 }
 
 /** ---- Metadata uses context endpoint ---- */
@@ -108,18 +112,10 @@ export default async function AttemptPage({
 }) {
   const { attemptId } = await params;
   const session = await getSession();
-  const sp = await searchParams;
-  const rawDraftId = sp["draftId"];
-  const draftId =
-    typeof rawDraftId === "string"
-      ? rawDraftId
-      : Array.isArray(rawDraftId)
-        ? (rawDraftId[0] ?? null)
-        : null;
-  const infiniteMode = sp["infiniteMode"] === "true";
-  const rawInstructions = sp["userInstructions"];
-  const userInstructions =
-    typeof rawInstructions === "string" ? rawInstructions : null;
+  const q = loadAttemptSearchParams(await searchParams);
+  const draftId = q.draftId;
+  const infiniteMode = q.infiniteMode ?? false;
+  const userInstructions = q.userInstructions;
 
   // Read UI preferences from cookies for SSR
   const cookieStore = await cookies();
@@ -133,7 +129,10 @@ export default async function AttemptPage({
     const [attemptData, context, groupResult] = await Promise.all([
       getAttemptDetail(attemptId),
       api.post("/attempt/context", { body: { entity_id: attemptId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/attempt/group", { body: {} } as GroupAttemptIn),
+      api.post(
+        "/attempt/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupAttemptIn,
+      ),
     ]);
     const snapshot = buildSnapshot(session, context.profile);
 
@@ -187,8 +186,19 @@ export default async function AttemptPage({
         panelProps={{
           artifactType: "attempt",
           groupId: (groupResult as GroupAttemptOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as GroupAttemptOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "group"],
           prompts: context.prompts?.prompts,
+          getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction:
+            searchAttemptGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runAttemptGenerate as PanelProps["runGenerateAction"],
         }}
       >
         {/* Desktop-only gutter. On mobile the chat bubbles and input

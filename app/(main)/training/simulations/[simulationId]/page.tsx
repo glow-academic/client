@@ -8,7 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Simulation from "@/components/artifacts/simulation/Simulation";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -107,6 +107,22 @@ async function searchSimulationGroups(query: string): Promise<GenerationsOut> {
   return api.post("/simulation/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getSimulationGroup(input: GroupSimulationIn): Promise<GroupSimulationOut> {
+  "use server";
+  return api.post("/simulation/group", input);
+}
+
+async function searchSimulationGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/simulation/generations", input);
+}
+
+async function runSimulationGenerate(input: GenerateSimulationIn): Promise<GenerateSimulationOut> {
+  "use server";
+  return api.post("/simulation/generate", input);
+}
+
 async function createSimulationProblem(input: ProblemSimulationIn): Promise<ProblemSimulationOut> {
   "use server";
   return api.post("/simulation/problem", input);
@@ -169,6 +185,8 @@ export default async function EditSimulationPage({
     draftId: parseAsString,
     scenarioSearch: parseAsString,
     scenarioShowSelected: parseAsBoolean,
+    groupId: parseAsString,
+    groupSearch: parseAsString,
   };
   const loadSimulationSearchParams = createLoader(simulationSearchParams);
   const q = loadSimulationSearchParams(searchParamsObj);
@@ -192,7 +210,10 @@ export default async function EditSimulationPage({
       getSimulation(input),
       api.post("/simulation/context", { body: { entity_id: simulationId } } as ContextIn) as Promise<ContextOut>,
       api.post("/simulation/drafts", {} as never),
-      api.post("/simulation/group", { body: {} } as GroupSimulationIn),
+      api.post(
+        "/simulation/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupSimulationIn,
+      ),
     ]);
 
     const entityName = context.page_metadata?.detail.title;
@@ -218,11 +239,22 @@ export default async function EditSimulationPage({
           panelProps={{
             artifactType: "simulation",
             groupId: (groupResult as GroupSimulationOut & { group_id?: string })?.group_id ?? null,
+            groupName:
+              (groupResult as GroupSimulationOut & { name?: string | null })?.name ?? null,
+            // Forward the full SSR-fetched group payload — the panel
+            // seeds historicalMessages from this synchronously and
+            // skips the duplicate client-side /<art>/group refetch
+            // on first paint, eliminating the hydration flicker.
+            initialGroupHistory: groupResult as Record<string, unknown>,
             generateAction: generateSimulation,
             operations: ["draft", "get", "group"],
             getGroupHistory: getSimulationGroupHistory,
             searchGroups: searchSimulationGroups,
             prompts: context.prompts?.prompts,
+            getGroupAction: getSimulationGroup as PanelProps["getGroupAction"],
+            searchGenerationsAction:
+              searchSimulationGenerations as PanelProps["searchGenerationsAction"],
+            runGenerateAction: runSimulationGenerate as PanelProps["runGenerateAction"],
           } as never}
         >
           <div

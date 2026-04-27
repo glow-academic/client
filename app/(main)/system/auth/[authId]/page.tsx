@@ -8,7 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Auth from "@/components/artifacts/auth/Auth";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -91,6 +91,22 @@ async function createAuthProblem(input: ProblemAuthIn): Promise<ProblemAuthOut> 
   return api.post("/auth/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getAuthGroup(input: GroupAuthIn): Promise<GroupAuthOut> {
+  "use server";
+  return api.post("/auth/group", input);
+}
+
+async function searchAuthGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/auth/generations", input);
+}
+
+async function runAuthGenerate(input: GenerateAuthIn): Promise<GenerateAuthOut> {
+  "use server";
+  return api.post("/auth/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata({
   params,
@@ -151,6 +167,8 @@ export default async function AuthEditPage({
   // Inline server-side parsers for auth search params
   const authSearchParams = {
     draftId: parseAsString,
+    groupId: parseAsString,
+    groupSearch: parseAsString,
   };
   const loadAuthSearchParams = createLoader(authSearchParams);
   const q = loadAuthSearchParams(searchParamsObj);
@@ -167,7 +185,10 @@ export default async function AuthEditPage({
       getAuth(input),
       api.post("/auth/context", { body: { entity_id: authId } } as ContextIn) as Promise<ContextOut>,
       api.post("/auth/drafts", {} as never),
-      api.post("/auth/group", { body: {} } as GroupAuthIn),
+      api.post(
+        "/auth/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupAuthIn,
+      ),
     ]);
 
     const entityName = context.page_metadata?.detail.title ?? "Auth";
@@ -188,10 +209,16 @@ export default async function AuthEditPage({
       panelProps: {
         artifactType: "auth",
         groupId: (groupResult as GroupAuthOut & { group_id?: string })?.group_id ?? null,
+        groupName:
+          (groupResult as GroupAuthOut & { name?: string | null })?.name ?? null,
         generateAction: generateAuth,
         operations: ["draft", "get", "group"],
         getGroupHistory: getAuthGroupHistory,
         searchGroups: searchAuthGroups,
+        getGroupAction: getAuthGroup as PanelProps["getGroupAction"],
+        searchGenerationsAction:
+          searchAuthGenerations as PanelProps["searchGenerationsAction"],
+        runGenerateAction: runAuthGenerate as PanelProps["runGenerateAction"],
       },
       ...(initialSidebarOpen !== undefined ? { initialSidebarOpen } : {}),
       ...(initialPanelOpen !== undefined ? { initialPanelOpen } : {}),

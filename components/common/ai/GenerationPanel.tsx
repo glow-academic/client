@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ShieldCheck kept for safe-mode toggle (TODO: re-enable)
-import { CheckCircle2, ChevronsUpDown, FileText, Image, Loader2, Mic, Plus, Search, Send, ShieldAlert, ShieldCheck, Video, Wrench, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronsUpDown, FileText, Image, Loader2, Mic, Search, Send, ShieldAlert, ShieldCheck, SquarePen, Video, Wrench, X, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
@@ -25,8 +24,9 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useTransport } from "@/lib/transport";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
-import type { GenerateMessage } from "@/hooks/use-generate";
+import type { GenerationMessage as GenerateMessage } from "@/hooks/use-artifact-generation";
+import { useSharedGenerationListener } from "@/hooks/use-artifact-generation-context";
+import { useQueryState, parseAsString } from "nuqs";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,12 +51,51 @@ interface HistoricalMessage {
   calls: { id: string; templateName: string | null }[];
 }
 
+/** Server action shape — pages define `"use server"` async fns and pass
+ *  them in. The runtime call still hits the API, but goes via the Next.js
+ *  server boundary, where ``getAuthHeaders()`` injects the Authorization
+ *  header. Calling ``api.post`` from a client component runs in the browser
+ *  with no auth header → 401. Server actions are the canonical fix.
+ */
+type GroupAction = (
+  input: { body: { group_id?: string } },
+) => Promise<Record<string, unknown>>;
+type GenerationsAction = (
+  input: { body: { search?: string | null } },
+) => Promise<Record<string, unknown>>;
+type GenerateAction = (
+  input: {
+    body: {
+      instructions?: string[];
+      config?: Record<string, unknown>;
+    };
+  },
+) => Promise<Record<string, unknown>>;
+
 interface GenerationPanelProps {
   /** Artifact type — used for both event namespacing and route prefix (e.g. "persona" → /persona/*) */
   artifactType: string;
   groupId: string | null;
+  /** SSR-fetched display name for `groupId`. Source of truth for the
+   *  header label so it survives remounts/refreshes (local picker
+   *  state alone would reset). `null` when the group has no name on
+   *  the server — panel falls back to "New Chat". */
+  groupName?: string | null;
+  /** SSR-fetched group response — used to seed ``historicalMessages``
+   *  synchronously on mount, eliminating the duplicate client-side
+   *  ``getGroupAction`` refetch that otherwise causes a hydration
+   *  flicker. Pass the page's `groupResult` directly. */
+  initialGroupHistory?: Record<string, unknown> | null;
   operations: string[];
   prompts?: Record<string, Array<{ title: string; content: string }>>;
+  /** Server action: POST /{artifactType}/group — fetch run history for a group.
+   *  Optional during migration; when omitted falls back to transport.send
+   *  (which 401s in the browser — that's the bug we're rolling out the fix for). */
+  getGroupAction?: GroupAction;
+  /** Server action: POST /{artifactType}/generations — search prior groups. */
+  searchGenerationsAction?: GenerationsAction;
+  /** Server action: POST /{artifactType}/generate — kick off a generation run. */
+  runGenerateAction?: GenerateAction;
 }
 
 // ---------------------------------------------------------------------------
@@ -111,12 +150,30 @@ function flattenMessages(res: GroupMessagesOut | Record<string, unknown>): Histo
 // ---------------------------------------------------------------------------
 
 export function GenerationPanel({
-  artifactType, groupId: groupIdProp, operations, prompts,
+  artifactType, groupId: groupIdProp, groupName: groupNameProp,
+  initialGroupHistory, operations, prompts,
+  getGroupAction, searchGenerationsAction, runGenerateAction,
 }: GenerationPanelProps) {
   const [instructions, setInstructions] = useState("");
-  // TODO: re-enable safe mode toggle — forced to dangerous (immediate execute) for now
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [dangerousMode, setDangerousMode] = useState(true);
+  // Dangerous mode (auto-execute) is persisted per-artifact in localStorage so
+  // each artifact's panel remembers the last preference. Default = true to
+  // match the prior hardcoded behavior.
+  const dangerousStorageKey = `glow.generationPanel.dangerous.${artifactType}`;
+  const [dangerousMode, setDangerousModeState] = useState<boolean>(true);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(dangerousStorageKey);
+    if (stored != null) setDangerousModeState(stored === "1");
+  }, [dangerousStorageKey]);
+  const setDangerousMode = useCallback(
+    (value: boolean) => {
+      setDangerousModeState(value);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(dangerousStorageKey, value ? "1" : "0");
+      }
+    },
+    [dangerousStorageKey],
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const transport = useTransport();
 
@@ -144,9 +201,24 @@ export function GenerationPanel({
     return result;
   }, [allPrompts, promptOffset]);
 
-  // Selected group — defaults to prop, can be changed via picker
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
+  // AI generation listener — shared with the page's form (e.g. Persona.tsx)
+  // via GenerationListenerProvider so the same `(artifactType, groupId)`
+  // pair only registers ONE set of transport subscriptions across the
+  // whole tree. FullPageLayout mounts the provider whenever `panelProps`
+  // is present; this component is only rendered inside that branch.
+  const listener = useSharedGenerationListener();
+
+  // Selected group — URL-backed via nuqs, owned by the
+  // GenerationListenerProvider so both the panel and the form share
+  // one writer. The page's SSR loader reads the same `?groupId=` and
+  // pre-fetches the picked group, so there's no post-hydration
+  // refetch flicker. Pre-latched BEFORE generate (in handleSend
+  // below) so a refresh mid-flight lands on the same group.
+  const selectedGroupId = listener.selectedGroupId;
+  const setSelectedGroupId = listener.latchGroupId;
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(
+    null,
+  );
   const activeGroupId = selectedGroupId ?? groupIdProp;
 
   // Listen for group completed event via transport
@@ -157,9 +229,6 @@ export function GenerationPanel({
     });
   }, [transport, artifactType]);
 
-  // AI generation — internal listener parameterized by artifactType
-  const listener = useArtifactGeneration(artifactType, activeGroupId);
-
   const liveMessages = listener.messages.map((m) => ({
     role: m.role, text: m.text, type: m.type,
     toolName: m.toolName,
@@ -168,8 +237,14 @@ export function GenerationPanel({
   const isGenerating = listener.isGenerating;
   const clearMessages = listener.clearMessages;
 
-  // Historical messages from /group/get
-  const [historicalMessages, setHistoricalMessages] = useState<HistoricalMessage[]>([]);
+  // Historical messages from /group/get. Seeded from the SSR-fetched
+  // `initialGroupHistory` so the panel renders the right runs
+  // synchronously on first paint — no client-side refetch flicker.
+  // `useState(initializer)` runs only on the first render; subsequent
+  // group changes go through the effect below as usual.
+  const [historicalMessages, setHistoricalMessages] = useState<HistoricalMessage[]>(
+    () => (initialGroupHistory ? flattenMessages(initialGroupHistory) : []),
+  );
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   // Text content cache: textUploadId → text string
   const [textContent, setTextContent] = useState<Record<string, string>>({});
@@ -182,10 +257,32 @@ export function GenerationPanel({
     const justFinished = prevIsGenerating.current && !isGenerating;
     prevIsGenerating.current = isGenerating;
 
+    // "Fresh chat" intent overrides everything — render empty,
+    // ignore the SSR-fetched windowed default's runs.
+    if (listener.forceNewChat) {
+      setHistoricalMessages([]);
+      setTextContent({});
+      return;
+    }
+
     const groupToFetch = selectedGroupId ?? groupIdProp;
     if (!groupToFetch) {
       setHistoricalMessages([]);
       setTextContent({});
+      return;
+    }
+
+    // SSR seed is valid as long as the active group still equals the
+    // page's SSR-fetched ``groupIdProp`` and we're not refetching
+    // after a just-finished generation (which has new runs to pick
+    // up). Note we deliberately DON'T gate on ``!selectedGroupId`` —
+    // pre-latching the URL with the same value as ``groupIdProp``
+    // would otherwise force a redundant refetch of identical data.
+    if (
+      !justFinished &&
+      initialGroupHistory &&
+      groupToFetch === groupIdProp
+    ) {
       return;
     }
 
@@ -205,7 +302,9 @@ export function GenerationPanel({
     let cancelled = false;
     setIsLoadingHistory(true);
 
-    const fetchHistory = transport.send(`/${artifactType}/group`, { group_id: groupToFetch });
+    const fetchHistory = getGroupAction
+      ? getGroupAction({ body: { group_id: groupToFetch } })
+      : transport.send(`/${artifactType}/group`, { group_id: groupToFetch });
 
     fetchHistory
       .then(async (res) => {
@@ -242,10 +341,23 @@ export function GenerationPanel({
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGroupId, groupIdProp, isGenerating, transport, artifactType]);
+  }, [selectedGroupId, groupIdProp, isGenerating, getGroupAction, transport, artifactType, listener.forceNewChat]);
 
-  // Search state
-  const [chatSearch, setChatSearch] = useState("");
+  // Search state — URL-backed via nuqs so the filter survives refresh
+  // and is sharable, mirroring the persona page's filter pattern.
+  // Reads/writes ``?groupSearch=…`` (cleared when empty for a clean URL).
+  const [chatSearchUrl, setChatSearchUrl] = useQueryState(
+    "groupSearch",
+    parseAsString,
+  );
+  const chatSearch = chatSearchUrl ?? "";
+  const setChatSearch = useCallback(
+    (value: string) => {
+      // Empty string ⇒ remove the param from the URL (no clutter).
+      void setChatSearchUrl(value || null);
+    },
+    [setChatSearchUrl],
+  );
   const [searchResults, setSearchResults] = useState<GroupSearchItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -255,7 +367,9 @@ export function GenerationPanel({
     async (query: string) => {
       setIsSearching(true);
       try {
-        const res = await transport.send(`/${artifactType}/generations`, { search: query.trim() || null });
+        const res = searchGenerationsAction
+          ? await searchGenerationsAction({ body: { search: query.trim() || null } })
+          : await transport.send(`/${artifactType}/generations`, { search: query.trim() || null });
         const mapped = (res.items ?? []).map((item: Record<string, unknown>) => ({
           id: String(item.group_id),
           name: (item.group_name as string) || "Untitled",
@@ -273,14 +387,26 @@ export function GenerationPanel({
         setIsSearching(false);
       }
     },
-    [transport, artifactType],
+    [searchGenerationsAction, transport, artifactType],
   );
 
   const handleDropdownOpen = useCallback(
     (open: boolean) => {
-      if (open) fetchGroups(chatSearch);
+      if (open) {
+        // Reopening — refetch with whatever the URL says (a deep link
+        // can preload a filter; a fresh open shows everything).
+        fetchGroups(chatSearch);
+      } else {
+        // Closing — drop the URL-backed filter, mirroring the
+        // persona-page picker pattern (GenericPicker.tsx:326-338):
+        // the search term only lives in the URL while the picker is
+        // open; closing it clears the param so the URL doesn't
+        // accumulate stale filter state.
+        setChatSearch("");
+        setSearchResults([]);
+      }
     },
-    [fetchGroups, chatSearch],
+    [fetchGroups, chatSearch, setChatSearch],
   );
 
   const handleSearchChange = useCallback(
@@ -293,12 +419,14 @@ export function GenerationPanel({
     [fetchGroups],
   );
 
-  // Auto-resize textarea
+  // Auto-resize textarea — clamp single-line height to the send button's
+  // 36px (h-9) so an empty input lines up with the button instead of
+  // collapsing shorter than it.
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = "auto";
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 128)}px`;
+      textarea.style.height = `${Math.max(36, Math.min(textarea.scrollHeight, 128))}px`;
     }
   }, [instructions]);
 
@@ -309,8 +437,10 @@ export function GenerationPanel({
       setChatSearch("");
       setSearchResults([]);
       clearMessages();
+      // Picking an existing chat overrides any "fresh chat" intent.
+      listener.setForceNewChat(false);
     },
-    [clearMessages],
+    [clearMessages, listener, setSelectedGroupId, setChatSearch],
   );
 
   const handleNewChatWithClear = useCallback(() => {
@@ -322,23 +452,54 @@ export function GenerationPanel({
     setSearchResults([]);
     setInstructions("");
     clearMessages();
-  }, [clearMessages]);
+    // Set the transient "fresh chat intent" flag — panel will render
+    // empty state and ignore the SSR-fetched windowed default until
+    // the user actually generates. Reset on first send (in
+    // handleSend) and reset by handleSelectGroupWithClear.
+    listener.setForceNewChat(true);
+  }, [clearMessages, listener, setSelectedGroupId, setChatSearch]);
 
   const handleSend = useCallback(async () => {
     if (!instructions.trim()) return;
     const text = instructions.trim();
     setInstructions("");
 
-    listener.setGenerating(true);
-    await transport.send(`/${artifactType}/generate`, {
-      instructions: text ? [text] : [],
-      config: {
-        operations,
-        dangerous: dangerousMode,
-        group_id: activeGroupId,
-      },
-    });
-  }, [instructions, dangerousMode, transport, artifactType, activeGroupId, operations, listener]);
+    try {
+      listener.setGenerating(true);
+      // "Fresh chat" intent: send no group_id so the server allocates
+      // a new one. The latch happens via the response (server returns
+      // the allocated id; the audit/forwarder path includes it on
+      // events). Reset the flag — the chat is committing right now.
+      const sendGroupId = listener.forceNewChat ? null : activeGroupId;
+      if (listener.forceNewChat) {
+        listener.setForceNewChat(false);
+      } else if (activeGroupId) {
+        // Normal path: pre-latch the URL to the group we're about to
+        // target. If the user refreshes mid-flight, SSR resolves
+        // back to this same group and picks up the in-progress run.
+        listener.latchGroupId(activeGroupId);
+      }
+      const generateBody = {
+        instructions: text ? [text] : [],
+        config: {
+          operations,
+          // Hardcoded: dangerous toggle is hidden in the UI; every
+          // generate runs in auto-execute mode.
+          dangerous: true,
+          group_id: sendGroupId,
+        },
+      };
+      if (runGenerateAction) {
+        await runGenerateAction({ body: generateBody });
+      } else {
+        await transport.send(`/${artifactType}/generate`, generateBody);
+      }
+    } catch (err) {
+      listener.setError(
+        err instanceof Error ? err.message : "Generate request failed",
+      );
+    }
+  }, [instructions, dangerousMode, runGenerateAction, transport, artifactType, activeGroupId, operations, listener]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -347,8 +508,31 @@ export function GenerationPanel({
     }
   }, [handleSend]);
 
-  const displayName = selectedGroupName ?? "New Chat";
-  const displaySubtext = selectedGroupId ? "Previous session" : "Current session";
+  // Display name precedence:
+  //   1. ``selectedGroupName`` — transient local override set the
+  //      moment the user picks a chat from the dropdown (snappy UI;
+  //      lost on remount).
+  //   2. ``groupNameProp`` — SSR-fetched name from the page's
+  //      ``/<art>/group`` response. Stable across remounts/refreshes
+  //      because the page re-runs SSR with the URL's ``?groupId=``.
+  //   3. Fallback: ``"Untitled"`` when a group is selected but
+  //      server-side name is null — keeps wording consistent with
+  //      the dropdown items (which also say "Untitled" for
+  //      null-named groups). ``"New Chat"`` when no group is
+  //      selected at all (the genuinely-new session).
+  // While the user has explicitly clicked "New Chat" (forceNewChat),
+  // ignore SSR-derived names and show the fresh-chat label —
+  // matches the empty render below.
+  const displayName = listener.forceNewChat
+    ? "New Chat"
+    : selectedGroupName ??
+      groupNameProp ??
+      (selectedGroupId ? "Untitled" : "New Chat");
+  const displaySubtext = listener.forceNewChat
+    ? "Current session"
+    : selectedGroupId
+      ? "Previous session"
+      : "Current session";
 
   const hasMessages = historicalMessages.length > 0 || liveMessages.length > 0;
 
@@ -361,10 +545,13 @@ export function GenerationPanel({
     const parts: React.ReactNode[] = [];
     const hasToolCalls = msg.calls.length > 0;
 
-    // Tool calls
+    // Tool calls — alignment follows the parent message's role so that
+    // user-initiated audited ops land on the user side and model-driven
+    // ones on the assistant side. Mirrors how text bubbles align.
+    const align = msg.role === "user" ? "justify-end" : "justify-start";
     for (const call of msg.calls) {
       parts.push(
-        <div key={`call-${call.id}`} className="flex justify-start">
+        <div key={`call-${call.id}`} className={`flex ${align}`}>
           <div className="max-w-[85%] flex items-center gap-2 rounded-md border border-dashed px-2.5 py-1.5 text-xs text-muted-foreground">
             <Wrench className="h-3 w-3 shrink-0" />
             <span className="flex-1 truncate">{call.templateName || "tool_call"}</span>
@@ -399,7 +586,7 @@ export function GenerationPanel({
     // Image uploads
     if (msg.imageIds.length > 0) {
       parts.push(
-        <div key={`img-${msg.id}`} className="flex justify-start">
+        <div key={`img-${msg.id}`} className={`flex ${align}`}>
           <div className="max-w-[85%] flex items-center gap-2 rounded-lg border bg-accent px-3 py-2">
             <Image className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
@@ -413,7 +600,7 @@ export function GenerationPanel({
     // Audio uploads
     if (msg.audioIds.length > 0) {
       parts.push(
-        <div key={`audio-${msg.id}`} className="flex justify-start">
+        <div key={`audio-${msg.id}`} className={`flex ${align}`}>
           <div className="max-w-[85%] flex items-center gap-2 rounded-lg border bg-accent px-3 py-2">
             <Mic className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
@@ -427,7 +614,7 @@ export function GenerationPanel({
     // Video uploads
     if (msg.videoIds.length > 0) {
       parts.push(
-        <div key={`video-${msg.id}`} className="flex justify-start">
+        <div key={`video-${msg.id}`} className={`flex ${align}`}>
           <div className="max-w-[85%] flex items-center gap-2 rounded-lg border bg-accent px-3 py-2">
             <Video className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
@@ -441,7 +628,7 @@ export function GenerationPanel({
     // File uploads
     if (msg.fileIds.length > 0) {
       parts.push(
-        <div key={`file-${msg.id}`} className="flex justify-start">
+        <div key={`file-${msg.id}`} className={`flex ${align}`}>
           <div className="max-w-[85%] flex items-center gap-2 rounded-lg border bg-accent px-3 py-2">
             <FileText className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
@@ -465,7 +652,7 @@ export function GenerationPanel({
       const isError = msg.toolStatus === "error";
       const isPending = !msg.toolStatus;
       return (
-        <div key={`live-${i}`} className="flex justify-start">
+        <div key={`live-${i}`} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
           <div className="max-w-[85%] flex items-center gap-2 rounded-md border border-dashed px-2.5 py-1.5 text-xs text-muted-foreground">
             <Wrench className="h-3 w-3 shrink-0" />
             <span className="flex-1 truncate">{msg.toolName}</span>
@@ -495,12 +682,32 @@ export function GenerationPanel({
     <Sidebar side="right" variant="sidebar" collapsible="offcanvas">
         <SidebarHeader>
           <SidebarMenu>
-            <SidebarMenuItem>
+            <SidebarMenuItem className="flex items-center gap-1 rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground has-[[data-state=open]]:bg-sidebar-accent has-[[data-state=open]]:text-sidebar-accent-foreground">
+              {/* Hover lives on the parent row so the leading icon
+                  and the trigger read as one continuous hover band.
+                  Children opt out of their own hover/open bg via
+                  ``hover:bg-transparent`` so they don't double-paint.
+                  Click targets remain distinct — the icon fires
+                  "new chat", the trigger opens the dropdown. */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 shrink-0 hover:bg-transparent"
+                    aria-label="New chat"
+                    onClick={handleNewChatWithClear}
+                  >
+                    <SquarePen className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>New chat</TooltipContent>
+              </Tooltip>
               <DropdownMenu onOpenChange={handleDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton
                     size="lg"
-                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                    className="flex-1 hover:bg-transparent hover:text-current data-[state=open]:bg-transparent data-[state=open]:text-current"
                   >
                     <div className="flex flex-col gap-0.5 leading-none text-left">
                       <span className="font-medium truncate">{displayName}</span>
@@ -510,8 +717,9 @@ export function GenerationPanel({
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 max-h-72 overflow-y-auto rounded-lg"
-                  align="start"
+                  className="w-[17rem] max-h-72 overflow-y-auto rounded-lg"
+                  align="end"
+                  sideOffset={4}
                 >
                   <div className="p-2">
                     <div className="relative">
@@ -551,17 +759,6 @@ export function GenerationPanel({
               </DropdownMenu>
             </SidebarMenuItem>
           </SidebarMenu>
-          {selectedGroupId && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="mx-2 mb-1 justify-start"
-              onClick={handleNewChatWithClear}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Chat
-            </Button>
-          )}
         </SidebarHeader>
 
         <SidebarContent className="flex flex-col p-0">
@@ -600,6 +797,20 @@ export function GenerationPanel({
         </SidebarContent>
 
         <SidebarFooter className="p-0">
+          {listener.stage === "error" && listener.error && (
+            <div className="mx-3 mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span className="flex-1">{listener.error}</span>
+              <button
+                type="button"
+                aria-label="Dismiss error"
+                onClick={() => listener.setError(null)}
+                className="shrink-0 opacity-70 hover:opacity-100"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
           <div className="border-t p-3">
             <div className="flex gap-2">
               <Textarea
@@ -609,25 +820,41 @@ export function GenerationPanel({
                 onKeyDown={handleKeyDown}
                 placeholder="Instructions..."
                 rows={1}
-                className="min-h-0 max-h-32 flex-1 resize-none overflow-y-auto text-sm"
+                className="min-h-9 max-h-32 flex-1 resize-none overflow-y-auto text-sm"
               />
               <TooltipProvider>
                 <div className="flex flex-col gap-1 self-end shrink-0">
-                  {/* Dangerous-mode toggle hidden — safe mode not wired up, dangerousMode is hard-coded true.
-                      Restore this block when re-enabling the toggle:
+                  {/* Dangerous-mode toggle hidden in UI — generation is
+                      always invoked with `dangerous: true` (auto-execute).
+                      Keep the state hook so the storage key + send payload
+                      stay coherent. */}
+                  {/*
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         size="icon"
-                        variant="destructive"
+                        variant={dangerousMode ? "destructive" : "outline"}
                         className="h-9 w-9"
-                        onClick={() => setDangerousMode((prev) => !prev)}
+                        onClick={() => setDangerousMode(!dangerousMode)}
+                        aria-label={
+                          dangerousMode
+                            ? "Auto-execute on (dangerous): tool calls run immediately"
+                            : "Auto-execute off: tool calls staged for approval"
+                        }
                       >
-                        <ShieldAlert className="h-4 w-4" />
+                        {dangerousMode ? (
+                          <ShieldAlert className="h-4 w-4" />
+                        ) : (
+                          <ShieldCheck className="h-4 w-4" />
+                        )}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Dangerous: executes immediately</p>
+                      <p className="max-w-[220px] text-xs">
+                        {dangerousMode
+                          ? "Auto-execute ON — tool calls run immediately. Click to require approval."
+                          : "Auto-execute OFF — tool calls are soft-staged pending acceptance. Click to enable immediate execution."}
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                   */}

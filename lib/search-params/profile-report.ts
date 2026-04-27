@@ -8,12 +8,14 @@ import {
   dashboardSectionSearchParams,
   historySearchParams,
 } from "@/lib/search-params/analytics";
-import { createLoader } from "nuqs/server";
+import { createLoader, parseAsString } from "nuqs/server";
 
 export const profileReportSearchParams = {
   ...analyticsSearchParams,
   ...historySearchParams,
   ...dashboardSectionSearchParams,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadProfileReportSearchParams = createLoader(

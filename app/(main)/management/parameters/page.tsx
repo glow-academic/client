@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Parameters from "@/components/artifacts/parameter/Parameters";
 
@@ -20,6 +20,7 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
+import { loadParametersSearchParams } from "@/lib/search-params/parameters";
 
 /** ---- Strong types from OpenAPI ---- */
 type ParametersListOut = OutputOf<"/parameter/search", "post">;
@@ -104,6 +105,22 @@ async function createParameterProblem(input: ProblemParameterIn): Promise<Proble
   return api.post("/parameter/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getParameterGroup(input: GroupParameterIn): Promise<GroupParameterOut> {
+  "use server";
+  return api.post("/parameter/group", input);
+}
+
+async function searchParameterGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/parameter/generations", input);
+}
+
+async function runParameterGenerate(input: GenerateParameterIn): Promise<GenerateParameterOut> {
+  "use server";
+  return api.post("/parameter/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -121,8 +138,13 @@ export async function generateMetadata(): Promise<Metadata> {
 const SIDEBAR_COOKIE = "glow_sidebar";
 const PANEL_COOKIE = "glow_panel";
 
-export default async function ContextPage() {
+interface ParametersPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function ContextPage({ searchParams }: ParametersPageProps) {
   const session = await getSession();
+  const q = loadParametersSearchParams(await searchParams);
 
   // Read UI preferences from cookies for SSR
   const cookieStore = await cookies();
@@ -141,7 +163,10 @@ export default async function ContextPage() {
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getParametersList(),
       readViewCookie("parameters"),
-      api.post("/parameter/group", { body: {} } as GroupParameterIn),
+      api.post(
+        "/parameter/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupParameterIn,
+      ),
     ]);
 
     return (
@@ -162,11 +187,22 @@ export default async function ContextPage() {
         panelProps={{
           artifactType: "parameter",
           groupId: (groupResult as GroupParameterOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as GroupParameterOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           generateAction: generateParameter,
           operations: ["draft", "get", "group"],
           getGroupHistory: getParameterGroupHistory,
           searchGroups: searchParameterGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getParameterGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction:
+            searchParameterGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runParameterGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="parameters-index">

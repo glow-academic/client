@@ -81,7 +81,7 @@ export function ModelRubricView({
 
         return (
           <Card
-            key={run.run_id ?? run.chat_id ?? Math.random().toString()}
+            key={`${run.chat_id ?? ""}::${run.run_id ?? "none"}`}
             className="border"
           >
             <CardHeader className="py-3 px-4">

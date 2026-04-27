@@ -28,6 +28,8 @@ import {
   type ModelRubricViewProps,
 } from "../chatAreas/ModelRubricView";
 import { RunSelector, type RunSelectorProps } from "../inputAreas/RunSelector";
+import { useTestRun } from "@/hooks/use-test-run";
+import { parseAsInteger, parseAsString, useQueryStates } from "nuqs";
 import {
   ResourcePanel,
   type ResourcePanelProps,
@@ -67,11 +69,22 @@ export default function TestChat({
     EMPTY_AGENT_CONFIG,
   );
 
-  // Derive invocation ID from first run
-  const invocationId = useMemo(() => {
-    const firstRun = runs[0];
-    return firstRun?.chat_id ?? null;
-  }, [runs]);
+  // Invocation id = the benchmark template invocation. Server emits it
+  // as `current_invocation_id` on /test/get; using it lets us fire runs
+  // even when the history list is empty (fresh tests have no bindings,
+  // so we can't piggy-back the id off runs[0] anymore).
+  const invocationId = useMemo(
+    () =>
+      test_data.current_invocation_id ??
+      test_data.next_invocation_id ??
+      test_data.invocations?.[0]?.invocation_id ??
+      null,
+    [
+      test_data.current_invocation_id,
+      test_data.next_invocation_id,
+      test_data.invocations,
+    ],
+  );
 
   // Status summary
   const statusSummary = useMemo(
@@ -91,46 +104,76 @@ export default function TestChat({
     runs.every((r) => r.status === "not_started");
 
   // ---- Multi-select run picker ----
-  // Build the picker list from the test's runs. Each entry exposes a
-  // human-readable label and the current status for the dot indicator.
+  // Picker (bottom composer) source = reusable run configs from
+  // `test_data.configs`, NOT history binding rows. Each config can be
+  // queued any number of times to fire fresh trace+run executions.
+  // Selection key = config.run_id (the runs_entry.id of the config row).
+  // Cast: server emits `configs/configs_groups/configs_total` but the
+  // openapi codegen may not have regenerated yet.
+  type ServerConfig = {
+    run_id: string;
+    group_id?: string | null;
+    label: string;
+    agent_name?: string | null;
+    model_name?: string | null;
+    prompt_ids?: string[];
+    tool_ids?: string[];
+    instruction_ids?: string[];
+  };
+  type ServerConfigGroup = {
+    group_id: string;
+    name?: string | null;
+    run_count: number;
+    last_run_at?: string | null;
+  };
+  type ServerConfigShape = {
+    configs?: ServerConfig[];
+    configs_groups?: ServerConfigGroup[];
+    configs_total?: number;
+    configs_groups_total?: number;
+    configs_per_group_total?: Record<string, number>;
+  };
+  const serverShape = test_data as unknown as ServerConfigShape;
+  const configs = useMemo(() => serverShape.configs ?? [], [serverShape]);
+  const configsGroups = useMemo(
+    () => serverShape.configs_groups ?? [],
+    [serverShape],
+  );
+  const configsTotal = serverShape.configs_total ?? configs.length;
+  const configsGroupsTotalBound =
+    serverShape.configs_groups_total ?? configsGroups.length;
+  const configsPerGroupTotal = useMemo(
+    () => serverShape.configs_per_group_total ?? {},
+    [serverShape],
+  );
+
   const runOptions = useMemo<TestChatHeaderRunOption[]>(
     () =>
-      runs
-        .filter((r): r is RunItem & { chat_id: string } => Boolean(r.chat_id))
-        .map((r) => ({
-          id: r.chat_id,
-          label: `${r.agent_name || "Agent"}${r.run_id ? ` · ${r.run_id.substring(0, 8)}` : ""}`,
-          status: r.status ?? "not_started",
-        })),
-    [runs],
+      configs.map((c) => ({
+        id: c.run_id,
+        label: c.label,
+        group_id: c.group_id ?? null,
+      })),
+    [configs],
   );
 
-  // Selection defaults to all runs so the page renders something on first
-  // load. Future-run inclusion: when new runs arrive, auto-include them.
-  const [selectedRunIds, setSelectedRunIds] = useState<string[]>(() =>
-    runOptions.map((o) => o.id),
-  );
+  // Composer-style selection — empty by default. The picker is the
+  // source of truth for what runs to queue on the next Run, NOT a
+  // filter for the history list. History always shows everything.
+  const [selectedRunIds, setSelectedRunIds] = useState<string[]>([]);
 
-  // Auto-include any newly-added run ids into the selection so freshly
-  // spawned runs ("future" runs in the user's framing) appear in the
-  // history view automatically.
-  const seenRunIdsRef = useState(() => new Set(runOptions.map((o) => o.id)))[0];
-  for (const o of runOptions) {
-    if (!seenRunIdsRef.has(o.id)) {
-      seenRunIdsRef.add(o.id);
-      // Defer to next tick to avoid setState-during-render.
-      queueMicrotask(() =>
-        setSelectedRunIds((prev) =>
-          prev.includes(o.id) ? prev : [...prev, o.id],
-        ),
-      );
-    }
-  }
-
+  // History list (top zone) = every binding row, regardless of status.
+  // Each binding is one actual past execution (a trace+run pair). Sort
+  // oldest → newest so the newest run sits closest to the composer,
+  // chat-message style. Drafts no longer live in the history list —
+  // the bottom picker now sources configs from test_data.configs.
   const filteredRuns = useMemo(() => {
-    const set = new Set(selectedRunIds);
-    return runs.filter((r) => r.chat_id && set.has(r.chat_id));
-  }, [runs, selectedRunIds]);
+    return [...runs].sort((a, b) => {
+      const at = (a.run_id ?? "") + (a.chat_id ?? "");
+      const bt = (b.run_id ?? "") + (b.chat_id ?? "");
+      return at.localeCompare(bt);
+    });
+  }, [runs]);
 
   // Messages list — passed into ModelHistoryView for per-run transcript rendering.
   // Source: /test/get's entries.messages (already filtered server-side to runs in this test).
@@ -287,6 +330,8 @@ export default function TestChat({
 
   // ---- Build props for GenericChatInterface ----
 
+  // Header is now a read-only history caption ("History · N").
+  // Run picker moved to the bottom composer (inputAreaProps).
   const chatHeaderProps = {
     show_documents: showResources,
     show_objectives: false,
@@ -297,9 +342,7 @@ export default function TestChat({
     on_toggle_rubric: () => {},
     eval_name: test_data.eval_name ?? null,
     status_summary: statusSummary,
-    runs: runOptions,
-    selected_run_ids: selectedRunIds,
-    on_select_runs: (ids: string[]) => setSelectedRunIds(ids),
+    history_count: filteredRuns.length,
   };
 
   const historyAreaProps: ModelHistoryViewProps = {
@@ -317,35 +360,136 @@ export default function TestChat({
     feedback,
   };
 
+  // useTestRun.run drives the canonical 3-step fire:
+  //   /test/trace (with run_id = config) → /test/generate → /test/run
+  // The server already accepts the config's run_id on /test/trace
+  // (TestTracePayload.run_id), so passing historicalRunId here makes the
+  // new trace inherit that config's bundle.
+  const testRunner = useTestRun();
+
   const handleRunSelected = useCallback(
     (extra_instructions: string) => {
-      // Fan out: start every selected run that's currently stoppable. The
-      // textarea contents are tracked alongside the agent-config form state
-      // for now — server-side run override wiring lands in a follow-up.
+      // selectedRunIds are config run_ids (runs_entry.id) from the picker.
+      // Fan out: one fresh trace+run per selected config.
       void extra_instructions;
-      const targets = filteredRuns.filter(
-        (r) => r.status === "not_started" && r.chat_id,
-      );
-      for (const r of targets) handleStartRun(r.chat_id!);
+      if (!invocationId) {
+        toast.error("Cannot run: no active invocation");
+        return;
+      }
+      const configsByRunId = new Map(configs.map((c) => [c.run_id, c]));
+      for (const configRunId of selectedRunIds) {
+        // Faithful replay: pull the bundle ids the server projected
+        // onto this config (sourced from the historical run's agent
+        // resource) and pass them as panel state. /test/trace stores
+        // them verbatim on the new trace's connection tables; the
+        // dispatcher reads them off the trace bundle.
+        const cfg = configsByRunId.get(configRunId);
+        const panel = cfg
+          ? {
+              ...(cfg.prompt_ids && cfg.prompt_ids.length > 0 && {
+                prompt_ids: cfg.prompt_ids,
+              }),
+              ...(cfg.tool_ids && cfg.tool_ids.length > 0 && {
+                tool_ids: cfg.tool_ids,
+              }),
+              ...(cfg.instruction_ids && cfg.instruction_ids.length > 0 && {
+                instruction_ids: cfg.instruction_ids,
+              }),
+            }
+          : undefined;
+        // Fire-and-forget; useTestRun handles its own staging + errors.
+        void testRunner.run({
+          testId: test_id,
+          testInvocationId: invocationId,
+          historicalRunId: configRunId,
+          ...(panel && Object.keys(panel).length > 0 && { panel }),
+        });
+      }
+      // Reset selection so the composer is clean for the next round —
+      // mirrors how a chat input clears after sending a message.
+      setSelectedRunIds([]);
     },
-    [filteredRuns, handleStartRun],
+    [configs, invocationId, selectedRunIds, test_id, testRunner],
   );
 
+  // is_starting = true while any selected config has fired and is still
+  // in its "starting" window. Selection is by config run_id, and
+  // startingRunIds tracks newly-fired runs by their run_id. Best-effort
+  // signal — clears when the trace transitions out of the starting set.
   const isAnySelectedStarting = useMemo(() => {
-    if (startingRunIds.size === 0) return false;
-    for (const r of filteredRuns) {
-      if (r.run_id && startingRunIds.has(r.run_id)) return true;
-    }
-    return false;
-  }, [filteredRuns, startingRunIds]);
+    if (startingRunIds.size === 0 || selectedRunIds.length === 0) return false;
+    return selectedRunIds.some((id) => startingRunIds.has(id));
+  }, [selectedRunIds, startingRunIds]);
 
+  // nuqs URL state for picker pagination — two axes:
+  //   • configsGroupsPage paginates group headers (outer).
+  //   • configsExpanded is the comma-separated list of group_ids the
+  //     user has opened. Server returns rows only for those.
+  // Flipping any of these triggers SSR re-fetch via /test/get.
+  const [
+    {
+      configsGroupsPage,
+      configsGroupsPageSize,
+      configsExpanded,
+      configsExpandedPageSize,
+    },
+    setConfigsParams,
+  ] = useQueryStates(
+    {
+      configsGroupsPage: parseAsInteger,
+      configsGroupsPageSize: parseAsInteger,
+      configsExpanded: parseAsString,
+      configsExpandedPageSize: parseAsInteger,
+    },
+    // shallow:false triggers a Next.js navigation so the server
+    // component re-runs and /test/get is re-fetched with the new
+    // pagination params. Without this nuqs only updates the URL and
+    // the SSR-fetched test_data prop stays frozen.
+    { shallow: false, history: "replace" },
+  );
+  const currentGroupsPage = configsGroupsPage ?? 1;
+  const currentGroupsPageSize = configsGroupsPageSize ?? 10;
+  const expandedIds = useMemo(
+    () =>
+      (configsExpanded ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    [configsExpanded],
+  );
+  const currentExpandedPageSize = configsExpandedPageSize ?? 20;
+
+  // Bottom composer: picker (source of truth for what gets queued) +
+  // optional extra instructions + Run button.
   const inputAreaProps: RunSelectorProps = {
     is_starting: isAnySelectedStarting,
-    has_selection: filteredRuns.some(
-      (r) => r.status === "not_started" && r.chat_id,
-    ),
+    has_selection: selectedRunIds.length > 0,
     on_run: handleRunSelected,
     is_connected: true,
+    runs: runOptions,
+    groups: configsGroups,
+    per_group_total: configsPerGroupTotal,
+    total_runs: configsTotal,
+    selected_run_ids: selectedRunIds,
+    on_select_runs: (ids: string[]) => setSelectedRunIds(ids),
+    pagination: {
+      groups_page: currentGroupsPage,
+      groups_page_size: currentGroupsPageSize,
+      groups_total_bound: configsGroupsTotalBound,
+      on_groups_page_change: (page: number) => {
+        void setConfigsParams({ configsGroupsPage: page });
+      },
+      expanded: expandedIds,
+      on_expanded_change: (next: string[]) => {
+        void setConfigsParams({
+          configsExpanded: next.length > 0 ? next.join(",") : null,
+        });
+      },
+      expanded_page_size: currentExpandedPageSize,
+      on_expanded_page_size_change: (size: number) => {
+        void setConfigsParams({ configsExpandedPageSize: size });
+      },
+    },
   };
 
   const documentAreaProps: ResourcePanelProps = {

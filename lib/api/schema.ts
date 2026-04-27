@@ -7682,6 +7682,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/test/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Test Stream */
+        get: operations["test_stream_test_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/test/problem": {
         parameters: {
             query?: never;
@@ -14121,8 +14138,12 @@ export interface components {
         };
         /**
          * CreateInvocationApiRequest
-         * @description Create a test_invocation_entry on an existing test, optionally with
-         *     multi-select resource selections supplied by the user.
+         * @description Create a test_invocation_entry on an existing test.
+         *
+         *     Mirrors CreateAttemptChatApiRequest. ``invocation_id`` is the
+         *     benchmark ``invocation_entry.id`` (the template); the materialized
+         *     ``test_invocation_entry`` inherits its bundle. Caller-supplied
+         *     fields override template defaults.
          */
         CreateInvocationApiRequest: {
             /**
@@ -14130,6 +14151,8 @@ export interface components {
              * Format: uuid
              */
             test_id: string;
+            /** Invocation Id */
+            invocation_id?: string | null;
             /**
              * Title
              * @default
@@ -14140,11 +14163,8 @@ export interface components {
              * @default false
              */
             use_custom: boolean;
-            /**
-             * Position
-             * @default 0
-             */
-            position: number;
+            /** Position */
+            position?: number | null;
             /** Agent Ids */
             agent_ids?: string[] | null;
             /** Rubric Ids */
@@ -28975,6 +28995,34 @@ export interface components {
              * @description UUID of the test to fetch
              */
             test_id: string;
+            /**
+             * Configs Groups Page
+             * @description 1-indexed page of group section headers
+             * @default 1
+             */
+            configs_groups_page: number;
+            /**
+             * Configs Groups Page Size
+             * @description Group headers per page
+             * @default 10
+             */
+            configs_groups_page_size: number;
+            /**
+             * Configs Expanded
+             * @description Group IDs the user has expanded; rows fetched only for these
+             */
+            configs_expanded?: string[];
+            /**
+             * Configs Expanded Page Size
+             * @description Rows per expanded group
+             * @default 20
+             */
+            configs_expanded_page_size: number;
+            /**
+             * Configs Search
+             * @description Free-text filter on group name
+             */
+            configs_search?: string | null;
         };
         /**
          * GetTestArtifactResponse
@@ -29020,6 +29068,35 @@ export interface components {
              * @description Run items derived from invocations
              */
             runs?: components["schemas"]["TestRunItem"][];
+            /**
+             * Configs
+             * @description Run configs only for groups in configs_expanded
+             */
+            configs?: components["schemas"]["TestConfigItem"][];
+            /**
+             * Configs Groups
+             * @description Group section headers (current outer page)
+             */
+            configs_groups?: components["schemas"]["TestConfigGroup"][];
+            /**
+             * Configs Total
+             * @description Total run configs across all groups (universe size)
+             * @default 0
+             */
+            configs_total: number;
+            /**
+             * Configs Groups Total
+             * @description Total groups matching filters (outer pagination universe)
+             * @default 0
+             */
+            configs_groups_total: number;
+            /**
+             * Configs Per Group Total
+             * @description group_id → total row count (used by inner pagination 'Show more' math)
+             */
+            configs_per_group_total?: {
+                [key: string]: number;
+            };
             /** @description Summary of invocation statuses */
             status_summary?: components["schemas"]["TestStatusSummary"] | null;
             /**
@@ -29168,16 +29245,6 @@ export interface components {
              * @default []
              */
             department_ids: string[];
-            /**
-             * Run Agent Ids
-             * @default []
-             */
-            run_agent_ids: string[];
-            /**
-             * Group Agent Ids
-             * @default []
-             */
-            group_agent_ids: string[];
             /** Voice Id */
             voice_id?: string | null;
             /** Temperature Level Id */
@@ -49327,6 +49394,8 @@ export interface components {
             test_id: string;
             /** Invocation Id */
             invocation_id?: string | null;
+            /** Benchmark Id */
+            benchmark_id?: string | null;
         };
         /**
          * StarterPrompt
@@ -49394,6 +49463,78 @@ export interface components {
              * @description UUID of the test
              */
             test_id: string;
+        };
+        /**
+         * TestConfigGroup
+         * @description A group bucket for the picker — used as the section header.
+         *
+         *     Renders one accordion section per row. `run_count` is the total
+         *     rows in the group (across the whole inner pagination universe,
+         *     not just the current expanded window). `last_run_at` drives the
+         *     outer ordering (most-recent-group first).
+         */
+        TestConfigGroup: {
+            /**
+             * Group Id
+             * @description UUID of the group
+             */
+            group_id: string;
+            /**
+             * Name
+             * @description Human-readable group name (or null if unnamed)
+             */
+            name?: string | null;
+            /**
+             * Run Count
+             * @description Total run configs in this group
+             * @default 0
+             */
+            run_count: number;
+            /**
+             * Last Run At
+             * @description ISO timestamp of the most recent run in this group
+             */
+            last_run_at?: string | null;
+        };
+        /**
+         * TestConfigItem
+         * @description A reusable run configuration the picker can queue.
+         *
+         *     Sources from runs_entry rows. Each row is a distinct config
+         *     (agent + model + bundle) that can be re-fired any number of times
+         *     into fresh trace executions.
+         */
+        TestConfigItem: {
+            /**
+             * Run Id
+             * @description UUID of the runs_entry config
+             */
+            run_id: string;
+            /**
+             * Group Id
+             * @description UUID of the parent group (for grouping in the picker)
+             */
+            group_id?: string | null;
+            /**
+             * Agent Name
+             * @description Display name of the agent
+             */
+            agent_name?: string | null;
+            /**
+             * Model Name
+             * @description Display name of the underlying model
+             */
+            model_name?: string | null;
+            /**
+             * Label
+             * @description Human-readable picker label
+             */
+            label: string;
+            /**
+             * Created At
+             * @description When this config was first created
+             */
+            created_at?: string | null;
         };
         /**
          * TestEntries
@@ -67262,6 +67403,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GroupTestApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_stream_test_stream_get: {
+        parameters: {
+            query?: {
+                group_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

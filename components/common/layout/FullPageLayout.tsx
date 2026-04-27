@@ -40,10 +40,8 @@ import { GenerationPanel } from "@/components/common/ai/GenerationPanel";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
 import { ProfileProviderClient } from "@/contexts/profile-context";
 import type { ContextProfile } from "@/contexts/profile-context";
-import { SocketProviderClient } from "@/contexts/socket-context";
 import { GroupProviderClient } from "@/contexts/group-context";
-import { TransportProvider } from "@/lib/transport";
-import type { TransportMode } from "@/lib/transport";
+import { GenerationListenerProvider } from "@/hooks/use-artifact-generation-context";
 import { SIDEBAR_SECTIONS } from "@/lib/sidebar-config";
 
 import type { SafeSessionSnapshot } from "@/lib/auth";
@@ -57,12 +55,43 @@ interface SidebarProps {
   createFeedback: (input: Record<string, unknown>) => Promise<Record<string, unknown>>;
 }
 
-interface PanelProps {
+export interface PanelProps {
   /** Artifact type — used for both event namespacing and route prefix (e.g. "persona" → /persona/*) */
   artifactType: string;
   groupId: string | null;
+  /** Display name for `groupId` — SSR-fetched from /<art>/group's
+   *  `name` field. Source of truth for the panel's header label
+   *  across remounts/refreshes. `null` for unnamed groups (panel
+   *  falls back to "New Chat"). */
+  groupName?: string | null;
+  /** Full SSR-fetched group response (the same payload `getGroupAction`
+   *  would return on the client). Panel uses this to seed
+   *  ``historicalMessages`` synchronously on mount and skip the
+   *  duplicate client-side `/{art}/group` refetch that otherwise
+   *  causes a hydration flicker. Pass the page's `groupResult`. */
+  initialGroupHistory?: Record<string, unknown> | null;
   operations: string[];
   prompts?: Record<string, Array<{ title: string; content: string }>>;
+  /** Pages define inline `"use server"` actions for each artifact's
+   *  `/group`, `/generations`, `/generate` and pass them in here.
+   *  Optional during migration: when a page hasn't been converted yet,
+   *  GenerationPanel falls back to the (broken) browser-side
+   *  ``transport.send`` path so the page still mounts. Once every page
+   *  defines these, the optionality should be removed. */
+  getGroupAction?: (
+    input: { body: { group_id?: string } },
+  ) => Promise<Record<string, unknown>>;
+  searchGenerationsAction?: (
+    input: { body: { search?: string | null } },
+  ) => Promise<Record<string, unknown>>;
+  runGenerateAction?: (
+    input: {
+      body: {
+        instructions?: string[];
+        config?: Record<string, unknown>;
+      };
+    },
+  ) => Promise<Record<string, unknown>>;
 }
 
 export interface FullPageLayoutProps {
@@ -79,8 +108,6 @@ export interface FullPageLayoutProps {
   toolbar?: React.ReactNode;
   // Right panel (omit for pages without a generation panel)
   panelProps?: PanelProps;
-  // Transport mode override (default: auto-detect)
-  transportMode?: TransportMode;
   // Content
   children: React.ReactNode;
 }
@@ -114,7 +141,6 @@ export function FullPageLayout({
   breadcrumbs,
   toolbar,
   panelProps,
-  transportMode,
   children,
 }: FullPageLayoutProps) {
   const router = useRouter();
@@ -149,34 +175,31 @@ export function FullPageLayout({
   return (
     <>
       <ThemeHydrator primitives={profileData?.theme ?? null} />
-      <SocketProviderClient
-        profileId={profileData?.id ?? null}
-        idToken={sessionSnapshot?.idToken ?? null}
+      <ProfileProviderClient
+        initial={profileData}
+        sessionSnapshot={sessionSnapshot}
       >
-        <TransportProvider
-          mode={transportMode}
-          authToken={sessionSnapshot?.idToken}
-        >
-          <ProfileProviderClient
-            initial={profileData}
-            sessionSnapshot={sessionSnapshot}
-          >
-            <GroupProviderClient initialGroupId={profileData?.group_id ?? null}>
-              <SidebarProvider defaultOpen={initialSidebarOpen ?? true}>
-                <UnifiedSidebar
-                  activeSection={sidebarProps.activeSection}
-                  onSectionChange={handleSectionChange}
-                  createFeedback={sidebarProps.createFeedback}
-                />
-                <SidebarInset>
-                  <LeftSidebarBridge>
-                    {({ toggleSidebar: toggleLeftSidebar }) => (
-                      <SidebarProvider
-                        defaultOpen={initialPanelOpen ?? false}
-                        cookieName="glow_panel"
-                        isMobile={rightPanelIsMobile}
-                        className="!min-h-0"
-                        style={{ "--sidebar-width": "18rem" } as React.CSSProperties}
+        <GroupProviderClient initialGroupId={profileData?.group_id ?? null}>
+          <SidebarProvider defaultOpen={initialSidebarOpen ?? true}>
+            <UnifiedSidebar
+              activeSection={sidebarProps.activeSection}
+              onSectionChange={handleSectionChange}
+              createFeedback={sidebarProps.createFeedback}
+            />
+            <SidebarInset>
+              <LeftSidebarBridge>
+                {({ toggleSidebar: toggleLeftSidebar }) => (
+                  <SidebarProvider
+                    defaultOpen={initialPanelOpen ?? false}
+                    cookieName="glow_panel"
+                    isMobile={rightPanelIsMobile}
+                    className="!min-h-0"
+                    style={{ "--sidebar-width": "18rem" } as React.CSSProperties}
+                  >
+                    {panelProps ? (
+                      <GenerationListenerProvider
+                        artifactType={panelProps.artifactType}
+                        groupId={panelProps.groupId}
                       >
                         <SidebarInset>
                           <PageHeader
@@ -185,25 +208,46 @@ export function FullPageLayout({
                             onToggleLeftSidebar={toggleLeftSidebar}
                             hasPanel={!!panelProps}
                           />
-                          <div className="flex flex-1 flex-col gap-4">{children}</div>
+                          <div className="flex flex-1 flex-col gap-4">
+                            {children}
+                          </div>
                         </SidebarInset>
-                        {panelProps && (
-                          <GenerationPanel
-                            artifactType={panelProps.artifactType}
-                            groupId={panelProps.groupId}
-                            operations={panelProps.operations}
-                            prompts={panelProps.prompts}
-                          />
-                        )}
-                      </SidebarProvider>
+                        <GenerationPanel
+                          artifactType={panelProps.artifactType}
+                          groupId={panelProps.groupId}
+                          groupName={panelProps.groupName ?? null}
+                          initialGroupHistory={
+                            panelProps.initialGroupHistory ?? null
+                          }
+                          operations={panelProps.operations}
+                          prompts={panelProps.prompts}
+                          getGroupAction={panelProps.getGroupAction}
+                          searchGenerationsAction={
+                            panelProps.searchGenerationsAction
+                          }
+                          runGenerateAction={panelProps.runGenerateAction}
+                        />
+                      </GenerationListenerProvider>
+                    ) : (
+                      <SidebarInset>
+                        <PageHeader
+                          breadcrumbs={breadcrumbs}
+                          toolbar={toolbar}
+                          onToggleLeftSidebar={toggleLeftSidebar}
+                          hasPanel={false}
+                        />
+                        <div className="flex flex-1 flex-col gap-4">
+                          {children}
+                        </div>
+                      </SidebarInset>
                     )}
-                  </LeftSidebarBridge>
-                </SidebarInset>
-              </SidebarProvider>
-            </GroupProviderClient>
-          </ProfileProviderClient>
-        </TransportProvider>
-      </SocketProviderClient>
+                  </SidebarProvider>
+                )}
+              </LeftSidebarBridge>
+            </SidebarInset>
+          </SidebarProvider>
+        </GroupProviderClient>
+      </ProfileProviderClient>
     </>
   );
 }

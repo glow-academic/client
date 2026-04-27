@@ -6,7 +6,7 @@
  */
 
 import { getSession } from "@/auth";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import SimulationHistory from "@/components/common/SimulationHistory";
 import Practice from "@/components/artifacts/practice/Practice";
@@ -29,6 +29,10 @@ type ContextIn = InputOf<"/attempt/context", "post">;
 type ContextOut = OutputOf<"/attempt/context", "post">;
 type GroupIn = InputOf<"/attempt/group", "post">;
 type GroupOut = OutputOf<"/attempt/group", "post">;
+type GenerationsIn = InputOf<"/attempt/generations", "post">;
+type GenerationsOut = OutputOf<"/attempt/generations", "post">;
+type GenerateIn = InputOf<"/attempt/generate", "post">;
+type GenerateOut = OutputOf<"/attempt/generate", "post">;
 type ProblemIn = InputOf<"/attempt/problem", "post">;
 type ProblemOut = OutputOf<"/attempt/problem", "post">;
 
@@ -55,6 +59,24 @@ async function refreshChat(): Promise<void> {
 async function createPracticeProblem(input: ProblemIn): Promise<ProblemOut> {
   "use server";
   return api.post("/attempt/problem", input);
+}
+
+/** ---- GenerationPanel server actions ---- */
+async function getAttemptGroup(input: GroupIn): Promise<GroupOut> {
+  "use server";
+  return api.post("/attempt/group", input);
+}
+
+async function searchAttemptGenerations(
+  input: GenerationsIn,
+): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/attempt/generations", input);
+}
+
+async function runAttemptGenerate(input: GenerateIn): Promise<GenerateOut> {
+  "use server";
+  return api.post("/attempt/generate", input);
 }
 
 /** ---- Page metadata ---- */
@@ -129,7 +151,10 @@ export default async function PracticePage({
         }),
       },
     } as SearchIn) as SearchOut,
-    api.post("/attempt/group", { body: {} } as GroupIn),
+    api.post(
+      "/attempt/group",
+      { body: q.groupId ? { group_id: q.groupId } : {} } as GroupIn,
+    ),
   ]);
 
   // Check if user is a guest (no items means no access / guest)
@@ -227,8 +252,19 @@ export default async function PracticePage({
       panelProps={{
         artifactType: "attempt",
         groupId: (groupResult as GroupOut & { group_id?: string })?.group_id ?? null,
+        groupName:
+          (groupResult as GroupOut & { name?: string | null })?.name ?? null,
+        // Forward the full SSR-fetched group payload — the panel
+        // seeds historicalMessages from this synchronously and
+        // skips the duplicate client-side /<art>/group refetch
+        // on first paint, eliminating the hydration flicker.
+        initialGroupHistory: groupResult as Record<string, unknown>,
         operations: ["draft", "get", "group"],
         prompts: context.prompts?.prompts,
+        getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
+        searchGenerationsAction:
+          searchAttemptGenerations as PanelProps["searchGenerationsAction"],
+        runGenerateAction: runAttemptGenerate as PanelProps["runGenerateAction"],
       }}
     >
       <div className="space-y-6 px-4">

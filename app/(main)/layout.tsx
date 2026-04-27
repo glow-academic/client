@@ -11,6 +11,7 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { headers } from "next/headers";
 import { Suspense } from "react";
 import { LogoutGuard } from "./logout-guard";
+import { MainProviders } from "./providers";
 
 // Force dynamic rendering to ensure layout re-renders on route changes
 // This fixes the issue where children don't update on client-side navigation
@@ -39,11 +40,16 @@ export default async function MainLayout({
   }
 
   return (
-    <Suspense
-      key={`suspense-${pathname}`}
-      fallback={<AppShell.ContentSkeleton />}
+    <MainProviders
+      profileId={session.user?.id ?? null}
+      idToken={session.id_token ?? null}
     >
-      {children}
-    </Suspense>
+      <Suspense
+        key={`suspense-${pathname}`}
+        fallback={<AppShell.ContentSkeleton />}
+      >
+        {children}
+      </Suspense>
+    </MainProviders>
   );
 }

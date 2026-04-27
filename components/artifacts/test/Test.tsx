@@ -248,7 +248,7 @@ export default function Test({
                 </TableRow>
               ) : (
                 runs.map((run) => (
-                  <TableRow key={run.chat_id}>
+                  <TableRow key={`${run.chat_id ?? ""}::${run.run_id ?? "none"}`}>
                     <TableCell className="font-mono text-xs">
                       {run.run_id ? `${run.run_id.substring(0, 8)}...` : "N/A"}
                     </TableCell>

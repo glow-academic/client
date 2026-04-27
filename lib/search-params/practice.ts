@@ -7,11 +7,13 @@ import {
   analyticsSearchParams,
   historySearchParams,
 } from "@/lib/search-params/analytics";
-import { createLoader } from "nuqs/server";
+import { createLoader, parseAsString } from "nuqs/server";
 
 export const practiceSearchParams = {
   ...analyticsSearchParams,
   ...historySearchParams,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadPracticeSearchParams = createLoader(practiceSearchParams);

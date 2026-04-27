@@ -8,7 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Tool from "@/components/artifacts/tool/Tool";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -103,6 +103,22 @@ async function previewTool(input: PreviewToolIn): Promise<PreviewToolOut> {
   return api.post("/tool/preview", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getToolGroup(input: GroupToolIn): Promise<GroupToolOut> {
+  "use server";
+  return api.post("/tool/group", input);
+}
+
+async function searchToolGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/tool/generations", input);
+}
+
+async function runToolGenerate(input: GenerateToolIn): Promise<GenerateToolOut> {
+  "use server";
+  return api.post("/tool/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata({
   params,
@@ -167,6 +183,8 @@ export default async function ToolDetailPage({
     argPositionsShowSelected: parseAsBoolean,
     argsOutputsShowSelected: parseAsBoolean,
     permissionsShowSelected: parseAsBoolean,
+    groupId: parseAsString,
+    groupSearch: parseAsString,
   };
   const loadToolSearchParams = createLoader(toolSearchParams);
   const q = loadToolSearchParams(searchParamsObj);
@@ -211,7 +229,10 @@ export default async function ToolDetailPage({
       getTool(input),
       api.post("/tool/context", { body: { entity_id: toolId } } as ContextIn) as Promise<ContextOut>,
       api.post("/tool/drafts", { body: {} } as any),
-      api.post("/tool/group", { body: {} } as GroupToolIn),
+      api.post(
+        "/tool/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupToolIn,
+      ),
     ]);
 
     // Check access
@@ -240,11 +261,17 @@ export default async function ToolDetailPage({
       panelProps: {
         artifactType: "tool",
         groupId: (groupResult as GroupToolOut & { group_id?: string })?.group_id ?? null,
+        groupName:
+          (groupResult as GroupToolOut & { name?: string | null })?.name ?? null,
         generateAction: generateTool,
         operations: ["draft", "get", "group"],
         getGroupHistory: getToolGroupHistory,
         searchGroups: searchToolGroups,
         prompts: context.prompts?.prompts,
+        getGroupAction: getToolGroup as PanelProps["getGroupAction"],
+        searchGenerationsAction:
+          searchToolGenerations as PanelProps["searchGenerationsAction"],
+        runGenerateAction: runToolGenerate as PanelProps["runGenerateAction"],
       },
     } as any;
 

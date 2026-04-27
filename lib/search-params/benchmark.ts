@@ -24,6 +24,8 @@ export const benchmarkSearchParams = {
   historyArchived: parseAsBoolean,
   historySortBy: parseAsString,
   historySortOrder: parseAsString,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadBenchmarkSearchParams = createLoader(benchmarkSearchParams);

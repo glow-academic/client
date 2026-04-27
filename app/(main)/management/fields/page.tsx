@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Fields from "@/components/artifacts/field/Fields";
 
@@ -20,6 +20,7 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
+import { loadFieldsSearchParams } from "@/lib/search-params/fields";
 
 /** ---- Strong types from OpenAPI ---- */
 type FieldsListOut = OutputOf<"/field/search", "post">;
@@ -97,6 +98,22 @@ async function createFieldProblem(input: ProblemFieldIn): Promise<ProblemFieldOu
   return api.post("/field/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getFieldGroup(input: GroupFieldIn): Promise<GroupFieldOut> {
+  "use server";
+  return api.post("/field/group", input);
+}
+
+async function searchFieldGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/field/generations", input);
+}
+
+async function runFieldGenerate(input: GenerateFieldIn): Promise<GenerateFieldOut> {
+  "use server";
+  return api.post("/field/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -114,8 +131,13 @@ export async function generateMetadata(): Promise<Metadata> {
 const SIDEBAR_COOKIE = "glow_sidebar";
 const PANEL_COOKIE = "glow_panel";
 
-export default async function FieldsPage() {
+interface FieldsPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function FieldsPage({ searchParams }: FieldsPageProps) {
   const session = await getSession();
+  const q = loadFieldsSearchParams(await searchParams);
 
   // Read UI preferences from cookies for SSR
   const cookieStore = await cookies();
@@ -134,7 +156,10 @@ export default async function FieldsPage() {
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getFieldsList(),
       readViewCookie("fields"),
-      api.post("/field/group", { body: {} } as GroupFieldIn),
+      api.post(
+        "/field/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupFieldIn,
+      ),
     ]);
 
     return (
@@ -155,11 +180,22 @@ export default async function FieldsPage() {
         panelProps={{
           artifactType: "field",
           groupId: (groupResult as GroupFieldOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as GroupFieldOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           generateAction: generateField,
           operations: ["draft", "get", "group"],
           getGroupHistory: getFieldGroupHistory,
           searchGroups: searchFieldGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getFieldGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction:
+            searchFieldGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runFieldGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="fields-index">

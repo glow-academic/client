@@ -8,7 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Department from "@/components/artifacts/department/Department";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -32,6 +32,10 @@ type PatchDepartmentDraftIn = InputOf<"/department/draft", "patch">;
 type PatchDepartmentDraftOut = OutputOf<"/department/draft", "patch">;
 type GroupDepartmentIn = InputOf<"/department/group", "post">;
 type GroupDepartmentOut = OutputOf<"/department/group", "post">;
+type GenerationsIn = InputOf<"/department/generations", "post">;
+type GenerationsOut = OutputOf<"/department/generations", "post">;
+type GenerateIn = InputOf<"/department/generate", "post">;
+type GenerateOut = OutputOf<"/department/generate", "post">;
 type ProblemDepartmentIn = InputOf<"/department/problem", "post">;
 type ProblemDepartmentOut = OutputOf<"/department/problem", "post">;
 type ContextIn = InputOf<"/department/context", "post">;
@@ -72,6 +76,22 @@ async function patchDepartmentDraft(
 async function createDepartmentProblem(input: ProblemDepartmentIn): Promise<ProblemDepartmentOut> {
   "use server";
   return api.post("/department/problem", input);
+}
+
+/** ---- GenerationPanel server actions ---- */
+async function getDepartmentGroup(input: GroupDepartmentIn): Promise<GroupDepartmentOut> {
+  "use server";
+  return api.post("/department/group", input);
+}
+
+async function searchDepartmentGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/department/generations", input);
+}
+
+async function runDepartmentGenerate(input: GenerateIn): Promise<GenerateOut> {
+  "use server";
+  return api.post("/department/generate", input);
 }
 
 /** ---- Page metadata ---- */
@@ -130,6 +150,8 @@ export default async function DepartmentEditPage({
   // Inline server-side parsers for department search params
   const departmentSearchParams = {
     draftId: parseAsString,
+    groupId: parseAsString,
+    groupSearch: parseAsString,
   };
   const loadDepartmentSearchParams = createLoader(departmentSearchParams);
   const q = loadDepartmentSearchParams(searchParamsObj);
@@ -146,7 +168,10 @@ export default async function DepartmentEditPage({
       getDepartment(input),
       api.post("/department/context", { body: { entity_id: departmentId } } as ContextIn) as Promise<ContextOut>,
       api.post("/department/drafts", {} as never),
-      api.post("/department/group", { body: {} } as GroupDepartmentIn),
+      api.post(
+        "/department/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupDepartmentIn,
+      ),
     ]);
     const snapshot = buildSnapshot(session, context.profile);
 
@@ -174,10 +199,21 @@ export default async function DepartmentEditPage({
           panelProps={{
             artifactType: "department",
             groupId: (groupResult as GroupDepartmentOut & { group_id?: string })?.group_id ?? null,
+            groupName:
+              (groupResult as GroupDepartmentOut & { name?: string | null })?.name ?? null,
+            // Forward the full SSR-fetched group payload — the panel
+            // seeds historicalMessages from this synchronously and
+            // skips the duplicate client-side /<art>/group refetch
+            // on first paint, eliminating the hydration flicker.
+            initialGroupHistory: groupResult as Record<string, unknown>,
             operations: ["draft", "get", "group"],
             ...(context.prompts?.prompts
               ? { prompts: context.prompts.prompts }
               : {}),
+            getGroupAction: getDepartmentGroup as PanelProps["getGroupAction"],
+            searchGenerationsAction:
+              searchDepartmentGenerations as PanelProps["searchGenerationsAction"],
+            runGenerateAction: runDepartmentGenerate as PanelProps["runGenerateAction"],
           } as any}
         >
           <div

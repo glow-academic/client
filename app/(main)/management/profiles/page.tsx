@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Profiles from "@/components/artifacts/profile/Profiles";
 
@@ -20,6 +20,7 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
+import { loadProfilesSearchParams } from "@/lib/search-params/profiles";
 
 /** ---- Strong types from OpenAPI ---- */
 type ProfilesListIn = InputOf<"/profile/search", "post">;
@@ -167,6 +168,22 @@ async function createProfileProblem(input: ProblemProfileIn): Promise<ProblemPro
   return api.post("/profile/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getProfileGroup(input: GroupProfileIn): Promise<GroupProfileOut> {
+  "use server";
+  return api.post("/profile/group", input);
+}
+
+async function searchProfileGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/profile/generations", input);
+}
+
+async function runProfileGenerate(input: GenerateProfileIn): Promise<GenerateProfileOut> {
+  "use server";
+  return api.post("/profile/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -184,8 +201,13 @@ export async function generateMetadata(): Promise<Metadata> {
 const SIDEBAR_COOKIE = "glow_sidebar";
 const PANEL_COOKIE = "glow_panel";
 
-export default async function ProfilesPage() {
+interface ProfilesPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function ProfilesPage({ searchParams }: ProfilesPageProps) {
   const session = await getSession();
+  const q = loadProfilesSearchParams(await searchParams);
 
   // Read UI preferences from cookies for SSR
   const cookieStore = await cookies();
@@ -205,7 +227,10 @@ export default async function ProfilesPage() {
       getProfilesList({ body: {} }),
       getCreateProfileData({ body: { department_ids: [] } }),
       readViewCookie("profiles"),
-      api.post("/profile/group", { body: {} } as GroupProfileIn),
+      api.post(
+        "/profile/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupProfileIn,
+      ),
     ]);
 
     return (
@@ -226,11 +251,22 @@ export default async function ProfilesPage() {
         panelProps={{
           artifactType: "profile",
           groupId: (groupResult as GroupProfileOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as GroupProfileOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           generateAction: generateProfile,
           operations: ["draft", "get", "group"],
           getGroupHistory: getProfileGroupHistory,
           searchGroups: searchProfileGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getProfileGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction:
+            searchProfileGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runProfileGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4">

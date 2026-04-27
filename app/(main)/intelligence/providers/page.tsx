@@ -6,7 +6,7 @@
  */
 
 import { getSession } from "@/auth";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Providers from "@/components/artifacts/provider/Providers";
 
@@ -113,6 +113,22 @@ async function createProviderProblem(input: ProblemProviderIn): Promise<ProblemP
   return api.post("/provider/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getProviderGroup(input: GroupProviderIn): Promise<GroupProviderOut> {
+  "use server";
+  return api.post("/provider/group", input);
+}
+
+async function searchProviderGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/provider/generations", input);
+}
+
+async function runProviderGenerate(input: GenerateProviderIn): Promise<GenerateProviderOut> {
+  "use server";
+  return api.post("/provider/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -186,7 +202,10 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getProvidersList(body),
       readViewCookie("providers"),
-      api.post("/provider/group", { body: {} } as GroupProviderIn),
+      api.post(
+        "/provider/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupProviderIn,
+      ),
     ]);
 
     return (
@@ -207,11 +226,22 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
         panelProps={{
           artifactType: "provider",
           groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as GroupProviderOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           generateAction: generateProvider,
           operations: ["draft", "get", "group"],
           getGroupHistory: getProviderGroupHistory,
           searchGroups: searchProviderGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getProviderGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction:
+            searchProviderGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runProviderGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="providers-index">

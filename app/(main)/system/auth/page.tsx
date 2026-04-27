@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Auths from "@/components/artifacts/auth/Auths";
 
@@ -20,6 +20,7 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
+import { loadAuthSearchParams } from "@/lib/search-params/auth";
 
 /** ---- Strong types from OpenAPI ---- */
 type AuthListOut = OutputOf<"/auth/search", "post">;
@@ -97,6 +98,22 @@ async function createAuthProblem(input: ProblemAuthIn): Promise<ProblemAuthOut> 
   return api.post("/auth/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getAuthGroup(input: GroupAuthIn): Promise<GroupAuthOut> {
+  "use server";
+  return api.post("/auth/group", input);
+}
+
+async function searchAuthGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/auth/generations", input);
+}
+
+async function runAuthGenerate(input: GenerateAuthIn): Promise<GenerateAuthOut> {
+  "use server";
+  return api.post("/auth/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -114,8 +131,13 @@ export async function generateMetadata(): Promise<Metadata> {
 const SIDEBAR_COOKIE = "glow_sidebar";
 const PANEL_COOKIE = "glow_panel";
 
-export default async function AuthPage() {
+interface AuthPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function AuthPage({ searchParams }: AuthPageProps) {
   const session = await getSession();
+  const q = loadAuthSearchParams(await searchParams);
 
   // Read UI preferences from cookies for SSR
   const cookieStore = await cookies();
@@ -134,7 +156,10 @@ export default async function AuthPage() {
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getAuthList(),
       readViewCookie("auths"),
-      api.post("/auth/group", { body: {} } as GroupAuthIn),
+      api.post(
+        "/auth/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupAuthIn,
+      ),
     ]);
 
     return (
@@ -155,11 +180,22 @@ export default async function AuthPage() {
         panelProps={{
           artifactType: "auth",
           groupId: (groupResult as GroupAuthOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as GroupAuthOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           generateAction: generateAuth,
           operations: ["draft", "get", "group"],
           getGroupHistory: getAuthGroupHistory,
           searchGroups: searchAuthGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getAuthGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction:
+            searchAuthGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runAuthGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="auth-index">

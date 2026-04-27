@@ -21,6 +21,8 @@ export const agentsSearchParams = {
   toolSearch: parseAsString,
   page: parseAsInteger,
   pageSize: parseAsInteger,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadAgentsSearchParams = createLoader(agentsSearchParams);

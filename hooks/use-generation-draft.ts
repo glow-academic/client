@@ -91,16 +91,25 @@ export function useGenerationDraft({
       return data.group_id === groupIdRef.current;
     };
 
+    // SSE delivers the operation result inside ``payload.output``;
+    // socket.io spreads it at the top level. Read both so this hook
+    // works regardless of which transport delivered the event.
+    const readBody = <T,>(data: Record<string, unknown>): T => {
+      const payload = data.payload as Record<string, unknown> | undefined;
+      const output = payload?.output as Record<string, unknown> | undefined;
+      return (output ?? data) as T;
+    };
+
     const handleCompleted = (data: Record<string, unknown>) => {
       if (!matchesGroup(data)) return;
-      const event = data as unknown as DraftCompletedEvent;
+      const event = readBody<DraftCompletedEvent>(data);
       if (!event.success || !event.draft_id) return;
       onCompletedRef.current?.(event.draft_id, event.form_state);
     };
 
     const handleFailed = (data: Record<string, unknown>) => {
       if (!matchesGroup(data)) return;
-      const event = data as unknown as DraftFailedEvent;
+      const event = readBody<DraftFailedEvent>(data);
       onFailedRef.current?.(event.message || "Draft save failed");
     };
 

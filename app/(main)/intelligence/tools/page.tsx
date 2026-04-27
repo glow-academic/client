@@ -6,7 +6,7 @@
  */
 
 import { getSession } from "@/auth";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import Tools from "@/components/artifacts/tool/Tools";
 
@@ -115,6 +115,22 @@ async function createToolProblem(input: ProblemToolIn): Promise<ProblemToolOut> 
   return api.post("/tool/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getToolGroup(input: GroupToolIn): Promise<GroupToolOut> {
+  "use server";
+  return api.post("/tool/group", input);
+}
+
+async function searchToolGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/tool/generations", input);
+}
+
+async function runToolGenerate(input: GenerateToolIn): Promise<GenerateToolOut> {
+  "use server";
+  return api.post("/tool/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -188,7 +204,10 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([
       getToolsList(body),
       readViewCookie("tools"),
-      api.post("/tool/group", { body: {} } as GroupToolIn),
+      api.post(
+        "/tool/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupToolIn,
+      ),
     ]);
 
     return (
@@ -209,11 +228,22 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
         panelProps={{
           artifactType: "tool",
           groupId: (groupResult as GroupToolOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as GroupToolOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           generateAction: generateTool,
           operations: ["draft", "get", "group"],
           getGroupHistory: getToolGroupHistory,
           searchGroups: searchToolGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getToolGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction:
+            searchToolGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runToolGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="tools-index">

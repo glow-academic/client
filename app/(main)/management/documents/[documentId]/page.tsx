@@ -8,7 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Document from "@/components/artifacts/document/Document";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -39,6 +39,10 @@ type PatchDocumentDraftIn = InputOf<"/document/draft", "patch">;
 type PatchDocumentDraftOut = OutputOf<"/document/draft", "patch">;
 type GroupDocumentIn = InputOf<"/document/group", "post">;
 type GroupDocumentOut = OutputOf<"/document/group", "post">;
+type GenerationsIn = InputOf<"/document/generations", "post">;
+type GenerationsOut = OutputOf<"/document/generations", "post">;
+type GenerateIn = InputOf<"/document/generate", "post">;
+type GenerateOut = OutputOf<"/document/generate", "post">;
 type ProblemDocumentIn = InputOf<"/document/problem", "post">;
 type ProblemDocumentOut = OutputOf<"/document/problem", "post">;
 type ContextIn = InputOf<"/document/context", "post">;
@@ -121,6 +125,22 @@ async function createDocumentProblem(input: ProblemDocumentIn): Promise<ProblemD
   return api.post("/document/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getDocumentGroup(input: GroupDocumentIn): Promise<GroupDocumentOut> {
+  "use server";
+  return api.post("/document/group", input);
+}
+
+async function searchDocumentGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/document/generations", input);
+}
+
+async function runDocumentGenerate(input: GenerateIn): Promise<GenerateOut> {
+  "use server";
+  return api.post("/document/generate", input);
+}
+
 const buildSectionFilter = (
   opts: {
     search?: string | null;
@@ -197,6 +217,8 @@ export default async function DocumentEditPage({
     uploadSearch: parseAsString,
     fieldShowSelected: parseAsBoolean,
     parameterIds: parseAsArrayOf(parseAsString),
+    groupId: parseAsString,
+    groupSearch: parseAsString,
   };
   const loadDocumentSearchParams = createLoader(documentSearchParams);
   const q = loadDocumentSearchParams(searchParamsObj);
@@ -224,7 +246,10 @@ export default async function DocumentEditPage({
       getDocumentDefault({ body } as GetDocumentIn),
       api.post("/document/context", { body: { entity_id: documentId } } as ContextIn) as Promise<ContextOut>,
       api.post("/document/drafts", {} as DocumentDraftsIn),
-      api.post("/document/group", { body: {} } as GroupDocumentIn),
+      api.post(
+        "/document/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupDocumentIn,
+      ),
     ]);
     const snapshot = buildSnapshot(session, context.profile);
 
@@ -255,8 +280,19 @@ export default async function DocumentEditPage({
           panelProps={{
             artifactType: "document",
             groupId: (groupResult as GroupDocumentOut & { group_id?: string })?.group_id ?? null,
+            groupName:
+              (groupResult as GroupDocumentOut & { name?: string | null })?.name ?? null,
+            // Forward the full SSR-fetched group payload — the panel
+            // seeds historicalMessages from this synchronously and
+            // skips the duplicate client-side /<art>/group refetch
+            // on first paint, eliminating the hydration flicker.
+            initialGroupHistory: groupResult as Record<string, unknown>,
             operations: ["draft", "get", "group"],
             ...(context.prompts?.prompts ? { prompts: context.prompts.prompts } : {}),
+            getGroupAction: getDocumentGroup as PanelProps["getGroupAction"],
+            searchGenerationsAction:
+              searchDocumentGenerations as PanelProps["searchGenerationsAction"],
+            runGenerateAction: runDocumentGenerate as PanelProps["runGenerateAction"],
           }}
         >
           <div

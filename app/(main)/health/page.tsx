@@ -5,7 +5,7 @@
  * 06/18/2025
  */
 import { getSession } from "@/auth";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import Logs from "@/components/artifacts/health/Logs";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { buildSnapshot } from "@/lib/auth";
@@ -24,12 +24,12 @@ type HealthBundleIn = InputOf<"/system/health/get", "post">;
 type HealthBundleOut = OutputOf<"/system/health/get", "post">;
 type ContextIn = InputOf<"/system/context", "post">;
 type ContextOut = OutputOf<"/system/context", "post">;
-type GenerateHealthIn = InputOf<"/system/generate", "post">;
-type GenerateHealthOut = OutputOf<"/system/generate", "post">;
-type GenerationsIn = InputOf<"/system/generations", "post">;
-type GenerationsOut = OutputOf<"/system/generations", "post">;
-type GroupHealthIn = InputOf<"/system/group", "post">;
-type GroupHealthOut = OutputOf<"/system/group", "post">;
+type SystemGroupIn = InputOf<"/system/group", "post">;
+type SystemGroupOut = OutputOf<"/system/group", "post">;
+type SystemGenerationsIn = InputOf<"/system/generations", "post">;
+type SystemGenerationsOut = OutputOf<"/system/generations", "post">;
+type SystemGenerateIn = InputOf<"/system/generate", "post">;
+type SystemGenerateOut = OutputOf<"/system/generate", "post">;
 type ProblemHealthIn = InputOf<"/system/problem", "post">;
 type ProblemHealthOut = OutputOf<"/system/problem", "post">;
 
@@ -55,26 +55,25 @@ async function refreshHealth(): Promise<void> {
   await api.post("/system/health/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
-async function generateHealth(
-  input: GenerateHealthIn
-): Promise<GenerateHealthOut> {
-  "use server";
-  return api.post("/system/generate", input);
-}
-
-async function getHealthGroupHistory(groupId: string): Promise<GroupHealthOut> {
-  "use server";
-  return api.post("/system/group", { body: { group_id: groupId } } as GroupHealthIn);
-}
-
-async function searchHealthGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/system/generations", { body: { search: query || null } } as GenerationsIn);
-}
-
 async function createHealthProblem(input: ProblemHealthIn): Promise<ProblemHealthOut> {
   "use server";
   return api.post("/system/problem", input);
+}
+
+/** ---- GenerationPanel server actions ---- */
+async function getSystemGroup(input: SystemGroupIn): Promise<SystemGroupOut> {
+  "use server";
+  return api.post("/system/group", input);
+}
+
+async function searchSystemGenerations(input: SystemGenerationsIn): Promise<SystemGenerationsOut> {
+  "use server";
+  return api.post("/system/generations", input);
+}
+
+async function runSystemGenerate(input: SystemGenerateIn): Promise<SystemGenerateOut> {
+  "use server";
+  return api.post("/system/generate", input);
 }
 
 /** ---- Page metadata ---- */
@@ -125,7 +124,10 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
           date_to: q.endDate ?? undefined,
         },
       }),
-      api.post("/system/group", { body: {} } as GroupHealthIn),
+      api.post(
+        "/system/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as SystemGroupIn,
+      ),
     ]);
 
     // Extract inline analytics facets
@@ -152,12 +154,19 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
         }
         panelProps={{
           artifactType: "health",
-          groupId: (groupResult as GroupHealthOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateHealth,
+          groupId: (groupResult as SystemGroupOut & { group_id?: string })?.group_id ?? null,
+          groupName:
+            (groupResult as SystemGroupOut & { name?: string | null })?.name ?? null,
+          // Forward the full SSR-fetched group payload — the panel
+          // seeds historicalMessages from this synchronously and
+          // skips the duplicate client-side /<art>/group refetch
+          // on first paint, eliminating the hydration flicker.
+          initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "group"],
-          getGroupHistory: getHealthGroupHistory,
-          searchGroups: searchHealthGroups,
           prompts: context.prompts?.prompts,
+          getGroupAction: getSystemGroup as PanelProps["getGroupAction"],
+          searchGenerationsAction: searchSystemGenerations as PanelProps["searchGenerationsAction"],
+          runGenerateAction: runSystemGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4">

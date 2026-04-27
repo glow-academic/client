@@ -22,6 +22,8 @@ export const simulationsListSearchParams = {
   flagSearch: parseAsString,
   page: parseAsInteger,
   pageSize: parseAsInteger,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadSimulationsListSearchParams = createLoader(simulationsListSearchParams);

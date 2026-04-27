@@ -7,7 +7,7 @@
  */
 
 import { getSession } from "@/auth";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Provider from "@/components/artifacts/provider/Provider";
@@ -93,6 +93,22 @@ async function createProviderProblem(input: ProblemProviderIn): Promise<ProblemP
   return api.post("/provider/problem", input);
 }
 
+/** ---- GenerationPanel server actions ---- */
+async function getProviderGroup(input: GroupProviderIn): Promise<GroupProviderOut> {
+  "use server";
+  return api.post("/provider/group", input);
+}
+
+async function searchProviderGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/provider/generations", input);
+}
+
+async function runProviderGenerate(input: GenerateProviderIn): Promise<GenerateProviderOut> {
+  "use server";
+  return api.post("/provider/generate", input);
+}
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -153,6 +169,8 @@ export default async function NewProviderPage({
       valueShowSelected: parseAsBoolean,
       endpointShowSelected: parseAsBoolean,
       keyShowSelected: parseAsBoolean,
+      groupId: parseAsString,
+      groupSearch: parseAsString,
     };
     const loadProviderSearchParams = createLoader(providerSearchParams);
     const q = loadProviderSearchParams(searchParamsObj);
@@ -191,7 +209,10 @@ export default async function NewProviderPage({
     const [providerDetailDefault, draftsResult, groupResult] = await Promise.all([
       getProviderDefault(input),
       api.post("/provider/drafts", {}),
-      api.post("/provider/group", { body: {} } as GroupProviderIn),
+      api.post(
+        "/provider/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupProviderIn,
+      ),
     ]);
 
     return (
@@ -215,11 +236,17 @@ export default async function NewProviderPage({
             panelProps: {
               artifactType: "provider",
               groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
+              groupName:
+                (groupResult as GroupProviderOut & { name?: string | null })?.name ?? null,
               generateAction: generateProvider,
               operations: ["draft", "get", "group"],
               getGroupHistory: getProviderGroupHistory,
               searchGroups: searchProviderGroups,
               prompts: context.prompts?.prompts,
+              getGroupAction: getProviderGroup as PanelProps["getGroupAction"],
+              searchGenerationsAction:
+                searchProviderGenerations as PanelProps["searchGenerationsAction"],
+              runGenerateAction: runProviderGenerate as PanelProps["runGenerateAction"],
             },
           } as any)}
         >

@@ -4,10 +4,12 @@
  */
 
 import { analyticsSearchParams } from "@/lib/search-params/analytics";
-import { createLoader } from "nuqs/server";
+import { createLoader, parseAsString } from "nuqs/server";
 
 export const leaderboardSearchParams = {
   ...analyticsSearchParams,
+  groupId: parseAsString,
+  groupSearch: parseAsString,
 };
 
 export const loadLeaderboardSearchParams = createLoader(leaderboardSearchParams);

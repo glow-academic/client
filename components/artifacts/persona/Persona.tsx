@@ -38,8 +38,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
-import { useGenerate } from "@/hooks/use-generate";
+import { useSharedGenerationListener } from "@/hooks/use-artifact-generation-context";
 import { useGenerationDraft } from "@/hooks/use-generation-draft";
+import { useSidebar } from "@/components/ui/sidebar";
+import { useTransport } from "@/lib/transport";
 
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 
@@ -177,12 +179,24 @@ function PersonaComponent({
   >(new Map());
 
   // --- AI Generation State ---
-  const { isGenerating: isGeneratingBool, generate } =
-    useGenerate({
-      artifactType: "persona",
-      operations: ["draft", "get", "docs", "group"],
-      groupId: groupId,
-    });
+  // Canonical path: subscribe to generation events via the shared transport
+  // listener (same primitive the right-side GenerationPanel uses), and emit
+  // requests through `transport.send("/persona/generate", ...)`. This collapses
+  // the previous dual-path architecture (panel via transport, StepCard buttons
+  // via raw socket) into one path that matches the attempt pattern.
+  const transport = useTransport();
+  // Shared listener mounted by FullPageLayout's GenerationListenerProvider.
+  // One transport subscription serves both this component (for the
+  // StepCard `isGenerating` flag) and the right-side GenerationPanel
+  // (for message rendering). No double-subscribe.
+  const generationListener = useSharedGenerationListener();
+  const isGeneratingBool = generationListener.isGenerating;
+
+  // Right-panel sidebar handle — Persona is mounted inside the inner
+  // (right-side) SidebarProvider via FullPageLayout, so useSidebar() returns
+  // the right panel's context. We auto-open it when a StepCard AI button is
+  // clicked so users see the streaming tool calls / text.
+  const { state: rightPanelState, setOpen: setRightPanelOpen } = useSidebar();
 
   // Wrap boolean into function for StepCardAiButton compatibility
   const isGenerating = useCallback(
@@ -768,20 +782,56 @@ function PersonaComponent({
         return;
       }
 
-      generate(
-        userInstructions || `Generate ${resourceTypes.join(", ")}`,
-        {
-          resources: resourceTypes,
-          artifactId: personaId ?? undefined,
-          params: { draft_id: draftIdToUse },
-        },
-      );
+      // Auto-open the right-side generation panel so the user can see the
+      // tool-call / text stream that's about to start.
+      if (rightPanelState !== "expanded") {
+        setRightPanelOpen(true);
+      }
+
+      const params: Record<string, string> = {
+        draft_id: draftIdToUse,
+        ...(personaId ? { artifact_id: personaId } : {}),
+      };
+
+      const instructions = userInstructions
+        ? [userInstructions]
+        : [`Generate ${resourceTypes.join(", ")}`];
+
+      try {
+        generationListener.setGenerating(true);
+        // Pre-latch the URL to the group we're about to target —
+        // mirrors how `draftId` is latched before save. If the user
+        // refreshes mid-generate, SSR resolves back to the same
+        // group and picks up the in-progress run.
+        if (groupId) {
+          generationListener.latchGroupId(groupId);
+        }
+        await transport.send("/persona/generate", {
+          instructions,
+          config: {
+            // resource types ARE the operations in the StepCard flow (matches
+            // what the old useGenerate hook emitted as `operations`).
+            operations: resourceTypes,
+            dangerous: true,
+            group_id: groupId,
+            params,
+          },
+        });
+      } catch (err) {
+        generationListener.setError(
+          err instanceof Error ? err.message : "Generate request failed",
+        );
+      }
     },
     [
       flushAllAndSave,
       formDataRef,
-      generate,
       personaId,
+      transport,
+      generationListener,
+      groupId,
+      rightPanelState,
+      setRightPanelOpen,
     ],
   );
 
