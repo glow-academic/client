@@ -49502,7 +49502,10 @@ export interface components {
          *
          *     Sources from runs_entry rows. Each row is a distinct config
          *     (agent + model + bundle) that can be re-fired any number of times
-         *     into fresh trace executions.
+         *     into fresh trace executions. The bundle ids carried here come from
+         *     the historical run's agent_resource — the picker passes them as
+         *     `RunPanelState` to /test/trace so the new trace records the same
+         *     prompt + tool + instruction set the original run executed against.
          */
         TestConfigItem: {
             /**
@@ -49535,6 +49538,21 @@ export interface components {
              * @description When this config was first created
              */
             created_at?: string | null;
+            /**
+             * Prompt Ids
+             * @description Prompt resource ids from the historical agent
+             */
+            prompt_ids?: string[];
+            /**
+             * Tool Ids
+             * @description Tool resource ids from the historical agent
+             */
+            tool_ids?: string[];
+            /**
+             * Instruction Ids
+             * @description Instruction resource ids from the historical agent
+             */
+            instruction_ids?: string[];
         };
         /**
          * TestEntries

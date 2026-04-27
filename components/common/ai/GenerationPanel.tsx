@@ -466,19 +466,26 @@ export function GenerationPanel({
 
     try {
       listener.setGenerating(true);
-      // "Fresh chat" intent: send no group_id so the server allocates
-      // a new one. The latch happens via the response (server returns
-      // the allocated id; the audit/forwarder path includes it on
-      // events). Reset the flag — the chat is committing right now.
-      const sendGroupId = listener.forceNewChat ? null : activeGroupId;
+      // Client-mints the id for fresh chats; the server idempotently
+      // upserts via ``create_group``'s ``ON CONFLICT`` clause. Same
+      // pattern ``draftId`` uses — caller is the source of truth for
+      // the canonical id, server fills in the row.
+      //
+      // Pre-latch is unconditional: existing groups latch to their
+      // current id (no-op if URL already matches), fresh chats latch
+      // to the just-minted id. The URL is correct synchronously
+      // before the request leaves, so refresh-during-generate
+      // resolves SSR back to the right group and the EventSource is
+      // already on the right channel from t=0.
+      const sendGroupId =
+        listener.forceNewChat
+          ? crypto.randomUUID()
+          : activeGroupId ?? crypto.randomUUID();
       if (listener.forceNewChat) {
         listener.setForceNewChat(false);
-      } else if (activeGroupId) {
-        // Normal path: pre-latch the URL to the group we're about to
-        // target. If the user refreshes mid-flight, SSR resolves
-        // back to this same group and picks up the in-progress run.
-        listener.latchGroupId(activeGroupId);
       }
+      listener.latchGroupId(sendGroupId);
+
       const generateBody = {
         instructions: text ? [text] : [],
         config: {
