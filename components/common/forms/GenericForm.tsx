@@ -108,10 +108,14 @@ export interface GenericFormProps<T extends Record<string, Parser<unknown>>> {
   // Optional bridge for parent side-effects (draft patching, websocket, etc.)
   onFormDataChange?: (formData: Values<T>) => void;
 
-  // Optional bridge so parent can imperatively update URL-backed state
+  // Optional bridge so parent can imperatively update URL-backed state.
+  // The setter accepts an options object (passes through to nuqs):
+  //   ``shallow: true`` skips the Next.js RSC re-fetch, useful for
+  //   mount-time URL "seeding" where no server data needs to change.
   registerSetFormData?: (
     setFormData: (
-      updates: Partial<Values<T>> | ((prev: Values<T>) => Partial<Values<T>>)
+      updates: Partial<Values<T>> | ((prev: Values<T>) => Partial<Values<T>>),
+      options?: { shallow?: boolean; history?: "push" | "replace"; scroll?: boolean }
     ) => void
   ) => void;
 }

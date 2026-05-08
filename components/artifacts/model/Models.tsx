@@ -9,6 +9,7 @@
 "use client";
 import { Copy, Cpu, Edit, Eye, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -54,6 +55,7 @@ import type {
   DeleteModelOut,
   DuplicateModelIn,
   DuplicateModelOut,
+  ModelsListBody,
   ModelsListOut,
   UpdateModelIn,
   UpdateModelOut,
@@ -75,6 +77,11 @@ export interface ModelsProps {
   ) => Promise<DuplicateModelOut>;
   deleteModelAction?: (input: DeleteModelIn) => Promise<DeleteModelOut>;
   updateModelAction?: (input: UpdateModelIn) => Promise<UpdateModelOut>;
+  /** The body the page used for its SSR ``/model/search`` call.
+   *  Forwarded as the filter envelope on bulk delete/update calls
+   *  when the user is in ``selectAll=1`` mode — the server resolves
+   *  matching rows directly, no client-side enumeration. */
+  currentSearchBody?: ModelsListBody;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;
@@ -98,6 +105,7 @@ export default function Models({
   duplicateModelAction,
   deleteModelAction,
   updateModelAction,
+  currentSearchBody,
   pageIndex,
   pageSize,
   totalCount,
@@ -139,12 +147,53 @@ export default function Models({
       .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
   }, [modelsData?.flag_filter]);
 
-  // Selection state
-  const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
-  const selectedCount = selectedModelIds.length;
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated focus link. Three params
+  // model the full state machine:
+  //
+  //   - ``selectedIds=A,B``        → explicit selection of named rows
+  //   - ``selectAll=1``            → every row matching the active
+  //                                  filters/search is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                                → all-matching minus exclusions
+  //   - (none of the above)        → empty selection
+  //
+  // The all-matching mode keeps the URL compact for huge datasets
+  // (one boolean instead of N ids) and follows the active filter —
+  // change the filter and "all matching" follows naturally. Shallow
+  // updates avoid the RSC re-fetch burst.
+  const [selectedModelIds, setSelectedModelIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedModelIds, setExcludedModelIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+
+  const totalMatchingCount = totalCount;
+
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedModelIds.includes(id)
+        : selectedModelIds.includes(id);
+    },
+    [selectAllMatching, excludedModelIds, selectedModelIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedModelIds.length)
+    : selectedModelIds.length;
+
   const selectedModels = useMemo(() => {
-    return models.filter((m) => m.model_id && selectedModelIds.includes(m.model_id));
-  }, [models, selectedModelIds]);
+    return models.filter((m) => m.model_id && isSelected(m.model_id));
+  }, [models, isSelected]);
   const deletableModels = useMemo(
     () => selectedModels.filter((m) => m.can_delete),
     [selectedModels],
@@ -157,20 +206,59 @@ export default function Models({
     () => selectedModels.filter((m) => m.can_edit ?? true),
     [selectedModels],
   );
+
+  // Toggle selection for a single model. Under all-matching mode we
+  // toggle membership in ``excludedModelIds`` (deselect ⇒ add to
+  // exclusions, re-select ⇒ remove). Under explicit mode it's the
+  // straight ``selectedModelIds`` toggle.
   const toggleSelection = useCallback((modelId: string) => {
-    setSelectedModelIds((prev) =>
-      prev.includes(modelId) ? prev.filter((id) => id !== modelId) : [...prev, modelId]
-    );
-  }, []);
-  const clearSelection = useCallback(() => setSelectedModelIds([]), []);
+    if (selectAllMatching) {
+      void setExcludedModelIds((prev) =>
+        prev.includes(modelId)
+          ? prev.filter((id) => id !== modelId)
+          : [...prev, modelId],
+      );
+    } else {
+      void setSelectedModelIds((prev) =>
+        prev.includes(modelId)
+          ? prev.filter((id) => id !== modelId)
+          : [...prev, modelId],
+      );
+    }
+  }, [selectAllMatching, setExcludedModelIds, setSelectedModelIds]);
+
+  const clearSelection = useCallback(() => {
+    void setSelectedModelIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedModelIds([]);
+  }, [setSelectedModelIds, setSelectAllMatching, setExcludedModelIds]);
+
   const selectAllOnPage = useCallback(() => {
     const pageIds = models.filter((m) => m.model_id).map((m) => m.model_id!);
-    setSelectedModelIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [models]);
+    void setSelectAllMatching(false);
+    void setExcludedModelIds([]);
+    void setSelectedModelIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [models, setSelectAllMatching, setExcludedModelIds, setSelectedModelIds]);
+
+  // Promote the current page-only selection into "all matching
+  // filter" mode. Clears explicit ids and exclusions — all-matching
+  // is the canonical truth from this point.
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedModelIds([]);
+    void setExcludedModelIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedModelIds, setExcludedModelIds, setSelectAllMatching]);
+
   const allPageSelected = useMemo(() => {
     const pageIds = models.filter((m) => m.model_id).map((m) => m.model_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedModelIds.includes(id));
-  }, [models, selectedModelIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [models, isSelected]);
+
+  // Whether there ARE more matching rows than what's loaded on this
+  // page — used to decide whether to surface the "Select all N
+  // matching" affordance after the user selects the page.
+  const hasMoreThanCurrentPage = totalMatchingCount > models.length;
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -676,12 +764,45 @@ export default function Models({
   };
 
   const handleBulkDelete = async () => {
-    if (!deleteModelAction || deletableModels.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deleteModelAction`` call shape; the
+    // body just differs.
+    if (!deleteModelAction) return;
+    if (!selectAllMatching && deletableModels.length === 0) return;
     setIsBulkDeleting(true);
     try {
-      const ids = deletableModels.map((m) => m.model_id!);
-      await deleteModelAction({ body: { model_ids: ids, accept: true } });
-      toast.success(`${ids.length} model(s) deleted successfully`);
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedModelIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            model_ids: deletableModels.map((m) => m.model_id!),
+            accept: true,
+          };
+
+      const result = await deleteModelAction({ body } as DeleteModelIn);
+
+      // Per-row results from the server: success entries are actual
+      // deletions, failures are soft-skipped rows (no permission /
+      // not found). Toast reflects both counts so the user knows
+      // some rows were skipped without inspecting the receipt.
+      const results = (result as DeleteModelOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(`${successCount} model(s) deleted, ${skippedCount} skipped`);
+      } else {
+        toast.success(`${successCount} model(s) deleted successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -694,7 +815,8 @@ export default function Models({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateModelAction || editableModels.length === 0) return;
+    if (!updateModelAction) return;
+    if (!selectAllMatching && editableModels.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     if (!hasActiveChange) {
@@ -702,24 +824,62 @@ export default function Models({
       return;
     }
 
+    // Resolve flag UUIDs by type from the server-provided catalog.
     const activeFlagId = flagOptions.find((f) => f.type === "model_active")?.id;
 
     setIsBulkEditing(true);
     try {
-      const items = editableModels.map((m) => {
+      let body: UpdateModelIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know what each row's existing flags are), so
+        // the active toggle becomes "set to this value across all
+        // matching rows" — same semantic as a manual sweep.
         let flag_ids: string[] | undefined;
         if (hasActiveChange) {
-          const isActive = bulkEditActiveStatus;
-          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+          flag_ids = [];
+          if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
         }
-        return {
-          id: m.model_id!,
-          ...(hasActiveChange && { flag_ids }),
-        };
-      });
+        body = {
+          all: true,
+          excluded_ids: excludedModelIds,
+          ...(currentSearchBody ?? {}),
+          patch: {
+            ...(hasActiveChange && { flag_ids }),
+          },
+          accept: true,
+        } as UpdateModelIn["body"];
+      } else {
+        // Explicit: clone the patch per-row, preserving each row's
+        // existing flag state for flags we aren't toggling. (Models
+        // currently only expose the active toggle in bulk-edit, so
+        // there's no other state to preserve, but the structure
+        // mirrors scenario for consistency.)
+        const items = editableModels.map((m) => {
+          let flag_ids: string[] | undefined;
+          if (hasActiveChange) {
+            const isActive = bulkEditActiveStatus;
+            flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+          }
+          return {
+            id: m.model_id!,
+            ...(hasActiveChange && { flag_ids }),
+          };
+        });
+        body = { models: items } as UpdateModelIn["body"];
+      }
 
-      await updateModelAction({ body: { models: items } } as UpdateModelIn);
-      toast.success(`${items.length} model(s) updated successfully`);
+      const result = await updateModelAction({ body } as UpdateModelIn);
+
+      // Per-row results — same soft-skip pattern as bulk delete.
+      const results = (result as UpdateModelOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(`${successCount} model(s) updated, ${skippedCount} skipped`);
+      } else {
+        toast.success(`${successCount} model(s) updated successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -737,7 +897,7 @@ export default function Models({
   };
 
   const renderModelCard = (model: (typeof models)[number]) => {
-    const isSelected = model.model_id ? selectedModelIds.includes(model.model_id) : false;
+    const cardSelected = isSelected(model.model_id);
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
@@ -749,13 +909,13 @@ export default function Models({
     <Card
       key={model.model_id}
       className={`group hover:shadow-md transition-all flex flex-col h-full min-h-[220px] cursor-pointer ${
-        isSelected ? "ring-2 ring-primary" : ""
+        cardSelected ? "ring-2 ring-primary" : ""
       }`}
       data-testid="model-card"
       data-model-id={model.model_id}
       role="gridcell"
       aria-label={`model card ${model.name || "Unnamed Model"}`}
-      aria-selected={isSelected}
+      aria-selected={cardSelected}
       onClick={handleCardClick}
     >
       <CardHeader className="flex-0">
@@ -771,7 +931,7 @@ export default function Models({
                 data-action-button
               >
                 <Checkbox
-                  checked={isSelected}
+                  checked={cardSelected}
                   onCheckedChange={() => {
                     if (model.model_id) toggleSelection(model.model_id);
                   }}
@@ -874,9 +1034,9 @@ export default function Models({
         <div className="space-y-4">
           {/* Toolbar — swaps between filter bar and selection action bar */}
           {selectedCount > 0 ? (
+            <div className="space-y-2" data-testid="models-toolbar">
             <div
               className="flex items-center justify-between gap-2"
-              data-testid="models-toolbar"
             >
               <div className="flex items-center gap-2">
                 {deleteModelAction && (
@@ -885,10 +1045,12 @@ export default function Models({
                     size="sm"
                     className="h-8"
                     onClick={() => setShowBulkDeleteDialog(true)}
-                    disabled={deletableModels.length === 0}
+                    disabled={!selectAllMatching && deletableModels.length === 0}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete {deletableModels.length} of {selectedCount}
+                    {selectAllMatching
+                      ? `Delete ${selectedCount} matching`
+                      : `Delete ${deletableModels.length} of ${selectedCount}`}
                   </Button>
                 )}
                 {updateModelAction && (
@@ -897,15 +1059,17 @@ export default function Models({
                     size="sm"
                     className="h-8"
                     onClick={openBulkEditDialog}
-                    disabled={editableModels.length === 0}
+                    disabled={!selectAllMatching && editableModels.length === 0}
                   >
                     <Pencil className="mr-2 h-4 w-4" />
-                    Edit {editableModels.length} of {selectedCount}
+                    {selectAllMatching
+                      ? `Edit ${selectedCount} matching`
+                      : `Edit ${editableModels.length} of ${selectedCount}`}
                   </Button>
                 )}
-                {!allPageSelected && (
+                {!allPageSelected && !selectAllMatching && (
                   <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
-                    Select All
+                    Select Page
                   </Button>
                 )}
                 <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
@@ -916,6 +1080,51 @@ export default function Models({
                 table={table}
                 hiddenColumns={["name", "provider", "is_custom", "active", "departments", "agents", "updated_at"]}
               />
+            </div>
+
+            {/* Cross-page selection banners. Two states:
+                (a) page-all selected, more matching elsewhere → offer
+                    "Select all N matching" to flip into all-matching mode.
+                (b) all-matching active → show count + Clear so the
+                    user always has an obvious escape hatch.
+                Mutually exclusive — both never render at once. */}
+            {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+              <div
+                className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+                data-testid="select-all-matching-banner"
+              >
+                <span className="text-muted-foreground">
+                  All {models.length} on this page selected.
+                </span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={selectAllMatchingNow}
+                >
+                  Select all {totalMatchingCount} matching
+                </Button>
+              </div>
+            )}
+            {selectAllMatching && (
+              <div
+                className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+                data-testid="all-matching-active-banner"
+              >
+                <span className="text-muted-foreground">
+                  All {selectedCount} matching models selected
+                  {excludedModelIds.length > 0 && ` (${excludedModelIds.length} excluded)`}.
+                </span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={clearSelection}
+                >
+                  Clear
+                </Button>
+              </div>
+            )}
             </div>
           ) : (
             <div
@@ -1064,7 +1273,7 @@ export default function Models({
         <BulkDeleteDialog
           open={showBulkDeleteDialog}
           onOpenChange={setShowBulkDeleteDialog}
-          count={deletableModels.length}
+          count={selectAllMatching ? selectedCount : deletableModels.length}
           entityLabel="model"
           entityLabelPlural="models"
           isDeleting={isBulkDeleting}
@@ -1072,35 +1281,59 @@ export default function Models({
           description={
             <>
               <p>This action cannot be undone.</p>
-              {deletableModels.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                  <ul className="text-sm space-y-0.5">
-                    {deletableModels.map((m) => (
-                      <li key={m.model_id} className="flex items-center gap-1.5">
-                        <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                        {m.name || "Unnamed Model"}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {nonDeletableModels.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
-                    Cannot be deleted (in use):
+              {selectAllMatching ? (
+                // All-matching mode: server resolves rows from filter +
+                // exclusions; per-row permission failures soft-skip.
+                // We can't enumerate names without round-tripping through
+                // the search endpoint (which would re-trigger the RSC
+                // burst), so show the count + filter state instead.
+                <div className="text-sm text-muted-foreground">
+                  <p>
+                    All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                    {" "}models will be deleted server-side using the current filter.
                   </p>
-                  <ul className="text-sm space-y-0.5">
-                    {nonDeletableModels.map((m) => (
-                      <li
-                        key={m.model_id}
-                        className="flex items-center gap-1.5 text-muted-foreground"
-                      >
-                        {m.name || "Unnamed Model"}
-                      </li>
-                    ))}
-                  </ul>
+                  {excludedModelIds.length > 0 && (
+                    <p className="mt-1">
+                      {excludedModelIds.length} explicitly excluded.
+                    </p>
+                  )}
+                  <p className="mt-1">
+                    Models you don't have permission to delete will be skipped automatically.
+                  </p>
                 </div>
+              ) : (
+                <>
+                  {deletableModels.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                      <ul className="text-sm space-y-0.5">
+                        {deletableModels.map((m) => (
+                          <li key={m.model_id} className="flex items-center gap-1.5">
+                            <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                            {m.name || "Unnamed Model"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {nonDeletableModels.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                        Cannot be deleted (in use):
+                      </p>
+                      <ul className="text-sm space-y-0.5">
+                        {nonDeletableModels.map((m) => (
+                          <li
+                            key={m.model_id}
+                            className="flex items-center gap-1.5 text-muted-foreground"
+                          >
+                            {m.name || "Unnamed Model"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
               )}
             </>
           }
@@ -1110,7 +1343,7 @@ export default function Models({
         <BulkEditDialog
           open={showBulkEditDialog}
           onOpenChange={setShowBulkEditDialog}
-          count={editableModels.length}
+          count={selectAllMatching ? selectedCount : editableModels.length}
           entityLabelPlural="models"
           isSaving={isBulkEditing}
           onSave={handleBulkEdit}

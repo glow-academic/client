@@ -21,6 +21,8 @@ import { createLoader, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetAgentIn = InputOf<"/agent/get", "post">;
 type GetAgentOut = OutputOf<"/agent/get", "post">;
@@ -34,8 +36,6 @@ type GroupAgentIn = InputOf<"/agent/group", "post">;
 type GroupAgentOut = OutputOf<"/agent/group", "post">;
 type GenerationsIn = InputOf<"/agent/generations", "post">;
 type GenerationsOut = OutputOf<"/agent/generations", "post">;
-type GenerateIn = InputOf<"/agent/generate", "post">;
-type GenerateOut = OutputOf<"/agent/generate", "post">;
 type ProblemAgentIn = InputOf<"/agent/problem", "post">;
 type ProblemAgentOut = OutputOf<"/agent/problem", "post">;
 type ContextIn = InputOf<"/agent/context", "post">;
@@ -84,10 +84,15 @@ async function searchAgentGenerations(input: GenerationsIn): Promise<Generations
   return api.post("/agent/generations", input);
 }
 
-async function runAgentGenerate(input: GenerateIn): Promise<GenerateOut> {
-  "use server";
-  return api.post("/agent/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getAgentContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/agent/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata({
@@ -97,7 +102,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { agentId } = await params;
-    const context = await api.post("/agent/context", { body: { entity_id: agentId } } as ContextIn) as ContextOut;
+    const context = await getAgentContextById(agentId);
     return {
       title: context.page_metadata?.detail.title,
       description: context.page_metadata?.detail.description,
@@ -188,7 +193,7 @@ export default async function AgentEditPage({
 
     const [agentDetail, context, draftsResult, groupResult] = await Promise.all([
       getAgent(input),
-      api.post("/agent/context", { body: { entity_id: agentId } } as ContextIn) as Promise<ContextOut>,
+      getAgentContextById(agentId) as Promise<ContextOut>,
       api.post("/agent/drafts", {} as any),
       api.post(
         "/agent/group",
@@ -219,17 +224,17 @@ export default async function AgentEditPage({
           panelProps={
             {
               artifactType: "agent",
+              initialPanelPrefs: await readGenerationPanelPrefs(),
               groupId: (groupResult as GroupAgentOut & { group_id?: string })?.group_id ?? null,
               groupName:
                 (groupResult as GroupAgentOut & { name?: string | null })?.name ?? null,
-              operations: ["draft", "get", "group"],
+              operations: ["draft", "get", "title"],
               ...(context.prompts?.prompts
                 ? { prompts: context.prompts.prompts }
                 : {}),
               getGroupAction: getAgentGroup as PanelProps["getGroupAction"],
               searchGenerationsAction:
                 searchAgentGenerations as PanelProps["searchGenerationsAction"],
-              runGenerateAction: runAgentGenerate as PanelProps["runGenerateAction"],
             } as any
           }
         >

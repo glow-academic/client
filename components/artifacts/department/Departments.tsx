@@ -7,6 +7,7 @@
 "use client";
 import { Copy, Edit, Eye, Pencil, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -33,6 +34,7 @@ import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import type {
   DeleteDepartmentIn,
   DeleteDepartmentOut,
+  DepartmentsListBody,
   DepartmentsListOut,
   DuplicateDepartmentIn,
   DuplicateDepartmentOut,
@@ -70,6 +72,11 @@ export interface DepartmentsProps {
   updateDepartmentAction?: (
     input: UpdateDepartmentIn,
   ) => Promise<UpdateDepartmentOut>;
+  /** The body the page used for its SSR ``/department/search`` call.
+   *  Forwarded as the filter envelope on bulk delete/update calls
+   *  when the user is in ``selectAll=1`` mode — the server resolves
+   *  matching rows directly, no client-side enumeration. */
+  currentSearchBody?: DepartmentsListBody;
 }
 
 const DEPARTMENTS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
@@ -90,6 +97,7 @@ export default function Departments({
   duplicateDepartmentAction,
   deleteDepartmentAction,
   updateDepartmentAction,
+  currentSearchBody,
 }: DepartmentsProps) {
   const router = useRouter();
 
@@ -171,14 +179,62 @@ export default function Departments({
     [departmentsData?.logins_filter]
   );
 
-  // Selection state
-  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>([]);
-  const selectedCount = selectedDepartmentIds.length;
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated link. Three params model
+  // the full state machine:
+  //
+  //   - ``selectedIds=A,B``        → explicit selection of named rows
+  //   - ``selectAll=1``            → every row matching the active
+  //                                  filters/search is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                                → all-matching minus exclusions
+  //   - (none of the above)        → empty selection
+  //
+  // The all-matching mode keeps the URL compact for huge datasets
+  // (one boolean instead of N ids) and follows the active filter —
+  // change the filter and "all matching" follows naturally. Shallow
+  // updates avoid the RSC re-fetch burst.
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedDepartmentIds, setExcludedDepartmentIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+
+  // ``isSelected`` is the single read predicate every row uses; it
+  // dispatches between explicit-id and all-matching modes so
+  // downstream code never needs to branch.
+  const totalMatchingCount = departmentsData?.total_count ?? 0;
+
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedDepartmentIds.includes(id)
+        : selectedDepartmentIds.includes(id);
+    },
+    [selectAllMatching, excludedDepartmentIds, selectedDepartmentIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedDepartmentIds.length)
+    : selectedDepartmentIds.length;
+
+  /** Selected rows that are loaded on the current page. Under all-
+   *  matching mode this is "every loaded row not in excludedIds";
+   *  under explicit mode it's the rows whose id is in selectedIds.
+   *  Bulk-op handlers dispatch on ``selectAllMatching`` to either
+   *  enumerate per-row patches (explicit) or send the filter envelope
+   *  + ``patch`` for the server to expand (all-matching). */
   const selectedDepartments = useMemo(() => {
-    return departments.filter(
-      (d) => d.department_id && selectedDepartmentIds.includes(d.department_id),
-    );
-  }, [departments, selectedDepartmentIds]);
+    return departments.filter((d) => isSelected(d.department_id));
+  }, [departments, isSelected]);
   const deletableDepartments = useMemo(
     () => selectedDepartments.filter((d) => d.can_delete),
     [selectedDepartments],
@@ -192,22 +248,62 @@ export default function Departments({
     [selectedDepartments],
   );
 
+  // Toggle selection for a single department. Under all-matching mode
+  // we toggle membership in excludedDepartmentIds (deselect ⇒ add to
+  // exclusions, re-select ⇒ remove). Under explicit mode it's the
+  // straight selectedDepartmentIds toggle.
   const toggleSelection = useCallback((departmentId: string) => {
-    setSelectedDepartmentIds((prev) =>
-      prev.includes(departmentId)
-        ? prev.filter((id) => id !== departmentId)
-        : [...prev, departmentId],
-    );
-  }, []);
-  const clearSelection = useCallback(() => setSelectedDepartmentIds([]), []);
+    if (selectAllMatching) {
+      void setExcludedDepartmentIds((prev) =>
+        prev.includes(departmentId)
+          ? prev.filter((id) => id !== departmentId)
+          : [...prev, departmentId],
+      );
+    } else {
+      void setSelectedDepartmentIds((prev) =>
+        prev.includes(departmentId)
+          ? prev.filter((id) => id !== departmentId)
+          : [...prev, departmentId],
+      );
+    }
+  }, [selectAllMatching, setExcludedDepartmentIds, setSelectedDepartmentIds]);
+
+  const clearSelection = useCallback(() => {
+    void setSelectedDepartmentIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedDepartmentIds([]);
+  }, [setSelectedDepartmentIds, setSelectAllMatching, setExcludedDepartmentIds]);
+
   const selectAllOnPage = useCallback(() => {
     const pageIds = departments.filter((d) => d.department_id).map((d) => d.department_id!);
-    setSelectedDepartmentIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [departments]);
+    void setSelectAllMatching(false);
+    void setExcludedDepartmentIds([]);
+    void setSelectedDepartmentIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [departments, setSelectAllMatching, setExcludedDepartmentIds, setSelectedDepartmentIds]);
+
+  /** Promote the current page-only selection into "all matching
+   *  filter" mode. Clears explicit ids and exclusions — the all-
+   *  matching mode is the canonical truth from this point. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedDepartmentIds([]);
+    void setExcludedDepartmentIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedDepartmentIds, setExcludedDepartmentIds, setSelectAllMatching]);
+
+  // Check if all departments on the current page are selected. Under
+  // all-matching mode every loaded row whose id isn't in
+  // ``excludedDepartmentIds`` is implicitly selected, so the predicate
+  // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
     const pageIds = departments.filter((d) => d.department_id).map((d) => d.department_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedDepartmentIds.includes(id));
-  }, [departments, selectedDepartmentIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [departments, isSelected]);
+
+  // Whether there ARE more matching rows than what's loaded on this
+  // page — used to decide whether to surface the "Select all N
+  // matching" affordance after the user selects the page.
+  const hasMoreThanCurrentPage = totalMatchingCount > departments.length;
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -418,12 +514,46 @@ export default function Departments({
   };
 
   const handleBulkDelete = async () => {
-    if (!deleteDepartmentAction || deletableDepartments.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deleteDepartmentAction`` call shape; the
+    // body just differs.
+    if (!deleteDepartmentAction) return;
+    if (!selectAllMatching && deletableDepartments.length === 0) return;
+
     setIsBulkDeleting(true);
     try {
-      const ids = deletableDepartments.map((d) => d.department_id!);
-      await deleteDepartmentAction({ body: { department_ids: ids, accept: true } });
-      toast.success(`${ids.length} department(s) deleted successfully`);
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedDepartmentIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            department_ids: deletableDepartments.map((d) => d.department_id!),
+            accept: true,
+          };
+
+      const result = await deleteDepartmentAction({ body } as DeleteDepartmentIn);
+
+      // Per-row results from the server: success entries are actual
+      // deletions, failures are soft-skipped rows (no permission /
+      // not found). Toast reflects both counts so the user knows
+      // some rows were skipped without inspecting the receipt.
+      const results = (result as DeleteDepartmentOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(`${successCount} department(s) deleted, ${skippedCount} skipped`);
+      } else {
+        toast.success(`${successCount} department(s) deleted successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -436,7 +566,8 @@ export default function Departments({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateDepartmentAction || editableDepartments.length === 0) return;
+    if (!updateDepartmentAction) return;
+    if (!selectAllMatching && editableDepartments.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     if (!hasActiveChange) {
@@ -448,20 +579,52 @@ export default function Departments({
 
     setIsBulkEditing(true);
     try {
-      const items = editableDepartments.map((d) => {
+      let body: UpdateDepartmentIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know what each row's existing flags are), so
+        // each toggle becomes "set to this value across all matching
+        // rows" — the same semantic as a manual sweep.
         let flag_ids: string[] | undefined;
         if (hasActiveChange) {
-          const isActive = bulkEditActiveStatus;
-          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+          flag_ids = bulkEditActiveStatus && activeFlagId ? [activeFlagId] : [];
         }
-        return {
-          id: d.department_id!,
-          ...(hasActiveChange && { flag_ids }),
-        };
-      });
+        body = {
+          all: true,
+          excluded_ids: excludedDepartmentIds,
+          ...(currentSearchBody ?? {}),
+          patch: {
+            ...(hasActiveChange && { flag_ids }),
+          },
+          accept: true,
+        } as UpdateDepartmentIn["body"];
+      } else {
+        // Explicit: clone the patch per-row, preserving each row's
+        // existing flag state for flags we aren't toggling.
+        const items = editableDepartments.map((d) => {
+          let flag_ids: string[] | undefined;
+          if (hasActiveChange) {
+            flag_ids = bulkEditActiveStatus && activeFlagId ? [activeFlagId] : [];
+          }
+          return {
+            id: d.department_id!,
+            ...(hasActiveChange && { flag_ids }),
+          };
+        });
+        body = { departments: items } as UpdateDepartmentIn["body"];
+      }
 
-      await updateDepartmentAction({ body: { departments: items } } as UpdateDepartmentIn);
-      toast.success(`${items.length} department(s) updated successfully`);
+      const result = await updateDepartmentAction({ body } as UpdateDepartmentIn);
+
+      // Per-row results — same soft-skip pattern as bulk delete.
+      const results = (result as UpdateDepartmentOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(`${successCount} department(s) updated, ${skippedCount} skipped`);
+      } else {
+        toast.success(`${successCount} department(s) updated successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -483,9 +646,7 @@ export default function Departments({
   };
 
   const renderDepartmentCard = (department: (typeof departments)[0]) => {
-    const isSelected = department.department_id
-      ? selectedDepartmentIds.includes(department.department_id)
-      : false;
+    const cardSelected = isSelected(department.department_id);
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
@@ -497,13 +658,13 @@ export default function Departments({
     <Card
       key={department.department_id}
       className={`group hover:shadow-md transition-all cursor-pointer ${
-        isSelected ? "ring-2 ring-primary" : ""
+        cardSelected ? "ring-2 ring-primary" : ""
       }`}
       data-testid="department-card"
       data-department-id={department.department_id}
       role="gridcell"
       aria-label={`department card ${department.name || "Unnamed Department"}`}
-      aria-selected={isSelected}
+      aria-selected={cardSelected}
       onClick={handleCardClick}
     >
       <CardHeader>
@@ -519,7 +680,7 @@ export default function Departments({
                 data-action-button
               >
                 <Checkbox
-                  checked={isSelected}
+                  checked={cardSelected}
                   onCheckedChange={() => {
                     if (department.department_id) toggleSelection(department.department_id);
                   }}
@@ -651,48 +812,95 @@ export default function Departments({
       <div className="space-y-4">
         {/* Toolbar — swaps between filter bar and selection action bar */}
         {selectedCount > 0 ? (
-          <div
-            className="flex items-center justify-between gap-2"
-            data-testid="departments-toolbar"
-          >
-            <div className="flex items-center gap-2">
-              {deleteDepartmentAction && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="h-8"
-                  onClick={() => setShowBulkDeleteDialog(true)}
-                  disabled={deletableDepartments.length === 0}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete {deletableDepartments.length} of {selectedCount}
+          <div className="space-y-2" data-testid="departments-toolbar">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                {deleteDepartmentAction && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setShowBulkDeleteDialog(true)}
+                    disabled={!selectAllMatching && deletableDepartments.length === 0}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {selectAllMatching
+                      ? `Delete ${selectedCount} matching`
+                      : `Delete ${deletableDepartments.length} of ${selectedCount}`}
+                  </Button>
+                )}
+                {updateDepartmentAction && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={openBulkEditDialog}
+                    disabled={!selectAllMatching && editableDepartments.length === 0}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    {selectAllMatching
+                      ? `Edit ${selectedCount} matching`
+                      : `Edit ${editableDepartments.length} of ${selectedCount}`}
+                  </Button>
+                )}
+                {!allPageSelected && !selectAllMatching && (
+                  <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
+                    Select Page
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
+                  Unselect All
                 </Button>
-              )}
-              {updateDepartmentAction && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8"
-                  onClick={openBulkEditDialog}
-                  disabled={editableDepartments.length === 0}
-                >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit {editableDepartments.length} of {selectedCount}
-                </Button>
-              )}
-              {!allPageSelected && (
-                <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
-                  Select All
-                </Button>
-              )}
-              <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
-                Unselect All
-              </Button>
+              </div>
+              <DataTableViewOptions
+                table={table}
+                hiddenColumns={["name", "updated_at", "profile_ids", "setting_ids", "login_ids"]}
+              />
             </div>
-            <DataTableViewOptions
-              table={table}
-              hiddenColumns={["name", "updated_at", "profile_ids", "setting_ids", "login_ids"]}
-            />
+
+            {/* Cross-page selection banners. Two states:
+                (a) page-all selected, more matching elsewhere → offer
+                    "Select all N matching" to flip into all-matching mode.
+                (b) all-matching active → show count + Clear so the
+                    user always has an obvious escape hatch.
+                Mutually exclusive — both never render at once. */}
+            {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+              <div
+                className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+                data-testid="select-all-matching-banner"
+              >
+                <span className="text-muted-foreground">
+                  All {departments.length} on this page selected.
+                </span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={selectAllMatchingNow}
+                >
+                  Select all {totalMatchingCount} matching
+                </Button>
+              </div>
+            )}
+            {selectAllMatching && (
+              <div
+                className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+                data-testid="all-matching-active-banner"
+              >
+                <span className="text-muted-foreground">
+                  All {selectedCount} matching departments selected
+                  {excludedDepartmentIds.length > 0 && ` (${excludedDepartmentIds.length} excluded)`}.
+                </span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={clearSelection}
+                >
+                  Clear
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <div
@@ -813,7 +1021,7 @@ export default function Departments({
       <BulkDeleteDialog
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
-        count={deletableDepartments.length}
+        count={selectAllMatching ? selectedCount : deletableDepartments.length}
         entityLabel="department"
         entityLabelPlural="departments"
         isDeleting={isBulkDeleting}
@@ -821,35 +1029,59 @@ export default function Departments({
         description={
           <>
             <p>This action cannot be undone.</p>
-            {deletableDepartments.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                <ul className="text-sm space-y-0.5">
-                  {deletableDepartments.map((d) => (
-                    <li key={d.department_id} className="flex items-center gap-1.5">
-                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                      {d.name || "Unnamed Department"}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {nonDeletableDepartments.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
-                  Cannot be deleted (in use):
+            {selectAllMatching ? (
+              // All-matching mode: server resolves rows from filter +
+              // exclusions; per-row permission failures soft-skip.
+              // We can't enumerate names without round-tripping through
+              // the search endpoint (which would re-trigger the RSC
+              // burst), so show the count + filter state instead.
+              <div className="text-sm text-muted-foreground">
+                <p>
+                  All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                  {" "}departments will be deleted server-side using the current filter.
                 </p>
-                <ul className="text-sm space-y-0.5">
-                  {nonDeletableDepartments.map((d) => (
-                    <li
-                      key={d.department_id}
-                      className="flex items-center gap-1.5 text-muted-foreground"
-                    >
-                      {d.name || "Unnamed Department"}
-                    </li>
-                  ))}
-                </ul>
+                {excludedDepartmentIds.length > 0 && (
+                  <p className="mt-1">
+                    {excludedDepartmentIds.length} explicitly excluded.
+                  </p>
+                )}
+                <p className="mt-1">
+                  Departments you don&apos;t have permission to delete will be skipped automatically.
+                </p>
               </div>
+            ) : (
+              <>
+                {deletableDepartments.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                    <ul className="text-sm space-y-0.5">
+                      {deletableDepartments.map((d) => (
+                        <li key={d.department_id} className="flex items-center gap-1.5">
+                          <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                          {d.name || "Unnamed Department"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {nonDeletableDepartments.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                      Cannot be deleted (in use):
+                    </p>
+                    <ul className="text-sm space-y-0.5">
+                      {nonDeletableDepartments.map((d) => (
+                        <li
+                          key={d.department_id}
+                          className="flex items-center gap-1.5 text-muted-foreground"
+                        >
+                          {d.name || "Unnamed Department"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
             )}
           </>
         }
@@ -859,7 +1091,7 @@ export default function Departments({
       <BulkEditDialog
         open={showBulkEditDialog}
         onOpenChange={setShowBulkEditDialog}
-        count={editableDepartments.length}
+        count={selectAllMatching ? selectedCount : editableDepartments.length}
         entityLabelPlural="departments"
         isSaving={isBulkEditing}
         onSave={handleBulkEdit}

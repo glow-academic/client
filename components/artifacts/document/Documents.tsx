@@ -60,6 +60,7 @@ import {
 import type {
   DeleteDocumentIn,
   DeleteDocumentOut,
+  DocumentsListBody,
   DocumentsListOut,
   UpdateDocumentIn,
   UpdateDocumentOut,
@@ -84,6 +85,7 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDocumentAi } from "@/hooks/use-document-ai";
 import { useRouter } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 
 // Helper function to truncate text
 const truncateText = (text: string, maxLength: number = 30): string => {
@@ -103,6 +105,11 @@ export interface DocumentsProps {
   updateDocumentAction?: (
     input: UpdateDocumentIn
   ) => Promise<UpdateDocumentOut>;
+  /** The body the page used for its SSR ``/document/search`` call.
+   *  Forwarded as the filter envelope on bulk delete/update calls
+   *  when the user is in ``selectAll=1`` mode — the server resolves
+   *  matching rows directly, no client-side enumeration. */
+  currentSearchBody?: DocumentsListBody;
 }
 
 const DOCUMENTS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
@@ -150,6 +157,7 @@ export default function Documents({
   initialColumnVisibility,
   deleteDocumentAction,
   updateDocumentAction,
+  currentSearchBody,
 }: DocumentsProps) {
   const [columnVisibility, setColumnVisibility] = useColumnVisibility(
     "documents",
@@ -282,12 +290,63 @@ export default function Documents({
       .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
   }, [documentsData?.flag_filter]);
 
-  // Selection state
-  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
-  const selectedCount = selectedDocumentIds.length;
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated link. Three params model
+  // the full state machine:
+  //
+  //   - ``selectedIds=A,B``        → explicit selection of named rows
+  //   - ``selectAll=1``            → every row matching the active
+  //                                  filters/search is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                                → all-matching minus exclusions
+  //   - (none of the above)        → empty selection
+  //
+  // The all-matching mode keeps the URL compact for huge datasets
+  // (one boolean instead of N ids) and follows the active filter —
+  // change the filter and "all matching" follows naturally. Shallow
+  // updates avoid the RSC re-fetch burst.
+  const [selectedDocumentIds, setSelectedDocumentIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedDocumentIds, setExcludedDocumentIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+
+  // ``isSelected`` is the single read predicate every row uses; it
+  // dispatches between explicit-id and all-matching modes so
+  // downstream code never needs to branch. ``selectedCount`` mirrors
+  // that — under all-matching it's ``totalCount - excludedIds.length``.
+  const totalMatchingCount = documentsData?.total_count ?? 0;
+
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedDocumentIds.includes(id)
+        : selectedDocumentIds.includes(id);
+    },
+    [selectAllMatching, excludedDocumentIds, selectedDocumentIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedDocumentIds.length)
+    : selectedDocumentIds.length;
+
+  /** Selected rows that are loaded on the current page. Under all-
+   *  matching mode this is "every loaded row not in excludedIds";
+   *  under explicit mode it's the rows whose id is in selectedIds.
+   *  Bulk-op handlers dispatch on ``selectAllMatching`` to either
+   *  enumerate per-row patches (explicit) or send the filter envelope
+   *  + ``patch`` for the server to expand (all-matching). */
   const selectedDocuments = useMemo(() => {
-    return documents.filter((d) => d.document_id && selectedDocumentIds.includes(d.document_id));
-  }, [documents, selectedDocumentIds]);
+    return documents.filter((d) => isSelected(d.document_id));
+  }, [documents, isSelected]);
   const deletableDocuments = useMemo(
     () => selectedDocuments.filter((d) => d.can_delete),
     [selectedDocuments],
@@ -301,18 +360,47 @@ export default function Documents({
     [selectedDocuments],
   );
 
+  // Toggle selection for a single document. Under all-matching mode
+  // we toggle membership in excludedDocumentIds (deselect ⇒ add to
+  // exclusions, re-select ⇒ remove). Under explicit mode it's the
+  // straight selectedDocumentIds toggle.
   const toggleSelection = useCallback((documentId: string) => {
-    setSelectedDocumentIds((prev) =>
-      prev.includes(documentId)
-        ? prev.filter((id) => id !== documentId)
-        : [...prev, documentId]
-    );
-  }, []);
-  const clearSelection = useCallback(() => setSelectedDocumentIds([]), []);
+    if (selectAllMatching) {
+      void setExcludedDocumentIds((prev) =>
+        prev.includes(documentId)
+          ? prev.filter((id) => id !== documentId)
+          : [...prev, documentId],
+      );
+    } else {
+      void setSelectedDocumentIds((prev) =>
+        prev.includes(documentId)
+          ? prev.filter((id) => id !== documentId)
+          : [...prev, documentId],
+      );
+    }
+  }, [selectAllMatching, setExcludedDocumentIds, setSelectedDocumentIds]);
+
+  const clearSelection = useCallback(() => {
+    void setSelectedDocumentIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedDocumentIds([]);
+  }, [setSelectedDocumentIds, setSelectAllMatching, setExcludedDocumentIds]);
+
   const selectAllOnPage = useCallback(() => {
     const pageIds = documents.filter((d) => d.document_id).map((d) => d.document_id!);
-    setSelectedDocumentIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [documents]);
+    void setSelectAllMatching(false);
+    void setExcludedDocumentIds([]);
+    void setSelectedDocumentIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [documents, setSelectAllMatching, setExcludedDocumentIds, setSelectedDocumentIds]);
+
+  /** Promote the current page-only selection into "all matching
+   *  filter" mode. Clears explicit ids and exclusions — the all-
+   *  matching mode is the canonical truth from this point. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedDocumentIds([]);
+    void setExcludedDocumentIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedDocumentIds, setExcludedDocumentIds, setSelectAllMatching]);
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -366,10 +454,10 @@ export default function Documents({
         cell: ({ row }) => {
           const docId = row.original.document_id;
           if (!docId) return null;
-          const isSelected = selectedDocumentIds.includes(docId);
+          const checked = isSelected(docId);
           return (
             <Checkbox
-              checked={isSelected}
+              checked={checked}
               onCheckedChange={() => toggleSelection(docId)}
               aria-label={`Select document ${row.original.name || "Unnamed"}`}
             />
@@ -606,7 +694,7 @@ export default function Documents({
       handleEdit,
       handlePreview,
       handleSingleDelete,
-      selectedDocumentIds,
+      isSelected,
       toggleSelection,
     ]
   );
@@ -657,12 +745,48 @@ export default function Documents({
   ]);
 
   const handleBulkDelete = async () => {
-    if (!deleteDocumentAction || deletableDocuments.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deleteDocumentAction`` call shape; the
+    // body just differs.
+    if (!deleteDocumentAction) return;
+    if (!selectAllMatching && deletableDocuments.length === 0) return;
+
     setIsBulkDeleting(true);
     try {
-      const ids = deletableDocuments.map((d) => d.document_id!);
-      await deleteDocumentAction({ body: { document_ids: ids, accept: true } });
-      toast.success(`${ids.length} document(s) deleted successfully`);
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedDocumentIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            document_ids: deletableDocuments.map((d) => d.document_id!),
+            accept: true,
+          };
+
+      const result = await deleteDocumentAction({ body } as DeleteDocumentIn);
+
+      // Per-row results from the server: success entries are actual
+      // deletions, failures are soft-skipped rows (no permission /
+      // not found). Toast reflects both counts so the user knows
+      // some rows were skipped without inspecting the receipt.
+      const results = (result as DeleteDocumentOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} document(s) deleted, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} document(s) deleted successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -675,7 +799,8 @@ export default function Documents({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateDocumentAction || editableDocuments.length === 0) return;
+    if (!updateDocumentAction) return;
+    if (!selectAllMatching && editableDocuments.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     const hasTemplateChange = bulkEditTemplateStatus !== null;
@@ -693,25 +818,74 @@ export default function Documents({
 
     setIsBulkEditing(true);
     try {
-      const items = editableDocuments.map((doc) => {
+      // Shared change set used by both paths. Under all-matching the
+      // server clones this per resolved row (stamping each id);
+      // under explicit we clone client-side, preserving per-row flag
+      // state for fields we aren't toggling.
+      const sharedPatch = {
+        ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
+      };
+
+      let body: UpdateDocumentIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know what each row's existing flags are), so
+        // each toggle becomes "set to this value across all matching
+        // rows" — the same semantic as a manual sweep.
         let flag_ids: string[] | undefined;
         if (hasAnyFlagChange) {
-          const isActive = hasActiveChange ? bulkEditActiveStatus : !doc.is_inactive;
-          // Document type doesn't expose is_template on list rows yet — preserve nothing for it.
-          const isTemplate = hasTemplateChange ? bulkEditTemplateStatus : false;
           flag_ids = [];
-          if (isActive && activeFlagId) flag_ids.push(activeFlagId);
-          if (isTemplate && templateFlagId) flag_ids.push(templateFlagId);
+          if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
+          if (bulkEditTemplateStatus && templateFlagId) flag_ids.push(templateFlagId);
         }
-        return {
-          id: doc.document_id!,
-          ...(hasAnyFlagChange && { flag_ids }),
-          ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
-        };
-      });
+        body = {
+          all: true,
+          excluded_ids: excludedDocumentIds,
+          ...(currentSearchBody ?? {}),
+          patch: {
+            ...sharedPatch,
+            ...(hasAnyFlagChange && { flag_ids }),
+          },
+          accept: true,
+        } as UpdateDocumentIn["body"];
+      } else {
+        // Explicit: clone the patch per-row, preserving each row's
+        // existing flag state for flags we aren't toggling.
+        const items = editableDocuments.map((doc) => {
+          let flag_ids: string[] | undefined;
+          if (hasAnyFlagChange) {
+            const isActive = hasActiveChange ? bulkEditActiveStatus : !doc.is_inactive;
+            // Document list rows expose ``is_template`` from the
+            // server now; fall back to false when undefined.
+            const isTemplate = hasTemplateChange
+              ? bulkEditTemplateStatus
+              : (doc.is_template ?? false);
+            flag_ids = [];
+            if (isActive && activeFlagId) flag_ids.push(activeFlagId);
+            if (isTemplate && templateFlagId) flag_ids.push(templateFlagId);
+          }
+          return {
+            id: doc.document_id!,
+            ...sharedPatch,
+            ...(hasAnyFlagChange && { flag_ids }),
+          };
+        });
+        body = { documents: items } as UpdateDocumentIn["body"];
+      }
 
-      await updateDocumentAction({ body: { documents: items } } as UpdateDocumentIn);
-      toast.success(`${items.length} document(s) updated successfully`);
+      const result = await updateDocumentAction({ body } as UpdateDocumentIn);
+
+      // Per-row results — same soft-skip pattern as bulk delete.
+      const results = (result as UpdateDocumentOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} document(s) updated, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} document(s) updated successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -730,10 +904,20 @@ export default function Documents({
     setShowBulkEditDialog(true);
   };
 
+  // Check if all documents on the current page are selected. Under
+  // all-matching mode every loaded row whose id isn't in
+  // ``excludedDocumentIds`` is implicitly selected, so the predicate
+  // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
     const pageIds = documents.filter((d) => d.document_id).map((d) => d.document_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedDocumentIds.includes(id));
-  }, [documents, selectedDocumentIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [documents, isSelected]);
+
+  // Whether there ARE more matching rows than what's loaded on this
+  // page — used to decide whether to surface the "Select all N
+  // matching" affordance after the user selects the page.
+  const hasMoreThanCurrentPage = totalMatchingCount > documents.length;
 
   const departmentPickerOptions = useMemo(
     () => departmentOptions.map((opt) => ({ value: opt.value, label: opt.label })),
@@ -783,48 +967,95 @@ export default function Documents({
           <div className="space-y-4">
             {/* Toolbar — swaps between filter bar and selection action bar */}
             {selectedCount > 0 ? (
-              <div
-                className="flex items-center justify-between gap-2"
-                data-testid="documents-toolbar"
-              >
-                <div className="flex items-center gap-2">
-                  {deleteDocumentAction && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="h-8"
-                      onClick={() => setShowBulkDeleteDialog(true)}
-                      disabled={deletableDocuments.length === 0}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete {deletableDocuments.length} of {selectedCount}
+              <div className="space-y-2" data-testid="documents-toolbar">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    {deleteDocumentAction && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => setShowBulkDeleteDialog(true)}
+                        disabled={!selectAllMatching && deletableDocuments.length === 0}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {selectAllMatching
+                          ? `Delete ${selectedCount} matching`
+                          : `Delete ${deletableDocuments.length} of ${selectedCount}`}
+                      </Button>
+                    )}
+                    {updateDocumentAction && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={openBulkEditDialog}
+                        disabled={!selectAllMatching && editableDocuments.length === 0}
+                      >
+                        <Pencil className="mr-2 h-4 w-4" />
+                        {selectAllMatching
+                          ? `Edit ${selectedCount} matching`
+                          : `Edit ${editableDocuments.length} of ${selectedCount}`}
+                      </Button>
+                    )}
+                    {!allPageSelected && !selectAllMatching && (
+                      <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
+                        Select Page
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
+                      Unselect All
                     </Button>
-                  )}
-                  {updateDocumentAction && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8"
-                      onClick={openBulkEditDialog}
-                      disabled={editableDocuments.length === 0}
-                    >
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit {editableDocuments.length} of {selectedCount}
-                    </Button>
-                  )}
-                  {!allPageSelected && (
-                    <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
-                      Select All
-                    </Button>
-                  )}
-                  <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
-                    Unselect All
-                  </Button>
+                  </div>
+                  <DataTableViewOptions
+                    table={table}
+                    hiddenColumns={["select", "name", "actions", "departments"]}
+                  />
                 </div>
-                <DataTableViewOptions
-                  table={table}
-                  hiddenColumns={["select", "name", "actions", "departments"]}
-                />
+
+                {/* Cross-page selection banners. Two states:
+                    (a) page-all selected, more matching elsewhere → offer
+                        "Select all N matching" to flip into all-matching mode.
+                    (b) all-matching active → show count + Clear so the
+                        user always has an obvious escape hatch.
+                    Mutually exclusive — both never render at once. */}
+                {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+                  <div
+                    className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+                    data-testid="select-all-matching-banner"
+                  >
+                    <span className="text-muted-foreground">
+                      All {documents.length} on this page selected.
+                    </span>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0"
+                      onClick={selectAllMatchingNow}
+                    >
+                      Select all {totalMatchingCount} matching
+                    </Button>
+                  </div>
+                )}
+                {selectAllMatching && (
+                  <div
+                    className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+                    data-testid="all-matching-active-banner"
+                  >
+                    <span className="text-muted-foreground">
+                      All {selectedCount} matching documents selected
+                      {excludedDocumentIds.length > 0 && ` (${excludedDocumentIds.length} excluded)`}.
+                    </span>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0"
+                      onClick={clearSelection}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <div
@@ -1019,7 +1250,7 @@ export default function Documents({
         <BulkDeleteDialog
           open={showBulkDeleteDialog}
           onOpenChange={setShowBulkDeleteDialog}
-          count={deletableDocuments.length}
+          count={selectAllMatching ? selectedCount : deletableDocuments.length}
           entityLabel="document"
           entityLabelPlural="documents"
           isDeleting={isBulkDeleting}
@@ -1027,30 +1258,54 @@ export default function Documents({
           description={
             <>
               <p>This action cannot be undone.</p>
-              {deletableDocuments.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                  <ul className="text-sm space-y-0.5">
-                    {deletableDocuments.map((d) => (
-                      <li key={d.document_id} className="flex items-center gap-1.5">
-                        <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                        {d.name || "Unnamed Document"}
-                      </li>
-                    ))}
-                  </ul>
+              {selectAllMatching ? (
+                // All-matching mode: server resolves rows from filter +
+                // exclusions; per-row permission failures soft-skip.
+                // We can't enumerate names without round-tripping through
+                // the search endpoint (which would re-trigger the RSC
+                // burst), so show the count + filter state instead.
+                <div className="text-sm text-muted-foreground">
+                  <p>
+                    All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                    {" "}documents will be deleted server-side using the current filter.
+                  </p>
+                  {excludedDocumentIds.length > 0 && (
+                    <p className="mt-1">
+                      {excludedDocumentIds.length} explicitly excluded.
+                    </p>
+                  )}
+                  <p className="mt-1">
+                    Documents you don't have permission to delete will be skipped automatically.
+                  </p>
                 </div>
-              )}
-              {nonDeletableDocuments.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use):</p>
-                  <ul className="text-sm space-y-0.5">
-                    {nonDeletableDocuments.map((d) => (
-                      <li key={d.document_id} className="flex items-center gap-1.5 text-muted-foreground">
-                        {d.name || "Unnamed Document"}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              ) : (
+                <>
+                  {deletableDocuments.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                      <ul className="text-sm space-y-0.5">
+                        {deletableDocuments.map((d) => (
+                          <li key={d.document_id} className="flex items-center gap-1.5">
+                            <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                            {d.name || "Unnamed Document"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {nonDeletableDocuments.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use):</p>
+                      <ul className="text-sm space-y-0.5">
+                        {nonDeletableDocuments.map((d) => (
+                          <li key={d.document_id} className="flex items-center gap-1.5 text-muted-foreground">
+                            {d.name || "Unnamed Document"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
               )}
             </>
           }
@@ -1060,7 +1315,7 @@ export default function Documents({
         <BulkEditDialog
           open={showBulkEditDialog}
           onOpenChange={setShowBulkEditDialog}
-          count={editableDocuments.length}
+          count={selectAllMatching ? selectedCount : editableDocuments.length}
           entityLabelPlural="documents"
           isSaving={isBulkEditing}
           onSave={handleBulkEdit}

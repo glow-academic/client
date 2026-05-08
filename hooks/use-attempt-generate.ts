@@ -104,7 +104,7 @@ export function useAttemptGenerate(
             .send("/attempt/generate", {
               instructions: ["Set up this training scenario based on the draft configuration."],
               config: {
-                operations: ["chat_get", "chat_create", "draft", "group"],
+                operations: ["chat_get", "chat_create", "draft", "title"],
                 params: {
                   draft_id: draftId,
                   chat_id: params.chatId,

@@ -20,6 +20,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetEvalIn = InputOf<"/eval/get", "post">;
 type GetEvalOut = OutputOf<"/eval/get", "post">;
@@ -31,8 +33,6 @@ type PatchEvalDraftIn = InputOf<"/eval/draft", "patch">;
 type PatchEvalDraftOut = OutputOf<"/eval/draft", "patch">;
 type GroupEvalIn = InputOf<"/eval/group", "post">;
 type GroupEvalOut = OutputOf<"/eval/group", "post">;
-type GenerateEvalIn = InputOf<"/eval/generate", "post">;
-type GenerateEvalOut = OutputOf<"/eval/generate", "post">;
 type GenerationsIn = InputOf<"/eval/generations", "post">;
 type GenerationsOut = OutputOf<"/eval/generations", "post">;
 type ProblemEvalIn = InputOf<"/eval/problem", "post">;
@@ -69,12 +69,6 @@ async function patchEvalDraft(
   return api.patch("/eval/draft", input);
 }
 
-async function generateEval(
-  input: GenerateEvalIn
-): Promise<GenerateEvalOut> {
-  "use server";
-  return api.post("/eval/generate", input);
-}
 
 async function getEvalGroupHistory(groupId: string): Promise<GroupEvalOut> {
   "use server";
@@ -102,10 +96,15 @@ async function searchEvalGenerations(input: GenerationsIn): Promise<GenerationsO
   return api.post("/eval/generations", input);
 }
 
-async function runEvalGenerate(input: GenerateEvalIn): Promise<GenerateEvalOut> {
-  "use server";
-  return api.post("/eval/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getEvalContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/eval/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata({
@@ -115,7 +114,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { evalId } = await params;
-    const context = await api.post("/eval/context", { body: { entity_id: evalId } } as ContextIn) as ContextOut;
+    const context = await getEvalContextById(evalId);
     return {
       title: context.page_metadata?.detail.title,
       description: context.page_metadata?.detail.description,
@@ -188,7 +187,7 @@ export default async function EvalDetailPage({
     } as unknown as GetEvalIn;
     const [evalDetail, context, draftsResult, groupResult] = await Promise.all([
       getEvalDetail(input),
-      api.post("/eval/context", { body: { entity_id: evalId } } as ContextIn) as Promise<ContextOut>,
+      getEvalContextById(evalId) as Promise<ContextOut>,
       api.post("/eval/drafts", {} as never),
       api.post(
         "/eval/group",
@@ -218,6 +217,7 @@ export default async function EvalDetailPage({
           toolbar={<SaveToolbar />}
           panelProps={{
             artifactType: "eval",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
             groupId:
               (groupResult as GroupEvalOut & { group_id?: string })?.group_id ??
               "",
@@ -228,8 +228,7 @@ export default async function EvalDetailPage({
             // skips the duplicate client-side /<art>/group refetch
             // on first paint, eliminating the hydration flicker.
             initialGroupHistory: groupResult as Record<string, unknown>,
-            generateAction: generateEval,
-            operations: ["draft", "get", "group"],
+            operations: ["draft", "get", "title"],
             getGroupHistory: getEvalGroupHistory,
             searchGroups: searchEvalGroups,
             ...(context.prompts?.prompts
@@ -238,7 +237,6 @@ export default async function EvalDetailPage({
             getGroupAction: getEvalGroup as PanelProps["getGroupAction"],
             searchGenerationsAction:
               searchEvalGenerations as PanelProps["searchGenerationsAction"],
-            runGenerateAction: runEvalGenerate as PanelProps["runGenerateAction"],
           } as never}
         >
           <div

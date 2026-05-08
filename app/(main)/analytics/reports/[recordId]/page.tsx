@@ -22,14 +22,14 @@ import { loadProfileReportSearchParams } from "@/lib/search-params/profile-repor
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type DashboardIn = InputOf<"/attempt/dashboard/get", "post">;
 type DashboardOut = OutputOf<"/attempt/dashboard/get", "post">;
 type ReportHistoryOut = NonNullable<DashboardOut["history"]>;
 type ContextIn = InputOf<"/attempt/context", "post">;
 type ContextOut = OutputOf<"/attempt/context", "post">;
-type GenerateRecordIn = InputOf<"/attempt/generate", "post">;
-type GenerateRecordOut = OutputOf<"/attempt/generate", "post">;
 type GenerationsIn = InputOf<"/attempt/generations", "post">;
 type GenerationsOut = OutputOf<"/attempt/generations", "post">;
 type GroupRecordIn = InputOf<"/attempt/group", "post">;
@@ -64,17 +64,20 @@ async function searchAttemptGenerations(
   return api.post("/attempt/generations", input);
 }
 
-async function runAttemptGenerate(
-  input: GenerateRecordIn,
-): Promise<GenerateRecordOut> {
-  "use server";
-  return api.post("/attempt/generate", input);
-}
 
 async function createRecordProblem(input: ProblemRecordIn): Promise<ProblemRecordOut> {
   "use server";
   return api.post("/attempt/problem", input);
 }
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getAttemptContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/attempt/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata({
@@ -84,7 +87,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { recordId } = await params;
-    const context = await api.post("/attempt/context", { body: { entity_id: recordId } } as ContextIn) as ContextOut;
+    const context = await getAttemptContextById(recordId);
     return { title: context.page_metadata?.detail.title, description: context.page_metadata?.detail.description };
   } catch {
     return { title: "Profile Report" };
@@ -196,7 +199,7 @@ export default async function RecordPage({
           ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
         },
       }),
-      api.post("/attempt/context", { body: { entity_id: recordId } } as ContextIn) as Promise<ContextOut>,
+      getAttemptContextById(recordId) as Promise<ContextOut>,
       api.post(
         "/attempt/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupRecordIn,
@@ -246,6 +249,7 @@ export default async function RecordPage({
         }
         panelProps={{
           artifactType: "record",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupRecordOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupRecordOut & { name?: string | null })?.name ?? null,
@@ -254,13 +258,11 @@ export default async function RecordPage({
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           prompts: context.prompts?.prompts,
           getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchAttemptGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction:
-            runAttemptGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="px-4">

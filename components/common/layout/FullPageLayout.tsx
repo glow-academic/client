@@ -36,7 +36,10 @@ import {
 import { useIsNarrow } from "@/hooks/use-mobile";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { PageHeader, type BreadcrumbItem } from "@/components/common/layout/PageHeader";
-import { GenerationPanel } from "@/components/common/ai/GenerationPanel";
+import {
+  GenerationPanel,
+  type GenerationPanelPrefs,
+} from "@/components/common/ai/GenerationPanel";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
 import { ProfileProviderClient } from "@/contexts/profile-context";
 import type { ContextProfile } from "@/contexts/profile-context";
@@ -84,14 +87,13 @@ export interface PanelProps {
   searchGenerationsAction?: (
     input: { body: { search?: string | null } },
   ) => Promise<Record<string, unknown>>;
-  runGenerateAction?: (
-    input: {
-      body: {
-        instructions?: string[];
-        config?: Record<string, unknown>;
-      };
-    },
-  ) => Promise<Record<string, unknown>>;
+  /** SSR-read settings-menu cookie prefs. The page calls
+   *  ``readGenerationPanelPrefs()`` (from
+   *  ``@/lib/generation/panel-prefs``) and passes the result through.
+   *  Omit to use defaults — the panel will still work, but the first
+   *  paint may briefly mismatch a returning user's last toggles until
+   *  they touch a control. */
+  initialPanelPrefs?: GenerationPanelPrefs;
 }
 
 export interface FullPageLayoutProps {
@@ -225,7 +227,7 @@ export function FullPageLayout({
                           searchGenerationsAction={
                             panelProps.searchGenerationsAction
                           }
-                          runGenerateAction={panelProps.runGenerateAction}
+                          initialPanelPrefs={panelProps.initialPanelPrefs}
                         />
                       </GenerationListenerProvider>
                     ) : (

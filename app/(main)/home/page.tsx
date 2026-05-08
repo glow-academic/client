@@ -21,6 +21,8 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { loadHomeSearchParams } from "@/lib/search-params/home";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type HomeIn = InputOf<"/attempt/home/get", "post">;
 type HomeOut = OutputOf<"/attempt/home/get", "post">;
@@ -31,8 +33,6 @@ type GroupIn = InputOf<"/attempt/group", "post">;
 type GroupOut = OutputOf<"/attempt/group", "post">;
 type GenerationsIn = InputOf<"/attempt/generations", "post">;
 type GenerationsOut = OutputOf<"/attempt/generations", "post">;
-type GenerateIn = InputOf<"/attempt/generate", "post">;
-type GenerateOut = OutputOf<"/attempt/generate", "post">;
 type ProblemIn = InputOf<"/attempt/problem", "post">;
 type ProblemOut = OutputOf<"/attempt/problem", "post">;
 
@@ -74,15 +74,20 @@ async function searchAttemptGenerations(
   return api.post("/attempt/generations", input);
 }
 
-async function runAttemptGenerate(input: GenerateIn): Promise<GenerateOut> {
-  "use server";
-  return api.post("/attempt/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getAttemptContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/attempt/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getAttemptContext();
     return {
       title: "Home",
       description: context.page_metadata?.list.description ??
@@ -113,7 +118,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   try {
   // Profile data for providers
-  const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await getAttemptContext();
   const snapshot = buildSnapshot(session, context.profile);
   guardPage("/home", context.profile.role_permissions);
 
@@ -245,15 +250,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       }
       panelProps={{
         artifactType: "attempt",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
         groupId: (groupResult as GroupOut & { group_id?: string })?.group_id ?? null,
         groupName:
           (groupResult as GroupOut & { name?: string | null })?.name ?? null,
-        operations: ["draft", "get", "group"],
+        operations: ["draft", "get", "title"],
         prompts: context.prompts?.prompts,
         getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
         searchGenerationsAction:
           searchAttemptGenerations as PanelProps["searchGenerationsAction"],
-        runGenerateAction: runAttemptGenerate as PanelProps["runGenerateAction"],
       }}
     >
       <div className="space-y-6 px-4">

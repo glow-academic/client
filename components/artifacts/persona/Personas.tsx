@@ -7,6 +7,7 @@
 "use client";
 import { Brain, Check, CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Pencil, Sparkles, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -27,6 +28,7 @@ import type {
   DuplicatePersonaIn,
   DuplicatePersonaOut,
   PersonasListOut,
+  PersonasListBody,
   CreatePersonaIn,
   CreatePersonaOut,
   UpdatePersonaIn,
@@ -64,8 +66,9 @@ import {
 } from "@/components/ui/tooltip";
 
 import { useProfile } from "@/contexts/profile-context";
-import { usePersonaAi } from "@/hooks/use-persona-ai";
+import { useArtifactGhosts } from "@/hooks/use-artifact-ghosts";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
+import { PersonaGhostRail } from "@/components/artifacts/persona/PersonaGhostRail";
 
 
 // Utility function to generate gradient from hex color
@@ -102,6 +105,11 @@ export interface PersonasProps {
   createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
   updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
   parseCsvAction?: ((formData: FormData) => Promise<ParseCsvResult>) | undefined;
+  /** The body the page used for its SSR ``/persona/search`` call.
+   *  Forwarded as the ``filter`` field on bulk delete/update calls
+   *  when the user is in ``selectAll=1`` mode — the server resolves
+   *  matching rows directly, no client-side enumeration. */
+  currentSearchBody?: PersonasListBody;
   importFields?: ImportFieldDef[] | undefined;
   // Server-side pagination
   pageIndex: number;
@@ -124,6 +132,7 @@ export default function Personas({
   createPersonaAction,
   updatePersonaAction,
   parseCsvAction,
+  currentSearchBody,
   importFields,
   pageIndex,
   pageSize,
@@ -147,8 +156,35 @@ export default function Personas({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
 
-  // Selection state
-  const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated link. Three params model
+  // the full state machine:
+  //
+  //   - ``selectedIds=A,B``        → explicit selection of named rows
+  //   - ``selectAll=1``            → every row matching the active
+  //                                  filters/search is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                                → all-matching minus exclusions
+  //   - (none of the above)        → empty selection
+  //
+  // The all-matching mode keeps the URL compact for huge datasets
+  // (one boolean instead of N ids) and follows the active filter —
+  // change the filter and "all matching" follows naturally. Excluded-
+  // id growth is naturally bounded by what the user can see and
+  // deselect (one page at a time), so we don't enforce a hard cap.
+  // Shallow updates avoid the RSC re-fetch burst.
+  const [selectedPersonaIds, setSelectedPersonaIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedPersonaIds, setExcludedPersonaIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -166,11 +202,13 @@ export default function Personas({
   // Bulk import state
   const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
 
-  // Generation events for personas — refresh page on completion. Generation
-  // itself is dispatched from the GenerationPanel, not from this page.
-  usePersonaAi({
-    onComplete: () => router.refresh(),
-  });
+  // ``usePersonaAi`` previously listened for ``persona.generate.completed``
+  // and called ``router.refresh()`` so the list view updated after
+  // generation. Removed — the audit framework already surfaces every
+  // operation in the activity rail (so the user knows it happened),
+  // and the duplicate-SSR-burst on every generate cycle was visible
+  // noise. Newly-generated personas appear on next manual refresh
+  // or when the user navigates back to this page.
 
   // Local search state for debouncing
   const [searchTerm, setSearchTerm] = useState(
@@ -199,16 +237,63 @@ export default function Personas({
   // Memoize personas data to prevent infinite re-renders
   const personasData = serverListData;
 
-  // Extract personas array
-  const personas = useMemo(() => {
+  // SSR-seeded base list. The audit-driven ghost hook layers
+  // create/update/delete/duplicate lifecycle on top — committed rows
+  // get merged into ``mergedPersonas`` directly so the table stays
+  // current without a ``router.refresh()`` (which would re-burst the
+  // page's SSR fetches — see GenerationPanel handleSend rationale).
+  const basePersonas = useMemo(() => {
     return personasData?.personas || [];
   }, [personasData?.personas]);
 
-  // Computed selection info
-  const selectedCount = selectedPersonaIds.length;
+  const {
+    ghosts: personaGhosts,
+    mergedRows: mergedPersonas,
+    ack: ackPersonaGhost,
+    drop: dropPersonaGhost,
+  } = useArtifactGhosts({
+    artifactType: "persona",
+    ops: ["create", "delete"],
+    baseRows: basePersonas,
+    rowKey: "persona_id",
+  });
+
+  // Downstream code reads ``personas`` — keep that name to minimize
+  // diff. The active list is the merged view (base + create overlays
+  // − delete overlays).
+  const personas = mergedPersonas;
+
+  // ---- Selection helpers ----------------------------------------
+  // ``isSelected`` is the single read predicate every row uses; it
+  // dispatches between explicit-id and all-matching modes so
+  // downstream code never needs to branch. ``selectedCount`` mirrors
+  // that — under all-matching it's ``totalCount - excludedIds.length``.
+
+  const totalMatchingCount = personasData?.total_count ?? 0;
+
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedPersonaIds.includes(id)
+        : selectedPersonaIds.includes(id);
+    },
+    [selectAllMatching, excludedPersonaIds, selectedPersonaIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedPersonaIds.length)
+    : selectedPersonaIds.length;
+
+  /** Selected rows that are loaded on the current page. Under all-
+   *  matching mode this is "every loaded row not in excludedIds";
+   *  under explicit mode it's the rows whose id is in selectedIds.
+   *  Bulk-op handlers use ``resolveBulkIds`` (below) to expand to
+   *  the full matching set under all-matching mode, but the loaded
+   *  subset is what the toolbar's "X of Y" counts off-page. */
   const selectedPersonas = useMemo(() => {
-    return personas.filter((p) => p.persona_id && selectedPersonaIds.includes(p.persona_id));
-  }, [personas, selectedPersonaIds]);
+    return personas.filter((p) => p.persona_id && isSelected(p.persona_id));
+  }, [personas, isSelected]);
 
   const deletablePersonas = useMemo(() => {
     return selectedPersonas.filter((p) => p.can_delete);
@@ -222,32 +307,65 @@ export default function Personas({
     return selectedPersonas.filter((p) => p.can_edit);
   }, [selectedPersonas]);
 
-  // Check if all personas on the current page are selected
+  // Check if all personas on the current page are selected. Under
+  // all-matching mode every loaded row whose id isn't in
+  // ``excludedPersonaIds`` is implicitly selected, so the predicate
+  // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
     const pageIds = personas.filter((p) => p.persona_id).map((p) => p.persona_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedPersonaIds.includes(id));
-  }, [personas, selectedPersonaIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [personas, isSelected]);
 
-  // Toggle selection for a single persona
+  // Whether there ARE more matching rows than what's loaded on this
+  // page — used to decide whether to surface the "Select all N
+  // matching" affordance after the user selects the page.
+  const hasMoreThanCurrentPage = totalMatchingCount > personas.length;
+
+  // Toggle selection for a single persona. Under all-matching mode
+  // we toggle membership in excludedPersonaIds (deselect ⇒ add to
+  // exclusions, re-select ⇒ remove). Under explicit mode it's the
+  // straight selectedPersonaIds toggle.
   const toggleSelection = useCallback((personaId: string) => {
-    setSelectedPersonaIds((prev) =>
-      prev.includes(personaId)
-        ? prev.filter((id) => id !== personaId)
-        : [...prev, personaId]
-    );
-  }, []);
+    if (selectAllMatching) {
+      void setExcludedPersonaIds((prev) =>
+        prev.includes(personaId)
+          ? prev.filter((id) => id !== personaId)
+          : [...prev, personaId],
+      );
+    } else {
+      void setSelectedPersonaIds((prev) =>
+        prev.includes(personaId)
+          ? prev.filter((id) => id !== personaId)
+          : [...prev, personaId],
+      );
+    }
+  }, [selectAllMatching, setExcludedPersonaIds, setSelectedPersonaIds]);
 
   const clearSelection = useCallback(() => {
-    setSelectedPersonaIds([]);
-  }, []);
+    void setSelectedPersonaIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedPersonaIds([]);
+  }, [setSelectedPersonaIds, setSelectAllMatching, setExcludedPersonaIds]);
 
   const selectAllOnPage = useCallback(() => {
     const pageIds = personas.filter((p) => p.persona_id).map((p) => p.persona_id!);
-    setSelectedPersonaIds((prev) => {
+    void setSelectAllMatching(false);
+    void setExcludedPersonaIds([]);
+    void setSelectedPersonaIds((prev) => {
       const combined = new Set([...prev, ...pageIds]);
       return Array.from(combined);
     });
-  }, [personas]);
+  }, [personas, setSelectAllMatching, setExcludedPersonaIds, setSelectedPersonaIds]);
+
+  /** Promote the current page-only selection into "all matching
+   *  filter" mode. Clears explicit ids and exclusions — the all-
+   *  matching mode is the canonical truth from this point. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedPersonaIds([]);
+    void setExcludedPersonaIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedPersonaIds, setExcludedPersonaIds, setSelectAllMatching]);
 
   // Derive options from filter sections (server returns filtered options based on search)
   const scenarioOptions = useMemo(() => {
@@ -804,7 +922,12 @@ export default function Personas({
   };
 
   const handleBulkDelete = async () => {
-    if (!deletePersonaAction || deletablePersonas.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deletePersonaAction`` call shape; the
+    // body just differs.
+    if (!deletePersonaAction) return;
+    if (!selectAllMatching && deletablePersonas.length === 0) return;
 
     if (!profile?.id) {
       toast.error("Profile not loaded. Please refresh the page.");
@@ -813,14 +936,39 @@ export default function Personas({
 
     setIsBulkDeleting(true);
     try {
-      const ids = deletablePersonas.map((p) => p.persona_id!);
-      await deletePersonaAction({
-        body: {
-          ids,
-          accept: true,
-        },
-      });
-      toast.success(`${ids.length} persona(s) deleted successfully`);
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedPersonaIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            ids: deletablePersonas.map((p) => p.persona_id!),
+            accept: true,
+          };
+
+      const result = await deletePersonaAction({ body } as DeletePersonaIn);
+
+      // Per-row results from the server: success entries are actual
+      // deletions, failures are soft-skipped rows (no permission /
+      // not found). Toast reflects both counts so the user knows
+      // some rows were skipped without inspecting the receipt.
+      const results = (result as DeletePersonaOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} persona(s) deleted, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} persona(s) deleted successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -834,14 +982,17 @@ export default function Personas({
   };
 
   const handleBulkEdit = async () => {
-    if (!updatePersonaAction || editablePersonas.length === 0) return;
+    if (!updatePersonaAction) return;
+    if (!selectAllMatching && editablePersonas.length === 0) return;
 
     if (!profile?.id) {
       toast.error("Profile not loaded. Please refresh the page.");
       return;
     }
 
-    // Build items with only changed fields
+    // Build the patch with only changed fields. Same shape under
+    // both modes — explicit cloning per-row vs. server-side cloning
+    // per matched id is the only difference.
     const hasActiveChange = bulkEditActiveStatus !== null;
     const hasColorChange = bulkEditColorIds.length > 0;
     const hasIconChange = bulkEditIconIds.length > 0;
@@ -860,32 +1011,71 @@ export default function Personas({
 
     setIsBulkEditing(true);
     try {
-      const items = editablePersonas.map((p) => {
-        // Reconstruct flag_ids per-row, preserving flags we aren't toggling.
-        // Today only `active` is exposed — additional flag types slot in here.
+      // Shared change set used by both paths. Under all-matching the
+      // server clones this per resolved row (stamping each id);
+      // under explicit we clone client-side, preserving per-row flag
+      // state for fields we aren't toggling.
+      const sharedPatch = {
+        ...(hasColorChange && { color_id: bulkEditColorIds[0] }),
+        ...(hasIconChange && { icon_id: bulkEditIconIds[0] }),
+        ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
+        ...(hasVoiceChange && { voice_ids: bulkEditVoiceIds }),
+      };
+
+      let body: UpdatePersonaIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know what each row's existing flags are), so
+        // the active toggle becomes "set to this value across all
+        // matching rows" — the same semantic as a manual sweep. Other
+        // flag types slot in here as the UI exposes them.
         let flag_ids: string[] | undefined;
         if (hasAnyFlagChange) {
-          const isActive = hasActiveChange ? bulkEditActiveStatus : !p.is_inactive;
           flag_ids = [];
-          if (isActive && activeFlagId) flag_ids.push(activeFlagId);
+          if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
         }
+        body = {
+          all: true,
+          excluded_ids: excludedPersonaIds,
+          ...(currentSearchBody ?? {}),
+          patch: {
+            ...sharedPatch,
+            ...(hasAnyFlagChange && { flag_ids }),
+          },
+          accept: true,
+        } as UpdatePersonaIn["body"];
+      } else {
+        // Explicit: clone the patch per-row, preserving each row's
+        // existing flag state for flags we aren't toggling.
+        const items = editablePersonas.map((p) => {
+          let flag_ids: string[] | undefined;
+          if (hasAnyFlagChange) {
+            const isActive = hasActiveChange ? bulkEditActiveStatus : !p.is_inactive;
+            flag_ids = [];
+            if (isActive && activeFlagId) flag_ids.push(activeFlagId);
+          }
+          return {
+            id: p.persona_id!,
+            ...sharedPatch,
+            ...(hasAnyFlagChange && { flag_ids }),
+          };
+        });
+        body = { personas: items } as UpdatePersonaIn["body"];
+      }
 
-        return {
-          id: p.persona_id!,
-          ...(hasAnyFlagChange && { flag_ids }),
-          ...(hasColorChange && { color_id: bulkEditColorIds[0] }),
-          ...(hasIconChange && { icon_id: bulkEditIconIds[0] }),
-          ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
-          ...(hasVoiceChange && { voice_ids: bulkEditVoiceIds }),
-        };
-      });
+      const result = await updatePersonaAction({ body } as UpdatePersonaIn);
 
-      await updatePersonaAction({
-        body: {
-          personas: items,
-        },
-      } as UpdatePersonaIn);
-      toast.success(`${items.length} persona(s) updated successfully`);
+      // Per-row results — same soft-skip pattern as bulk delete.
+      const results = (result as UpdatePersonaOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} persona(s) updated, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} persona(s) updated successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -1190,10 +1380,8 @@ export default function Personas({
         <div className="space-y-4">
         {/* Toolbar — swaps between filter bar and selection action bar */}
         {selectedCount > 0 ? (
-          <div
-            className="flex items-center justify-between gap-2"
-            data-testid="personas-toolbar"
-          >
+          <div className="space-y-2" data-testid="personas-toolbar">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {deletePersonaAction && (
                 <Button
@@ -1201,10 +1389,12 @@ export default function Personas({
                   size="sm"
                   className="h-8"
                   onClick={() => setShowBulkDeleteDialog(true)}
-                  disabled={deletablePersonas.length === 0}
+                  disabled={!selectAllMatching && deletablePersonas.length === 0}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete {deletablePersonas.length} of {selectedCount}
+                  {selectAllMatching
+                    ? `Delete ${selectedCount} matching`
+                    : `Delete ${deletablePersonas.length} of ${selectedCount}`}
                 </Button>
               )}
               {updatePersonaAction && (
@@ -1213,20 +1403,22 @@ export default function Personas({
                   size="sm"
                   className="h-8"
                   onClick={openBulkEditDialog}
-                  disabled={editablePersonas.length === 0}
+                  disabled={!selectAllMatching && editablePersonas.length === 0}
                 >
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit {editablePersonas.length} of {selectedCount}
+                  {selectAllMatching
+                    ? `Edit ${selectedCount} matching`
+                    : `Edit ${editablePersonas.length} of ${selectedCount}`}
                 </Button>
               )}
-              {!allPageSelected && (
+              {!allPageSelected && !selectAllMatching && (
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-8"
                   onClick={selectAllOnPage}
                 >
-                  Select All
+                  Select Page
                 </Button>
               )}
               <Button
@@ -1239,6 +1431,51 @@ export default function Personas({
               </Button>
             </div>
             <DataTableViewOptions table={table} hiddenColumns={["name", "description", "scenarios", "fieldIds", "departments", "updated_at"]} />
+          </div>
+
+          {/* Cross-page selection banners. Two states:
+              (a) page-all selected, more matching elsewhere → offer
+                  "Select all N matching" to flip into all-matching mode.
+              (b) all-matching active → show count + Clear so the
+                  user always has an obvious escape hatch.
+              Mutually exclusive — both never render at once. */}
+          {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+              data-testid="select-all-matching-banner"
+            >
+              <span className="text-muted-foreground">
+                All {personas.length} on this page selected.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={selectAllMatchingNow}
+              >
+                Select all {totalMatchingCount} matching
+              </Button>
+            </div>
+          )}
+          {selectAllMatching && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+              data-testid="all-matching-active-banner"
+            >
+              <span className="text-muted-foreground">
+                All {selectedCount} matching personas selected
+                {excludedPersonaIds.length > 0 && ` (${excludedPersonaIds.length} excluded)`}.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={clearSelection}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
           </div>
         ) : (
           <div
@@ -1341,6 +1578,17 @@ export default function Personas({
           </div>
         )}
 
+        {/* Ghost rail — live overlay for in-flight create/delete (and
+            soft-pending Accept/Reject) sourced from the audit event
+            stream. Always pinned above the table so it survives
+            pagination/filtering — the design rule is "always visible
+            on page 1, regardless of where the row would naturally sort." */}
+        <PersonaGhostRail
+          ghosts={personaGhosts}
+          ack={ackPersonaGhost}
+          onDrop={dropPersonaGhost}
+        />
+
         {/* Cards Grid — container-query driven so it scales to available width
             (e.g. when the right AI panel opens, the grid drops a column smoothly
             rather than waiting on a viewport breakpoint).
@@ -1411,7 +1659,7 @@ export default function Personas({
       <BulkDeleteDialog
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
-        count={deletablePersonas.length}
+        count={selectAllMatching ? selectedCount : deletablePersonas.length}
         entityLabel="persona"
         entityLabelPlural="personas"
         isDeleting={isBulkDeleting}
@@ -1419,31 +1667,55 @@ export default function Personas({
         description={
           <>
             <p>This action cannot be undone.</p>
-            {deletablePersonas.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                <ul className="text-sm space-y-0.5">
-                  {deletablePersonas.map((p) => (
-                    <li key={p.persona_id} className="flex items-center gap-1.5">
-                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                      {p.name || "Unnamed Persona"}
-                    </li>
-                  ))}
-                </ul>
+            {selectAllMatching ? (
+              // All-matching mode: server resolves rows from filter +
+              // exclusions; per-row permission failures soft-skip.
+              // We can't enumerate names without round-tripping through
+              // the search endpoint (which would re-trigger the RSC
+              // burst), so show the count + filter state instead.
+              <div className="text-sm text-muted-foreground">
+                <p>
+                  All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                  {" "}personas will be deleted server-side using the current filter.
+                </p>
+                {excludedPersonaIds.length > 0 && (
+                  <p className="mt-1">
+                    {excludedPersonaIds.length} explicitly excluded.
+                  </p>
+                )}
+                <p className="mt-1">
+                  Personas you don't have permission to delete will be skipped automatically.
+                </p>
               </div>
-            )}
-            {nonDeletablePersonas.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by scenarios):</p>
-                <ul className="text-sm space-y-0.5">
-                  {nonDeletablePersonas.map((p) => (
-                    <li key={p.persona_id} className="flex items-center gap-1.5 text-muted-foreground">
-                      <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
-                      {p.name || "Unnamed Persona"}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            ) : (
+              <>
+                {deletablePersonas.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                    <ul className="text-sm space-y-0.5">
+                      {deletablePersonas.map((p) => (
+                        <li key={p.persona_id} className="flex items-center gap-1.5">
+                          <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                          {p.name || "Unnamed Persona"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {nonDeletablePersonas.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by scenarios):</p>
+                    <ul className="text-sm space-y-0.5">
+                      {nonDeletablePersonas.map((p) => (
+                        <li key={p.persona_id} className="flex items-center gap-1.5 text-muted-foreground">
+                          <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                          {p.name || "Unnamed Persona"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
             )}
           </>
         }
@@ -1453,7 +1725,7 @@ export default function Personas({
       <BulkEditDialog
         open={showBulkEditDialog}
         onOpenChange={setShowBulkEditDialog}
-        count={editablePersonas.length}
+        count={selectAllMatching ? selectedCount : editablePersonas.length}
         entityLabelPlural="personas"
         isSaving={isBulkEditing}
         onSave={handleBulkEdit}

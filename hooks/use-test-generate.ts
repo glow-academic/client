@@ -126,7 +126,7 @@ export function useTestGenerate(
                   "invocation_get",
                   "invocation_create",
                   "draft",
-                  "group",
+                  "title",
                 ],
                 params: {
                   test_id: params.testId,

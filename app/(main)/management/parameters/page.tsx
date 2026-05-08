@@ -22,8 +22,31 @@ import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
 import { loadParametersSearchParams } from "@/lib/search-params/parameters";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type ParametersListOut = OutputOf<"/parameter/search", "post">;
+
+/** ---- Body type for parameters list request ----
+ * Mirrors persona's ``PersonasListBody`` — same shape that the bulk
+ * delete/update endpoints accept under their ``all=true`` path so the
+ * client can forward the SSR search body verbatim. NOTE: today the
+ * parameters page does not URL-drive its filters (TanStack column
+ * filters are client-side), so this body is effectively just the
+ * pagination defaults. See known-gaps in
+ * ``project_bulk_write_pattern.md``. */
+type ParametersListBody = {
+  search?: string | null;
+  scenario_ids?: string[] | null;
+  field_ids?: string[] | null;
+  filter_department_ids?: string[] | null;
+  scenario_search?: string | null;
+  field_search?: string | null;
+  department_search?: string | null;
+  flag_search?: string | null;
+  page_size?: number | null;
+  page_offset?: number | null;
+};
 type DuplicateParameterIn = InputOf<"/parameter/duplicate", "post">;
 type DuplicateParameterOut = OutputOf<"/parameter/duplicate", "post">;
 type DeleteParameterIn = InputOf<"/parameter/delete", "post">;
@@ -32,8 +55,6 @@ type UpdateParameterIn = InputOf<"/parameter/update", "post">;
 type UpdateParameterOut = OutputOf<"/parameter/update", "post">;
 type GroupParameterIn = InputOf<"/parameter/group", "post">;
 type GroupParameterOut = OutputOf<"/parameter/group", "post">;
-type GenerateParameterIn = InputOf<"/parameter/generate", "post">;
-type GenerateParameterOut = OutputOf<"/parameter/generate", "post">;
 type GenerationsIn = InputOf<"/parameter/generations", "post">;
 type GenerationsOut = OutputOf<"/parameter/generations", "post">;
 type ProblemParameterIn = InputOf<"/parameter/problem", "post">;
@@ -45,11 +66,13 @@ type ContextOut = OutputOf<"/parameter/context", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getParametersList = async (): Promise<ParametersListOut> => {
+const getParametersList = async (
+  body: ParametersListBody,
+): Promise<ParametersListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/parameter/search",
-    { body: {} },
+    { body },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -83,12 +106,6 @@ async function updateParameter(
   return api.post("/parameter/update", input);
 }
 
-async function generateParameter(
-  input: GenerateParameterIn
-): Promise<GenerateParameterOut> {
-  "use server";
-  return api.post("/parameter/generate", input);
-}
 
 async function getParameterGroupHistory(groupId: string): Promise<GroupParameterOut> {
   "use server";
@@ -116,15 +133,20 @@ async function searchParameterGenerations(input: GenerationsIn): Promise<Generat
   return api.post("/parameter/generations", input);
 }
 
-async function runParameterGenerate(input: GenerateParameterIn): Promise<GenerateParameterOut> {
-  "use server";
-  return api.post("/parameter/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getParameterContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/parameter/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/parameter/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getParameterContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -155,13 +177,20 @@ export default async function ContextPage({ searchParams }: ParametersPageProps)
 
   try {
     // Profile data for providers
-    const context = await api.post("/parameter/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getParameterContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/management/parameters", context.profile.role_permissions);
 
+    // SSR search body. Today this is empty (filters are client-side
+    // TanStack column filters, not URL-driven), but the shape is in
+    // place so flipping filters to nuqs URL params later is mechanical.
+    // Forwarded to the bulk delete/update endpoints via the
+    // ``currentSearchBody`` prop on the list component.
+    const body: ParametersListBody = {};
+
     // Fetch list data, view cookie, and group in parallel
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([
-      getParametersList(),
+      getParametersList(body),
       readViewCookie("parameters"),
       api.post(
         "/parameter/group",
@@ -186,6 +215,7 @@ export default async function ContextPage({ searchParams }: ParametersPageProps)
         toolbar={<NewArtifactButton label="New Parameter" href="/management/parameters/new" />}
         panelProps={{
           artifactType: "parameter",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupParameterOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupParameterOut & { name?: string | null })?.name ?? null,
@@ -194,15 +224,13 @@ export default async function ContextPage({ searchParams }: ParametersPageProps)
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          generateAction: generateParameter,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           getGroupHistory: getParameterGroupHistory,
           searchGroups: searchParameterGroups,
           prompts: context.prompts?.prompts,
           getGroupAction: getParameterGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchParameterGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runParameterGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="parameters-index">
@@ -212,6 +240,7 @@ export default async function ContextPage({ searchParams }: ParametersPageProps)
             duplicateParameterAction={duplicateParameter}
             deleteParameterAction={deleteParameter}
             updateParameterAction={updateParameter}
+            currentSearchBody={body}
           />
         </div>
       </FullPageLayout>
@@ -241,6 +270,7 @@ export type {
   DuplicateParameterIn,
   DuplicateParameterOut,
   ParametersListOut,
+  ParametersListBody,
   UpdateParameterIn,
   UpdateParameterOut,
 };

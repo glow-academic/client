@@ -19,13 +19,13 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { loadAttemptSearchParams } from "@/lib/search-params/attempt";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type AttemptDetailIn = InputOf<"/attempt/get", "post">;
 type AttemptDetailOut = OutputOf<"/attempt/get", "post">;
 type ContextIn = InputOf<"/attempt/context", "post">;
 type ContextOut = OutputOf<"/attempt/context", "post">;
-type GenerateAttemptIn = InputOf<"/attempt/generate", "post">;
-type GenerateAttemptOut = OutputOf<"/attempt/generate", "post">;
 type GroupAttemptIn = InputOf<"/attempt/group", "post">;
 type GroupAttemptOut = OutputOf<"/attempt/group", "post">;
 type GenerationsIn = InputOf<"/attempt/generations", "post">;
@@ -69,12 +69,15 @@ async function searchAttemptGenerations(
   return api.post("/attempt/generations", input);
 }
 
-async function runAttemptGenerate(
-  input: GenerateAttemptIn,
-): Promise<GenerateAttemptOut> {
-  "use server";
-  return api.post("/attempt/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getAttemptContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/attempt/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Metadata uses context endpoint ---- */
 export async function generateMetadata(
@@ -84,7 +87,7 @@ export async function generateMetadata(
   const { attemptId } = await params;
 
   try {
-    const context = await api.post("/attempt/context", { body: { entity_id: attemptId } } as ContextIn) as ContextOut;
+    const context = await getAttemptContextById(attemptId);
     return {
       title: context.page_metadata?.detail.title ?? "Attempt",
       description: context.page_metadata?.detail.description,
@@ -128,7 +131,7 @@ export default async function AttemptPage({
     // Profile data for providers + attempt data in parallel
     const [attemptData, context, groupResult] = await Promise.all([
       getAttemptDetail(attemptId),
-      api.post("/attempt/context", { body: { entity_id: attemptId } } as ContextIn) as Promise<ContextOut>,
+      getAttemptContextById(attemptId) as Promise<ContextOut>,
       api.post(
         "/attempt/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupAttemptIn,
@@ -185,6 +188,7 @@ export default async function AttemptPage({
         }
         panelProps={{
           artifactType: "attempt",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupAttemptOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupAttemptOut & { name?: string | null })?.name ?? null,
@@ -193,12 +197,11 @@ export default async function AttemptPage({
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           prompts: context.prompts?.prompts,
           getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchAttemptGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runAttemptGenerate as PanelProps["runGenerateAction"],
         }}
       >
         {/* Desktop-only gutter. On mobile the chat bubbles and input

@@ -21,6 +21,8 @@ import { createLoader, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetDepartmentIn = InputOf<"/department/get", "post">;
 type GetDepartmentOut = OutputOf<"/department/get", "post">;
@@ -34,8 +36,6 @@ type GroupDepartmentIn = InputOf<"/department/group", "post">;
 type GroupDepartmentOut = OutputOf<"/department/group", "post">;
 type GenerationsIn = InputOf<"/department/generations", "post">;
 type GenerationsOut = OutputOf<"/department/generations", "post">;
-type GenerateIn = InputOf<"/department/generate", "post">;
-type GenerateOut = OutputOf<"/department/generate", "post">;
 type ProblemDepartmentIn = InputOf<"/department/problem", "post">;
 type ProblemDepartmentOut = OutputOf<"/department/problem", "post">;
 type ContextIn = InputOf<"/department/context", "post">;
@@ -89,10 +89,15 @@ async function searchDepartmentGenerations(input: GenerationsIn): Promise<Genera
   return api.post("/department/generations", input);
 }
 
-async function runDepartmentGenerate(input: GenerateIn): Promise<GenerateOut> {
-  "use server";
-  return api.post("/department/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getDepartmentContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/department/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata({
@@ -102,7 +107,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { departmentId } = await params;
-    const context = await api.post("/department/context", { body: { entity_id: departmentId } } as ContextIn) as ContextOut;
+    const context = await getDepartmentContextById(departmentId);
     return {
       title: context.page_metadata?.detail.title,
       description: context.page_metadata?.detail.description,
@@ -166,7 +171,7 @@ export default async function DepartmentEditPage({
 
     const [departmentDetail, context, draftsResult, groupResult] = await Promise.all([
       getDepartment(input),
-      api.post("/department/context", { body: { entity_id: departmentId } } as ContextIn) as Promise<ContextOut>,
+      getDepartmentContextById(departmentId) as Promise<ContextOut>,
       api.post("/department/drafts", {} as never),
       api.post(
         "/department/group",
@@ -198,6 +203,7 @@ export default async function DepartmentEditPage({
           toolbar={<SaveToolbar />}
           panelProps={{
             artifactType: "department",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
             groupId: (groupResult as GroupDepartmentOut & { group_id?: string })?.group_id ?? null,
             groupName:
               (groupResult as GroupDepartmentOut & { name?: string | null })?.name ?? null,
@@ -206,14 +212,13 @@ export default async function DepartmentEditPage({
             // skips the duplicate client-side /<art>/group refetch
             // on first paint, eliminating the hydration flicker.
             initialGroupHistory: groupResult as Record<string, unknown>,
-            operations: ["draft", "get", "group"],
+            operations: ["draft", "get", "title"],
             ...(context.prompts?.prompts
               ? { prompts: context.prompts.prompts }
               : {}),
             getGroupAction: getDepartmentGroup as PanelProps["getGroupAction"],
             searchGenerationsAction:
               searchDepartmentGenerations as PanelProps["searchGenerationsAction"],
-            runGenerateAction: runDepartmentGenerate as PanelProps["runGenerateAction"],
           } as any}
         >
           <div

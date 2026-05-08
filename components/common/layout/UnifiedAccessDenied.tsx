@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { LoginReturnButton } from "@/components/common/layout/LoginReturnButton";
 type ProfileRole =
   | "superadmin"
   | "admin"
@@ -86,9 +87,10 @@ export function UnifiedAccessDenied({
             </CardHeader>
             <CardContent className="text-center space-y-4">
               <div className="flex flex-col gap-2">
-                <Button asChild className="w-full">
-                  <Link href={`/?return_to=${encodeURIComponent(pathname)}`}>Log In</Link>
-                </Button>
+                {/* Reads live browser URL (path + query) so re-auth
+                    returns the user to exactly where they were —
+                    selection ids, groupId, filters preserved. */}
+                <LoginReturnButton />
               </div>
             </CardContent>
           </Card>

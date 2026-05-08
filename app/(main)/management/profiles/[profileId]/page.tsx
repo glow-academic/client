@@ -21,6 +21,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetProfileIn = InputOf<"/profile/get", "post">;
 type GetProfileOut = OutputOf<"/profile/get", "post">;
@@ -30,8 +32,6 @@ type PatchProfileDraftIn = InputOf<"/profile/draft", "patch">;
 type PatchProfileDraftOut = OutputOf<"/profile/draft", "patch">;
 type GroupProfileIn = InputOf<"/profile/group", "post">;
 type GroupProfileOut = OutputOf<"/profile/group", "post">;
-type GenerateProfileIn = InputOf<"/profile/generate", "post">;
-type GenerateProfileOut = OutputOf<"/profile/generate", "post">;
 type ProblemProfileIn = InputOf<"/profile/problem", "post">;
 type ProblemProfileOut = OutputOf<"/profile/problem", "post">;
 type ContextIn = InputOf<"/profile/context", "post">;
@@ -58,12 +58,6 @@ async function patchProfileDraft(
   return api.patch("/profile/draft", input);
 }
 
-async function generateProfile(
-  input: GenerateProfileIn
-): Promise<GenerateProfileOut> {
-  "use server";
-  return api.post("/profile/generate", input);
-}
 
 async function getProfileGroupHistory(groupId: string): Promise<GroupProfileOut> {
   "use server";
@@ -83,6 +77,15 @@ async function createProfileProblem(input: ProblemProfileIn): Promise<ProblemPro
   return api.post("/profile/problem", input);
 }
 
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getProfileContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/profile/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
+
 /** ---- Page metadata ---- */
 export async function generateMetadata({
   params,
@@ -91,7 +94,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { profileId } = await params;
-    const context = await api.post("/profile/context", { body: { entity_id: profileId } } as ContextIn) as ContextOut;
+    const context = await getProfileContextById(profileId);
     return {
       title: context.page_metadata?.detail.title,
       description: context.page_metadata?.detail.description,
@@ -163,7 +166,7 @@ export default async function ProfileEditPage({
 
     const [profileDetail, context, draftsResult, groupResult] = await Promise.all([
       getProfile(input),
-      api.post("/profile/context", { body: { entity_id: profileId } } as ContextIn) as Promise<ContextOut>,
+      getProfileContextById(profileId) as Promise<ContextOut>,
       api.post("/profile/drafts", {}),
       api.post("/profile/group", { body: {} } as GroupProfileIn),
     ]);
@@ -191,11 +194,11 @@ export default async function ProfileEditPage({
             toolbar: <SaveToolbar />,
             panelProps: {
               artifactType: "profile",
+              initialPanelPrefs: await readGenerationPanelPrefs(),
               groupId:
                 (groupResult as GroupProfileOut & { group_id?: string })?.group_id ??
                 null,
-              generateAction: generateProfile,
-              operations: ["draft", "get", "group"],
+              operations: ["draft", "get", "title"],
               getGroupHistory: getProfileGroupHistory,
               searchGroups: searchProfileGroups,
               prompts: context.prompts?.prompts,

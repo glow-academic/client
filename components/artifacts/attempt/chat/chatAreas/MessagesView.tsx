@@ -563,8 +563,13 @@ export function MessagesView({
 
                   // Handle empty/loading states at message level
                   if (contents.length === 0) {
-                    if (isOptimisticVoiceMessage) {
-                      // Voice message being transcribed
+                    // Blank query (user) bubble — covers both the
+                    // optimistic-voice-id case and any real user
+                    // message whose contents haven't streamed in yet
+                    // (voice transcription pending). Show dots in the
+                    // right-aligned primary bubble so the user sees
+                    // their utterance is being captured.
+                    if (isQuery || isOptimisticVoiceMessage) {
                       return (
                         <div key={message.id} className="flex justify-end mb-3">
                           <div className="max-w-[80%]">

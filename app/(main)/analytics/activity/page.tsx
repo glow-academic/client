@@ -20,6 +20,8 @@ import { loadActivitySearchParams } from "@/lib/search-params/activity";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type ActivityBundleIn = InputOf<"/system/activity/get", "post">;
 type ActivityBundleOut = OutputOf<"/system/activity/get", "post">;
@@ -37,10 +39,17 @@ type SystemGroupIn = InputOf<"/system/group", "post">;
 type SystemGroupOut = OutputOf<"/system/group", "post">;
 type SystemGenerationsIn = InputOf<"/system/generations", "post">;
 type SystemGenerationsOut = OutputOf<"/system/generations", "post">;
-type SystemGenerateIn = InputOf<"/system/generate", "post">;
-type SystemGenerateOut = OutputOf<"/system/generate", "post">;
 type ProblemActivityIn = InputOf<"/system/problem", "post">;
 type ProblemActivityOut = OutputOf<"/system/problem", "post">;
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getSystemContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/system/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Direct fetch functions ---- */
 const getActivityBundle = async (
@@ -61,7 +70,7 @@ const getActivityBundle = async (
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/system/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getSystemContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -93,7 +102,7 @@ export default async function ActivityPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/system/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getSystemContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/analytics/activity", context.profile.role_permissions);
 
@@ -168,6 +177,7 @@ export default async function ActivityPage({
         }
         panelProps={{
           artifactType: "activity",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as SystemGroupOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as SystemGroupOut & { name?: string | null })?.name ?? null,
@@ -176,11 +186,10 @@ export default async function ActivityPage({
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           prompts: context.prompts?.prompts,
           getGroupAction: getSystemGroup as PanelProps["getGroupAction"],
           searchGenerationsAction: searchSystemGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runSystemGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="activity-index">
@@ -228,10 +237,6 @@ async function searchSystemGenerations(input: SystemGenerationsIn): Promise<Syst
   return api.post("/system/generations", input);
 }
 
-async function runSystemGenerate(input: SystemGenerateIn): Promise<SystemGenerateOut> {
-  "use server";
-  return api.post("/system/generate", input);
-}
 
 async function createActivityProblem(input: ProblemActivityIn): Promise<ProblemActivityOut> {
   "use server";

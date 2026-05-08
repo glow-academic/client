@@ -8,6 +8,7 @@
 "use client";
 import { CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Pencil, Search, Sparkles, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -27,6 +28,7 @@ import type {
   UpdateSimulationIn,
   UpdateSimulationOut,
   SimulationsListOut,
+  SimulationsListBody,
 } from "@/app/(main)/training/simulations/page";
 import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
@@ -79,6 +81,11 @@ export interface SimulationsProps {
   createSimulationAction?: (input: CreateSimulationIn) => Promise<CreateSimulationOut>;
   updateSimulationAction?: (input: UpdateSimulationIn) => Promise<UpdateSimulationOut>;
   parseCsvAction?: (formData: FormData) => Promise<ParseCsvResult>;
+  /** The body the page used for its SSR ``/simulation/search`` call.
+   *  Forwarded as the filter envelope on bulk delete/update calls
+   *  when the user is in ``selectAll=1`` mode — the server resolves
+   *  matching rows directly, no client-side enumeration. */
+  currentSearchBody?: SimulationsListBody;
   importFields?: ImportFieldDef[];
   // Server-side pagination/filtering state
   pageIndex: number;
@@ -98,6 +105,7 @@ export function Simulations({
   createSimulationAction,
   updateSimulationAction,
   parseCsvAction,
+  currentSearchBody,
   importFields,
   pageIndex,
   pageSize,
@@ -118,8 +126,33 @@ export function Simulations({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
 
-  // Selection state
-  const [selectedSimulationIds, setSelectedSimulationIds] = useState<string[]>([]);
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated focus link. Three params
+  // model the full state machine:
+  //
+  //   - ``selectedIds=A,B``        → explicit selection of named rows
+  //   - ``selectAll=1``            → every row matching the active
+  //                                  filters/search is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                                → all-matching minus exclusions
+  //   - (none of the above)        → empty selection
+  //
+  // The all-matching mode keeps the URL compact for huge datasets
+  // (one boolean instead of N ids) and follows the active filter —
+  // change the filter and "all matching" follows naturally. Shallow
+  // updates skip the RSC re-fetch burst.
+  const [selectedSimulationIds, setSelectedSimulationIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedSimulationIds, setExcludedSimulationIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -201,11 +234,31 @@ export function Simulations({
     [simulationsData?.simulations],
   );
 
-  // Computed selection info
-  const selectedCount = selectedSimulationIds.length;
+  // ---- Selection helpers ----------------------------------------
+  // ``isSelected`` is the single read predicate every row uses; it
+  // dispatches between explicit-id and all-matching modes so
+  // downstream code never needs to branch. ``selectedCount`` mirrors
+  // that — under all-matching it's ``totalCount - excludedIds.length``.
+
+  const totalMatchingCount = simulationsData?.total_count ?? 0;
+
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedSimulationIds.includes(id)
+        : selectedSimulationIds.includes(id);
+    },
+    [selectAllMatching, excludedSimulationIds, selectedSimulationIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedSimulationIds.length)
+    : selectedSimulationIds.length;
+
   const selectedSimulations = useMemo(() => {
-    return simulations.filter((s) => s.simulation_id && selectedSimulationIds.includes(s.simulation_id));
-  }, [simulations, selectedSimulationIds]);
+    return simulations.filter((s) => s.simulation_id && isSelected(s.simulation_id));
+  }, [simulations, isSelected]);
 
   const deletableSimulations = useMemo(() => {
     return selectedSimulations.filter((s) => s.can_delete);
@@ -219,32 +272,65 @@ export function Simulations({
     return selectedSimulations.filter((s) => s.can_edit);
   }, [selectedSimulations]);
 
-  // Check if all simulations on the current page are selected
+  // Check if all simulations on the current page are selected.
+  // Under all-matching mode every loaded row whose id isn't in
+  // ``excludedSimulationIds`` is implicitly selected, so the predicate
+  // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
     const pageIds = simulations.filter((s) => s.simulation_id).map((s) => s.simulation_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedSimulationIds.includes(id));
-  }, [simulations, selectedSimulationIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [simulations, isSelected]);
 
-  // Toggle selection for a single simulation
+  // Whether there ARE more matching rows than what's loaded on this
+  // page — used to decide whether to surface the "Select all N
+  // matching" affordance after the user selects the page.
+  const hasMoreThanCurrentPage = totalMatchingCount > simulations.length;
+
+  // Toggle selection for a single simulation. Under all-matching mode
+  // we toggle membership in excludedSimulationIds (deselect ⇒ add to
+  // exclusions, re-select ⇒ remove). Under explicit mode it's the
+  // straight selectedSimulationIds toggle.
   const toggleSelection = useCallback((simulationId: string) => {
-    setSelectedSimulationIds((prev) =>
-      prev.includes(simulationId)
-        ? prev.filter((id) => id !== simulationId)
-        : [...prev, simulationId]
-    );
-  }, []);
+    if (selectAllMatching) {
+      void setExcludedSimulationIds((prev) =>
+        prev.includes(simulationId)
+          ? prev.filter((id) => id !== simulationId)
+          : [...prev, simulationId],
+      );
+    } else {
+      void setSelectedSimulationIds((prev) =>
+        prev.includes(simulationId)
+          ? prev.filter((id) => id !== simulationId)
+          : [...prev, simulationId],
+      );
+    }
+  }, [selectAllMatching, setExcludedSimulationIds, setSelectedSimulationIds]);
 
   const clearSelection = useCallback(() => {
-    setSelectedSimulationIds([]);
-  }, []);
+    void setSelectedSimulationIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedSimulationIds([]);
+  }, [setSelectedSimulationIds, setSelectAllMatching, setExcludedSimulationIds]);
 
   const selectAllOnPage = useCallback(() => {
     const pageIds = simulations.filter((s) => s.simulation_id).map((s) => s.simulation_id!);
-    setSelectedSimulationIds((prev) => {
+    void setSelectAllMatching(false);
+    void setExcludedSimulationIds([]);
+    void setSelectedSimulationIds((prev) => {
       const combined = new Set([...prev, ...pageIds]);
       return Array.from(combined);
     });
-  }, [simulations]);
+  }, [simulations, setSelectAllMatching, setExcludedSimulationIds, setSelectedSimulationIds]);
+
+  /** Promote the current page-only selection into "all matching
+   *  filter" mode. Clears explicit ids and exclusions — the all-
+   *  matching mode is the canonical truth from this point. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedSimulationIds([]);
+    void setExcludedSimulationIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedSimulationIds, setExcludedSimulationIds, setSelectAllMatching]);
 
   // Create scenario mapping dict client-side for lookups (from scenarios array)
   const scenarioMapping = useMemo(() => {
@@ -581,13 +667,48 @@ export function Simulations({
   };
 
   const handleBulkDelete = async () => {
-    if (!deleteSimulationAction || deletableSimulations.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deleteSimulationAction`` call shape; the
+    // body just differs.
+    if (!deleteSimulationAction) return;
+    if (!selectAllMatching && deletableSimulations.length === 0) return;
 
     setIsBulkDeleting(true);
     try {
-      const ids = deletableSimulations.map((s) => s.simulation_id!);
-      await deleteSimulationAction({ body: { simulation_ids: ids, accept: true } });
-      toast.success(`${ids.length} simulation(s) deleted successfully`);
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedSimulationIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            simulation_ids: deletableSimulations.map((s) => s.simulation_id!),
+            accept: true,
+          };
+
+      const result = await deleteSimulationAction({ body } as DeleteSimulationIn);
+
+      // Per-row results from the server: success entries are actual
+      // deletions, failures are soft-skipped rows (no permission /
+      // not found). Toast reflects both counts so the user knows
+      // some rows were skipped without inspecting the receipt.
+      const results = (result as DeleteSimulationOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} simulation(s) deleted, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} simulation(s) deleted successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -601,7 +722,8 @@ export function Simulations({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateSimulationAction || editableSimulations.length === 0) return;
+    if (!updateSimulationAction) return;
+    if (!selectAllMatching && editableSimulations.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     const hasPracticeChange = bulkEditPracticeMode !== null;
@@ -619,32 +741,70 @@ export function Simulations({
 
     setIsBulkEditing(true);
     try {
-      const items = editableSimulations.map((sim) => {
-        let flagIds: string[] | undefined;
+      // Shared change set used by both paths. Under all-matching the
+      // server clones this per resolved row (stamping each id);
+      // under explicit we clone client-side, preserving per-row flag
+      // state for fields we aren't toggling.
+      const sharedPatch = {
+        ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
+      };
 
+      let body: UpdateSimulationIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know what each row's existing flags are), so
+        // active/practice toggles become "set to this value across
+        // all matching rows" — the same semantic as a manual sweep.
+        let flag_ids: string[] | undefined;
         if (hasAnyFlagChange) {
-          // Determine effective flag state per simulation, preserving unchanged flags
-          const isActive = hasActiveChange ? bulkEditActiveStatus : !sim.is_inactive;
-          const isPractice = hasPracticeChange ? bulkEditPracticeMode : !!sim.practice_simulation;
-
-          flagIds = [];
-          if (isActive && activeFlagId) flagIds.push(activeFlagId);
-          if (isPractice && practiceFlagId) flagIds.push(practiceFlagId);
+          flag_ids = [];
+          if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
+          if (bulkEditPracticeMode && practiceFlagId) flag_ids.push(practiceFlagId);
         }
+        body = {
+          all: true,
+          excluded_ids: excludedSimulationIds,
+          ...(currentSearchBody ?? {}),
+          patch: {
+            ...sharedPatch,
+            ...(hasAnyFlagChange && { flag_ids }),
+          },
+          accept: true,
+        } as UpdateSimulationIn["body"];
+      } else {
+        // Explicit: clone the patch per-row, preserving each row's
+        // existing flag state for flags we aren't toggling.
+        const items = editableSimulations.map((sim) => {
+          let flagIds: string[] | undefined;
+          if (hasAnyFlagChange) {
+            const isActive = hasActiveChange ? bulkEditActiveStatus : !sim.is_inactive;
+            const isPractice = hasPracticeChange ? bulkEditPracticeMode : !!sim.practice_simulation;
+            flagIds = [];
+            if (isActive && activeFlagId) flagIds.push(activeFlagId);
+            if (isPractice && practiceFlagId) flagIds.push(practiceFlagId);
+          }
+          return {
+            id: sim.simulation_id!,
+            ...sharedPatch,
+            ...(hasAnyFlagChange && { flag_ids: flagIds }),
+          };
+        });
+        body = { simulations: items } as UpdateSimulationIn["body"];
+      }
 
-        return {
-          id: sim.simulation_id!,
-          ...(hasAnyFlagChange && { flag_ids: flagIds }),
-          ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
-        };
-      });
+      const result = await updateSimulationAction({ body } as UpdateSimulationIn);
 
-      await updateSimulationAction({
-        body: {
-          simulations: items,
-        },
-      } as UpdateSimulationIn);
-      toast.success(`${items.length} simulation(s) updated successfully`);
+      // Per-row results — same soft-skip pattern as bulk delete.
+      const results = (result as UpdateSimulationOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} simulation(s) updated, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} simulation(s) updated successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -943,10 +1103,8 @@ export function Simulations({
         <div className="space-y-4">
           {/* Toolbar — swaps between filter bar and selection action bar */}
           {selectedCount > 0 ? (
-            <div
-              className="flex items-center justify-between gap-2"
-              data-testid="simulations-toolbar"
-            >
+            <div className="space-y-2" data-testid="simulations-toolbar">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 {deleteSimulationAction && (
                   <Button
@@ -954,10 +1112,12 @@ export function Simulations({
                     size="sm"
                     className="h-8"
                     onClick={() => setShowBulkDeleteDialog(true)}
-                    disabled={deletableSimulations.length === 0}
+                    disabled={!selectAllMatching && deletableSimulations.length === 0}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete {deletableSimulations.length} of {selectedCount}
+                    {selectAllMatching
+                      ? `Delete ${selectedCount} matching`
+                      : `Delete ${deletableSimulations.length} of ${selectedCount}`}
                   </Button>
                 )}
                 {updateSimulationAction && (
@@ -966,20 +1126,22 @@ export function Simulations({
                     size="sm"
                     className="h-8"
                     onClick={openBulkEditDialog}
-                    disabled={editableSimulations.length === 0}
+                    disabled={!selectAllMatching && editableSimulations.length === 0}
                   >
                     <Pencil className="mr-2 h-4 w-4" />
-                    Edit {editableSimulations.length} of {selectedCount}
+                    {selectAllMatching
+                      ? `Edit ${selectedCount} matching`
+                      : `Edit ${editableSimulations.length} of ${selectedCount}`}
                   </Button>
                 )}
-                {!allPageSelected && (
+                {!allPageSelected && !selectAllMatching && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-8"
                     onClick={selectAllOnPage}
                   >
-                    Select All
+                    Select Page
                   </Button>
                 )}
                 <Button
@@ -992,6 +1154,51 @@ export function Simulations({
                 </Button>
               </div>
               <DataTableViewOptions table={table} hiddenColumns={["name", "scenario_ids", "cohort_ids", "departments", "updated_at"]} />
+            </div>
+
+            {/* Cross-page selection banners. Two states:
+                (a) page-all selected, more matching elsewhere → offer
+                    "Select all N matching" to flip into all-matching mode.
+                (b) all-matching active → show count + Clear so the
+                    user always has an obvious escape hatch.
+                Mutually exclusive — both never render at once. */}
+            {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+              <div
+                className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+                data-testid="select-all-matching-banner"
+              >
+                <span className="text-muted-foreground">
+                  All {simulations.length} on this page selected.
+                </span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={selectAllMatchingNow}
+                >
+                  Select all {totalMatchingCount} matching
+                </Button>
+              </div>
+            )}
+            {selectAllMatching && (
+              <div
+                className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+                data-testid="all-matching-active-banner"
+              >
+                <span className="text-muted-foreground">
+                  All {selectedCount} matching simulations selected
+                  {excludedSimulationIds.length > 0 && ` (${excludedSimulationIds.length} excluded)`}.
+                </span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={clearSelection}
+                >
+                  Clear
+                </Button>
+              </div>
+            )}
             </div>
           ) : (
           <div
@@ -1138,7 +1345,7 @@ export function Simulations({
         <BulkDeleteDialog
           open={showBulkDeleteDialog}
           onOpenChange={setShowBulkDeleteDialog}
-          count={deletableSimulations.length}
+          count={selectAllMatching ? selectedCount : deletableSimulations.length}
           entityLabel="simulation"
           entityLabelPlural="simulations"
           isDeleting={isBulkDeleting}
@@ -1146,31 +1353,55 @@ export function Simulations({
           description={
             <>
               <p>This action cannot be undone.</p>
-              {deletableSimulations.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                  <ul className="text-sm space-y-0.5">
-                    {deletableSimulations.map((s) => (
-                      <li key={s.simulation_id} className="flex items-center gap-1.5">
-                        <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                        {s.name || "Unnamed Simulation"}
-                      </li>
-                    ))}
-                  </ul>
+              {selectAllMatching ? (
+                // All-matching mode: server resolves rows from filter +
+                // exclusions; per-row permission failures soft-skip.
+                // We can't enumerate names without round-tripping through
+                // the search endpoint (which would re-trigger the RSC
+                // burst), so show the count + filter state instead.
+                <div className="text-sm text-muted-foreground">
+                  <p>
+                    All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                    {" "}simulations will be deleted server-side using the current filter.
+                  </p>
+                  {excludedSimulationIds.length > 0 && (
+                    <p className="mt-1">
+                      {excludedSimulationIds.length} explicitly excluded.
+                    </p>
+                  )}
+                  <p className="mt-1">
+                    Simulations you don't have permission to delete will be skipped automatically.
+                  </p>
                 </div>
-              )}
-              {nonDeletableSimulations.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by cohorts):</p>
-                  <ul className="text-sm space-y-0.5">
-                    {nonDeletableSimulations.map((s) => (
-                      <li key={s.simulation_id} className="flex items-center gap-1.5 text-muted-foreground">
-                        <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
-                        {s.name || "Unnamed Simulation"}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              ) : (
+                <>
+                  {deletableSimulations.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                      <ul className="text-sm space-y-0.5">
+                        {deletableSimulations.map((s) => (
+                          <li key={s.simulation_id} className="flex items-center gap-1.5">
+                            <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                            {s.name || "Unnamed Simulation"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {nonDeletableSimulations.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by cohorts):</p>
+                      <ul className="text-sm space-y-0.5">
+                        {nonDeletableSimulations.map((s) => (
+                          <li key={s.simulation_id} className="flex items-center gap-1.5 text-muted-foreground">
+                            <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                            {s.name || "Unnamed Simulation"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
               )}
             </>
           }
@@ -1180,7 +1411,7 @@ export function Simulations({
         <BulkEditDialog
           open={showBulkEditDialog}
           onOpenChange={setShowBulkEditDialog}
-          count={editableSimulations.length}
+          count={selectAllMatching ? selectedCount : editableSimulations.length}
           entityLabelPlural="simulations"
           isSaving={isBulkEditing}
           onSave={handleBulkEdit}

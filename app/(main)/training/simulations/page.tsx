@@ -23,6 +23,8 @@ import { guardPage } from "@/lib/permissions";
 import { loadSimulationsListSearchParams } from "@/lib/search-params/simulations";
 import type { ParseCsvResult } from "@/components/common/BulkImport";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type SimulationsListOut = OutputOf<"/simulation/search", "post">;
 type DuplicateSimulationIn = InputOf<"/simulation/duplicate", "post">;
@@ -35,8 +37,6 @@ type UpdateSimulationIn = InputOf<"/simulation/update", "post">;
 type UpdateSimulationOut = OutputOf<"/simulation/update", "post">;
 type GroupSimulationIn = InputOf<"/simulation/group", "post">;
 type GroupSimulationOut = OutputOf<"/simulation/group", "post">;
-type GenerateSimulationIn = InputOf<"/simulation/generate", "post">;
-type GenerateSimulationOut = OutputOf<"/simulation/generate", "post">;
 type GenerationsIn = InputOf<"/simulation/generations", "post">;
 type GenerationsOut = OutputOf<"/simulation/generations", "post">;
 type ProblemSimulationIn = InputOf<"/simulation/problem", "post">;
@@ -108,12 +108,6 @@ async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   return api.post("/simulation/csv", { formData });
 }
 
-async function generateSimulation(
-  input: GenerateSimulationIn
-): Promise<GenerateSimulationOut> {
-  "use server";
-  return api.post("/simulation/generate", input);
-}
 
 async function getSimulationGroupHistory(groupId: string): Promise<GroupSimulationOut> {
   "use server";
@@ -136,20 +130,25 @@ async function searchSimulationGenerations(input: GenerationsIn): Promise<Genera
   return api.post("/simulation/generations", input);
 }
 
-async function runSimulationGenerate(input: GenerateSimulationIn): Promise<GenerateSimulationOut> {
-  "use server";
-  return api.post("/simulation/generate", input);
-}
 
 async function createSimulationProblem(input: ProblemSimulationIn): Promise<ProblemSimulationOut> {
   "use server";
   return api.post("/simulation/problem", input);
 }
 
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getSimulationContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/simulation/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/simulation/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getSimulationContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -179,7 +178,7 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
 
   try {
     // Profile data for providers
-    const context = await api.post("/simulation/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getSimulationContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/training/simulations", context.profile.role_permissions);
 
@@ -244,6 +243,7 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
         toolbar={<NewArtifactButton label="New Simulation" href="/training/simulations/new" />}
         panelProps={{
           artifactType: "simulation",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupSimulationOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupSimulationOut & { name?: string | null })?.name ?? null,
@@ -252,15 +252,13 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          generateAction: generateSimulation,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           getGroupHistory: getSimulationGroupHistory,
           searchGroups: searchSimulationGroups,
           prompts: context.prompts?.prompts,
           getGroupAction: getSimulationGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchSimulationGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runSimulationGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="simulations-index">
@@ -272,6 +270,7 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
             createSimulationAction={createSimulation}
             updateSimulationAction={updateSimulation}
             parseCsvAction={parseCsv}
+            currentSearchBody={body}
             importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
             pageIndex={pageIndex}
             pageSize={pageSize}
@@ -313,4 +312,5 @@ export type {
   UpdateSimulationIn,
   UpdateSimulationOut,
   SimulationsListOut,
+  SimulationsListBody,
 };

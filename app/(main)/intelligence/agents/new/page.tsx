@@ -22,6 +22,8 @@ import { createLoader, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetAgentIn = InputOf<"/agent/get", "post">;
 type GetAgentOut = OutputOf<"/agent/get", "post">;
@@ -60,10 +62,19 @@ async function createAgentProblem(input: ProblemAgentIn): Promise<ProblemAgentOu
   return api.post("/agent/problem", input);
 }
 
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getAgentContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/agent/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/agent/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getAgentContext();
     return {
       title: context.page_metadata?.new.title,
       description: context.page_metadata?.new.description,
@@ -93,7 +104,7 @@ export default async function NewAgentPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/agent/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getAgentContext();
     const snapshot = buildSnapshot(session, context.profile);
 
     // Parse search params using nuqs
@@ -178,8 +189,9 @@ export default async function NewAgentPage({
           panelProps={
             {
               artifactType: "agent",
+              initialPanelPrefs: await readGenerationPanelPrefs(),
               groupId: (groupResult as GroupAgentOut & { group_id?: string })?.group_id ?? null,
-              operations: ["draft", "get", "group"],
+              operations: ["draft", "get", "title"],
               ...(context.prompts?.prompts
                 ? { prompts: context.prompts.prompts }
                 : {}),

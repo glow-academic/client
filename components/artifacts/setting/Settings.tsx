@@ -6,6 +6,7 @@
 "use client";
 import { Edit, Eye, Pencil, Settings as SettingsIcon, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -25,6 +26,7 @@ import {
 
 import type {
   SettingsListOut,
+  SettingsListBody,
   DeleteSettingIn,
   DeleteSettingOut,
   UpdateSettingIn,
@@ -52,6 +54,15 @@ export interface SettingsProps {
   initialColumnVisibility?: VisibilityState;
   deleteSettingAction?: (input: DeleteSettingIn) => Promise<DeleteSettingOut>;
   updateSettingAction?: (input: UpdateSettingIn) => Promise<UpdateSettingOut>;
+  /** The body the page used for its SSR ``/setting/search`` call.
+   *  Forwarded as the filter envelope on bulk delete/update calls
+   *  when the user is in ``selectAll=1`` mode — the server resolves
+   *  matching rows directly, no client-side enumeration. */
+  currentSearchBody?: SettingsListBody;
+  /** Total number of matching rows server-side. Used to decide
+   *  whether to surface the "Select all N matching" affordance and
+   *  to size the all-matching mode count. */
+  totalCount?: number;
 }
 
 const SETTINGS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
@@ -71,6 +82,8 @@ export default function Settings({
   initialColumnVisibility,
   deleteSettingAction,
   updateSettingAction,
+  currentSearchBody,
+  totalCount,
 }: SettingsProps) {
   const { departmentIds } = useProfile();
   const router = useRouter();
@@ -142,12 +155,59 @@ export default function Settings({
     [settingsData?.systems_filter]
   );
 
-  // Selection state
-  const [selectedSettingIds, setSelectedSettingIds] = useState<string[]>([]);
-  const selectedCount = selectedSettingIds.length;
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated focus link. Three params
+  // model the full state machine:
+  //
+  //   - ``selectedIds=A,B``       → explicit selection of named rows
+  //   - ``selectAll=1``           → every row matching the active
+  //                                 filters/search is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                               → all-matching minus exclusions
+  //   - (none of the above)       → empty selection
+  //
+  // The all-matching mode keeps the URL compact for huge datasets
+  // (one boolean instead of N ids) and follows the active filter —
+  // change the filter and "all matching" follows naturally. Shallow
+  // updates skip the RSC re-fetch burst.
+  const [selectedSettingIds, setSelectedSettingIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedSettingIds, setExcludedSettingIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+
+  // ---- Selection helpers ----------------------------------------
+  // ``isSelected`` is the single read predicate every row uses; it
+  // dispatches between explicit-id and all-matching modes so
+  // downstream code never needs to branch. ``selectedCount`` mirrors
+  // that — under all-matching it's ``totalCount - excludedIds.length``.
+
+  const totalMatchingCount = totalCount ?? settings.length;
+
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedSettingIds.includes(id)
+        : selectedSettingIds.includes(id);
+    },
+    [selectAllMatching, excludedSettingIds, selectedSettingIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedSettingIds.length)
+    : selectedSettingIds.length;
+
   const selectedSettings = useMemo(() => {
-    return settings.filter((s) => s.settings_id && selectedSettingIds.includes(s.settings_id));
-  }, [settings, selectedSettingIds]);
+    return settings.filter((s) => s.settings_id && isSelected(s.settings_id));
+  }, [settings, isSelected]);
   const deletableSettings = useMemo(
     () => selectedSettings.filter((s) => s.can_delete),
     [selectedSettings],
@@ -161,22 +221,58 @@ export default function Settings({
     [selectedSettings],
   );
 
+  // Toggle selection for a single setting. Under all-matching mode
+  // we toggle membership in excludedSettingIds (deselect ⇒ add to
+  // exclusions, re-select ⇒ remove). Under explicit mode it's the
+  // straight selectedSettingIds toggle.
   const toggleSelection = useCallback((settingsId: string) => {
-    setSelectedSettingIds((prev) =>
-      prev.includes(settingsId)
-        ? prev.filter((id) => id !== settingsId)
-        : [...prev, settingsId]
-    );
-  }, []);
-  const clearSelection = useCallback(() => setSelectedSettingIds([]), []);
+    if (selectAllMatching) {
+      void setExcludedSettingIds((prev) =>
+        prev.includes(settingsId)
+          ? prev.filter((id) => id !== settingsId)
+          : [...prev, settingsId],
+      );
+    } else {
+      void setSelectedSettingIds((prev) =>
+        prev.includes(settingsId)
+          ? prev.filter((id) => id !== settingsId)
+          : [...prev, settingsId],
+      );
+    }
+  }, [selectAllMatching, setExcludedSettingIds, setSelectedSettingIds]);
+
+  const clearSelection = useCallback(() => {
+    void setSelectedSettingIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedSettingIds([]);
+  }, [setSelectedSettingIds, setSelectAllMatching, setExcludedSettingIds]);
+
   const selectAllOnPage = useCallback(() => {
     const pageIds = settings.filter((s) => s.settings_id).map((s) => s.settings_id!);
-    setSelectedSettingIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [settings]);
+    void setSelectAllMatching(false);
+    void setExcludedSettingIds([]);
+    void setSelectedSettingIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [settings, setSelectAllMatching, setExcludedSettingIds, setSelectedSettingIds]);
+
   const allPageSelected = useMemo(() => {
     const pageIds = settings.filter((s) => s.settings_id).map((s) => s.settings_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedSettingIds.includes(id));
-  }, [settings, selectedSettingIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [settings, isSelected]);
+
+  // Whether there ARE more matching rows than what's loaded on this
+  // page — used to decide whether to surface the "Select all N
+  // matching" affordance after the user selects the page.
+  const hasMoreThanCurrentPage = totalMatchingCount > settings.length;
+
+  /** Promote the current page-only selection into "all matching
+   *  filter" mode. Clears explicit ids and exclusions — the all-
+   *  matching mode is the canonical truth from this point. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedSettingIds([]);
+    void setExcludedSettingIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedSettingIds, setExcludedSettingIds, setSelectAllMatching]);
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -188,12 +284,46 @@ export default function Settings({
   const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
 
   const handleBulkDelete = async () => {
-    if (!deleteSettingAction || deletableSettings.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deleteSettingAction`` call shape; the
+    // body just differs.
+    if (!deleteSettingAction) return;
+    if (!selectAllMatching && deletableSettings.length === 0) return;
+
     setIsBulkDeleting(true);
     try {
-      const ids = deletableSettings.map((s) => s.settings_id!);
-      await deleteSettingAction({ body: { setting_ids: ids, accept: true } } as DeleteSettingIn);
-      toast.success(`${ids.length} setting(s) deleted successfully`);
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedSettingIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            setting_ids: deletableSettings.map((s) => s.settings_id!),
+            accept: true,
+          };
+
+      const result = await deleteSettingAction({ body } as DeleteSettingIn);
+
+      // Per-row results from the server: success entries are actual
+      // deletions, failures are soft-skipped rows (no permission /
+      // not found). Toast reflects both counts so the user knows
+      // some rows were skipped without inspecting the receipt.
+      const results = (result as DeleteSettingOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(`${successCount} setting(s) deleted, ${skippedCount} skipped`);
+      } else {
+        toast.success(`${successCount} setting(s) deleted successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -206,7 +336,8 @@ export default function Settings({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateSettingAction || editableSettings.length === 0) return;
+    if (!updateSettingAction) return;
+    if (!selectAllMatching && editableSettings.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     if (!hasActiveChange) {
@@ -219,23 +350,46 @@ export default function Settings({
 
     setIsBulkEditing(true);
     try {
-      // Canonical flag shape: ship `flag_ids` per item. Server derives semantics
-      // by flag type/value. With one flag (setting_active), the array is either
-      // [activeFlagId] or [] — no preservation logic needed.
-      const items = editableSettings.map((s) => {
-        let flag_ids: string[] | undefined;
-        if (hasActiveChange) {
-          const isActive = bulkEditActiveStatus;
-          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
-        }
-        return {
-          id: s.settings_id!,
-          ...(hasActiveChange && { flag_ids }),
-        };
-      });
+      let body: UpdateSettingIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know what each row's existing flags are), so
+        // the active toggle becomes "set to this value across all
+        // matching rows" — the same semantic as a manual sweep.
+        const flag_ids: string[] = [];
+        if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
+        body = {
+          all: true,
+          excluded_ids: excludedSettingIds,
+          ...(currentSearchBody ?? {}),
+          patch: { flag_ids },
+          accept: true,
+        } as UpdateSettingIn["body"];
+      } else {
+        // Explicit: clone the patch per-row. With one flag
+        // (setting_active), the array is either [activeFlagId] or [].
+        const items = editableSettings.map((s) => {
+          const flag_ids: string[] = [];
+          if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
+          return {
+            id: s.settings_id!,
+            flag_ids,
+          };
+        });
+        body = { settings: items } as UpdateSettingIn["body"];
+      }
 
-      await updateSettingAction({ body: { settings: items } } as UpdateSettingIn);
-      toast.success(`${items.length} setting(s) updated successfully`);
+      const result = await updateSettingAction({ body } as UpdateSettingIn);
+
+      // Per-row results — same soft-skip pattern as bulk delete.
+      const results = (result as UpdateSettingOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(`${successCount} setting(s) updated, ${skippedCount} skipped`);
+      } else {
+        toast.success(`${successCount} setting(s) updated successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -439,7 +593,11 @@ export default function Settings({
 
   const renderSettingCard = (setting: (typeof settings)[0]) => {
     const settingsId = setting.settings_id;
-    const isSelected = settingsId ? selectedSettingIds.includes(settingsId) : false;
+    // Mode-aware: under all-matching, every loaded row whose id isn't
+    // in ``excludedSettingIds`` reads as selected; under explicit it's
+    // the straight ``selectedSettingIds.includes`` check. Delegated to
+    // the outer ``isSelected`` so the row branch stays single-source.
+    const isCardSelected = isSelected(settingsId);
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
@@ -451,13 +609,13 @@ export default function Settings({
       <Card
         key={setting.settings_id}
         className={`group hover:shadow-md transition-all cursor-pointer ${
-          isSelected ? "ring-2 ring-primary" : ""
+          isCardSelected ? "ring-2 ring-primary" : ""
         }`}
         data-testid="setting-card"
         data-setting-id={setting.settings_id}
         role="gridcell"
         aria-label={`setting card ${setting.name || "Unnamed Setting"}`}
-        aria-selected={isSelected}
+        aria-selected={isCardSelected}
         onClick={handleCardClick}
       >
         <CardHeader>
@@ -473,7 +631,7 @@ export default function Settings({
                   data-action-button
                 >
                   <Checkbox
-                    checked={isSelected}
+                    checked={isCardSelected}
                     onCheckedChange={() => {
                       if (settingsId) toggleSelection(settingsId);
                     }}
@@ -565,10 +723,8 @@ export default function Settings({
       <div className="space-y-4">
         {/* Toolbar — swaps between filter bar and selection action bar */}
         {selectedCount > 0 ? (
-          <div
-            className="flex items-center justify-between gap-2"
-            data-testid="settings-toolbar"
-          >
+          <div className="space-y-2" data-testid="settings-toolbar">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {deleteSettingAction && (
                 <Button
@@ -576,10 +732,12 @@ export default function Settings({
                   size="sm"
                   className="h-8"
                   onClick={() => setShowBulkDeleteDialog(true)}
-                  disabled={deletableSettings.length === 0}
+                  disabled={!selectAllMatching && deletableSettings.length === 0}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete {deletableSettings.length} of {selectedCount}
+                  {selectAllMatching
+                    ? `Delete ${selectedCount} matching`
+                    : `Delete ${deletableSettings.length} of ${selectedCount}`}
                 </Button>
               )}
               {updateSettingAction && (
@@ -588,15 +746,17 @@ export default function Settings({
                   size="sm"
                   className="h-8"
                   onClick={openBulkEditDialog}
-                  disabled={editableSettings.length === 0}
+                  disabled={!selectAllMatching && editableSettings.length === 0}
                 >
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit {editableSettings.length} of {selectedCount}
+                  {selectAllMatching
+                    ? `Edit ${selectedCount} matching`
+                    : `Edit ${editableSettings.length} of ${selectedCount}`}
                 </Button>
               )}
-              {!allPageSelected && (
+              {!allPageSelected && !selectAllMatching && (
                 <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
-                  Select All
+                  Select Page
                 </Button>
               )}
               <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
@@ -607,6 +767,51 @@ export default function Settings({
               table={table}
               hiddenColumns={["name", "description", "active", "created_at", "departments", "provider_ids", "auth_ids", "system_ids"]}
             />
+          </div>
+
+          {/* Cross-page selection banners. Two states:
+              (a) page-all selected, more matching elsewhere → offer
+                  "Select all N matching" to flip into all-matching mode.
+              (b) all-matching active → show count + Clear so the
+                  user always has an obvious escape hatch.
+              Mutually exclusive — both never render at once. */}
+          {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+              data-testid="select-all-matching-banner"
+            >
+              <span className="text-muted-foreground">
+                All {settings.length} on this page selected.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={selectAllMatchingNow}
+              >
+                Select all {totalMatchingCount} matching
+              </Button>
+            </div>
+          )}
+          {selectAllMatching && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+              data-testid="all-matching-active-banner"
+            >
+              <span className="text-muted-foreground">
+                All {selectedCount} matching settings selected
+                {excludedSettingIds.length > 0 && ` (${excludedSettingIds.length} excluded)`}.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={clearSelection}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
           </div>
         ) : (
         <div
@@ -698,7 +903,7 @@ export default function Settings({
       <BulkDeleteDialog
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
-        count={deletableSettings.length}
+        count={selectAllMatching ? selectedCount : deletableSettings.length}
         entityLabel="setting"
         entityLabelPlural="settings"
         isDeleting={isBulkDeleting}
@@ -706,35 +911,59 @@ export default function Settings({
         description={
           <>
             <p>This action cannot be undone.</p>
-            {deletableSettings.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                <ul className="text-sm space-y-0.5">
-                  {deletableSettings.map((s) => (
-                    <li key={s.settings_id} className="flex items-center gap-1.5">
-                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                      {s.name || "Unnamed Setting"}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {nonDeletableSettings.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
-                  Cannot be deleted (in use):
+            {selectAllMatching ? (
+              // All-matching mode: server resolves rows from filter +
+              // exclusions; per-row permission failures soft-skip.
+              // We can't enumerate names without round-tripping through
+              // the search endpoint (which would re-trigger the RSC
+              // burst), so show the count + filter state instead.
+              <div className="text-sm text-muted-foreground">
+                <p>
+                  All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                  {" "}settings will be deleted server-side using the current filter.
                 </p>
-                <ul className="text-sm space-y-0.5">
-                  {nonDeletableSettings.map((s) => (
-                    <li
-                      key={s.settings_id}
-                      className="flex items-center gap-1.5 text-muted-foreground"
-                    >
-                      {s.name || "Unnamed Setting"}
-                    </li>
-                  ))}
-                </ul>
+                {excludedSettingIds.length > 0 && (
+                  <p className="mt-1">
+                    {excludedSettingIds.length} explicitly excluded.
+                  </p>
+                )}
+                <p className="mt-1">
+                  Settings you don't have permission to delete will be skipped automatically.
+                </p>
               </div>
+            ) : (
+              <>
+                {deletableSettings.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                    <ul className="text-sm space-y-0.5">
+                      {deletableSettings.map((s) => (
+                        <li key={s.settings_id} className="flex items-center gap-1.5">
+                          <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                          {s.name || "Unnamed Setting"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {nonDeletableSettings.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                      Cannot be deleted (in use):
+                    </p>
+                    <ul className="text-sm space-y-0.5">
+                      {nonDeletableSettings.map((s) => (
+                        <li
+                          key={s.settings_id}
+                          className="flex items-center gap-1.5 text-muted-foreground"
+                        >
+                          {s.name || "Unnamed Setting"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
             )}
           </>
         }
@@ -744,7 +973,7 @@ export default function Settings({
       <BulkEditDialog
         open={showBulkEditDialog}
         onOpenChange={setShowBulkEditDialog}
-        count={editableSettings.length}
+        count={selectAllMatching ? selectedCount : editableSettings.length}
         entityLabelPlural="settings"
         isSaving={isBulkEditing}
         onSave={handleBulkEdit}

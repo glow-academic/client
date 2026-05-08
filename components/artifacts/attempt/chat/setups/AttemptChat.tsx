@@ -828,7 +828,7 @@ export function AttemptChat({
         freshlyCompletedChatsRef.current.add(data["chat_id"] as string);
         router.refresh();
       }, scope),
-      transport.on("attempt.ended", (data: Record<string, unknown>) => {
+      transport.on("attempt.complete.completed", (data: Record<string, unknown>) => {
         if (data["attempt_id"] !== attempt_id) return;
         router.refresh();
         if (data["success"]) {

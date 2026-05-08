@@ -23,6 +23,8 @@ import { guardPage } from "@/lib/permissions";
 import { loadAgentsSearchParams } from "@/lib/search-params/agents";
 import { readViewCookie } from "@/lib/view-cookie";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type AgentsListOut = OutputOf<"/agent/search", "post">;
 type DuplicateAgentIn = InputOf<"/agent/duplicate", "post">;
@@ -33,8 +35,6 @@ type UpdateAgentIn = InputOf<"/agent/update", "post">;
 type UpdateAgentOut = OutputOf<"/agent/update", "post">;
 type GroupAgentIn = InputOf<"/agent/group", "post">;
 type GroupAgentOut = OutputOf<"/agent/group", "post">;
-type GenerateAgentIn = InputOf<"/agent/generate", "post">;
-type GenerateAgentOut = OutputOf<"/agent/generate", "post">;
 type GenerationsIn = InputOf<"/agent/generations", "post">;
 type GenerationsOut = OutputOf<"/agent/generations", "post">;
 type ProblemAgentIn = InputOf<"/agent/problem", "post">;
@@ -88,12 +88,6 @@ async function updateAgent(input: UpdateAgentIn): Promise<UpdateAgentOut> {
   return api.post("/agent/update", input);
 }
 
-async function generateAgent(
-  input: GenerateAgentIn
-): Promise<GenerateAgentOut> {
-  "use server";
-  return api.post("/agent/generate", input);
-}
 
 async function getAgentGroupHistory(groupId: string): Promise<GroupAgentOut> {
   "use server";
@@ -121,15 +115,20 @@ async function searchAgentGenerations(input: GenerationsIn): Promise<Generations
   return api.post("/agent/generations", input);
 }
 
-async function runAgentGenerate(input: GenerateAgentIn): Promise<GenerateAgentOut> {
-  "use server";
-  return api.post("/agent/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getAgentContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/agent/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/agent/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getAgentContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -159,7 +158,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
 
   try {
     // Profile data for providers
-    const context = await api.post("/agent/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getAgentContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/intelligence/agents", context.profile.role_permissions);
 
@@ -223,6 +222,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
         toolbar={<NewArtifactButton label="New Agent" href="/intelligence/agents/new" />}
         panelProps={{
           artifactType: "agent",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupAgentOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupAgentOut & { name?: string | null })?.name ?? null,
@@ -231,15 +231,13 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          generateAction: generateAgent,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           getGroupHistory: getAgentGroupHistory,
           searchGroups: searchAgentGroups,
           prompts: context.prompts?.prompts,
           getGroupAction: getAgentGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchAgentGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runAgentGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="agents-index">
@@ -249,6 +247,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
             duplicateAgentAction={duplicateAgent}
             deleteAgentAction={deleteAgent}
             updateAgentAction={updateAgent}
+            currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}
@@ -280,6 +279,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
   AgentsListOut,
+  AgentsListBody,
   DeleteAgentIn,
   DeleteAgentOut,
   DuplicateAgentIn,

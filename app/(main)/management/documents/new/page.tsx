@@ -27,6 +27,8 @@ import {
 import { buildSnapshot } from "@/lib/auth";
 import type { DraftItem } from "@/contexts/draft-context";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetDocumentIn = InputOf<"/document/get", "post">;
 type GetDocumentOut = OutputOf<"/document/get", "post">;
@@ -38,8 +40,6 @@ type GroupDocumentIn = InputOf<"/document/group", "post">;
 type GroupDocumentOut = OutputOf<"/document/group", "post">;
 type GenerationsIn = InputOf<"/document/generations", "post">;
 type GenerationsOut = OutputOf<"/document/generations", "post">;
-type GenerateIn = InputOf<"/document/generate", "post">;
-type GenerateOut = OutputOf<"/document/generate", "post">;
 type ProblemDocumentIn = InputOf<"/document/problem", "post">;
 type ProblemDocumentOut = OutputOf<"/document/problem", "post">;
 type ContextIn = InputOf<"/document/context", "post">;
@@ -128,10 +128,6 @@ async function searchDocumentGenerations(input: GenerationsIn): Promise<Generati
   return api.post("/document/generations", input);
 }
 
-async function runDocumentGenerate(input: GenerateIn): Promise<GenerateOut> {
-  "use server";
-  return api.post("/document/generate", input);
-}
 
 const buildSectionFilter = (
   opts: {
@@ -149,10 +145,19 @@ const buildSectionFilter = (
   return Object.keys(filter).length > 0 ? filter : undefined;
 };
 
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getDocumentContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/document/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/document/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getDocumentContext();
     return {
       title: context.page_metadata?.new.title,
       description: context.page_metadata?.new.description,
@@ -182,7 +187,7 @@ export default async function NewDocumentPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/document/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getDocumentContext();
     const snapshot = buildSnapshot(session, context.profile);
 
     // Parse search params using nuqs
@@ -263,6 +268,7 @@ export default async function NewDocumentPage({
           toolbar={<SaveToolbar />}
           panelProps={{
             artifactType: "document",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
             groupId: (groupResult as GroupDocumentOut & { group_id?: string })?.group_id ?? null,
             groupName:
               (groupResult as GroupDocumentOut & { name?: string | null })?.name ?? null,
@@ -271,12 +277,11 @@ export default async function NewDocumentPage({
             // skips the duplicate client-side /<art>/group refetch
             // on first paint, eliminating the hydration flicker.
             initialGroupHistory: groupResult as Record<string, unknown>,
-            operations: ["draft", "get", "group"],
+            operations: ["draft", "get", "title"],
             ...(context.prompts?.prompts ? { prompts: context.prompts.prompts } : {}),
             getGroupAction: getDocumentGroup as PanelProps["getGroupAction"],
             searchGenerationsAction:
               searchDocumentGenerations as PanelProps["searchGenerationsAction"],
-            runGenerateAction: runDocumentGenerate as PanelProps["runGenerateAction"],
           }}
         >
           <div

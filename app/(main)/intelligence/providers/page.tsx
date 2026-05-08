@@ -23,6 +23,8 @@ import { guardPage } from "@/lib/permissions";
 import { loadProvidersSearchParams } from "@/lib/search-params/providers";
 import { readViewCookie } from "@/lib/view-cookie";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type ProvidersListOut = OutputOf<"/provider/search", "post">;
 type DeleteProviderIn = InputOf<"/provider/delete", "post">;
@@ -31,8 +33,6 @@ type UpdateProviderIn = InputOf<"/provider/update", "post">;
 type UpdateProviderOut = OutputOf<"/provider/update", "post">;
 type GroupProviderIn = InputOf<"/provider/group", "post">;
 type GroupProviderOut = OutputOf<"/provider/group", "post">;
-type GenerateProviderIn = InputOf<"/provider/generate", "post">;
-type GenerateProviderOut = OutputOf<"/provider/generate", "post">;
 type GenerationsIn = InputOf<"/provider/generations", "post">;
 type GenerationsOut = OutputOf<"/provider/generations", "post">;
 type ProblemProviderIn = InputOf<"/provider/problem", "post">;
@@ -91,12 +91,6 @@ async function updateProvider(
   return api.post("/provider/update", input);
 }
 
-async function generateProvider(
-  input: GenerateProviderIn
-): Promise<GenerateProviderOut> {
-  "use server";
-  return api.post("/provider/generate", input);
-}
 
 async function getProviderGroupHistory(groupId: string): Promise<GroupProviderOut> {
   "use server";
@@ -124,15 +118,20 @@ async function searchProviderGenerations(input: GenerationsIn): Promise<Generati
   return api.post("/provider/generations", input);
 }
 
-async function runProviderGenerate(input: GenerateProviderIn): Promise<GenerateProviderOut> {
-  "use server";
-  return api.post("/provider/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getProviderContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/provider/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getProviderContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -162,7 +161,7 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
 
   try {
     // Profile data for providers
-    const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getProviderContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/intelligence/providers", context.profile.role_permissions);
 
@@ -225,6 +224,7 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
         toolbar={<NewArtifactButton label="New Provider" href="/intelligence/providers/new" />}
         panelProps={{
           artifactType: "provider",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupProviderOut & { name?: string | null })?.name ?? null,
@@ -233,15 +233,13 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          generateAction: generateProvider,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           getGroupHistory: getProviderGroupHistory,
           searchGroups: searchProviderGroups,
           prompts: context.prompts?.prompts,
           getGroupAction: getProviderGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchProviderGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runProviderGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="providers-index">
@@ -250,6 +248,7 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
             initialColumnVisibility={initialColumnVisibility}
             deleteProviderAction={deleteProvider}
             updateProviderAction={updateProvider}
+            currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}
@@ -281,6 +280,7 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
 export type {
   DeleteProviderIn,
   DeleteProviderOut,
+  ProvidersListBody,
   ProvidersListOut,
   UpdateProviderIn,
   UpdateProviderOut,

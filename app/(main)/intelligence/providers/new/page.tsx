@@ -22,6 +22,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetProviderIn = InputOf<"/provider/get", "post">;
 type GetProviderOut = OutputOf<"/provider/get", "post">;
@@ -31,8 +33,6 @@ type PatchProviderDraftIn = InputOf<"/provider/draft", "patch">;
 type PatchProviderDraftOut = OutputOf<"/provider/draft", "patch">;
 type GroupProviderIn = InputOf<"/provider/group", "post">;
 type GroupProviderOut = OutputOf<"/provider/group", "post">;
-type GenerateProviderIn = InputOf<"/provider/generate", "post">;
-type GenerateProviderOut = OutputOf<"/provider/generate", "post">;
 type ProblemProviderIn = InputOf<"/provider/problem", "post">;
 type ProblemProviderOut = OutputOf<"/provider/problem", "post">;
 type ContextIn = InputOf<"/provider/context", "post">;
@@ -68,12 +68,6 @@ async function patchProviderDraft(
   return api.patch("/provider/draft", input);
 }
 
-async function generateProvider(
-  input: GenerateProviderIn
-): Promise<GenerateProviderOut> {
-  "use server";
-  return api.post("/provider/generate", input);
-}
 
 async function getProviderGroupHistory(groupId: string): Promise<GroupProviderOut> {
   "use server";
@@ -104,15 +98,20 @@ async function searchProviderGenerations(input: GenerationsIn): Promise<Generati
   return api.post("/provider/generations", input);
 }
 
-async function runProviderGenerate(input: GenerateProviderIn): Promise<GenerateProviderOut> {
-  "use server";
-  return api.post("/provider/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getProviderContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/provider/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getProviderContext();
     return {
       title: context.page_metadata?.new.title,
       description: context.page_metadata?.new.description,
@@ -142,7 +141,7 @@ export default async function NewProviderPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getProviderContext();
     const snapshot = buildSnapshot(session, context.profile);
 
     // Parse search params using nuqs
@@ -235,18 +234,17 @@ export default async function NewProviderPage({
             toolbar: <SaveToolbar />,
             panelProps: {
               artifactType: "provider",
+              initialPanelPrefs: await readGenerationPanelPrefs(),
               groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
               groupName:
                 (groupResult as GroupProviderOut & { name?: string | null })?.name ?? null,
-              generateAction: generateProvider,
-              operations: ["draft", "get", "group"],
+              operations: ["draft", "get", "title"],
               getGroupHistory: getProviderGroupHistory,
               searchGroups: searchProviderGroups,
               prompts: context.prompts?.prompts,
               getGroupAction: getProviderGroup as PanelProps["getGroupAction"],
               searchGenerationsAction:
                 searchProviderGenerations as PanelProps["searchGenerationsAction"],
-              runGenerateAction: runProviderGenerate as PanelProps["runGenerateAction"],
             },
           } as any)}
         >

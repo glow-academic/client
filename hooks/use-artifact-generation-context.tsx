@@ -58,7 +58,12 @@ export function GenerationListenerProvider({
   );
   const latchGroupId = useCallback(
     (id: string | null) => {
-      void setSelectedGroupIdRaw(id);
+      // Shallow URL update — the latch exists so refresh-during-generate
+      // resolves SSR back to the same group, but the URL change itself
+      // shouldn't trigger an RSC re-fetch (which would re-run all the
+      // page's audited fetches and double the activity-rail bubbles).
+      // Same shape as the parameterIds init effect on Persona.tsx.
+      void setSelectedGroupIdRaw(id, { shallow: true });
     },
     [setSelectedGroupIdRaw],
   );

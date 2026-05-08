@@ -7,11 +7,13 @@
 "use client";
 import { Brain, Copy, Edit, Eye, Pencil, Thermometer, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type {
   AgentsListOut,
+  AgentsListBody,
   DeleteAgentIn,
   DeleteAgentOut,
   DuplicateAgentIn,
@@ -64,6 +66,11 @@ export interface AgentsProps {
   ) => Promise<DuplicateAgentOut>;
   deleteAgentAction?: (input: DeleteAgentIn) => Promise<DeleteAgentOut>;
   updateAgentAction?: (input: UpdateAgentIn) => Promise<UpdateAgentOut>;
+  /** The body the page used for its SSR ``/agent/search`` call.
+   *  Spread into bulk delete/update calls when the user is in
+   *  ``selectAll=1`` mode — the server resolves matching rows
+   *  directly from the same predicates, no client-side enumeration. */
+  currentSearchBody?: AgentsListBody;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;
@@ -87,6 +94,7 @@ export default function Agents({
   duplicateAgentAction,
   deleteAgentAction,
   updateAgentAction,
+  currentSearchBody,
   pageIndex,
   pageSize,
   totalCount,
@@ -175,12 +183,61 @@ export default function Agents({
       .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
   }, [agentsData?.flag_filter]);
 
-  // Selection state
-  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
-  const selectedCount = selectedAgentIds.length;
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated link. Three params model
+  // the full state machine:
+  //
+  //   - ``selectedIds=A,B``        → explicit selection of named rows
+  //   - ``selectAll=1``            → every row matching the active
+  //                                  filters/search is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                                → all-matching minus exclusions
+  //   - (none of the above)        → empty selection
+  //
+  // The all-matching mode keeps the URL compact for huge datasets
+  // (one boolean instead of N ids) and follows the active filter —
+  // change the filter and "all matching" follows naturally. Excluded-
+  // id growth is naturally bounded by what the user can see and
+  // deselect (one page at a time), so we don't enforce a hard cap.
+  // Shallow updates avoid the RSC re-fetch burst.
+  const [selectedAgentIds, setSelectedAgentIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedAgentIds, setExcludedAgentIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+
+  // ---- Selection helpers ----------------------------------------
+  // ``isSelected`` is the single read predicate every row uses; it
+  // dispatches between explicit-id and all-matching modes so
+  // downstream code never needs to branch. ``selectedCount`` mirrors
+  // that — under all-matching it's ``totalCount - excludedIds.length``.
+
+  const totalMatchingCount = agentsData?.total_count ?? 0;
+
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedAgentIds.includes(id)
+        : selectedAgentIds.includes(id);
+    },
+    [selectAllMatching, excludedAgentIds, selectedAgentIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedAgentIds.length)
+    : selectedAgentIds.length;
+
   const selectedAgents = useMemo(() => {
-    return agents.filter((a) => a.agent_id && selectedAgentIds.includes(a.agent_id));
-  }, [agents, selectedAgentIds]);
+    return agents.filter((a) => a.agent_id && isSelected(a.agent_id));
+  }, [agents, isSelected]);
   const deletableAgents = useMemo(
     () => selectedAgents.filter((a) => a.can_delete),
     [selectedAgents],
@@ -193,20 +250,63 @@ export default function Agents({
     () => selectedAgents.filter((a) => a.can_edit ?? true),
     [selectedAgents],
   );
+
+  // Toggle selection for a single agent. Under all-matching mode
+  // we toggle membership in excludedAgentIds (deselect ⇒ add to
+  // exclusions, re-select ⇒ remove). Under explicit mode it's the
+  // straight selectedAgentIds toggle.
   const toggleSelection = useCallback((agentId: string) => {
-    setSelectedAgentIds((prev) =>
-      prev.includes(agentId) ? prev.filter((id) => id !== agentId) : [...prev, agentId]
-    );
-  }, []);
-  const clearSelection = useCallback(() => setSelectedAgentIds([]), []);
+    if (selectAllMatching) {
+      void setExcludedAgentIds((prev) =>
+        prev.includes(agentId)
+          ? prev.filter((id) => id !== agentId)
+          : [...prev, agentId],
+      );
+    } else {
+      void setSelectedAgentIds((prev) =>
+        prev.includes(agentId)
+          ? prev.filter((id) => id !== agentId)
+          : [...prev, agentId],
+      );
+    }
+  }, [selectAllMatching, setExcludedAgentIds, setSelectedAgentIds]);
+
+  const clearSelection = useCallback(() => {
+    void setSelectedAgentIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedAgentIds([]);
+  }, [setSelectedAgentIds, setSelectAllMatching, setExcludedAgentIds]);
+
   const selectAllOnPage = useCallback(() => {
     const pageIds = agents.filter((a) => a.agent_id).map((a) => a.agent_id!);
-    setSelectedAgentIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [agents]);
+    void setSelectAllMatching(false);
+    void setExcludedAgentIds([]);
+    void setSelectedAgentIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [agents, setSelectAllMatching, setExcludedAgentIds, setSelectedAgentIds]);
+
+  /** Promote the current page-only selection into "all matching
+   *  filter" mode. Clears explicit ids and exclusions — the all-
+   *  matching mode is the canonical truth from this point. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedAgentIds([]);
+    void setExcludedAgentIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedAgentIds, setExcludedAgentIds, setSelectAllMatching]);
+
+  // Check if all agents on the current page are selected. Under
+  // all-matching mode every loaded row whose id isn't in
+  // ``excludedAgentIds`` is implicitly selected, so the predicate
+  // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
     const pageIds = agents.filter((a) => a.agent_id).map((a) => a.agent_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedAgentIds.includes(id));
-  }, [agents, selectedAgentIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [agents, isSelected]);
+
+  // Whether there ARE more matching rows than what's loaded on this
+  // page — used to decide whether to surface the "Select all N
+  // matching" affordance after the user selects the page.
+  const hasMoreThanCurrentPage = totalMatchingCount > agents.length;
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -591,7 +691,7 @@ export default function Agents({
     setIsDeleting(true);
     try {
       await deleteAgentAction({
-        body: { agent_ids: [deleteItem.id], accept: true },
+        body: { agent_ids: [deleteItem.id], accept: true } as DeleteAgentIn["body"],
       });
       toast.success("Agent deleted successfully");
       router.refresh();
@@ -618,12 +718,48 @@ export default function Agents({
   };
 
   const handleBulkDelete = async () => {
-    if (!deleteAgentAction || deletableAgents.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deleteAgentAction`` call shape; the
+    // body just differs.
+    if (!deleteAgentAction) return;
+    if (!selectAllMatching && deletableAgents.length === 0) return;
+
     setIsBulkDeleting(true);
     try {
-      const ids = deletableAgents.map((a) => a.agent_id!);
-      await deleteAgentAction({ body: { agent_ids: ids, accept: true } });
-      toast.success(`${ids.length} agent(s) deleted successfully`);
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedAgentIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            agent_ids: deletableAgents.map((a) => a.agent_id!),
+            accept: true,
+          };
+
+      const result = await deleteAgentAction({ body } as DeleteAgentIn);
+
+      // Per-row results from the server: success entries are actual
+      // deletions, failures are soft-skipped rows (no permission /
+      // not found). Toast reflects both counts so the user knows
+      // some rows were skipped without inspecting the receipt.
+      const results = (result as DeleteAgentOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} agent(s) deleted, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} agent(s) deleted successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -636,7 +772,8 @@ export default function Agents({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateAgentAction || editableAgents.length === 0) return;
+    if (!updateAgentAction) return;
+    if (!selectAllMatching && editableAgents.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     const hasMcpChange = bulkEditMcpStatus !== null;
@@ -652,23 +789,60 @@ export default function Agents({
 
     setIsBulkEditing(true);
     try {
-      const items = editableAgents.map((row) => {
+      let body: UpdateAgentIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know what each row's existing flags are), so
+        // a flag toggle becomes "set to this value across all
+        // matching rows" — the same semantic as a manual sweep.
         let flag_ids: string[] | undefined;
         if (hasAnyFlagChange) {
-          const isActive = hasActiveChange ? bulkEditActiveStatus : !row.is_inactive;
-          const isMcp = hasMcpChange ? bulkEditMcpStatus : !!row.is_mcp;
           flag_ids = [];
-          if (isActive && activeFlagId) flag_ids.push(activeFlagId);
-          if (isMcp && mcpFlagId) flag_ids.push(mcpFlagId);
+          if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
+          if (bulkEditMcpStatus && mcpFlagId) flag_ids.push(mcpFlagId);
         }
-        return {
-          id: row.agent_id!,
-          ...(hasAnyFlagChange && { flag_ids }),
-        };
-      });
+        body = {
+          all: true,
+          excluded_ids: excludedAgentIds,
+          ...(currentSearchBody ?? {}),
+          patch: {
+            ...(hasAnyFlagChange && { flag_ids }),
+          },
+          accept: true,
+        } as UpdateAgentIn["body"];
+      } else {
+        // Explicit: clone the patch per-row, preserving each row's
+        // existing flag state for flags we aren't toggling.
+        const items = editableAgents.map((row) => {
+          let flag_ids: string[] | undefined;
+          if (hasAnyFlagChange) {
+            const isActive = hasActiveChange ? bulkEditActiveStatus : !row.is_inactive;
+            const isMcp = hasMcpChange ? bulkEditMcpStatus : !!row.is_mcp;
+            flag_ids = [];
+            if (isActive && activeFlagId) flag_ids.push(activeFlagId);
+            if (isMcp && mcpFlagId) flag_ids.push(mcpFlagId);
+          }
+          return {
+            id: row.agent_id!,
+            ...(hasAnyFlagChange && { flag_ids }),
+          };
+        });
+        body = { agents: items } as UpdateAgentIn["body"];
+      }
 
-      await updateAgentAction({ body: { agents: items } } as UpdateAgentIn);
-      toast.success(`${items.length} agent(s) updated successfully`);
+      const result = await updateAgentAction({ body } as UpdateAgentIn);
+
+      // Per-row results — same soft-skip pattern as bulk delete.
+      const results = (result as UpdateAgentOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} agent(s) updated, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} agent(s) updated successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -687,7 +861,7 @@ export default function Agents({
   };
 
   const renderAgentCard = (agent: (typeof agents)[0]) => {
-    const isSelected = agent.agent_id ? selectedAgentIds.includes(agent.agent_id) : false;
+    const cardSelected = agent.agent_id ? isSelected(agent.agent_id) : false;
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
@@ -699,13 +873,13 @@ export default function Agents({
     <Card
       key={agent.agent_id}
       className={`group hover:shadow-md transition-all cursor-pointer ${
-        isSelected ? "ring-2 ring-primary" : ""
+        cardSelected ? "ring-2 ring-primary" : ""
       }`}
       data-testid="agent-card"
       data-agent-id={agent.agent_id}
       role="gridcell"
       aria-label={`agent card ${agent.name || "Unnamed Agent"}`}
-      aria-selected={isSelected}
+      aria-selected={cardSelected}
       onClick={handleCardClick}
     >
       <CardHeader>
@@ -721,7 +895,7 @@ export default function Agents({
                 data-action-button
               >
                 <Checkbox
-                  checked={isSelected}
+                  checked={cardSelected}
                   onCheckedChange={() => {
                     if (agent.agent_id) toggleSelection(agent.agent_id);
                   }}
@@ -845,10 +1019,8 @@ export default function Agents({
       <div className="space-y-4">
         {/* Toolbar — swaps between filter bar and selection action bar */}
         {selectedCount > 0 ? (
-          <div
-            className="flex items-center justify-between gap-2"
-            data-testid="agents-toolbar"
-          >
+          <div className="space-y-2" data-testid="agents-toolbar">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {deleteAgentAction && (
                 <Button
@@ -856,10 +1028,12 @@ export default function Agents({
                   size="sm"
                   className="h-8"
                   onClick={() => setShowBulkDeleteDialog(true)}
-                  disabled={deletableAgents.length === 0}
+                  disabled={!selectAllMatching && deletableAgents.length === 0}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete {deletableAgents.length} of {selectedCount}
+                  {selectAllMatching
+                    ? `Delete ${selectedCount} matching`
+                    : `Delete ${deletableAgents.length} of ${selectedCount}`}
                 </Button>
               )}
               {updateAgentAction && (
@@ -868,15 +1042,17 @@ export default function Agents({
                   size="sm"
                   className="h-8"
                   onClick={openBulkEditDialog}
-                  disabled={editableAgents.length === 0}
+                  disabled={!selectAllMatching && editableAgents.length === 0}
                 >
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit {editableAgents.length} of {selectedCount}
+                  {selectAllMatching
+                    ? `Edit ${selectedCount} matching`
+                    : `Edit ${editableAgents.length} of ${selectedCount}`}
                 </Button>
               )}
-              {!allPageSelected && (
+              {!allPageSelected && !selectAllMatching && (
                 <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
-                  Select All
+                  Select Page
                 </Button>
               )}
               <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
@@ -887,6 +1063,51 @@ export default function Agents({
               table={table}
               hiddenColumns={["name", "model_id", "departments", "tools", "updated_at"]}
             />
+          </div>
+
+          {/* Cross-page selection banners. Two states:
+              (a) page-all selected, more matching elsewhere → offer
+                  "Select all N matching" to flip into all-matching mode.
+              (b) all-matching active → show count + Clear so the
+                  user always has an obvious escape hatch.
+              Mutually exclusive — both never render at once. */}
+          {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+              data-testid="select-all-matching-banner"
+            >
+              <span className="text-muted-foreground">
+                All {agents.length} on this page selected.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={selectAllMatchingNow}
+              >
+                Select all {totalMatchingCount} matching
+              </Button>
+            </div>
+          )}
+          {selectAllMatching && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+              data-testid="all-matching-active-banner"
+            >
+              <span className="text-muted-foreground">
+                All {selectedCount} matching agents selected
+                {excludedAgentIds.length > 0 && ` (${excludedAgentIds.length} excluded)`}.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={clearSelection}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
           </div>
         ) : (
           <div
@@ -1037,7 +1258,7 @@ export default function Agents({
       <BulkDeleteDialog
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
-        count={deletableAgents.length}
+        count={selectAllMatching ? selectedCount : deletableAgents.length}
         entityLabel="agent"
         entityLabelPlural="agents"
         isDeleting={isBulkDeleting}
@@ -1045,35 +1266,59 @@ export default function Agents({
         description={
           <>
             <p>This action cannot be undone.</p>
-            {deletableAgents.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                <ul className="text-sm space-y-0.5">
-                  {deletableAgents.map((a) => (
-                    <li key={a.agent_id} className="flex items-center gap-1.5">
-                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                      {a.name || "Unnamed Agent"}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {nonDeletableAgents.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
-                  Cannot be deleted (in use):
+            {selectAllMatching ? (
+              // All-matching mode: server resolves rows from filter +
+              // exclusions; per-row permission failures soft-skip.
+              // We can't enumerate names without round-tripping through
+              // the search endpoint (which would re-trigger the RSC
+              // burst), so show the count + filter state instead.
+              <div className="text-sm text-muted-foreground">
+                <p>
+                  All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                  {" "}agents will be deleted server-side using the current filter.
                 </p>
-                <ul className="text-sm space-y-0.5">
-                  {nonDeletableAgents.map((a) => (
-                    <li
-                      key={a.agent_id}
-                      className="flex items-center gap-1.5 text-muted-foreground"
-                    >
-                      {a.name || "Unnamed Agent"}
-                    </li>
-                  ))}
-                </ul>
+                {excludedAgentIds.length > 0 && (
+                  <p className="mt-1">
+                    {excludedAgentIds.length} explicitly excluded.
+                  </p>
+                )}
+                <p className="mt-1">
+                  Agents you don&apos;t have permission to delete will be skipped automatically.
+                </p>
               </div>
+            ) : (
+              <>
+                {deletableAgents.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                    <ul className="text-sm space-y-0.5">
+                      {deletableAgents.map((a) => (
+                        <li key={a.agent_id} className="flex items-center gap-1.5">
+                          <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                          {a.name || "Unnamed Agent"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {nonDeletableAgents.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                      Cannot be deleted (in use):
+                    </p>
+                    <ul className="text-sm space-y-0.5">
+                      {nonDeletableAgents.map((a) => (
+                        <li
+                          key={a.agent_id}
+                          className="flex items-center gap-1.5 text-muted-foreground"
+                        >
+                          {a.name || "Unnamed Agent"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
             )}
           </>
         }
@@ -1083,7 +1328,7 @@ export default function Agents({
       <BulkEditDialog
         open={showBulkEditDialog}
         onOpenChange={setShowBulkEditDialog}
-        count={editableAgents.length}
+        count={selectAllMatching ? selectedCount : editableAgents.length}
         entityLabelPlural="agents"
         isSaving={isBulkEditing}
         onSave={handleBulkEdit}

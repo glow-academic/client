@@ -1,15 +1,20 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, ChevronsUpDown, FileText, Image, Loader2, Mic, Search, Send, ShieldAlert, ShieldCheck, SquarePen, Video, Wrench, X, XCircle } from "lucide-react";
+import dynamic from "next/dynamic";
+import { AlertCircle, Check, CheckCircle2, ChevronDown, ChevronsUpDown, FileText, Image, Loader2, Mic, Search, Send, Settings2, SquarePen, Video, Wrench, X, XCircle } from "lucide-react";
+import { ackOperation } from "@/lib/api/ack";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -26,6 +31,7 @@ import {
 import { useTransport } from "@/lib/transport";
 import type { GenerationMessage as GenerateMessage } from "@/hooks/use-artifact-generation";
 import { useSharedGenerationListener } from "@/hooks/use-artifact-generation-context";
+import { callDownloadUrl, textDownloadUrl } from "@/lib/api/download-routes";
 import { useQueryState, parseAsString } from "nuqs";
 
 // ---------------------------------------------------------------------------
@@ -48,7 +54,19 @@ interface HistoricalMessage {
   videoIds: string[];
   fileIds: string[];
   callIds: string[];
-  calls: { id: string; templateName: string | null }[];
+  calls: {
+    id: string;
+    templateName: string | null;
+    /** Tool resource envelope (``GetToolResponse`` shape) when this
+     *  call has a registered tool; ``null`` for audit-only events. */
+    tool: Record<string, unknown> | null;
+  }[];
+  /** Whether this message will be threaded into the LLM's context for
+   *  the next generation. Mirrors the dedup pass on the server (latest
+   *  read-only call per tool wins; writes always kept). When false,
+   *  ``inContextReason`` explains why. */
+  inContext: boolean;
+  inContextReason: string;
 }
 
 /** Server action shape — pages define `"use server"` async fns and pass
@@ -63,14 +81,23 @@ type GroupAction = (
 type GenerationsAction = (
   input: { body: { search?: string | null } },
 ) => Promise<Record<string, unknown>>;
-type GenerateAction = (
-  input: {
-    body: {
-      instructions?: string[];
-      config?: Record<string, unknown>;
-    };
-  },
-) => Promise<Record<string, unknown>>;
+/** Settings-menu preferences read from cookies at SSR time and passed
+ *  into the panel as a prop. Avoids the hydration flicker that a
+ *  client-side ``useEffect(cookieRead)`` would cause: server renders
+ *  with the same values the client will use on first paint. The
+ *  client-side toggles still write the cookies back so the next SSR
+ *  navigation picks them up. */
+export interface GenerationPanelPrefs {
+  safeMode: boolean;
+  showFullContext: boolean;
+  showUserTools: boolean;
+}
+
+export const DEFAULT_GENERATION_PANEL_PREFS: GenerationPanelPrefs = {
+  safeMode: false,
+  showFullContext: false,
+  showUserTools: false,
+};
 
 interface GenerationPanelProps {
   /** Artifact type — used for both event namespacing and route prefix (e.g. "persona" → /persona/*) */
@@ -94,8 +121,12 @@ interface GenerationPanelProps {
   getGroupAction?: GroupAction;
   /** Server action: POST /{artifactType}/generations — search prior groups. */
   searchGenerationsAction?: GenerationsAction;
-  /** Server action: POST /{artifactType}/generate — kick off a generation run. */
-  runGenerateAction?: GenerateAction;
+  /** SSR-read cookie prefs for the settings menu. Pages compute this
+   *  via ``readGenerationPanelPrefs()`` (see lib/generation/panel-prefs.ts)
+   *  and pass it through. Omit to use the all-false defaults — the
+   *  panel still works, but the first paint will use defaults until
+   *  the user toggles something. */
+  initialPanelPrefs?: GenerationPanelPrefs;
 }
 
 // ---------------------------------------------------------------------------
@@ -138,11 +169,463 @@ function flattenMessages(res: GroupMessagesOut | Record<string, unknown>): Histo
         calls: ((msg.calls as Array<Record<string, unknown>>) ?? []).map((c) => ({
           id: String(c.id),
           templateName: (c.template_name as string) ?? (c.tool_name as string) ?? null,
+          tool: (c.tool as Record<string, unknown> | null) ?? null,
         })),
+        inContext: msg.in_context !== false,
+        inContextReason: (msg.in_context_reason as string) ?? "kept",
       });
     }
   }
   return flat;
+}
+
+/**
+ * Lazy text bubble — fetches the per-artifact text-download BFF route
+ * on first viewport intersection. URL is resolved via {@link
+ * textDownloadUrl}, which routes to the per-artifact endpoint when the
+ * artifact has been migrated and falls back to ``/api/system/...``
+ * otherwise. Renders the cached body once available, the shared
+ * "Loading..." placeholder until then. Refetch is suppressed via the
+ * ``cached`` prop: if the parent already has the body, we skip the
+ * observer entirely. ``rootMargin`` pre-fetches a screen ahead so
+ * users almost never see the placeholder while scrolling.
+ */
+function LazyText({
+  textId,
+  artifactType,
+  cached,
+  onLoaded,
+  alignClass,
+  bubbleClass,
+}: {
+  textId: string;
+  artifactType: string;
+  cached: string | undefined;
+  onLoaded: (id: string, text: string) => void;
+  alignClass: string;
+  bubbleClass: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (cached !== undefined) return;
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+
+    let cancelled = false;
+    let fired = false;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (fired) return;
+        if (!entries.some((e) => e.isIntersecting)) return;
+        fired = true;
+        observer.disconnect();
+        void (async () => {
+          try {
+            const r = await fetch(textDownloadUrl(artifactType, textId));
+            const text = r.ok ? await r.text() : "";
+            if (!cancelled) onLoaded(textId, text);
+          } catch {
+            if (!cancelled) onLoaded(textId, "");
+          }
+        })();
+      },
+      { rootMargin: "400px" },
+    );
+    observer.observe(el);
+
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
+  }, [textId, artifactType, cached, onLoaded]);
+
+  return (
+    <div ref={ref} className={`flex ${alignClass}`}>
+      <div className={bubbleClass}>
+        {cached ? (
+          <span className="whitespace-pre-wrap">{cached}</span>
+        ) : (
+          <div className="flex items-center gap-1.5 text-xs opacity-70">
+            <FileText className="h-3 w-3" />
+            <span>Loading...</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Visual variant matching the role split used by text bubbles:
+ *  user → solid primary bg + inverse text (dark/inverse style),
+ *  assistant → dashed-border accent surface (default muted style).
+ *  Kept as a single helper so the button and the status indicator
+ *  stay in lockstep. */
+function toolBubbleClasses(role: "user" | "assistant"): string {
+  return role === "user"
+    ? "bg-primary text-primary-foreground border-dashed border-primary-foreground/20 hover:bg-primary/90"
+    : "border border-dashed text-muted-foreground hover:bg-accent";
+}
+
+/** Lazily-loaded compact Markdown renderer. The accordion lives in a
+ *  narrow sidebar column, so we use the inline-sized variant
+ *  (``MarkdownInline``) — no KaTeX, no syntax highlighting, no
+ *  autolink-heading arrows, just GFM with tight typography. The
+ *  full-page renderer (``components/common/markdown/Markdown``) blew
+ *  up the layout with chat-grade heading sizes. */
+const MarkdownRenderer = dynamic(
+  () =>
+    import("@/components/common/markdown/MarkdownInline").then((mod) => ({
+      default: ({ content }: { content: string }) => (
+        <mod.default>{content}</mod.default>
+      ),
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        <span>Loading preview…</span>
+      </div>
+    ),
+  },
+);
+
+/** Derive the lifecycle state of a soft-eligible operation from its
+ *  receipt. The audit framework dual-stamps ack events onto the
+ *  original soft call's receipt (see ``ws/output.py``), so the
+ *  receipt's ``events`` array accumulates the full lifecycle on disk.
+ *
+ *  Rules:
+ *    - ``arguments.soft !== true``         → "executed" (no soft path taken)
+ *    - latest event with ``data.accept = true``  → "accepted"
+ *    - latest event with ``data.accept = false`` → "rejected"
+ *    - otherwise (soft fired but no ack yet)     → "pending"
+ */
+type ReceiptState = "pending" | "accepted" | "rejected" | "executed";
+
+function deriveReceiptState(data: Record<string, unknown>): ReceiptState {
+  const args = data["arguments"] as Record<string, unknown> | undefined;
+  if (!args || args["soft"] !== true) return "executed";
+  const events = (data["events"] as Array<Record<string, unknown>> | undefined) ?? [];
+  // Walk newest → oldest so the most recent ack wins.
+  for (let i = events.length - 1; i >= 0; i--) {
+    const evt = events[i];
+    if (!evt) continue;
+    const evtData = evt["data"] as Record<string, unknown> | undefined;
+    if (evtData && typeof evtData["accept"] === "boolean") {
+      return evtData["accept"] ? "accepted" : "rejected";
+    }
+  }
+  return "pending";
+}
+
+/** Pull ``(artifact, operation)`` segments from any event name in the
+ *  receipt — ``"persona.draft.started"`` → ``["persona", "draft"]``.
+ *  Used as the route prefix for the generic ack server action. */
+function deriveRoute(
+  data: Record<string, unknown>,
+): { artifact: string; operation: string } | null {
+  const events = (data["events"] as Array<Record<string, unknown>> | undefined) ?? [];
+  for (const evt of events) {
+    const name = evt["event"];
+    if (typeof name === "string") {
+      const parts = name.split(".");
+      if (parts.length >= 2 && parts[0] && parts[1]) {
+        return { artifact: parts[0], operation: parts[1] };
+      }
+    }
+  }
+  return null;
+}
+
+/** Body of an expanded tool-call accordion.
+ *
+ *  Two stacked sections:
+ *    - Lifecycle controls (top): when the receipt is in ``pending`` state,
+ *      surface Accept / Reject buttons. Clicking fires the generic
+ *      ``ackOperation`` server action against ``/<artifact>/<operation>``,
+ *      and the audit framework dual-stamps ack events back onto this same
+ *      receipt — next render reflects the new state.
+ *    - Receipt body (rest): Preview / Raw toggle.
+ *      - ``preview`` (default): renders ``data.output`` as Markdown
+ *        (the tool's Jinja-templated friendly summary).
+ *      - ``raw``: pretty-printed JSON of the whole receipt. */
+function CallReceiptBody({ data }: { data: Record<string, unknown> }) {
+  const output = typeof data["output"] === "string" ? (data["output"] as string) : null;
+  const hasPreview = output !== null && output.trim().length > 0;
+  const [mode, setMode] = useState<"preview" | "raw">(
+    hasPreview ? "preview" : "raw",
+  );
+
+  // ── Lifecycle state ──────────────────────────────────────────────
+  const initialState = useMemo(() => deriveReceiptState(data), [data]);
+  // Local override for optimistic update — the receipt JSON on disk
+  // gets new ack events appended by the server, but we don't refetch
+  // until the bubble is reopened. Treat the local state as the truth
+  // for this render pass.
+  const [optimisticState, setOptimisticState] = useState<ReceiptState | null>(null);
+  const state = optimisticState ?? initialState;
+  const route = useMemo(() => deriveRoute(data), [data]);
+  const callId = typeof data["call_id"] === "string" ? (data["call_id"] as string) : null;
+  const [acking, setAcking] = useState(false);
+  const [ackError, setAckError] = useState<string | null>(null);
+
+  const handleAck = useCallback(
+    async (accept: boolean) => {
+      if (!route || !callId || acking) return;
+      setAcking(true);
+      setAckError(null);
+      // Optimistic flip — UI updates instantly. Server's ack events
+      // will land on the receipt asynchronously.
+      setOptimisticState(accept ? "accepted" : "rejected");
+      try {
+        await ackOperation({
+          artifact: route.artifact,
+          operation: route.operation,
+          idempotencyKey: callId,
+          accept,
+        });
+      } catch (err) {
+        // Revert optimistic state and surface the error.
+        setOptimisticState(null);
+        setAckError(err instanceof Error ? err.message : "Ack failed");
+      } finally {
+        setAcking(false);
+      }
+    },
+    [route, callId, acking],
+  );
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      {/* Lifecycle controls */}
+      {state === "pending" && route && callId && (
+        <div className="flex items-center gap-1.5 self-end text-[10px]">
+          <button
+            type="button"
+            onClick={() => void handleAck(true)}
+            disabled={acking}
+            className="px-2 py-0.5 rounded transition-colors bg-green-500/15 text-green-600 hover:bg-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+          >
+            {acking ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Check className="h-2.5 w-2.5" />}
+            Accept
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleAck(false)}
+            disabled={acking}
+            className="px-2 py-0.5 rounded transition-colors text-muted-foreground hover:text-foreground hover:bg-foreground/5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+          >
+            <X className="h-2.5 w-2.5" />
+            Reject
+          </button>
+        </div>
+      )}
+      {state === "accepted" && (
+        <span className="self-end text-[10px] text-green-600 flex items-center gap-1">
+          <Check className="h-2.5 w-2.5" />
+          Accepted
+        </span>
+      )}
+      {state === "rejected" && (
+        <span className="self-end text-[10px] text-muted-foreground flex items-center gap-1">
+          <X className="h-2.5 w-2.5" />
+          Rejected
+        </span>
+      )}
+      {ackError && (
+        <span className="self-end text-[10px] text-red-500">{ackError}</span>
+      )}
+
+      {/* Preview/Raw toggle */}
+      {hasPreview && (
+        <div className="flex items-center gap-1 self-end text-[10px]">
+          <button
+            type="button"
+            onClick={() => setMode("preview")}
+            aria-pressed={mode === "preview"}
+            className={`px-1.5 py-0.5 rounded transition-colors ${
+              mode === "preview"
+                ? "bg-foreground/10 text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Preview
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("raw")}
+            aria-pressed={mode === "raw"}
+            className={`px-1.5 py-0.5 rounded transition-colors ${
+              mode === "raw"
+                ? "bg-foreground/10 text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Raw
+          </button>
+        </div>
+      )}
+      {mode === "preview" && hasPreview ? (
+        <div className="max-h-80 overflow-auto">
+          <MarkdownRenderer content={output as string} />
+        </div>
+      ) : (
+        <pre className="text-[11px] leading-snug whitespace-pre-wrap break-words max-h-80 overflow-auto font-mono text-muted-foreground">
+          {JSON.stringify(data, null, 2)}
+        </pre>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Expandable tool-call bubble — shared between the historical and the
+ * live renderers. ``align`` follows the message role (right for user,
+ * left for assistant). When opened, the dropdown body lazy-fetches the
+ * call's persisted JSON via {@link callDownloadUrl}.
+ *
+ * Live messages whose ``toolStatus !== "success"`` should NOT use this —
+ * they render the static {@link ToolCallStatusBubble} instead, since
+ * there is no completed call_id to expand yet.
+ */
+function ToolCallBubble({
+  callId,
+  templateName,
+  tool,
+  role,
+  align,
+  expanded,
+  onToggle,
+}: {
+  callId: string;
+  templateName: string | null;
+  /** Tool resource envelope. ``null`` when no tool is registered —
+   *  callers shouldn't pass undefined; pass ``null`` explicitly. */
+  tool: Record<string, unknown> | null;
+  role: "user" | "assistant";
+  align: string;
+  expanded: { id: string; data: Record<string, unknown> | null; error: string | null } | null;
+  onToggle: (id: string) => void;
+}) {
+  const isOpen = expanded?.id === callId;
+  const label = bubbleLabel(tool, templateName);
+  const description =
+    tool && typeof tool["description"] === "string" ? (tool["description"] as string) : "";
+  // Outer is `flex` (row) — `justify-end` / `justify-start` controls
+  // horizontal placement. Inner is `flex-col` to stack the toggle
+  // button on top of the expanded JSON. Width-capping the inner
+  // column keeps the bubble narrow regardless of side.
+  return (
+    <div className={`flex ${align}`}>
+      <div className="flex flex-col gap-1 max-w-[85%]">
+        <button
+          type="button"
+          onClick={() => onToggle(callId)}
+          aria-expanded={isOpen}
+          title={description || undefined}
+          className={`flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors text-left ${toolBubbleClasses(role)}`}
+        >
+          <Wrench className="h-3 w-3 shrink-0" />
+          <span className="flex-1 truncate">{label}</span>
+          <CheckCircle2 className="h-3 w-3 shrink-0 text-green-500" />
+          <ChevronDown
+            className={`h-3 w-3 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          />
+        </button>
+        {isOpen && (
+          <div className="rounded-md border bg-muted/40 px-2.5 py-2">
+            {expanded?.data ? (
+              <CallReceiptBody data={expanded.data} />
+            ) : expanded?.error ? (
+              <span className="text-xs text-red-500">{expanded.error}</span>
+            ) : (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Loading…</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Static in-flight tool-call indicator — shown while ``toolStatus`` is
+ *  pending or errored. No dropdown because there's no call_id to expand
+ *  yet (or the call failed). Aligns right for user, left for assistant. */
+function ToolCallStatusBubble({
+  toolName,
+  status,
+  role,
+  align,
+}: {
+  toolName: string;
+  status: "pending" | "error";
+  role: "user" | "assistant";
+  align: string;
+}) {
+  return (
+    <div className={`flex ${align}`}>
+      <div className={`max-w-[85%] flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs ${toolBubbleClasses(role)}`}>
+        <Wrench className="h-3 w-3 shrink-0" />
+        <span className="flex-1 truncate">{toolName}</span>
+        {status === "pending" ? (
+          <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
+        ) : (
+          <XCircle className="h-3 w-3 shrink-0 text-destructive" />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Lightweight event pill — used when an audited operation fires but
+ *  has no registered tool, OR when the parent message role is ``"user"``
+ *  (user-attributed audit events aren't conceptually tool calls — they're
+ *  records of UI actions). Smaller than {@link ToolCallBubble}, no
+ *  border, dot icon, no chevron, no expandable receipt.
+ *
+ *  Status reflects the audit lifecycle: pending (spinner), success
+ *  (subtle dot), error (red x).
+ */
+function EventPill({
+  name,
+  status,
+  align,
+}: {
+  name: string;
+  status: "pending" | "success" | "error";
+  align: string;
+}) {
+  return (
+    <div className={`flex ${align}`}>
+      <div className="max-w-[85%] flex items-center gap-1.5 px-2 py-0.5 text-[11px] text-muted-foreground/80">
+        {status === "pending" ? (
+          <Loader2 className="h-2.5 w-2.5 shrink-0 animate-spin" />
+        ) : status === "error" ? (
+          <XCircle className="h-2.5 w-2.5 shrink-0 text-destructive" />
+        ) : (
+          <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
+        )}
+        <span className="flex-1 truncate">{name}</span>
+      </div>
+    </div>
+  );
+}
+
+/** Pick the visible label for a tool-call bubble. Prefer the registered
+ *  tool's ``name`` (recognizable for tools the user configured), fall
+ *  back to the title-cased operation when no tool envelope is set. */
+function bubbleLabel(
+  tool: Record<string, unknown> | null | undefined,
+  fallback: string | null,
+): string {
+  const name = tool && typeof tool["name"] === "string" ? (tool["name"] as string) : null;
+  return name || fallback || "tool_call";
 }
 
 // ---------------------------------------------------------------------------
@@ -152,28 +635,52 @@ function flattenMessages(res: GroupMessagesOut | Record<string, unknown>): Histo
 export function GenerationPanel({
   artifactType, groupId: groupIdProp, groupName: groupNameProp,
   initialGroupHistory, operations, prompts,
-  getGroupAction, searchGenerationsAction, runGenerateAction,
+  getGroupAction, searchGenerationsAction,
+  initialPanelPrefs = DEFAULT_GENERATION_PANEL_PREFS,
 }: GenerationPanelProps) {
   const [instructions, setInstructions] = useState("");
-  // Dangerous mode (auto-execute) is persisted per-artifact in localStorage so
-  // each artifact's panel remembers the last preference. Default = true to
-  // match the prior hardcoded behavior.
-  const dangerousStorageKey = `glow.generationPanel.dangerous.${artifactType}`;
-  const [dangerousMode, setDangerousModeState] = useState<boolean>(true);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(dangerousStorageKey);
-    if (stored != null) setDangerousModeState(stored === "1");
-  }, [dangerousStorageKey]);
-  const setDangerousMode = useCallback(
-    (value: boolean) => {
-      setDangerousModeState(value);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(dangerousStorageKey, value ? "1" : "0");
-      }
-    },
-    [dangerousStorageKey],
-  );
+
+  // Generation panel preferences — initial values come from cookies
+  // read by the page at SSR time and passed in via ``initialPanelPrefs``.
+  // No useEffect cookie read here, so first client paint matches SSR
+  // (no hydration flicker). The setters write the cookies back so the
+  // next SSR navigation picks up the change. All three defaults are
+  // unchecked = sensible defaults: auto-execute on, hide stale
+  // messages, hide user-fired tool clutter.
+  //
+  //   safeMode         — when true, tool calls are soft-staged pending
+  //                      acceptance instead of running immediately. The
+  //                      send payload uses ``dangerous: !safeMode``.
+  //   showFullContext  — when true, render every message in the group
+  //                      including ones the LLM won't see on the next
+  //                      generation (deduped reads, audit-only events).
+  //   showUserTools    — when true, render user-attributed tool calls
+  //                      (auto-fired Context/Search/Group on page load,
+  //                      etc.). Default off keeps the panel focused on
+  //                      assistant-driven work.
+  const [safeMode, setSafeModeState] = useState<boolean>(initialPanelPrefs.safeMode);
+  const [showFullContext, setShowFullContextState] = useState<boolean>(initialPanelPrefs.showFullContext);
+  const [showUserTools, setShowUserToolsState] = useState<boolean>(initialPanelPrefs.showUserTools);
+
+  const writeCookie = useCallback((name: string, value: boolean) => {
+    if (typeof document === "undefined") return;
+    // 1-year max-age; SameSite=Lax so it follows top-level navigations
+    // (cookies need to flow on the SSR fetch the Next.js server makes).
+    document.cookie = `${name}=${value ? "1" : "0"}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+  }, []);
+
+  const setSafeMode = useCallback((v: boolean) => {
+    setSafeModeState(v);
+    writeCookie("glow.gp.safeMode", v);
+  }, [writeCookie]);
+  const setShowFullContext = useCallback((v: boolean) => {
+    setShowFullContextState(v);
+    writeCookie("glow.gp.showFullContext", v);
+  }, [writeCookie]);
+  const setShowUserTools = useCallback((v: boolean) => {
+    setShowUserToolsState(v);
+    writeCookie("glow.gp.showUserTools", v);
+  }, [writeCookie]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const transport = useTransport();
 
@@ -230,9 +737,11 @@ export function GenerationPanel({
   }, [transport, artifactType]);
 
   const liveMessages = listener.messages.map((m) => ({
+    id: m.id,
     role: m.role, text: m.text, type: m.type,
     toolName: m.toolName,
     toolStatus: m.toolStatus === "pending" ? undefined : m.toolStatus,
+    tool: m.tool,
   } as GenerateMessage));
   const isGenerating = listener.isGenerating;
   const clearMessages = listener.clearMessages;
@@ -249,16 +758,10 @@ export function GenerationPanel({
   // Text content cache: textUploadId → text string
   const [textContent, setTextContent] = useState<Record<string, string>>({});
 
-  // Fetch historical messages when a group is active (selected or context)
-  // Also refetch after generation completes to pick up new messages
-  const prevIsGenerating = useRef(false);
+  // Fetch historical messages when the selected group changes. Live
+  // bubbles from ``useArtifactGeneration`` stay on screen until the
+  // user navigates away — no clear/refetch dance at completion.
   useEffect(() => {
-    // Detect generation completion (was generating, now not)
-    const justFinished = prevIsGenerating.current && !isGenerating;
-    prevIsGenerating.current = isGenerating;
-
-    // "Fresh chat" intent overrides everything — render empty,
-    // ignore the SSR-fetched windowed default's runs.
     if (listener.forceNewChat) {
       setHistoricalMessages([]);
       setTextContent({});
@@ -272,32 +775,14 @@ export function GenerationPanel({
       return;
     }
 
-    // SSR seed is valid as long as the active group still equals the
-    // page's SSR-fetched ``groupIdProp`` and we're not refetching
-    // after a just-finished generation (which has new runs to pick
-    // up). Note we deliberately DON'T gate on ``!selectedGroupId`` —
-    // pre-latching the URL with the same value as ``groupIdProp``
-    // would otherwise force a redundant refetch of identical data.
-    if (
-      !justFinished &&
-      initialGroupHistory &&
-      groupToFetch === groupIdProp
-    ) {
+    // SSR seed valid when the active group still equals the page's
+    // SSR-fetched ``groupIdProp``. Skip the redundant refetch.
+    if (initialGroupHistory && groupToFetch === groupIdProp) {
       return;
     }
 
-    // Clear stale state before fetching the new group's history.
-    // `historicalMessages` + `textContent` are keyed to the previous group and
-    // will otherwise bleed through until the new fetch resolves.
-    if (!justFinished) {
-      setHistoricalMessages([]);
-      setTextContent({});
-    }
-
-    // Clear live messages when refetching (they'll be in history now)
-    if (justFinished) {
-      clearMessages();
-    }
+    setHistoricalMessages([]);
+    setTextContent({});
 
     let cancelled = false;
     setIsLoadingHistory(true);
@@ -307,29 +792,9 @@ export function GenerationPanel({
       : transport.send(`/${artifactType}/group`, { group_id: groupToFetch });
 
     fetchHistory
-      .then(async (res) => {
+      .then((res) => {
         if (cancelled) return;
-        const messages = flattenMessages(res);
-        setHistoricalMessages(messages);
-
-        // Collect all text upload IDs and fetch content in parallel
-        const allTextIds = messages.flatMap((m) => m.textIds);
-        if (allTextIds.length > 0) {
-          const entries = await Promise.all(
-            allTextIds.map(async (id) => {
-              try {
-                const r = await fetch(`/api/system/text/${id}`);
-                if (!r.ok) return [id, ""] as const;
-                return [id, await r.text()] as const;
-              } catch {
-                return [id, ""] as const;
-              }
-            }),
-          );
-          if (!cancelled) {
-            setTextContent(Object.fromEntries(entries));
-          }
-        }
+        setHistoricalMessages(flattenMessages(res));
       })
       .catch(() => {
         if (cancelled) return;
@@ -341,7 +806,57 @@ export function GenerationPanel({
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGroupId, groupIdProp, isGenerating, getGroupAction, transport, artifactType, listener.forceNewChat]);
+  }, [selectedGroupId, groupIdProp, getGroupAction, transport, artifactType, listener.forceNewChat]);
+
+  // Per-bubble lazy fetch handler — passed to ``<LazyText>``. Bubbles
+  // fetch their own body when scrolled into view (or near it) and write
+  // back into the shared ``textContent`` cache so subsequent scroll-by
+  // is free.
+  const onTextLoaded = useCallback((id: string, text: string) => {
+    setTextContent((prev) => (id in prev ? prev : { ...prev, [id]: text }));
+  }, []);
+
+  // Call expansion — at most one call's receipt in memory at a time. Click
+  // to fetch + open; click again (or another) to swap. The receipt JSON
+  // can be large; bounding to one keeps the panel cheap.
+  const [expandedCall, setExpandedCall] = useState<{
+    id: string;
+    data: Record<string, unknown> | null;
+    error: string | null;
+  } | null>(null);
+
+  const toggleCall = useCallback(async (callId: string) => {
+    let shouldFetch = true;
+    setExpandedCall((curr) => {
+      if (curr?.id === callId) {
+        shouldFetch = false;
+        return null;
+      }
+      return { id: callId, data: null, error: null };
+    });
+    if (!shouldFetch) return;
+    try {
+      const r = await fetch(callDownloadUrl(artifactType, callId));
+      if (!r.ok) {
+        setExpandedCall((curr) =>
+          curr?.id === callId
+            ? { id: callId, data: null, error: `Fetch failed (${r.status})` }
+            : curr,
+        );
+        return;
+      }
+      const data = (await r.json()) as Record<string, unknown>;
+      setExpandedCall((curr) =>
+        curr?.id === callId ? { id: callId, data, error: null } : curr,
+      );
+    } catch (e) {
+      setExpandedCall((curr) =>
+        curr?.id === callId
+          ? { id: callId, data: null, error: e instanceof Error ? e.message : "Failed" }
+          : curr,
+      );
+    }
+  }, [artifactType]);
 
   // Search state — URL-backed via nuqs so the filter survives refresh
   // and is sharable, mirroring the persona page's filter pattern.
@@ -490,23 +1005,29 @@ export function GenerationPanel({
         instructions: text ? [text] : [],
         config: {
           operations,
-          // Hardcoded: dangerous toggle is hidden in the UI; every
-          // generate runs in auto-execute mode.
-          dangerous: true,
+          // Driven by the "Safe mode" toggle in the settings menu.
+          // Default unchecked → ``safeMode=false`` → ``dangerous=true``
+          // (auto-execute, matches prior hardcoded behavior). Toggling
+          // safe mode on soft-stages tool calls for explicit approval.
+          dangerous: !safeMode,
           group_id: sendGroupId,
         },
       };
-      if (runGenerateAction) {
-        await runGenerateAction({ body: generateBody });
-      } else {
-        await transport.send(`/${artifactType}/generate`, generateBody);
-      }
+      // Generate goes through ``transport.send`` (client → BFF), NOT a
+      // Next.js server action. Server actions auto-trigger an RSC
+      // re-render of the page that hosts the panel, which re-runs the
+      // page's SSR data fetches (``/X/context``, ``/X/group``,
+      // ``/X/search``) — visible as a duplicate burst on every prompt
+      // submit. The panel's own update flow is SSE-driven, so the
+      // refresh is pure waste here. CRUD actions (create/update/delete)
+      // legitimately want the refresh and stay as server actions.
+      await transport.send(`/${artifactType}/generate`, generateBody);
     } catch (err) {
       listener.setError(
         err instanceof Error ? err.message : "Generate request failed",
       );
     }
-  }, [instructions, dangerousMode, runGenerateAction, transport, artifactType, activeGroupId, operations, listener]);
+  }, [instructions, safeMode, transport, artifactType, activeGroupId, operations, listener]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -532,8 +1053,8 @@ export function GenerationPanel({
   // matches the empty render below.
   const displayName = listener.forceNewChat
     ? "New Chat"
-    : selectedGroupName ??
-      groupNameProp ??
+    : selectedGroupName ||
+      groupNameProp ||
       (selectedGroupId ? "Untitled" : "New Chat");
   const displaySubtext = listener.forceNewChat
     ? "Current session"
@@ -541,7 +1062,49 @@ export function GenerationPanel({
       ? "Previous session"
       : "Current session";
 
-  const hasMessages = historicalMessages.length > 0 || liveMessages.length > 0;
+  // Settings-menu filters are orthogonal — each toggle gates one rule
+  // independently of the other. A message has to pass BOTH rules to be
+  // shown:
+  //
+  //   showFullContext OFF (default) → drop messages the LLM won't see
+  //                                   on the next turn (in_context=false
+  //                                   for history; tool=null audit
+  //                                   events for live).
+  //   showUserTools OFF (default)   → drop user-attributed tool calls
+  //                                   (auto-fired *_Context / *_Search
+  //                                   / *_Group on page load).
+  //
+  // Memoized so re-renders only recompute when one of the deps changes,
+  // and so the same filtered lists drive both the render and the
+  // ``hasMessages`` empty-state decision below.
+  const filteredHistoricalMessages = useMemo(
+    () =>
+      historicalMessages.filter((m) => {
+        if (!showFullContext && !m.inContext) return false;
+        if (!showUserTools && m.role === "user" && m.calls.length > 0) {
+          return false;
+        }
+        return true;
+      }),
+    [historicalMessages, showFullContext, showUserTools],
+  );
+
+  const filteredLiveMessages = useMemo(
+    () =>
+      liveMessages.filter((m) => {
+        if (!showFullContext && m.type === "tool" && m.tool == null) {
+          return false;
+        }
+        if (!showUserTools && m.type === "tool" && m.role === "user") {
+          return false;
+        }
+        return true;
+      }),
+    [liveMessages, showFullContext, showUserTools],
+  );
+
+  const hasMessages =
+    filteredHistoricalMessages.length > 0 || filteredLiveMessages.length > 0;
 
   // ---- Renderers ----
 
@@ -552,41 +1115,61 @@ export function GenerationPanel({
     const parts: React.ReactNode[] = [];
     const hasToolCalls = msg.calls.length > 0;
 
-    // Tool calls — alignment follows the parent message's role so that
-    // user-initiated audited ops land on the user side and model-driven
-    // ones on the assistant side. Mirrors how text bubbles align.
+    // Tier selection is tool-presence-based:
+    //   - call.tool present → ToolCallBubble. A tool is connected to
+    //                          this call via ``tools_calls_connection``,
+    //                          so we have real metadata (name,
+    //                          description, future icon). Render the
+    //                          full bubble regardless of who initiated
+    //                          the call. Alignment still follows role.
+    //   - call.tool null    → EventPill. Audit fired but no tool was
+    //                          connected — render a lightweight event
+    //                          marker rather than a fake tool call.
     const align = msg.role === "user" ? "justify-end" : "justify-start";
     for (const call of msg.calls) {
-      parts.push(
-        <div key={`call-${call.id}`} className={`flex ${align}`}>
-          <div className="max-w-[85%] flex items-center gap-2 rounded-md border border-dashed px-2.5 py-1.5 text-xs text-muted-foreground">
-            <Wrench className="h-3 w-3 shrink-0" />
-            <span className="flex-1 truncate">{call.templateName || "tool_call"}</span>
-            <CheckCircle2 className="h-3 w-3 shrink-0 text-green-500" />
-          </div>
-        </div>,
-      );
+      if (call.tool == null) {
+        parts.push(
+          <EventPill
+            key={`call-${call.id}`}
+            name={bubbleLabel(call.tool, call.templateName)}
+            status="success"
+            align={align}
+          />,
+        );
+      } else {
+        parts.push(
+          <ToolCallBubble
+            key={`call-${call.id}`}
+            callId={call.id}
+            templateName={call.templateName}
+            tool={call.tool}
+            role={msg.role === "user" ? "user" : "assistant"}
+            align={align}
+            expanded={expandedCall}
+            onToggle={(id) => void toggleCall(id)}
+          />,
+        );
+      }
     }
 
     // Text uploads — only render standalone text (skip if message has tool calls,
-    // since those text_ids are just rendered tool output, not assistant text)
+    // since those text_ids are just rendered tool output, not assistant text).
+    // Each ``<LazyText>`` fetches its body when scrolled into view.
     if (!hasToolCalls) for (const textId of msg.textIds) {
-      const content = textContent[textId];
+      const alignClass = msg.role === "user" ? "justify-end" : "justify-start";
+      const bubbleClass = `max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+        msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-accent border"
+      }`;
       parts.push(
-        <div key={`text-${textId}`} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-          <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-            msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-accent border"
-          }`}>
-            {content ? (
-              <span className="whitespace-pre-wrap">{content}</span>
-            ) : (
-              <div className="flex items-center gap-1.5 text-xs opacity-70">
-                <FileText className="h-3 w-3" />
-                <span>Loading...</span>
-              </div>
-            )}
-          </div>
-        </div>,
+        <LazyText
+          key={`text-${textId}`}
+          textId={textId}
+          artifactType={artifactType}
+          cached={textContent[textId]}
+          onLoaded={onTextLoaded}
+          alignClass={alignClass}
+          bubbleClass={bubbleClass}
+        />,
       );
     }
 
@@ -656,22 +1239,51 @@ export function GenerationPanel({
 
   const renderLiveMessage = (msg: GenerateMessage, i: number) => {
     if (msg.type === "tool") {
-      const isError = msg.toolStatus === "error";
-      const isPending = !msg.toolStatus;
+      const align = msg.role === "user" ? "justify-end" : "justify-start";
+
+      // Tier selection is tool-presence-based — see renderHistoricalMessage
+      // for the rule. ``msg.tool == null`` ⇒ event pill; tool present ⇒
+      // full bubble. Alignment still follows role so user-initiated and
+      // model-driven calls land on opposite sides.
+      if (msg.tool == null) {
+        const pillStatus: "pending" | "success" | "error" =
+          msg.toolStatus === "success" ? "success"
+            : msg.toolStatus === "error" ? "error"
+              : "pending";
+        return (
+          <EventPill
+            key={`live-${i}`}
+            name={bubbleLabel(msg.tool, msg.toolName ?? null)}
+            status={pillStatus}
+            align={align}
+          />
+        );
+      }
+
+      // Tool present — full bubble. Once succeeded, expandable;
+      // otherwise show a static status indicator.
+      if (msg.toolStatus === "success") {
+        return (
+          <ToolCallBubble
+            key={`live-${i}`}
+            callId={msg.id}
+            templateName={msg.toolName ?? null}
+            tool={msg.tool}
+            role={msg.role}
+            align={align}
+            expanded={expandedCall}
+            onToggle={(id) => void toggleCall(id)}
+          />
+        );
+      }
       return (
-        <div key={`live-${i}`} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-          <div className="max-w-[85%] flex items-center gap-2 rounded-md border border-dashed px-2.5 py-1.5 text-xs text-muted-foreground">
-            <Wrench className="h-3 w-3 shrink-0" />
-            <span className="flex-1 truncate">{msg.toolName}</span>
-            {isPending ? (
-              <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
-            ) : isError ? (
-              <XCircle className="h-3 w-3 shrink-0 text-destructive" />
-            ) : (
-              <CheckCircle2 className="h-3 w-3 shrink-0 text-green-500" />
-            )}
-          </div>
-        </div>
+        <ToolCallStatusBubble
+          key={`live-${i}`}
+          toolName={bubbleLabel(msg.tool, msg.toolName ?? null)}
+          status={msg.toolStatus === "error" ? "error" : "pending"}
+          role={msg.role}
+          align={align}
+        />
       );
     }
     return (
@@ -775,8 +1387,8 @@ export function GenerationPanel({
             </div>
           ) : hasMessages ? (
             <div className="flex flex-1 flex-col gap-2 overflow-y-auto pl-3 pr-3 py-3">
-              {historicalMessages.map((msg, i) => renderHistoricalMessage(msg, i))}
-              {liveMessages.map((msg, i) => renderLiveMessage(msg, i))}
+              {filteredHistoricalMessages.map((msg, i) => renderHistoricalMessage(msg, i))}
+              {filteredLiveMessages.map((msg, i) => renderLiveMessage(msg, i))}
               {isGenerating && (
                 <div className="flex justify-start">
                   <div className="rounded-lg bg-accent border px-3 py-2">
@@ -831,40 +1443,68 @@ export function GenerationPanel({
               />
               <TooltipProvider>
                 <div className="flex flex-col gap-1 self-end shrink-0">
-                  {/* Dangerous-mode toggle hidden in UI — generation is
-                      always invoked with `dangerous: true` (auto-execute).
-                      Keep the state hook so the storage key + send payload
-                      stay coherent. */}
-                  {/*
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant={dangerousMode ? "destructive" : "outline"}
-                        className="h-9 w-9"
-                        onClick={() => setDangerousMode(!dangerousMode)}
-                        aria-label={
-                          dangerousMode
-                            ? "Auto-execute on (dangerous): tool calls run immediately"
-                            : "Auto-execute off: tool calls staged for approval"
-                        }
+                  {/* Sticky session settings — auto-execute, context
+                      filtering, future toggles. Stacked above the send
+                      button so the right rail stays single-column. */}
+                  <DropdownMenu>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-9 w-9"
+                            aria-label="Generation settings"
+                          >
+                            <Settings2 className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Generation settings</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <DropdownMenuContent align="end" className="w-64">
+                      <DropdownMenuLabel>Generation settings</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuCheckboxItem
+                        checked={safeMode}
+                        onCheckedChange={(v) => setSafeMode(Boolean(v))}
+                        onSelect={(e) => e.preventDefault()}
                       >
-                        {dangerousMode ? (
-                          <ShieldAlert className="h-4 w-4" />
-                        ) : (
-                          <ShieldCheck className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-[220px] text-xs">
-                        {dangerousMode
-                          ? "Auto-execute ON — tool calls run immediately. Click to require approval."
-                          : "Auto-execute OFF — tool calls are soft-staged pending acceptance. Click to enable immediate execution."}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                  */}
+                        <div className="flex flex-col">
+                          <span className="text-sm">Safe mode</span>
+                          <span className="text-xs text-muted-foreground">
+                            Stage tool calls for approval before they run
+                          </span>
+                        </div>
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={showFullContext}
+                        onCheckedChange={(v) => setShowFullContext(Boolean(v))}
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-sm">Show full context</span>
+                          <span className="text-xs text-muted-foreground">
+                            Show every message in this group, including ones not sent to the model
+                          </span>
+                        </div>
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={showUserTools}
+                        onCheckedChange={(v) => setShowUserTools(Boolean(v))}
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-sm">Show user tools</span>
+                          <span className="text-xs text-muted-foreground">
+                            Show background user-fired tool calls (Context, Search, etc.)
+                          </span>
+                        </div>
+                      </DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span tabIndex={0}>

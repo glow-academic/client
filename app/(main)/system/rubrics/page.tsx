@@ -22,6 +22,8 @@ import { guardPage } from "@/lib/permissions";
 import { loadRubricsSearchParams } from "@/lib/search-params/rubrics";
 import { readViewCookie } from "@/lib/view-cookie";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type RubricsListOut = OutputOf<"/rubric/search", "post">;
 type DuplicateRubricIn = InputOf<"/rubric/duplicate", "post">;
@@ -32,8 +34,6 @@ type UpdateRubricIn = InputOf<"/rubric/update", "post">;
 type UpdateRubricOut = OutputOf<"/rubric/update", "post">;
 type GroupRubricIn = InputOf<"/rubric/group", "post">;
 type GroupRubricOut = OutputOf<"/rubric/group", "post">;
-type GenerateRubricIn = InputOf<"/rubric/generate", "post">;
-type GenerateRubricOut = OutputOf<"/rubric/generate", "post">;
 type GenerationsIn = InputOf<"/rubric/generations", "post">;
 type GenerationsOut = OutputOf<"/rubric/generations", "post">;
 type ProblemRubricIn = InputOf<"/rubric/problem", "post">;
@@ -89,12 +89,6 @@ async function updateRubric(
   return api.post("/rubric/update", input);
 }
 
-async function generateRubric(
-  input: GenerateRubricIn
-): Promise<GenerateRubricOut> {
-  "use server";
-  return api.post("/rubric/generate", input);
-}
 
 async function getRubricGroupHistory(groupId: string): Promise<GroupRubricOut> {
   "use server";
@@ -122,15 +116,20 @@ async function searchRubricGenerations(input: GenerationsIn): Promise<Generation
   return api.post("/rubric/generations", input);
 }
 
-async function runRubricGenerate(input: GenerateRubricIn): Promise<GenerateRubricOut> {
-  "use server";
-  return api.post("/rubric/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getRubricContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/rubric/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getRubricContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -160,7 +159,7 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
 
   try {
     // Profile data for providers
-    const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getRubricContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/system/rubrics", context.profile.role_permissions);
 
@@ -222,6 +221,7 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
         toolbar={<NewArtifactButton label="New Rubric" href="/system/rubrics/new" />}
         panelProps={{
           artifactType: "rubric",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupRubricOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupRubricOut & { name?: string | null })?.name ?? null,
@@ -230,15 +230,13 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          generateAction: generateRubric,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           getGroupHistory: getRubricGroupHistory,
           searchGroups: searchRubricGroups,
           prompts: context.prompts?.prompts,
           getGroupAction: getRubricGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchRubricGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runRubricGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="rubrics-index">
@@ -248,6 +246,7 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
             duplicateRubricAction={duplicateRubric}
             deleteRubricAction={deleteRubric}
             updateRubricAction={updateRubric}
+            currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}
@@ -284,4 +283,5 @@ export type {
   RubricsListOut,
   UpdateRubricIn,
   UpdateRubricOut,
+  RubricsListBody,
 };

@@ -21,6 +21,8 @@ import { guardPage } from "@/lib/permissions";
 import { loadEvalsSearchParams } from "@/lib/search-params/evals";
 import { readViewCookie } from "@/lib/view-cookie";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type EvalsListOut = OutputOf<"/eval/search", "post">;
 type DeleteEvalIn = InputOf<"/eval/delete", "post">;
@@ -29,8 +31,6 @@ type UpdateEvalIn = InputOf<"/eval/update", "post">;
 type UpdateEvalOut = OutputOf<"/eval/update", "post">;
 type GroupEvalIn = InputOf<"/eval/group", "post">;
 type GroupEvalOut = OutputOf<"/eval/group", "post">;
-type GenerateEvalIn = InputOf<"/eval/generate", "post">;
-type GenerateEvalOut = OutputOf<"/eval/generate", "post">;
 type GenerationsIn = InputOf<"/eval/generations", "post">;
 type GenerationsOut = OutputOf<"/eval/generations", "post">;
 type ProblemEvalIn = InputOf<"/eval/problem", "post">;
@@ -75,12 +75,6 @@ async function updateEval(input: UpdateEvalIn): Promise<UpdateEvalOut> {
   return api.post("/eval/update", input);
 }
 
-async function generateEval(
-  input: GenerateEvalIn
-): Promise<GenerateEvalOut> {
-  "use server";
-  return api.post("/eval/generate", input);
-}
 
 async function getEvalGroupHistory(groupId: string): Promise<GroupEvalOut> {
   "use server";
@@ -108,15 +102,20 @@ async function searchEvalGenerations(input: GenerationsIn): Promise<GenerationsO
   return api.post("/eval/generations", input);
 }
 
-async function runEvalGenerate(input: GenerateEvalIn): Promise<GenerateEvalOut> {
-  "use server";
-  return api.post("/eval/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getEvalContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/eval/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getEvalContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -146,7 +145,7 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
 
   try {
     // Profile data for providers
-    const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getEvalContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/system/evals", context.profile.role_permissions);
 
@@ -206,6 +205,7 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
         toolbar={<NewArtifactButton label="New Eval" href="/system/evals/new" />}
         panelProps={{
           artifactType: "eval",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupEvalOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupEvalOut & { name?: string | null })?.name ?? null,
@@ -214,15 +214,13 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          generateAction: generateEval,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           getGroupHistory: getEvalGroupHistory,
           searchGroups: searchEvalGroups,
           prompts: context.prompts?.prompts,
           getGroupAction: getEvalGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchEvalGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runEvalGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="evals-index">
@@ -231,6 +229,7 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
             initialColumnVisibility={initialColumnVisibility}
             deleteEvalAction={deleteEval}
             updateEvalAction={updateEval}
+            currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}
@@ -262,6 +261,7 @@ export type {
   DeleteEvalIn,
   DeleteEvalOut,
   EvalsListOut,
+  EvalsListBody,
   UpdateEvalIn,
   UpdateEvalOut,
 };

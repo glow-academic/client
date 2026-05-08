@@ -21,6 +21,8 @@ import { cookies } from "next/headers";
 import { loadBenchmarkSearchParams } from "@/lib/search-params/benchmark";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type BenchmarkOverviewIn = InputOf<"/test/benchmark/get", "post">;
 type BenchmarkOverviewOut = OutputOf<"/test/benchmark/get", "post">;
@@ -49,8 +51,6 @@ type EvalsListOut = {
 /** ---- Generation types from OpenAPI ---- */
 type ContextIn = InputOf<"/test/context", "post">;
 type ContextOut = OutputOf<"/test/context", "post">;
-type TestGenerateIn = InputOf<"/test/generate", "post">;
-type TestGenerateOut = OutputOf<"/test/generate", "post">;
 type TestGenerationsIn = InputOf<"/test/generations", "post">;
 type TestGenerationsOut = OutputOf<"/test/generations", "post">;
 type TestGroupIn = InputOf<"/test/group", "post">;
@@ -109,15 +109,20 @@ async function searchTestGenerations(
   return api.post("/test/generations", input);
 }
 
-async function runTestGenerate(input: TestGenerateIn): Promise<TestGenerateOut> {
-  "use server";
-  return api.post("/test/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getTestContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/test/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/test/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getTestContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -170,7 +175,7 @@ export default async function BenchmarkPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/test/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getTestContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/benchmark", context.profile.role_permissions);
 
@@ -431,6 +436,7 @@ export default async function BenchmarkPage({
         }
         panelProps={{
           artifactType: "test",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as TestGroupOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as TestGroupOut & { name?: string | null })?.name ?? null,
@@ -439,12 +445,11 @@ export default async function BenchmarkPage({
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           prompts: context.prompts?.prompts,
           getGroupAction: getTestGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchTestGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runTestGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4">

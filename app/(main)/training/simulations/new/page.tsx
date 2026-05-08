@@ -21,6 +21,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetSimulationIn = InputOf<"/simulation/get", "post">;
 type GetSimulationOut = OutputOf<"/simulation/get", "post">;
@@ -30,8 +32,6 @@ type PatchSimulationDraftIn = InputOf<"/simulation/draft", "patch">;
 type PatchSimulationDraftOut = OutputOf<"/simulation/draft", "patch">;
 type GroupSimulationIn = InputOf<"/simulation/group", "post">;
 type GroupSimulationOut = OutputOf<"/simulation/group", "post">;
-type GenerateSimulationIn = InputOf<"/simulation/generate", "post">;
-type GenerateSimulationOut = OutputOf<"/simulation/generate", "post">;
 type ProblemSimulationIn = InputOf<"/simulation/problem", "post">;
 type ProblemSimulationOut = OutputOf<"/simulation/problem", "post">;
 type ContextIn = InputOf<"/simulation/context", "post">;
@@ -78,12 +78,6 @@ async function patchSimulationDraft(
   return api.patch("/simulation/draft", input);
 }
 
-async function generateSimulation(
-  input: GenerateSimulationIn
-): Promise<GenerateSimulationOut> {
-  "use server";
-  return api.post("/simulation/generate", input);
-}
 
 async function getSimulationGroupHistory(groupId: string): Promise<GroupSimulationOut> {
   "use server";
@@ -109,20 +103,25 @@ async function searchSimulationGenerations(input: GenerationsIn): Promise<Genera
   return api.post("/simulation/generations", input);
 }
 
-async function runSimulationGenerate(input: GenerateSimulationIn): Promise<GenerateSimulationOut> {
-  "use server";
-  return api.post("/simulation/generate", input);
-}
 
 async function createSimulationProblem(input: ProblemSimulationIn): Promise<ProblemSimulationOut> {
   "use server";
   return api.post("/simulation/problem", input);
 }
 
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getSimulationContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/simulation/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/simulation/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getSimulationContext();
     return {
       title: context.page_metadata?.new.title,
       description: context.page_metadata?.new.description,
@@ -190,7 +189,7 @@ export default async function NewSimulationPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/simulation/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getSimulationContext();
     const snapshot = buildSnapshot(session, context.profile);
 
     const draftsResult = await api.post("/simulation/drafts", {} as never);
@@ -220,6 +219,7 @@ export default async function NewSimulationPage({
           toolbar={<SaveToolbar />}
           panelProps={{
             artifactType: "simulation",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
             groupId: (groupResult as GroupSimulationOut & { group_id?: string })?.group_id ?? null,
             groupName:
               (groupResult as GroupSimulationOut & { name?: string | null })?.name ?? null,
@@ -228,15 +228,13 @@ export default async function NewSimulationPage({
             // skips the duplicate client-side /<art>/group refetch
             // on first paint, eliminating the hydration flicker.
             initialGroupHistory: groupResult as Record<string, unknown>,
-            generateAction: generateSimulation,
-            operations: ["draft", "get", "group"],
+            operations: ["draft", "get", "title"],
             getGroupHistory: getSimulationGroupHistory,
             searchGroups: searchSimulationGroups,
             prompts: context.prompts?.prompts,
             getGroupAction: getSimulationGroup as PanelProps["getGroupAction"],
             searchGenerationsAction:
               searchSimulationGenerations as PanelProps["searchGenerationsAction"],
-            runGenerateAction: runSimulationGenerate as PanelProps["runGenerateAction"],
           } as never}
         >
           <div

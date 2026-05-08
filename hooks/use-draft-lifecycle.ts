@@ -59,7 +59,11 @@ export function useDraftLifecycle(config: {
   // --- draftId from GenericForm URL state ---
   const [draftId, setDraftId] = useState<string | null>(null);
   const setUrlFormDataRef = useRef<
-    null | ((updates: Record<string, unknown>) => void)
+    | null
+    | ((
+        updates: Record<string, unknown>,
+        options?: { shallow?: boolean; history?: "push" | "replace"; scroll?: boolean },
+      ) => void)
   >(null);
   const formDataRef = useRef<Record<string, unknown>>({});
 

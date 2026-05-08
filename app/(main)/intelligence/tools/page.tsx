@@ -23,6 +23,8 @@ import { guardPage } from "@/lib/permissions";
 import { loadToolsSearchParams } from "@/lib/search-params/tools";
 import { readViewCookie } from "@/lib/view-cookie";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type ToolsListIn = InputOf<"/tool/search", "post">;
 type ToolsListOut = OutputOf<"/tool/search", "post">;
@@ -34,8 +36,6 @@ type UpdateToolIn = InputOf<"/tool/update", "post">;
 type UpdateToolOut = OutputOf<"/tool/update", "post">;
 type GroupToolIn = InputOf<"/tool/group", "post">;
 type GroupToolOut = OutputOf<"/tool/group", "post">;
-type GenerateToolIn = InputOf<"/tool/generate", "post">;
-type GenerateToolOut = OutputOf<"/tool/generate", "post">;
 type GenerationsIn = InputOf<"/tool/generations", "post">;
 type GenerationsOut = OutputOf<"/tool/generations", "post">;
 type ProblemToolIn = InputOf<"/tool/problem", "post">;
@@ -93,12 +93,6 @@ async function updateTool(input: UpdateToolIn): Promise<UpdateToolOut> {
   return api.post("/tool/update", input);
 }
 
-async function generateTool(
-  input: GenerateToolIn
-): Promise<GenerateToolOut> {
-  "use server";
-  return api.post("/tool/generate", input);
-}
 
 async function getToolGroupHistory(groupId: string): Promise<GroupToolOut> {
   "use server";
@@ -126,15 +120,20 @@ async function searchToolGenerations(input: GenerationsIn): Promise<GenerationsO
   return api.post("/tool/generations", input);
 }
 
-async function runToolGenerate(input: GenerateToolIn): Promise<GenerateToolOut> {
-  "use server";
-  return api.post("/tool/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getToolContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/tool/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/tool/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getToolContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -164,7 +163,7 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
 
   try {
     // Profile data for providers
-    const context = await api.post("/tool/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getToolContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/intelligence/tools", context.profile.role_permissions);
 
@@ -227,6 +226,7 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
         toolbar={<NewArtifactButton label="New Tool" href="/intelligence/tools/new" />}
         panelProps={{
           artifactType: "tool",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupToolOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupToolOut & { name?: string | null })?.name ?? null,
@@ -235,15 +235,13 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          generateAction: generateTool,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           getGroupHistory: getToolGroupHistory,
           searchGroups: searchToolGroups,
           prompts: context.prompts?.prompts,
           getGroupAction: getToolGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchToolGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runToolGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="tools-index">
@@ -253,6 +251,7 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
             deleteToolAction={deleteTool}
             duplicateToolAction={duplicateTool}
             updateToolAction={updateTool}
+            currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}
@@ -287,6 +286,7 @@ export type {
   DuplicateToolIn,
   DuplicateToolOut,
   ToolsListOut,
+  ToolsListBody,
   UpdateToolIn,
   UpdateToolOut,
 };

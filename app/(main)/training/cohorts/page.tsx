@@ -23,6 +23,8 @@ import { guardPage } from "@/lib/permissions";
 import { loadCohortsListSearchParams } from "@/lib/search-params/cohorts";
 import type { ParseCsvResult } from "@/components/common/BulkImport";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type CohortsListOut = OutputOf<"/cohort/search", "post">;
 type DuplicateCohortIn = InputOf<"/cohort/duplicate", "post">;
@@ -35,8 +37,6 @@ type UpdateCohortIn = InputOf<"/cohort/update", "post">;
 type UpdateCohortOut = OutputOf<"/cohort/update", "post">;
 type GroupCohortIn = InputOf<"/cohort/group", "post">;
 type GroupCohortOut = OutputOf<"/cohort/group", "post">;
-type GenerateCohortIn = InputOf<"/cohort/generate", "post">;
-type GenerateCohortOut = OutputOf<"/cohort/generate", "post">;
 type GenerationsIn = InputOf<"/cohort/generations", "post">;
 type GenerationsOut = OutputOf<"/cohort/generations", "post">;
 type ProblemCohortIn = InputOf<"/cohort/problem", "post">;
@@ -106,12 +106,6 @@ async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   return api.post("/cohort/csv", { formData });
 }
 
-async function generateCohort(
-  input: GenerateCohortIn
-): Promise<GenerateCohortOut> {
-  "use server";
-  return api.post("/cohort/generate", input);
-}
 
 async function getCohortGroupHistory(groupId: string): Promise<GroupCohortOut> {
   "use server";
@@ -139,15 +133,20 @@ async function searchCohortGenerations(input: GenerationsIn): Promise<Generation
   return api.post("/cohort/generations", input);
 }
 
-async function runCohortGenerate(input: GenerateCohortIn): Promise<GenerateCohortOut> {
-  "use server";
-  return api.post("/cohort/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getCohortContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/cohort/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getCohortContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -177,7 +176,7 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
 
   try {
     // Profile data for providers
-    const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getCohortContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/training/cohorts", context.profile.role_permissions);
 
@@ -242,6 +241,7 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
         toolbar={<NewArtifactButton label="New Cohort" href="/training/cohorts/new" />}
         panelProps={{
           artifactType: "cohort",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupCohortOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupCohortOut & { name?: string | null })?.name ?? null,
@@ -250,15 +250,13 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          generateAction: generateCohort,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           getGroupHistory: getCohortGroupHistory,
           searchGroups: searchCohortGroups,
           prompts: context.prompts?.prompts,
           getGroupAction: getCohortGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchCohortGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runCohortGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="cohorts-index">
@@ -270,6 +268,7 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
             createCohortAction={createCohort}
             updateCohortAction={updateCohort}
             parseCsvAction={parseCsv}
+            currentSearchBody={body}
             importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
             pageIndex={pageIndex}
             pageSize={pageSize}
@@ -303,6 +302,7 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
   CohortsListOut,
+  CohortsListBody,
   DeleteCohortIn,
   DeleteCohortOut,
   DuplicateCohortIn,

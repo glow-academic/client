@@ -17,6 +17,7 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
+import { cache } from "react";
 /** ---- Strong types from OpenAPI ---- */
 type ProblemAttemptIn = InputOf<"/attempt/problem", "post">;
 type ProblemAttemptOut = OutputOf<"/attempt/problem", "post">;
@@ -72,6 +73,15 @@ async function patchChatDraft(
   return api.patch("/attempt/draft", input);
 }
 
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getAttemptContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/attempt/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
+
 /** ---- Metadata uses context endpoint ---- */
 export async function generateMetadata({
   params,
@@ -81,7 +91,7 @@ export async function generateMetadata({
   const { chatId } = await params;
 
   try {
-    const context = await api.post("/attempt/context", { body: { entity_id: chatId } } as ContextIn) as ContextOut;
+    const context = await getAttemptContextById(chatId);
     return {
       title: context.page_metadata?.detail.title ?? "Customize Training",
       description: context.page_metadata?.detail.description ?? "Customize and start a bundle-based training session.",
@@ -124,7 +134,7 @@ export default async function ChatPage({
     // Profile + entity context in parallel
     const [bundleData, context] = await Promise.all([
       getChatBundle(chatId, attemptId, draftId),
-      api.post("/attempt/context", { body: { entity_id: chatId } } as ContextIn) as Promise<ContextOut>,
+      getAttemptContextById(chatId) as Promise<ContextOut>,
     ]);
     const snapshot = buildSnapshot(session, context.profile);
 

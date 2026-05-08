@@ -21,6 +21,8 @@ import { createLoader, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetAuthIn = InputOf<"/auth/get", "post">;
 type GetAuthOut = OutputOf<"/auth/get", "post">;
@@ -30,8 +32,6 @@ type PatchAuthDraftIn = InputOf<"/auth/draft", "patch">;
 type PatchAuthDraftOut = OutputOf<"/auth/draft", "patch">;
 type GroupAuthIn = InputOf<"/auth/group", "post">;
 type GroupAuthOut = OutputOf<"/auth/group", "post">;
-type GenerateAuthIn = InputOf<"/auth/generate", "post">;
-type GenerateAuthOut = OutputOf<"/auth/generate", "post">;
 type GenerationsIn = InputOf<"/auth/generations", "post">;
 type GenerationsOut = OutputOf<"/auth/generations", "post">;
 type ProblemAuthIn = InputOf<"/auth/problem", "post">;
@@ -62,12 +62,6 @@ async function patchAuthDraft(
   return api.patch("/auth/draft", input);
 }
 
-async function generateAuth(
-  input: GenerateAuthIn
-): Promise<GenerateAuthOut> {
-  "use server";
-  return api.post("/auth/generate", input);
-}
 
 async function getAuthGroupHistory(groupId: string): Promise<GroupAuthOut> {
   "use server";
@@ -95,15 +89,20 @@ async function searchAuthGenerations(input: GenerationsIn): Promise<GenerationsO
   return api.post("/auth/generations", input);
 }
 
-async function runAuthGenerate(input: GenerateAuthIn): Promise<GenerateAuthOut> {
-  "use server";
-  return api.post("/auth/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getAuthContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/auth/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/auth/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getAuthContext();
     return {
       title: context.page_metadata?.new.title,
       description: context.page_metadata?.new.description,
@@ -134,7 +133,7 @@ export default async function AuthCreatePage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/auth/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getAuthContext();
     const snapshot = buildSnapshot(session, context.profile);
 
     // Parse search params using nuqs
@@ -190,17 +189,16 @@ export default async function AuthCreatePage({
       toolbar: <SaveToolbar />,
       panelProps: {
         artifactType: "auth",
+        initialPanelPrefs: await readGenerationPanelPrefs(),
         groupId: (groupResult as GroupAuthOut & { group_id?: string })?.group_id ?? null,
         groupName:
           (groupResult as GroupAuthOut & { name?: string | null })?.name ?? null,
-        generateAction: generateAuth,
-        operations: ["draft", "get", "group"],
+        operations: ["draft", "get", "title"],
         getGroupHistory: getAuthGroupHistory,
         searchGroups: searchAuthGroups,
         getGroupAction: getAuthGroup as PanelProps["getGroupAction"],
         searchGenerationsAction:
           searchAuthGenerations as PanelProps["searchGenerationsAction"],
-        runGenerateAction: runAuthGenerate as PanelProps["runGenerateAction"],
       },
       ...(initialSidebarOpen !== undefined ? { initialSidebarOpen } : {}),
       ...(initialPanelOpen !== undefined ? { initialPanelOpen } : {}),

@@ -22,6 +22,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetToolIn = InputOf<"/tool/get", "post">;
 type GetToolOut = OutputOf<"/tool/get", "post">;
@@ -32,8 +34,6 @@ type PatchToolDraftOut = OutputOf<"/tool/draft", "patch">;
 
 type GroupToolIn = InputOf<"/tool/group", "post">;
 type GroupToolOut = OutputOf<"/tool/group", "post">;
-type GenerateToolIn = InputOf<"/tool/generate", "post">;
-type GenerateToolOut = OutputOf<"/tool/generate", "post">;
 type ProblemToolIn = InputOf<"/tool/problem", "post">;
 type ProblemToolOut = OutputOf<"/tool/problem", "post">;
 type ContextIn = InputOf<"/tool/context", "post">;
@@ -65,12 +65,6 @@ async function patchToolDraft(
 }
 
 
-async function generateTool(
-  input: GenerateToolIn
-): Promise<GenerateToolOut> {
-  "use server";
-  return api.post("/tool/generate", input);
-}
 
 async function getToolGroupHistory(groupId: string): Promise<GroupToolOut> {
   "use server";
@@ -101,15 +95,20 @@ async function searchToolGenerations(input: GenerationsIn): Promise<GenerationsO
   return api.post("/tool/generations", input);
 }
 
-async function runToolGenerate(input: GenerateToolIn): Promise<GenerateToolOut> {
-  "use server";
-  return api.post("/tool/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getToolContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/tool/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/tool/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getToolContext();
     return {
       title: context.page_metadata?.new.title,
       description: context.page_metadata?.new.description,
@@ -140,7 +139,7 @@ export default async function NewToolPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/tool/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getToolContext();
     const snapshot = buildSnapshot(session, context.profile);
 
     // Parse search params using nuqs
@@ -234,18 +233,17 @@ export default async function NewToolPage({
       toolbar: <SaveToolbar />,
       panelProps: {
         artifactType: "tool",
+        initialPanelPrefs: await readGenerationPanelPrefs(),
         groupId: (groupResult as GroupToolOut & { group_id?: string })?.group_id ?? null,
         groupName:
           (groupResult as GroupToolOut & { name?: string | null })?.name ?? null,
-        generateAction: generateTool,
-        operations: ["draft", "get", "group"],
+        operations: ["draft", "get", "title"],
         getGroupHistory: getToolGroupHistory,
         searchGroups: searchToolGroups,
         prompts: context.prompts?.prompts,
         getGroupAction: getToolGroup as PanelProps["getGroupAction"],
         searchGenerationsAction:
           searchToolGenerations as PanelProps["searchGenerationsAction"],
-        runGenerateAction: runToolGenerate as PanelProps["runGenerateAction"],
       },
     } as any;
 

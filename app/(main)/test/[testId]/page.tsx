@@ -18,13 +18,13 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { loadTestSearchParams } from "@/lib/search-params/test";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 export type TestArtifactOut = OutputOf<"/test/get", "post">;
 
 type ContextIn = InputOf<"/test/context", "post">;
 type ContextOut = OutputOf<"/test/context", "post">;
-type TestGenerateIn = InputOf<"/test/generate", "post">;
-type TestGenerateOut = OutputOf<"/test/generate", "post">;
 type TestGenerationsIn = InputOf<"/test/generations", "post">;
 type TestGenerationsOut = OutputOf<"/test/generations", "post">;
 type TestGroupIn = InputOf<"/test/group", "post">;
@@ -90,10 +90,15 @@ async function searchTestGenerations(
   return api.post("/test/generations", input);
 }
 
-async function runTestGenerate(input: TestGenerateIn): Promise<TestGenerateOut> {
-  "use server";
-  return api.post("/test/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getTestContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/test/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata({
@@ -103,7 +108,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { testId } = await params;
-    const context = await api.post("/test/context", { body: { entity_id: testId } } as ContextIn) as ContextOut;
+    const context = await getTestContextById(testId);
     return {
       title: context.page_metadata?.detail.title,
       description: context.page_metadata?.detail.description,
@@ -150,7 +155,7 @@ export default async function TestPage({
         configs_expanded_page_size: q.configsExpandedPageSize ?? 20,
         configs_search: q.configsSearch ?? null,
       }),
-      api.post("/test/context", { body: { entity_id: testId } } as ContextIn) as Promise<ContextOut>,
+      getTestContextById(testId) as Promise<ContextOut>,
       api.post(
         "/test/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as TestGroupIn,
@@ -185,6 +190,7 @@ export default async function TestPage({
         }
         panelProps={{
           artifactType: "test",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as TestGroupOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as TestGroupOut & { name?: string | null })?.name ?? null,
@@ -193,12 +199,11 @@ export default async function TestPage({
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          operations: ["invocation_get", "invocation_create", "draft", "group"],
+          operations: ["invocation_get", "invocation_create", "draft", "title"],
           prompts: context.prompts?.prompts,
           getGroupAction: getTestGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchTestGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runTestGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="px-4">

@@ -22,6 +22,8 @@ import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
 import { loadAuthSearchParams } from "@/lib/search-params/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type AuthListOut = OutputOf<"/auth/search", "post">;
 type DuplicateAuthIn = InputOf<"/auth/duplicate", "post">;
@@ -32,8 +34,6 @@ type UpdateAuthIn = InputOf<"/auth/update", "post">;
 type UpdateAuthOut = OutputOf<"/auth/update", "post">;
 type GroupAuthIn = InputOf<"/auth/group", "post">;
 type GroupAuthOut = OutputOf<"/auth/group", "post">;
-type GenerateAuthIn = InputOf<"/auth/generate", "post">;
-type GenerateAuthOut = OutputOf<"/auth/generate", "post">;
 type GenerationsIn = InputOf<"/auth/generations", "post">;
 type GenerationsOut = OutputOf<"/auth/generations", "post">;
 type ProblemAuthIn = InputOf<"/auth/problem", "post">;
@@ -41,12 +41,24 @@ type ProblemAuthOut = OutputOf<"/auth/problem", "post">;
 type ContextIn = InputOf<"/auth/context", "post">;
 type ContextOut = OutputOf<"/auth/context", "post">;
 
+/** ---- Body type for auths list request ----
+ *  Mirrors ``SearchAuthApiRequest`` from the OpenAPI schema plus
+ *  ``flag_search`` (server accepts it; openapi.json regen pending). */
+type AuthsListBody = {
+  search?: string | null;
+  filter_department_ids?: string[] | null;
+  department_search?: string | null;
+  flag_search?: string | null;
+  page_size: number | null;
+  page_offset: number | null;
+};
+
 /** ---- Direct fetch (no Next.js cache) ---- */
-const getAuthList = async (): Promise<AuthListOut> => {
+const getAuthList = async (body: AuthsListBody): Promise<AuthListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/auth/search",
-    { body: {} },
+    { body },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -76,12 +88,6 @@ async function updateAuth(input: UpdateAuthIn): Promise<UpdateAuthOut> {
   return api.post("/auth/update", input);
 }
 
-async function generateAuth(
-  input: GenerateAuthIn
-): Promise<GenerateAuthOut> {
-  "use server";
-  return api.post("/auth/generate", input);
-}
 
 async function getAuthGroupHistory(groupId: string): Promise<GroupAuthOut> {
   "use server";
@@ -109,15 +115,20 @@ async function searchAuthGenerations(input: GenerationsIn): Promise<GenerationsO
   return api.post("/auth/generations", input);
 }
 
-async function runAuthGenerate(input: GenerateAuthIn): Promise<GenerateAuthOut> {
-  "use server";
-  return api.post("/auth/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getAuthContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/auth/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/auth/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getAuthContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -148,13 +159,18 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
 
   try {
     // Profile data for providers
-    const context = await api.post("/auth/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getAuthContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/system/auth", context.profile.role_permissions);
 
+    // Build the search body — the same shape gets forwarded to the
+    // bulk-write endpoints under select-all-matching mode so the
+    // server resolves matching ids without a client-side enumeration.
+    const body: AuthsListBody = { page_size: 1000, page_offset: 0 };
+
     // Fetch list data, view cookie, and group in parallel
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([
-      getAuthList(),
+      getAuthList(body),
       readViewCookie("auths"),
       api.post(
         "/auth/group",
@@ -179,6 +195,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
         toolbar={<NewArtifactButton label="New Auth" href="/system/auth/new" />}
         panelProps={{
           artifactType: "auth",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupAuthOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupAuthOut & { name?: string | null })?.name ?? null,
@@ -187,15 +204,13 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          generateAction: generateAuth,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           getGroupHistory: getAuthGroupHistory,
           searchGroups: searchAuthGroups,
           prompts: context.prompts?.prompts,
           getGroupAction: getAuthGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchAuthGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runAuthGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="auth-index">
@@ -205,6 +220,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
             duplicateAuthAction={duplicateAuth}
             deleteAuthAction={deleteAuth}
             updateAuthAction={updateAuth}
+            currentSearchBody={body}
           />
         </div>
       </FullPageLayout>
@@ -230,6 +246,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
   AuthListOut,
+  AuthsListBody,
   DeleteAuthIn,
   DeleteAuthOut,
   DuplicateAuthIn,

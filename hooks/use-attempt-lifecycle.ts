@@ -116,10 +116,10 @@ export function useAttemptLifecycle({
 
     const scope = groupId ? { groupId } : undefined;
     const unsubs = [
-      transport.on("attempt.started", handleStarted, scope),
+      transport.on("attempt.start.completed", handleStarted, scope),
       transport.on("attempt.chat.started", handleChatStarted, scope),
       transport.on("attempt.chat.ended", handleChatEnded, scope),
-      transport.on("attempt.ended", handleEnded, scope),
+      transport.on("attempt.complete.completed", handleEnded, scope),
       transport.on("attempt.chat_grade.completed", handleGradeComplete, scope),
       transport.on("attempt.error", handleError, scope),
       transport.on("attempt.chat.response_result", handleResponseResult, scope),

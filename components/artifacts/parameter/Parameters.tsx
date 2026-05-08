@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -62,6 +63,7 @@ import type {
   DeleteParameterOut,
   DuplicateParameterIn,
   DuplicateParameterOut,
+  ParametersListBody,
   ParametersListOut,
   UpdateParameterIn,
   UpdateParameterOut,
@@ -86,6 +88,11 @@ export interface ParametersProps {
   updateParameterAction?: (
     input: UpdateParameterIn
   ) => Promise<UpdateParameterOut>;
+  /** The body the page used for its SSR ``/parameter/search`` call.
+   *  Forwarded as filter fields on bulk delete/update calls when the
+   *  user is in ``selectAll=1`` mode — the server resolves matching
+   *  rows directly, no client-side enumeration. */
+  currentSearchBody?: ParametersListBody;
 }
 
 const PARAMETERS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
@@ -101,6 +108,7 @@ export default function Parameters({
   duplicateParameterAction,
   deleteParameterAction,
   updateParameterAction,
+  currentSearchBody,
 }: ParametersProps) {
   const router = useRouter();
   const { profile } = useProfile();
@@ -141,12 +149,54 @@ export default function Parameters({
       .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
   }, [parametersData?.flag_filter]);
 
-  // Selection state
-  const [selectedParameterIds, setSelectedParameterIds] = useState<string[]>([]);
-  const selectedCount = selectedParameterIds.length;
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated link. Three params model
+  // the full state machine:
+  //
+  //   - ``selectedIds=A,B``        → explicit selection of named rows
+  //   - ``selectAll=1``            → every row matching the active
+  //                                  filters/search is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                                → all-matching minus exclusions
+  //   - (none of the above)        → empty selection
+  //
+  // Shallow updates skip the RSC re-fetch burst. See persona's
+  // Personas.tsx for the canonical implementation; same shape applies.
+  const [selectedParameterIds, setSelectedParameterIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedParameterIds, setExcludedParameterIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+
+  const totalMatchingCount = parametersData?.total_count ?? parameters.length;
+
+  // Single mode-aware read predicate every row uses; downstream code
+  // never needs to branch.
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedParameterIds.includes(id)
+        : selectedParameterIds.includes(id);
+    },
+    [selectAllMatching, excludedParameterIds, selectedParameterIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedParameterIds.length)
+    : selectedParameterIds.length;
+
   const selectedParameters = useMemo(() => {
-    return parameters.filter((p) => p.parameter_id && selectedParameterIds.includes(p.parameter_id));
-  }, [parameters, selectedParameterIds]);
+    return parameters.filter((p) => p.parameter_id && isSelected(p.parameter_id));
+  }, [parameters, isSelected]);
+
   const deletableParameters = useMemo(
     () => selectedParameters.filter((p) => p.can_delete),
     [selectedParameters],
@@ -160,22 +210,59 @@ export default function Parameters({
     [selectedParameters],
   );
 
-  const toggleSelection = useCallback((parameterId: string) => {
-    setSelectedParameterIds((prev) =>
-      prev.includes(parameterId)
-        ? prev.filter((id) => id !== parameterId)
-        : [...prev, parameterId]
-    );
-  }, []);
-  const clearSelection = useCallback(() => setSelectedParameterIds([]), []);
-  const selectAllOnPage = useCallback(() => {
-    const pageIds = parameters.filter((p) => p.parameter_id).map((p) => p.parameter_id!);
-    setSelectedParameterIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [parameters]);
+  // Under all-matching mode every loaded row whose id isn't in
+  // ``excludedParameterIds`` is implicitly selected, so the predicate
+  // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
     const pageIds = parameters.filter((p) => p.parameter_id).map((p) => p.parameter_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedParameterIds.includes(id));
-  }, [parameters, selectedParameterIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [parameters, isSelected]);
+
+  // Whether there are more matching rows than what's loaded — used to
+  // decide whether to surface the "Select all N matching" affordance.
+  const hasMoreThanCurrentPage = totalMatchingCount > parameters.length;
+
+  // Toggle a single row. Under all-matching we toggle membership in
+  // excludedIds (deselect ⇒ add to exclusions, re-select ⇒ remove).
+  // Under explicit mode it's the straight selectedIds toggle.
+  const toggleSelection = useCallback((parameterId: string) => {
+    if (selectAllMatching) {
+      void setExcludedParameterIds((prev) =>
+        prev.includes(parameterId)
+          ? prev.filter((id) => id !== parameterId)
+          : [...prev, parameterId],
+      );
+    } else {
+      void setSelectedParameterIds((prev) =>
+        prev.includes(parameterId)
+          ? prev.filter((id) => id !== parameterId)
+          : [...prev, parameterId],
+      );
+    }
+  }, [selectAllMatching, setExcludedParameterIds, setSelectedParameterIds]);
+
+  const clearSelection = useCallback(() => {
+    void setSelectedParameterIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedParameterIds([]);
+  }, [setSelectedParameterIds, setSelectAllMatching, setExcludedParameterIds]);
+
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = parameters.filter((p) => p.parameter_id).map((p) => p.parameter_id!);
+    void setSelectAllMatching(false);
+    void setExcludedParameterIds([]);
+    void setSelectedParameterIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [parameters, setSelectAllMatching, setExcludedParameterIds, setSelectedParameterIds]);
+
+  /** Promote the current page-only selection into "all matching
+   *  filter" mode. Clears explicit ids and exclusions — all-matching
+   *  mode is the canonical truth from this point. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedParameterIds([]);
+    void setExcludedParameterIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedParameterIds, setExcludedParameterIds, setSelectAllMatching]);
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -438,12 +525,46 @@ export default function Parameters({
   };
 
   const handleBulkDelete = async () => {
-    if (!deleteParameterAction || deletableParameters.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deleteParameterAction`` call shape; only
+    // the body differs.
+    if (!deleteParameterAction) return;
+    if (!selectAllMatching && deletableParameters.length === 0) return;
+
     setIsBulkDeleting(true);
     try {
-      const ids = deletableParameters.map((p) => p.parameter_id!);
-      await deleteParameterAction({ body: { parameter_ids: ids, accept: true } });
-      toast.success(`${ids.length} parameter(s) deleted successfully`);
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedParameterIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            parameter_ids: deletableParameters.map((p) => p.parameter_id!),
+            accept: true,
+          };
+
+      const result = await deleteParameterAction({ body } as DeleteParameterIn);
+
+      // Per-row results from the server: success entries are actual
+      // deletions, failures are soft-skipped rows (no permission /
+      // not found). Toast reflects both counts so the user knows
+      // some rows were skipped without inspecting the receipt.
+      const results = (result as DeleteParameterOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(`${successCount} parameter(s) deleted, ${skippedCount} skipped`);
+      } else {
+        toast.success(`${successCount} parameter(s) deleted successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -456,7 +577,8 @@ export default function Parameters({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateParameterAction || editableParameters.length === 0) return;
+    if (!updateParameterAction) return;
+    if (!selectAllMatching && editableParameters.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     if (!hasActiveChange) {
@@ -464,24 +586,56 @@ export default function Parameters({
       return;
     }
 
+    // Resolve flag UUIDs by type from the server-provided catalog.
     const activeFlagId = flagOptions.find((f) => f.type === "parameter_active")?.id;
 
     setIsBulkEditing(true);
     try {
-      const items = editableParameters.map((p) => {
+      let body: UpdateParameterIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know each row's existing flags), so the active
+        // toggle becomes "set to this value across all matching rows"
+        // — same semantic as a manual sweep.
         let flag_ids: string[] | undefined;
         if (hasActiveChange) {
-          const isActive = bulkEditActiveStatus;
-          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+          flag_ids = bulkEditActiveStatus && activeFlagId ? [activeFlagId] : [];
         }
-        return {
-          id: p.parameter_id!,
-          ...(hasActiveChange && { flag_ids }),
-        };
-      });
+        body = {
+          all: true,
+          excluded_ids: excludedParameterIds,
+          ...(currentSearchBody ?? {}),
+          patch: {
+            ...(hasActiveChange && { flag_ids }),
+          },
+          accept: true,
+        } as UpdateParameterIn["body"];
+      } else {
+        // Explicit: clone the patch per-row.
+        const items = editableParameters.map((p) => {
+          let flag_ids: string[] | undefined;
+          if (hasActiveChange) {
+            flag_ids = bulkEditActiveStatus && activeFlagId ? [activeFlagId] : [];
+          }
+          return {
+            id: p.parameter_id!,
+            ...(hasActiveChange && { flag_ids }),
+          };
+        });
+        body = { parameters: items } as UpdateParameterIn["body"];
+      }
 
-      await updateParameterAction({ body: { parameters: items } } as UpdateParameterIn);
-      toast.success(`${items.length} parameter(s) updated successfully`);
+      const result = await updateParameterAction({ body } as UpdateParameterIn);
+
+      // Per-row results — same soft-skip pattern as bulk delete.
+      const results = (result as UpdateParameterOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(`${successCount} parameter(s) updated, ${skippedCount} skipped`);
+      } else {
+        toast.success(`${successCount} parameter(s) updated successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -543,9 +697,9 @@ export default function Parameters({
 
   const renderParameterCard = (parameter: (typeof parameters)[number]) => {
     const count = parameter.num_items; // Pre-calculated from server
-    const isSelected = parameter.parameter_id
-      ? selectedParameterIds.includes(parameter.parameter_id)
-      : false;
+    // Use the mode-aware ``isSelected`` predicate (handles both
+    // explicit and all-matching modes uniformly).
+    const rowSelected = isSelected(parameter.parameter_id);
 
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons
@@ -559,13 +713,13 @@ export default function Parameters({
       <Card
         key={parameter.parameter_id}
         className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
-          isSelected ? "ring-2 ring-primary" : ""
+          rowSelected ? "ring-2 ring-primary" : ""
         }`}
         data-testid="parameter-card"
         data-parameter-id={parameter.parameter_id}
         role="gridcell"
         aria-label={`parameter card ${parameter.name}`}
-        aria-selected={isSelected}
+        aria-selected={rowSelected}
         onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
@@ -581,7 +735,7 @@ export default function Parameters({
                   data-action-button
                 >
                   <Checkbox
-                    checked={isSelected}
+                    checked={rowSelected}
                     onCheckedChange={() => {
                       if (parameter.parameter_id) toggleSelection(parameter.parameter_id);
                     }}
@@ -728,10 +882,8 @@ export default function Parameters({
         <div className="space-y-4">
           {/* Toolbar — swaps between filter bar and selection action bar */}
           {selectedCount > 0 ? (
-            <div
-              className="flex items-center justify-between gap-2"
-              data-testid="parameters-toolbar"
-            >
+            <div className="space-y-2" data-testid="parameters-toolbar">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 {deleteParameterAction && (
                   <Button
@@ -739,10 +891,12 @@ export default function Parameters({
                     size="sm"
                     className="h-8"
                     onClick={() => setShowBulkDeleteDialog(true)}
-                    disabled={deletableParameters.length === 0}
+                    disabled={!selectAllMatching && deletableParameters.length === 0}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete {deletableParameters.length} of {selectedCount}
+                    {selectAllMatching
+                      ? `Delete ${selectedCount} matching`
+                      : `Delete ${deletableParameters.length} of ${selectedCount}`}
                   </Button>
                 )}
                 {updateParameterAction && (
@@ -751,15 +905,17 @@ export default function Parameters({
                     size="sm"
                     className="h-8"
                     onClick={openBulkEditDialog}
-                    disabled={editableParameters.length === 0}
+                    disabled={!selectAllMatching && editableParameters.length === 0}
                   >
                     <Pencil className="mr-2 h-4 w-4" />
-                    Edit {editableParameters.length} of {selectedCount}
+                    {selectAllMatching
+                      ? `Edit ${selectedCount} matching`
+                      : `Edit ${editableParameters.length} of ${selectedCount}`}
                   </Button>
                 )}
-                {!allPageSelected && (
+                {!allPageSelected && !selectAllMatching && (
                   <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
-                    Select All
+                    Select Page
                   </Button>
                 )}
                 <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
@@ -770,6 +926,51 @@ export default function Parameters({
                 table={table}
                 hiddenColumns={["name", "updated_at", "scenarios", "fields", "departments"]}
               />
+            </div>
+
+            {/* Cross-page selection banners. Two states:
+                (a) page-all selected, more matching elsewhere → offer
+                    "Select all N matching" to flip into all-matching mode.
+                (b) all-matching active → show count + Clear so the
+                    user always has an obvious escape hatch.
+                Mutually exclusive — both never render at once. */}
+            {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+              <div
+                className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+                data-testid="select-all-matching-banner"
+              >
+                <span className="text-muted-foreground">
+                  All {parameters.length} on this page selected.
+                </span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={selectAllMatchingNow}
+                >
+                  Select all {totalMatchingCount} matching
+                </Button>
+              </div>
+            )}
+            {selectAllMatching && (
+              <div
+                className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+                data-testid="all-matching-active-banner"
+              >
+                <span className="text-muted-foreground">
+                  All {selectedCount} matching parameters selected
+                  {excludedParameterIds.length > 0 && ` (${excludedParameterIds.length} excluded)`}.
+                </span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={clearSelection}
+                >
+                  Clear
+                </Button>
+              </div>
+            )}
             </div>
           ) : (
             <div
@@ -892,7 +1093,7 @@ export default function Parameters({
       <BulkDeleteDialog
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
-        count={deletableParameters.length}
+        count={selectAllMatching ? selectedCount : deletableParameters.length}
         entityLabel="parameter"
         entityLabelPlural="parameters"
         isDeleting={isBulkDeleting}
@@ -900,35 +1101,59 @@ export default function Parameters({
         description={
           <>
             <p>This action cannot be undone.</p>
-            {deletableParameters.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                <ul className="text-sm space-y-0.5">
-                  {deletableParameters.map((p) => (
-                    <li key={p.parameter_id} className="flex items-center gap-1.5">
-                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                      {p.name || "Unnamed Parameter"}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {nonDeletableParameters.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
-                  Cannot be deleted (in use):
+            {selectAllMatching ? (
+              // All-matching mode: server resolves rows from filter +
+              // exclusions; per-row permission failures soft-skip.
+              // We can't enumerate names without round-tripping through
+              // the search endpoint (which would re-trigger the RSC
+              // burst), so show the count + filter state instead.
+              <div className="text-sm text-muted-foreground">
+                <p>
+                  All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                  {" "}parameters will be deleted server-side using the current filter.
                 </p>
-                <ul className="text-sm space-y-0.5">
-                  {nonDeletableParameters.map((p) => (
-                    <li
-                      key={p.parameter_id}
-                      className="flex items-center gap-1.5 text-muted-foreground"
-                    >
-                      {p.name || "Unnamed Parameter"}
-                    </li>
-                  ))}
-                </ul>
+                {excludedParameterIds.length > 0 && (
+                  <p className="mt-1">
+                    {excludedParameterIds.length} explicitly excluded.
+                  </p>
+                )}
+                <p className="mt-1">
+                  Parameters you don&apos;t have permission to delete will be skipped automatically.
+                </p>
               </div>
+            ) : (
+              <>
+                {deletableParameters.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                    <ul className="text-sm space-y-0.5">
+                      {deletableParameters.map((p) => (
+                        <li key={p.parameter_id} className="flex items-center gap-1.5">
+                          <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                          {p.name || "Unnamed Parameter"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {nonDeletableParameters.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                      Cannot be deleted (in use):
+                    </p>
+                    <ul className="text-sm space-y-0.5">
+                      {nonDeletableParameters.map((p) => (
+                        <li
+                          key={p.parameter_id}
+                          className="flex items-center gap-1.5 text-muted-foreground"
+                        >
+                          {p.name || "Unnamed Parameter"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
             )}
           </>
         }
@@ -938,7 +1163,7 @@ export default function Parameters({
       <BulkEditDialog
         open={showBulkEditDialog}
         onOpenChange={setShowBulkEditDialog}
-        count={editableParameters.length}
+        count={selectAllMatching ? selectedCount : editableParameters.length}
         entityLabelPlural="parameters"
         isSaving={isBulkEditing}
         onSave={handleBulkEdit}

@@ -21,6 +21,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetFieldIn = InputOf<"/field/get", "post">;
 type GetFieldOut = OutputOf<"/field/get", "post">;
@@ -30,8 +32,6 @@ type PatchFieldDraftIn = InputOf<"/field/draft", "patch">;
 type PatchFieldDraftOut = OutputOf<"/field/draft", "patch">;
 type GroupFieldIn = InputOf<"/field/group", "post">;
 type GroupFieldOut = OutputOf<"/field/group", "post">;
-type GenerateFieldIn = InputOf<"/field/generate", "post">;
-type GenerateFieldOut = OutputOf<"/field/generate", "post">;
 type ProblemFieldIn = InputOf<"/field/problem", "post">;
 type ProblemFieldOut = OutputOf<"/field/problem", "post">;
 type ContextIn = InputOf<"/field/context", "post">;
@@ -74,12 +74,6 @@ async function patchFieldDraft(
   return api.patch("/field/draft", input);
 }
 
-async function generateField(
-  input: GenerateFieldIn
-): Promise<GenerateFieldOut> {
-  "use server";
-  return api.post("/field/generate", input);
-}
 
 async function getFieldGroupHistory(groupId: string): Promise<GroupFieldOut> {
   "use server";
@@ -99,6 +93,15 @@ async function createFieldProblem(input: ProblemFieldIn): Promise<ProblemFieldOu
   return api.post("/field/problem", input);
 }
 
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getFieldContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/field/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
+
 /** ---- Page metadata ---- */
 export async function generateMetadata({
   params,
@@ -107,7 +110,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { fieldId } = await params;
-    const context = await api.post("/field/context", { body: { entity_id: fieldId } } as ContextIn) as ContextOut;
+    const context = await getFieldContextById(fieldId);
     return {
       title: context.page_metadata?.detail.title,
       description: context.page_metadata?.detail.description,
@@ -194,7 +197,7 @@ export default async function FieldEditPage({
 
     const [fieldData, context, draftsResult, groupResult] = await Promise.all([
       getField(input),
-      api.post("/field/context", { body: { entity_id: fieldId } } as ContextIn) as Promise<ContextOut>,
+      getFieldContextById(fieldId) as Promise<ContextOut>,
       api.post("/field/drafts", {}),
       api.post("/field/group", { body: {} } as GroupFieldIn),
     ]);
@@ -222,11 +225,11 @@ export default async function FieldEditPage({
             toolbar: <SaveToolbar />,
             panelProps: {
               artifactType: "field",
+              initialPanelPrefs: await readGenerationPanelPrefs(),
               groupId:
                 (groupResult as GroupFieldOut & { group_id?: string })?.group_id ??
                 null,
-              generateAction: generateField,
-              operations: ["draft", "get", "group"],
+              operations: ["draft", "get", "title"],
               getGroupHistory: getFieldGroupHistory,
               searchGroups: searchFieldGroups,
               prompts: context.prompts?.prompts,

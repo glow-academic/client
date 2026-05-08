@@ -37,6 +37,12 @@ export interface GenerationMessage {
   type: "text" | "tool";
   toolName?: string;
   toolStatus?: "pending" | "success" | "error";
+  /** Tool resource (id/name/description/...) when this audited
+   *  operation has a registered tool. ``null`` means the audit fired
+   *  but no tool is registered — render as a lightweight event pill
+   *  rather than a full tool-call bubble. Always set explicitly to
+   *  avoid ``exactOptionalPropertyTypes`` undefined-vs-absent ambiguity. */
+  tool: Record<string, unknown> | null;
 }
 
 export interface GenerationListener {
@@ -175,7 +181,7 @@ export function useArtifactGeneration(
       setErrorState(message);
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: "assistant", text: message, type: "text" },
+        { id: crypto.randomUUID(), role: "assistant", text: message, type: "text", tool: null },
       ]);
     };
 
@@ -213,10 +219,20 @@ export function useArtifactGeneration(
       if (!parsed) return;
       const { operation } = parsed;
 
+      // ``generate`` is the wrapper run that contains every tool call
+      // and text-streaming event. Run the panel-state side-effects
+      // (isGenerating flag, timeout timer) AND fall through to the
+      // bubble-creation logic so the rail shows a long-running
+      // "Persona Generate" pending bubble for the whole run — appears
+      // before the user-message text bubble, stays pending while tool
+      // calls and text deltas fire alongside, and flips to success on
+      // ``persona.generate.completed``.
       if (operation === "generate") {
-        if (phase === "started") return handleGenerateStarted();
-        if (phase === "completed") return handleGenerateCompleted();
-        return handleGenerateFailed(data);
+        if (phase === "started") handleGenerateStarted();
+        else if (phase === "completed") handleGenerateCompleted();
+        else handleGenerateFailed(data);
+        // No early return — let the standard lifecycle code below also
+        // create/update the bubble keyed by ``call_id``.
       }
 
       const callId = (data.call_id as string) || "";
@@ -228,13 +244,34 @@ export function useArtifactGeneration(
       const rawRole = data.role ?? payload.role;
       const role = rawRole === "user" ? "user" : "assistant";
       const toolName = titleCase(`${parsed.artifact} ${operation}`);
+      // ``tool`` is the canonical wire envelope from the audit framework
+      // (full ``GetToolResponse`` shape, or ``null`` when no tool is
+      // registered). The renderer uses presence/absence of this field
+      // as the discriminator between "tool call" and "event pill".
+      // Explicit ``| null`` typing avoids ``exactOptionalPropertyTypes``
+      // friction at the setMessages site below.
+      const tool: Record<string, unknown> | null =
+        ((data.tool as Record<string, unknown> | null | undefined) ??
+          (payload.tool as Record<string, unknown> | null | undefined) ??
+          null);
 
       if (phase === "started") {
         setMessages((prev) => {
-          if (prev.some((m) => m.id === callId)) return prev;
+          // If the pipeline's ``generate.call.start`` already created
+          // a bubble for this ``call_id`` (raw snake_case ``tool_name``),
+          // promote its label to the title-cased operation name AND
+          // the tool envelope (pipeline event has no ``tool`` field;
+          // the audit's started arrives later and refines).
+          if (prev.some((m) => m.id === callId)) {
+            return prev.map((m) =>
+              m.id === callId
+                ? { ...m, toolName, tool: (tool ?? m.tool) ?? null }
+                : m,
+            );
+          }
           return [
             ...prev,
-            { id: callId, role, text: "", type: "tool", toolName, toolStatus: "pending" },
+            { id: callId, role, text: "", type: "tool", toolName, toolStatus: "pending", tool },
           ];
         });
         return;
@@ -259,7 +296,7 @@ export function useArtifactGeneration(
         }
         return [
           ...prev,
-          { id: crypto.randomUUID(), role: "assistant", text: delta, type: "text" },
+          { id: crypto.randomUUID(), role: "assistant", text: delta, type: "text", tool: null },
         ];
       });
     };
@@ -272,7 +309,7 @@ export function useArtifactGeneration(
       if (role === "user") {
         setMessages((prev) => [
           ...prev,
-          { id: crypto.randomUUID(), role: "user", text, type: "text" },
+          { id: crypto.randomUUID(), role: "user", text, type: "text", tool: null },
         ]);
         return;
       }
@@ -285,36 +322,50 @@ export function useArtifactGeneration(
         }
         return [
           ...prev,
-          { id: crypto.randomUUID(), role: "assistant", text, type: "text" },
+          { id: crypto.randomUUID(), role: "assistant", text, type: "text", tool: null },
         ];
       });
     };
 
+    // Pipeline-driven tool-call lifecycle. Server emits ``call_id`` (the
+    // pre-minted DB row id) on these events so they share an id space
+    // with the audit lifecycle (``handleLifecycle`` above). Same id ⇒
+    // the dedup-on-id branch in ``handleLifecycle`` collapses both
+    // events into a single bubble. Whichever fires first creates the
+    // bubble; the other arrives, finds the id, and is a no-op for
+    // creation but still drives status updates.
     const handleCallStart = (data: Record<string, unknown>) => {
-      const toolCallId = data.tool_call_id as string;
+      const callId = data.call_id as string;
       const toolName = data.tool_name as string;
-      if (!toolCallId) return;
+      if (!callId) return;
       const role = data.role === "user" ? "user" : "assistant";
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: toolCallId,
-          role,
-          text: "",
-          type: "tool",
-          toolName: toolName || "tool_call",
-          toolStatus: "pending",
-        },
-      ]);
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === callId)) return prev;
+        return [
+          ...prev,
+          {
+            id: callId,
+            role,
+            text: "",
+            type: "tool",
+            // ``tool`` envelope is set by the audit's ``.started`` event
+            // that follows this pipeline event. Until then, render as a
+            // generic tool call (no envelope yet).
+            tool: null,
+            toolName: toolName || "tool_call",
+            toolStatus: "pending",
+          },
+        ];
+      });
     };
 
     const handleCallComplete = (data: Record<string, unknown>) => {
-      const toolCallId = data.tool_call_id as string;
+      const callId = data.call_id as string;
       const success = data.success as boolean;
-      if (!toolCallId) return;
+      if (!callId) return;
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.id === toolCallId
+          msg.id === callId
             ? { ...msg, toolStatus: success ? "success" : "error" }
             : msg,
         ),

@@ -23,6 +23,8 @@ import { guardPage } from "@/lib/permissions";
 import { loadModelsSearchParams } from "@/lib/search-params/models";
 import { readViewCookie } from "@/lib/view-cookie";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type ModelsListOut = OutputOf<"/model/search", "post">;
 type DuplicateModelIn = InputOf<"/model/duplicate", "post">;
@@ -33,8 +35,6 @@ type UpdateModelIn = InputOf<"/model/update", "post">;
 type UpdateModelOut = OutputOf<"/model/update", "post">;
 type GroupModelIn = InputOf<"/model/group", "post">;
 type GroupModelOut = OutputOf<"/model/group", "post">;
-type GenerateModelIn = InputOf<"/model/generate", "post">;
-type GenerateModelOut = OutputOf<"/model/generate", "post">;
 type GenerationsIn = InputOf<"/model/generations", "post">;
 type GenerationsOut = OutputOf<"/model/generations", "post">;
 type ProblemModelIn = InputOf<"/model/problem", "post">;
@@ -88,12 +88,6 @@ async function updateModel(input: UpdateModelIn): Promise<UpdateModelOut> {
   return api.post("/model/update", input);
 }
 
-async function generateModel(
-  input: GenerateModelIn
-): Promise<GenerateModelOut> {
-  "use server";
-  return api.post("/model/generate", input);
-}
 
 async function getModelGroupHistory(groupId: string): Promise<GroupModelOut> {
   "use server";
@@ -121,15 +115,20 @@ async function searchModelGenerations(input: GenerationsIn): Promise<Generations
   return api.post("/model/generations", input);
 }
 
-async function runModelGenerate(input: GenerateModelIn): Promise<GenerateModelOut> {
-  "use server";
-  return api.post("/model/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getModelContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/model/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/model/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getModelContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -159,7 +158,7 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
 
   try {
     // Profile data for providers
-    const context = await api.post("/model/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getModelContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/intelligence/models", context.profile.role_permissions);
 
@@ -223,6 +222,7 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
         toolbar={<NewArtifactButton label="New Model" href="/intelligence/models/new" />}
         panelProps={{
           artifactType: "model",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupModelOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupModelOut & { name?: string | null })?.name ?? null,
@@ -231,15 +231,13 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          generateAction: generateModel,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           getGroupHistory: getModelGroupHistory,
           searchGroups: searchModelGroups,
           prompts: context.prompts?.prompts,
           getGroupAction: getModelGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchModelGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runModelGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="models-index">
@@ -249,6 +247,7 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
             duplicateModelAction={duplicateModel}
             deleteModelAction={deleteModel}
             updateModelAction={updateModel}
+            currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}
@@ -283,6 +282,7 @@ export type {
   DeleteModelOut,
   DuplicateModelIn,
   DuplicateModelOut,
+  ModelsListBody,
   ModelsListOut,
   UpdateModelIn,
   UpdateModelOut,

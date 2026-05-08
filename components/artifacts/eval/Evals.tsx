@@ -8,6 +8,7 @@
 
 import { Edit, Eye, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -15,6 +16,7 @@ import type {
   DeleteEvalIn,
   DeleteEvalOut,
   EvalsListOut,
+  EvalsListBody,
   UpdateEvalIn,
   UpdateEvalOut,
 } from "@/app/(main)/system/evals/page";
@@ -58,6 +60,11 @@ export interface EvalsProps {
   initialColumnVisibility?: VisibilityState;
   deleteEvalAction?: (input: DeleteEvalIn) => Promise<DeleteEvalOut>;
   updateEvalAction?: (input: UpdateEvalIn) => Promise<UpdateEvalOut>;
+  /** The body the page used for its SSR ``/eval/search`` call.
+   *  Forwarded as flat filter fields on bulk delete/update calls when
+   *  the user is in ``selectAll=1`` mode — the server resolves matching
+   *  rows directly, no client-side enumeration. */
+  currentSearchBody?: EvalsListBody;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;
@@ -83,6 +90,7 @@ export default function Evals({
   initialColumnVisibility,
   deleteEvalAction,
   updateEvalAction,
+  currentSearchBody,
   pageIndex,
   pageSize,
   totalCount,
@@ -185,14 +193,52 @@ export default function Evals({
       .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
   }, [evalsData?.flag_filter]);
 
-  // Selection state
-  const [selectedEvalIds, setSelectedEvalIds] = useState<string[]>([]);
-  const selectedCount = selectedEvalIds.length;
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated link. Three params model
+  // the full state machine:
+  //
+  //   - ``selectedIds=A,B``      → explicit selection of named rows
+  //   - ``selectAll=1``          → every row matching active filters
+  //   - ``selectAll=1&excludedIds=X`` → all-matching minus exclusions
+  //   - (none)                   → empty selection
+  //
+  // Shallow updates skip the RSC re-fetch burst.
+  const [selectedEvalIds, setSelectedEvalIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedEvalIds, setExcludedEvalIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+
+  const totalMatchingCount = evalsData?.total_count ?? 0;
+
+  // Mode-aware predicate — every row read goes through this so the
+  // rest of the component never branches on ``selectAllMatching``.
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedEvalIds.includes(id)
+        : selectedEvalIds.includes(id);
+    },
+    [selectAllMatching, excludedEvalIds, selectedEvalIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedEvalIds.length)
+    : selectedEvalIds.length;
+
   const selectedEvals = useMemo(() => {
     return (Array.isArray(evalsData?.evals) ? evalsData.evals : []).filter(
-      (e) => e.eval_id && selectedEvalIds.includes(e.eval_id)
+      (e) => e.eval_id && isSelected(e.eval_id)
     );
-  }, [evalsData?.evals, selectedEvalIds]);
+  }, [evalsData?.evals, isSelected]);
   const deletableEvals = useMemo(
     () => selectedEvals.filter((e) => e.can_delete),
     [selectedEvals],
@@ -206,14 +252,38 @@ export default function Evals({
     [selectedEvals],
   );
 
+  // Toggle selection for a single eval. Under all-matching mode toggle
+  // membership in excludedEvalIds; otherwise toggle selectedEvalIds.
   const toggleSelection = useCallback((evalId: string) => {
-    setSelectedEvalIds((prev) =>
-      prev.includes(evalId)
-        ? prev.filter((id) => id !== evalId)
-        : [...prev, evalId]
-    );
-  }, []);
-  const clearSelection = useCallback(() => setSelectedEvalIds([]), []);
+    if (selectAllMatching) {
+      void setExcludedEvalIds((prev) =>
+        prev.includes(evalId)
+          ? prev.filter((id) => id !== evalId)
+          : [...prev, evalId],
+      );
+    } else {
+      void setSelectedEvalIds((prev) =>
+        prev.includes(evalId)
+          ? prev.filter((id) => id !== evalId)
+          : [...prev, evalId],
+      );
+    }
+  }, [selectAllMatching, setExcludedEvalIds, setSelectedEvalIds]);
+
+  const clearSelection = useCallback(() => {
+    void setSelectedEvalIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedEvalIds([]);
+  }, [setSelectedEvalIds, setSelectAllMatching, setExcludedEvalIds]);
+
+  /** Promote the page-only selection into "all matching filter" mode.
+   *  Clears explicit ids and exclusions — the all-matching mode is the
+   *  canonical truth from this point. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedEvalIds([]);
+    void setExcludedEvalIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedEvalIds, setExcludedEvalIds, setSelectAllMatching]);
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -400,20 +470,65 @@ export default function Evals({
 
   const selectAllOnPage = useCallback(() => {
     const pageIds = evalsListArray.filter((e) => e.eval_id).map((e) => e.eval_id!);
-    setSelectedEvalIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [evalsListArray]);
+    void setSelectAllMatching(false);
+    void setExcludedEvalIds([]);
+    void setSelectedEvalIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [evalsListArray, setSelectAllMatching, setExcludedEvalIds, setSelectedEvalIds]);
+
+  // Under all-matching mode every loaded row whose id isn't in
+  // ``excludedEvalIds`` is implicitly selected, so the predicate
+  // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
     const pageIds = evalsListArray.filter((e) => e.eval_id).map((e) => e.eval_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedEvalIds.includes(id));
-  }, [evalsListArray, selectedEvalIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [evalsListArray, isSelected]);
+
+  // Whether there ARE more matching rows than what's loaded on this
+  // page — used to decide whether to surface the "Select all N
+  // matching" affordance after the user selects the page.
+  const hasMoreThanCurrentPage = totalMatchingCount > evalsListArray.length;
 
   const handleBulkDelete = async () => {
-    if (!deleteEvalAction || deletableEvals.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deleteEvalAction`` call shape; the body
+    // just differs.
+    if (!deleteEvalAction) return;
+    if (!selectAllMatching && deletableEvals.length === 0) return;
+
     setIsBulkDeleting(true);
     try {
-      const ids = deletableEvals.map((e) => e.eval_id!);
-      await deleteEvalAction({ body: { eval_ids: ids, accept: true } } as DeleteEvalIn);
-      toast.success(`${ids.length} eval(s) deleted successfully`);
+      const body = selectAllMatching
+        ? ({
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[]. Cast via ``unknown`` because the
+            // ``all``/``excluded_ids``/filter fields lag the generated
+            // OpenAPI types until the next regen.
+            all: true as const,
+            excluded_ids: excludedEvalIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          } as unknown as DeleteEvalIn["body"])
+        : ({
+            eval_ids: deletableEvals.map((e) => e.eval_id!),
+            accept: true,
+          } as DeleteEvalIn["body"]);
+
+      const result = await deleteEvalAction({ body } as DeleteEvalIn);
+
+      // Per-row results — soft-skip count surfaces partial success.
+      const results = (result as DeleteEvalOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(`${successCount} eval(s) deleted, ${skippedCount} skipped`);
+      } else {
+        toast.success(`${successCount} eval(s) deleted successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -426,9 +541,11 @@ export default function Evals({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateEvalAction || editableEvals.length === 0) return;
+    if (!updateEvalAction) return;
+    if (!selectAllMatching && editableEvals.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
+    const hasAnyFlagChange = hasActiveChange;
     if (!hasActiveChange) {
       toast.error("No changes selected");
       return;
@@ -438,20 +555,52 @@ export default function Evals({
 
     setIsBulkEditing(true);
     try {
-      const items = editableEvals.map((e) => {
+      let body: UpdateEvalIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know each row's existing flags), so the active
+        // toggle becomes "set to this value across all matching rows"
+        // — same semantic as a manual sweep.
         let flag_ids: string[] | undefined;
-        if (hasActiveChange) {
-          const isActive = bulkEditActiveStatus;
-          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+        if (hasAnyFlagChange) {
+          flag_ids = [];
+          if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
         }
-        return {
-          id: e.eval_id!,
-          ...(hasActiveChange && { flag_ids }),
-        };
-      });
+        body = {
+          all: true,
+          excluded_ids: excludedEvalIds,
+          ...(currentSearchBody ?? {}),
+          patch: {
+            ...(hasAnyFlagChange && { flag_ids }),
+          },
+          accept: true,
+        } as unknown as UpdateEvalIn["body"];
+      } else {
+        // Explicit: clone the patch per-row.
+        const items = editableEvals.map((e) => {
+          let flag_ids: string[] | undefined;
+          if (hasAnyFlagChange) {
+            const isActive = bulkEditActiveStatus;
+            flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+          }
+          return {
+            id: e.eval_id!,
+            ...(hasAnyFlagChange && { flag_ids }),
+          };
+        });
+        body = { evals: items } as UpdateEvalIn["body"];
+      }
 
-      await updateEvalAction({ body: { evals: items } } as UpdateEvalIn);
-      toast.success(`${items.length} eval(s) updated successfully`);
+      const result = await updateEvalAction({ body } as UpdateEvalIn);
+
+      const results = (result as UpdateEvalOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(`${successCount} eval(s) updated, ${skippedCount} skipped`);
+      } else {
+        toast.success(`${successCount} eval(s) updated successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -596,7 +745,7 @@ export default function Evals({
     const evalName = evalItem.name ?? "";
 
     if (!evalId) return null;
-    const isSelected = selectedEvalIds.includes(evalId);
+    const rowSelected = isSelected(evalId);
 
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons
@@ -608,13 +757,13 @@ export default function Evals({
       <Card
         key={evalId}
         className={`group relative flex flex-col h-full transition-all hover:shadow-md cursor-pointer ${
-          isSelected ? "ring-2 ring-primary" : ""
+          rowSelected ? "ring-2 ring-primary" : ""
         }`}
         data-testid="eval-card"
         data-eval-id={evalId}
         role="gridcell"
         aria-label={`eval card ${evalName}`}
-        aria-selected={isSelected}
+        aria-selected={rowSelected}
         onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
@@ -630,7 +779,7 @@ export default function Evals({
                   data-action-button
                 >
                   <Checkbox
-                    checked={isSelected}
+                    checked={rowSelected}
                     onCheckedChange={() => toggleSelection(evalId)}
                     className="rounded-full h-5 w-5"
                     aria-label={`Select eval ${evalName || "Unnamed"}`}
@@ -728,10 +877,8 @@ export default function Evals({
       <div className="space-y-4">
         {/* Toolbar — swaps between filter bar and selection action bar */}
         {selectedCount > 0 ? (
-          <div
-            className="flex items-center justify-between gap-2"
-            data-testid="evals-toolbar"
-          >
+          <div className="space-y-2" data-testid="evals-toolbar">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {deleteEvalAction && (
                 <Button
@@ -739,10 +886,12 @@ export default function Evals({
                   size="sm"
                   className="h-8"
                   onClick={() => setShowBulkDeleteDialog(true)}
-                  disabled={deletableEvals.length === 0}
+                  disabled={!selectAllMatching && deletableEvals.length === 0}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete {deletableEvals.length} of {selectedCount}
+                  {selectAllMatching
+                    ? `Delete ${selectedCount} matching`
+                    : `Delete ${deletableEvals.length} of ${selectedCount}`}
                 </Button>
               )}
               {updateEvalAction && (
@@ -751,15 +900,17 @@ export default function Evals({
                   size="sm"
                   className="h-8"
                   onClick={openBulkEditDialog}
-                  disabled={editableEvals.length === 0}
+                  disabled={!selectAllMatching && editableEvals.length === 0}
                 >
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit {editableEvals.length} of {selectedCount}
+                  {selectAllMatching
+                    ? `Edit ${selectedCount} matching`
+                    : `Edit ${editableEvals.length} of ${selectedCount}`}
                 </Button>
               )}
-              {!allPageSelected && (
+              {!allPageSelected && !selectAllMatching && (
                 <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
-                  Select All
+                  Select Page
                 </Button>
               )}
               <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
@@ -770,6 +921,51 @@ export default function Evals({
               table={table}
               hiddenColumns={["name", "departments", "model_ids", "rubric_ids", "updated_at"]}
             />
+          </div>
+
+          {/* Cross-page selection banners. Two states:
+              (a) page-all selected, more matching elsewhere → offer
+                  "Select all N matching" to flip into all-matching mode.
+              (b) all-matching active → show count + Clear so the user
+                  always has an obvious escape hatch.
+              Mutually exclusive — both never render at once. */}
+          {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+              data-testid="select-all-matching-banner"
+            >
+              <span className="text-muted-foreground">
+                All {evalsListArray.length} on this page selected.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={selectAllMatchingNow}
+              >
+                Select all {totalMatchingCount} matching
+              </Button>
+            </div>
+          )}
+          {selectAllMatching && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+              data-testid="all-matching-active-banner"
+            >
+              <span className="text-muted-foreground">
+                All {selectedCount} matching evals selected
+                {excludedEvalIds.length > 0 && ` (${excludedEvalIds.length} excluded)`}.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={clearSelection}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
           </div>
         ) : (
         <div
@@ -890,7 +1086,7 @@ export default function Evals({
       <BulkDeleteDialog
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
-        count={deletableEvals.length}
+        count={selectAllMatching ? selectedCount : deletableEvals.length}
         entityLabel="eval"
         entityLabelPlural="evals"
         isDeleting={isBulkDeleting}
@@ -898,35 +1094,56 @@ export default function Evals({
         description={
           <>
             <p>This action cannot be undone.</p>
-            {deletableEvals.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                <ul className="text-sm space-y-0.5">
-                  {deletableEvals.map((e) => (
-                    <li key={e.eval_id} className="flex items-center gap-1.5">
-                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                      {e.name || "Unnamed Eval"}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {nonDeletableEvals.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
-                  Cannot be deleted (in use):
+            {selectAllMatching ? (
+              // All-matching mode: server resolves rows from filter +
+              // exclusions; per-row permission failures soft-skip. We
+              // can't enumerate names without round-tripping through
+              // the search endpoint, so show count + filter state.
+              <div className="text-sm text-muted-foreground">
+                <p>
+                  All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                  {" "}evals will be deleted server-side using the current filter.
                 </p>
-                <ul className="text-sm space-y-0.5">
-                  {nonDeletableEvals.map((e) => (
-                    <li
-                      key={e.eval_id}
-                      className="flex items-center gap-1.5 text-muted-foreground"
-                    >
-                      {e.name || "Unnamed Eval"}
-                    </li>
-                  ))}
-                </ul>
+                {excludedEvalIds.length > 0 && (
+                  <p className="mt-1">{excludedEvalIds.length} explicitly excluded.</p>
+                )}
+                <p className="mt-1">
+                  Evals you don't have permission to delete will be skipped automatically.
+                </p>
               </div>
+            ) : (
+              <>
+                {deletableEvals.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                    <ul className="text-sm space-y-0.5">
+                      {deletableEvals.map((e) => (
+                        <li key={e.eval_id} className="flex items-center gap-1.5">
+                          <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                          {e.name || "Unnamed Eval"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {nonDeletableEvals.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                      Cannot be deleted (in use):
+                    </p>
+                    <ul className="text-sm space-y-0.5">
+                      {nonDeletableEvals.map((e) => (
+                        <li
+                          key={e.eval_id}
+                          className="flex items-center gap-1.5 text-muted-foreground"
+                        >
+                          {e.name || "Unnamed Eval"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
             )}
           </>
         }
@@ -936,7 +1153,7 @@ export default function Evals({
       <BulkEditDialog
         open={showBulkEditDialog}
         onOpenChange={setShowBulkEditDialog}
-        count={editableEvals.length}
+        count={selectAllMatching ? selectedCount : editableEvals.length}
         entityLabelPlural="evals"
         isSaving={isBulkEditing}
         onSave={handleBulkEdit}

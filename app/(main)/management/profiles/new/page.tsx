@@ -21,6 +21,7 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 import { cache } from "react";
 
 import { buildSnapshot } from "@/lib/auth";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetProfileIn = InputOf<"/profile/get", "post">;
@@ -31,8 +32,6 @@ type PatchProfileDraftIn = InputOf<"/profile/draft", "patch">;
 type PatchProfileDraftOut = OutputOf<"/profile/draft", "patch">;
 type GroupProfileIn = InputOf<"/profile/group", "post">;
 type GroupProfileOut = OutputOf<"/profile/group", "post">;
-type GenerateProfileIn = InputOf<"/profile/generate", "post">;
-type GenerateProfileOut = OutputOf<"/profile/generate", "post">;
 type ProblemProfileIn = InputOf<"/profile/problem", "post">;
 type ProblemProfileOut = OutputOf<"/profile/problem", "post">;
 type ContextIn = InputOf<"/profile/context", "post">;
@@ -63,12 +62,6 @@ async function patchProfileDraft(
   return api.patch("/profile/draft", input);
 }
 
-async function generateProfile(
-  input: GenerateProfileIn
-): Promise<GenerateProfileOut> {
-  "use server";
-  return api.post("/profile/generate", input);
-}
 
 async function getProfileGroupHistory(groupId: string): Promise<GroupProfileOut> {
   "use server";
@@ -189,11 +182,11 @@ export default async function NewProfilePage({
             toolbar: <SaveToolbar />,
             panelProps: {
               artifactType: "profile",
+              initialPanelPrefs: await readGenerationPanelPrefs(),
               groupId:
                 (groupResult as GroupProfileOut & { group_id?: string })?.group_id ??
                 null,
-              generateAction: generateProfile,
-              operations: ["draft", "get", "group"],
+              operations: ["draft", "get", "title"],
               getGroupHistory: getProfileGroupHistory,
               searchGroups: searchProfileGroups,
               prompts: context.prompts?.prompts,

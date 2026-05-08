@@ -21,11 +21,11 @@ import { cookies } from "next/headers";
 import { loadLeaderboardSearchParams } from "@/lib/search-params/leaderboard";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type LeaderboardIn = InputOf<"/attempt/leaderboard/get", "post">;
 type LeaderboardOut = OutputOf<"/attempt/leaderboard/get", "post">;
-type GenerateLeaderboardIn = InputOf<"/attempt/generate", "post">;
-type GenerateLeaderboardOut = OutputOf<"/attempt/generate", "post">;
 type GenerationsIn = InputOf<"/attempt/generations", "post">;
 type GenerationsOut = OutputOf<"/attempt/generations", "post">;
 type GroupLeaderboardIn = InputOf<"/attempt/group", "post">;
@@ -79,17 +79,20 @@ async function searchAttemptGenerations(
   return api.post("/attempt/generations", input);
 }
 
-async function runAttemptGenerate(
-  input: GenerateLeaderboardIn,
-): Promise<GenerateLeaderboardOut> {
-  "use server";
-  return api.post("/attempt/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getAttemptContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/attempt/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getAttemptContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -121,7 +124,7 @@ export default async function LeaderboardPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getAttemptContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/leaderboard", context.profile.role_permissions);
 
@@ -176,6 +179,7 @@ export default async function LeaderboardPage({
         }
         panelProps={{
           artifactType: "leaderboard",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupLeaderboardOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupLeaderboardOut & { name?: string | null })?.name ?? null,
@@ -184,12 +188,11 @@ export default async function LeaderboardPage({
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           prompts: context.prompts?.prompts,
           getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchAttemptGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runAttemptGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="leaderboard-index">

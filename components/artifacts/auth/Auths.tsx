@@ -5,6 +5,7 @@
 "use client";
 import { Copy, Edit, Eye, Key, Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -44,6 +45,7 @@ import { useProfile } from "@/contexts/profile-context";
 
 import type {
   AuthListOut,
+  AuthsListBody,
   DeleteAuthIn,
   DeleteAuthOut,
   DuplicateAuthIn,
@@ -61,6 +63,11 @@ export interface AuthsProps {
   duplicateAuthAction?: (input: DuplicateAuthIn) => Promise<DuplicateAuthOut>;
   deleteAuthAction?: (input: DeleteAuthIn) => Promise<DeleteAuthOut>;
   updateAuthAction?: (input: UpdateAuthIn) => Promise<UpdateAuthOut>;
+  /** The body the page used for its SSR ``/auth/search`` call.
+   *  Forwarded as the filter fields on bulk delete/update calls
+   *  when the user is in ``selectAll=1`` mode — the server resolves
+   *  matching rows directly, no client-side enumeration. */
+  currentSearchBody?: AuthsListBody;
 }
 
 const AUTHS_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
@@ -80,6 +87,7 @@ export default function Auths({
   duplicateAuthAction,
   deleteAuthAction,
   updateAuthAction,
+  currentSearchBody,
 }: AuthsProps) {
   const router = useRouter();
   const { profile } = useProfile();
@@ -245,12 +253,54 @@ export default function Auths({
   const authItemKeysColumn = table.getColumn("auth_item_key_ids");
   const isFiltered = table.getState().columnFilters.length > 0;
 
-  // Selection state
-  const [selectedAuthIds, setSelectedAuthIds] = useState<string[]>([]);
-  const selectedCount = selectedAuthIds.length;
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated link. Three params model
+  // the full state machine:
+  //
+  //   - ``selectedIds=A,B``        → explicit selection
+  //   - ``selectAll=1``            → every row matching the active
+  //                                  filters is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                                → all-matching minus exclusions
+  //
+  // The all-matching mode keeps the URL compact for huge datasets and
+  // follows the active filter — change the filter and "all matching"
+  // follows naturally.
+  const [selectedAuthIds, setSelectedAuthIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedAuthIds, setExcludedAuthIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+
+  // Total matching is the server-reported total_count under the active
+  // filter; under all-matching mode it's the universe of rows the
+  // server will write to (minus exclusions).
+  const totalMatchingCount = authsData?.total_count ?? auths.length;
+
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedAuthIds.includes(id)
+        : selectedAuthIds.includes(id);
+    },
+    [selectAllMatching, excludedAuthIds, selectedAuthIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedAuthIds.length)
+    : selectedAuthIds.length;
+
   const selectedAuths = useMemo(() => {
-    return auths.filter((a) => a.auth_id && selectedAuthIds.includes(a.auth_id));
-  }, [auths, selectedAuthIds]);
+    return auths.filter((a) => a.auth_id && isSelected(a.auth_id));
+  }, [auths, isSelected]);
   const deletableAuths = useMemo(
     () => selectedAuths.filter((a) => a.can_delete),
     [selectedAuths],
@@ -265,21 +315,49 @@ export default function Auths({
   );
 
   const toggleSelection = useCallback((authId: string) => {
-    setSelectedAuthIds((prev) =>
-      prev.includes(authId)
-        ? prev.filter((id) => id !== authId)
-        : [...prev, authId]
-    );
-  }, []);
-  const clearSelection = useCallback(() => setSelectedAuthIds([]), []);
+    if (selectAllMatching) {
+      void setExcludedAuthIds((prev) =>
+        prev.includes(authId)
+          ? prev.filter((id) => id !== authId)
+          : [...prev, authId],
+      );
+    } else {
+      void setSelectedAuthIds((prev) =>
+        prev.includes(authId)
+          ? prev.filter((id) => id !== authId)
+          : [...prev, authId],
+      );
+    }
+  }, [selectAllMatching, setExcludedAuthIds, setSelectedAuthIds]);
+
+  const clearSelection = useCallback(() => {
+    void setSelectedAuthIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedAuthIds([]);
+  }, [setSelectedAuthIds, setSelectAllMatching, setExcludedAuthIds]);
+
   const selectAllOnPage = useCallback(() => {
     const pageIds = auths.filter((a) => a.auth_id).map((a) => a.auth_id!);
-    setSelectedAuthIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [auths]);
+    void setSelectAllMatching(false);
+    void setExcludedAuthIds([]);
+    void setSelectedAuthIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [auths, setSelectAllMatching, setExcludedAuthIds, setSelectedAuthIds]);
+
+  /** Promote the current page-only selection into "all matching
+   *  filter" mode. Clears explicit ids and exclusions. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedAuthIds([]);
+    void setExcludedAuthIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedAuthIds, setExcludedAuthIds, setSelectAllMatching]);
+
   const allPageSelected = useMemo(() => {
     const pageIds = auths.filter((a) => a.auth_id).map((a) => a.auth_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedAuthIds.includes(id));
-  }, [auths, selectedAuthIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [auths, isSelected]);
+
+  const hasMoreThanCurrentPage = totalMatchingCount > auths.length;
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -351,12 +429,53 @@ export default function Auths({
   };
 
   const handleBulkDelete = async () => {
-    if (!deleteAuthAction || deletableAuths.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deleteAuthAction`` call shape; the body
+    // just differs.
+    if (!deleteAuthAction) return;
+    if (!selectAllMatching && deletableAuths.length === 0) return;
+
+    if (!profile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
+
     setIsBulkDeleting(true);
     try {
-      const ids = deletableAuths.map((a) => a.auth_id!);
-      await deleteAuthAction({ body: { auth_ids: ids, accept: true } });
-      toast.success(`${ids.length} auth(s) deleted successfully`);
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedAuthIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            auth_ids: deletableAuths.map((a) => a.auth_id!),
+            accept: true,
+          };
+
+      const result = await deleteAuthAction({ body } as DeleteAuthIn);
+
+      // Per-row results from the server: success entries are actual
+      // deletions, failures are soft-skipped rows (no permission /
+      // not found). Toast reflects both counts so the user knows
+      // some rows were skipped without inspecting the receipt.
+      const results = (result as DeleteAuthOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} auth(s) deleted, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} auth(s) deleted successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -369,9 +488,16 @@ export default function Auths({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateAuthAction || editableAuths.length === 0) return;
+    if (!updateAuthAction) return;
+    if (!selectAllMatching && editableAuths.length === 0) return;
+
+    if (!profile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
 
     const hasActiveChange = bulkEditActiveStatus !== null;
+    const hasAnyFlagChange = hasActiveChange;
     if (!hasActiveChange) {
       toast.error("No changes selected");
       return;
@@ -381,20 +507,55 @@ export default function Auths({
 
     setIsBulkEditing(true);
     try {
-      const items = editableAuths.map((a) => {
+      let body: UpdateAuthIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know what each row's existing flags are), so
+        // the active toggle becomes "set to this value across all
+        // matching rows" — same semantic as a manual sweep.
         let flag_ids: string[] | undefined;
-        if (hasActiveChange) {
-          const isActive = bulkEditActiveStatus;
-          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+        if (hasAnyFlagChange) {
+          flag_ids = [];
+          if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
         }
-        return {
-          id: a.auth_id!,
-          ...(hasActiveChange && { flag_ids }),
-        };
-      });
+        body = {
+          all: true,
+          excluded_ids: excludedAuthIds,
+          ...(currentSearchBody ?? {}),
+          patch: {
+            ...(hasAnyFlagChange && { flag_ids }),
+          },
+          accept: true,
+        } as UpdateAuthIn["body"];
+      } else {
+        // Explicit: clone the patch per-row.
+        const items = editableAuths.map((a) => {
+          let flag_ids: string[] | undefined;
+          if (hasAnyFlagChange) {
+            const isActive = bulkEditActiveStatus;
+            flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+          }
+          return {
+            id: a.auth_id!,
+            ...(hasAnyFlagChange && { flag_ids }),
+          };
+        });
+        body = { auths: items } as UpdateAuthIn["body"];
+      }
 
-      await updateAuthAction({ body: { auths: items } } as UpdateAuthIn);
-      toast.success(`${items.length} auth(s) updated successfully`);
+      const result = await updateAuthAction({ body } as UpdateAuthIn);
+
+      // Per-row results — same soft-skip pattern as bulk delete.
+      const results = (result as UpdateAuthOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} auth(s) updated, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} auth(s) updated successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -413,7 +574,7 @@ export default function Auths({
 
   const renderAuthCard = (auth: (typeof auths)[number]) => {
     const count = auth.item_count ?? 0;
-    const isSelected = auth.auth_id ? selectedAuthIds.includes(auth.auth_id) : false;
+    const isCardSelected = isSelected(auth.auth_id);
 
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons
@@ -427,13 +588,13 @@ export default function Auths({
       <Card
         key={auth.auth_id}
         className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
-          isSelected ? "ring-2 ring-primary" : ""
+          isCardSelected ? "ring-2 ring-primary" : ""
         }`}
         data-testid="auth-card"
         data-auth-id={auth.auth_id}
         role="gridcell"
         aria-label={`auth card ${auth.name}`}
-        aria-selected={isSelected}
+        aria-selected={isCardSelected}
         onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
@@ -449,7 +610,7 @@ export default function Auths({
                   data-action-button
                 >
                   <Checkbox
-                    checked={isSelected}
+                    checked={isCardSelected}
                     onCheckedChange={() => {
                       if (auth.auth_id) toggleSelection(auth.auth_id);
                     }}
@@ -559,48 +720,95 @@ export default function Auths({
     <div className="space-y-6">
       {/* Toolbar — swaps between filter bar and selection action bar */}
       {selectedCount > 0 ? (
-        <div
-          className="flex items-center justify-between gap-2"
-          data-testid="auths-toolbar"
-        >
-          <div className="flex items-center gap-2">
-            {deleteAuthAction && (
-              <Button
-                variant="destructive"
-                size="sm"
-                className="h-8"
-                onClick={() => setShowBulkDeleteDialog(true)}
-                disabled={deletableAuths.length === 0}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete {deletableAuths.length} of {selectedCount}
+        <div className="space-y-2" data-testid="auths-toolbar">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              {deleteAuthAction && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setShowBulkDeleteDialog(true)}
+                  disabled={!selectAllMatching && deletableAuths.length === 0}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {selectAllMatching
+                    ? `Delete ${selectedCount} matching`
+                    : `Delete ${deletableAuths.length} of ${selectedCount}`}
+                </Button>
+              )}
+              {updateAuthAction && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={openBulkEditDialog}
+                  disabled={!selectAllMatching && editableAuths.length === 0}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  {selectAllMatching
+                    ? `Edit ${selectedCount} matching`
+                    : `Edit ${editableAuths.length} of ${selectedCount}`}
+                </Button>
+              )}
+              {!allPageSelected && !selectAllMatching && (
+                <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
+                  Select Page
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
+                Unselect All
               </Button>
-            )}
-            {updateAuthAction && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8"
-                onClick={openBulkEditDialog}
-                disabled={editableAuths.length === 0}
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit {editableAuths.length} of {selectedCount}
-              </Button>
-            )}
-            {!allPageSelected && (
-              <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
-                Select All
-              </Button>
-            )}
-            <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
-              Unselect All
-            </Button>
+            </div>
+            <DataTableViewOptions
+              table={table}
+              hiddenColumns={["departments", "setting_ids", "auth_item_key_ids"]}
+            />
           </div>
-          <DataTableViewOptions
-            table={table}
-            hiddenColumns={["departments", "setting_ids", "auth_item_key_ids"]}
-          />
+
+          {/* Cross-page selection banners. Two states:
+              (a) page-all selected, more matching elsewhere → offer
+                  "Select all N matching" to flip into all-matching mode.
+              (b) all-matching active → show count + Clear so the
+                  user always has an obvious escape hatch.
+              Mutually exclusive — both never render at once. */}
+          {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+              data-testid="select-all-matching-banner"
+            >
+              <span className="text-muted-foreground">
+                All {auths.length} on this page selected.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={selectAllMatchingNow}
+              >
+                Select all {totalMatchingCount} matching
+              </Button>
+            </div>
+          )}
+          {selectAllMatching && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+              data-testid="all-matching-active-banner"
+            >
+              <span className="text-muted-foreground">
+                All {selectedCount} matching auths selected
+                {excludedAuthIds.length > 0 && ` (${excludedAuthIds.length} excluded)`}.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={clearSelection}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex items-center justify-between flex-wrap gap-2" data-testid="auths-toolbar">
@@ -687,7 +895,7 @@ export default function Auths({
       <BulkDeleteDialog
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
-        count={deletableAuths.length}
+        count={selectAllMatching ? selectedCount : deletableAuths.length}
         entityLabel="auth"
         entityLabelPlural="auths"
         isDeleting={isBulkDeleting}
@@ -695,35 +903,58 @@ export default function Auths({
         description={
           <>
             <p>This action cannot be undone.</p>
-            {deletableAuths.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                <ul className="text-sm space-y-0.5">
-                  {deletableAuths.map((a) => (
-                    <li key={a.auth_id} className="flex items-center gap-1.5">
-                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                      {a.name || "Unnamed Auth"}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {nonDeletableAuths.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
-                  Cannot be deleted (in use):
+            {selectAllMatching ? (
+              // All-matching mode: server resolves rows from filter +
+              // exclusions; per-row permission failures soft-skip.
+              // We can't enumerate names without round-tripping through
+              // the search endpoint, so show the count + filter state.
+              <div className="text-sm text-muted-foreground">
+                <p>
+                  All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                  {" "}auths will be deleted server-side using the current filter.
                 </p>
-                <ul className="text-sm space-y-0.5">
-                  {nonDeletableAuths.map((a) => (
-                    <li
-                      key={a.auth_id}
-                      className="flex items-center gap-1.5 text-muted-foreground"
-                    >
-                      {a.name || "Unnamed Auth"}
-                    </li>
-                  ))}
-                </ul>
+                {excludedAuthIds.length > 0 && (
+                  <p className="mt-1">
+                    {excludedAuthIds.length} explicitly excluded.
+                  </p>
+                )}
+                <p className="mt-1">
+                  Auths you don't have permission to delete will be skipped automatically.
+                </p>
               </div>
+            ) : (
+              <>
+                {deletableAuths.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                    <ul className="text-sm space-y-0.5">
+                      {deletableAuths.map((a) => (
+                        <li key={a.auth_id} className="flex items-center gap-1.5">
+                          <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                          {a.name || "Unnamed Auth"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {nonDeletableAuths.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                      Cannot be deleted (in use):
+                    </p>
+                    <ul className="text-sm space-y-0.5">
+                      {nonDeletableAuths.map((a) => (
+                        <li
+                          key={a.auth_id}
+                          className="flex items-center gap-1.5 text-muted-foreground"
+                        >
+                          {a.name || "Unnamed Auth"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
             )}
           </>
         }
@@ -733,7 +964,7 @@ export default function Auths({
       <BulkEditDialog
         open={showBulkEditDialog}
         onOpenChange={setShowBulkEditDialog}
-        count={editableAuths.length}
+        count={selectAllMatching ? selectedCount : editableAuths.length}
         entityLabelPlural="auths"
         isSaving={isBulkEditing}
         onSave={handleBulkEdit}

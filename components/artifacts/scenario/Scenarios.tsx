@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -37,6 +38,7 @@ import type {
   UpdateScenarioIn,
   UpdateScenarioOut,
   ScenariosListOut,
+  ScenariosListBody,
 } from "@/app/(main)/training/scenarios/page";
 import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -93,6 +95,11 @@ export interface ScenariosProps {
   createScenarioAction?: (input: CreateScenarioIn) => Promise<CreateScenarioOut>;
   updateScenarioAction?: (input: UpdateScenarioIn) => Promise<UpdateScenarioOut>;
   parseCsvAction?: (formData: FormData) => Promise<ParseCsvResult>;
+  /** The body the page used for its SSR ``/scenario/search`` call.
+   *  Forwarded as the filter envelope on bulk delete/update calls
+   *  when the user is in ``selectAll=1`` mode — the server resolves
+   *  matching rows directly, no client-side enumeration. */
+  currentSearchBody?: ScenariosListBody;
   importFields?: ImportFieldDef[];
   // Server-side pagination/filtering state
   pageIndex: number;
@@ -112,6 +119,7 @@ export function Scenarios({
   createScenarioAction,
   updateScenarioAction,
   parseCsvAction,
+  currentSearchBody,
   importFields,
   pageIndex,
   pageSize,
@@ -135,8 +143,33 @@ export function Scenarios({
     new Set(),
   );
 
-  // Selection state (root/parent scenarios only)
-  const [selectedScenarioIds, setSelectedScenarioIds] = useState<string[]>([]);
+  // Selection state (root/parent scenarios only) — URL-backed so it
+  // survives refresh and is craftable as a shareable / LLM-generated
+  // focus link. Three params model the full state machine:
+  //
+  //   - ``selectedIds=A,B``        → explicit selection of named rows
+  //   - ``selectAll=1``            → every row matching the active
+  //                                  filters/search is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                                → all-matching minus exclusions
+  //   - (none of the above)        → empty selection
+  //
+  // The all-matching mode keeps the URL compact for huge datasets
+  // (one boolean instead of N ids) and follows the active filter —
+  // change the filter and "all matching" follows naturally. Shallow
+  // updates avoid the RSC re-fetch burst.
+  const [selectedScenarioIds, setSelectedScenarioIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedScenarioIds, setExcludedScenarioIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -265,10 +298,31 @@ export function Scenarios({
     return scenarios.filter((scenario) => !scenario.parent_scenario_id);
   }, [scenarios]);
 
-  const selectedCount = selectedScenarioIds.length;
+  // ---- Selection helpers ----------------------------------------
+  // ``isSelected`` is the single read predicate every row uses; it
+  // dispatches between explicit-id and all-matching modes so
+  // downstream code never needs to branch. ``selectedCount`` mirrors
+  // that — under all-matching it's ``totalCount - excludedIds.length``.
+
+  const totalMatchingCount = scenariosData?.total_count ?? 0;
+
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedScenarioIds.includes(id)
+        : selectedScenarioIds.includes(id);
+    },
+    [selectAllMatching, excludedScenarioIds, selectedScenarioIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedScenarioIds.length)
+    : selectedScenarioIds.length;
+
   const selectedScenarios = useMemo(() => {
-    return parentScenarios.filter((s) => s.scenario_id && selectedScenarioIds.includes(s.scenario_id));
-  }, [parentScenarios, selectedScenarioIds]);
+    return parentScenarios.filter((s) => s.scenario_id && isSelected(s.scenario_id));
+  }, [parentScenarios, isSelected]);
 
   const deletableScenarios = useMemo(() => {
     return selectedScenarios.filter((s) => s.can_delete);
@@ -282,32 +336,65 @@ export function Scenarios({
     return selectedScenarios.filter((s) => s.can_edit);
   }, [selectedScenarios]);
 
-  // Check if all parent scenarios on the current page are selected
+  // Check if all parent scenarios on the current page are selected.
+  // Under all-matching mode every loaded row whose id isn't in
+  // ``excludedScenarioIds`` is implicitly selected, so the predicate
+  // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
     const pageIds = parentScenarios.filter((s) => s.scenario_id).map((s) => s.scenario_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedScenarioIds.includes(id));
-  }, [parentScenarios, selectedScenarioIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [parentScenarios, isSelected]);
 
-  // Toggle selection for a single scenario
+  // Whether there ARE more matching rows than what's loaded on this
+  // page — used to decide whether to surface the "Select all N
+  // matching" affordance after the user selects the page.
+  const hasMoreThanCurrentPage = totalMatchingCount > parentScenarios.length;
+
+  // Toggle selection for a single scenario. Under all-matching mode
+  // we toggle membership in excludedScenarioIds (deselect ⇒ add to
+  // exclusions, re-select ⇒ remove). Under explicit mode it's the
+  // straight selectedScenarioIds toggle.
   const toggleSelection = useCallback((scenarioId: string) => {
-    setSelectedScenarioIds((prev) =>
-      prev.includes(scenarioId)
-        ? prev.filter((id) => id !== scenarioId)
-        : [...prev, scenarioId]
-    );
-  }, []);
+    if (selectAllMatching) {
+      void setExcludedScenarioIds((prev) =>
+        prev.includes(scenarioId)
+          ? prev.filter((id) => id !== scenarioId)
+          : [...prev, scenarioId],
+      );
+    } else {
+      void setSelectedScenarioIds((prev) =>
+        prev.includes(scenarioId)
+          ? prev.filter((id) => id !== scenarioId)
+          : [...prev, scenarioId],
+      );
+    }
+  }, [selectAllMatching, setExcludedScenarioIds, setSelectedScenarioIds]);
 
   const clearSelection = useCallback(() => {
-    setSelectedScenarioIds([]);
-  }, []);
+    void setSelectedScenarioIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedScenarioIds([]);
+  }, [setSelectedScenarioIds, setSelectAllMatching, setExcludedScenarioIds]);
 
   const selectAllOnPage = useCallback(() => {
     const pageIds = parentScenarios.filter((s) => s.scenario_id).map((s) => s.scenario_id!);
-    setSelectedScenarioIds((prev) => {
+    void setSelectAllMatching(false);
+    void setExcludedScenarioIds([]);
+    void setSelectedScenarioIds((prev) => {
       const combined = new Set([...prev, ...pageIds]);
       return Array.from(combined);
     });
-  }, [parentScenarios]);
+  }, [parentScenarios, setSelectAllMatching, setExcludedScenarioIds, setSelectedScenarioIds]);
+
+  /** Promote the current page-only selection into "all matching
+   *  filter" mode. Clears explicit ids and exclusions — the all-
+   *  matching mode is the canonical truth from this point. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedScenarioIds([]);
+    void setExcludedScenarioIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedScenarioIds, setExcludedScenarioIds, setSelectAllMatching]);
 
   // Use server-provided facet options directly (filtered by search term server-side)
   const personaOptions = useMemo(
@@ -598,13 +685,48 @@ export function Scenarios({
   };
 
   const handleBulkDelete = async () => {
-    if (!deleteScenarioAction || deletableScenarios.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deleteScenarioAction`` call shape; the
+    // body just differs.
+    if (!deleteScenarioAction) return;
+    if (!selectAllMatching && deletableScenarios.length === 0) return;
 
     setIsBulkDeleting(true);
     try {
-      const ids = deletableScenarios.map((s) => s.scenario_id!);
-      await deleteScenarioAction({ body: { scenario_ids: ids, accept: true } });
-      toast.success(`${ids.length} scenario(s) deleted successfully`);
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedScenarioIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            scenario_ids: deletableScenarios.map((s) => s.scenario_id!),
+            accept: true,
+          };
+
+      const result = await deleteScenarioAction({ body } as DeleteScenarioIn);
+
+      // Per-row results from the server: success entries are actual
+      // deletions, failures are soft-skipped rows (no permission /
+      // not found). Toast reflects both counts so the user knows
+      // some rows were skipped without inspecting the receipt.
+      const results = (result as DeleteScenarioOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} scenario(s) deleted, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} scenario(s) deleted successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -618,7 +740,8 @@ export function Scenarios({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateScenarioAction || editableScenarios.length === 0) return;
+    if (!updateScenarioAction) return;
+    if (!selectAllMatching && editableScenarios.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     const hasDeptChange = bulkEditDepartmentIds !== null;
@@ -635,25 +758,67 @@ export function Scenarios({
 
     setIsBulkEditing(true);
     try {
-      const items = editableScenarios.map((scenario) => {
-        // Reconstruct flag_ids per-row, preserving flags we aren't toggling.
-        // Today only `active` is exposed — additional flag types slot in here.
+      // Shared change set used by both paths. Under all-matching the
+      // server clones this per resolved row (stamping each id);
+      // under explicit we clone client-side, preserving per-row flag
+      // state for fields we aren't toggling.
+      const sharedPatch = {
+        ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
+      };
+
+      let body: UpdateScenarioIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know what each row's existing flags are), so
+        // the active toggle becomes "set to this value across all
+        // matching rows" — the same semantic as a manual sweep.
         let flag_ids: string[] | undefined;
         if (hasAnyFlagChange) {
-          const isActive = hasActiveChange ? bulkEditActiveStatus : !scenario.is_inactive;
           flag_ids = [];
-          if (isActive && activeFlagId) flag_ids.push(activeFlagId);
+          if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
         }
+        body = {
+          all: true,
+          excluded_ids: excludedScenarioIds,
+          ...(currentSearchBody ?? {}),
+          patch: {
+            ...sharedPatch,
+            ...(hasAnyFlagChange && { flag_ids }),
+          },
+          accept: true,
+        } as UpdateScenarioIn["body"];
+      } else {
+        // Explicit: clone the patch per-row, preserving each row's
+        // existing flag state for flags we aren't toggling.
+        const items = editableScenarios.map((scenario) => {
+          let flag_ids: string[] | undefined;
+          if (hasAnyFlagChange) {
+            const isActive = hasActiveChange ? bulkEditActiveStatus : !scenario.is_inactive;
+            flag_ids = [];
+            if (isActive && activeFlagId) flag_ids.push(activeFlagId);
+          }
+          return {
+            id: scenario.scenario_id!,
+            ...sharedPatch,
+            ...(hasAnyFlagChange && { flag_ids }),
+          };
+        });
+        body = { scenarios: items } as UpdateScenarioIn["body"];
+      }
 
-        return {
-          id: scenario.scenario_id!,
-          ...(hasAnyFlagChange && { flag_ids }),
-          ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
-        };
-      });
+      const result = await updateScenarioAction({ body } as UpdateScenarioIn);
 
-      await updateScenarioAction({ body: { scenarios: items } } as UpdateScenarioIn);
-      toast.success(`${items.length} scenario(s) updated successfully`);
+      // Per-row results — same soft-skip pattern as bulk delete.
+      const results = (result as UpdateScenarioOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} scenario(s) updated, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} scenario(s) updated successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -819,7 +984,7 @@ export function Scenarios({
     isCollapsed?: boolean,
     onToggleCollapse?: () => void,
   ) => {
-    const isSelected = !isChild && scenario.scenario_id ? selectedScenarioIds.includes(scenario.scenario_id) : false;
+    const isSelectedRow = !isChild && scenario.scenario_id ? isSelected(scenario.scenario_id) : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons or if it's a child scenario
@@ -837,8 +1002,8 @@ export function Scenarios({
         data-scenario-id={scenario.scenario_id}
         className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
           isChild ? "ml-8 border-l-2 border-l-blue-200" : "cursor-pointer"
-        } ${isSelected ? "ring-2 ring-primary" : ""}`}
-        aria-selected={!isChild ? isSelected : undefined}
+        } ${isSelectedRow ? "ring-2 ring-primary" : ""}`}
+        aria-selected={!isChild ? isSelectedRow : undefined}
         onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
@@ -854,7 +1019,7 @@ export function Scenarios({
                     data-action-button
                   >
                     <Checkbox
-                      checked={isSelected}
+                      checked={isSelectedRow}
                       onCheckedChange={() => {
                         if (scenario.scenario_id) toggleSelection(scenario.scenario_id);
                       }}
@@ -1187,10 +1352,8 @@ export function Scenarios({
         <div className="space-y-4">
           {/* Toolbar — swaps between filter bar and selection action bar */}
           {selectedCount > 0 ? (
-            <div
-              className="flex items-center justify-between gap-2"
-              data-testid="scenarios-toolbar"
-            >
+            <div className="space-y-2" data-testid="scenarios-toolbar">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 {deleteScenarioAction && (
                   <Button
@@ -1198,10 +1361,12 @@ export function Scenarios({
                     size="sm"
                     className="h-8"
                     onClick={() => setShowBulkDeleteDialog(true)}
-                    disabled={deletableScenarios.length === 0}
+                    disabled={!selectAllMatching && deletableScenarios.length === 0}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete {deletableScenarios.length} of {selectedCount}
+                    {selectAllMatching
+                      ? `Delete ${selectedCount} matching`
+                      : `Delete ${deletableScenarios.length} of ${selectedCount}`}
                   </Button>
                 )}
                 {updateScenarioAction && (
@@ -1210,20 +1375,22 @@ export function Scenarios({
                     size="sm"
                     className="h-8"
                     onClick={openBulkEditDialog}
-                    disabled={editableScenarios.length === 0}
+                    disabled={!selectAllMatching && editableScenarios.length === 0}
                   >
                     <Pencil className="mr-2 h-4 w-4" />
-                    Edit {editableScenarios.length} of {selectedCount}
+                    {selectAllMatching
+                      ? `Edit ${selectedCount} matching`
+                      : `Edit ${editableScenarios.length} of ${selectedCount}`}
                   </Button>
                 )}
-                {!allPageSelected && (
+                {!allPageSelected && !selectAllMatching && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-8"
                     onClick={selectAllOnPage}
                   >
-                    Select All
+                    Select Page
                   </Button>
                 )}
                 <Button
@@ -1236,6 +1403,51 @@ export function Scenarios({
                 </Button>
               </div>
               <DataTableViewOptions table={table} hiddenColumns={["name", "problem_statement", "persona_id", "simulation_ids", "departments", "persona_display", "updated_at"]} />
+            </div>
+
+            {/* Cross-page selection banners. Two states:
+                (a) page-all selected, more matching elsewhere → offer
+                    "Select all N matching" to flip into all-matching mode.
+                (b) all-matching active → show count + Clear so the
+                    user always has an obvious escape hatch.
+                Mutually exclusive — both never render at once. */}
+            {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+              <div
+                className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+                data-testid="select-all-matching-banner"
+              >
+                <span className="text-muted-foreground">
+                  All {parentScenarios.length} on this page selected.
+                </span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={selectAllMatchingNow}
+                >
+                  Select all {totalMatchingCount} matching
+                </Button>
+              </div>
+            )}
+            {selectAllMatching && (
+              <div
+                className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+                data-testid="all-matching-active-banner"
+              >
+                <span className="text-muted-foreground">
+                  All {selectedCount} matching scenarios selected
+                  {excludedScenarioIds.length > 0 && ` (${excludedScenarioIds.length} excluded)`}.
+                </span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={clearSelection}
+                >
+                  Clear
+                </Button>
+              </div>
+            )}
             </div>
           ) : (
           <div
@@ -1374,7 +1586,7 @@ export function Scenarios({
         <BulkDeleteDialog
           open={showBulkDeleteDialog}
           onOpenChange={setShowBulkDeleteDialog}
-          count={deletableScenarios.length}
+          count={selectAllMatching ? selectedCount : deletableScenarios.length}
           entityLabel="scenario"
           entityLabelPlural="scenarios"
           isDeleting={isBulkDeleting}
@@ -1382,31 +1594,55 @@ export function Scenarios({
           description={
             <>
               <p>This action cannot be undone.</p>
-              {deletableScenarios.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                  <ul className="text-sm space-y-0.5">
-                    {deletableScenarios.map((s) => (
-                      <li key={s.scenario_id} className="flex items-center gap-1.5">
-                        <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                        {s.name || "Unnamed Scenario"}
-                      </li>
-                    ))}
-                  </ul>
+              {selectAllMatching ? (
+                // All-matching mode: server resolves rows from filter +
+                // exclusions; per-row permission failures soft-skip.
+                // We can't enumerate names without round-tripping through
+                // the search endpoint (which would re-trigger the RSC
+                // burst), so show the count + filter state instead.
+                <div className="text-sm text-muted-foreground">
+                  <p>
+                    All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                    {" "}scenarios will be deleted server-side using the current filter.
+                  </p>
+                  {excludedScenarioIds.length > 0 && (
+                    <p className="mt-1">
+                      {excludedScenarioIds.length} explicitly excluded.
+                    </p>
+                  )}
+                  <p className="mt-1">
+                    Scenarios you don't have permission to delete will be skipped automatically.
+                  </p>
                 </div>
-              )}
-              {nonDeletableScenarios.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by simulations):</p>
-                  <ul className="text-sm space-y-0.5">
-                    {nonDeletableScenarios.map((s) => (
-                      <li key={s.scenario_id} className="flex items-center gap-1.5 text-muted-foreground">
-                        <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
-                        {s.name || "Unnamed Scenario"}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              ) : (
+                <>
+                  {deletableScenarios.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                      <ul className="text-sm space-y-0.5">
+                        {deletableScenarios.map((s) => (
+                          <li key={s.scenario_id} className="flex items-center gap-1.5">
+                            <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                            {s.name || "Unnamed Scenario"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {nonDeletableScenarios.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by simulations):</p>
+                      <ul className="text-sm space-y-0.5">
+                        {nonDeletableScenarios.map((s) => (
+                          <li key={s.scenario_id} className="flex items-center gap-1.5 text-muted-foreground">
+                            <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                            {s.name || "Unnamed Scenario"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
               )}
             </>
           }
@@ -1416,7 +1652,7 @@ export function Scenarios({
         <BulkEditDialog
           open={showBulkEditDialog}
           onOpenChange={setShowBulkEditDialog}
-          count={editableScenarios.length}
+          count={selectAllMatching ? selectedCount : editableScenarios.length}
           entityLabelPlural="scenarios"
           isSaving={isBulkEditing}
           onSave={handleBulkEdit}

@@ -8,11 +8,13 @@
 "use client";
 import { CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Pencil, Play, Search, Sparkles, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type {
   CohortsListOut,
+  CohortsListBody,
   DeleteCohortIn,
   DeleteCohortOut,
   DuplicateCohortIn,
@@ -78,6 +80,11 @@ export interface CohortsProps {
   createCohortAction?: (input: CreateCohortIn) => Promise<CreateCohortOut>;
   updateCohortAction?: (input: UpdateCohortIn) => Promise<UpdateCohortOut>;
   parseCsvAction?: (formData: FormData) => Promise<ParseCsvResult>;
+  /** The body the page used for its SSR ``/cohort/search`` call.
+   *  Forwarded as the filter envelope on bulk delete/update calls
+   *  when the user is in ``selectAll=1`` mode — the server resolves
+   *  matching rows directly, no client-side enumeration. */
+  currentSearchBody?: CohortsListBody;
   importFields?: ImportFieldDef[];
   // Server-side pagination/filtering state
   pageIndex: number;
@@ -97,6 +104,7 @@ export default function Cohorts({
   createCohortAction,
   updateCohortAction,
   parseCsvAction,
+  currentSearchBody,
   importFields,
   pageIndex,
   pageSize,
@@ -120,8 +128,33 @@ export default function Cohorts({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
 
-  // Selection state
-  const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated focus link. Three params
+  // model the full state machine:
+  //
+  //   - ``selectedIds=A,B``        → explicit selection of named rows
+  //   - ``selectAll=1``            → every row matching the active
+  //                                  filters/search is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                                → all-matching minus exclusions
+  //   - (none of the above)        → empty selection
+  //
+  // The all-matching mode keeps the URL compact for huge datasets
+  // (one boolean instead of N ids) and follows the active filter —
+  // change the filter and "all matching" follows naturally. Shallow
+  // updates avoid the RSC re-fetch burst.
+  const [selectedCohortIds, setSelectedCohortIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedCohortIds, setExcludedCohortIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -198,11 +231,31 @@ export default function Cohorts({
     [cohortsData?.cohorts],
   );
 
-  // Computed selection info
-  const selectedCount = selectedCohortIds.length;
+  // ---- Selection helpers ----------------------------------------
+  // ``isSelected`` is the single read predicate every row uses; it
+  // dispatches between explicit-id and all-matching modes so
+  // downstream code never needs to branch. ``selectedCount`` mirrors
+  // that — under all-matching it's ``totalCount - excludedIds.length``.
+
+  const totalMatchingCount = cohortsData?.total_count ?? 0;
+
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedCohortIds.includes(id)
+        : selectedCohortIds.includes(id);
+    },
+    [selectAllMatching, excludedCohortIds, selectedCohortIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedCohortIds.length)
+    : selectedCohortIds.length;
+
   const selectedCohorts = useMemo(() => {
-    return cohorts.filter((c) => c.cohort_id && selectedCohortIds.includes(c.cohort_id));
-  }, [cohorts, selectedCohortIds]);
+    return cohorts.filter((c) => c.cohort_id && isSelected(c.cohort_id));
+  }, [cohorts, isSelected]);
 
   const deletableCohorts = useMemo(() => {
     return selectedCohorts.filter((c) => c.can_delete);
@@ -216,32 +269,65 @@ export default function Cohorts({
     return selectedCohorts.filter((c) => c.can_edit);
   }, [selectedCohorts]);
 
-  // Check if all cohorts on the current page are selected
+  // Check if all cohorts on the current page are selected.
+  // Under all-matching mode every loaded row whose id isn't in
+  // ``excludedCohortIds`` is implicitly selected, so the predicate
+  // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
     const pageIds = cohorts.filter((c) => c.cohort_id).map((c) => c.cohort_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedCohortIds.includes(id));
-  }, [cohorts, selectedCohortIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [cohorts, isSelected]);
 
-  // Toggle selection for a single cohort
+  // Whether there ARE more matching rows than what's loaded on this
+  // page — used to decide whether to surface the "Select all N
+  // matching" affordance after the user selects the page.
+  const hasMoreThanCurrentPage = totalMatchingCount > cohorts.length;
+
+  // Toggle selection for a single cohort. Under all-matching mode
+  // we toggle membership in excludedCohortIds (deselect ⇒ add to
+  // exclusions, re-select ⇒ remove). Under explicit mode it's the
+  // straight selectedCohortIds toggle.
   const toggleSelection = useCallback((cohortId: string) => {
-    setSelectedCohortIds((prev) =>
-      prev.includes(cohortId)
-        ? prev.filter((id) => id !== cohortId)
-        : [...prev, cohortId]
-    );
-  }, []);
+    if (selectAllMatching) {
+      void setExcludedCohortIds((prev) =>
+        prev.includes(cohortId)
+          ? prev.filter((id) => id !== cohortId)
+          : [...prev, cohortId],
+      );
+    } else {
+      void setSelectedCohortIds((prev) =>
+        prev.includes(cohortId)
+          ? prev.filter((id) => id !== cohortId)
+          : [...prev, cohortId],
+      );
+    }
+  }, [selectAllMatching, setExcludedCohortIds, setSelectedCohortIds]);
 
   const clearSelection = useCallback(() => {
-    setSelectedCohortIds([]);
-  }, []);
+    void setSelectedCohortIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedCohortIds([]);
+  }, [setSelectedCohortIds, setSelectAllMatching, setExcludedCohortIds]);
 
   const selectAllOnPage = useCallback(() => {
     const pageIds = cohorts.filter((c) => c.cohort_id).map((c) => c.cohort_id!);
-    setSelectedCohortIds((prev) => {
+    void setSelectAllMatching(false);
+    void setExcludedCohortIds([]);
+    void setSelectedCohortIds((prev) => {
       const combined = new Set([...prev, ...pageIds]);
       return Array.from(combined);
     });
-  }, [cohorts]);
+  }, [cohorts, setSelectAllMatching, setExcludedCohortIds, setSelectedCohortIds]);
+
+  /** Promote the current page-only selection into "all matching
+   *  filter" mode. Clears explicit ids and exclusions — the all-
+   *  matching mode is the canonical truth from this point. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedCohortIds([]);
+    void setExcludedCohortIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedCohortIds, setExcludedCohortIds, setSelectAllMatching]);
 
   // Use server-provided facet options directly (filtered by search term server-side)
   const simulationOptions = useMemo(
@@ -560,13 +646,48 @@ export default function Cohorts({
   };
 
   const handleBulkDelete = async () => {
-    if (!deleteCohortAction || deletableCohorts.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deleteCohortAction`` call shape; the
+    // body just differs.
+    if (!deleteCohortAction) return;
+    if (!selectAllMatching && deletableCohorts.length === 0) return;
 
     setIsBulkDeleting(true);
     try {
-      const ids = deletableCohorts.map((c) => c.cohort_id!);
-      await deleteCohortAction({ body: { cohort_ids: ids, accept: true } });
-      toast.success(`${ids.length} cohort(s) deleted successfully`);
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedCohortIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            cohort_ids: deletableCohorts.map((c) => c.cohort_id!),
+            accept: true,
+          };
+
+      const result = await deleteCohortAction({ body } as DeleteCohortIn);
+
+      // Per-row results from the server: success entries are actual
+      // deletions, failures are soft-skipped rows (no permission /
+      // not found). Toast reflects both counts so the user knows
+      // some rows were skipped without inspecting the receipt.
+      const results = (result as DeleteCohortOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} cohort(s) deleted, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} cohort(s) deleted successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -580,7 +701,8 @@ export default function Cohorts({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateCohortAction || editableCohorts.length === 0) return;
+    if (!updateCohortAction) return;
+    if (!selectAllMatching && editableCohorts.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     const hasDeptChange = bulkEditDepartmentIds !== null;
@@ -597,28 +719,67 @@ export default function Cohorts({
 
     setIsBulkEditing(true);
     try {
-      const items = editableCohorts.map((cohort) => {
-        // Reconstruct flag_ids per-row, preserving flags we aren't toggling.
+      // Shared change set used by both paths. Under all-matching the
+      // server clones this per resolved row (stamping each id);
+      // under explicit we clone client-side, preserving per-row flag
+      // state for fields we aren't toggling.
+      const sharedPatch = {
+        ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
+      };
+
+      let body: UpdateCohortIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know what each row's existing flags are), so
+        // the active toggle becomes "set to this value across all
+        // matching rows" — the same semantic as a manual sweep.
         let flag_ids: string[] | undefined;
         if (hasAnyFlagChange) {
-          const isActive = hasActiveChange ? bulkEditActiveStatus : !cohort.is_inactive;
           flag_ids = [];
-          if (isActive && activeFlagId) flag_ids.push(activeFlagId);
+          if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
         }
+        body = {
+          all: true,
+          excluded_ids: excludedCohortIds,
+          ...(currentSearchBody ?? {}),
+          patch: {
+            ...sharedPatch,
+            ...(hasAnyFlagChange && { flag_ids }),
+          },
+          accept: true,
+        } as UpdateCohortIn["body"];
+      } else {
+        // Explicit: clone the patch per-row, preserving each row's
+        // existing flag state for flags we aren't toggling.
+        const items = editableCohorts.map((cohort) => {
+          let flag_ids: string[] | undefined;
+          if (hasAnyFlagChange) {
+            const isActive = hasActiveChange ? bulkEditActiveStatus : !cohort.is_inactive;
+            flag_ids = [];
+            if (isActive && activeFlagId) flag_ids.push(activeFlagId);
+          }
+          return {
+            id: cohort.cohort_id!,
+            ...sharedPatch,
+            ...(hasAnyFlagChange && { flag_ids }),
+          };
+        });
+        body = { cohorts: items } as UpdateCohortIn["body"];
+      }
 
-        return {
-          id: cohort.cohort_id!,
-          ...(hasAnyFlagChange && { flag_ids }),
-          ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
-        };
-      });
+      const result = await updateCohortAction({ body } as UpdateCohortIn);
 
-      await updateCohortAction({
-        body: {
-          cohorts: items,
-        },
-      } as UpdateCohortIn);
-      toast.success(`${items.length} cohort(s) updated successfully`);
+      // Per-row results — same soft-skip pattern as bulk delete.
+      const results = (result as UpdateCohortOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} cohort(s) updated, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} cohort(s) updated successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -672,7 +833,7 @@ export default function Cohorts({
   };
 
   const renderCohortCard = (cohort: (typeof cohorts)[number]) => {
-    const isSelected = cohort.cohort_id ? selectedCohortIds.includes(cohort.cohort_id) : false;
+    const isSelectedRow = cohort.cohort_id ? isSelected(cohort.cohort_id) : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons
@@ -689,9 +850,9 @@ export default function Cohorts({
       data-testid="cohort-card"
       {...(cohort.cohort_id ? { "data-cohort-id": cohort.cohort_id } : {})}
       className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
-        isSelected ? "ring-2 ring-primary" : ""
+        isSelectedRow ? "ring-2 ring-primary" : ""
       }`}
-      aria-selected={isSelected}
+      aria-selected={isSelectedRow}
       onClick={handleCardClick}
     >
       <CardHeader className="pb-3">
@@ -706,7 +867,7 @@ export default function Cohorts({
                 data-action-button
               >
                 <Checkbox
-                  checked={isSelected}
+                  checked={isSelectedRow}
                   onCheckedChange={() => {
                     if (cohort.cohort_id) toggleSelection(cohort.cohort_id);
                   }}
@@ -869,10 +1030,8 @@ export default function Cohorts({
         <div className="space-y-4">
           {/* Toolbar — swaps between filter bar and selection action bar */}
           {selectedCount > 0 ? (
-            <div
-              className="flex items-center justify-between gap-2"
-              data-testid="cohorts-toolbar"
-            >
+            <div className="space-y-2" data-testid="cohorts-toolbar">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 {deleteCohortAction && (
                   <Button
@@ -880,10 +1039,12 @@ export default function Cohorts({
                     size="sm"
                     className="h-8"
                     onClick={() => setShowBulkDeleteDialog(true)}
-                    disabled={deletableCohorts.length === 0}
+                    disabled={!selectAllMatching && deletableCohorts.length === 0}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete {deletableCohorts.length} of {selectedCount}
+                    {selectAllMatching
+                      ? `Delete ${selectedCount} matching`
+                      : `Delete ${deletableCohorts.length} of ${selectedCount}`}
                   </Button>
                 )}
                 {updateCohortAction && (
@@ -892,20 +1053,22 @@ export default function Cohorts({
                     size="sm"
                     className="h-8"
                     onClick={openBulkEditDialog}
-                    disabled={editableCohorts.length === 0}
+                    disabled={!selectAllMatching && editableCohorts.length === 0}
                   >
                     <Pencil className="mr-2 h-4 w-4" />
-                    Edit {editableCohorts.length} of {selectedCount}
+                    {selectAllMatching
+                      ? `Edit ${selectedCount} matching`
+                      : `Edit ${editableCohorts.length} of ${selectedCount}`}
                   </Button>
                 )}
-                {!allPageSelected && (
+                {!allPageSelected && !selectAllMatching && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-8"
                     onClick={selectAllOnPage}
                   >
-                    Select All
+                    Select Page
                   </Button>
                 )}
                 <Button
@@ -918,6 +1081,51 @@ export default function Cohorts({
                 </Button>
               </div>
               <DataTableViewOptions table={table} hiddenColumns={["name", "profile_ids", "simulation_ids", "departments", "updated_at"]} />
+            </div>
+
+            {/* Cross-page selection banners. Two states:
+                (a) page-all selected, more matching elsewhere → offer
+                    "Select all N matching" to flip into all-matching mode.
+                (b) all-matching active → show count + Clear so the
+                    user always has an obvious escape hatch.
+                Mutually exclusive — both never render at once. */}
+            {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+              <div
+                className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+                data-testid="select-all-matching-banner"
+              >
+                <span className="text-muted-foreground">
+                  All {cohorts.length} on this page selected.
+                </span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={selectAllMatchingNow}
+                >
+                  Select all {totalMatchingCount} matching
+                </Button>
+              </div>
+            )}
+            {selectAllMatching && (
+              <div
+                className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+                data-testid="all-matching-active-banner"
+              >
+                <span className="text-muted-foreground">
+                  All {selectedCount} matching cohorts selected
+                  {excludedCohortIds.length > 0 && ` (${excludedCohortIds.length} excluded)`}.
+                </span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={clearSelection}
+                >
+                  Clear
+                </Button>
+              </div>
+            )}
             </div>
           ) : (
           <div
@@ -1061,7 +1269,7 @@ export default function Cohorts({
         <BulkDeleteDialog
           open={showBulkDeleteDialog}
           onOpenChange={setShowBulkDeleteDialog}
-          count={deletableCohorts.length}
+          count={selectAllMatching ? selectedCount : deletableCohorts.length}
           entityLabel="cohort"
           entityLabelPlural="cohorts"
           isDeleting={isBulkDeleting}
@@ -1069,31 +1277,55 @@ export default function Cohorts({
           description={
             <>
               <p>This action cannot be undone.</p>
-              {deletableCohorts.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                  <ul className="text-sm space-y-0.5">
-                    {deletableCohorts.map((c) => (
-                      <li key={c.cohort_id} className="flex items-center gap-1.5">
-                        <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                        {c.name || "Unnamed Cohort"}
-                      </li>
-                    ))}
-                  </ul>
+              {selectAllMatching ? (
+                // All-matching mode: server resolves rows from filter +
+                // exclusions; per-row permission failures soft-skip.
+                // We can't enumerate names without round-tripping through
+                // the search endpoint (which would re-trigger the RSC
+                // burst), so show the count + filter state instead.
+                <div className="text-sm text-muted-foreground">
+                  <p>
+                    All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                    {" "}cohorts will be deleted server-side using the current filter.
+                  </p>
+                  {excludedCohortIds.length > 0 && (
+                    <p className="mt-1">
+                      {excludedCohortIds.length} explicitly excluded.
+                    </p>
+                  )}
+                  <p className="mt-1">
+                    Cohorts you don't have permission to delete will be skipped automatically.
+                  </p>
                 </div>
-              )}
-              {nonDeletableCohorts.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use):</p>
-                  <ul className="text-sm space-y-0.5">
-                    {nonDeletableCohorts.map((c) => (
-                      <li key={c.cohort_id} className="flex items-center gap-1.5 text-muted-foreground">
-                        <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
-                        {c.name || "Unnamed Cohort"}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              ) : (
+                <>
+                  {deletableCohorts.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                      <ul className="text-sm space-y-0.5">
+                        {deletableCohorts.map((c) => (
+                          <li key={c.cohort_id} className="flex items-center gap-1.5">
+                            <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                            {c.name || "Unnamed Cohort"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {nonDeletableCohorts.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use):</p>
+                      <ul className="text-sm space-y-0.5">
+                        {nonDeletableCohorts.map((c) => (
+                          <li key={c.cohort_id} className="flex items-center gap-1.5 text-muted-foreground">
+                            <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                            {c.name || "Unnamed Cohort"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
               )}
             </>
           }
@@ -1103,7 +1335,7 @@ export default function Cohorts({
         <BulkEditDialog
           open={showBulkEditDialog}
           onOpenChange={setShowBulkEditDialog}
-          count={editableCohorts.length}
+          count={selectAllMatching ? selectedCount : editableCohorts.length}
           entityLabelPlural="cohorts"
           isSaving={isBulkEditing}
           onSave={handleBulkEdit}

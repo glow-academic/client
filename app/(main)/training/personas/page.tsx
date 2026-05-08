@@ -23,6 +23,8 @@ import { guardPage } from "@/lib/permissions";
 import { loadPersonasSearchParams } from "@/lib/search-params/personas";
 import type { ParseCsvResult } from "@/components/common/BulkImport";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type PersonasListOut = OutputOf<"/persona/search", "post">;
 type DuplicatePersonaIn = InputOf<"/persona/duplicate", "post">;
@@ -37,8 +39,6 @@ type GroupPersonaIn = InputOf<"/persona/group", "post">;
 type GroupPersonaOut = OutputOf<"/persona/group", "post">;
 type GenerationsIn = InputOf<"/persona/generations", "post">;
 type GenerationsOut = OutputOf<"/persona/generations", "post">;
-type GenerateIn = InputOf<"/persona/generate", "post">;
-type GenerateOut = OutputOf<"/persona/generate", "post">;
 type ProblemPersonaIn = InputOf<"/persona/problem", "post">;
 type ProblemPersonaOut = OutputOf<"/persona/problem", "post">;
 type ContextIn = InputOf<"/persona/context", "post">;
@@ -121,15 +121,20 @@ async function searchPersonaGenerations(input: GenerationsIn): Promise<Generatio
   return api.post("/persona/generations", input);
 }
 
-async function runPersonaGenerate(input: GenerateIn): Promise<GenerateOut> {
-  "use server";
-  return api.post("/persona/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getPersonaContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/persona/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getPersonaContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -159,7 +164,7 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
 
   try {
     // Profile data for providers
-    const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getPersonaContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/training/personas", context.profile.role_permissions);
 
@@ -226,6 +231,7 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
         toolbar={<NewArtifactButton label="New Persona" href="/training/personas/new" />}
         panelProps={{
           artifactType: "persona",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupPersonaOut & { name?: string | null })?.name ?? null,
@@ -234,12 +240,20 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          operations: ["draft", "get", "group"],
+          // Cross-persona toolset for the list view: the LLM can find,
+          // edit, duplicate, delete, and bulk-export, in addition to
+          // the draft lifecycle. Each operation is independently gated
+          // by tool registration on the server, so this is an
+          // upper-bound "allowed list" — any operation without a
+          // registered tool simply isn't picked by the LLM.
+          operations: [
+            "search", "get", "duplicate", "update", "delete",
+            "draft", "drafts", "create", "csv", "export", "title",
+          ],
           prompts: context.prompts?.prompts,
           getGroupAction: getPersonaGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchPersonaGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runPersonaGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="personas-index">
@@ -251,6 +265,7 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
             createPersonaAction={createPersona}
             updatePersonaAction={updatePersona}
             parseCsvAction={parseCsv}
+            currentSearchBody={body}
             importFields={listData.import_fields ?? undefined}
             pageIndex={pageIndex}
             pageSize={pageSize}
@@ -294,4 +309,5 @@ export type {
   CreatePersonaOut,
   UpdatePersonaIn,
   UpdatePersonaOut,
+  PersonasListBody,
 };

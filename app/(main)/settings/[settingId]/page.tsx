@@ -21,6 +21,8 @@ import { createLoader, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetSettingIn = InputOf<"/setting/get", "post">;
 type GetSettingOut = OutputOf<"/setting/get", "post">;
@@ -32,8 +34,6 @@ type PatchSettingDraftIn = InputOf<"/setting/draft", "patch">;
 type PatchSettingDraftOut = OutputOf<"/setting/draft", "patch">;
 type GroupSettingIn = InputOf<"/setting/group", "post">;
 type GroupSettingOut = OutputOf<"/setting/group", "post">;
-type GenerateSettingIn = InputOf<"/setting/generate", "post">;
-type GenerateSettingOut = OutputOf<"/setting/generate", "post">;
 type GenerationsIn = InputOf<"/setting/generations", "post">;
 type GenerationsOut = OutputOf<"/setting/generations", "post">;
 type ProblemSettingIn = InputOf<"/setting/problem", "post">;
@@ -73,12 +73,6 @@ async function patchSettingDraft(
   return api.patch("/setting/draft", input);
 }
 
-async function generateSetting(
-  input: GenerateSettingIn
-): Promise<GenerateSettingOut> {
-  "use server";
-  return api.post("/setting/generate", input);
-}
 
 async function getSettingGroupHistory(groupId: string): Promise<GroupSettingOut> {
   "use server";
@@ -111,10 +105,15 @@ async function searchSettingGenerations(input: GenerationsIn): Promise<Generatio
   return api.post("/setting/generations", input);
 }
 
-async function runSettingGenerate(input: GenerateSettingIn): Promise<GenerateSettingOut> {
-  "use server";
-  return api.post("/setting/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getSettingContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/setting/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata({
@@ -124,7 +123,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { settingId } = await params;
-    const context = await api.post("/setting/context", { body: { entity_id: settingId } } as ContextIn) as ContextOut;
+    const context = await getSettingContextById(settingId);
     return {
       title: context.page_metadata?.detail.title,
       description: context.page_metadata?.detail.description,
@@ -194,7 +193,7 @@ export default async function SettingEditPage({
     } as unknown as GetSettingIn;
     const [settingDetail, context, draftsResult, groupResult] = await Promise.all([
       getSetting(input),
-      api.post("/setting/context", { body: { entity_id: settingId } } as ContextIn) as Promise<ContextOut>,
+      getSettingContextById(settingId) as Promise<ContextOut>,
       api.post("/setting/drafts", {} as any),
       api.post(
         "/setting/group",
@@ -222,6 +221,7 @@ export default async function SettingEditPage({
           toolbar={<SaveToolbar />}
           panelProps={{
             artifactType: "setting",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
             groupId: (groupResult as GroupSettingOut & { group_id?: string })?.group_id ?? null,
             groupName:
               (groupResult as GroupSettingOut & { name?: string | null })?.name ?? null,
@@ -230,15 +230,13 @@ export default async function SettingEditPage({
             // skips the duplicate client-side /<art>/group refetch
             // on first paint, eliminating the hydration flicker.
             initialGroupHistory: groupResult as Record<string, unknown>,
-            generateAction: generateSetting,
-            operations: ["draft", "get", "group"],
+            operations: ["draft", "get", "title"],
             getGroupHistory: getSettingGroupHistory,
             searchGroups: searchSettingGroups,
             prompts: context.prompts?.prompts,
             getGroupAction: getSettingGroup as PanelProps["getGroupAction"],
             searchGenerationsAction:
               searchSettingGenerations as PanelProps["searchGenerationsAction"],
-            runGenerateAction: runSettingGenerate as PanelProps["runGenerateAction"],
           } as any}
         >
           <div

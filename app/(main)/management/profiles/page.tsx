@@ -22,9 +22,30 @@ import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
 import { loadProfilesSearchParams } from "@/lib/search-params/profiles";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type ProfilesListIn = InputOf<"/profile/search", "post">;
 type ProfilesListOut = OutputOf<"/profile/search", "post">;
+
+/** ---- Body type for profile list request ----
+ *  Mirrors the search-route filter fields (kept in sync manually
+ *  because the SearchProfileApiRequest type isn't exported from the
+ *  client OpenAPI tree). Used both for the SSR fetch and as the
+ *  ``currentSearchBody`` prop forwarded to the bulk-write all-
+ *  matching path. */
+type ProfilesListBody = {
+  search?: string | null;
+  cohort_ids?: string[] | null;
+  filter_department_ids?: string[] | null;
+  role_filter?: string | null;
+  cohort_search?: string | null;
+  department_search?: string | null;
+  role_search?: string | null;
+  flag_search?: string | null;
+  page_size?: number | null;
+  page_offset?: number | null;
+};
 type DeleteProfileIn = InputOf<"/profile/delete", "post">;
 type DeleteProfileOut = OutputOf<"/profile/delete", "post">;
 type BulkDeleteProfileIn = InputOf<"/profile/bulk/delete", "post">;
@@ -42,8 +63,6 @@ type EmulateProfileOut = OutputOf<"/profile/emulate", "post">;
 type UnemulateProfileOut = OutputOf<"/profile/unemulate", "post">;
 type GroupProfileIn = InputOf<"/profile/group", "post">;
 type GroupProfileOut = OutputOf<"/profile/group", "post">;
-type GenerateProfileIn = InputOf<"/profile/generate", "post">;
-type GenerateProfileOut = OutputOf<"/profile/generate", "post">;
 type GenerationsIn = InputOf<"/profile/generations", "post">;
 type GenerationsOut = OutputOf<"/profile/generations", "post">;
 type ProblemProfileIn = InputOf<"/profile/problem", "post">;
@@ -146,12 +165,6 @@ async function unemulateProfile(
   }
 }
 
-async function generateProfile(
-  input: GenerateProfileIn
-): Promise<GenerateProfileOut> {
-  "use server";
-  return api.post("/profile/generate", input);
-}
 
 async function getProfileGroupHistory(groupId: string): Promise<GroupProfileOut> {
   "use server";
@@ -179,15 +192,20 @@ async function searchProfileGenerations(input: GenerationsIn): Promise<Generatio
   return api.post("/profile/generations", input);
 }
 
-async function runProfileGenerate(input: GenerateProfileIn): Promise<GenerateProfileOut> {
-  "use server";
-  return api.post("/profile/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getProfileContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/profile/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/profile/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getProfileContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -218,13 +236,21 @@ export default async function ProfilesPage({ searchParams }: ProfilesPageProps) 
 
   try {
     // Profile data for providers
-    const context = await api.post("/profile/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getProfileContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/management/profiles", context.profile.role_permissions);
 
+    // The current page passes empty filters (column-filter state is
+    // managed client-side by TanStack today, not URL-driven). The
+    // bulk-write all-matching path still gets a well-formed body so
+    // the server has something to plug into the resolver — but the
+    // filter fields will be null/empty until profiles' filter state
+    // migrates to nuqs URL params (parity with persona/scenario).
+    const body: ProfilesListBody = {};
+
     // Fetch list data, create profile data, view cookie, and group in parallel
     const [listData, initialCreateProfileData, initialColumnVisibility, groupResult] = await Promise.all([
-      getProfilesList({ body: {} }),
+      getProfilesList({ body }),
       getCreateProfileData({ body: { department_ids: [] } }),
       readViewCookie("profiles"),
       api.post(
@@ -250,6 +276,7 @@ export default async function ProfilesPage({ searchParams }: ProfilesPageProps) 
         toolbar={<NewArtifactButton label="New Profile" href="/management/profiles/new" />}
         panelProps={{
           artifactType: "profile",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupProfileOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupProfileOut & { name?: string | null })?.name ?? null,
@@ -258,15 +285,13 @@ export default async function ProfilesPage({ searchParams }: ProfilesPageProps) 
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          generateAction: generateProfile,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           getGroupHistory: getProfileGroupHistory,
           searchGroups: searchProfileGroups,
           prompts: context.prompts?.prompts,
           getGroupAction: getProfileGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchProfileGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runProfileGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4">
@@ -280,6 +305,7 @@ export default async function ProfilesPage({ searchParams }: ProfilesPageProps) 
             processCSVAction={processCSV}
             emulateProfileAction={emulateProfile}
             unemulateProfileAction={unemulateProfile}
+            currentSearchBody={body}
           />
         </div>
       </FullPageLayout>
@@ -317,6 +343,7 @@ export type {
   ProcessCSVOut,
   ProcessedCSVRow,
   ProfileListItem,
+  ProfilesListBody,
   ProfilesListIn,
   ProfilesListOut,
   SearchProfileIn,

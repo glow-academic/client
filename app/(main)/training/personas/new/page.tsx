@@ -23,8 +23,10 @@ import {
   parseAsBoolean,
   parseAsString,
 } from "nuqs/server";
+import { cache } from "react";
 
 import { buildSnapshot } from "@/lib/auth";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetPersonaIn = InputOf<"/persona/get", "post">;
@@ -37,12 +39,11 @@ type GroupPersonaIn = InputOf<"/persona/group", "post">;
 type GroupPersonaOut = OutputOf<"/persona/group", "post">;
 type GenerationsIn = InputOf<"/persona/generations", "post">;
 type GenerationsOut = OutputOf<"/persona/generations", "post">;
-type GenerateIn = InputOf<"/persona/generate", "post">;
-type GenerateOut = OutputOf<"/persona/generate", "post">;
 type ProblemPersonaIn = InputOf<"/persona/problem", "post">;
 type ProblemPersonaOut = OutputOf<"/persona/problem", "post">;
 type ContextIn = InputOf<"/persona/context", "post">;
 type ContextOut = OutputOf<"/persona/context", "post">;
+type DraftsOut = OutputOf<"/persona/drafts", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getPersonaDefault = async (
@@ -53,6 +54,14 @@ const getPersonaDefault = async (
     headers: { "X-Bypass-Cache": "1" },
   });
 };
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. */
+const getPersonaContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/persona/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Strongly-typed server actions ---- */
 async function createPersona(input: CreatePersonaIn): Promise<CreatePersonaOut> {
@@ -83,15 +92,20 @@ async function searchPersonaGenerations(input: GenerationsIn): Promise<Generatio
   return api.post("/persona/generations", input);
 }
 
-async function runPersonaGenerate(input: GenerateIn): Promise<GenerateOut> {
+
+/** Lazy drafts fetch — invoked by ``DraftProviderClient`` on the first
+ *  ``SaveToolbar`` dropdown open. Keeps the drafts list off the SSR
+ *  critical path; the audit bubble only fires when the user actually
+ *  asks for the picker. */
+async function searchPersonaDrafts(): Promise<DraftsOut> {
   "use server";
-  return api.post("/persona/generate", input);
+  return api.post("/persona/drafts", {});
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getPersonaContext();
     return {
       title: context.page_metadata?.new.title,
       description: context.page_metadata?.new.description,
@@ -121,7 +135,7 @@ export default async function NewPersonaPage({
 
   try {
     // Profile data for providers (until /personas/context returns full profile)
-    const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getPersonaContext();
     const snapshot = buildSnapshot(session, context.profile);
 
     // Parse search params using nuqs
@@ -181,9 +195,8 @@ export default async function NewPersonaPage({
       } as GetPersonaIn["body"],
     };
 
-    const [personaDetailDefault, draftsResult, groupResult] = await Promise.all([
+    const [personaDetailDefault, groupResult] = await Promise.all([
       getPersonaDefault(input),
-      api.post("/persona/drafts", {}),
       api.post(
         "/persona/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupPersonaIn,
@@ -191,7 +204,7 @@ export default async function NewPersonaPage({
     ]);
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient searchDraftsAction={searchPersonaDrafts}>
         <FullPageLayout
           profileData={context.profile}
           sessionSnapshot={snapshot}
@@ -209,6 +222,7 @@ export default async function NewPersonaPage({
           toolbar={<SaveToolbar />}
           panelProps={{
             artifactType: "persona",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
             groupId: (groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null,
             groupName:
               (groupResult as GroupPersonaOut & { name?: string | null })?.name ?? null,
@@ -217,12 +231,11 @@ export default async function NewPersonaPage({
             // skips the duplicate client-side /<art>/group refetch
             // on first paint, eliminating the hydration flicker.
             initialGroupHistory: groupResult as Record<string, unknown>,
-            operations: ["draft", "get", "group"],
+            operations: ["draft", "get", "title"],
             prompts: context.prompts?.prompts,
             getGroupAction: getPersonaGroup as PanelProps["getGroupAction"],
             searchGenerationsAction:
               searchPersonaGenerations as PanelProps["searchGenerationsAction"],
-            runGenerateAction: runPersonaGenerate as PanelProps["runGenerateAction"],
           }}
         >
           <div

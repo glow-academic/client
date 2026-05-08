@@ -5,6 +5,7 @@
 "use client";
 import { Copy, Edit, Eye, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -24,6 +25,7 @@ import type {
   DeleteToolOut,
   DuplicateToolIn,
   DuplicateToolOut,
+  ToolsListBody,
   ToolsListOut,
   UpdateToolIn,
   UpdateToolOut,
@@ -61,6 +63,11 @@ export interface ToolsProps {
   duplicateToolAction?: (input: DuplicateToolIn) => Promise<DuplicateToolOut>;
   deleteToolAction?: (input: DeleteToolIn) => Promise<DeleteToolOut>;
   updateToolAction?: (input: UpdateToolIn) => Promise<UpdateToolOut>;
+  /** The body the page used for its SSR ``/tool/search`` call.
+   *  Forwarded as the flat filter fields on bulk delete/update calls
+   *  when the user is in ``selectAll=1`` mode — the server resolves
+   *  matching rows directly, no client-side enumeration. */
+  currentSearchBody?: ToolsListBody;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;
@@ -87,6 +94,7 @@ export default function Tools({
   duplicateToolAction,
   deleteToolAction,
   updateToolAction,
+  currentSearchBody,
   pageIndex,
   pageSize,
   totalCount,
@@ -150,12 +158,64 @@ export default function Tools({
       .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
   }, [toolsData?.flag_filter]);
 
-  // Selection state
-  const [selectedToolIds, setSelectedToolIds] = useState<string[]>([]);
-  const selectedCount = selectedToolIds.length;
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated link. Three params model
+  // the full state machine:
+  //
+  //   - ``selectedIds=A,B``        → explicit selection of named rows
+  //   - ``selectAll=1``            → every row matching the active
+  //                                  filters/search is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                                → all-matching minus exclusions
+  //   - (none of the above)        → empty selection
+  //
+  // The all-matching mode keeps the URL compact for huge datasets
+  // (one boolean instead of N ids) and follows the active filter —
+  // change the filter and "all matching" follows naturally. Excluded-
+  // id growth is naturally bounded by what the user can see and
+  // deselect (one page at a time), so we don't enforce a hard cap.
+  // Shallow updates avoid the RSC re-fetch burst.
+  const [selectedToolIds, setSelectedToolIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedToolIds, setExcludedToolIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+
+  // ---- Selection helpers ----------------------------------------
+  // ``isSelected`` is the single read predicate every row uses; it
+  // dispatches between explicit-id and all-matching modes so
+  // downstream code never needs to branch. ``selectedCount`` mirrors
+  // that — under all-matching it's ``totalCount - excludedIds.length``.
+
+  const totalMatchingCount = totalCount;
+
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedToolIds.includes(id)
+        : selectedToolIds.includes(id);
+    },
+    [selectAllMatching, excludedToolIds, selectedToolIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedToolIds.length)
+    : selectedToolIds.length;
+
+  /** Selected rows that are loaded on the current page. Under all-
+   *  matching mode this is "every loaded row not in excludedIds";
+   *  under explicit mode it's the rows whose id is in selectedIds. */
   const selectedTools = useMemo(() => {
-    return toolsArray.filter((t) => t.tool_id && selectedToolIds.includes(t.tool_id));
-  }, [toolsArray, selectedToolIds]);
+    return toolsArray.filter((t) => t.tool_id && isSelected(t.tool_id));
+  }, [toolsArray, isSelected]);
   const deletableTools = useMemo(
     () => selectedTools.filter((t) => t.can_delete),
     [selectedTools],
@@ -168,20 +228,63 @@ export default function Tools({
     () => selectedTools.filter((t) => t.can_edit ?? true),
     [selectedTools],
   );
+
+  // Toggle selection for a single tool. Under all-matching mode we
+  // toggle membership in excludedToolIds (deselect ⇒ add to
+  // exclusions, re-select ⇒ remove). Under explicit mode it's the
+  // straight selectedToolIds toggle.
   const toggleSelection = useCallback((toolId: string) => {
-    setSelectedToolIds((prev) =>
-      prev.includes(toolId) ? prev.filter((id) => id !== toolId) : [...prev, toolId]
-    );
-  }, []);
-  const clearSelection = useCallback(() => setSelectedToolIds([]), []);
+    if (selectAllMatching) {
+      void setExcludedToolIds((prev) =>
+        prev.includes(toolId)
+          ? prev.filter((id) => id !== toolId)
+          : [...prev, toolId],
+      );
+    } else {
+      void setSelectedToolIds((prev) =>
+        prev.includes(toolId)
+          ? prev.filter((id) => id !== toolId)
+          : [...prev, toolId],
+      );
+    }
+  }, [selectAllMatching, setExcludedToolIds, setSelectedToolIds]);
+
+  const clearSelection = useCallback(() => {
+    void setSelectedToolIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedToolIds([]);
+  }, [setSelectedToolIds, setSelectAllMatching, setExcludedToolIds]);
+
   const selectAllOnPage = useCallback(() => {
     const pageIds = toolsArray.filter((t) => t.tool_id).map((t) => t.tool_id!);
-    setSelectedToolIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [toolsArray]);
+    void setSelectAllMatching(false);
+    void setExcludedToolIds([]);
+    void setSelectedToolIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [toolsArray, setSelectAllMatching, setExcludedToolIds, setSelectedToolIds]);
+
+  /** Promote the current page-only selection into "all matching
+   *  filter" mode. Clears explicit ids and exclusions — the all-
+   *  matching mode is the canonical truth from this point. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedToolIds([]);
+    void setExcludedToolIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedToolIds, setExcludedToolIds, setSelectAllMatching]);
+
+  // Check if all tools on the current page are selected. Under all-
+  // matching mode every loaded row whose id isn't in
+  // ``excludedToolIds`` is implicitly selected, so the predicate
+  // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
     const pageIds = toolsArray.filter((t) => t.tool_id).map((t) => t.tool_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedToolIds.includes(id));
-  }, [toolsArray, selectedToolIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [toolsArray, isSelected]);
+
+  // Whether there ARE more matching rows than what's loaded on this
+  // page — used to decide whether to surface the "Select all N
+  // matching" affordance after the user selects the page.
+  const hasMoreThanCurrentPage = totalMatchingCount > toolsArray.length;
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -533,12 +636,46 @@ export default function Tools({
   };
 
   const handleBulkDelete = async () => {
-    if (!deleteToolAction || deletableTools.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deleteToolAction`` call shape; the body
+    // just differs.
+    if (!deleteToolAction) return;
+    if (!selectAllMatching && deletableTools.length === 0) return;
+
     setIsBulkDeleting(true);
     try {
-      const ids = deletableTools.map((t) => t.tool_id!);
-      await deleteToolAction({ body: { tool_ids: ids, accept: true } });
-      toast.success(`${ids.length} tool(s) deleted successfully`);
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedToolIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            tool_ids: deletableTools.map((t) => t.tool_id!),
+            accept: true,
+          };
+
+      const result = await deleteToolAction({ body } as DeleteToolIn);
+
+      // Per-row results from the server: success entries are actual
+      // deletions, failures are soft-skipped rows (no permission /
+      // not found). Toast reflects both counts so the user knows
+      // some rows were skipped without inspecting the receipt.
+      const results = (result as DeleteToolOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(`${successCount} tool(s) deleted, ${skippedCount} skipped`);
+      } else {
+        toast.success(`${successCount} tool(s) deleted successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -551,7 +688,8 @@ export default function Tools({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateToolAction || editableTools.length === 0) return;
+    if (!updateToolAction) return;
+    if (!selectAllMatching && editableTools.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     if (!hasActiveChange) {
@@ -563,20 +701,52 @@ export default function Tools({
 
     setIsBulkEditing(true);
     try {
-      const items = editableTools.map((t) => {
+      let body: UpdateToolIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know what each row's existing flags are), so the
+        // active toggle becomes "set to this value across all matching
+        // rows" — same semantic as a manual sweep.
         let flag_ids: string[] | undefined;
         if (hasActiveChange) {
-          const isActive = bulkEditActiveStatus;
-          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+          flag_ids = bulkEditActiveStatus && activeFlagId ? [activeFlagId] : [];
         }
-        return {
-          id: t.tool_id!,
-          ...(hasActiveChange && { flag_ids }),
-        };
-      });
+        body = {
+          all: true,
+          excluded_ids: excludedToolIds,
+          ...(currentSearchBody ?? {}),
+          patch: {
+            ...(hasActiveChange && { flag_ids }),
+          },
+          accept: true,
+        } as UpdateToolIn["body"];
+      } else {
+        // Explicit: clone the patch per-row.
+        const items = editableTools.map((t) => {
+          let flag_ids: string[] | undefined;
+          if (hasActiveChange) {
+            const isActive = bulkEditActiveStatus;
+            flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+          }
+          return {
+            id: t.tool_id!,
+            ...(hasActiveChange && { flag_ids }),
+          };
+        });
+        body = { tools: items } as UpdateToolIn["body"];
+      }
 
-      await updateToolAction({ body: { tools: items } } as UpdateToolIn);
-      toast.success(`${items.length} tool(s) updated successfully`);
+      const result = await updateToolAction({ body } as UpdateToolIn);
+
+      // Per-row results — same soft-skip pattern as bulk delete.
+      const results = (result as UpdateToolOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(`${successCount} tool(s) updated, ${skippedCount} skipped`);
+      } else {
+        toast.success(`${successCount} tool(s) updated successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -599,7 +769,7 @@ export default function Tools({
 
     if (!toolId) return null;
 
-    const isSelected = selectedToolIds.includes(toolId);
+    const rowSelected = isSelected(toolId);
 
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons
@@ -611,13 +781,13 @@ export default function Tools({
       <Card
         key={toolId}
         className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
-          isSelected ? "ring-2 ring-primary" : ""
+          rowSelected ? "ring-2 ring-primary" : ""
         }`}
         data-testid="tool-card"
         data-tool-id={toolId}
         role="gridcell"
         aria-label={`tool card ${toolName}`}
-        aria-selected={isSelected}
+        aria-selected={rowSelected}
         onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
@@ -633,7 +803,7 @@ export default function Tools({
                   data-action-button
                 >
                   <Checkbox
-                    checked={isSelected}
+                    checked={rowSelected}
                     onCheckedChange={() => toggleSelection(toolId)}
                     className="rounded-full h-5 w-5"
                     aria-label={`Select tool ${toolName || "Unnamed"}`}
@@ -773,10 +943,8 @@ export default function Tools({
       <div className="space-y-4">
         {/* Toolbar — swaps between filter bar and selection action bar */}
         {selectedCount > 0 ? (
-          <div
-            className="flex items-center justify-between gap-2"
-            data-testid="tools-toolbar"
-          >
+          <div className="space-y-2" data-testid="tools-toolbar">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {deleteToolAction && (
                 <Button
@@ -784,10 +952,12 @@ export default function Tools({
                   size="sm"
                   className="h-8"
                   onClick={() => setShowBulkDeleteDialog(true)}
-                  disabled={deletableTools.length === 0}
+                  disabled={!selectAllMatching && deletableTools.length === 0}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete {deletableTools.length} of {selectedCount}
+                  {selectAllMatching
+                    ? `Delete ${selectedCount} matching`
+                    : `Delete ${deletableTools.length} of ${selectedCount}`}
                 </Button>
               )}
               {updateToolAction && (
@@ -796,15 +966,17 @@ export default function Tools({
                   size="sm"
                   className="h-8"
                   onClick={openBulkEditDialog}
-                  disabled={editableTools.length === 0}
+                  disabled={!selectAllMatching && editableTools.length === 0}
                 >
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit {editableTools.length} of {selectedCount}
+                  {selectAllMatching
+                    ? `Edit ${selectedCount} matching`
+                    : `Edit ${editableTools.length} of ${selectedCount}`}
                 </Button>
               )}
-              {!allPageSelected && (
+              {!allPageSelected && !selectAllMatching && (
                 <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
-                  Select All
+                  Select Page
                 </Button>
               )}
               <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
@@ -815,6 +987,51 @@ export default function Tools({
               table={table}
               hiddenColumns={["name", "departments", "agents", "permissions", "creatable", "updated_at"]}
             />
+          </div>
+
+          {/* Cross-page selection banners. Two states:
+              (a) page-all selected, more matching elsewhere → offer
+                  "Select all N matching" to flip into all-matching mode.
+              (b) all-matching active → show count + Clear so the
+                  user always has an obvious escape hatch.
+              Mutually exclusive — both never render at once. */}
+          {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+              data-testid="select-all-matching-banner"
+            >
+              <span className="text-muted-foreground">
+                All {toolsArray.length} on this page selected.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={selectAllMatchingNow}
+              >
+                Select all {totalMatchingCount} matching
+              </Button>
+            </div>
+          )}
+          {selectAllMatching && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+              data-testid="all-matching-active-banner"
+            >
+              <span className="text-muted-foreground">
+                All {selectedCount} matching tools selected
+                {excludedToolIds.length > 0 && ` (${excludedToolIds.length} excluded)`}.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={clearSelection}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
           </div>
         ) : (
           <div
@@ -943,7 +1160,7 @@ export default function Tools({
       <BulkDeleteDialog
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
-        count={deletableTools.length}
+        count={selectAllMatching ? selectedCount : deletableTools.length}
         entityLabel="tool"
         entityLabelPlural="tools"
         isDeleting={isBulkDeleting}
@@ -951,6 +1168,28 @@ export default function Tools({
         description={
           <>
             <p>This action cannot be undone.</p>
+            {selectAllMatching ? (
+              // All-matching mode: server resolves rows from filter +
+              // exclusions; per-row permission failures soft-skip.
+              // We can't enumerate names without round-tripping through
+              // the search endpoint (which would re-trigger the RSC
+              // burst), so show the count + filter state instead.
+              <div className="text-sm text-muted-foreground">
+                <p>
+                  All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                  {" "}tools will be deleted server-side using the current filter.
+                </p>
+                {excludedToolIds.length > 0 && (
+                  <p className="mt-1">
+                    {excludedToolIds.length} explicitly excluded.
+                  </p>
+                )}
+                <p className="mt-1">
+                  Tools you don't have permission to delete will be skipped automatically.
+                </p>
+              </div>
+            ) : (
+              <>
             {deletableTools.length > 0 && (
               <div>
                 <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
@@ -981,6 +1220,8 @@ export default function Tools({
                 </ul>
               </div>
             )}
+              </>
+            )}
           </>
         }
       />
@@ -989,7 +1230,7 @@ export default function Tools({
       <BulkEditDialog
         open={showBulkEditDialog}
         onOpenChange={setShowBulkEditDialog}
-        count={editableTools.length}
+        count={selectAllMatching ? selectedCount : editableTools.length}
         entityLabelPlural="tools"
         isSaving={isBulkEditing}
         onSave={handleBulkEdit}

@@ -21,6 +21,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetCohortIn = InputOf<"/cohort/get", "post">;
 type GetCohortOut = OutputOf<"/cohort/get", "post">;
@@ -30,8 +32,6 @@ type PatchCohortDraftIn = InputOf<"/cohort/draft", "patch">;
 type PatchCohortDraftOut = OutputOf<"/cohort/draft", "patch">;
 type GroupCohortIn = InputOf<"/cohort/group", "post">;
 type GroupCohortOut = OutputOf<"/cohort/group", "post">;
-type GenerateCohortIn = InputOf<"/cohort/generate", "post">;
-type GenerateCohortOut = OutputOf<"/cohort/generate", "post">;
 type ProblemCohortIn = InputOf<"/cohort/problem", "post">;
 type ProblemCohortOut = OutputOf<"/cohort/problem", "post">;
 type ContextIn = InputOf<"/cohort/context", "post">;
@@ -60,12 +60,6 @@ async function patchCohortDraft(
   return api.patch("/cohort/draft", input);
 }
 
-async function generateCohort(
-  input: GenerateCohortIn
-): Promise<GenerateCohortOut> {
-  "use server";
-  return api.post("/cohort/generate", input);
-}
 
 async function getCohortGroupHistory(groupId: string): Promise<GroupCohortOut> {
   "use server";
@@ -85,10 +79,19 @@ async function createCohortProblem(input: ProblemCohortIn): Promise<ProblemCohor
   return api.post("/cohort/problem", input);
 }
 
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getCohortContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/cohort/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getCohortContext();
     return {
       title: context.page_metadata?.new.title,
       description: context.page_metadata?.new.description,
@@ -118,7 +121,7 @@ export default async function NewCohortPage({
 
   try {
     // Profile data for providers (until /cohorts/context returns full profile)
-    const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getCohortContext();
     const snapshot = buildSnapshot(session, context.profile);
 
     // Parse search params using nuqs
@@ -210,11 +213,11 @@ export default async function NewCohortPage({
             toolbar: <SaveToolbar />,
             panelProps: {
               artifactType: "cohort",
+              initialPanelPrefs: await readGenerationPanelPrefs(),
               groupId:
                 (groupResult as GroupCohortOut & { group_id?: string })?.group_id ??
                 null,
-              generateAction: generateCohort,
-              operations: ["draft", "get", "group"],
+              operations: ["draft", "get", "title"],
               getGroupHistory: getCohortGroupHistory,
               searchGroups: searchCohortGroups,
               prompts: context.prompts?.prompts,

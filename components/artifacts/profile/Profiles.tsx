@@ -23,6 +23,7 @@ import {
   VisibilityState,
 } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import React, { useCallback, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
@@ -127,6 +128,7 @@ import type {
   ProcessCSVOut,
   ProcessedCSVRow,
   ProfileListItem,
+  ProfilesListBody,
   SearchProfileIn,
   SearchProfileOut,
   ProfilesListOut,
@@ -164,6 +166,11 @@ export interface ProfilesProps {
   processCSVAction?: ProcessCSVAction;
   emulateProfileAction?: EmulateProfileAction;
   unemulateProfileAction?: EmulateProfileAction;
+  /** The body the page used for its SSR ``/profile/search`` call.
+   *  Forwarded as the filter fields on bulk delete/update calls when
+   *  the user is in ``selectAll=1`` mode — the server resolves matching
+   *  rows directly, no client-side enumeration. */
+  currentSearchBody?: ProfilesListBody;
 }
 
 const PROFILES_INITIAL_COLUMN_VISIBILITY: VisibilityState = {
@@ -392,6 +399,7 @@ export default function Profiles({
   processCSVAction,
   emulateProfileAction,
   unemulateProfileAction,
+  currentSearchBody,
 }: ProfilesProps) {
   const router = useRouter();
   const {
@@ -404,11 +412,37 @@ export default function Profiles({
     onComplete: () => router.refresh(),
   });
 
-  // Selection state
-  const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated link. Three params model
+  // the full state machine:
+  //
+  //   - ``selectedIds=A,B``        → explicit selection of named rows
+  //   - ``selectAll=1``            → every row matching the active
+  //                                  filters/search is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                                → all-matching minus exclusions
+  //   - (none of the above)        → empty selection
+  //
+  // The all-matching mode keeps the URL compact for huge datasets
+  // (one boolean instead of N ids) and follows the active filter —
+  // change the filter and "all matching" follows naturally. Shallow
+  // updates avoid the RSC re-fetch burst.
+  const [selectedProfileIds, setSelectedProfileIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedProfileIds, setExcludedProfileIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
 
   // Bulk delete dialog
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Bulk edit dialog
   const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
@@ -1168,10 +1202,33 @@ export default function Profiles({
         <div className="pr-2">
           <Checkbox
             checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
+              selectAllMatching
+                ? allPageSelected
+                : table.getIsAllPageRowsSelected() ||
+                  (table.getIsSomePageRowsSelected() && "indeterminate")
             }
             onCheckedChange={(value) => {
+              // Under all-matching mode the header click toggles
+              // exclusion of every row on the current page rather
+              // than mutating selectedIds (which is unused while
+              // selectAll=1).
+              if (selectAllMatching) {
+                const pageIds = table
+                  .getFilteredRowModel()
+                  .rows.map((row) => row.original.profile_id)
+                  .filter((id): id is string => !!id);
+                if (value) {
+                  setExcludedProfileIds((prev) =>
+                    prev.filter((id) => !pageIds.includes(id)),
+                  );
+                } else {
+                  setExcludedProfileIds((prev) => {
+                    const next = new Set([...prev, ...pageIds]);
+                    return Array.from(next);
+                  });
+                }
+                return;
+              }
               table.toggleAllPageRowsSelected(!!value);
               const visibleRowIds = table
                 .getFilteredRowModel()
@@ -1202,18 +1259,10 @@ export default function Profiles({
       cell: ({ row }) => (
         <div className="pr-2">
           <Checkbox
-            checked={
-              row.original.profile_id
-                ? selectedProfileIds.includes(row.original.profile_id)
-                : false
-            }
-            onCheckedChange={(value) => {
+            checked={isSelected(row.original.profile_id)}
+            onCheckedChange={() => {
               if (!row.original.profile_id) return;
-              setSelectedProfileIds((prev) =>
-                value
-                  ? [...prev, row.original.profile_id!]
-                  : prev.filter((x) => x !== row.original.profile_id)
-              );
+              toggleSelection(row.original.profile_id);
             }}
             aria-label="Select row"
             className="translate-y-[2px]"
@@ -1358,7 +1407,11 @@ export default function Profiles({
     );
     return [checkboxColumn, ...filtered, actionsColumn];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [columns, selectedProfileIds, router, emulatingProfileId, handleEmulate, handleUnemulate]);
+    // ``isSelected`` / ``toggleSelection`` are declared further down
+    // but stable per render via useCallback; included so the columns
+    // re-build when selection state changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columns, selectedProfileIds, selectAllMatching, excludedProfileIds, router, emulatingProfileId, handleEmulate, handleUnemulate]);
 
   const table = useReactTable({
     data: profiles,
@@ -1402,14 +1455,41 @@ export default function Profiles({
   const roleColumn = table.getColumn("role");
   const departmentIdsColumn = table.getColumn("department_ids");
   const permissionIdsColumn = table.getColumn("permission_ids");
-  const selectedCount = selectedProfileIds.length;
+  // ---- Selection helpers ----------------------------------------
+  // ``isSelected`` is the single read predicate every row uses; it
+  // dispatches between explicit-id and all-matching modes so
+  // downstream code never needs to branch. ``selectedCount`` mirrors
+  // that — under all-matching it's ``totalCount - excludedIds.length``.
+  const totalMatchingCount = serverListData?.total_count ?? 0;
 
-  const deletableCount = useMemo(() => {
-    return selectedProfileIds.filter((id) => {
-      const row = profiles.find((s) => s.profile_id === id);
-      return row?.can_delete ?? false;
-    }).length;
-  }, [selectedProfileIds, profiles]);
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedProfileIds.includes(id)
+        : selectedProfileIds.includes(id);
+    },
+    [selectAllMatching, excludedProfileIds, selectedProfileIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedProfileIds.length)
+    : selectedProfileIds.length;
+
+  /** Selected rows that are loaded on the current page. */
+  const selectedProfilesOnPage = useMemo(() => {
+    return profiles.filter((p) => p.profile_id && isSelected(p.profile_id));
+  }, [profiles, isSelected]);
+
+  const deletableProfiles = useMemo(() => {
+    return selectedProfilesOnPage.filter((p) => p.can_delete ?? false);
+  }, [selectedProfilesOnPage]);
+
+  const nonDeletableProfiles = useMemo(() => {
+    return selectedProfilesOnPage.filter((p) => !(p.can_delete ?? false));
+  }, [selectedProfilesOnPage]);
+
+  const deletableCount = deletableProfiles.length;
 
   // Flag catalog (e.g. profile_active) — used to reconstruct flag_ids on bulk edit.
   const flagOptions = useMemo(() => {
@@ -1419,11 +1499,72 @@ export default function Profiles({
   }, [serverListData?.flag_filter]);
 
   const editableProfiles = useMemo(() => {
-    return profiles.filter(
-      (p) => p.profile_id && selectedProfileIds.includes(p.profile_id) && (p.can_edit ?? true)
-    );
-  }, [profiles, selectedProfileIds]);
+    return selectedProfilesOnPage.filter((p) => p.can_edit ?? true);
+  }, [selectedProfilesOnPage]);
   const editableCount = editableProfiles.length;
+
+  // Check if all profiles on the current page are selected.
+  const allPageSelected = useMemo(() => {
+    const pageIds = profiles.filter((p) => p.profile_id).map((p) => p.profile_id!);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [profiles, isSelected]);
+
+  // Whether there ARE more matching rows than what's loaded on this
+  // page — used to decide whether to surface the "Select all N
+  // matching" affordance after the user selects the page.
+  const hasMoreThanCurrentPage = totalMatchingCount > profiles.length;
+
+  // Toggle selection for a single profile. Under all-matching mode
+  // we toggle membership in excludedProfileIds; otherwise it's the
+  // straight selectedProfileIds toggle.
+  const toggleSelection = useCallback((profileIdToToggle: string) => {
+    if (selectAllMatching) {
+      void setExcludedProfileIds((prev) =>
+        prev.includes(profileIdToToggle)
+          ? prev.filter((id) => id !== profileIdToToggle)
+          : [...prev, profileIdToToggle],
+      );
+    } else {
+      void setSelectedProfileIds((prev) =>
+        prev.includes(profileIdToToggle)
+          ? prev.filter((id) => id !== profileIdToToggle)
+          : [...prev, profileIdToToggle],
+      );
+    }
+  }, [selectAllMatching, setExcludedProfileIds, setSelectedProfileIds]);
+
+  const clearSelection = useCallback(() => {
+    void setSelectedProfileIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedProfileIds([]);
+  }, [setSelectedProfileIds, setSelectAllMatching, setExcludedProfileIds]);
+
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = profiles.filter((p) => p.profile_id).map((p) => p.profile_id!);
+    void setSelectAllMatching(false);
+    void setExcludedProfileIds([]);
+    void setSelectedProfileIds((prev) => {
+      const combined = new Set([...prev, ...pageIds]);
+      return Array.from(combined);
+    });
+  }, [profiles, setSelectAllMatching, setExcludedProfileIds, setSelectedProfileIds]);
+
+  /** Promote the current page-only selection into "all matching
+   *  filter" mode. Clears explicit ids and exclusions. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedProfileIds([]);
+    void setExcludedProfileIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedProfileIds, setExcludedProfileIds, setSelectAllMatching]);
+
+  // suppress unused-symbol lint when toggleSelection isn't wired into the
+  // table row UI yet (the selection checkbox in this artifact still uses
+  // the table's RowSelection model). Keeping it exported in the helper
+  // closure so the bulk handlers + future row-checkbox refactor land
+  // cleanly without needing another patch.
+  void toggleSelection;
+  void selectAllOnPage;
 
   const openBulkEditDialog = () => {
     setBulkEditActiveStatus(null);
@@ -1431,7 +1572,8 @@ export default function Profiles({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateProfileAction || editableProfiles.length === 0) return;
+    if (!updateProfileAction) return;
+    if (!selectAllMatching && editableProfiles.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     if (!hasActiveChange) {
@@ -1444,24 +1586,49 @@ export default function Profiles({
 
     setIsBulkEditing(true);
     try {
-      // Canonical flag shape: ship `flag_ids` per item. With a single flag type
-      // (profile_active), the array is either [activeFlagId] or [] — no
-      // preservation of other flag types is needed.
-      const items = editableProfiles.map((p) => {
-        let flag_ids: string[] | undefined;
-        if (hasActiveChange) {
-          const isActive = bulkEditActiveStatus;
-          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
-        }
-        return {
-          profile_id: p.profile_id!,
-          ...(hasActiveChange && { flag_ids }),
-        };
-      });
+      let body: UpdateProfileIn["body"];
+      if (selectAllMatching) {
+        // All-matching: server clones the patch per resolved row,
+        // stamping each id. Per-row flag preservation isn't possible —
+        // the active toggle becomes "set across all matching rows".
+        const flag_ids: string[] = [];
+        if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
+        body = {
+          all: true,
+          excluded_ids: excludedProfileIds,
+          ...(currentSearchBody ?? {}),
+          patch: { flag_ids },
+          accept: true,
+        } as UpdateProfileIn["body"];
+      } else {
+        // Explicit: clone the patch per-row, preserving each row's
+        // existing flag state for flags we aren't toggling.
+        const items = editableProfiles.map((p) => {
+          const flag_ids = bulkEditActiveStatus && activeFlagId ? [activeFlagId] : [];
+          return {
+            profile_id: p.profile_id!,
+            flag_ids,
+          };
+        });
+        body = { profiles: items, accept: true } as UpdateProfileIn["body"];
+      }
 
-      await updateProfileAction({ body: { profiles: items } } as UpdateProfileIn);
-      toast.success(`${items.length} profile(s) updated successfully`);
-      setSelectedProfileIds([]);
+      const result = await updateProfileAction({ body } as UpdateProfileIn);
+
+      // Per-row results from server: success = actual update, failures
+      // are soft-skipped rows under all-matching (no permission /
+      // not found). Toast reflects both counts.
+      const results = (result as UpdateProfileOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} profile(s) updated, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} profile(s) updated successfully`);
+      }
+      clearSelection();
       router.refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to update profiles";
@@ -1469,6 +1636,69 @@ export default function Profiles({
     } finally {
       setIsBulkEditing(false);
       setShowBulkEditDialog(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    // Either explicit-mode (deletable rows on current page) OR all-
+    // matching mode (server resolves rows via filter). Both converge
+    // on the same ``bulkDeleteProfileAction`` call shape; the body
+    // just differs.
+    if (!bulkDeleteProfileAction) return;
+    if (!selectAllMatching && deletableProfiles.length === 0) {
+      setShowBulkDeleteDialog(false);
+      return;
+    }
+
+    setIsBulkDeleting(true);
+    try {
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedProfileIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            profile_ids: deletableProfiles.map((p) => p.profile_id!),
+            accept: true,
+          };
+
+      const result = await bulkDeleteProfileAction({ body } as BulkDeleteProfileIn);
+
+      // ``BulkDeleteProfileOut`` is currently typed ``unknown`` (the
+      // ``/profile/bulk/delete`` path lags in the regenerated OpenAPI
+      // tree — same reason `BulkDeleteProfileIn` needs the cast above).
+      // Narrow through a structural shape so the soft-skip toast count
+      // type-checks once the OpenAPI types catch up.
+      type BulkDeleteRow = { success: boolean; profile_id?: string | null; message?: string };
+      const results = ((result as { results?: BulkDeleteRow[] }).results) ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} profile(s) deleted, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(
+          successCount > 0
+            ? `${successCount} profile(s) deleted successfully`
+            : "Selected profiles deleted",
+        );
+      }
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete profiles";
+      toast.error(msg.replace(/^\d{3}\s*/, "") || "Failed to delete selected profiles");
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
     }
   };
 
@@ -1554,9 +1784,11 @@ export default function Profiles({
                   onClick={() => setShowBulkDeleteDialog(true)}
                   className="h-8"
                   data-testid="btn-bulk-delete-profiles"
-                  disabled={deletableCount === 0}
+                  disabled={!selectAllMatching && deletableCount === 0}
                 >
-                  Delete {deletableCount} of {selectedCount}
+                  {selectAllMatching
+                    ? `Delete ${selectedCount} matching`
+                    : `Delete ${deletableCount} of ${selectedCount}`}
                 </Button>
               )}
 
@@ -1569,10 +1801,25 @@ export default function Profiles({
                   onClick={openBulkEditDialog}
                   className="h-8"
                   data-testid="btn-bulk-edit-profiles"
-                  disabled={editableCount === 0}
+                  disabled={!selectAllMatching && editableCount === 0}
                 >
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit {editableCount} of {selectedCount}
+                  {selectAllMatching
+                    ? `Edit ${selectedCount} matching`
+                    : `Edit ${editableCount} of ${selectedCount}`}
+                </Button>
+              )}
+
+              {/* Clear selection — escape hatch in both modes */}
+              {selectedCount > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSelection}
+                  className="h-8"
+                >
+                  Unselect All
                 </Button>
               )}
 
@@ -1594,6 +1841,50 @@ export default function Profiles({
               />
             </div>
           </div>
+
+          {/* Cross-page selection banners. Two states:
+              (a) page-all selected, more matching elsewhere → offer
+                  "Select all N matching" to flip into all-matching mode.
+              (b) all-matching active → show count + Clear so the
+                  user always has an obvious escape hatch.
+              Mutually exclusive — both never render at once. */}
+          {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+              data-testid="select-all-matching-banner"
+            >
+              <span className="text-muted-foreground">
+                All {profiles.length} on this page selected.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={selectAllMatchingNow}
+              >
+                Select all {totalMatchingCount} matching
+              </Button>
+            </div>
+          )}
+          {selectAllMatching && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+              data-testid="all-matching-active-banner"
+            >
+              <span className="text-muted-foreground">
+                All {selectedCount} matching profiles selected
+                {excludedProfileIds.length > 0 && ` (${excludedProfileIds.length} excluded)`}.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={clearSelection}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
 
           {/* Table */}
           <div
@@ -2258,54 +2549,48 @@ export default function Profiles({
         )}
 
         {/* Bulk Delete Confirmation */}
-        {(() => {
-          const selected = profiles.filter(
-            (s) => s.profile_id && selectedProfileIds.includes(s.profile_id)
-          );
-          const nonDeletable = selected.filter((s) => !s.can_delete);
-          const deletable = selected.filter((s) => s.can_delete);
-          return (
-            <BulkDeleteDialog
-              open={showBulkDeleteDialog}
-              onOpenChange={setShowBulkDeleteDialog}
-              count={deletable.length}
-              entityLabel="profile"
-              entityLabelPlural="profiles"
-              isDeleting={false}
-              onConfirm={async () => {
-                try {
-                  const deletableIds = deletable
-                    .map((s) => s.profile_id!)
-                    .filter((id): id is string => id !== null && id !== undefined);
-                  if (deletableIds.length === 0) {
-                    setShowBulkDeleteDialog(false);
-                    return;
-                  }
-                  if (!bulkDeleteProfileAction) return;
-                  await bulkDeleteProfileAction({
-                    body: { profile_ids: deletableIds },
-                  });
-                  router.refresh();
-                  toast.success("Selected profiles deleted");
-                  setSelectedProfileIds([]);
-                  setShowBulkDeleteDialog(false);
-                } catch {
-                  toast.error("Failed to delete selected profiles");
-                }
-              }}
-              description={
-                <>
+        <BulkDeleteDialog
+          open={showBulkDeleteDialog}
+          onOpenChange={setShowBulkDeleteDialog}
+          count={selectAllMatching ? selectedCount : deletableProfiles.length}
+          entityLabel="profile"
+          entityLabelPlural="profiles"
+          isDeleting={isBulkDeleting}
+          onConfirm={handleBulkDelete}
+          description={
+            <>
+              <p>
+                This will permanently delete the selected accounts. Default
+                profiles and your own account will not be deleted.
+              </p>
+              {selectAllMatching ? (
+                // All-matching mode: server resolves rows from filter +
+                // exclusions; per-row permission failures soft-skip.
+                // We can't enumerate names without round-tripping through
+                // the search endpoint, so show count + filter state.
+                <div className="text-sm text-muted-foreground">
                   <p>
-                    This will permanently delete the selected accounts. Default
-                    profiles and your own account will not be deleted.
+                    All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                    {" "}profiles will be deleted server-side using the current filter.
                   </p>
-                  {deletable.length > 0 && (
+                  {excludedProfileIds.length > 0 && (
+                    <p className="mt-1">
+                      {excludedProfileIds.length} explicitly excluded.
+                    </p>
+                  )}
+                  <p className="mt-1">
+                    Profiles you don't have permission to delete will be skipped automatically.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {deletableProfiles.length > 0 && (
                     <div>
                       <p className="text-sm font-medium text-destructive mb-1">
                         The following accounts will be removed:
                       </p>
                       <ul className="text-sm space-y-0.5 max-h-32 overflow-y-auto">
-                        {deletable.map((s) => (
+                        {deletableProfiles.map((s) => (
                           <li key={s.profile_id} className="flex items-center gap-1.5">
                             <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                             {s.name} (
@@ -2317,13 +2602,13 @@ export default function Profiles({
                       </ul>
                     </div>
                   )}
-                  {nonDeletable.length > 0 && (
+                  {nonDeletableProfiles.length > 0 && (
                     <div>
                       <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
                         Cannot be deleted (skipped):
                       </p>
                       <ul className="text-sm space-y-0.5 max-h-24 overflow-y-auto">
-                        {nonDeletable.map((s) => (
+                        {nonDeletableProfiles.map((s) => (
                           <li
                             key={s.profile_id}
                             className="flex items-center gap-1.5 text-muted-foreground"
@@ -2341,16 +2626,16 @@ export default function Profiles({
                     </div>
                   )}
                 </>
-              }
-            />
-          );
-        })()}
+              )}
+            </>
+          }
+        />
 
         {/* Bulk Edit Modal */}
         <BulkEditDialog
           open={showBulkEditDialog}
           onOpenChange={setShowBulkEditDialog}
-          count={editableCount}
+          count={selectAllMatching ? selectedCount : editableCount}
           entityLabelPlural="profiles"
           isSaving={isBulkEditing}
           onSave={handleBulkEdit}

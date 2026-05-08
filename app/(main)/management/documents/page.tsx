@@ -22,6 +22,8 @@ import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
 import { loadDocumentsSearchParams } from "@/lib/search-params/documents";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type DocumentsListIn = InputOf<"/document/search", "post">;
 type DocumentsListOut = OutputOf<"/document/search", "post">;
@@ -34,8 +36,6 @@ type GenerateTemplateIn = never;
 type GenerateTemplateOut = never;
 type GroupDocumentIn = InputOf<"/document/group", "post">;
 type GroupDocumentOut = OutputOf<"/document/group", "post">;
-type GenerateDocumentIn = InputOf<"/document/generate", "post">;
-type GenerateDocumentOut = OutputOf<"/document/generate", "post">;
 type GenerationsIn = InputOf<"/document/generations", "post">;
 type GenerationsOut = OutputOf<"/document/generations", "post">;
 type ProblemDocumentIn = InputOf<"/document/problem", "post">;
@@ -43,12 +43,21 @@ type ProblemDocumentOut = OutputOf<"/document/problem", "post">;
 type ContextIn = InputOf<"/document/context", "post">;
 type ContextOut = OutputOf<"/document/context", "post">;
 
+/** ---- Body type for documents list request ----
+ *  Matches the server's ``SearchDocumentApiRequest`` validator. The
+ *  client passes this same shape to the bulk delete/update endpoints
+ *  under ``all=true`` mode so the server can resolve matching ids
+ *  without a client-side enumeration round-trip. Derived from the
+ *  OpenAPI input so ``page_size`` / ``page_offset`` nullability stays
+ *  in sync with the server. */
+type DocumentsListBody = NonNullable<DocumentsListIn["body"]>;
+
 /** ---- Direct fetch (no Next.js cache) ---- */
-const getDocumentsList = async (): Promise<DocumentsListOut> => {
+const getDocumentsList = async (body: DocumentsListBody): Promise<DocumentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/document/search",
-    { body: {} },
+    { body },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -75,12 +84,6 @@ async function updateDocument(
   return api.post("/document/update", input);
 }
 
-async function generateDocument(
-  input: GenerateDocumentIn
-): Promise<GenerateDocumentOut> {
-  "use server";
-  return api.post("/document/generate", input);
-}
 
 async function getDocumentGroupHistory(groupId: string): Promise<GroupDocumentOut> {
   "use server";
@@ -108,15 +111,20 @@ async function searchDocumentGenerations(input: GenerationsIn): Promise<Generati
   return api.post("/document/generations", input);
 }
 
-async function runDocumentGenerate(input: GenerateDocumentIn): Promise<GenerateDocumentOut> {
-  "use server";
-  return api.post("/document/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getDocumentContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/document/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/document/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getDocumentContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -147,13 +155,25 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
 
   try {
     // Profile data for providers
-    const context = await api.post("/document/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getDocumentContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/management/documents", context.profile.role_permissions);
 
+    // The documents list page doesn't yet expose URL-backed filters,
+    // but we still build a ``body`` so bulk write endpoints under
+    // ``selectAll=1`` mode have a well-formed filter envelope to echo
+    // back. As filter URL state is added, populate fields from ``q``
+    // here — the client component already passes this through.
+    // ``page_size``/``page_offset`` are required-but-nullable in the
+    // OpenAPI schema; passing null lets the server use its defaults.
+    const body: DocumentsListBody = {
+      page_size: null,
+      page_offset: null,
+    };
+
     // Fetch list data, view cookie, and group in parallel
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([
-      getDocumentsList(),
+      getDocumentsList(body),
       readViewCookie("documents"),
       api.post(
         "/document/group",
@@ -178,6 +198,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
         toolbar={<NewArtifactButton label="New Document" href="/management/documents/new" />}
         panelProps={{
           artifactType: "document",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupDocumentOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupDocumentOut & { name?: string | null })?.name ?? null,
@@ -186,19 +207,23 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          generateAction: generateDocument,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           getGroupHistory: getDocumentGroupHistory,
           searchGroups: searchDocumentGroups,
           prompts: context.prompts?.prompts,
           getGroupAction: getDocumentGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchDocumentGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runDocumentGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="documents-index">
-          <Documents listData={listData} initialColumnVisibility={initialColumnVisibility} deleteDocumentAction={deleteDocument} updateDocumentAction={updateDocument} />
+          <Documents
+            listData={listData}
+            initialColumnVisibility={initialColumnVisibility}
+            deleteDocumentAction={deleteDocument}
+            updateDocumentAction={updateDocument}
+            currentSearchBody={body}
+          />
         </div>
       </FullPageLayout>
     );
@@ -226,6 +251,7 @@ export type {
   DeleteDocumentOut,
   DocumentsListIn,
   DocumentsListOut,
+  DocumentsListBody,
   GenerateTemplateIn,
   GenerateTemplateOut,
   UpdateDocumentIn,

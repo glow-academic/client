@@ -633,12 +633,16 @@ function PersonaComponent({
   });
 
   // --- AI Draft Sync (generic: update draftId when AI saves) ---
+  // The URL update already triggers a Next.js RSC re-fetch via
+  // ``GenericForm``'s ``shallow: false`` default, so an explicit
+  // ``router.refresh()`` here would just produce a second SSR cycle
+  // (visible as duplicated context/group/get audit bubbles after
+  // every persona.draft.completed). One mechanism is enough.
   useGenerationDraft({
     artifactType: "persona",
     groupId: groupId,
     onDraftCompleted: (draftId) => {
       setUrlFormDataRef.current?.({ draftId });
-      router.refresh();
     },
     onDraftFailed: (message) => {
       toast.error("AI draft failed", { description: message });
@@ -755,16 +759,24 @@ function PersonaComponent({
   }, [patchPersonaDraftAction]);
 
   // --- Initialize URL parameterIds from server resolved_parameter_ids ---
+  // Mount-time URL seeding only — uses ``shallow: true`` so nuqs writes
+  // the URL without triggering a Next.js RSC re-fetch. Without this, the
+  // page double-SSRs on every load (one render, then a second triggered
+  // by the URL update). User-driven URL changes elsewhere keep the
+  // GenericForm default of ``shallow: false`` so search filters still
+  // round-trip server-side.
   const hasInitializedParameterIds = useRef(false);
   useEffect(() => {
     const resolvedIds = (personaData as PersonaData & { resolved_parameter_ids?: string[] | null })?.resolved_parameter_ids;
     if (!hasInitializedParameterIds.current) {
       hasInitializedParameterIds.current = true;
       if (setUrlFormDataRef.current) {
-        // Set resolved IDs, or null to remove empty ?parameterIds= from URL
-        setUrlFormDataRef.current({
-          parameterIds: resolvedIds && resolvedIds.length > 0 ? resolvedIds : null,
-        });
+        setUrlFormDataRef.current(
+          {
+            parameterIds: resolvedIds && resolvedIds.length > 0 ? resolvedIds : null,
+          },
+          { shallow: true },
+        );
       }
     }
   }, [personaData, setUrlFormDataRef]);

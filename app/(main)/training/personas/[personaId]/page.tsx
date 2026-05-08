@@ -26,6 +26,8 @@ import {
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetPersonaIn = InputOf<"/persona/get", "post">;
 type GetPersonaOut = OutputOf<"/persona/get", "post">;
@@ -37,8 +39,6 @@ type GroupPersonaIn = InputOf<"/persona/group", "post">;
 type GroupPersonaOut = OutputOf<"/persona/group", "post">;
 type GenerationsIn = InputOf<"/persona/generations", "post">;
 type GenerationsOut = OutputOf<"/persona/generations", "post">;
-type GenerateIn = InputOf<"/persona/generate", "post">;
-type GenerateOut = OutputOf<"/persona/generate", "post">;
 type ProblemPersonaIn = InputOf<"/persona/problem", "post">;
 type ProblemPersonaOut = OutputOf<"/persona/problem", "post">;
 type ContextIn = InputOf<"/persona/context", "post">;
@@ -81,10 +81,15 @@ async function searchPersonaGenerations(input: GenerationsIn): Promise<Generatio
   return api.post("/persona/generations", input);
 }
 
-async function runPersonaGenerate(input: GenerateIn): Promise<GenerateOut> {
-  "use server";
-  return api.post("/persona/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getPersonaContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/persona/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata({
@@ -94,7 +99,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { personaId } = await params;
-    const context = await api.post("/persona/context", { body: { entity_id: personaId } } as ContextIn) as ContextOut;
+    const context = await getPersonaContextById(personaId);
     return {
       title: context.page_metadata?.detail.title,
       description: context.page_metadata?.detail.description,
@@ -186,7 +191,7 @@ export default async function PersonaEditPage({
 
     const [personaDetail, context, draftsResult, groupResult] = await Promise.all([
       getPersona(input),
-      api.post("/persona/context", { body: { entity_id: personaId } } as ContextIn) as Promise<ContextOut>,
+      getPersonaContextById(personaId) as Promise<ContextOut>,
       api.post("/persona/drafts", {}),
       api.post(
         "/persona/group",
@@ -216,6 +221,7 @@ export default async function PersonaEditPage({
           toolbar={<SaveToolbar />}
           panelProps={{
             artifactType: "persona",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
             groupId: (groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null,
             groupName:
               (groupResult as GroupPersonaOut & { name?: string | null })?.name ?? null,
@@ -224,12 +230,11 @@ export default async function PersonaEditPage({
             // skips the duplicate client-side /persona/group refetch
             // on first paint, eliminating the hydration flicker.
             initialGroupHistory: groupResult as Record<string, unknown>,
-            operations: ["draft", "get", "group"],
+            operations: ["draft", "get", "title"],
             prompts: context.prompts?.prompts,
             getGroupAction: getPersonaGroup as PanelProps["getGroupAction"],
             searchGenerationsAction:
               searchPersonaGenerations as PanelProps["searchGenerationsAction"],
-            runGenerateAction: runPersonaGenerate as PanelProps["runGenerateAction"],
           }}
         >
           <div

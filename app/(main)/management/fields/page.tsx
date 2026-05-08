@@ -22,6 +22,8 @@ import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
 import { loadFieldsSearchParams } from "@/lib/search-params/fields";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type FieldsListOut = OutputOf<"/field/search", "post">;
 type DuplicateFieldIn = InputOf<"/field/duplicate", "post">;
@@ -32,8 +34,6 @@ type UpdateFieldIn = InputOf<"/field/update", "post">;
 type UpdateFieldOut = OutputOf<"/field/update", "post">;
 type GroupFieldIn = InputOf<"/field/group", "post">;
 type GroupFieldOut = OutputOf<"/field/group", "post">;
-type GenerateFieldIn = InputOf<"/field/generate", "post">;
-type GenerateFieldOut = OutputOf<"/field/generate", "post">;
 type GenerationsIn = InputOf<"/field/generations", "post">;
 type GenerationsOut = OutputOf<"/field/generations", "post">;
 type ProblemFieldIn = InputOf<"/field/problem", "post">;
@@ -41,12 +41,34 @@ type ProblemFieldOut = OutputOf<"/field/problem", "post">;
 type ContextIn = InputOf<"/field/context", "post">;
 type ContextOut = OutputOf<"/field/context", "post">;
 
+/** ---- Body type for fields list request ----
+ *  Mirrors ``SearchFieldApiRequest`` so the all-matching bulk write
+ *  path can spread this verbatim into ``/field/delete`` /
+ *  ``/field/update`` bodies under ``selectAll=1`` mode.
+ *
+ *  ``page_size`` / ``page_offset`` are list-pagination knobs that
+ *  ``SearchFieldApiRequest`` requires; the bulk delete/update
+ *  validators ignore unknown fields, so spreading this whole body
+ *  through is safe. */
+type FieldsListBody = {
+  search?: string | null;
+  parameter_ids?: string[] | null;
+  persona_ids?: string[] | null;
+  filter_department_ids?: string[] | null;
+  parameter_search?: string | null;
+  persona_search?: string | null;
+  department_search?: string | null;
+  flag_search?: string | null;
+  page_size: number | null;
+  page_offset: number | null;
+};
+
 /** ---- Direct fetch (no Next.js cache) ---- */
-const getFieldsList = async (): Promise<FieldsListOut> => {
+const getFieldsList = async (body: FieldsListBody): Promise<FieldsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/field/search",
-    { body: {} },
+    { body },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -76,12 +98,6 @@ async function updateField(input: UpdateFieldIn): Promise<UpdateFieldOut> {
   return api.post("/field/update", input);
 }
 
-async function generateField(
-  input: GenerateFieldIn
-): Promise<GenerateFieldOut> {
-  "use server";
-  return api.post("/field/generate", input);
-}
 
 async function getFieldGroupHistory(groupId: string): Promise<GroupFieldOut> {
   "use server";
@@ -109,15 +125,20 @@ async function searchFieldGenerations(input: GenerationsIn): Promise<Generations
   return api.post("/field/generations", input);
 }
 
-async function runFieldGenerate(input: GenerateFieldIn): Promise<GenerateFieldOut> {
-  "use server";
-  return api.post("/field/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getFieldContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/field/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getFieldContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -148,13 +169,23 @@ export default async function FieldsPage({ searchParams }: FieldsPageProps) {
 
   try {
     // Profile data for providers
-    const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getFieldContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/management/fields", context.profile.role_permissions);
 
+    // The fields list page uses client-side faceted filters (TanStack
+    // table column filters) rather than threading filter state through
+    // the URL → server. Until we move filters server-side the SSR body
+    // is empty, but it's still threaded as ``currentSearchBody`` so the
+    // bulk all-matching shape can spread it verbatim once that lands.
+    const body: FieldsListBody = {
+      page_size: null,
+      page_offset: null,
+    };
+
     // Fetch list data, view cookie, and group in parallel
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([
-      getFieldsList(),
+      getFieldsList(body),
       readViewCookie("fields"),
       api.post(
         "/field/group",
@@ -179,6 +210,7 @@ export default async function FieldsPage({ searchParams }: FieldsPageProps) {
         toolbar={<NewArtifactButton label="New Field" href="/management/fields/new" />}
         panelProps={{
           artifactType: "field",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupFieldOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupFieldOut & { name?: string | null })?.name ?? null,
@@ -187,15 +219,13 @@ export default async function FieldsPage({ searchParams }: FieldsPageProps) {
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          generateAction: generateField,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           getGroupHistory: getFieldGroupHistory,
           searchGroups: searchFieldGroups,
           prompts: context.prompts?.prompts,
           getGroupAction: getFieldGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchFieldGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runFieldGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="fields-index">
@@ -205,6 +235,7 @@ export default async function FieldsPage({ searchParams }: FieldsPageProps) {
             duplicateFieldAction={duplicateField}
             deleteFieldAction={deleteField}
             updateFieldAction={updateField}
+            currentSearchBody={body}
           />
         </div>
       </FullPageLayout>
@@ -230,6 +261,7 @@ export default async function FieldsPage({ searchParams }: FieldsPageProps) {
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
   FieldsListOut,
+  FieldsListBody,
   DeleteFieldIn,
   DeleteFieldOut,
   DuplicateFieldIn,

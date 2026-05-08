@@ -9,6 +9,7 @@
 "use client";
 import { Copy, Edit, Eye, FileCheck, Pencil, Star, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -29,6 +30,7 @@ import type {
   DuplicateRubricIn,
   DuplicateRubricOut,
   RubricsListOut,
+  RubricsListBody,
   UpdateRubricIn,
   UpdateRubricOut,
 } from "@/app/(main)/system/rubrics/page";
@@ -68,6 +70,11 @@ export interface RubricsProps {
   ) => Promise<DuplicateRubricOut>;
   deleteRubricAction?: (input: DeleteRubricIn) => Promise<DeleteRubricOut>;
   updateRubricAction?: (input: UpdateRubricIn) => Promise<UpdateRubricOut>;
+  /** The body the page used for its SSR ``/rubric/search`` call.
+   *  Forwarded as the filter on bulk delete/update calls when the
+   *  user is in ``selectAll=1`` mode — the server resolves matching
+   *  rows directly, no client-side enumeration. */
+  currentSearchBody?: RubricsListBody;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;
@@ -96,6 +103,7 @@ export default function Rubrics({
   duplicateRubricAction,
   deleteRubricAction,
   updateRubricAction,
+  currentSearchBody,
   pageIndex,
   pageSize,
   totalCount,
@@ -165,12 +173,55 @@ export default function Rubrics({
       .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
   }, [rubricsData?.flag_filter]);
 
-  // Selection state
-  const [selectedRubricIds, setSelectedRubricIds] = useState<string[]>([]);
-  const selectedCount = selectedRubricIds.length;
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated link. Three params
+  // model the full state machine:
+  //
+  //   - ``selectedIds=A,B``        → explicit selection of named rows
+  //   - ``selectAll=1``            → every row matching the active
+  //                                  filters/search is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                                → all-matching minus exclusions
+  //
+  // The all-matching mode keeps the URL compact for huge datasets
+  // (one boolean instead of N ids) and follows the active filter.
+  // Shallow updates avoid the RSC re-fetch burst.
+  const [selectedRubricIds, setSelectedRubricIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedRubricIds, setExcludedRubricIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+
+  const totalMatchingCount = rubricsData?.total_count ?? 0;
+
+  // ``isSelected`` is the single read predicate every row uses; it
+  // dispatches between explicit-id and all-matching modes so
+  // downstream code never needs to branch. ``selectedCount`` mirrors
+  // that — under all-matching it's ``totalCount - excludedIds.length``.
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedRubricIds.includes(id)
+        : selectedRubricIds.includes(id);
+    },
+    [selectAllMatching, excludedRubricIds, selectedRubricIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedRubricIds.length)
+    : selectedRubricIds.length;
+
   const selectedRubrics = useMemo(() => {
-    return rubrics.filter((r) => r.rubric_id && selectedRubricIds.includes(r.rubric_id));
-  }, [rubrics, selectedRubricIds]);
+    return rubrics.filter((r) => r.rubric_id && isSelected(r.rubric_id));
+  }, [rubrics, isSelected]);
   const deletableRubrics = useMemo(
     () => selectedRubrics.filter((r) => r.can_delete),
     [selectedRubrics],
@@ -184,20 +235,58 @@ export default function Rubrics({
     [selectedRubrics],
   );
 
+  // Toggle selection for a single rubric. Under all-matching mode
+  // we toggle membership in excludedRubricIds (deselect ⇒ add to
+  // exclusions, re-select ⇒ remove). Under explicit mode it's the
+  // straight selectedRubricIds toggle.
   const toggleSelection = useCallback((rubricId: string) => {
-    setSelectedRubricIds((prev) =>
-      prev.includes(rubricId) ? prev.filter((id) => id !== rubricId) : [...prev, rubricId]
-    );
-  }, []);
-  const clearBulkSelection = useCallback(() => setSelectedRubricIds([]), []);
+    if (selectAllMatching) {
+      void setExcludedRubricIds((prev) =>
+        prev.includes(rubricId)
+          ? prev.filter((id) => id !== rubricId)
+          : [...prev, rubricId],
+      );
+    } else {
+      void setSelectedRubricIds((prev) =>
+        prev.includes(rubricId)
+          ? prev.filter((id) => id !== rubricId)
+          : [...prev, rubricId],
+      );
+    }
+  }, [selectAllMatching, setExcludedRubricIds, setSelectedRubricIds]);
+
+  const clearBulkSelection = useCallback(() => {
+    void setSelectedRubricIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedRubricIds([]);
+  }, [setSelectedRubricIds, setSelectAllMatching, setExcludedRubricIds]);
+
   const selectAllOnPage = useCallback(() => {
     const pageIds = rubrics.filter((r) => r.rubric_id).map((r) => r.rubric_id!);
-    setSelectedRubricIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [rubrics]);
+    void setSelectAllMatching(false);
+    void setExcludedRubricIds([]);
+    void setSelectedRubricIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [rubrics, setSelectAllMatching, setExcludedRubricIds, setSelectedRubricIds]);
+
   const allPageSelected = useMemo(() => {
     const pageIds = rubrics.filter((r) => r.rubric_id).map((r) => r.rubric_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedRubricIds.includes(id));
-  }, [rubrics, selectedRubricIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [rubrics, isSelected]);
+
+  // Whether there ARE more matching rows than what's loaded on this
+  // page — used to decide whether to surface the "Select all N
+  // matching" affordance after the user selects the page.
+  const hasMoreThanCurrentPage = totalMatchingCount > rubrics.length;
+
+  /** Promote the current page-only selection into "all matching
+   *  filter" mode. Clears explicit ids and exclusions — the all-
+   *  matching mode is the canonical truth from this point. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedRubricIds([]);
+    void setExcludedRubricIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedRubricIds, setExcludedRubricIds, setSelectAllMatching]);
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -635,12 +724,53 @@ export default function Rubrics({
   };
 
   const handleBulkDelete = async () => {
-    if (!deleteRubricAction || deletableRubrics.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deleteRubricAction`` call shape; the
+    // body just differs.
+    if (!deleteRubricAction) return;
+    if (!selectAllMatching && deletableRubrics.length === 0) return;
+
+    if (!profile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
+
     setIsBulkDeleting(true);
     try {
-      const ids = deletableRubrics.map((r) => r.rubric_id!);
-      await deleteRubricAction({ body: { rubric_ids: ids, accept: true } });
-      toast.success(`${ids.length} rubric(s) deleted successfully`);
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedRubricIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            rubric_ids: deletableRubrics.map((r) => r.rubric_id!),
+            accept: true,
+          };
+
+      const result = await deleteRubricAction({ body } as DeleteRubricIn);
+
+      // Per-row results from the server: success entries are actual
+      // deletions, failures are soft-skipped rows (no permission /
+      // not found). Toast reflects both counts so the user knows
+      // some rows were skipped without inspecting the receipt.
+      const results = (result as DeleteRubricOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} rubric(s) deleted, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} rubric(s) deleted successfully`);
+      }
       clearBulkSelection();
       router.refresh();
     } catch (err) {
@@ -653,9 +783,16 @@ export default function Rubrics({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateRubricAction || editableRubrics.length === 0) return;
+    if (!updateRubricAction) return;
+    if (!selectAllMatching && editableRubrics.length === 0) return;
+
+    if (!profile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
 
     const hasActiveChange = bulkEditActiveStatus !== null;
+    const hasAnyFlagChange = hasActiveChange;
     if (!hasActiveChange) {
       toast.error("No changes selected");
       return;
@@ -665,20 +802,56 @@ export default function Rubrics({
 
     setIsBulkEditing(true);
     try {
-      const items = editableRubrics.map((r) => {
+      let body: UpdateRubricIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know what each row's existing flags are), so
+        // the active toggle becomes "set to this value across all
+        // matching rows" — same semantic as a manual sweep.
         let flag_ids: string[] | undefined;
-        if (hasActiveChange) {
-          const isActive = bulkEditActiveStatus;
-          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+        if (hasAnyFlagChange) {
+          flag_ids = [];
+          if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
         }
-        return {
-          id: r.rubric_id!,
-          ...(hasActiveChange && { flag_ids }),
-        };
-      });
+        body = {
+          all: true,
+          excluded_ids: excludedRubricIds,
+          ...(currentSearchBody ?? {}),
+          patch: {
+            ...(hasAnyFlagChange && { flag_ids }),
+          },
+          accept: true,
+        } as UpdateRubricIn["body"];
+      } else {
+        // Explicit: clone the patch per-row, preserving each row's
+        // existing flag state for flags we aren't toggling.
+        const items = editableRubrics.map((r) => {
+          let flag_ids: string[] | undefined;
+          if (hasAnyFlagChange) {
+            const isActive = hasActiveChange ? bulkEditActiveStatus : !r.is_inactive;
+            flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+          }
+          return {
+            id: r.rubric_id!,
+            ...(hasAnyFlagChange && { flag_ids }),
+          };
+        });
+        body = { rubrics: items } as UpdateRubricIn["body"];
+      }
 
-      await updateRubricAction({ body: { rubrics: items } } as UpdateRubricIn);
-      toast.success(`${items.length} rubric(s) updated successfully`);
+      const result = await updateRubricAction({ body } as UpdateRubricIn);
+
+      // Per-row results — same soft-skip pattern as bulk delete.
+      const results = (result as UpdateRubricOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} rubric(s) updated, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} rubric(s) updated successfully`);
+      }
       clearBulkSelection();
       router.refresh();
     } catch (err) {
@@ -713,7 +886,7 @@ export default function Rubrics({
         ? Math.round((totalPassPoints / totalPoints) * 100)
         : (rubric.pass_percentage ?? 0);
 
-    const isSelected = rubric.rubric_id ? selectedRubricIds.includes(rubric.rubric_id) : false;
+    const cardIsSelected = isSelected(rubric.rubric_id);
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
@@ -724,12 +897,12 @@ export default function Rubrics({
     return (
       <Card
         key={rubric.rubric_id}
-        className={`group w-full hover:shadow-md transition-all cursor-pointer ${isSelected ? "ring-2 ring-primary" : ""}`}
+        className={`group w-full hover:shadow-md transition-all cursor-pointer ${cardIsSelected ? "ring-2 ring-primary" : ""}`}
         data-testid="rubric-card"
         data-rubric-id={rubric.rubric_id}
         role="gridcell"
         aria-label={`rubric card ${rubric.name || "Unnamed Rubric"}`}
-        aria-selected={isSelected}
+        aria-selected={cardIsSelected}
         onClick={handleCardClick}
       >
         {/* Header */}
@@ -746,7 +919,7 @@ export default function Rubrics({
                   data-action-button
                 >
                   <Checkbox
-                    checked={isSelected}
+                    checked={cardIsSelected}
                     onCheckedChange={() => {
                       if (rubric.rubric_id) toggleSelection(rubric.rubric_id);
                     }}
@@ -909,10 +1082,8 @@ export default function Rubrics({
       <div className="space-y-4" data-testid="rubrics-data-table">
         {/* Toolbar — swaps between filter bar and selection action bar */}
         {selectedCount > 0 ? (
-          <div
-            className="flex items-center justify-between gap-2"
-            data-testid="rubrics-toolbar"
-          >
+          <div className="space-y-2" data-testid="rubrics-toolbar">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {deleteRubricAction && (
                 <Button
@@ -920,10 +1091,12 @@ export default function Rubrics({
                   size="sm"
                   className="h-8"
                   onClick={() => setShowBulkDeleteDialog(true)}
-                  disabled={deletableRubrics.length === 0}
+                  disabled={!selectAllMatching && deletableRubrics.length === 0}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete {deletableRubrics.length} of {selectedCount}
+                  {selectAllMatching
+                    ? `Delete ${selectedCount} matching`
+                    : `Delete ${deletableRubrics.length} of ${selectedCount}`}
                 </Button>
               )}
               {updateRubricAction && (
@@ -932,15 +1105,17 @@ export default function Rubrics({
                   size="sm"
                   className="h-8"
                   onClick={openBulkEditDialog}
-                  disabled={editableRubrics.length === 0}
+                  disabled={!selectAllMatching && editableRubrics.length === 0}
                 >
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit {editableRubrics.length} of {selectedCount}
+                  {selectAllMatching
+                    ? `Edit ${selectedCount} matching`
+                    : `Edit ${editableRubrics.length} of ${selectedCount}`}
                 </Button>
               )}
-              {!allPageSelected && (
+              {!allPageSelected && !selectAllMatching && (
                 <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
-                  Select All
+                  Select Page
                 </Button>
               )}
               <Button variant="ghost" size="sm" className="h-8" onClick={clearBulkSelection}>
@@ -951,6 +1126,51 @@ export default function Rubrics({
               table={table}
               hiddenColumns={["name", "passPercentage", "simulations", "departments", "eval_ids"]}
             />
+          </div>
+
+          {/* Cross-page selection banners. Two states:
+              (a) page-all selected, more matching elsewhere → offer
+                  "Select all N matching" to flip into all-matching mode.
+              (b) all-matching active → show count + Clear so the
+                  user always has an obvious escape hatch.
+              Mutually exclusive — both never render at once. */}
+          {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+              data-testid="select-all-matching-banner"
+            >
+              <span className="text-muted-foreground">
+                All {rubrics.length} on this page selected.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={selectAllMatchingNow}
+              >
+                Select all {totalMatchingCount} matching
+              </Button>
+            </div>
+          )}
+          {selectAllMatching && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+              data-testid="all-matching-active-banner"
+            >
+              <span className="text-muted-foreground">
+                All {selectedCount} matching rubrics selected
+                {excludedRubricIds.length > 0 && ` (${excludedRubricIds.length} excluded)`}.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={clearBulkSelection}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
           </div>
         ) : (
         <div
@@ -1082,7 +1302,7 @@ export default function Rubrics({
       <BulkDeleteDialog
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
-        count={deletableRubrics.length}
+        count={selectAllMatching ? selectedCount : deletableRubrics.length}
         entityLabel="rubric"
         entityLabelPlural="rubrics"
         isDeleting={isBulkDeleting}
@@ -1090,35 +1310,59 @@ export default function Rubrics({
         description={
           <>
             <p>This action cannot be undone.</p>
-            {deletableRubrics.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                <ul className="text-sm space-y-0.5">
-                  {deletableRubrics.map((r) => (
-                    <li key={r.rubric_id} className="flex items-center gap-1.5">
-                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                      {r.name || "Unnamed Rubric"}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {nonDeletableRubrics.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
-                  Cannot be deleted (in use):
+            {selectAllMatching ? (
+              // All-matching mode: server resolves rows from filter +
+              // exclusions; per-row permission failures soft-skip.
+              // We can't enumerate names without round-tripping through
+              // the search endpoint (which would re-trigger the RSC
+              // burst), so show the count + filter state instead.
+              <div className="text-sm text-muted-foreground">
+                <p>
+                  All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                  {" "}rubrics will be deleted server-side using the current filter.
                 </p>
-                <ul className="text-sm space-y-0.5">
-                  {nonDeletableRubrics.map((r) => (
-                    <li
-                      key={r.rubric_id}
-                      className="flex items-center gap-1.5 text-muted-foreground"
-                    >
-                      {r.name || "Unnamed Rubric"}
-                    </li>
-                  ))}
-                </ul>
+                {excludedRubricIds.length > 0 && (
+                  <p className="mt-1">
+                    {excludedRubricIds.length} explicitly excluded.
+                  </p>
+                )}
+                <p className="mt-1">
+                  Rubrics you don't have permission to delete will be skipped automatically.
+                </p>
               </div>
+            ) : (
+              <>
+                {deletableRubrics.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                    <ul className="text-sm space-y-0.5">
+                      {deletableRubrics.map((r) => (
+                        <li key={r.rubric_id} className="flex items-center gap-1.5">
+                          <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                          {r.name || "Unnamed Rubric"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {nonDeletableRubrics.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                      Cannot be deleted (in use):
+                    </p>
+                    <ul className="text-sm space-y-0.5">
+                      {nonDeletableRubrics.map((r) => (
+                        <li
+                          key={r.rubric_id}
+                          className="flex items-center gap-1.5 text-muted-foreground"
+                        >
+                          {r.name || "Unnamed Rubric"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
             )}
           </>
         }
@@ -1128,7 +1372,7 @@ export default function Rubrics({
       <BulkEditDialog
         open={showBulkEditDialog}
         onOpenChange={setShowBulkEditDialog}
-        count={editableRubrics.length}
+        count={selectAllMatching ? selectedCount : editableRubrics.length}
         entityLabelPlural="rubrics"
         isSaving={isBulkEditing}
         onSave={handleBulkEdit}

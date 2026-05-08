@@ -84,19 +84,11 @@ export function createWsEvents(socket: AppSocket): EventChannel {
     // ``scope`` is ignored — WS uses one multiplexed socket; group
     // filtering happens server-side via the publish path's group_id.
     on(event, handler, _scope) {
-      // eslint-disable-next-line no-console
-      console.log(`[ws] subscribe → ${event}`);
-      const wrapped: Handler = (data) => {
-        // eslint-disable-next-line no-console
-        console.log(`[ws] received → ${event}`, data);
-        handler(data);
-      };
-
       if (isWildcard(event)) {
         const sub: PatternSubscription = {
           pattern: event,
           regex: compilePattern(event),
-          handler: wrapped,
+          handler,
         };
         patterns.push(sub);
         return () => {
@@ -110,11 +102,11 @@ export function createWsEvents(socket: AppSocket): EventChannel {
         handlers = new Set();
         exact.set(event, handlers);
       }
-      handlers.add(wrapped);
+      handlers.add(handler);
       return () => {
         const set = exact.get(event);
         if (!set) return;
-        set.delete(wrapped);
+        set.delete(handler);
         if (set.size === 0) exact.delete(event);
       };
     },

@@ -64,8 +64,10 @@ export function deriveGenerationConfig(
     mode = "edit";
   }
 
-  // Operations based on mode
-  const operations = [...MODE_OPERATIONS[mode], "group"];
+  // Operations based on mode. ``title`` (write) lets the LLM rename the
+  // conversation group at end of turn — the read-side ``group`` resolve
+  // is auto-fired by the audit framework, not exposed as a tool.
+  const operations = [...MODE_OPERATIONS[mode], "title"];
 
   // Params from URL
   const params: Record<string, string> = {};

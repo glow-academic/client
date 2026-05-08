@@ -5,12 +5,14 @@
 "use client";
 import { Edit, Eye, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type {
   DeleteProviderIn,
   DeleteProviderOut,
+  ProvidersListBody,
   ProvidersListOut,
   UpdateProviderIn,
   UpdateProviderOut,
@@ -61,6 +63,11 @@ export interface ProvidersProps {
   updateProviderAction?: (
     input: UpdateProviderIn
   ) => Promise<UpdateProviderOut>;
+  /** The body the page used for its SSR ``/provider/search`` call.
+   *  Forwarded as the filter envelope on bulk delete/update calls
+   *  when the user is in ``selectAll=1`` mode — the server resolves
+   *  matching rows directly, no client-side enumeration. */
+  currentSearchBody?: ProvidersListBody;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;
@@ -81,6 +88,7 @@ export default function Providers({
   initialColumnVisibility,
   deleteProviderAction,
   updateProviderAction,
+  currentSearchBody,
   pageIndex,
   pageSize,
   totalCount,
@@ -181,12 +189,55 @@ export default function Providers({
       .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
   }, [providersData?.flag_filter]);
 
-  // Selection state
-  const [selectedProviderIds, setSelectedProviderIds] = useState<string[]>([]);
-  const selectedCount = selectedProviderIds.length;
+  // Selection state — URL-backed so it survives refresh and is
+  // craftable as a shareable / LLM-generated focus link. Three
+  // params model the full state machine:
+  //
+  //   - ``selectedIds=A,B``        → explicit selection of named rows
+  //   - ``selectAll=1``            → every row matching the active
+  //                                  filters/search is selected
+  //   - ``selectAll=1&excludedIds=X``
+  //                                → all-matching minus exclusions
+  //   - (none of the above)        → empty selection
+  //
+  // Shallow updates skip the RSC re-fetch burst.
+  const [selectedProviderIds, setSelectedProviderIds] = useQueryState(
+    "selectedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+  const [selectAllMatching, setSelectAllMatching] = useQueryState(
+    "selectAll",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [excludedProviderIds, setExcludedProviderIds] = useQueryState(
+    "excludedIds",
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({ shallow: true }),
+  );
+
+  // ---- Selection helpers ----------------------------------------
+  // ``isSelected`` is the single read predicate every row uses; it
+  // dispatches between explicit-id and all-matching modes so
+  // downstream code never needs to branch. ``selectedCount`` mirrors
+  // that — under all-matching it's ``totalCount - excludedIds.length``.
+  const totalMatchingCount = totalCount;
+
+  const isSelected = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return false;
+      return selectAllMatching
+        ? !excludedProviderIds.includes(id)
+        : selectedProviderIds.includes(id);
+    },
+    [selectAllMatching, excludedProviderIds, selectedProviderIds],
+  );
+
+  const selectedCount = selectAllMatching
+    ? Math.max(0, totalMatchingCount - excludedProviderIds.length)
+    : selectedProviderIds.length;
+
   const selectedProviders = useMemo(() => {
-    return providers.filter((p) => p.provider_id && selectedProviderIds.includes(p.provider_id));
-  }, [providers, selectedProviderIds]);
+    return providers.filter((p) => p.provider_id && isSelected(p.provider_id));
+  }, [providers, isSelected]);
   const deletableProviders = useMemo(
     () => selectedProviders.filter((p) => p.can_delete),
     [selectedProviders],
@@ -200,22 +251,62 @@ export default function Providers({
     [selectedProviders],
   );
 
+  // Toggle selection for a single provider. Under all-matching mode
+  // we toggle membership in excludedProviderIds (deselect ⇒ add to
+  // exclusions, re-select ⇒ remove). Under explicit mode it's the
+  // straight selectedProviderIds toggle.
   const toggleSelection = useCallback((providerId: string) => {
-    setSelectedProviderIds((prev) =>
-      prev.includes(providerId)
-        ? prev.filter((id) => id !== providerId)
-        : [...prev, providerId]
-    );
-  }, []);
-  const clearSelection = useCallback(() => setSelectedProviderIds([]), []);
+    if (selectAllMatching) {
+      void setExcludedProviderIds((prev) =>
+        prev.includes(providerId)
+          ? prev.filter((id) => id !== providerId)
+          : [...prev, providerId],
+      );
+    } else {
+      void setSelectedProviderIds((prev) =>
+        prev.includes(providerId)
+          ? prev.filter((id) => id !== providerId)
+          : [...prev, providerId]
+      );
+    }
+  }, [selectAllMatching, setExcludedProviderIds, setSelectedProviderIds]);
+
+  const clearSelection = useCallback(() => {
+    void setSelectedProviderIds([]);
+    void setSelectAllMatching(false);
+    void setExcludedProviderIds([]);
+  }, [setSelectedProviderIds, setSelectAllMatching, setExcludedProviderIds]);
+
   const selectAllOnPage = useCallback(() => {
     const pageIds = providers.filter((p) => p.provider_id).map((p) => p.provider_id!);
-    setSelectedProviderIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [providers]);
+    void setSelectAllMatching(false);
+    void setExcludedProviderIds([]);
+    void setSelectedProviderIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+  }, [providers, setSelectAllMatching, setExcludedProviderIds, setSelectedProviderIds]);
+
+  /** Promote the current page-only selection into "all matching
+   *  filter" mode. Clears explicit ids and exclusions — the all-
+   *  matching mode is the canonical truth from this point. */
+  const selectAllMatchingNow = useCallback(() => {
+    void setSelectedProviderIds([]);
+    void setExcludedProviderIds([]);
+    void setSelectAllMatching(true);
+  }, [setSelectedProviderIds, setExcludedProviderIds, setSelectAllMatching]);
+
+  // Check if all parent providers on the current page are selected.
+  // Under all-matching mode every loaded row whose id isn't in
+  // ``excludedProviderIds`` is implicitly selected, so the predicate
+  // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
     const pageIds = providers.filter((p) => p.provider_id).map((p) => p.provider_id!);
-    return pageIds.length > 0 && pageIds.every((id) => selectedProviderIds.includes(id));
-  }, [providers, selectedProviderIds]);
+    if (pageIds.length === 0) return false;
+    return pageIds.every((id) => isSelected(id));
+  }, [providers, isSelected]);
+
+  // Whether there ARE more matching rows than what's loaded on this
+  // page — used to decide whether to surface the "Select all N
+  // matching" affordance after the user selects the page.
+  const hasMoreThanCurrentPage = totalMatchingCount > providers.length;
 
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -544,12 +635,47 @@ export default function Providers({
   };
 
   const handleBulkDelete = async () => {
-    if (!deleteProviderAction || deletableProviders.length === 0) return;
+    // Either explicit-mode (deletable rows on current page) OR
+    // all-matching mode (server resolves rows via filter). Both
+    // converge on the same ``deleteProviderAction`` call shape; the
+    // body just differs.
+    if (!deleteProviderAction) return;
+    if (!selectAllMatching && deletableProviders.length === 0) return;
     setIsBulkDeleting(true);
     try {
-      const ids = deletableProviders.map((p) => p.provider_id!);
-      await deleteProviderAction({ body: { provider_ids: ids, accept: true } } as DeleteProviderIn);
-      toast.success(`${ids.length} provider(s) deleted successfully`);
+      const body = selectAllMatching
+        ? {
+            // Server resolves matching ids from the same filter the
+            // page used (currentSearchBody is the SSR body), subtracts
+            // ``excluded_ids``, then runs the existing per-row delete.
+            // Per-row permission failures soft-skip — surfaced in
+            // response.results[].
+            all: true as const,
+            excluded_ids: excludedProviderIds,
+            ...(currentSearchBody ?? {}),
+            accept: true,
+          }
+        : {
+            provider_ids: deletableProviders.map((p) => p.provider_id!),
+            accept: true,
+          };
+
+      const result = await deleteProviderAction({ body } as DeleteProviderIn);
+
+      // Per-row results from the server: success entries are actual
+      // deletions, failures are soft-skipped rows (no permission /
+      // not found). Toast reflects both counts so the user knows
+      // some rows were skipped without inspecting the receipt.
+      const results = (result as DeleteProviderOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} provider(s) deleted, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} provider(s) deleted successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -562,7 +688,8 @@ export default function Providers({
   };
 
   const handleBulkEdit = async () => {
-    if (!updateProviderAction || editableProviders.length === 0) return;
+    if (!updateProviderAction) return;
+    if (!selectAllMatching && editableProviders.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     if (!hasActiveChange) {
@@ -574,20 +701,55 @@ export default function Providers({
 
     setIsBulkEditing(true);
     try {
-      const items = editableProviders.map((p) => {
+      let body: UpdateProviderIn["body"];
+      if (selectAllMatching) {
+        // All-matching: the server can't preserve per-row flag state
+        // (it doesn't know what each row's existing flags are), so
+        // the active toggle becomes "set to this value across all
+        // matching rows" — the same semantic as a manual sweep.
         let flag_ids: string[] | undefined;
         if (hasActiveChange) {
-          const isActive = bulkEditActiveStatus;
-          flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+          flag_ids = [];
+          if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
         }
-        return {
-          id: p.provider_id!,
-          ...(hasActiveChange && { flag_ids }),
-        };
-      });
+        body = {
+          all: true,
+          excluded_ids: excludedProviderIds,
+          ...(currentSearchBody ?? {}),
+          patch: {
+            ...(hasActiveChange && { flag_ids }),
+          },
+          accept: true,
+        } as UpdateProviderIn["body"];
+      } else {
+        // Explicit: clone the patch per-row, preserving each row's
+        // existing flag state for flags we aren't toggling.
+        const items = editableProviders.map((p) => {
+          let flag_ids: string[] | undefined;
+          if (hasActiveChange) {
+            const isActive = bulkEditActiveStatus;
+            flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
+          }
+          return {
+            id: p.provider_id!,
+            ...(hasActiveChange && { flag_ids }),
+          };
+        });
+        body = { providers: items } as UpdateProviderIn["body"];
+      }
 
-      await updateProviderAction({ body: { providers: items } } as UpdateProviderIn);
-      toast.success(`${items.length} provider(s) updated successfully`);
+      const result = await updateProviderAction({ body } as UpdateProviderIn);
+
+      const results = (result as UpdateProviderOut).results ?? [];
+      const successCount = results.filter((r) => r.success).length;
+      const skippedCount = results.length - successCount;
+      if (skippedCount > 0) {
+        toast.success(
+          `${successCount} provider(s) updated, ${skippedCount} skipped`,
+        );
+      } else {
+        toast.success(`${successCount} provider(s) updated successfully`);
+      }
       clearSelection();
       router.refresh();
     } catch (err) {
@@ -612,7 +774,7 @@ export default function Providers({
     const providerId = provider.provider_id;
     const providerName = provider.name;
     if (!providerId) return null;
-    const isSelected = selectedProviderIds.includes(providerId);
+    const isSelectedRow = isSelected(providerId);
 
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons
@@ -627,10 +789,10 @@ export default function Providers({
         data-testid="provider-card"
         data-provider-id={providerId}
         className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
-          isSelected ? "ring-2 ring-primary" : ""
+          isSelectedRow ? "ring-2 ring-primary" : ""
         }`}
         role="gridcell"
-        aria-selected={isSelected}
+        aria-selected={isSelectedRow}
         onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
@@ -646,7 +808,7 @@ export default function Providers({
                   data-action-button
                 >
                   <Checkbox
-                    checked={isSelected}
+                    checked={isSelectedRow}
                     onCheckedChange={() => toggleSelection(providerId)}
                     className="rounded-full h-5 w-5"
                     aria-label={`Select provider ${providerName || "Unnamed"}`}
@@ -730,48 +892,95 @@ export default function Providers({
     <div className="space-y-6" data-page="providers-index">
       {/* Toolbar — swaps between filter bar and selection action bar */}
       {selectedCount > 0 ? (
-        <div
-          className="flex items-center justify-between gap-2"
-          data-testid="providers-toolbar"
-        >
-          <div className="flex items-center gap-2">
-            {deleteProviderAction && (
-              <Button
-                variant="destructive"
-                size="sm"
-                className="h-8"
-                onClick={() => setShowBulkDeleteDialog(true)}
-                disabled={deletableProviders.length === 0}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete {deletableProviders.length} of {selectedCount}
+        <div className="space-y-2" data-testid="providers-toolbar">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              {deleteProviderAction && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setShowBulkDeleteDialog(true)}
+                  disabled={!selectAllMatching && deletableProviders.length === 0}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {selectAllMatching
+                    ? `Delete ${selectedCount} matching`
+                    : `Delete ${deletableProviders.length} of ${selectedCount}`}
+                </Button>
+              )}
+              {updateProviderAction && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={openBulkEditDialog}
+                  disabled={!selectAllMatching && editableProviders.length === 0}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  {selectAllMatching
+                    ? `Edit ${selectedCount} matching`
+                    : `Edit ${editableProviders.length} of ${selectedCount}`}
+                </Button>
+              )}
+              {!allPageSelected && !selectAllMatching && (
+                <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
+                  Select Page
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
+                Unselect All
               </Button>
-            )}
-            {updateProviderAction && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8"
-                onClick={openBulkEditDialog}
-                disabled={editableProviders.length === 0}
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit {editableProviders.length} of {selectedCount}
-              </Button>
-            )}
-            {!allPageSelected && (
-              <Button variant="ghost" size="sm" className="h-8" onClick={selectAllOnPage}>
-                Select All
-              </Button>
-            )}
-            <Button variant="ghost" size="sm" className="h-8" onClick={clearSelection}>
-              Unselect All
-            </Button>
+            </div>
+            <DataTableViewOptions
+              table={table}
+              hiddenColumns={["name", "description", "value", "departments", "models", "status", "updated_at"]}
+            />
           </div>
-          <DataTableViewOptions
-            table={table}
-            hiddenColumns={["name", "description", "value", "departments", "models", "status", "updated_at"]}
-          />
+
+          {/* Cross-page selection banners. Two states:
+              (a) page-all selected, more matching elsewhere → offer
+                  "Select all N matching" to flip into all-matching mode.
+              (b) all-matching active → show count + Clear so the
+                  user always has an obvious escape hatch.
+              Mutually exclusive — both never render at once. */}
+          {!selectAllMatching && allPageSelected && hasMoreThanCurrentPage && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+              data-testid="select-all-matching-banner"
+            >
+              <span className="text-muted-foreground">
+                All {providers.length} on this page selected.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={selectAllMatchingNow}
+              >
+                Select all {totalMatchingCount} matching
+              </Button>
+            </div>
+          )}
+          {selectAllMatching && (
+            <div
+              className="flex items-center justify-between gap-2 rounded-md border bg-primary/5 px-3 py-2 text-sm"
+              data-testid="all-matching-active-banner"
+            >
+              <span className="text-muted-foreground">
+                All {selectedCount} matching providers selected
+                {excludedProviderIds.length > 0 && ` (${excludedProviderIds.length} excluded)`}.
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={clearSelection}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2" data-testid="providers-toolbar">
@@ -894,7 +1103,7 @@ export default function Providers({
       <BulkDeleteDialog
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
-        count={deletableProviders.length}
+        count={selectAllMatching ? selectedCount : deletableProviders.length}
         entityLabel="provider"
         entityLabelPlural="providers"
         isDeleting={isBulkDeleting}
@@ -902,35 +1111,59 @@ export default function Providers({
         description={
           <>
             <p>This action cannot be undone.</p>
-            {deletableProviders.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
-                <ul className="text-sm space-y-0.5">
-                  {deletableProviders.map((p) => (
-                    <li key={p.provider_id} className="flex items-center gap-1.5">
-                      <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
-                      {p.name || "Unnamed Provider"}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {nonDeletableProviders.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
-                  Cannot be deleted (in use):
+            {selectAllMatching ? (
+              // All-matching mode: server resolves rows from filter +
+              // exclusions; per-row permission failures soft-skip.
+              // We can't enumerate names without round-tripping through
+              // the search endpoint (which would re-trigger the RSC
+              // burst), so show the count + filter state instead.
+              <div className="text-sm text-muted-foreground">
+                <p>
+                  All <span className="font-medium text-foreground">{selectedCount}</span> matching
+                  {" "}providers will be deleted server-side using the current filter.
                 </p>
-                <ul className="text-sm space-y-0.5">
-                  {nonDeletableProviders.map((p) => (
-                    <li
-                      key={p.provider_id}
-                      className="flex items-center gap-1.5 text-muted-foreground"
-                    >
-                      {p.name || "Unnamed Provider"}
-                    </li>
-                  ))}
-                </ul>
+                {excludedProviderIds.length > 0 && (
+                  <p className="mt-1">
+                    {excludedProviderIds.length} explicitly excluded.
+                  </p>
+                )}
+                <p className="mt-1">
+                  Providers you don't have permission to delete will be skipped automatically.
+                </p>
               </div>
+            ) : (
+              <>
+                {deletableProviders.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                    <ul className="text-sm space-y-0.5">
+                      {deletableProviders.map((p) => (
+                        <li key={p.provider_id} className="flex items-center gap-1.5">
+                          <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                          {p.name || "Unnamed Provider"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {nonDeletableProviders.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
+                      Cannot be deleted (in use):
+                    </p>
+                    <ul className="text-sm space-y-0.5">
+                      {nonDeletableProviders.map((p) => (
+                        <li
+                          key={p.provider_id}
+                          className="flex items-center gap-1.5 text-muted-foreground"
+                        >
+                          {p.name || "Unnamed Provider"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
             )}
           </>
         }
@@ -940,7 +1173,7 @@ export default function Providers({
       <BulkEditDialog
         open={showBulkEditDialog}
         onOpenChange={setShowBulkEditDialog}
-        count={editableProviders.length}
+        count={selectAllMatching ? selectedCount : editableProviders.length}
         entityLabelPlural="providers"
         isSaving={isBulkEditing}
         onSave={handleBulkEdit}

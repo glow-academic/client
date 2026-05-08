@@ -18,6 +18,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { loadHealthSearchParams } from "@/lib/search-params/health";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 
 /** ---- Strong types from OpenAPI ---- */
 type HealthBundleIn = InputOf<"/system/health/get", "post">;
@@ -28,8 +29,6 @@ type SystemGroupIn = InputOf<"/system/group", "post">;
 type SystemGroupOut = OutputOf<"/system/group", "post">;
 type SystemGenerationsIn = InputOf<"/system/generations", "post">;
 type SystemGenerationsOut = OutputOf<"/system/generations", "post">;
-type SystemGenerateIn = InputOf<"/system/generate", "post">;
-type SystemGenerateOut = OutputOf<"/system/generate", "post">;
 type ProblemHealthIn = InputOf<"/system/problem", "post">;
 type ProblemHealthOut = OutputOf<"/system/problem", "post">;
 
@@ -71,15 +70,20 @@ async function searchSystemGenerations(input: SystemGenerationsIn): Promise<Syst
   return api.post("/system/generations", input);
 }
 
-async function runSystemGenerate(input: SystemGenerateIn): Promise<SystemGenerateOut> {
-  "use server";
-  return api.post("/system/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getSystemContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/system/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/system/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getSystemContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -109,7 +113,7 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
 
   try {
     // Profile data for providers
-    const context = await api.post("/system/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getSystemContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/health", context.profile.role_permissions);
 
@@ -154,6 +158,7 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
         }
         panelProps={{
           artifactType: "health",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as SystemGroupOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as SystemGroupOut & { name?: string | null })?.name ?? null,
@@ -162,11 +167,10 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           prompts: context.prompts?.prompts,
           getGroupAction: getSystemGroup as PanelProps["getGroupAction"],
           searchGenerationsAction: searchSystemGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runSystemGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4">

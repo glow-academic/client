@@ -32,6 +32,8 @@ export function SaveToolbar() {
     drafts,
     selectedDraftId,
     setSelectedDraftId,
+    isDraftsLoading,
+    loadDrafts,
   } = useDrafts();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -101,7 +103,11 @@ export function SaveToolbar() {
   // No unsaved changes — show the drafts dropdown
   return (
     <div className="pr-0">
-      <DropdownMenu>
+      <DropdownMenu
+        onOpenChange={(open) => {
+          if (open) loadDrafts();
+        }}
+      >
         <DropdownMenuTrigger asChild>
           <Button variant="default" size="sm">
             <FileText className="h-4 w-4" />
@@ -125,7 +131,12 @@ export function SaveToolbar() {
               <DropdownMenuSeparator />
             </>
           )}
-          {drafts.length === 0 ? (
+          {isDraftsLoading && drafts.length === 0 ? (
+            <DropdownMenuItem disabled>
+              <Loader2 className="h-3 w-3 animate-spin mr-2" />
+              Loading drafts...
+            </DropdownMenuItem>
+          ) : drafts.length === 0 ? (
             <DropdownMenuItem disabled>No drafts available</DropdownMenuItem>
           ) : (
             drafts

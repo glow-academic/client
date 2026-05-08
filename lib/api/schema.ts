@@ -344,6 +344,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/persona/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_persona_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/persona/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_persona_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/scenario/get": {
         parameters: {
             query?: never;
@@ -824,6 +864,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/scenario/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_scenario_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/simulation/get": {
         parameters: {
             query?: never;
@@ -1158,6 +1218,46 @@ export interface paths {
         get: operations["simulation_stream_simulation_stream_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/simulation/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_simulation_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/simulation/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_simulation_call_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1604,6 +1704,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/document/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_document_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/department/get": {
         parameters: {
             query?: never;
@@ -1938,6 +2058,46 @@ export interface paths {
         get: operations["department_stream_department_stream_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/department/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_department_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/department/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_department_call_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2284,6 +2444,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cohort/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_cohort_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cohort/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_cohort_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/eval/search": {
         parameters: {
             query?: never;
@@ -2624,6 +2824,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/eval/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_eval_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/eval/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_eval_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rubric/get": {
         parameters: {
             query?: never;
@@ -2958,6 +3198,46 @@ export interface paths {
         get: operations["rubric_stream_rubric_stream_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rubric/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_rubric_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rubric/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_rubric_call_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3324,6 +3604,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/setting/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_setting_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/setting/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_setting_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/agent/context": {
         parameters: {
             query?: never;
@@ -3664,6 +3984,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/agent/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_agent_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agent/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_agent_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/model/get": {
         parameters: {
             query?: never;
@@ -3998,6 +4358,46 @@ export interface paths {
         get: operations["model_stream_model_stream_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/model/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_model_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/model/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_model_call_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4364,6 +4764,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/provider/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_provider_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/provider/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_provider_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/parameter/get": {
         parameters: {
             query?: never;
@@ -4704,6 +5144,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/parameter/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_parameter_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/parameter/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_parameter_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/field/get": {
         parameters: {
             query?: never;
@@ -5038,6 +5518,46 @@ export interface paths {
         get: operations["field_stream_field_stream_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/field/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_field_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/field/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_field_call_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5404,6 +5924,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/profile/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_profile_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profile/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_profile_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/context": {
         parameters: {
             query?: never;
@@ -5718,6 +6278,46 @@ export interface paths {
         get: operations["auth_stream_auth_stream_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_auth_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_auth_call_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6078,6 +6678,46 @@ export interface paths {
         get: operations["tool_stream_tool_stream_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tool/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_tool_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tool/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_tool_call_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7345,6 +7985,26 @@ export interface paths {
          * @description Return a PNG preview of the first page of a PDF upload.
          */
         post: operations["preview_file_attempt_file_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID.
+         */
+        post: operations["download_call_attempt_call_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11255,10 +11915,214 @@ export interface components {
             file: string;
         };
         /**
+         * CallDownloadAgentApiRequest
+         * @description Request model for agent call download endpoint.
+         */
+        CallDownloadAgentApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadAttemptApiRequest
+         * @description Request model for attempt call download endpoint.
+         */
+        CallDownloadAttemptApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadAuthApiRequest
+         * @description Request model for auth call download endpoint.
+         */
+        CallDownloadAuthApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadCohortApiRequest
+         * @description Request model for cohort call download endpoint.
+         */
+        CallDownloadCohortApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadDepartmentApiRequest
+         * @description Request model for department call download endpoint.
+         */
+        CallDownloadDepartmentApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadDocumentApiRequest
+         * @description Request model for document call download endpoint.
+         */
+        CallDownloadDocumentApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadEvalApiRequest
+         * @description Request model for eval call download endpoint.
+         */
+        CallDownloadEvalApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadFieldApiRequest
+         * @description Request model for field call download endpoint.
+         */
+        CallDownloadFieldApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
          * CallDownloadGroupApiRequest
          * @description Request model for group call download endpoint.
          */
         CallDownloadGroupApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadModelApiRequest
+         * @description Request model for model call download endpoint.
+         */
+        CallDownloadModelApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadParameterApiRequest
+         * @description Request model for parameter call download endpoint.
+         */
+        CallDownloadParameterApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadPersonaApiRequest
+         * @description Request model for persona call download endpoint.
+         */
+        CallDownloadPersonaApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadProfileApiRequest
+         * @description Request model for profile call download endpoint.
+         */
+        CallDownloadProfileApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadProviderApiRequest
+         * @description Request model for provider call download endpoint.
+         */
+        CallDownloadProviderApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadRubricApiRequest
+         * @description Request model for rubric call download endpoint.
+         */
+        CallDownloadRubricApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadScenarioApiRequest
+         * @description Request model for scenario call download endpoint.
+         */
+        CallDownloadScenarioApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadSettingApiRequest
+         * @description Request model for setting call download endpoint.
+         */
+        CallDownloadSettingApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadSimulationApiRequest
+         * @description Request model for simulation call download endpoint.
+         */
+        CallDownloadSimulationApiRequest: {
             /**
              * Call Id
              * Format: uuid
@@ -11272,6 +12136,18 @@ export interface components {
              * Call Id
              * Format: uuid
              * @description UUID of the call resource to download
+             */
+            call_id: string;
+        };
+        /**
+         * CallDownloadToolApiRequest
+         * @description Request model for tool call download endpoint.
+         */
+        CallDownloadToolApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
              */
             call_id: string;
         };
@@ -14449,13 +15325,18 @@ export interface components {
         /**
          * CreatePersonaApiRequest
          * @description Request model for bulk create persona endpoint.
+         *
+         *     Two body shapes:
+         *       - First call: ``personas`` required.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant artifact by ``idempotency_key``.
          */
         CreatePersonaApiRequest: {
             /**
              * Personas
-             * @description List of persona items to create
+             * @description List of persona items to create (required on first call)
              */
-            personas: components["schemas"]["CreatePersonaItem"][];
+            personas?: components["schemas"]["CreatePersonaItem"][] | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant create
@@ -16594,13 +17475,88 @@ export interface components {
         /**
          * DeletePersonaApiRequest
          * @description Request model for bulk delete persona endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/persona/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeletePersonaApiRequest: {
             /**
              * Ids
-             * @description List of persona UUIDs to delete
+             * @description List of persona UUIDs to delete (required on first call when ``all`` is false)
              */
-            ids: string[];
+            ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every persona matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Scenario Ids
+             * @description Filter by scenario UUIDs
+             */
+            scenario_ids?: string[] | null;
+            /**
+             * Field Ids
+             * @description Filter by field UUIDs
+             */
+            field_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Scenario Search
+             * @description Search text for scenario facet (no-op for row filtering)
+             */
+            scenario_search?: string | null;
+            /**
+             * Field Search
+             * @description Search text for field facet (no-op for row filtering)
+             */
+            field_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Color Search
+             * @description Search text for color facet (no-op for row filtering)
+             */
+            color_search?: string | null;
+            /**
+             * Icon Search
+             * @description Search text for icon facet (no-op for row filtering)
+             */
+            icon_search?: string | null;
+            /**
+             * Voice Search
+             * @description Search text for voice facet (no-op for row filtering)
+             */
+            voice_search?: string | null;
+            /**
+             * Instruction Search
+             * @description Search text for instruction facet (no-op for row filtering)
+             */
+            instruction_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -18570,14 +19526,18 @@ export interface components {
         /**
          * DuplicatePersonaApiRequest
          * @description Request model for duplicate persona endpoint.
+         *
+         *     Two body shapes:
+         *       - First call: ``id`` required.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant copy by ``idempotency_key``.
          */
         DuplicatePersonaApiRequest: {
             /**
              * Id
-             * Format: uuid
-             * @description UUID of the persona to duplicate
+             * @description UUID of the persona to duplicate (required on first call)
              */
-            id: string;
+            id?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant duplicate
@@ -29794,21 +30754,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupAgentApiResponse
@@ -29822,20 +30771,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -29853,21 +30797,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupAttemptApiResponse
@@ -29881,20 +30814,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -29912,21 +30840,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupAuthApiResponse
@@ -29940,20 +30857,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -29974,6 +30886,10 @@ export interface components {
             tool_name?: string | null;
             /** Template Name */
             template_name?: string | null;
+            /** Tool */
+            tool?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * GroupCohortApiRequest
@@ -29986,21 +30902,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupCohortApiResponse
@@ -30014,20 +30919,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -30045,21 +30945,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupDepartmentApiResponse
@@ -30073,20 +30962,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -30284,21 +31168,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupDocumentApiResponse
@@ -30312,20 +31185,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -30343,21 +31211,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupEvalApiResponse
@@ -30371,20 +31228,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -30402,21 +31254,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupFieldApiResponse
@@ -30430,20 +31271,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -30582,6 +31418,18 @@ export interface components {
             call_ids?: string[];
             /** Calls */
             calls?: components["schemas"]["GroupCall"][];
+            /**
+             * In Context
+             * @description Whether this message is included in the LLM context for the next generation. Mirrors the dedup pass that builds chat history (see in_context_reason).
+             * @default true
+             */
+            in_context: boolean;
+            /**
+             * In Context Reason
+             * @description Why this message is in/out of LLM context. 'kept' = included; 'deduped_read' = older read-only call to a tool that has a fresher result later in the group; future values may include 'trimmed_top_n'.
+             * @default kept
+             */
+            in_context_reason: string;
         };
         /**
          * GroupModelApiRequest
@@ -30594,21 +31442,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupModelApiResponse
@@ -30622,20 +31459,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -30653,21 +31485,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupParameterApiResponse
@@ -30681,20 +31502,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -30712,21 +31528,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupPersonaApiResponse
@@ -30740,20 +31545,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -30771,21 +31571,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupProfileApiResponse
@@ -30799,20 +31588,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -30830,21 +31614,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupProviderApiResponse
@@ -30858,20 +31631,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -30889,21 +31657,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupRubricApiResponse
@@ -30917,20 +31674,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -30963,21 +31715,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupScenarioApiResponse
@@ -30991,20 +31732,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -31022,21 +31758,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupSettingApiResponse
@@ -31050,20 +31775,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -31081,21 +31801,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupSimulationApiResponse
@@ -31109,20 +31818,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -31140,21 +31844,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupSystemApiResponse
@@ -31168,20 +31861,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -31199,21 +31887,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupTestApiResponse
@@ -31227,20 +31904,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -31258,21 +31930,10 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Name
-             * @description Optional name for the group
+             * Snapshot Key
+             * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
-            name?: string | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack — promotes or rejects a dormant group
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
+            snapshot_key?: string | null;
         };
         /**
          * GroupToolApiResponse
@@ -31286,20 +31947,15 @@ export interface components {
              */
             group_id: string;
             /**
-             * Group Name Id
-             * @description UUID of the created group_names entry (if name was provided)
-             */
-            group_name_id?: string | null;
-            /**
              * Name
-             * @description The name that was set (if provided)
+             * @description The group's current title (latest active group_names_entry, or 'New Chat' fallback for freshly minted groups)
              */
             name?: string | null;
             /**
-             * Idempotency Key
-             * @description Idempotency key echoed back for client correlation
+             * Snapshot Key
+             * @description Snapshot key echoed back — the UUID concurrent fan-out reads converged on via SETNX. Mirrors the resolved group_id.
              */
-            idempotency_key?: string | null;
+            snapshot_key?: string | null;
             /**
              * Runs
              * @description Conversation history — populated when resolving an existing group for fetch
@@ -41375,18 +42031,23 @@ export interface components {
         /**
          * ProblemPersonaApiRequest
          * @description Request model for persona problem endpoint.
+         *
+         *     Two body shapes:
+         *       - First call: ``type`` and ``message`` required.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant problem by ``idempotency_key``.
          */
         ProblemPersonaApiRequest: {
             /**
              * Type
-             * @description Problem type: feature, bug, question, other
+             * @description Problem type: feature, bug, question, other (required on first call)
              */
-            type: string;
+            type?: string | null;
             /**
              * Message
-             * @description Problem description (max 1000 chars)
+             * @description Problem description, max 1000 chars (required on first call)
              */
-            message: string;
+            message?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant problem
@@ -50028,6 +50689,18 @@ export interface components {
             instructions?: string[] | null;
         };
         /**
+         * TextDownloadAgentApiRequest
+         * @description Request model for agent text download endpoint.
+         */
+        TextDownloadAgentApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
          * TextDownloadAttemptApiRequest
          * @description Request model for attempt text download endpoint.
          */
@@ -50040,10 +50713,70 @@ export interface components {
             text_id: string;
         };
         /**
+         * TextDownloadAuthApiRequest
+         * @description Request model for auth text download endpoint.
+         */
+        TextDownloadAuthApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadCohortApiRequest
+         * @description Request model for cohort text download endpoint.
+         */
+        TextDownloadCohortApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadDepartmentApiRequest
+         * @description Request model for department text download endpoint.
+         */
+        TextDownloadDepartmentApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
          * TextDownloadDocumentApiRequest
          * @description Request model for document text download endpoint.
          */
         TextDownloadDocumentApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadEvalApiRequest
+         * @description Request model for eval text download endpoint.
+         */
+        TextDownloadEvalApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadFieldApiRequest
+         * @description Request model for field text download endpoint.
+         */
+        TextDownloadFieldApiRequest: {
             /**
              * Text Id
              * Format: uuid
@@ -50064,10 +50797,106 @@ export interface components {
             text_id: string;
         };
         /**
+         * TextDownloadModelApiRequest
+         * @description Request model for model text download endpoint.
+         */
+        TextDownloadModelApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadParameterApiRequest
+         * @description Request model for parameter text download endpoint.
+         */
+        TextDownloadParameterApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadPersonaApiRequest
+         * @description Request model for persona text download endpoint.
+         */
+        TextDownloadPersonaApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadProfileApiRequest
+         * @description Request model for profile text download endpoint.
+         */
+        TextDownloadProfileApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadProviderApiRequest
+         * @description Request model for provider text download endpoint.
+         */
+        TextDownloadProviderApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadRubricApiRequest
+         * @description Request model for rubric text download endpoint.
+         */
+        TextDownloadRubricApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
          * TextDownloadScenarioApiRequest
          * @description Request model for scenario text download endpoint.
          */
         TextDownloadScenarioApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadSettingApiRequest
+         * @description Request model for setting text download endpoint.
+         */
+        TextDownloadSettingApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadSimulationApiRequest
+         * @description Request model for simulation text download endpoint.
+         */
+        TextDownloadSimulationApiRequest: {
             /**
              * Text Id
              * Format: uuid
@@ -50081,6 +50910,18 @@ export interface components {
              * Text Id
              * Format: uuid
              * @description UUID of the text resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadToolApiRequest
+         * @description Request model for tool text download endpoint.
+         */
+        TextDownloadToolApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
              */
             text_id: string;
         };
@@ -51852,13 +52693,91 @@ export interface components {
         /**
          * UpdatePersonaApiRequest
          * @description Request model for bulk update persona endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``personas`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/persona/search`` accepts plus a single shared ``patch`` that
+         *         every matched row receives. The impl resolves matching ids,
+         *         subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdatePersonaApiRequest: {
             /**
              * Personas
-             * @description List of persona items to update
+             * @description List of persona items to update (required on first call when ``all`` is false)
              */
-            personas: components["schemas"]["UpdatePersonaItem"][];
+            personas?: components["schemas"]["UpdatePersonaItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every persona matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdatePersonaPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Scenario Ids
+             * @description Filter by scenario UUIDs
+             */
+            scenario_ids?: string[] | null;
+            /**
+             * Field Ids
+             * @description Filter by field UUIDs
+             */
+            field_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Scenario Search
+             * @description Search text for scenario facet (no-op for row filtering)
+             */
+            scenario_search?: string | null;
+            /**
+             * Field Search
+             * @description Search text for field facet (no-op for row filtering)
+             */
+            field_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Color Search
+             * @description Search text for color facet (no-op for row filtering)
+             */
+            color_search?: string | null;
+            /**
+             * Icon Search
+             * @description Search text for icon facet (no-op for row filtering)
+             */
+            icon_search?: string | null;
+            /**
+             * Voice Search
+             * @description Search text for voice facet (no-op for row filtering)
+             */
+            voice_search?: string | null;
+            /**
+             * Instruction Search
+             * @description Search text for instruction facet (no-op for row filtering)
+             */
+            instruction_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -51900,6 +52819,122 @@ export interface components {
              * @description UUID of the persona to update (required)
              */
             id: string;
+            /**
+             * Name Id
+             * @description UUID of an existing name resource to select
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Display name text (creates new resource if name_id not provided)
+             */
+            name?: string | null;
+            /**
+             * Color Id
+             * @description UUID of an existing color resource to select
+             */
+            color_id?: string | null;
+            /**
+             * Color
+             * @description Hex color code (creates new resource if color_id not provided)
+             */
+            color?: string | null;
+            /**
+             * Icon Id
+             * @description UUID of an existing icon resource to select
+             */
+            icon_id?: string | null;
+            /**
+             * Icon
+             * @description Icon identifier value (creates new resource if icon_id not provided)
+             */
+            icon?: string | null;
+            /**
+             * Instructions Id
+             * @description UUID of an existing instruction resource to select
+             */
+            instructions_id?: string | null;
+            /**
+             * Instructions
+             * @description System instruction template (creates new resource if instructions_id not provided)
+             */
+            instructions?: string | null;
+            /**
+             * Description Id
+             * @description UUID of an existing description resource to select
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Persona description text (creates new resource if description_id not provided)
+             */
+            description?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized persona_active flag state; resolved to a flag_ids entry server-side
+             */
+            active?: boolean | null;
+            /**
+             * Department Ids
+             * @description Department UUIDs to associate (replaces existing)
+             */
+            department_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names (resolved to UUIDs server-side)
+             */
+            departments?: string[] | null;
+            /**
+             * Parameter Field Ids
+             * @description Parameter field UUIDs to associate (replaces existing)
+             */
+            parameter_field_ids?: string[] | null;
+            /**
+             * Parameter Fields
+             * @description Parameter field names (resolved to UUIDs server-side)
+             */
+            parameter_fields?: string[] | null;
+            /**
+             * Example Ids
+             * @description Example resource UUIDs to associate (replaces existing)
+             */
+            example_ids?: string[] | null;
+            /**
+             * Examples
+             * @description Example texts (creates new example resources)
+             */
+            examples?: string[] | null;
+            /**
+             * Voice Ids
+             * @description Voice resource UUIDs to associate (replaces existing)
+             */
+            voice_ids?: string[] | null;
+            /**
+             * Voices
+             * @description Voice values (resolved to UUIDs server-side)
+             */
+            voices?: string[] | null;
+        };
+        /**
+         * UpdatePersonaPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdatePersonaItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdatePersonaPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved persona id per matched row
+             */
+            id?: string | null;
             /**
              * Name Id
              * @description UUID of an existing name resource to select
@@ -55748,6 +56783,72 @@ export interface operations {
             };
         };
     };
+    download_text_persona_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadPersonaApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_persona_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadPersonaApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_scenario_scenario_get_post: {
         parameters: {
             query?: never;
@@ -56531,6 +57632,39 @@ export interface operations {
             };
         };
     };
+    download_call_scenario_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadScenarioApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_simulation_simulation_get_post: {
         parameters: {
             query?: never;
@@ -57056,6 +58190,72 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_text_simulation_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadSimulationApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_simulation_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadSimulationApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -57788,6 +58988,39 @@ export interface operations {
             };
         };
     };
+    download_call_document_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadDocumentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_department_department_get_post: {
         parameters: {
             query?: never;
@@ -58313,6 +59546,72 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_text_department_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadDepartmentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_department_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadDepartmentApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -58880,6 +60179,72 @@ export interface operations {
             };
         };
     };
+    download_text_cohort_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadCohortApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_cohort_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadCohortApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search_eval_eval_search_post: {
         parameters: {
             query?: never;
@@ -59426,6 +60791,72 @@ export interface operations {
             };
         };
     };
+    download_text_eval_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadEvalApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_eval_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadEvalApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_rubric_rubric_get_post: {
         parameters: {
             query?: never;
@@ -59951,6 +61382,72 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_text_rubric_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadRubricApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_rubric_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadRubricApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -60551,6 +62048,72 @@ export interface operations {
             };
         };
     };
+    download_text_setting_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadSettingApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_setting_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadSettingApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_agent_context_agent_context_post: {
         parameters: {
             query?: never;
@@ -61097,6 +62660,72 @@ export interface operations {
             };
         };
     };
+    download_text_agent_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadAgentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_agent_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadAgentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_model_model_get_post: {
         parameters: {
             query?: never;
@@ -61622,6 +63251,72 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_text_model_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadModelApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_model_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadModelApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -62222,6 +63917,72 @@ export interface operations {
             };
         };
     };
+    download_text_provider_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadProviderApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_provider_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadProviderApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_parameter_parameter_get_post: {
         parameters: {
             query?: never;
@@ -62768,6 +64529,72 @@ export interface operations {
             };
         };
     };
+    download_text_parameter_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadParameterApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_parameter_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadParameterApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_field_field_get_post: {
         parameters: {
             query?: never;
@@ -63293,6 +65120,72 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_text_field_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadFieldApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_field_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadFieldApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -63893,6 +65786,72 @@ export interface operations {
             };
         };
     };
+    download_text_profile_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadProfileApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_profile_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadProfileApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_auth_context_auth_context_post: {
         parameters: {
             query?: never;
@@ -64385,6 +66344,72 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_text_auth_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadAuthApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_auth_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadAuthApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -64964,6 +66989,72 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_text_tool_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadToolApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_tool_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadToolApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -66859,6 +68950,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["FilePreviewAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_attempt_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadAttemptApiRequest"];
             };
         };
         responses: {

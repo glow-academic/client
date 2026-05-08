@@ -190,22 +190,14 @@ class PerArtifactSseMultiplexer {
       if (typeof eventType !== "string") return;
 
       const exact = entry.exact.get(eventType);
-      const patternMatches = entry.patterns.filter((p) => p.regex.test(eventType));
-      // TEMP DIAGNOSTIC: verify wildcard dispatch is wiring up. Remove once
-      // the lifecycle subs are confirmed to fire for every audited op.
-      // eslint-disable-next-line no-console
-      console.log("[sse]", eventType, {
-        exactHandlers: exact?.handlers.size ?? 0,
-        registeredPatterns: entry.patterns.map((p) => p.pattern),
-        matchedPatterns: patternMatches.map((p) => p.pattern),
-      });
-
       if (exact) {
         for (const h of exact.handlers) h(data);
       }
 
-      for (const sub of patternMatches) {
-        sub.handler(data);
+      if (entry.patterns.length > 0) {
+        for (const sub of entry.patterns) {
+          if (sub.regex.test(eventType)) sub.handler(data);
+        }
       }
     };
     source.addEventListener("message", entry.onMessage);

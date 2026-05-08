@@ -22,8 +22,17 @@ import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
 import { loadDepartmentsSearchParams } from "@/lib/search-params/departments";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
+type DepartmentsListIn = InputOf<"/department/search", "post">;
 type DepartmentsListOut = OutputOf<"/department/search", "post">;
+/** ---- Body type for departments list request ----
+ *  Matches the server's ``SearchDepartmentApiRequest`` validator. The
+ *  client passes this same shape to the bulk delete/update endpoints
+ *  under ``all=true`` mode so the server can resolve matching ids
+ *  without a client-side enumeration round-trip. */
+type DepartmentsListBody = NonNullable<DepartmentsListIn["body"]>;
 type DuplicateDepartmentIn = InputOf<"/department/duplicate", "post">;
 type DuplicateDepartmentOut = OutputOf<"/department/duplicate", "post">;
 type DeleteDepartmentIn = InputOf<"/department/delete", "post">;
@@ -32,8 +41,6 @@ type UpdateDepartmentIn = InputOf<"/department/update", "post">;
 type UpdateDepartmentOut = OutputOf<"/department/update", "post">;
 type GroupDepartmentIn = InputOf<"/department/group", "post">;
 type GroupDepartmentOut = OutputOf<"/department/group", "post">;
-type GenerateDepartmentIn = InputOf<"/department/generate", "post">;
-type GenerateDepartmentOut = OutputOf<"/department/generate", "post">;
 type GenerationsIn = InputOf<"/department/generations", "post">;
 type GenerationsOut = OutputOf<"/department/generations", "post">;
 type ProblemDepartmentIn = InputOf<"/department/problem", "post">;
@@ -45,11 +52,13 @@ type ContextOut = OutputOf<"/department/context", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getDepartmentsList = async (): Promise<DepartmentsListOut> => {
+const getDepartmentsList = async (
+  body: DepartmentsListBody,
+): Promise<DepartmentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/department/search",
-    { body: {} },
+    { body },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -85,12 +94,6 @@ async function updateDepartment(
   return api.post("/department/update", input);
 }
 
-async function generateDepartment(
-  input: GenerateDepartmentIn
-): Promise<GenerateDepartmentOut> {
-  "use server";
-  return api.post("/department/generate", input);
-}
 
 async function getDepartmentGroupHistory(groupId: string): Promise<GroupDepartmentOut> {
   "use server";
@@ -118,15 +121,20 @@ async function searchDepartmentGenerations(input: GenerationsIn): Promise<Genera
   return api.post("/department/generations", input);
 }
 
-async function runDepartmentGenerate(input: GenerateDepartmentIn): Promise<GenerateDepartmentOut> {
-  "use server";
-  return api.post("/department/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getDepartmentContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/department/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/department/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getDepartmentContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -157,13 +165,25 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
 
   try {
     // Profile data for providers
-    const context = await api.post("/department/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getDepartmentContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/system/departments", context.profile.role_permissions);
 
+    // The departments list page doesn't yet expose URL-backed filters,
+    // but we still build a ``body`` so bulk write endpoints under
+    // ``selectAll=1`` mode have a well-formed filter envelope to echo
+    // back. As filter URL state is added, populate fields from ``q``
+    // here — the client component already passes this through.
+    // ``page_size``/``page_offset`` are required-but-nullable in the
+    // OpenAPI schema; passing null lets the server use its defaults.
+    const body: DepartmentsListBody = {
+      page_size: null,
+      page_offset: null,
+    };
+
     // Fetch list data, view cookie, and group in parallel
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([
-      getDepartmentsList(),
+      getDepartmentsList(body),
       readViewCookie("departments"),
       api.post(
         "/department/group",
@@ -188,6 +208,7 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
         toolbar={<NewArtifactButton label="New Department" href="/system/departments/new" />}
         panelProps={{
           artifactType: "department",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupDepartmentOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupDepartmentOut & { name?: string | null })?.name ?? null,
@@ -196,15 +217,13 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          generateAction: generateDepartment,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           getGroupHistory: getDepartmentGroupHistory,
           searchGroups: searchDepartmentGroups,
           prompts: context.prompts?.prompts,
           getGroupAction: getDepartmentGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchDepartmentGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runDepartmentGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="departments-index">
@@ -214,6 +233,7 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
             duplicateDepartmentAction={duplicateDepartment}
             deleteDepartmentAction={deleteDepartment}
             updateDepartmentAction={updateDepartment}
+            currentSearchBody={body}
           />
         </div>
       </FullPageLayout>
@@ -240,6 +260,7 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
 export type {
   DeleteDepartmentIn,
   DeleteDepartmentOut,
+  DepartmentsListBody,
   DepartmentsListOut,
   DuplicateDepartmentIn,
   DuplicateDepartmentOut,

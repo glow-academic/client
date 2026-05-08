@@ -25,6 +25,8 @@ import {
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetScenarioIn = InputOf<"/scenario/get", "post">;
 type GetScenarioOut = OutputOf<"/scenario/get", "post">;
@@ -34,8 +36,6 @@ type PatchScenarioDraftIn = InputOf<"/scenario/draft", "patch">;
 type PatchScenarioDraftOut = OutputOf<"/scenario/draft", "patch">;
 type GroupScenarioIn = InputOf<"/scenario/group", "post">;
 type GroupScenarioOut = OutputOf<"/scenario/group", "post">;
-type GenerateScenarioIn = InputOf<"/scenario/generate", "post">;
-type GenerateScenarioOut = OutputOf<"/scenario/generate", "post">;
 type ProblemScenarioIn = InputOf<"/scenario/problem", "post">;
 type ProblemScenarioOut = OutputOf<"/scenario/problem", "post">;
 type ContextIn = InputOf<"/scenario/context", "post">;
@@ -103,12 +103,6 @@ async function patchScenarioDraft(
   return api.patch("/scenario/draft", input);
 }
 
-async function generateScenario(
-  input: GenerateScenarioIn
-): Promise<GenerateScenarioOut> {
-  "use server";
-  return api.post("/scenario/generate", input);
-}
 
 async function getScenarioGroupHistory(groupId: string): Promise<GroupScenarioOut> {
   "use server";
@@ -134,15 +128,20 @@ async function searchScenarioGenerations(input: GenerationsIn): Promise<Generati
   return api.post("/scenario/generations", input);
 }
 
-async function runScenarioGenerate(input: GenerateScenarioIn): Promise<GenerateScenarioOut> {
-  "use server";
-  return api.post("/scenario/generate", input);
-}
 
 async function createScenarioProblem(input: ProblemScenarioIn): Promise<ProblemScenarioOut> {
   "use server";
   return api.post("/scenario/problem", input);
 }
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getScenarioContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/scenario/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata({
@@ -152,7 +151,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { scenarioId } = await params;
-    const context = await api.post("/scenario/context", { body: { entity_id: scenarioId } } as ContextIn) as ContextOut;
+    const context = await getScenarioContextById(scenarioId);
     return {
       title: context.page_metadata?.detail.title,
       description: context.page_metadata?.detail.description,
@@ -248,7 +247,7 @@ export default async function EditScenarioPage({
 
     const [scenarioDetail, context, draftsResult, groupResult] = await Promise.all([
       getScenario(input),
-      api.post("/scenario/context", { body: { entity_id: scenarioId } } as ContextIn) as Promise<ContextOut>,
+      getScenarioContextById(scenarioId) as Promise<ContextOut>,
       api.post("/scenario/drafts", {}),
       api.post(
         "/scenario/group",
@@ -279,6 +278,7 @@ export default async function EditScenarioPage({
           toolbar={<SaveToolbar />}
           panelProps={{
             artifactType: "scenario",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
             groupId: (groupResult as GroupScenarioOut & { group_id?: string })?.group_id ?? null,
             groupName:
               (groupResult as GroupScenarioOut & { name?: string | null })?.name ?? null,
@@ -287,15 +287,13 @@ export default async function EditScenarioPage({
             // skips the duplicate client-side /<art>/group refetch
             // on first paint, eliminating the hydration flicker.
             initialGroupHistory: groupResult as Record<string, unknown>,
-            generateAction: generateScenario,
-            operations: ["draft", "get", "group"],
+            operations: ["draft", "get", "title"],
             getGroupHistory: getScenarioGroupHistory,
             searchGroups: searchScenarioGroups,
             prompts: context.prompts?.prompts,
             getGroupAction: getScenarioGroup as PanelProps["getGroupAction"],
             searchGenerationsAction:
               searchScenarioGenerations as PanelProps["searchGenerationsAction"],
-            runGenerateAction: runScenarioGenerate as PanelProps["runGenerateAction"],
           }}
         >
           <div

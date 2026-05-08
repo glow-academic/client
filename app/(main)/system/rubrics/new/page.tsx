@@ -21,6 +21,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type GetRubricIn = InputOf<"/rubric/get", "post">;
 type GetRubricOut = OutputOf<"/rubric/get", "post">;
@@ -30,8 +32,6 @@ type PatchRubricDraftIn = InputOf<"/rubric/draft", "patch">;
 type PatchRubricDraftOut = OutputOf<"/rubric/draft", "patch">;
 type GroupRubricIn = InputOf<"/rubric/group", "post">;
 type GroupRubricOut = OutputOf<"/rubric/group", "post">;
-type GenerateRubricIn = InputOf<"/rubric/generate", "post">;
-type GenerateRubricOut = OutputOf<"/rubric/generate", "post">;
 type GenerationsIn = InputOf<"/rubric/generations", "post">;
 type GenerationsOut = OutputOf<"/rubric/generations", "post">;
 type ProblemRubricIn = InputOf<"/rubric/problem", "post">;
@@ -96,12 +96,6 @@ async function patchRubricDraft(
   return api.patch("/rubric/draft", input);
 }
 
-async function generateRubric(
-  input: GenerateRubricIn
-): Promise<GenerateRubricOut> {
-  "use server";
-  return api.post("/rubric/generate", input);
-}
 
 async function getRubricGroupHistory(groupId: string): Promise<GroupRubricOut> {
   "use server";
@@ -129,15 +123,20 @@ async function searchRubricGenerations(input: GenerationsIn): Promise<Generation
   return api.post("/rubric/generations", input);
 }
 
-async function runRubricGenerate(input: GenerateRubricIn): Promise<GenerateRubricOut> {
-  "use server";
-  return api.post("/rubric/generate", input);
-}
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getRubricContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/rubric/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getRubricContext();
     return {
       title: context.page_metadata?.new.title,
       description: context.page_metadata?.new.description,
@@ -167,7 +166,7 @@ export default async function NewRubricPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getRubricContext();
     const snapshot = buildSnapshot(session, context.profile);
 
     // Parse search params using nuqs
@@ -236,13 +235,13 @@ export default async function NewRubricPage({
             toolbar: <SaveToolbar />,
             panelProps: {
               artifactType: "rubric",
+              initialPanelPrefs: await readGenerationPanelPrefs(),
               groupId:
                 (groupResult as GroupRubricOut & { group_id?: string | null })
                   ?.group_id ?? "",
               groupName:
                 (groupResult as GroupRubricOut & { name?: string | null })?.name ?? null,
-              generateAction: generateRubric,
-              operations: ["draft", "get", "group"],
+              operations: ["draft", "get", "title"],
               getGroupHistory: getRubricGroupHistory,
               searchGroups: searchRubricGroups,
               ...(context.prompts?.prompts
@@ -251,7 +250,6 @@ export default async function NewRubricPage({
               getGroupAction: getRubricGroup as PanelProps["getGroupAction"],
               searchGenerationsAction:
                 searchRubricGenerations as PanelProps["searchGenerationsAction"],
-              runGenerateAction: runRubricGenerate as PanelProps["runGenerateAction"],
             },
           } as any)}
         >

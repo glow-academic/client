@@ -19,6 +19,8 @@ import { buildSnapshot } from "@/lib/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { loadPricingGroupSearchParams } from "@/lib/search-params/pricing-group";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type PricingGroupDetailIn = InputOf<"/system/group/get", "post">;
 type PricingGroupDetailOut = OutputOf<"/system/group/get", "post">;
@@ -28,8 +30,6 @@ type SystemGroupIn = InputOf<"/system/group", "post">;
 type SystemGroupOut = OutputOf<"/system/group", "post">;
 type SystemGenerationsIn = InputOf<"/system/generations", "post">;
 type SystemGenerationsOut = OutputOf<"/system/generations", "post">;
-type SystemGenerateIn = InputOf<"/system/generate", "post">;
-type SystemGenerateOut = OutputOf<"/system/generate", "post">;
 type ProblemGroupIn = InputOf<"/system/problem", "post">;
 type ProblemGroupOut = OutputOf<"/system/problem", "post">;
 
@@ -60,15 +60,20 @@ async function searchSystemGenerations(input: SystemGenerationsIn): Promise<Syst
   return api.post("/system/generations", input);
 }
 
-async function runSystemGenerate(input: SystemGenerateIn): Promise<SystemGenerateOut> {
-  "use server";
-  return api.post("/system/generate", input);
-}
 
 async function createGroupProblem(input: ProblemGroupIn): Promise<ProblemGroupOut> {
   "use server";
   return api.post("/system/problem", input);
 }
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getSystemContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/system/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
 
 /** ---- Page metadata ---- */
 export async function generateMetadata({
@@ -78,7 +83,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { groupId } = await params;
-    const context = await api.post("/system/context", { body: { entity_id: groupId } } as ContextIn) as ContextOut;
+    const context = await getSystemContextById(groupId);
     return { title: context.page_metadata?.detail.title, description: context.page_metadata?.detail.description };
   } catch {
     return { title: "Pricing Group" };
@@ -125,7 +130,7 @@ export default async function PricingGroupPage({
           group_id: groupId,
         },
       }),
-      api.post("/system/context", { body: { entity_id: groupId } } as ContextIn) as Promise<ContextOut>,
+      getSystemContextById(groupId) as Promise<ContextOut>,
       api.post(
         "/system/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as SystemGroupIn,
@@ -151,6 +156,7 @@ export default async function PricingGroupPage({
         ]}
         panelProps={{
           artifactType: "group",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (genGroupResult as SystemGroupOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (genGroupResult as SystemGroupOut & { name?: string | null })?.name ?? null,
@@ -159,11 +165,10 @@ export default async function PricingGroupPage({
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: genGroupResult as Record<string, unknown>,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           prompts: context.prompts?.prompts,
           getGroupAction: getSystemGroup as PanelProps["getGroupAction"],
           searchGenerationsAction: searchSystemGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runSystemGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">

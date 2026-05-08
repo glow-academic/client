@@ -21,6 +21,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type ParameterGetIn = InputOf<"/parameter/get", "post">;
 type ParameterGetOut = OutputOf<"/parameter/get", "post">;
@@ -30,8 +32,6 @@ type PatchParameterDraftIn = InputOf<"/parameter/draft", "patch">;
 type PatchParameterDraftOut = OutputOf<"/parameter/draft", "patch">;
 type GroupParameterIn = InputOf<"/parameter/group", "post">;
 type GroupParameterOut = OutputOf<"/parameter/group", "post">;
-type GenerateParameterIn = InputOf<"/parameter/generate", "post">;
-type GenerateParameterOut = OutputOf<"/parameter/generate", "post">;
 type ProblemParameterIn = InputOf<"/parameter/problem", "post">;
 type ProblemParameterOut = OutputOf<"/parameter/problem", "post">;
 type ContextIn = InputOf<"/parameter/context", "post">;
@@ -64,12 +64,6 @@ async function patchParameterDraft(input: PatchParameterDraftIn): Promise<PatchP
   return api.patch("/parameter/draft", input);
 }
 
-async function generateParameter(
-  input: GenerateParameterIn
-): Promise<GenerateParameterOut> {
-  "use server";
-  return api.post("/parameter/generate", input);
-}
 
 async function getParameterGroupHistory(groupId: string): Promise<GroupParameterOut> {
   "use server";
@@ -89,6 +83,15 @@ async function createParameterProblem(input: ProblemParameterIn): Promise<Proble
   return api.post("/parameter/problem", input);
 }
 
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getParameterContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/parameter/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
+
 /** ---- Page metadata ---- */
 export async function generateMetadata({
   params,
@@ -97,7 +100,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   try {
     const { parameterId } = await params;
-    const context = await api.post("/parameter/context", { body: { entity_id: parameterId } } as ContextIn) as ContextOut;
+    const context = await getParameterContextById(parameterId);
     return {
       title: context.page_metadata?.detail.title,
       description: context.page_metadata?.detail.description,
@@ -177,7 +180,7 @@ export default async function ParameterEditPage({
     } as ParameterGetIn;
     const [parameterDetail, context, draftsResult, groupResult] = await Promise.all([
       getParameter(input),
-      api.post("/parameter/context", { body: { entity_id: parameterId } } as ContextIn) as Promise<ContextOut>,
+      getParameterContextById(parameterId) as Promise<ContextOut>,
       api.post("/parameter/drafts", {}),
       api.post("/parameter/group", { body: {} } as GroupParameterIn),
     ]);
@@ -208,11 +211,11 @@ export default async function ParameterEditPage({
             toolbar: <SaveToolbar />,
             panelProps: {
               artifactType: "parameter",
+              initialPanelPrefs: await readGenerationPanelPrefs(),
               groupId:
                 (groupResult as GroupParameterOut & { group_id?: string })?.group_id ??
                 null,
-              generateAction: generateParameter,
-              operations: ["draft", "get", "group"],
+              operations: ["draft", "get", "title"],
               getGroupHistory: getParameterGroupHistory,
               searchGroups: searchParameterGroups,
               prompts: context.prompts?.prompts,

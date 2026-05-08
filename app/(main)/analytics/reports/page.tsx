@@ -21,6 +21,8 @@ import { loadReportsSearchParams } from "@/lib/search-params/reports";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 
 
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type ReportsIn = InputOf<"/attempt/report/search", "post">;
 type ReportsOut = OutputOf<"/attempt/report/search", "post">;
@@ -28,8 +30,6 @@ type ReportsOut = OutputOf<"/attempt/report/search", "post">;
 /** ---- Generation types ---- */
 type ContextIn = InputOf<"/attempt/context", "post">;
 type ContextOut = OutputOf<"/attempt/context", "post">;
-type GenerateReportsIn = InputOf<"/attempt/generate", "post">;
-type GenerateReportsOut = OutputOf<"/attempt/generate", "post">;
 type GenerationsIn = InputOf<"/attempt/generations", "post">;
 type GenerationsOut = OutputOf<"/attempt/generations", "post">;
 type GroupReportsIn = InputOf<"/attempt/group", "post">;
@@ -55,10 +55,19 @@ const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
   });
 };
 
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getAttemptContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/attempt/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+);
+
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getAttemptContext();
     return {
       title: context.page_metadata?.list.title,
       description: context.page_metadata?.list.description,
@@ -90,7 +99,7 @@ export default async function ReportsFullPage({
 
   try {
     // Profile data for providers
-    const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
+    const context = await getAttemptContext();
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/analytics/reports", context.profile.role_permissions);
 
@@ -237,6 +246,7 @@ export default async function ReportsFullPage({
         }
         panelProps={{
           artifactType: "reports",
+          initialPanelPrefs: await readGenerationPanelPrefs(),
           groupId: (groupResult as GroupReportsOut & { group_id?: string })?.group_id ?? null,
           groupName:
             (groupResult as GroupReportsOut & { name?: string | null })?.name ?? null,
@@ -245,12 +255,11 @@ export default async function ReportsFullPage({
           // skips the duplicate client-side /<art>/group refetch
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
-          operations: ["draft", "get", "group"],
+          operations: ["draft", "get", "title"],
           prompts: context.prompts?.prompts,
           getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
           searchGenerationsAction:
             searchAttemptGenerations as PanelProps["searchGenerationsAction"],
-          runGenerateAction: runAttemptGenerate as PanelProps["runGenerateAction"],
         }}
       >
         <div className="space-y-6 px-4" data-page="reports-index">
@@ -308,12 +317,6 @@ async function searchAttemptGenerations(
   return api.post("/attempt/generations", input);
 }
 
-async function runAttemptGenerate(
-  input: GenerateReportsIn,
-): Promise<GenerateReportsOut> {
-  "use server";
-  return api.post("/attempt/generate", input);
-}
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type { ReportsIn, ReportsOut };

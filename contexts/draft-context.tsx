@@ -32,6 +32,14 @@ interface DraftContextType {
   saveStatus: SaveStatus;
   hasUnsavedChanges: boolean;
   triggerSave: () => void;
+  /** True while a lazy ``searchDraftsAction`` fetch is in flight. */
+  isDraftsLoading: boolean;
+  /** Trigger a lazy fetch via ``searchDraftsAction``. No-op when the
+   *  page passed ``drafts`` eagerly (no action wired) or after the
+   *  first successful load. Callers (e.g. ``SaveToolbar``'s dropdown
+   *  ``onOpenChange``) can fire this on every open — internal guards
+   *  collapse to a single fetch. */
+  loadDrafts: () => void;
 }
 
 const DraftContext = createContext<DraftContextType | null>(null);
@@ -48,13 +56,30 @@ export function useDrafts(): DraftContextType {
 
 export function DraftProviderClient({
   children,
-  drafts,
+  drafts: initialDrafts,
   initialAutosave,
+  searchDraftsAction,
 }: {
   children: React.ReactNode;
-  drafts: DraftItem[];
+  /** Eagerly-fetched draft list (legacy SSR pattern). When omitted,
+   *  the provider starts empty and lazy-fetches via
+   *  ``searchDraftsAction`` on the first ``loadDrafts()`` call. */
+  drafts?: DraftItem[];
   initialAutosave?: boolean;
+  /** Server action to fetch drafts on demand. Pages should pass this
+   *  instead of ``drafts`` to avoid the page-load network call (and
+   *  the corresponding audit-bubble noise). Loose shape matches the
+   *  precedent set by eager ``drafts`` consumers (which cast at the
+   *  SSR boundary because OpenAPI's per-artifact draft shape doesn't
+   *  satisfy ``DraftItem``'s ``UUID``-typed fields). */
+  searchDraftsAction?: () => Promise<{ entries?: unknown[] | null }>;
 }) {
+  const [drafts, setDrafts] = useState<DraftItem[]>(initialDrafts ?? []);
+  const [isDraftsLoading, setIsDraftsLoading] = useState(false);
+  // ``true`` after the first successful lazy fetch OR when the page
+  // passed eager ``initialDrafts``. Suppresses redundant refetch on
+  // repeated dropdown opens.
+  const draftsLoadedRef = React.useRef(initialDrafts !== undefined);
   const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
 
   // Autosave state — initialized from SSR cookie prop, falling back to true
@@ -86,6 +111,27 @@ export function DraftProviderClient({
   const triggerSave = useCallback(() => {
     window.dispatchEvent(new CustomEvent("trigger-save"));
   }, []);
+
+  // Lazy drafts loader — called by ``SaveToolbar`` on dropdown open.
+  // Idempotent: skips if already loaded or already in flight.
+  const loadDrafts = useCallback(() => {
+    if (!searchDraftsAction) return;
+    if (draftsLoadedRef.current) return;
+    if (isDraftsLoading) return;
+    setIsDraftsLoading(true);
+    void searchDraftsAction()
+      .then((res) => {
+        setDrafts((res.entries ?? []) as DraftItem[]);
+        draftsLoadedRef.current = true;
+      })
+      .catch(() => {
+        // Swallow — picker shows "No drafts available". A retry happens
+        // on next open because draftsLoadedRef stays false.
+      })
+      .finally(() => {
+        setIsDraftsLoading(false);
+      });
+  }, [searchDraftsAction, isDraftsLoading]);
 
   // Listen for save status updates from page components
   useEffect(() => {
@@ -119,6 +165,8 @@ export function DraftProviderClient({
       saveStatus,
       hasUnsavedChanges,
       triggerSave,
+      isDraftsLoading,
+      loadDrafts,
     }),
     [
       drafts,
@@ -129,6 +177,8 @@ export function DraftProviderClient({
       saveStatus,
       hasUnsavedChanges,
       triggerSave,
+      isDraftsLoading,
+      loadDrafts,
     ]
   );
 
