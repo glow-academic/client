@@ -425,7 +425,11 @@ function PersonaComponent({
     | undefined
   >(undefined);
 
-  // formStateKey excludes draftId — the hook prepends it
+  // formStateKey excludes draftId — the hook prepends it.
+  // ``pending_ids`` is part of the key so per-field Accept/Reject (which
+  // mutates only the pending list) reliably triggers autosave. Without
+  // this, accepting a pending resource where the form's id already
+  // points at the pending one (the common case) was a silent no-op.
   const formStateKey = React.useMemo(
     () =>
       JSON.stringify({
@@ -444,6 +448,8 @@ function PersonaComponent({
         description: formState.description,
         instructions: formState.instructions,
         examples: formState.examples,
+        // Pending lifecycle — see comment above.
+        pending_ids: formState.pending_ids,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -467,6 +473,8 @@ function PersonaComponent({
       formState.instructions,
       // eslint-disable-next-line react-hooks/exhaustive-deps
       JSON.stringify(formState.examples),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.pending_ids),
     ],
   );
 
@@ -974,6 +982,52 @@ function PersonaComponent({
     [stepResources],
   );
 
+  // ─── Per-field pending lifecycle ──────────────────────────────────
+  // Field components (Names, Descriptions, ...) call these when the
+  // user clicks the inline ✓ / ✗ on a pending diff. The handlers
+  // remove the explicitly-decided ``pendingId`` from ``pending_ids`` —
+  // distinct from the ``prev.<field>_id``-based filter the previous
+  // implementation used, which only worked when the form's id happened
+  // to coincide with the pending resource's id. ``formStateKey`` now
+  // includes ``pending_ids`` so changes here trigger autosave even when
+  // the field id stays put (i.e. accept where the pending id was
+  // already selected).
+  const handleAcceptPendingField = useCallback(
+    (
+      field: "name_id" | "description_id" | "color_id" | "icon_id" | "instructions_id",
+      pendingId: string,
+    ) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: pendingId,
+        // Clear the corresponding value field so the patch payload
+        // carries the resolved id instead of the (also-stale) text.
+        ...(field === "name_id" ? { name: null } : {}),
+        ...(field === "description_id" ? { description: null } : {}),
+        ...(field === "instructions_id" ? { instructions: null } : {}),
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingField = useCallback(
+    (
+      field: "name_id" | "description_id" | "color_id" | "icon_id" | "instructions_id",
+      pendingId: string,
+    ) => {
+      setFormState((prev) => ({
+        ...prev,
+        // Drop the field id only if it currently points at the rejected
+        // pending. If the user had a different selection that happened
+        // alongside a pending suggestion, leave their selection alone.
+        [field]: prev[field] === pendingId ? null : prev[field],
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
   // --- Disabled / Breadcrumb ---
   const disabled = useMemo(() => {
     if (!personaData) return false;
@@ -1286,12 +1340,13 @@ function PersonaComponent({
                       ...prev,
                       name_id: nameId,
                       name: null,
-                      // If accepting, remove from pending; if rejecting (null), also remove
-                      pending_ids: prev.pending_ids.filter((id) => {
-                        const prevNameId = prev.name_id;
-                        return id !== prevNameId;
-                      }),
                     }))
+                  }
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("name_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("name_id", pendingId)
                   }
                   onNameChange={handleNameChange}
                   onGenerate={generateHandlers["names"]}
@@ -1336,8 +1391,13 @@ function PersonaComponent({
                       ...prev,
                       description_id: descriptionId,
                       description: null,
-                      pending_ids: prev.pending_ids.filter((id) => id !== prev.description_id),
                     }))
+                  }
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("description_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("description_id", pendingId)
                   }
                   onDescriptionChange={handleDescriptionChange}
                   searchTerm={

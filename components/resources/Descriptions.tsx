@@ -160,6 +160,9 @@ export interface DescriptionsProps {
   onSearchChange?: (term: string) => void; // Callback when search term changes
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
+  /** Per-field pending lifecycle. See Names.tsx for the full pattern. */
+  onAcceptPending?: (pendingId: string) => void;
+  onRejectPending?: (pendingId: string) => void;
 }
 
 export function Descriptions({
@@ -180,6 +183,8 @@ export function Descriptions({
   searchTerm,
   onSearchChange,
   isAutosaveEnabled = true,
+  onAcceptPending,
+  onRejectPending,
 }: DescriptionsProps) {
   const resource = description_resource ?? null;
   const resourceId = description_id ?? null;
@@ -265,7 +270,9 @@ export function Descriptions({
   const currentText = "";
   const pendingText = resource?.description || "";
 
-  // Accept pending — confirm the pending resource
+  // Accept pending — confirm the pending resource. Use the parent's
+  // accept hook when supplied so it can sync ``pending_ids`` alongside
+  // the id swap. See Names.tsx for the full reasoning.
   const handleAccept = useCallback(() => {
     if (!resource?.id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
@@ -275,13 +282,22 @@ export function Descriptions({
     lastSavedValueRef.current = text;
     lastServerTextRef.current = text;
     isDirtyRef.current = false;
-    onDescriptionIdChange(resource.id);
-  }, [resource, onDescriptionIdChange]);
+    if (onAcceptPending) {
+      onAcceptPending(resource.id);
+    } else {
+      onDescriptionIdChange(resource.id);
+    }
+  }, [resource, onAcceptPending, onDescriptionIdChange]);
 
-  // Reject pending — remove the pending resource
+  // Reject pending — drop the pending resource. Same pattern as Accept.
   const handleReject = useCallback(() => {
-    onDescriptionIdChange(null);
-  }, [onDescriptionIdChange]);
+    const pendingId = resource?.id;
+    if (onRejectPending && pendingId) {
+      onRejectPending(pendingId);
+    } else {
+      onDescriptionIdChange(null);
+    }
+  }, [resource, onRejectPending, onDescriptionIdChange]);
 
   // Use descriptions array if available
   const suggestionsMapping = useMemo(() => {

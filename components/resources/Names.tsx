@@ -41,6 +41,14 @@ export interface NamesProps {
   onNameChange?: (name: string) => void; // Report value changes upward
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
+  /** Per-field pending lifecycle. Called when the user clicks Accept on
+   *  the pending diff. Parent should remove ``pendingId`` from
+   *  ``pending_ids`` (so the connection is promoted to active=true) and
+   *  set ``name_id`` to ``pendingId``. */
+  onAcceptPending?: (pendingId: string) => void;
+  /** Called when the user clicks Reject. Parent should remove
+   *  ``pendingId`` from ``pending_ids`` AND set ``name_id`` to null. */
+  onRejectPending?: (pendingId: string) => void;
 }
 
 export function Names({
@@ -58,6 +66,8 @@ export function Names({
   hideDescription = false,
   onNameChange,
   isAutosaveEnabled = true,
+  onAcceptPending,
+  onRejectPending,
 }: NamesProps) {
   const resource = name_resource ?? null;
   const show = show_name ?? true;
@@ -193,7 +203,11 @@ export function Names({
     [ghostSuffix, ghostMatch, namesArray, onNameIdChange]
   );
 
-  // Accept pending — confirm the pending resource as the active selection
+  // Accept pending — confirm the pending resource as the active selection.
+  // Use the parent's accept hook when available so it can remove
+  // ``resource.id`` from ``pending_ids`` (the pending lifecycle bookkeeping)
+  // alongside the id swap. Falls back to the plain id-change path for
+  // legacy callers that don't supply the hook.
   const handleAccept = useCallback(() => {
     if (!resource?.id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
@@ -201,13 +215,23 @@ export function Names({
     setInternalValue(text);
     lastSavedValueRef.current = text;
     isDirtyRef.current = false;
-    onNameIdChange(resource.id);
-  }, [resource, onNameIdChange]);
+    if (onAcceptPending) {
+      onAcceptPending(resource.id);
+    } else {
+      onNameIdChange(resource.id);
+    }
+  }, [resource, onAcceptPending, onNameIdChange]);
 
-  // Reject pending — remove the pending resource from form state
+  // Reject pending — drop the pending resource from form state. Same
+  // hook-vs-fallback structure as Accept above.
   const handleReject = useCallback(() => {
-    onNameIdChange(null);
-  }, [onNameIdChange]);
+    const pendingId = resource?.id;
+    if (onRejectPending && pendingId) {
+      onRejectPending(pendingId);
+    } else {
+      onNameIdChange(null);
+    }
+  }, [resource, onRejectPending, onNameIdChange]);
 
   // Don't render if show_name is false (AFTER all hooks)
   if (!show) {
