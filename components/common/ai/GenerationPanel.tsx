@@ -60,6 +60,15 @@ interface HistoricalMessage {
     /** Tool resource envelope (``GetToolResponse`` shape) when this
      *  call has a registered tool; ``null`` for audit-only events. */
     tool: Record<string, unknown> | null;
+    /** Latest ``soft_calls_mv`` row for this call, stamped server-side
+     *  in ``resolve_group_impl``. ``null`` when the call wasn't a soft
+     *  write — those don't have a ledger entry, so they render as
+     *  fully executed.
+     *  See ``project_soft_calls_entry_pattern`` (api memory). */
+    ledgerStatus: "pending" | "accepted" | "rejected" | null;
+    ledgerOperation: string | null;
+    ledgerArtifact: string | null;
+    ledgerArtifactId: string | null;
   }[];
   /** Whether this message will be threaded into the LLM's context for
    *  the next generation. Mirrors the dedup pass on the server (latest
@@ -170,6 +179,10 @@ function flattenMessages(res: GroupMessagesOut | Record<string, unknown>): Histo
           id: String(c.id),
           templateName: (c.template_name as string) ?? (c.tool_name as string) ?? null,
           tool: (c.tool as Record<string, unknown> | null) ?? null,
+          ledgerStatus: (c.ledger_status as "pending" | "accepted" | "rejected" | null) ?? null,
+          ledgerOperation: (c.ledger_operation as string | null) ?? null,
+          ledgerArtifact: (c.ledger_artifact as string | null) ?? null,
+          ledgerArtifactId: (c.ledger_artifact_id as string | null) ?? null,
         })),
         inContext: msg.in_context !== false,
         inContextReason: (msg.in_context_reason as string) ?? "kept",
@@ -292,67 +305,43 @@ const MarkdownRenderer = dynamic(
   },
 );
 
-/** Derive the lifecycle state of a soft-eligible operation from its
- *  receipt. The audit framework dual-stamps ack events onto the
- *  original soft call's receipt (see ``ws/output.py``), so the
- *  receipt's ``events`` array accumulates the full lifecycle on disk.
+/** Lifecycle state of a soft-eligible tool call.
  *
- *  Rules:
- *    - ``arguments.soft !== true``         → "executed" (no soft path taken)
- *    - latest event with ``data.accept = true``  → "accepted"
- *    - latest event with ``data.accept = false`` → "rejected"
- *    - otherwise (soft fired but no ack yet)     → "pending"
- */
+ *  Source of truth is the server's ``soft_calls_mv`` ledger, surfaced
+ *  via ``GroupCall.ledger_status``. ``executed`` means the call wasn't a
+ *  soft write at all (no ledger entry) — render no ack controls. */
 type ReceiptState = "pending" | "accepted" | "rejected" | "executed";
 
-function deriveReceiptState(data: Record<string, unknown>): ReceiptState {
-  const args = data["arguments"] as Record<string, unknown> | undefined;
-  if (!args || args["soft"] !== true) return "executed";
-  const events = (data["events"] as Array<Record<string, unknown>> | undefined) ?? [];
-  // Walk newest → oldest so the most recent ack wins.
-  for (let i = events.length - 1; i >= 0; i--) {
-    const evt = events[i];
-    if (!evt) continue;
-    const evtData = evt["data"] as Record<string, unknown> | undefined;
-    if (evtData && typeof evtData["accept"] === "boolean") {
-      return evtData["accept"] ? "accepted" : "rejected";
-    }
-  }
-  return "pending";
-}
-
-/** Pull ``(artifact, operation)`` segments from any event name in the
- *  receipt — ``"persona.draft.started"`` → ``["persona", "draft"]``.
- *  Used as the route prefix for the generic ack server action. */
-function deriveRoute(
-  data: Record<string, unknown>,
-): { artifact: string; operation: string } | null {
-  const events = (data["events"] as Array<Record<string, unknown>> | undefined) ?? [];
-  for (const evt of events) {
-    const name = evt["event"];
-    if (typeof name === "string") {
-      const parts = name.split(".");
-      if (parts.length >= 2 && parts[0] && parts[1]) {
-        return { artifact: parts[0], operation: parts[1] };
-      }
-    }
-  }
-  return null;
+function ledgerToReceiptState(
+  ledgerStatus: "pending" | "accepted" | "rejected" | null,
+): ReceiptState {
+  return ledgerStatus ?? "executed";
 }
 
 /** Body of an expanded tool-call accordion.
  *
  *  Two stacked sections:
- *    - Lifecycle controls (top): when the receipt is in ``pending`` state,
- *      surface Accept / Reject buttons. Clicking fires the generic
- *      ``ackOperation`` server action against ``/<artifact>/<operation>``,
- *      and the audit framework dual-stamps ack events back onto this same
- *      receipt — next render reflects the new state.
- *    - Receipt body (rest): Preview / Raw toggle.
- *      - ``preview`` (default): renders ``data.output`` as Markdown
- *        (the tool's Jinja-templated friendly summary).
- *      - ``raw``: pretty-printed JSON of the whole receipt. */
-function CallReceiptBody({ data }: { data: Record<string, unknown> }) {
+ *    - Lifecycle controls (top): when the call's ledger status is
+ *      ``pending``, surface Accept / Reject buttons. Clicking fires the
+ *      generic ``ackOperation`` server action against
+ *      ``/<artifact>/<operation>``; the server appends the ack ledger
+ *      row, and on next render the parent passes the updated status.
+ *    - Receipt body (rest): Preview / Raw toggle of the call JSON. */
+function CallReceiptBody({
+  data,
+  callId,
+  ledgerStatus,
+  ledgerArtifact,
+  ledgerOperation,
+}: {
+  data: Record<string, unknown>;
+  callId: string;
+  /** Server-stamped ledger snapshot (see GroupCall on api side).
+   *  ``null`` for non-soft calls — render no ack controls. */
+  ledgerStatus: "pending" | "accepted" | "rejected" | null;
+  ledgerArtifact: string | null;
+  ledgerOperation: string | null;
+}) {
   const output = typeof data["output"] === "string" ? (data["output"] as string) : null;
   const hasPreview = output !== null && output.trim().length > 0;
   const [mode, setMode] = useState<"preview" | "raw">(
@@ -360,15 +349,15 @@ function CallReceiptBody({ data }: { data: Record<string, unknown> }) {
   );
 
   // ── Lifecycle state ──────────────────────────────────────────────
-  const initialState = useMemo(() => deriveReceiptState(data), [data]);
-  // Local override for optimistic update — the receipt JSON on disk
-  // gets new ack events appended by the server, but we don't refetch
-  // until the bubble is reopened. Treat the local state as the truth
-  // for this render pass.
+  const initialState = ledgerToReceiptState(ledgerStatus);
+  // Local override for optimistic update — server's accepted/rejected
+  // ledger row arrives async; treat the local state as truth this render.
   const [optimisticState, setOptimisticState] = useState<ReceiptState | null>(null);
   const state = optimisticState ?? initialState;
-  const route = useMemo(() => deriveRoute(data), [data]);
-  const callId = typeof data["call_id"] === "string" ? (data["call_id"] as string) : null;
+  const route =
+    ledgerArtifact && ledgerOperation
+      ? { artifact: ledgerArtifact, operation: ledgerOperation }
+      : null;
   const [acking, setAcking] = useState(false);
   const [ackError, setAckError] = useState<string | null>(null);
 
@@ -499,6 +488,9 @@ function ToolCallBubble({
   align,
   expanded,
   onToggle,
+  ledgerStatus = null,
+  ledgerArtifact = null,
+  ledgerOperation = null,
 }: {
   callId: string;
   templateName: string | null;
@@ -509,6 +501,11 @@ function ToolCallBubble({
   align: string;
   expanded: { id: string; data: Record<string, unknown> | null; error: string | null } | null;
   onToggle: (id: string) => void;
+  /** Ledger snapshot from server. Null fields = non-soft call → no
+   *  ack controls. */
+  ledgerStatus?: "pending" | "accepted" | "rejected" | null;
+  ledgerArtifact?: string | null;
+  ledgerOperation?: string | null;
 }) {
   const isOpen = expanded?.id === callId;
   const label = bubbleLabel(tool, templateName);
@@ -538,7 +535,13 @@ function ToolCallBubble({
         {isOpen && (
           <div className="rounded-md border bg-muted/40 px-2.5 py-2">
             {expanded?.data ? (
-              <CallReceiptBody data={expanded.data} />
+              <CallReceiptBody
+                data={expanded.data}
+                callId={callId}
+                ledgerStatus={ledgerStatus}
+                ledgerArtifact={ledgerArtifact}
+                ledgerOperation={ledgerOperation}
+              />
             ) : expanded?.error ? (
               <span className="text-xs text-red-500">{expanded.error}</span>
             ) : (
@@ -1150,6 +1153,9 @@ export function GenerationPanel({
             align={align}
             expanded={expandedCall}
             onToggle={(id) => void toggleCall(id)}
+            ledgerStatus={call.ledgerStatus}
+            ledgerArtifact={call.ledgerArtifact}
+            ledgerOperation={call.ledgerOperation}
           />,
         );
       }
