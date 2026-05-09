@@ -732,6 +732,63 @@ function ModelComponent({
     setFormState((prev) => ({ ...prev, description, description_id: null }));
   }, []);
 
+  // ─── Per-field pending lifecycle ──────────────────────────────────
+  // Mirrors the canonical persona pattern: inline ✓ / ✗ on a pending
+  // diff resolves the id, removes it from ``pending_ids`` so the next
+  // autosave promotes (accept) or drops (reject) the connection.
+  type SingleField = "name_id" | "description_id";
+  type MultiField = "flag_ids" | "department_ids" | "voice_ids";
+
+  const handleAcceptPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: pendingId,
+        ...(field === "name_id" ? { name: null } : {}),
+        ...(field === "description_id" ? { description: null } : {}),
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: prev[field] === pendingId ? null : prev[field],
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleAcceptPendingMulti = useCallback(
+    (_field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        // Multi-accept keeps the ids in the field array (already
+        // selected). Just strip them from pending_ids so the next save
+        // promotes the connections to active=true.
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        [field]: (prev[field] as string[]).filter((id) => !removeSet.has(id)),
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
   const {
     setUrlFormDataRef,
     onFormDataChange,
@@ -1276,6 +1333,12 @@ function ModelComponent({
                   disabled={disabled}
                   onNameIdChange={handleNameIdChange}
                   onNameChange={handleNameChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("name_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("name_id", pendingId)
+                  }
                   placeholder="e.g., GPT-4"
                   defaultName="New Model"
                   required={s?.names?.required ?? true}
@@ -1319,6 +1382,12 @@ function ModelComponent({
                   disabled={disabled}
                   onDescriptionIdChange={handleDescriptionIdChange}
                   onDescriptionChange={handleDescriptionChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("description_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("description_id", pendingId)
+                  }
                   placeholder="Enter a brief description"
                   required={s?.descriptions?.required ?? false}
                 />
@@ -1387,6 +1456,12 @@ function ModelComponent({
                       department_ids: ids,
                     }))
                   }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("department_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("department_ids", pendingIds)
+                  }
                 />
 
                 {/* Unified multi-flag picker. The seven model flag groups
@@ -1403,6 +1478,12 @@ function ModelComponent({
                   label="Flags"
                   disabled={disabled}
                   onChange={handleFlagToggle}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("flag_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("flag_ids", pendingIds)
+                  }
                 />
               </div>
             </StepCard>
@@ -1818,6 +1899,12 @@ function ModelComponent({
                 disabled={disabled}
                 onVoiceIdsChange={(ids) =>
                   setFormState({ ...formState, voice_ids: ids })
+                }
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("voice_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("voice_ids", pendingIds)
                 }
                 label="Voices"
                 required={s?.voices?.required ?? false}

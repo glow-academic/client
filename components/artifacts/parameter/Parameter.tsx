@@ -366,6 +366,60 @@ function ParameterComponent({
     }));
   }, []);
 
+  // ─── Per-field pending lifecycle ──────────────────────────────────
+  // Mirrors persona — Field components call these when the user clicks
+  // ✓ / ✗ on a pending diff. ``formStateKey`` (JSON.stringify(formState))
+  // already includes ``pending_ids`` so changes here trigger autosave.
+  type SingleField = "name_id" | "description_id";
+  type MultiField = "flag_ids" | "department_ids" | "field_ids";
+
+  const handleAcceptPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: pendingId,
+        ...(field === "name_id" ? { name: null } : {}),
+        ...(field === "description_id" ? { description: null } : {}),
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: prev[field] === pendingId ? null : prev[field],
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleAcceptPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        [field]: (prev[field] as string[]).filter((id) => !removeSet.has(id)),
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
   const {
     setUrlFormDataRef,
     onFormDataChange,
@@ -719,6 +773,12 @@ function ParameterComponent({
                   disabled={disabled}
                   onNameIdChange={handleNameIdChange}
                   onNameChange={handleNameChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("name_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("name_id", pendingId)
+                  }
                   placeholder="e.g., Student Age"
                   defaultName="New Parameter"
                   required={true}
@@ -754,6 +814,12 @@ function ParameterComponent({
                   disabled={disabled}
                   onDescriptionIdChange={handleDescriptionIdChange}
                   onDescriptionChange={handleDescriptionChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("description_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("description_id", pendingId)
+                  }
                   label="Description"
                   placeholder="Enter a brief description (optional)"
                   required={false}
@@ -772,6 +838,12 @@ function ParameterComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("department_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("department_ids", pendingIds)
+                  }
                   required={false}
                 />
 
@@ -783,6 +855,12 @@ function ParameterComponent({
                   label="Flags"
                   disabled={disabled}
                   onChange={handleFlagToggle}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("flag_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("flag_ids", pendingIds)
+                  }
                 />
               </div>
             </StepCard>

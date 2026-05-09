@@ -721,6 +721,58 @@ export default function Agent({
     }));
   }, []);
 
+  // ─── Per-field pending lifecycle ──────────────────────────────────
+  // See Persona.tsx for the canonical pattern and rationale.
+  type SingleField = "name_id" | "description_id" | "instructions_id";
+  type MultiField = "departmentIds" | "flag_ids" | "voice_ids";
+
+  const handleAcceptPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setDraftState((prev) => ({
+        ...prev,
+        [field]: pendingId,
+        ...(field === "name_id" ? { name: null } : {}),
+        ...(field === "description_id" ? { description: null } : {}),
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setDraftState((prev) => ({
+        ...prev,
+        [field]: prev[field] === pendingId ? null : prev[field],
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleAcceptPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setDraftState((prev) => ({
+        ...prev,
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setDraftState((prev) => ({
+        ...prev,
+        [field]: (prev[field] as string[]).filter((id) => !removeSet.has(id)),
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
   const {
     setUrlFormDataRef,
     onFormDataChange,
@@ -1452,6 +1504,12 @@ export default function Agent({
                           disabled={isReadonly}
                           onNameIdChange={handleNameIdChange}
                           onNameChange={handleNameChange}
+                          onAcceptPending={(pendingId) =>
+                            handleAcceptPendingField("name_id", pendingId)
+                          }
+                          onRejectPending={(pendingId) =>
+                            handleRejectPendingField("name_id", pendingId)
+                          }
                           placeholder="e.g., Customer Support Agent"
                           defaultName="New Agent"
                           required={namesSection?.required ?? false}
@@ -1499,6 +1557,12 @@ export default function Agent({
                           disabled={isReadonly}
                           onDescriptionIdChange={handleDescriptionIdChange}
                           onDescriptionChange={handleDescriptionChange}
+                          onAcceptPending={(pendingId: string) =>
+                            handleAcceptPendingField("description_id", pendingId)
+                          }
+                          onRejectPending={(pendingId: string) =>
+                            handleRejectPendingField("description_id", pendingId)
+                          }
                           searchTerm={descriptionSearch}
                           onSearchChange={(term: string) =>
                             setStepFormData({ descriptionSearch: term || null })
@@ -1535,6 +1599,12 @@ export default function Agent({
                               departmentIds: ids,
                             }));
                           }}
+                          onAcceptPending={(pendingIds: string[]) =>
+                            handleAcceptPendingMulti("departmentIds", pendingIds)
+                          }
+                          onRejectPending={(pendingIds: string[]) =>
+                            handleRejectPendingMulti("departmentIds", pendingIds)
+                          }
                           onGenerate={handleGenerateDepartments}
                           required={departmentsSection?.required ?? false}
 
@@ -1577,6 +1647,12 @@ export default function Agent({
                               };
                             });
                           }}
+                          onAcceptPending={(pendingIds) =>
+                            handleAcceptPendingMulti("flag_ids", pendingIds)
+                          }
+                          onRejectPending={(pendingIds) =>
+                            handleRejectPendingMulti("flag_ids", pendingIds)
+                          }
                         />
                       </div>
                     </StepCard>
@@ -1910,6 +1986,12 @@ export default function Agent({
                         onVoiceIdsChange={(ids: string[]) =>
                           setDraftState((prev) => ({ ...prev, voice_ids: ids }))
                         }
+                        onAcceptPending={(pendingIds: string[]) =>
+                          handleAcceptPendingMulti("voice_ids", pendingIds)
+                        }
+                        onRejectPending={(pendingIds: string[]) =>
+                          handleRejectPendingMulti("voice_ids", pendingIds)
+                        }
                       />
                     </StepCard>
                   );
@@ -2117,6 +2199,12 @@ export default function Agent({
                             ...prev,
                             instructions_id: id,
                           }))
+                        }
+                        onAcceptPending={(pendingId: string) =>
+                          handleAcceptPendingField("instructions_id", pendingId)
+                        }
+                        onRejectPending={(pendingId: string) =>
+                          handleRejectPendingField("instructions_id", pendingId)
                         }
                         searchTerm={instructionsSearch}
                         onSearchChange={(term: string) =>

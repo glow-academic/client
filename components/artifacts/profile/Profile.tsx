@@ -472,6 +472,58 @@ function ProfileComponent({
     setFormState((prev) => ({ ...prev, name, name_id: null }));
   }, []);
 
+  // ─── Per-field pending lifecycle ──────────────────────────────────
+  // Mirrors persona — see Persona.tsx for full rationale. ``formStateKey``
+  // already includes ``pending_ids`` so changes here trigger autosave.
+  type SingleField = "name_id";
+  type MultiField = "flag_ids" | "department_ids";
+
+  const handleAcceptPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: pendingId,
+        ...(field === "name_id" ? { name: null } : {}),
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: prev[field] === pendingId ? null : prev[field],
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleAcceptPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        [field]: (prev[field] as string[]).filter((id) => !removeSet.has(id)),
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
   const {
     setUrlFormDataRef,
     onFormDataChange,
@@ -956,6 +1008,12 @@ function ProfileComponent({
                   disabled={disabled}
                   onNameIdChange={handleNameIdChange}
                   onNameChange={handleNameChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("name_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("name_id", pendingId)
+                  }
                   placeholder="e.g., Jane Doe"
                   defaultName="New Profile"
                   required={true}
@@ -991,6 +1049,12 @@ function ProfileComponent({
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
+                  }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("department_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("department_ids", pendingIds)
                   }
                   required={false}
                 />
@@ -1035,6 +1099,12 @@ function ProfileComponent({
                       };
                     });
                   }}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("flag_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("flag_ids", pendingIds)
+                  }
                 />
               </div>
             </StepCard>

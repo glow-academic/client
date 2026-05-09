@@ -617,6 +617,9 @@ function ScenarioComponent({
         videos: formState.videos,
         questions: formState.questions,
         options: formState.options,
+        // Pending lifecycle — included so per-field Accept/Reject (which
+        // mutates only the pending list) reliably triggers autosave.
+        pending_ids: formState.pending_ids,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -641,6 +644,8 @@ function ScenarioComponent({
       formState.videos,
       formState.questions,
       formState.options,
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(formState.pending_ids),
     ],
   );
 
@@ -754,6 +759,61 @@ function ScenarioComponent({
       options: opts.length > 0 ? opts : null,
     }));
   }, []);
+
+  // ─── Per-field pending lifecycle ──────────────────────────────────
+  // Field components (Names, Descriptions, ...) call these when the user
+  // clicks the inline ✓/✗ on a pending diff. Mirrors persona pattern.
+  type SingleField = "name_id" | "description_id";
+  type MultiField = "department_ids" | "parameter_field_ids" | "flag_ids";
+
+  const handleAcceptPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: pendingId,
+        // Clear the corresponding value field so the patch payload carries
+        // the resolved id instead of the (also-stale) text.
+        ...(field === "name_id" ? { name: null } : {}),
+        ...(field === "description_id" ? { description: null } : {}),
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: prev[field] === pendingId ? null : prev[field],
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleAcceptPendingMulti = useCallback(
+    (_field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        [field]: (prev[field] as string[]).filter((id) => !removeSet.has(id)),
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
 
   // Empty flush registry ref (no more client-side resource creation)
   const emptyFlushRef = useRef(new Map<string, () => Promise<void | Record<string, unknown>>>());
@@ -1794,10 +1854,15 @@ function ScenarioComponent({
                       ...prev,
                       name_id: nameId,
                       name: null,
-                      pending_ids: prev.pending_ids.filter((id) => id !== prev.name_id),
                     }))
                   }
                   onNameChange={handleNameChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("name_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("name_id", pendingId)
+                  }
                   onGenerate={generateHandlers["names"]}
                   placeholder="e.g., Customer Support Escalation"
                   defaultName="New Scenario"
@@ -1842,10 +1907,15 @@ function ScenarioComponent({
                       ...prev,
                       description_id: descriptionId,
                       description: null,
-                      pending_ids: prev.pending_ids.filter((id) => id !== prev.description_id),
                     }))
                   }
                   onDescriptionChange={handleDescriptionChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("description_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("description_id", pendingId)
+                  }
                   onGenerate={generateHandlers["descriptions"]}
                   label="Description"
                   placeholder="Describe the scenario"
@@ -1869,6 +1939,12 @@ function ScenarioComponent({
                         pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
                       };
                     })
+                  }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("department_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("department_ids", pendingIds)
                   }
                   label="Departments"
                   required={false}
@@ -1968,6 +2044,12 @@ function ScenarioComponent({
                     </div>
                   }
                   onChange={handleFlagToggle}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("flag_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("flag_ids", pendingIds)
+                  }
                 />
               </div>
             </StepCard>
@@ -2287,6 +2369,12 @@ function ScenarioComponent({
                         pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
                       };
                     })
+                  }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("parameter_field_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("parameter_field_ids", pendingIds)
                   }
                   disabled={disabled}
                   showAiGenerate={false}

@@ -479,9 +479,8 @@ function AuthComponent({
       ...prev,
       name_id: nameId,
       name: null,
-      pending_ids: retainPendingIds(prev.pending_ids, "names", nameId ? [nameId] : []),
     }));
-  }, [retainPendingIds]);
+  }, []);
 
   const handleNameChange = useCallback((name: string) => {
     setFormState((prev) => ({ ...prev, name }));
@@ -492,17 +491,64 @@ function AuthComponent({
       ...prev,
       description_id: descriptionId,
       description: null,
-      pending_ids: retainPendingIds(
-        prev.pending_ids,
-        "descriptions",
-        descriptionId ? [descriptionId] : [],
-      ),
     }));
-  }, [retainPendingIds]);
+  }, []);
 
   const handleDescriptionChange = useCallback((description: string) => {
     setFormState((prev) => ({ ...prev, description }));
   }, []);
+
+  // ─── Per-field pending lifecycle ──────────────────────────────────
+  // See Persona.tsx for the canonical pattern and rationale.
+  type SingleField = "name_id" | "description_id";
+  type MultiField = "flag_ids" | "department_ids";
+
+  const handleAcceptPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: pendingId,
+        ...(field === "name_id" ? { name: null } : {}),
+        ...(field === "description_id" ? { description: null } : {}),
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: prev[field] === pendingId ? null : prev[field],
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleAcceptPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        [field]: (prev[field] as string[]).filter((id) => !removeSet.has(id)),
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
@@ -742,6 +788,12 @@ function AuthComponent({
                   disabled={disabled}
                   onNameIdChange={handleNameIdChange}
                   onNameChange={handleNameChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("name_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("name_id", pendingId)
+                  }
                   placeholder="e.g., Production API Key"
                   defaultName="New Auth"
                   required={nameRequired}
@@ -774,6 +826,12 @@ function AuthComponent({
                   disabled={disabled}
                   onDescriptionIdChange={handleDescriptionIdChange}
                   onDescriptionChange={handleDescriptionChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("description_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("description_id", pendingId)
+                  }
                   searchTerm={
                     (stepFormData["descriptionSearch"] as
                       | string
@@ -797,10 +855,13 @@ function AuthComponent({
                     setFormState((prev) => ({
                       ...prev,
                       department_ids: ids,
-                      pending_ids: prev.pending_ids.filter(
-                        (pid) => ids.includes(pid) || !prev.department_ids.includes(pid),
-                      ),
                     }))
+                  }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("department_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("department_ids", pendingIds)
                   }
                 />
 
@@ -812,6 +873,12 @@ function AuthComponent({
                   label="Flags"
                   disabled={disabled}
                   onChange={handleFlagToggle}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("flag_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("flag_ids", pendingIds)
+                  }
                 />
               </div>
             </StepCard>

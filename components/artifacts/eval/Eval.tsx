@@ -774,6 +774,63 @@ function EvalComponent({
     setFormState((prev) => ({ ...prev, description }));
   }, []);
 
+  // ─── Per-field pending lifecycle ──────────────────────────────────
+  // Mirrors the canonical persona pattern: inline ✓ / ✗ on a pending
+  // diff resolves the id, removes it from ``pending_ids`` so the next
+  // autosave promotes (accept) or drops (reject) the connection.
+  type SingleField = "name_id" | "description_id";
+  type MultiField = "flag_ids" | "department_ids";
+
+  const handleAcceptPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: pendingId,
+        ...(field === "name_id" ? { name: null } : {}),
+        ...(field === "description_id" ? { description: null } : {}),
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: prev[field] === pendingId ? null : prev[field],
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleAcceptPendingMulti = useCallback(
+    (_field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        // Multi-accept keeps the ids in the field array (already
+        // selected). Just strip them from pending_ids so the next save
+        // promotes the connections to active=true.
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        [field]: (prev[field] as string[]).filter((id) => !removeSet.has(id)),
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
   // Readonly logic using server-provided can_edit flag
   const disabled = useMemo(() => {
     if (!s) return false;
@@ -1131,6 +1188,12 @@ function EvalComponent({
                   disabled={disabled}
                   onNameIdChange={handleNameIdChange}
                   onNameChange={handleNameChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("name_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("name_id", pendingId)
+                  }
                   required={true}
                   placeholder="Eval name"
                   defaultName="New Eval"
@@ -1166,6 +1229,12 @@ function EvalComponent({
                   disabled={disabled}
                   onDescriptionIdChange={handleDescriptionIdChange}
                   onDescriptionChange={handleDescriptionChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("description_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("description_id", pendingId)
+                  }
                   required={false}
                 />
 
@@ -1181,6 +1250,12 @@ function EvalComponent({
                   label="Flags"
                   disabled={disabled}
                   onChange={handleFlagToggle}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("flag_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("flag_ids", pendingIds)
+                  }
                 />
 
                 <Departments
@@ -1193,6 +1268,12 @@ function EvalComponent({
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
+                  }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("department_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("department_ids", pendingIds)
                   }
                   required={false}
                 />

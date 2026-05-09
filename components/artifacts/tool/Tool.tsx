@@ -727,6 +727,62 @@ function ToolComponent({
     }));
   }, []);
 
+  // ─── Per-field pending lifecycle ──────────────────────────────────
+  // Mirrors persona pattern. draftPatchKey already includes pending_ids,
+  // so accept/reject reliably triggers autosave even when the underlying
+  // field id/list doesn't shift. Tool has no value fields for
+  // name/description/instruction beyond the existing handlers, so the
+  // helpers stay simple.
+  type SingleField = "name_id" | "description_id" | "instruction_id";
+  type MultiField = "department_ids" | "flag_ids";
+
+  const handleAcceptPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: pendingId,
+        ...(field === "name_id" ? { name: null } : {}),
+        ...(field === "description_id" ? { description: null } : {}),
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: prev[field] === pendingId ? null : prev[field],
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleAcceptPendingMulti = useCallback(
+    (_field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        [field]: (prev[field] as string[]).filter((id) => !removeSet.has(id)),
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
   // Live preview against /tool/preview — renders each output template with
   // mock arg values, returns compiled text + per-arg type/filter hints +
   // undeclared variable list. Audited like decrypt.
@@ -1135,6 +1191,12 @@ function ToolComponent({
                   disabled={disabled}
                   onNameIdChange={handleNameIdChange}
                   onNameChange={handleNameChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("name_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("name_id", pendingId)
+                  }
                   placeholder="e.g., Calculator"
                   defaultName="New Tool"
                   hideDescription={true}
@@ -1168,6 +1230,12 @@ function ToolComponent({
                   disabled={disabled}
                   onDescriptionIdChange={handleDescriptionIdChange}
                   onDescriptionChange={handleDescriptionChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("description_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("description_id", pendingId)
+                  }
                 />
                 {/* Departments — multi-select. Catalog is sourced from
                     `(toolData as any).departments` once the GET endpoint
@@ -1183,6 +1251,12 @@ function ToolComponent({
                   onChange={(ids: string[]) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("department_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("department_ids", pendingIds)
+                  }
                   label="Departments"
                 />
                 <Flags
@@ -1192,6 +1266,12 @@ function ToolComponent({
                   columns={1}
                   disabled={disabled}
                   onChange={handleFlagToggle}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("flag_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("flag_ids", pendingIds)
+                  }
                   label="Flags"
                 />
               </div>
@@ -2165,6 +2245,12 @@ function ToolComponent({
                     ...prev,
                     instruction_id: nextId,
                   }))
+                }
+                onAcceptPending={(pendingId) =>
+                  handleAcceptPendingField("instruction_id", pendingId)
+                }
+                onRejectPending={(pendingId) =>
+                  handleRejectPendingField("instruction_id", pendingId)
                 }
                 label="Response Template"
                 placeholder="Enter the response template body…"

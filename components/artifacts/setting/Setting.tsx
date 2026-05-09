@@ -425,6 +425,59 @@ function Setting({
     }));
   }, [pruneSectionPending]);
 
+  // ─── Per-field pending lifecycle ──────────────────────────────────
+  // Mirrors persona pattern. Helpers manage pending_ids; existing
+  // handlers retain their pruneSectionPending logic for full-list resets.
+  type SingleField = "name_id" | "description_id";
+  type MultiField = "department_ids" | "flag_ids" | "color_ids";
+
+  const handleAcceptPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: pendingId,
+        ...(field === "name_id" ? { name: null } : {}),
+        ...(field === "description_id" ? { description: null } : {}),
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: prev[field] === pendingId ? null : prev[field],
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleAcceptPendingMulti = useCallback(
+    (_field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        [field]: (prev[field] as string[]).filter((id) => !removeSet.has(id)),
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
   useEffect(() => {
     if (!patchSettingDraftAction) {
       patchActionRef.current = undefined;
@@ -908,6 +961,12 @@ function Setting({
                 disabled={disabled}
                 onNameIdChange={handleNameIdChange}
                 onNameChange={handleNameChange}
+                onAcceptPending={(pendingId) =>
+                  handleAcceptPendingField("name_id", pendingId)
+                }
+                onRejectPending={(pendingId) =>
+                  handleRejectPendingField("name_id", pendingId)
+                }
                 placeholder="e.g., University Settings"
                 defaultName="New Setting"
                 hideDescription={true}
@@ -941,6 +1000,12 @@ function Setting({
               disabled={disabled}
               onDescriptionIdChange={handleDescriptionIdChange}
               onDescriptionChange={handleDescriptionChange}
+              onAcceptPending={(pendingId) =>
+                handleAcceptPendingField("description_id", pendingId)
+              }
+              onRejectPending={(pendingId) =>
+                handleRejectPendingField("description_id", pendingId)
+              }
             />
             <Departments
               department_ids={formState.department_ids}
@@ -955,6 +1020,12 @@ function Setting({
                   pending_ids: pruneSectionPending("departments", ids),
                 }))
               }
+              onAcceptPending={(pendingIds) =>
+                handleAcceptPendingMulti("department_ids", pendingIds)
+              }
+              onRejectPending={(pendingIds) =>
+                handleRejectPendingMulti("department_ids", pendingIds)
+              }
             />
             <Flags
               flags={s?.flags ?? []}
@@ -964,6 +1035,12 @@ function Setting({
               disabled={disabled}
               show_flags={true}
               onChange={handleFlagToggle}
+              onAcceptPending={(pendingIds) =>
+                handleAcceptPendingMulti("flag_ids", pendingIds)
+              }
+              onRejectPending={(pendingIds) =>
+                handleRejectPendingMulti("flag_ids", pendingIds)
+              }
             />
           </StepCard>
         );
@@ -1060,6 +1137,34 @@ function Setting({
                             };
                           })
                         }
+                        onAcceptPending={(pendingId) => {
+                          // Colors are stored as a multi-id array partitioned
+                          // by `type`. Accept = swap the per-type slot to the
+                          // accepted id, then strip it from pending_ids.
+                          setFormState((prev) => {
+                            const retained = prev.color_ids.filter(
+                              (id) => !rowIdsForType.has(id),
+                            );
+                            return {
+                              ...prev,
+                              color_ids: [...retained, pendingId],
+                              pending_ids: prev.pending_ids.filter(
+                                (id) => id !== pendingId,
+                              ),
+                            };
+                          });
+                        }}
+                        onRejectPending={(pendingId) => {
+                          setFormState((prev) => ({
+                            ...prev,
+                            color_ids: prev.color_ids.filter(
+                              (id) => id !== pendingId,
+                            ),
+                            pending_ids: prev.pending_ids.filter(
+                              (id) => id !== pendingId,
+                            ),
+                          }));
+                        }}
                       />
                     );
                   })}

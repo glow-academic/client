@@ -479,6 +479,66 @@ function DocumentComponent({
     }));
   }, []);
 
+  // ─── Per-field pending lifecycle ──────────────────────────────────
+  // Mirrors the canonical persona pattern: inline ✓ / ✗ on a pending
+  // diff resolves the id, removes it from ``pending_ids`` so the next
+  // autosave promotes (accept) or drops (reject) the connection.
+  type SingleField = "name_id" | "description_id";
+  type MultiField =
+    | "flag_ids"
+    | "department_ids"
+    | "parameter_field_ids";
+
+  const handleAcceptPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: pendingId,
+        ...(field === "name_id" ? { name: null } : {}),
+        ...(field === "description_id" ? { description: null } : {}),
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingField = useCallback(
+    (field: SingleField, pendingId: string) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: prev[field] === pendingId ? null : prev[field],
+        pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleAcceptPendingMulti = useCallback(
+    (_field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        // Multi-accept keeps the ids in the field array (already
+        // selected). Just strip them from pending_ids so the next save
+        // promotes the connections to active=true.
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        [field]: (prev[field] as string[]).filter((id) => !removeSet.has(id)),
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
   useEffect(() => {
     const newState = getInitialFormState();
     setFormState((prev) => {
@@ -985,6 +1045,12 @@ function DocumentComponent({
                   disabled={disabled}
                   onNameIdChange={handleNameIdChange}
                   onNameChange={handleNameChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("name_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("name_id", pendingId)
+                  }
                   placeholder="e.g., Course Syllabus"
                   defaultName="New Document"
                   required={true}
@@ -1024,6 +1090,12 @@ function DocumentComponent({
                   disabled={disabled}
                   onDescriptionIdChange={handleDescriptionIdChange}
                   onDescriptionChange={handleDescriptionChange}
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("description_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("description_id", pendingId)
+                  }
                   searchTerm={descriptionSearchTerm}
                   onSearchChange={(term) =>
                     setStepFormData({ descriptionSearch: term || null })
@@ -1043,6 +1115,12 @@ function DocumentComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("department_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("department_ids", pendingIds)
+                  }
                 />
 
                 <Flags
@@ -1053,6 +1131,12 @@ function DocumentComponent({
                   label="Flags"
                   disabled={disabled}
                   onChange={handleFlagToggle}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("flag_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("flag_ids", pendingIds)
+                  }
                 />
               </div>
             </StepCard>
@@ -1108,6 +1192,12 @@ function DocumentComponent({
                     ...prev,
                     parameter_field_ids: ids,
                   }))
+                }
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("parameter_field_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("parameter_field_ids", pendingIds)
                 }
                 disabled={disabled}
               />
