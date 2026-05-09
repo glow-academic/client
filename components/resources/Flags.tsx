@@ -56,6 +56,12 @@ export interface FlagsProps {
   disabled?: boolean;
   headerRight?: React.ReactNode;
   show_flags?: boolean;
+  /** Per-field pending lifecycle (multi-select). Receives flag
+   *  resource ids that have ``pending=true``. Parent should remove
+   *  them from ``pending_ids``; reject also clears the per-type
+   *  toggles. See Departments.tsx for the full pattern. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 type FlagGroup = {
@@ -92,6 +98,8 @@ export function Flags({
   disabled = false,
   headerRight,
   show_flags = true,
+  onAcceptPending,
+  onRejectPending,
 }: FlagsProps) {
   // Group flag rows by type — each logical flag surfaces as one toggle.
   const groups = useMemo<FlagGroup[]>(() => {
@@ -124,6 +132,17 @@ export function Flags({
     }
     return set;
   }, [groups]);
+  // Flag resource ids that are currently pending (one per pending row;
+  // a logical flag may contribute up to 2 — true row and false row).
+  // Parent uses these to sync ``pending_ids`` on accept/reject.
+  const pendingFlagIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const g of groups) {
+      if (g.trueRow?.pending && g.trueRow.id) ids.push(g.trueRow.id);
+      if (g.falseRow?.pending && g.falseRow.id) ids.push(g.falseRow.id);
+    }
+    return ids;
+  }, [groups]);
   const showDiff = pendingTypes.size > 0;
 
   const handleToggle = useCallback(
@@ -134,12 +153,22 @@ export function Flags({
   );
 
   const handleAccept = useCallback(() => {
-    // Pending state is confirmed by the next non-pending save. No-op here.
-  }, []);
+    // Pending toggles stay as the user's selection. Parent hook strips
+    // pending flag resource ids from ``pending_ids`` so the next save
+    // promotes those connections to active=true.
+    if (onAcceptPending && pendingFlagIds.length > 0) {
+      onAcceptPending(pendingFlagIds);
+    }
+  }, [onAcceptPending, pendingFlagIds]);
 
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingFlagIds.length > 0) {
+      onRejectPending(pendingFlagIds);
+    }
+    // Clear the per-type toggles regardless of the parent hook —
+    // matches legacy behavior (rejecting a flag should null its value).
     for (const t of pendingTypes) onChange(t, null);
-  }, [pendingTypes, onChange]);
+  }, [pendingTypes, pendingFlagIds, onRejectPending, onChange]);
 
   if (!show_flags || groups.length === 0) return null;
 
