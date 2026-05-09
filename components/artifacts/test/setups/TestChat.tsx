@@ -119,6 +119,10 @@ export default function TestChat({
     prompt_ids?: string[];
     tool_ids?: string[];
     instruction_ids?: string[];
+    /** Historical (artifact, operation) pairs this run executed.
+     *  Used to filter the tools picker so the user only sees tools
+     *  that grant operations the replay tape can serve. */
+    permissions?: [string, string][];
   };
   type ServerConfigGroup = {
     group_id: string;
@@ -492,11 +496,39 @@ export default function TestChat({
     },
   };
 
+  // Filter the tools picker by the union of currently-selected runs'
+  // historical permissions. The benchmark replay tape is keyed by
+  // (artifact, operation) — a tool only makes sense in this picker if
+  // it grants at least one of the historical operations. When nothing
+  // is selected (or selected runs lack permissions data — older
+  // payload), fall back to the full tool catalog.
+  const filteredTools = useMemo(() => {
+    const allTools = test_data.resources?.tools ?? null;
+    if (!allTools) return null;
+    if (selectedRunIds.length === 0) return allTools;
+    const allowed = new Set<string>();
+    for (const cfg of configs) {
+      if (!selectedRunIds.includes(cfg.run_id)) continue;
+      for (const [artifact, operation] of cfg.permissions ?? []) {
+        allowed.add(`${artifact}.${operation}`);
+      }
+    }
+    if (allowed.size === 0) return allTools;
+    const out: Record<string, Record<string, unknown>> = {};
+    for (const [id, tool] of Object.entries(allTools)) {
+      const perms = (tool as { permissions?: [string, string][] }).permissions ?? [];
+      if (perms.some(([a, o]) => allowed.has(`${a}.${o}`))) {
+        out[id] = tool as Record<string, unknown>;
+      }
+    }
+    return out;
+  }, [test_data.resources?.tools, selectedRunIds, configs]);
+
   const documentAreaProps: ResourcePanelProps = {
     visible: showResources,
     form_state: formState,
     on_form_change: setFormState,
-    tools: test_data.resources?.tools ?? null,
+    tools: filteredTools,
     qualities: test_data.resources?.qualities ?? null,
     modalities: test_data.resources?.modalities ?? null,
     reasoning_levels: test_data.resources?.reasoning_levels ?? null,
