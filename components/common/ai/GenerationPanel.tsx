@@ -320,27 +320,23 @@ function ledgerToReceiptState(
 
 /** Body of an expanded tool-call accordion.
  *
- *  Two stacked sections:
- *    - Lifecycle controls (top): when the call's ledger status is
- *      ``pending``, surface Accept / Reject buttons. Clicking fires the
- *      generic ``ackOperation`` server action against
- *      ``/<artifact>/<operation>``; the server appends the ack ledger
- *      row, and on next render the parent passes the updated status.
- *    - Receipt body (rest): Preview / Raw toggle of the call JSON. */
+ *  Lifecycle state (``state``, ``onAck``, ``acking``, ``ackError``) is
+ *  owned by the parent ``ToolCallBubble`` so the collapsed-header
+ *  Accept/Reject and the expanded Accept/Reject share one optimistic
+ *  state. This body just renders the larger Accept/Reject row + the
+ *  Preview/Raw toggle of the call JSON. */
 function CallReceiptBody({
   data,
-  callId,
-  ledgerStatus,
-  ledgerArtifact,
-  ledgerOperation,
+  state,
+  acking,
+  onAck,
+  ackError,
 }: {
   data: Record<string, unknown>;
-  callId: string;
-  /** Server-stamped ledger snapshot (see GroupCall on api side).
-   *  ``null`` for non-soft calls — render no ack controls. */
-  ledgerStatus: "pending" | "accepted" | "rejected" | null;
-  ledgerArtifact: string | null;
-  ledgerOperation: string | null;
+  state: ReceiptState;
+  acking: boolean;
+  onAck: (accept: boolean) => void | Promise<void>;
+  ackError: string | null;
 }) {
   const output = typeof data["output"] === "string" ? (data["output"] as string) : null;
   const hasPreview = output !== null && output.trim().length > 0;
@@ -348,53 +344,17 @@ function CallReceiptBody({
     hasPreview ? "preview" : "raw",
   );
 
-  // ── Lifecycle state ──────────────────────────────────────────────
-  const initialState = ledgerToReceiptState(ledgerStatus);
-  // Local override for optimistic update — server's accepted/rejected
-  // ledger row arrives async; treat the local state as truth this render.
-  const [optimisticState, setOptimisticState] = useState<ReceiptState | null>(null);
-  const state = optimisticState ?? initialState;
-  const route =
-    ledgerArtifact && ledgerOperation
-      ? { artifact: ledgerArtifact, operation: ledgerOperation }
-      : null;
-  const [acking, setAcking] = useState(false);
-  const [ackError, setAckError] = useState<string | null>(null);
-
-  const handleAck = useCallback(
-    async (accept: boolean) => {
-      if (!route || !callId || acking) return;
-      setAcking(true);
-      setAckError(null);
-      // Optimistic flip — UI updates instantly. Server's ack events
-      // will land on the receipt asynchronously.
-      setOptimisticState(accept ? "accepted" : "rejected");
-      try {
-        await ackOperation({
-          artifact: route.artifact,
-          operation: route.operation,
-          idempotencyKey: callId,
-          accept,
-        });
-      } catch (err) {
-        // Revert optimistic state and surface the error.
-        setOptimisticState(null);
-        setAckError(err instanceof Error ? err.message : "Ack failed");
-      } finally {
-        setAcking(false);
-      }
-    },
-    [route, callId, acking],
-  );
-
   return (
     <div className="flex flex-col gap-1.5">
-      {/* Lifecycle controls */}
-      {state === "pending" && route && callId && (
+      {/* Lifecycle controls — full-width Accept/Reject pair when
+          ``state === "pending"``. Inline icon-buttons on the bubble
+          header are also wired (see ToolCallBubble) so the user can
+          act without expanding; both share ``onAck``. */}
+      {state === "pending" && (
         <div className="flex items-center gap-1.5 self-end text-[10px]">
           <button
             type="button"
-            onClick={() => void handleAck(true)}
+            onClick={() => void onAck(true)}
             disabled={acking}
             className="px-2 py-0.5 rounded transition-colors bg-green-500/15 text-green-600 hover:bg-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
           >
@@ -403,7 +363,7 @@ function CallReceiptBody({
           </button>
           <button
             type="button"
-            onClick={() => void handleAck(false)}
+            onClick={() => void onAck(false)}
             disabled={acking}
             className="px-2 py-0.5 rounded transition-colors text-muted-foreground hover:text-foreground hover:bg-foreground/5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
           >
@@ -511,36 +471,129 @@ function ToolCallBubble({
   const label = bubbleLabel(tool, templateName);
   const description =
     tool && typeof tool["description"] === "string" ? (tool["description"] as string) : "";
+
+  // ── Lifecycle state (lifted up from CallReceiptBody) ────────────
+  // The header status icon AND the expanded body's controls share
+  // ``optimisticState`` so they stay in sync after a click.
+  const initialState = ledgerToReceiptState(ledgerStatus);
+  const [optimisticState, setOptimisticState] = useState<ReceiptState | null>(null);
+  const state = optimisticState ?? initialState;
+  const route =
+    ledgerArtifact && ledgerOperation
+      ? { artifact: ledgerArtifact, operation: ledgerOperation }
+      : null;
+  const [acking, setAcking] = useState(false);
+  const [ackError, setAckError] = useState<string | null>(null);
+
+  const handleAck = useCallback(
+    async (accept: boolean) => {
+      if (!route || !callId || acking) return;
+      setAcking(true);
+      setAckError(null);
+      setOptimisticState(accept ? "accepted" : "rejected");
+      try {
+        await ackOperation({
+          artifact: route.artifact,
+          operation: route.operation,
+          idempotencyKey: callId,
+          accept,
+        });
+      } catch (err) {
+        setOptimisticState(null);
+        setAckError(err instanceof Error ? err.message : "Ack failed");
+      } finally {
+        setAcking(false);
+      }
+    },
+    [route, callId, acking],
+  );
+
+  // Status icon shown in the collapsed header. For ``pending`` we
+  // render inline Accept/Reject icon-buttons instead so the user can
+  // act without expanding.
+  const statusIcon =
+    state === "rejected" ? (
+      <XCircle className="h-3 w-3 shrink-0 text-destructive" />
+    ) : (
+      <CheckCircle2
+        className={`h-3 w-3 shrink-0 ${state === "accepted" ? "text-green-500" : "text-green-500"}`}
+      />
+    );
   // Outer is `flex` (row) — `justify-end` / `justify-start` controls
   // horizontal placement. Inner is `flex-col` to stack the toggle
   // button on top of the expanded JSON. Width-capping the inner
   // column keeps the bubble narrow regardless of side.
+  // The outer is a clickable region (toggles expand). Pending state
+  // renders inline Accept/Reject icon-buttons next to the chevron;
+  // those stop propagation so clicking them doesn't also toggle the
+  // bubble. Other states show a status icon (green check / red X).
   return (
     <div className={`flex ${align}`}>
       <div className="flex flex-col gap-1 max-w-[85%]">
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => onToggle(callId)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onToggle(callId);
+            }
+          }}
           aria-expanded={isOpen}
           title={description || undefined}
-          className={`flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors text-left ${toolBubbleClasses(role)}`}
+          className={`flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors text-left cursor-pointer ${toolBubbleClasses(role)}`}
         >
           <Wrench className="h-3 w-3 shrink-0" />
           <span className="flex-1 truncate">{label}</span>
-          <CheckCircle2 className="h-3 w-3 shrink-0 text-green-500" />
+          {state === "pending" && route ? (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handleAck(true);
+                }}
+                disabled={acking}
+                title="Accept"
+                aria-label="Accept pending operation"
+                className="inline-flex items-center justify-center h-5 w-5 rounded bg-green-500/15 text-green-600 hover:bg-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {acking ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handleAck(false);
+                }}
+                disabled={acking}
+                title="Reject"
+                aria-label="Reject pending operation"
+                className="inline-flex items-center justify-center h-5 w-5 rounded text-muted-foreground hover:text-foreground hover:bg-foreground/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </>
+          ) : (
+            statusIcon
+          )}
           <ChevronDown
             className={`h-3 w-3 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
           />
-        </button>
+        </div>
+        {ackError && (
+          <span className="self-end text-[10px] text-red-500">{ackError}</span>
+        )}
         {isOpen && (
           <div className="rounded-md border bg-muted/40 px-2.5 py-2">
             {expanded?.data ? (
               <CallReceiptBody
                 data={expanded.data}
-                callId={callId}
-                ledgerStatus={ledgerStatus}
-                ledgerArtifact={ledgerArtifact}
-                ledgerOperation={ledgerOperation}
+                state={state}
+                acking={acking}
+                onAck={handleAck}
+                ackError={ackError}
               />
             ) : expanded?.error ? (
               <span className="text-xs text-red-500">{expanded.error}</span>
