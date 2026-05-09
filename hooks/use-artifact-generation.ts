@@ -43,6 +43,14 @@ export interface GenerationMessage {
    *  rather than a full tool-call bubble. Always set explicitly to
    *  avoid ``exactOptionalPropertyTypes`` undefined-vs-absent ambiguity. */
   tool: Record<string, unknown> | null;
+  /** Latest ``soft_calls_mv`` row for this call, stamped server-side
+   *  in ``run_artifact_operation_with_audit`` and surfaced via the
+   *  ``.completed`` event payload. ``null`` for non-soft calls.
+   *  See ``project_soft_calls_entry_pattern`` (api memory). */
+  ledgerStatus?: "pending" | "accepted" | "rejected" | null;
+  ledgerOperation?: string | null;
+  ledgerArtifact?: string | null;
+  ledgerArtifactId?: string | null;
 }
 
 export interface GenerationListener {
@@ -278,8 +286,38 @@ export function useArtifactGeneration(
       }
 
       const nextStatus = phase === "completed" ? "success" : "error";
+      // ``.completed`` carries the soft_calls ledger snapshot stamped
+      // by the audit emit — pick it up so live bubbles render the
+      // inline Accept/Reject without waiting for a group refetch.
+      const ledgerStatus =
+        (data.ledger_status as "pending" | "accepted" | "rejected" | null | undefined) ??
+        (payload.ledger_status as "pending" | "accepted" | "rejected" | null | undefined) ??
+        null;
+      const ledgerOperation =
+        (data.ledger_operation as string | null | undefined) ??
+        (payload.ledger_operation as string | null | undefined) ??
+        null;
+      const ledgerArtifact =
+        (data.ledger_artifact as string | null | undefined) ??
+        (payload.ledger_artifact as string | null | undefined) ??
+        null;
+      const ledgerArtifactId =
+        (data.ledger_artifact_id as string | null | undefined) ??
+        (payload.ledger_artifact_id as string | null | undefined) ??
+        null;
       setMessages((prev) =>
-        prev.map((m) => (m.id === callId ? { ...m, toolStatus: nextStatus } : m)),
+        prev.map((m) =>
+          m.id === callId
+            ? {
+                ...m,
+                toolStatus: nextStatus,
+                ledgerStatus,
+                ledgerOperation,
+                ledgerArtifact,
+                ledgerArtifactId,
+              }
+            : m,
+        ),
       );
     };
 

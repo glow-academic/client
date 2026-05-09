@@ -1323,7 +1323,10 @@ export function GenerationPanel({
       }
 
       // Tool present — full bubble. Once succeeded, expandable;
-      // otherwise show a static status indicator.
+      // otherwise show a static status indicator. ``.completed`` event
+      // payload carried the ledger snapshot (audit emit stamps it from
+      // soft_calls_mv) so the inline Accept/Reject renders without
+      // waiting for a group refetch.
       if (msg.toolStatus === "success") {
         return (
           <ToolCallBubble
@@ -1335,6 +1338,9 @@ export function GenerationPanel({
             align={align}
             expanded={expandedCall}
             onToggle={(id) => void toggleCall(id)}
+            ledgerStatus={msg.ledgerStatus ?? null}
+            ledgerArtifact={msg.ledgerArtifact ?? null}
+            ledgerOperation={msg.ledgerOperation ?? null}
           />
         );
       }
