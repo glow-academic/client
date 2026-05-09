@@ -1339,26 +1339,40 @@ export default function Personas({
                   until commit/failure). */}
               {isGhost && isPending && ghost.callId && (
                 <>
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    className="h-8"
-                    onClick={() => handlePersonaAck(ghost.callId, true, ghost.op)}
-                  >
-                    <Check className="mr-1 h-3.5 w-3.5" />
-                    Accept
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-8"
-                    onClick={() => handlePersonaAck(ghost.callId, false, ghost.op)}
-                  >
-                    <X className="mr-1 h-3.5 w-3.5" />
-                    Reject
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="sm"
+                        className="h-9 px-3"
+                        onClick={() => handlePersonaAck(ghost.callId, true, ghost.op)}
+                        aria-label="Accept pending persona"
+                        data-action-button
+                      >
+                        <Check className="h-4 w-4 md:mr-0 mr-2" />
+                        <span className="md:hidden">Accept</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Accept</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-9 px-3"
+                        onClick={() => handlePersonaAck(ghost.callId, false, ghost.op)}
+                        aria-label="Reject pending persona"
+                        data-action-button
+                      >
+                        <X className="h-4 w-4 md:mr-0 mr-2" />
+                        <span className="md:hidden">Reject</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Reject</TooltipContent>
+                  </Tooltip>
                 </>
               )}
               {isGhost && isFailed && ghost.error && (
