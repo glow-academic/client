@@ -31,6 +31,7 @@ import type {
   SimulationsListBody,
 } from "@/app/(main)/training/simulations/page";
 import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
+import { ackOperation } from "@/lib/api/ack";
 import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
@@ -269,6 +270,29 @@ export function Simulations({
   // minimize diff. The active list is the merged view (base +
   // create overlays − delete overlays).
   const simulations = mergedSimulations;
+
+  // Unified ack: live ghosts → hook; persistent pending → ackOperation+refresh.
+  const handleSimulationAck = useCallback(
+    async (callId: string, accept: boolean, op: Ghost<unknown>["op"]) => {
+      const live = simulationGhosts.find((g) => g.callId === callId);
+      if (live) {
+        await ackSimulationGhost(callId, accept);
+        return;
+      }
+      try {
+        await ackOperation({
+          artifact: "simulation",
+          operation: op,
+          idempotencyKey: callId,
+          accept,
+        });
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Ack failed");
+      }
+    },
+    [simulationGhosts, ackSimulationGhost, router],
+  );
 
   // ---- Selection helpers ----------------------------------------
   // ``isSelected`` is the single read predicate every row uses; it
@@ -1044,7 +1068,7 @@ export function Simulations({
                   variant="default"
                   size="sm"
                   className="h-8"
-                  onClick={() => ackSimulationGhost(ghost.callId, true)}
+                  onClick={() => handleSimulationAck(ghost.callId, true, ghost.op)}
                 >
                   <Check className="mr-1 h-3.5 w-3.5" />
                   Accept
@@ -1054,7 +1078,7 @@ export function Simulations({
                   variant="outline"
                   size="sm"
                   className="h-8"
-                  onClick={() => ackSimulationGhost(ghost.callId, false)}
+                  onClick={() => handleSimulationAck(ghost.callId, false, ghost.op)}
                 >
                   <X className="mr-1 h-3.5 w-3.5" />
                   Reject
@@ -1458,7 +1482,21 @@ export function Simulations({
                 tableRows.map((row) => {
                   const simulation = row.original;
                   const key = simulation.simulation_id || `simulation-${row.id}`;
-                  return <div key={key}>{renderSimulationCard(simulation)}</div>;
+                  const persistentGhost: Ghost<(typeof simulations)[number]> | undefined =
+                    simulation.pending_status === "pending" && simulation.pending_call_id
+                      ? {
+                          callId: simulation.pending_call_id,
+                          op: (simulation.pending_operation as Ghost<(typeof simulations)[number]>["op"]) ?? "create",
+                          state: "pending",
+                          rowId: simulation.simulation_id ?? null,
+                          partial: simulation as unknown as Ghost<(typeof simulations)[number]>["partial"],
+                          before: simulation,
+                          tool: null,
+                          error: null,
+                          arguments: {},
+                        }
+                      : undefined;
+                  return <div key={key}>{renderSimulationCard(simulation, persistentGhost)}</div>;
                 })
               ) : (
                 simulationGhosts.length === 0 && (

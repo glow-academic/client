@@ -44,6 +44,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useEvalAi } from "@/hooks/use-eval-ai";
 import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
+import { ackOperation } from "@/lib/api/ack";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -503,6 +504,31 @@ export default function Evals({
   // overlays − delete overlays).
   const evalsListArray = mergedEvals;
 
+  // Unified ack: live in-flight ghosts go through the hook; server-side
+  // persistent pending rows (synthesized from ``pending_status``) ack
+  // via the generic server action and refresh.
+  const handleEvalAck = useCallback(
+    async (callId: string, accept: boolean, op: Ghost<unknown>["op"]) => {
+      const live = evalGhosts.find((g) => g.callId === callId);
+      if (live) {
+        await ackEvalGhost(callId, accept);
+        return;
+      }
+      try {
+        await ackOperation({
+          artifact: "eval",
+          operation: op,
+          idempotencyKey: callId,
+          accept,
+        });
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Ack failed");
+      }
+    },
+    [evalGhosts, ackEvalGhost, router],
+  );
+
   const selectAllOnPage = useCallback(() => {
     const pageIds = evalsListArray.filter((e) => e.eval_id).map((e) => e.eval_id!);
     void setSelectAllMatching(false);
@@ -916,7 +942,7 @@ export default function Evals({
                     variant="default"
                     size="sm"
                     className="h-8"
-                    onClick={() => ackEvalGhost(ghost.callId, true)}
+                    onClick={() => handleEvalAck(ghost.callId, true, ghost.op)}
                   >
                     <Check className="mr-1 h-3.5 w-3.5" />
                     Accept
@@ -926,7 +952,7 @@ export default function Evals({
                     variant="outline"
                     size="sm"
                     className="h-8"
-                    onClick={() => ackEvalGhost(ghost.callId, false)}
+                    onClick={() => handleEvalAck(ghost.callId, false, ghost.op)}
                   >
                     <X className="mr-1 h-3.5 w-3.5" />
                     Reject
@@ -1214,7 +1240,28 @@ export default function Evals({
                 );
               })}
             {tableRows.length ? (
-              tableRows.map((row) => renderEvalCard(row.original))
+              tableRows.map((row) => {
+                const evalRow = row.original;
+                // Server-side pending status (from soft_calls_mv) — render
+                // the row as a pending ghost so Accept/Reject controls
+                // appear and the eval card visual reflects the dormant
+                // state.
+                const persistentGhost: Ghost<(typeof evalsListArray)[number]> | undefined =
+                  evalRow.pending_status === "pending" && evalRow.pending_call_id
+                    ? {
+                        callId: evalRow.pending_call_id,
+                        op: (evalRow.pending_operation as Ghost<(typeof evalsListArray)[number]>["op"]) ?? "create",
+                        state: "pending",
+                        rowId: evalRow.eval_id ?? null,
+                        partial: evalRow as unknown as Ghost<(typeof evalsListArray)[number]>["partial"],
+                        before: evalRow,
+                        tool: null,
+                        error: null,
+                        arguments: {},
+                      }
+                    : undefined;
+                return renderEvalCard(evalRow, persistentGhost);
+              })
             ) : (
               evalGhosts.length === 0 && (
                 <div className="col-span-full text-center py-8 text-muted-foreground">

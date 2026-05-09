@@ -85,6 +85,7 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDocumentAi } from "@/hooks/use-document-ai";
 import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
+import { ackOperation } from "@/lib/api/ack";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
@@ -203,6 +204,7 @@ export default function Documents({
   const {
     ghosts: documentGhosts,
     mergedRows: mergedDocuments,
+    ack: ackDocumentGhost,
   } = useArtifactGhosts({
     artifactType: "document",
     // All four CRUD ops the LLM might invoke or the user might trigger
@@ -226,6 +228,31 @@ export default function Documents({
   // diff. The active list is the merged view (base + create overlays
   // − delete overlays).
   const documents = mergedDocuments;
+
+  // Unified ack: live in-flight ghosts go through the hook; server-side
+  // persistent pending rows (synthesized from ``pending_status``) ack
+  // via the generic server action and refresh.
+  const handleDocumentAck = useCallback(
+    async (callId: string, accept: boolean, op: Ghost<unknown>["op"]) => {
+      const live = documentGhosts.find((g) => g.callId === callId);
+      if (live) {
+        await ackDocumentGhost(callId, accept);
+        return;
+      }
+      try {
+        await ackOperation({
+          artifact: "document",
+          operation: op,
+          idempotencyKey: callId,
+          accept,
+        });
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Ack failed");
+      }
+    },
+    [documentGhosts, ackDocumentGhost, router],
+  );
   const scenarios = useMemo(
     () =>
       (documentsData?.scenario_filter?.options || []).map((opt) => ({
@@ -1055,10 +1082,34 @@ export default function Documents({
               </TableCell>
             );
           }
-          // Actions column: suppressed during ghost lifecycle. Once
-          // ack/soft-write is wired (see project_persona_live_pattern
-          // memory), Pending state would expose Accept/Reject here.
+          // Actions column: Accept/Reject when pending; suppressed otherwise.
           if (col.id === "actions") {
+            if (isPending && ghost.callId) {
+              return (
+                <TableCell key={`ghost-${ghost.callId}-${col.id}`} className="border-r px-3 py-2 text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      className="h-7 px-2"
+                      onClick={() => handleDocumentAck(ghost.callId, true, ghost.op)}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2"
+                      onClick={() => handleDocumentAck(ghost.callId, false, ghost.op)}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                </TableCell>
+              );
+            }
             return (
               <TableCell key={`ghost-${ghost.callId}-${col.id}`} className="border-r px-3 py-2 text-center" />
             );
@@ -1319,26 +1370,46 @@ export default function Documents({
                     .filter((g) => g.state !== "committed" && g.state !== "accepted")
                     .map((g) => renderDocumentGhostRow(g))}
                   {tableRows.length ? (
-                    tableRows.map((row) => (
-                      <TableRow
-                        key={row.id}
-                        className="hover:bg-muted/30 transition-colors"
-                        data-testid="documents-row"
-                        data-document-id={row.original.document_id ?? undefined}
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell
-                            key={cell.id}
-                            className="border-r px-3 py-2 text-center"
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
+                    tableRows.map((row) => {
+                      const docRow = row.original;
+                      // Server-side pending status (from soft_calls_mv).
+                      // Render as a ghost row so Accept/Reject controls
+                      // appear and the visual reflects the dormant state.
+                      if (docRow.pending_status === "pending" && docRow.pending_call_id) {
+                        const persistentGhost: Ghost<DocumentRow> = {
+                          callId: docRow.pending_call_id,
+                          op: (docRow.pending_operation as Ghost<DocumentRow>["op"]) ?? "create",
+                          state: "pending",
+                          rowId: docRow.document_id ?? null,
+                          partial: docRow as unknown as Ghost<DocumentRow>["partial"],
+                          before: docRow,
+                          tool: null,
+                          error: null,
+                          arguments: {},
+                        };
+                        return renderDocumentGhostRow(persistentGhost);
+                      }
+                      return (
+                        <TableRow
+                          key={row.id}
+                          className="hover:bg-muted/30 transition-colors"
+                          data-testid="documents-row"
+                          data-document-id={row.original.document_id ?? undefined}
+                        >
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell
+                              key={cell.id}
+                              className="border-r px-3 py-2 text-center"
+                            >
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      );
+                    })
                   ) : (
                     documentGhosts.length === 0 && (
                       <TableRow>

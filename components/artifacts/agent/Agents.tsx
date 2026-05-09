@@ -10,6 +10,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ackOperation } from "@/lib/api/ack";
 
 import type {
   AgentsListOut,
@@ -186,6 +187,32 @@ export default function Agents({
   // diff. The active list is the merged view (base + create overlays
   // − delete overlays).
   const agents = mergedAgents;
+
+  // Unified ack handler: live in-flight ghosts go through the hook;
+  // server-side persistent pending rows ack via the generic action
+  // and refresh. Mirrors ``Personas.tsx::handlePersonaAck``.
+  const handleAgentAck = useCallback(
+    async (callId: string, accept: boolean, op: Ghost<unknown>["op"]) => {
+      const live = agentGhosts.find((g) => g.callId === callId);
+      if (live) {
+        await ackAgentGhost(callId, accept);
+        return;
+      }
+      try {
+        await ackOperation({
+          artifact: "agent",
+          operation: op,
+          idempotencyKey: callId,
+          accept,
+        });
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Ack failed");
+      }
+    },
+    [agentGhosts, ackAgentGhost, router],
+  );
+  void handleAgentAck;
 
   // Build model mapping from agents array (for per-card model name display)
   const modelMapping = useMemo(() => {
@@ -1352,7 +1379,28 @@ export default function Agents({
                 );
               })}
             {tableRows.length ? (
-              tableRows.map((row) => renderAgentCard(row.original))
+              tableRows.map((row) => {
+                const agent = row.original;
+                // Server-side pending status (from soft_calls_mv) — render
+                // the row as a pending ghost so Accept/Reject controls
+                // appear and the agent-card visual reflects the dormant
+                // state. Live in-flight ghosts come from the audit hub.
+                const persistentGhost: Ghost<(typeof agents)[0]> | undefined =
+                  agent.pending_status === "pending" && agent.pending_call_id
+                    ? {
+                        callId: agent.pending_call_id,
+                        op: (agent.pending_operation as Ghost<(typeof agents)[0]>["op"]) ?? "create",
+                        state: "pending",
+                        rowId: agent.agent_id ?? null,
+                        partial: agent as unknown as Ghost<(typeof agents)[0]>["partial"],
+                        before: agent,
+                        tool: null,
+                        error: null,
+                        arguments: {},
+                      }
+                    : undefined;
+                return renderAgentCard(agent, persistentGhost);
+              })
             ) : (
               agentGhosts.length === 0 && (
                 <div className="col-span-full text-center py-8 text-muted-foreground">

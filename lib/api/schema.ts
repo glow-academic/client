@@ -25122,6 +25122,11 @@ export interface components {
              */
             group_id?: string | null;
             /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
+            /**
              * Agent Id
              * @description UUID of the selected agent
              */
@@ -25678,6 +25683,11 @@ export interface components {
              * @description Group UUID for draft collaboration
              */
             group_id?: string | null;
+            /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
             /**
              * Show Ai Generate
              * @description Whether any auth resource supports AI generate
@@ -26414,6 +26424,11 @@ export interface components {
              */
             group_id?: string | null;
             /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
+            /**
              * Show Ai Generate
              * @description Whether AI generation is available
              */
@@ -26734,6 +26749,11 @@ export interface components {
              */
             group_id?: string | null;
             /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
+            /**
              * Show Ai Generate
              * @description Whether to show AI generate anywhere
              */
@@ -26985,6 +27005,11 @@ export interface components {
              * @description Associated group UUID
              */
             group_id?: string | null;
+            /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
             /**
              * Show Ai Generate
              * @description Whether AI generation is available
@@ -27308,6 +27333,11 @@ export interface components {
              * @description Associated group UUID
              */
             group_id?: string | null;
+            /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
             /**
              * Basic Show Ai Generate
              * @description Whether to show AI generate for the basic step
@@ -27645,6 +27675,11 @@ export interface components {
              * @description Group UUID for draft collaboration
              */
             group_id?: string | null;
+            /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
             /**
              * Show Ai Generate
              * @description Whether to show AI generate button anywhere
@@ -28531,6 +28566,11 @@ export interface components {
              */
             group_id?: string | null;
             /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
+            /**
              * Model Id
              * @description Model identifier
              */
@@ -28905,6 +28945,11 @@ export interface components {
              */
             group_id?: string | null;
             /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
+            /**
              * Show Ai Generate
              * @description Show AI generate if any resource supports it
              */
@@ -29164,6 +29209,11 @@ export interface components {
              * @description Generation group UUID for AI operations
              */
             group_id?: string | null;
+            /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches. The FE uses this to show the draft name in the SaveToolbar trigger.
+             */
+            draft_name?: string | null;
             /**
              * Show Ai Generate
              * @description Whether AI generation is available
@@ -29532,6 +29582,11 @@ export interface components {
              */
             group_id?: string | null;
             /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
+            /**
              * Profile Id
              * @description UUID of the profile
              */
@@ -29822,6 +29877,11 @@ export interface components {
              * @description Group identifier for the provider
              */
             group_id?: string | null;
+            /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
             /**
              * Provider Id
              * @description Provider identifier
@@ -30118,6 +30178,11 @@ export interface components {
              * @description Associated group UUID
              */
             group_id?: string | null;
+            /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
             /**
              * Show Ai Generate
              * @description Whether any section supports AI generation
@@ -30416,6 +30481,11 @@ export interface components {
              * @description UUID of the owning group
              */
             group_id?: string | null;
+            /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
             /**
              * Show Ai Generate
              * @description Whether AI generation is available
@@ -30873,6 +30943,11 @@ export interface components {
              */
             group_id?: string | null;
             /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
+            /**
              * Show Ai Generate
              * @description Whether any section should show AI generate
              */
@@ -31315,6 +31390,11 @@ export interface components {
              * @description UUID of the owning group
              */
             group_id?: string | null;
+            /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
             /**
              * Show Ai Generate
              * @description Whether AI generation is available
@@ -32171,6 +32251,11 @@ export interface components {
              * @description Group identifier for the tool
              */
             group_id?: string | null;
+            /**
+             * Draft Name
+             * @description Immutable draft label from the active draft entry, when a ``draft_id`` was supplied. ``None`` for non-draft fetches.
+             */
+            draft_name?: string | null;
             /**
              * Tool Id
              * @description Tool identifier
@@ -35345,6 +35430,21 @@ export interface components {
              * @description Whether the current user can delete
              */
             can_delete?: boolean | null;
+            /**
+             * Pending Status
+             * @description Soft-call ledger status for the latest pending op on this row
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Operation name (create/update/delete/duplicate/draft) of the latest pending soft-call entry
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description Originating tool call id for the latest pending soft-call entry
+             */
+            pending_call_id?: string | null;
         };
         /**
          * ListAgentApiResponse
@@ -35435,6 +35535,21 @@ export interface components {
              * @description Whether the actor can delete this auth
              */
             can_delete?: boolean | null;
+            /**
+             * Pending Status
+             * @description Soft-call ledger status for the latest pending op on this row
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Operation name (create/update/delete/duplicate/draft) of the latest pending soft-call entry
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description Originating tool call id for the latest pending soft-call entry
+             */
+            pending_call_id?: string | null;
         };
         /**
          * ListAuthApiResponse
@@ -35550,6 +35665,21 @@ export interface components {
              * @description Last updated timestamp
              */
             updated_at?: string | null;
+            /**
+             * Pending Status
+             * @description Soft-call ledger status for the latest pending op on this row
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Operation name (create/update/delete/duplicate/draft) of the latest pending soft-call entry
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description Originating tool call id for the latest pending soft-call entry
+             */
+            pending_call_id?: string | null;
         };
         /**
          * ListCohortApiDepartment
@@ -35822,6 +35952,21 @@ export interface components {
              * @description Timestamp of last update
              */
             updated_at?: string | null;
+            /**
+             * Pending Status
+             * @description Soft-call ledger status for the latest pending op on this row
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Operation name (create/update/delete/duplicate/draft) of the latest pending soft-call entry
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description Originating tool call id for the latest pending soft-call entry
+             */
+            pending_call_id?: string | null;
         };
         /** ListDepartmentApiResponse */
         ListDepartmentApiResponse: {
@@ -35899,6 +36044,21 @@ export interface components {
              * @description Whether the document is a template (derived from document_template flag)
              */
             is_template?: boolean | null;
+            /**
+             * Pending Status
+             * @description Latest soft_calls_mv status: 'pending' / 'accepted' / 'rejected'
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Operation type ('create'|'update'|'delete'|'duplicate') of the pending op
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description call_id (idempotency key for ack) of the pending op
+             */
+            pending_call_id?: string | null;
             /**
              * Extension
              * @description File extension derived from the primary file (e.g. 'pdf', 'docx', 'txt')
@@ -36020,6 +36180,21 @@ export interface components {
              */
             use_groups?: boolean | null;
             /**
+             * Pending Status
+             * @description Latest soft_calls_mv status: 'pending' / 'accepted' / 'rejected'
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Operation type ('create'|'update'|'delete'|'duplicate') of the pending op
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description call_id (idempotency key for ack) of the pending op
+             */
+            pending_call_id?: string | null;
+            /**
              * Num Runs
              * @description Number of eval runs
              */
@@ -36121,6 +36296,21 @@ export interface components {
              * @description Whether the field is inactive
              */
             is_inactive?: boolean | null;
+            /**
+             * Pending Status
+             * @description Latest soft_calls_mv status: 'pending' / 'accepted' / 'rejected'
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Operation type ('create'|'update'|'delete'|'duplicate') of the pending op
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description call_id (idempotency key for ack) of the pending op
+             */
+            pending_call_id?: string | null;
             /**
              * Can Edit
              * @description Whether the actor can edit this field
@@ -36495,6 +36685,21 @@ export interface components {
              */
             image_model?: boolean | null;
             /**
+             * Pending Status
+             * @description Latest soft_calls_mv status: 'pending' / 'accepted' / 'rejected'
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Operation type ('create'|'update'|'delete'|'duplicate') of the pending op
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description call_id (idempotency key for ack) of the pending op
+             */
+            pending_call_id?: string | null;
+            /**
              * Can Edit
              * @description Whether the current user can edit
              */
@@ -36616,6 +36821,21 @@ export interface components {
              * @description Timestamp of last update
              */
             updated_at?: string | null;
+            /**
+             * Pending Status
+             * @description Pending soft_calls_entry status (e.g. 'pending')
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Pending operation (create/update/delete/duplicate)
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description Originating tool call id for ack
+             */
+            pending_call_id?: string | null;
         };
         /** ListParameterApiResponse */
         ListParameterApiResponse: {
@@ -37056,6 +37276,21 @@ export interface components {
              * @description Whether the profile is inactive
              */
             is_inactive?: boolean | null;
+            /**
+             * Pending Status
+             * @description Pending soft_calls_entry status (e.g. 'pending')
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Pending operation (create/update/delete/duplicate)
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description Originating tool call id for ack
+             */
+            pending_call_id?: string | null;
         };
         /**
          * ListProfilesApiResponse
@@ -37156,6 +37391,21 @@ export interface components {
              * @description Whether the current user can duplicate
              */
             can_duplicate?: boolean | null;
+            /**
+             * Pending Status
+             * @description Pending soft_calls_entry status (e.g. 'pending')
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Pending operation (create/update/delete/duplicate)
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description Originating tool call id for ack
+             */
+            pending_call_id?: string | null;
         };
         /** ListProviderApiResponse */
         ListProviderApiResponse: {
@@ -37384,6 +37634,21 @@ export interface components {
              * @description Whether the rubric is inactive
              */
             is_inactive?: boolean | null;
+            /**
+             * Pending Status
+             * @description Pending soft_calls_entry status (e.g. 'pending')
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Pending operation (create/update/delete/duplicate)
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description Originating tool call id for ack
+             */
+            pending_call_id?: string | null;
         };
         /** ListRubricApiStandard */
         ListRubricApiStandard: {
@@ -37711,6 +37976,21 @@ export interface components {
              */
             cohort_ids?: string[] | null;
             /**
+             * Pending Status
+             * @description Latest soft_calls_mv status: 'pending' / 'accepted' / 'rejected'
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Operation type ('create'|'update'|'delete'|'duplicate') of the pending op
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description call_id (idempotency key for ack) of the pending op
+             */
+            pending_call_id?: string | null;
+            /**
              * Updated At
              * @description Last updated timestamp
              */
@@ -37882,6 +38162,21 @@ export interface components {
              * @description Whether the actor can duplicate this setting
              */
             can_duplicate?: boolean | null;
+            /**
+             * Pending Status
+             * @description Latest soft_calls_mv status: 'pending' / 'accepted' / 'rejected'
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Operation type ('create'|'update'|'delete'|'duplicate') of the pending op
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description call_id (idempotency key for ack) of the pending op
+             */
+            pending_call_id?: string | null;
         };
         /**
          * ListSimulationApiPersona
@@ -38050,6 +38345,21 @@ export interface components {
              */
             cohort_ids?: string[] | null;
             /**
+             * Pending Status
+             * @description Latest soft_calls_mv status: 'pending' / 'accepted' / 'rejected'
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Operation type ('create'|'update'|'delete'|'duplicate') of the pending op
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description call_id (idempotency key for ack) of the pending op
+             */
+            pending_call_id?: string | null;
+            /**
              * Updated At
              * @description Last updated timestamp
              */
@@ -38150,6 +38460,21 @@ export interface components {
              * @description Whether the current user can delete
              */
             can_delete?: boolean | null;
+            /**
+             * Pending Status
+             * @description Latest soft_calls_mv status: 'pending' / 'accepted' / 'rejected'
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Operation type ('create'|'update'|'delete'|'duplicate') of the pending op
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description call_id (idempotency key for ack) of the pending op
+             */
+            pending_call_id?: string | null;
         };
         /**
          * MessageData

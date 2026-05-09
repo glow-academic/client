@@ -12,6 +12,7 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
+import { ackOperation } from "@/lib/api/ack";
 
 import {
   AlertDialog,
@@ -163,6 +164,32 @@ export default function Departments({
   // diff. The active list is the merged view (base + create overlays
   // − delete overlays).
   const departments = mergedDepartments;
+
+  // Unified ack handler: live in-flight ghosts go through the hook;
+  // server-side persistent pending rows ack via the generic action
+  // and refresh. Mirrors ``Personas.tsx::handlePersonaAck``.
+  const handleDepartmentAck = useCallback(
+    async (callId: string, accept: boolean, op: Ghost<unknown>["op"]) => {
+      const live = departmentGhosts.find((g) => g.callId === callId);
+      if (live) {
+        await ackDepartmentGhost(callId, accept);
+        return;
+      }
+      try {
+        await ackOperation({
+          artifact: "department",
+          operation: op,
+          idempotencyKey: callId,
+          accept,
+        });
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Ack failed");
+      }
+    },
+    [departmentGhosts, ackDepartmentGhost, router],
+  );
+  void handleDepartmentAck;
   // Note: cohort/profile filter options removed since faceted filtering
   // is no longer supported without cohort_ids/profile_ids per row
 
@@ -1120,7 +1147,24 @@ export default function Departments({
                 );
               })}
             {tableRows.length ? (
-              tableRows.map((row) => renderDepartmentCard(row.original))
+              tableRows.map((row) => {
+                const department = row.original;
+                const persistentGhost: Ghost<(typeof departments)[0]> | undefined =
+                  department.pending_status === "pending" && department.pending_call_id
+                    ? {
+                        callId: department.pending_call_id,
+                        op: (department.pending_operation as Ghost<(typeof departments)[0]>["op"]) ?? "create",
+                        state: "pending",
+                        rowId: department.department_id ?? null,
+                        partial: department as unknown as Ghost<(typeof departments)[0]>["partial"],
+                        before: department,
+                        tool: null,
+                        error: null,
+                        arguments: {},
+                      }
+                    : undefined;
+                return renderDepartmentCard(department, persistentGhost);
+              })
             ) : (
               departmentGhosts.length === 0 && (
                 <div className="col-span-full text-center py-8 text-muted-foreground">

@@ -94,12 +94,20 @@ async function searchPersonaGenerations(input: GenerationsIn): Promise<Generatio
 
 
 /** Lazy drafts fetch — invoked by ``DraftProviderClient`` on the first
- *  ``SaveToolbar`` dropdown open. Keeps the drafts list off the SSR
- *  critical path; the audit bubble only fires when the user actually
- *  asks for the picker. */
-async function searchPersonaDrafts(): Promise<DraftsOut> {
+ *  ``SaveToolbar`` dropdown open AND on every search keystroke
+ *  (debounced upstream). The body carries ``search``/``page_limit``/
+ *  ``page_offset`` filters; an empty body returns the caller's most
+ *  recent drafts. */
+async function searchPersonaDrafts(
+  input?: { body?: { search?: string | null; page_limit?: number; page_offset?: number } },
+): Promise<DraftsOut> {
   "use server";
-  return api.post("/persona/drafts", {});
+  // OpenAPI spec lags behind the new ``GetPersonaDraftsApiRequest`` body
+  // until ``schema.ts`` is regenerated — cast bypasses the type drift.
+  return api.post(
+    "/persona/drafts",
+    (input ?? {}) as Parameters<typeof api.post<"/persona/drafts">>[1],
+  );
 }
 
 /** ---- Page metadata ---- */
@@ -204,7 +212,12 @@ export default async function NewPersonaPage({
     ]);
 
     return (
-      <DraftProviderClient searchDraftsAction={searchPersonaDrafts}>
+      <DraftProviderClient
+        searchDraftsAction={searchPersonaDrafts}
+        currentDraftName={
+          (personaDetailDefault as { draft_name?: string | null })?.draft_name ?? null
+        }
+      >
         <FullPageLayout
           profileData={context.profile}
           sessionSnapshot={snapshot}

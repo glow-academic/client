@@ -34,12 +34,25 @@ interface DraftContextType {
   triggerSave: () => void;
   /** True while a lazy ``searchDraftsAction`` fetch is in flight. */
   isDraftsLoading: boolean;
-  /** Trigger a lazy fetch via ``searchDraftsAction``. No-op when the
-   *  page passed ``drafts`` eagerly (no action wired) or after the
-   *  first successful load. Callers (e.g. ``SaveToolbar``'s dropdown
-   *  ``onOpenChange``) can fire this on every open — internal guards
-   *  collapse to a single fetch. */
-  loadDrafts: () => void;
+  /** Trigger a fetch via ``searchDraftsAction``. Pass ``{search}`` (or
+   *  any other body params) to override the default empty query. The
+   *  initial open call (no args) caches; calls with a non-empty body
+   *  always re-fetch so the dropdown stays responsive to typing. */
+  loadDrafts: (opts?: DraftsLoadOptions) => void;
+  /** Immutable label of the draft currently being edited, sourced from
+   *  the page's SSR ``/<art>/get`` call (``draft_name`` field) and
+   *  passed in via the provider. ``null`` when no draft is active. The
+   *  SaveToolbar uses this to render the dropdown trigger label
+   *  ("Jordan Lee") instead of the generic "Drafts". */
+  currentDraftName: string | null;
+}
+
+export interface DraftsLoadOptions {
+  /** Name search (ILIKE substring on the draft's stored ``name``). */
+  search?: string | null;
+  /** Pagination — page_limit defaults to 50 server-side. */
+  page_limit?: number;
+  page_offset?: number;
 }
 
 const DraftContext = createContext<DraftContextType | null>(null);
@@ -59,6 +72,7 @@ export function DraftProviderClient({
   drafts: initialDrafts,
   initialAutosave,
   searchDraftsAction,
+  currentDraftName: initialCurrentDraftName = null,
 }: {
   children: React.ReactNode;
   /** Eagerly-fetched draft list (legacy SSR pattern). When omitted,
@@ -68,11 +82,24 @@ export function DraftProviderClient({
   initialAutosave?: boolean;
   /** Server action to fetch drafts on demand. Pages should pass this
    *  instead of ``drafts`` to avoid the page-load network call (and
-   *  the corresponding audit-bubble noise). Loose shape matches the
-   *  precedent set by eager ``drafts`` consumers (which cast at the
-   *  SSR boundary because OpenAPI's per-artifact draft shape doesn't
-   *  satisfy ``DraftItem``'s ``UUID``-typed fields). */
-  searchDraftsAction?: () => Promise<{ entries?: unknown[] | null }>;
+   *  the corresponding audit-bubble noise). Body fields (``search``,
+   *  ``page_limit``, etc.) flow into the per-artifact ``GetXDraftsApiRequest``.
+   *  Loose shape matches the precedent set by eager ``drafts`` consumers
+   *  (which cast at the SSR boundary because OpenAPI's per-artifact
+   *  draft shape doesn't satisfy ``DraftItem``'s ``UUID``-typed fields). */
+  searchDraftsAction?: (
+    input?: {
+      body?: {
+        search?: string | null;
+        page_limit?: number;
+        page_offset?: number;
+      };
+    },
+  ) => Promise<{ entries?: unknown[] | null }>;
+  /** Immutable draft label sourced from the page's SSR ``/<art>/get``
+   *  response's ``draft_name`` field. Pass ``null`` (or omit) when no
+   *  draft is active — the trigger then shows "New draft". */
+  currentDraftName?: string | null;
 }) {
   const [drafts, setDrafts] = useState<DraftItem[]>(initialDrafts ?? []);
   const [isDraftsLoading, setIsDraftsLoading] = useState(false);
@@ -112,26 +139,49 @@ export function DraftProviderClient({
     window.dispatchEvent(new CustomEvent("trigger-save"));
   }, []);
 
-  // Lazy drafts loader — called by ``SaveToolbar`` on dropdown open.
-  // Idempotent: skips if already loaded or already in flight.
-  const loadDrafts = useCallback(() => {
-    if (!searchDraftsAction) return;
-    if (draftsLoadedRef.current) return;
-    if (isDraftsLoading) return;
-    setIsDraftsLoading(true);
-    void searchDraftsAction()
-      .then((res) => {
-        setDrafts((res.entries ?? []) as DraftItem[]);
-        draftsLoadedRef.current = true;
-      })
-      .catch(() => {
-        // Swallow — picker shows "No drafts available". A retry happens
-        // on next open because draftsLoadedRef stays false.
-      })
-      .finally(() => {
-        setIsDraftsLoading(false);
-      });
-  }, [searchDraftsAction, isDraftsLoading]);
+  // Drafts loader — fired by ``SaveToolbar`` on dropdown open AND on
+  // every keystroke in the search input (debounced upstream). Stable
+  // identity (only ``searchDraftsAction`` in deps) so the upstream
+  // effect doesn't re-run on every loading-state toggle and trigger a
+  // refetch loop. In-flight tracking uses a ref instead of state for
+  // the same reason.
+  const isDraftsLoadingRef = React.useRef(false);
+  const loadDrafts = useCallback(
+    (opts?: DraftsLoadOptions) => {
+      if (!searchDraftsAction) return;
+      const hasQuery = !!(
+        opts?.search ||
+        opts?.page_limit !== undefined ||
+        opts?.page_offset !== undefined
+      );
+      // Cache only the no-args open. Search-driven calls always go.
+      if (!hasQuery && draftsLoadedRef.current) return;
+      if (isDraftsLoadingRef.current) return;
+      isDraftsLoadingRef.current = true;
+      setIsDraftsLoading(true);
+      // ``exactOptionalPropertyTypes`` forbids ``page_limit: undefined``,
+      // so only set keys when the caller actually provided a value.
+      const body: { search?: string | null; page_limit?: number; page_offset?: number } = {
+        search: opts?.search ?? null,
+      };
+      if (opts?.page_limit !== undefined) body.page_limit = opts.page_limit;
+      if (opts?.page_offset !== undefined) body.page_offset = opts.page_offset;
+      void searchDraftsAction({ body })
+        .then((res) => {
+          setDrafts((res.entries ?? []) as DraftItem[]);
+          if (!hasQuery) draftsLoadedRef.current = true;
+        })
+        .catch(() => {
+          // Swallow — picker shows "No drafts available". A retry happens
+          // on next open because draftsLoadedRef stays false.
+        })
+        .finally(() => {
+          isDraftsLoadingRef.current = false;
+          setIsDraftsLoading(false);
+        });
+    },
+    [searchDraftsAction],
+  );
 
   // Listen for save status updates from page components
   useEffect(() => {
@@ -167,6 +217,7 @@ export function DraftProviderClient({
       triggerSave,
       isDraftsLoading,
       loadDrafts,
+      currentDraftName: initialCurrentDraftName,
     }),
     [
       drafts,
@@ -179,6 +230,7 @@ export function DraftProviderClient({
       triggerSave,
       isDraftsLoading,
       loadDrafts,
+      initialCurrentDraftName,
     ]
   );
 

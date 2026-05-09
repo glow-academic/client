@@ -52,6 +52,7 @@ import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
+import { ackOperation } from "@/lib/api/ack";
 import { useToolAi } from "@/hooks/use-tool-ai";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
@@ -190,6 +191,29 @@ export default function Tools({
   // diff. The active list is the merged view (base + create overlays
   // − delete overlays).
   const toolsArray = mergedTools;
+
+  // Unified ack: live ghosts → hook; persistent pending → ackOperation+refresh.
+  const handleToolAck = useCallback(
+    async (callId: string, accept: boolean, op: Ghost<unknown>["op"]) => {
+      const live = toolGhosts.find((g) => g.callId === callId);
+      if (live) {
+        await ackToolGhost(callId, accept);
+        return;
+      }
+      try {
+        await ackOperation({
+          artifact: "tool",
+          operation: op,
+          idempotencyKey: callId,
+          accept,
+        });
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Ack failed");
+      }
+    },
+    [toolGhosts, ackToolGhost, router],
+  );
 
   // Flag catalog (e.g. tool_active) — used to reconstruct flag_ids on bulk edit.
   const flagOptions = useMemo(() => {
@@ -937,7 +961,7 @@ export default function Tools({
                     variant="default"
                     size="sm"
                     className="h-8"
-                    onClick={() => ackToolGhost(ghost.callId, true)}
+                    onClick={() => handleToolAck(ghost.callId, true, ghost.op)}
                   >
                     <Check className="mr-1 h-3.5 w-3.5" />
                     Accept
@@ -947,7 +971,7 @@ export default function Tools({
                     variant="outline"
                     size="sm"
                     className="h-8"
-                    onClick={() => ackToolGhost(ghost.callId, false)}
+                    onClick={() => handleToolAck(ghost.callId, false, ghost.op)}
                   >
                     <X className="mr-1 h-3.5 w-3.5" />
                     Reject
@@ -1279,7 +1303,24 @@ export default function Tools({
                 );
               })}
             {tableRows.length ? (
-              tableRows.map((row) => renderToolCard(row.original))
+              tableRows.map((row) => {
+                const tool = row.original;
+                const persistentGhost: Ghost<(typeof toolsArray)[number]> | undefined =
+                  tool.pending_status === "pending" && tool.pending_call_id
+                    ? {
+                        callId: tool.pending_call_id,
+                        op: (tool.pending_operation as Ghost<(typeof toolsArray)[number]>["op"]) ?? "create",
+                        state: "pending",
+                        rowId: tool.tool_id ?? null,
+                        partial: tool as unknown as Ghost<(typeof toolsArray)[number]>["partial"],
+                        before: tool,
+                        tool: null,
+                        error: null,
+                        arguments: {},
+                      }
+                    : undefined;
+                return renderToolCard(tool, persistentGhost);
+              })
             ) : (
               toolGhosts.length === 0 && (
                 <div className="col-span-full text-center py-8 text-muted-foreground">

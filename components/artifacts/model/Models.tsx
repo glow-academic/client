@@ -40,6 +40,7 @@ import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useModelAi } from "@/hooks/use-model-ai";
 import { useProfile } from "@/contexts/profile-context";
 import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
+import { ackOperation } from "@/lib/api/ack";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -170,6 +171,31 @@ export default function Models({
 
   // Downstream code reads ``models`` — keep that name to minimize diff.
   const models = mergedModels;
+
+  // Unified ack: live in-flight ghosts go through the hook; server-side
+  // persistent pending rows (synthesized from ``pending_status``) ack
+  // via the generic server action and refresh.
+  const handleModelAck = useCallback(
+    async (callId: string, accept: boolean, op: Ghost<unknown>["op"]) => {
+      const live = modelGhosts.find((g) => g.callId === callId);
+      if (live) {
+        await ackModelGhost(callId, accept);
+        return;
+      }
+      try {
+        await ackOperation({
+          artifact: "model",
+          operation: op,
+          idempotencyKey: callId,
+          accept,
+        });
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Ack failed");
+      }
+    },
+    [modelGhosts, ackModelGhost, router],
+  );
 
   // Flag catalog (e.g. model_active) — used to reconstruct flag_ids on bulk edit.
   const flagOptions = useMemo(() => {
@@ -1071,7 +1097,7 @@ export default function Models({
               variant="default"
               size="sm"
               className="h-8"
-              onClick={() => ackModelGhost(ghost.callId, true)}
+              onClick={() => handleModelAck(ghost.callId, true, ghost.op)}
             >
               <Check className="mr-1 h-3.5 w-3.5" />
               Accept
@@ -1081,7 +1107,7 @@ export default function Models({
               variant="outline"
               size="sm"
               className="h-8"
-              onClick={() => ackModelGhost(ghost.callId, false)}
+              onClick={() => handleModelAck(ghost.callId, false, ghost.op)}
             >
               <X className="mr-1 h-3.5 w-3.5" />
               Reject
@@ -1378,7 +1404,24 @@ export default function Models({
                   );
                 })}
               {tableRows.length ? (
-                tableRows.map((row) => renderModelCard(row.original))
+                tableRows.map((row) => {
+                  const modelRow = row.original;
+                  const persistentGhost: Ghost<(typeof models)[number]> | undefined =
+                    modelRow.pending_status === "pending" && modelRow.pending_call_id
+                      ? {
+                          callId: modelRow.pending_call_id,
+                          op: (modelRow.pending_operation as Ghost<(typeof models)[number]>["op"]) ?? "create",
+                          state: "pending",
+                          rowId: modelRow.model_id ?? null,
+                          partial: modelRow as unknown as Ghost<(typeof models)[number]>["partial"],
+                          before: modelRow,
+                          tool: null,
+                          error: null,
+                          arguments: {},
+                        }
+                      : undefined;
+                  return renderModelCard(modelRow, persistentGhost);
+                })
               ) : (
                 modelGhosts.length === 0 && (
                   <div className="col-span-full text-center py-8 text-muted-foreground">

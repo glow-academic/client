@@ -58,6 +58,7 @@ import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
+import { ackOperation } from "@/lib/api/ack";
 import { useFieldAi } from "@/hooks/use-field-ai";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
@@ -168,6 +169,31 @@ export default function Fields({
   // diff. The active list is the merged view (base + create overlays
   // − delete overlays).
   const fields = mergedFields;
+
+  // Unified ack: live in-flight ghosts go through the hook; server-side
+  // persistent pending rows (synthesized from ``pending_status``) ack
+  // via the generic server action and refresh.
+  const handleFieldAck = useCallback(
+    async (callId: string, accept: boolean, op: Ghost<unknown>["op"]) => {
+      const live = fieldGhosts.find((g) => g.callId === callId);
+      if (live) {
+        await ackFieldGhost(callId, accept);
+        return;
+      }
+      try {
+        await ackOperation({
+          artifact: "field",
+          operation: op,
+          idempotencyKey: callId,
+          accept,
+        });
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Ack failed");
+      }
+    },
+    [fieldGhosts, ackFieldGhost, router],
+  );
 
   // Flag catalog (e.g. field_active) — used to reconstruct flag_ids on bulk edit.
   const flagOptions = useMemo(() => {
@@ -827,7 +853,7 @@ export default function Fields({
                     variant="default"
                     size="sm"
                     className="h-8"
-                    onClick={() => ackFieldGhost(ghost.callId, true)}
+                    onClick={() => handleFieldAck(ghost.callId, true, ghost.op)}
                   >
                     <Check className="mr-1 h-3.5 w-3.5" />
                     Accept
@@ -837,7 +863,7 @@ export default function Fields({
                     variant="outline"
                     size="sm"
                     className="h-8"
-                    onClick={() => ackFieldGhost(ghost.callId, false)}
+                    onClick={() => handleFieldAck(ghost.callId, false, ghost.op)}
                   >
                     <X className="mr-1 h-3.5 w-3.5" />
                     Reject
@@ -1176,7 +1202,24 @@ export default function Fields({
                 );
               })}
               {tableRows.length ? (
-                tableRows.map((row) => renderFieldCard(row.original))
+                tableRows.map((row) => {
+                  const fieldRow = row.original;
+                  const persistentGhost: Ghost<(typeof fields)[0]> | undefined =
+                    fieldRow.pending_status === "pending" && fieldRow.pending_call_id
+                      ? {
+                          callId: fieldRow.pending_call_id,
+                          op: (fieldRow.pending_operation as Ghost<(typeof fields)[0]>["op"]) ?? "create",
+                          state: "pending",
+                          rowId: fieldRow.field_id ?? null,
+                          partial: fieldRow as unknown as Ghost<(typeof fields)[0]>["partial"],
+                          before: fieldRow,
+                          tool: null,
+                          error: null,
+                          arguments: {},
+                        }
+                      : undefined;
+                  return renderFieldCard(fieldRow, persistentGhost);
+                })
               ) : (
                 visibleGhosts.length === 0 && (
                   <div className="col-span-full text-center py-8 text-muted-foreground">

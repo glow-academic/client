@@ -11,6 +11,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ackOperation } from "@/lib/api/ack";
 
 import type {
   CohortsListOut,
@@ -264,6 +265,32 @@ export default function Cohorts({
   // diff. The active list is the merged view (base + create overlays
   // − delete overlays).
   const cohorts = mergedCohorts;
+
+  // Unified ack handler: live in-flight ghosts go through the hook;
+  // server-side persistent pending rows ack via the generic action
+  // and refresh. Mirrors ``Personas.tsx::handlePersonaAck``.
+  const handleCohortAck = useCallback(
+    async (callId: string, accept: boolean, op: Ghost<unknown>["op"]) => {
+      const live = cohortGhosts.find((g) => g.callId === callId);
+      if (live) {
+        await ackCohortGhost(callId, accept);
+        return;
+      }
+      try {
+        await ackOperation({
+          artifact: "cohort",
+          operation: op,
+          idempotencyKey: callId,
+          accept,
+        });
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Ack failed");
+      }
+    },
+    [cohortGhosts, ackCohortGhost, router],
+  );
+  void handleCohortAck;
 
   // ---- Selection helpers ----------------------------------------
   // ``isSelected`` is the single read predicate every row uses; it
@@ -1381,7 +1408,21 @@ export default function Cohorts({
                 tableRows.map((row) => {
                   const cohort = row.original;
                   const key = cohort.cohort_id || `cohort-${row.id}`;
-                  return <div key={key}>{renderCohortCard(cohort)}</div>;
+                  const persistentGhost: Ghost<(typeof cohorts)[number]> | undefined =
+                    cohort.pending_status === "pending" && cohort.pending_call_id
+                      ? {
+                          callId: cohort.pending_call_id,
+                          op: (cohort.pending_operation as Ghost<(typeof cohorts)[number]>["op"]) ?? "create",
+                          state: "pending",
+                          rowId: cohort.cohort_id ?? null,
+                          partial: cohort as unknown as Ghost<(typeof cohorts)[number]>["partial"],
+                          before: cohort,
+                          tool: null,
+                          error: null,
+                          arguments: {},
+                        }
+                      : undefined;
+                  return <div key={key}>{renderCohortCard(cohort, persistentGhost)}</div>;
                 })
               ) : (
                 cohortGhosts.length === 0 && (

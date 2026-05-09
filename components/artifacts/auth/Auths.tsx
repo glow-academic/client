@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ackOperation } from "@/lib/api/ack";
 
 import {
   ColumnDef,
@@ -151,6 +152,32 @@ export default function Auths({
   // Downstream code reads ``auths`` — keep that name to minimize diff.
   // Active list is the merged view (base + create overlays − delete overlays).
   const auths = mergedAuths;
+
+  // Unified ack handler: live in-flight ghosts go through the hook;
+  // server-side persistent pending rows ack via the generic action
+  // and refresh. Mirrors ``Personas.tsx::handlePersonaAck``.
+  const handleAuthAck = useCallback(
+    async (callId: string, accept: boolean, op: Ghost<unknown>["op"]) => {
+      const live = authGhosts.find((g) => g.callId === callId);
+      if (live) {
+        await ackAuthGhost(callId, accept);
+        return;
+      }
+      try {
+        await ackOperation({
+          artifact: "auth",
+          operation: op,
+          idempotencyKey: callId,
+          accept,
+        });
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Ack failed");
+      }
+    },
+    [authGhosts, ackAuthGhost, router],
+  );
+  void handleAuthAck;
 
   // Flag catalog (e.g. auth_active) — used to reconstruct flag_ids on bulk edit.
   const flagOptions = useMemo(() => {
@@ -1038,7 +1065,24 @@ export default function Auths({
                 </div>
               );
             })}
-            {table.getRowModel().rows.map((row) => renderAuthCard(row.original))}
+            {table.getRowModel().rows.map((row) => {
+              const auth = row.original;
+              const persistentGhost: Ghost<(typeof auths)[0]> | undefined =
+                auth.pending_status === "pending" && auth.pending_call_id
+                  ? {
+                      callId: auth.pending_call_id,
+                      op: (auth.pending_operation as Ghost<(typeof auths)[0]>["op"]) ?? "create",
+                      state: "pending",
+                      rowId: auth.auth_id ?? null,
+                      partial: auth as unknown as Ghost<(typeof auths)[0]>["partial"],
+                      before: auth,
+                      tool: null,
+                      error: null,
+                      arguments: {},
+                    }
+                  : undefined;
+              return renderAuthCard(auth, persistentGhost);
+            })}
           </div>
         </div>
       )}

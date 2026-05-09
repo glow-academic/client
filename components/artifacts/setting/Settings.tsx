@@ -11,6 +11,7 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
+import { ackOperation } from "@/lib/api/ack";
 
 import {
   ColumnDef,
@@ -145,6 +146,29 @@ export default function Settings({
   // diff. The active list is the merged view (base + create overlays
   // − delete overlays).
   const settings = mergedSettings;
+
+  // Unified ack: live ghosts → hook; persistent pending → ackOperation+refresh.
+  const handleSettingAck = useCallback(
+    async (callId: string, accept: boolean, op: Ghost<unknown>["op"]) => {
+      const live = settingGhosts.find((g) => g.callId === callId);
+      if (live) {
+        await ackSettingGhost(callId, accept);
+        return;
+      }
+      try {
+        await ackOperation({
+          artifact: "setting",
+          operation: op,
+          idempotencyKey: callId,
+          accept,
+        });
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Ack failed");
+      }
+    },
+    [settingGhosts, ackSettingGhost, router],
+  );
 
   // Flag catalog (e.g. setting_active) — used to look up the active flag id for bulk edit.
   const flagOptions = useMemo(() => {
@@ -776,7 +800,7 @@ export default function Settings({
                     variant="default"
                     size="sm"
                     className="h-8"
-                    onClick={() => ackSettingGhost(ghost.callId, true)}
+                    onClick={() => handleSettingAck(ghost.callId, true, ghost.op)}
                   >
                     <Check className="mr-1 h-3.5 w-3.5" />
                     Accept
@@ -786,7 +810,7 @@ export default function Settings({
                     variant="outline"
                     size="sm"
                     className="h-8"
-                    onClick={() => ackSettingGhost(ghost.callId, false)}
+                    onClick={() => handleSettingAck(ghost.callId, false, ghost.op)}
                   >
                     <X className="mr-1 h-3.5 w-3.5" />
                     Reject
@@ -1046,7 +1070,24 @@ export default function Settings({
                 );
               })}
             {tableRows.length ? (
-              tableRows.map((row) => renderSettingCard(row.original))
+              tableRows.map((row) => {
+                const setting = row.original;
+                const persistentGhost: Ghost<(typeof settings)[0]> | undefined =
+                  setting.pending_status === "pending" && setting.pending_call_id
+                    ? {
+                        callId: setting.pending_call_id,
+                        op: (setting.pending_operation as Ghost<(typeof settings)[0]>["op"]) ?? "create",
+                        state: "pending",
+                        rowId: setting.settings_id ?? null,
+                        partial: setting as unknown as Ghost<(typeof settings)[0]>["partial"],
+                        before: setting,
+                        tool: null,
+                        error: null,
+                        arguments: {},
+                      }
+                    : undefined;
+                return renderSettingCard(setting, persistentGhost);
+              })
             ) : (
               settingGhosts.length === 0 && (
                 <div className="col-span-full text-center py-8 text-muted-foreground">

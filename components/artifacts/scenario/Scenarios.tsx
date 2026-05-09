@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { useScenarioAi } from "@/hooks/use-scenario-ai";
 import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
+import { ackOperation } from "@/lib/api/ack";
 
 import type {
   DeleteScenarioIn,
@@ -284,6 +285,31 @@ export function Scenarios({
   // diff. The active list is the merged view (base + create overlays
   // − delete overlays).
   const scenarios = mergedScenarios;
+
+  // Unified ack: live in-flight ghosts go through the hook; server-side
+  // persistent pending rows (synthesized from row.pending_status === "pending")
+  // ack via ackOperation + router.refresh. Mirrors handlePersonaAck.
+  const handleScenarioAck = useCallback(
+    async (callId: string, accept: boolean, op: Ghost<unknown>["op"]) => {
+      const live = scenarioGhosts.find((g) => g.callId === callId);
+      if (live) {
+        await ackScenarioGhost(callId, accept);
+        return;
+      }
+      try {
+        await ackOperation({
+          artifact: "scenario",
+          operation: op,
+          idempotencyKey: callId,
+          accept,
+        });
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Ack failed");
+      }
+    },
+    [scenarioGhosts, ackScenarioGhost, router],
+  );
   const personaMapping = useMemo(
     () => {
       const data = scenariosData;
@@ -1159,7 +1185,7 @@ export function Scenarios({
                     variant="default"
                     size="sm"
                     className="h-8"
-                    onClick={() => ackScenarioGhost(ghost.callId, true)}
+                    onClick={() => handleScenarioAck(ghost.callId, true, ghost.op)}
                   >
                     <Check className="mr-1 h-3.5 w-3.5" />
                     Accept
@@ -1169,7 +1195,7 @@ export function Scenarios({
                     variant="outline"
                     size="sm"
                     className="h-8"
-                    onClick={() => ackScenarioGhost(ghost.callId, false)}
+                    onClick={() => handleScenarioAck(ghost.callId, false, ghost.op)}
                   >
                     <X className="mr-1 h-3.5 w-3.5" />
                     Reject
@@ -1440,6 +1466,24 @@ export function Scenarios({
       const isCollapsed = collapsedGroups.has(parentId);
       const hasChildren = group.children.length > 0;
 
+      // Server-side pending status (from soft_calls_mv) — render the row
+      // as a pending ghost so Accept/Reject controls appear. Live in-flight
+      // ghosts continue to come from the audit hub (rendered separately).
+      const persistentGhost: Ghost<(typeof scenarios)[number]> | undefined =
+        group.parent.pending_status === "pending" && group.parent.pending_call_id
+          ? {
+              callId: group.parent.pending_call_id,
+              op: (group.parent.pending_operation as Ghost<(typeof scenarios)[number]>["op"]) ?? "create",
+              state: "pending",
+              rowId: group.parent.scenario_id ?? null,
+              partial: group.parent as unknown as Ghost<(typeof scenarios)[number]>["partial"],
+              before: group.parent,
+              tool: null,
+              error: null,
+              arguments: {},
+            }
+          : undefined;
+
       return (
         <div key={parentId} className="space-y-2">
           {/* Parent Scenario Card */}
@@ -1449,6 +1493,7 @@ export function Scenarios({
             hasChildren,
             isCollapsed,
             () => toggleGroupCollapse(parentId),
+            persistentGhost,
           )}
 
           {/* Child Scenarios */}
