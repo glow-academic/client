@@ -219,16 +219,27 @@ export default async function TestPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="eval"
-          redirectPath="/benchmark"
-        />
-      );
+      // 401 → not logged in (matches /home, /practice). 403 → resource
+      // belongs to a department the user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/test/${testId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="test"
+            redirectPath="/benchmark"
+          />
+        );
+      }
     }
     throw error;
   }

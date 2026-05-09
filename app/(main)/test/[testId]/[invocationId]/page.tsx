@@ -147,15 +147,25 @@ export default async function InvocationPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname={`/test/${testId}/${invocationId}`}
-        />
-      );
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/test/${testId}/${invocationId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="test"
+            redirectPath="/benchmark"
+          />
+        );
+      }
     }
     throw error;
   }
