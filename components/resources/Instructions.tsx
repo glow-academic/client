@@ -161,6 +161,9 @@ export interface InstructionsProps {
   onSearchChange?: (term: string) => void; // Callback when search term changes
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
+  /** Per-field pending lifecycle. See Names.tsx for the full pattern. */
+  onAcceptPending?: (pendingId: string) => void;
+  onRejectPending?: (pendingId: string) => void;
   // Legacy props for backward compatibility
   instructionsResource?: { id: string; template: string; generated?: boolean | null } | null;
   instructionsId?: string | null;
@@ -184,6 +187,8 @@ export function Instructions({
   searchTerm,
   onSearchChange,
   isAutosaveEnabled = true,
+  onAcceptPending,
+  onRejectPending,
   // Legacy props for backward compatibility
   instructionsResource,
   instructionsId,
@@ -270,7 +275,8 @@ export function Instructions({
   const currentText = internalValue || "";
   const pendingText = resource?.template || "";
 
-  // Accept pending — confirm the pending resource as the active selection
+  // Accept pending — confirm the pending resource as the active selection.
+  // See Names.tsx for the parent-hook pattern.
   const handleAccept = useCallback(() => {
     if (!resource?.id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
@@ -280,11 +286,20 @@ export function Instructions({
     lastSavedValueRef.current = text;
     lastServerTextRef.current = text;
     isDirtyRef.current = false;
-    onInstructionsIdChange(resource.id);
-  }, [resource, onInstructionsIdChange]);
+    if (onAcceptPending) {
+      onAcceptPending(resource.id);
+    } else {
+      onInstructionsIdChange(resource.id);
+    }
+  }, [resource, onAcceptPending, onInstructionsIdChange]);
 
-  // Reject pending — remove the pending resource from form state
+  // Reject pending — drop the pending resource from form state.
   const handleReject = useCallback(() => {
+    const pendingId = resource?.id;
+    if (onRejectPending && pendingId) {
+      onRejectPending(pendingId);
+      return;
+    }
     onInstructionsIdChange(null);
   }, [onInstructionsIdChange]);
 

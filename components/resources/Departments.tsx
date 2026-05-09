@@ -51,6 +51,12 @@ export interface DepartmentsProps {
     department_id?: string | null;
     name?: string | null;
   }> | null;
+  /** Per-field pending lifecycle (multi-select). Receives the full set
+   *  of pending ids being decided in this click. Parent should remove
+   *  them from ``pending_ids``; reject also removes them from
+   *  ``department_ids``. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
   // Legacy props for backward compatibility
   departmentIds?: string[];
 }
@@ -68,6 +74,8 @@ export function Departments({
   placeholder: _placeholder = "Select departments...",
   description,
   aiDepartmentResources: _aiDepartmentResources,
+  onAcceptPending,
+  onRejectPending,
   // Legacy props for backward compatibility
   departmentIds,
 }: DepartmentsProps) {
@@ -116,18 +124,27 @@ export function Departments({
     [onChange]
   );
 
-  // Accept pending — keep pending departments in selection
+  // Accept pending — pending items stay in ``ids`` (already selected).
+  // The parent hook removes them from ``pending_ids`` so the next save
+  // promotes the connections to active=true. Without the hook we fall
+  // through to a no-op (legacy behavior).
   const handleAccept = useCallback(() => {
-    // Pending items are already in ids (selected=true), just confirm
-    // The next draft save will persist them as active
-    // Nothing to change in form state — they're already included
-  }, []);
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
+  }, [onAcceptPending, pendingIds]);
 
-  // Reject pending — remove pending departments from selection
+  // Reject pending — drop them from selection AND tell the parent to
+  // strip them from ``pending_ids``. Falls back to the local-only
+  // behavior when no hook is provided.
   const handleReject = useCallback(() => {
     const newIds = ids.filter((id) => !pendingIds.has(id));
-    onChange(newIds);
-  }, [ids, pendingIds, onChange]);
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+    } else {
+      onChange(newIds);
+    }
+  }, [ids, pendingIds, onRejectPending, onChange]);
 
   // Don't render if show_departments is false (AFTER all hooks)
   if (!show) {

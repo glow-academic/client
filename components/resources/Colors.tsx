@@ -59,6 +59,9 @@ export interface ColorsProps {
   onShowSelectedChange?: (value: boolean) => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
+  /** Per-field pending lifecycle. See Names.tsx for the full pattern. */
+  onAcceptPending?: (pendingId: string) => void;
+  onRejectPending?: (pendingId: string) => void;
   // Legacy props for backward compatibility
   colorResource?: {
     id: string;
@@ -91,6 +94,8 @@ export function Colors({
   showSelectedFilter = false,
   onShowSelectedChange: _onShowSelectedChange,
   isAutosaveEnabled = true,
+  onAcceptPending,
+  onRejectPending,
   // Legacy props for backward compatibility
   colorResource,
   colorId: _colorId,
@@ -106,25 +111,32 @@ export function Colors({
   const isPending = resource?.pending === true;
   const showDiff = isPending;
 
-  // Accept pending — confirm the pending resource as the active selection
+  // Accept pending — confirm the pending resource as the active selection.
+  // Use the parent's accept hook when supplied so it can sync
+  // ``pending_ids`` alongside the id swap. See Names.tsx for the pattern.
   const handleAccept = useCallback(() => {
     if (!resource?.id) return;
-    if (onColorIdChange) {
-      onColorIdChange(resource.id);
-    }
     if (resource.hex_code) {
       setInternalValue(resource.hex_code);
       lastSavedValueRef.current = resource.hex_code;
       isDirtyRef.current = false;
     }
-  }, [resource, onColorIdChange]);
+    if (onAcceptPending) {
+      onAcceptPending(resource.id);
+    } else if (onColorIdChange) {
+      onColorIdChange(resource.id);
+    }
+  }, [resource, onAcceptPending, onColorIdChange]);
 
-  // Reject pending — remove the pending resource from form state
+  // Reject pending — drop the pending resource from form state.
   const handleReject = useCallback(() => {
-    if (onColorIdChange) {
+    const pendingId = resource?.id;
+    if (onRejectPending && pendingId) {
+      onRejectPending(pendingId);
+    } else if (onColorIdChange) {
       onColorIdChange(null);
     }
-  }, [onColorIdChange]);
+  }, [resource, onRejectPending, onColorIdChange]);
   
   // Track which color IDs have already had resources created (multi-select)
   const createdColorIdsRef = useRef<Set<string>>(new Set());

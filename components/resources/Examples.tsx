@@ -42,6 +42,9 @@ export interface ExamplesProps {
   // Optional: mapping of example_id -> example text (for initial display)
   exampleMapping?: Record<string, string>;
   onExamplesChange?: (examples: string[]) => void; // Report raw text values upward
+  /** Per-field pending lifecycle (multi-select). See Departments.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
   // Legacy props for backward compatibility
   exampleIds?: string[];
 }
@@ -61,6 +64,8 @@ export function Examples({
   itemPlaceholder = "Message",
   exampleMapping = {},
   onExamplesChange,
+  onAcceptPending,
+  onRejectPending,
   // Legacy props for backward compatibility
   exampleIds,
 }: ExamplesProps) {
@@ -197,17 +202,24 @@ export function Examples({
     return indices.size > 0 ? indices : undefined;
   }, [showDiff, ids, pendingIds, internalTexts.length]);
 
-  // Accept pending — pending items are already in selection, just confirm (no-op for form state)
+  // Accept pending — pending items stay in ``ids``; the parent hook
+  // strips them from ``pending_ids`` so the next save flips connections
+  // to active=true. See Departments.tsx for the full pattern.
   const handleAccept = useCallback(() => {
-    // Pending items are already in the selection; accepting is a no-op for form state.
-    // The parent will clear the pending flag on the server side.
-  }, []);
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
+  }, [onAcceptPending, pendingIds]);
 
-  // Reject pending — remove pending item IDs from selection
+  // Reject pending — drop them from selection AND from pending_ids.
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     const currentIds = ids.filter((id) => !pendingIds.has(id));
     _onChange(currentIds);
-  }, [ids, pendingIds, _onChange]);
+  }, [ids, pendingIds, onRejectPending, _onChange]);
 
   // Don't render if show_examples is false (AFTER all hooks)
   if (!show) {

@@ -984,19 +984,26 @@ function PersonaComponent({
 
   // ─── Per-field pending lifecycle ──────────────────────────────────
   // Field components (Names, Descriptions, ...) call these when the
-  // user clicks the inline ✓ / ✗ on a pending diff. The handlers
-  // remove the explicitly-decided ``pendingId`` from ``pending_ids`` —
-  // distinct from the ``prev.<field>_id``-based filter the previous
-  // implementation used, which only worked when the form's id happened
-  // to coincide with the pending resource's id. ``formStateKey`` now
-  // includes ``pending_ids`` so changes here trigger autosave even when
-  // the field id stays put (i.e. accept where the pending id was
-  // already selected).
+  // user clicks the inline ✓ / ✗ on a pending diff. Single-select
+  // variants take a scalar ``pendingId``; multi-select variants take
+  // a list. Both remove the decided ids from ``pending_ids``;
+  // ``formStateKey`` includes ``pending_ids`` so changes here trigger
+  // autosave even when the underlying field id/list doesn't shift.
+  type SingleField =
+    | "name_id"
+    | "description_id"
+    | "color_id"
+    | "icon_id"
+    | "instructions_id";
+  type MultiField =
+    | "department_ids"
+    | "example_ids"
+    | "parameter_field_ids"
+    | "voice_ids"
+    | "flag_ids";
+
   const handleAcceptPendingField = useCallback(
-    (
-      field: "name_id" | "description_id" | "color_id" | "icon_id" | "instructions_id",
-      pendingId: string,
-    ) => {
+    (field: SingleField, pendingId: string) => {
       setFormState((prev) => ({
         ...prev,
         [field]: pendingId,
@@ -1012,17 +1019,39 @@ function PersonaComponent({
   );
 
   const handleRejectPendingField = useCallback(
-    (
-      field: "name_id" | "description_id" | "color_id" | "icon_id" | "instructions_id",
-      pendingId: string,
-    ) => {
+    (field: SingleField, pendingId: string) => {
       setFormState((prev) => ({
         ...prev,
         // Drop the field id only if it currently points at the rejected
-        // pending. If the user had a different selection that happened
-        // alongside a pending suggestion, leave their selection alone.
+        // pending. Preserve a different existing selection.
         [field]: prev[field] === pendingId ? null : prev[field],
         pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
+      }));
+    },
+    [],
+  );
+
+  const handleAcceptPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        // Multi-accept keeps the ids in the field array (already
+        // selected). Just strip them from pending_ids so the next save
+        // promotes the connections to active=true.
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
+      }));
+    },
+    [],
+  );
+
+  const handleRejectPendingMulti = useCallback(
+    (field: MultiField, pendingIds: string[]) => {
+      const removeSet = new Set(pendingIds);
+      setFormState((prev) => ({
+        ...prev,
+        [field]: (prev[field] as string[]).filter((id) => !removeSet.has(id)),
+        pending_ids: prev.pending_ids.filter((id) => !removeSet.has(id)),
       }));
     },
     [],
@@ -1436,6 +1465,12 @@ function PersonaComponent({
                       };
                     })
                   }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("department_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("department_ids", pendingIds)
+                  }
                   required={false}
 
                   showAiGenerate={false}
@@ -1512,6 +1547,12 @@ function PersonaComponent({
                   }
                 }}
                 onChange={handleParameterFieldIdsChange}
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("parameter_field_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("parameter_field_ids", pendingIds)
+                }
                 disabled={disabled}
 
                 showAiGenerate={false}
@@ -1581,8 +1622,13 @@ function PersonaComponent({
                   setFormState((prev) => ({
                     ...prev,
                     color_id: colorId,
-                    pending_ids: prev.pending_ids.filter((id) => id !== prev.color_id),
                   }))
+                }
+                onAcceptPending={(pendingId) =>
+                  handleAcceptPendingField("color_id", pendingId)
+                }
+                onRejectPending={(pendingId) =>
+                  handleRejectPendingField("color_id", pendingId)
                 }
                 onGenerate={generateHandlers["colors"]}
                 searchTerm={
@@ -1663,8 +1709,13 @@ function PersonaComponent({
                   setFormState((prev) => ({
                     ...prev,
                     icon_id: iconId,
-                    pending_ids: prev.pending_ids.filter((id) => id !== prev.icon_id),
                   }))
+                }
+                onAcceptPending={(pendingId) =>
+                  handleAcceptPendingField("icon_id", pendingId)
+                }
+                onRejectPending={(pendingId) =>
+                  handleRejectPendingField("icon_id", pendingId)
                 }
                 onGenerate={generateHandlers["icons"]}
                 searchTerm={
@@ -1731,8 +1782,13 @@ function PersonaComponent({
                     ...prev,
                     instructions_id: instructionsId,
                     instructions: null,
-                    pending_ids: prev.pending_ids.filter((id) => id !== prev.instructions_id),
                   }))
+                }
+                onAcceptPending={(pendingId) =>
+                  handleAcceptPendingField("instructions_id", pendingId)
+                }
+                onRejectPending={(pendingId) =>
+                  handleRejectPendingField("instructions_id", pendingId)
                 }
                 onInstructionsChange={handleInstructionsChange}
                 searchTerm={
@@ -1761,6 +1817,12 @@ function PersonaComponent({
                 examples={s?.examples ?? []}
                 disabled={disabled}
                 onChange={handleExampleIdsChange}
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("example_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("example_ids", pendingIds)
+                }
                 onExamplesChange={handleExamplesChange}
                 onGenerate={generateHandlers["examples"]}
                 maxItems={10}
@@ -1786,6 +1848,12 @@ function PersonaComponent({
                       pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
                     };
                   })
+                }
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("voice_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("voice_ids", pendingIds)
                 }
 
                 showAiGenerate={false}

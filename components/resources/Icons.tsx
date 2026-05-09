@@ -54,6 +54,9 @@ export interface IconsProps {
   onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
   /** When false, skip automatic link tracking (manual save mode) */
   isAutosaveEnabled?: boolean;
+  /** Per-field pending lifecycle. See Names.tsx for the full pattern. */
+  onAcceptPending?: (pendingId: string) => void;
+  onRejectPending?: (pendingId: string) => void;
   // Legacy props for backward compatibility
   iconResource?: IconResourceItem | null;
   iconId?: string | null;
@@ -75,6 +78,8 @@ export function Icons({
   showSelectedFilter = false,
   onShowSelectedChange: _onShowSelectedChange,
   _isAutosaveEnabled = true,
+  onAcceptPending,
+  onRejectPending,
   // Legacy props for backward compatibility
   iconResource,
   iconId: _iconId,
@@ -90,16 +95,26 @@ export function Icons({
   const isPending = resource?.pending === true;
   const showDiff = isPending;
 
-  // Accept pending — confirm the pending resource as the active selection
+  // Accept pending — confirm the pending resource as the active selection.
+  // See Names.tsx for the parent-hook pattern.
   const handleAccept = useCallback(() => {
     if (!resource?.id) return;
-    onIconIdChange(resource.id);
-  }, [resource, onIconIdChange]);
+    if (onAcceptPending) {
+      onAcceptPending(resource.id);
+    } else {
+      onIconIdChange(resource.id);
+    }
+  }, [resource, onAcceptPending, onIconIdChange]);
 
-  // Reject pending — remove the pending resource from form state
+  // Reject pending — drop the pending resource from form state.
   const handleReject = useCallback(() => {
-    onIconIdChange(null);
-  }, [onIconIdChange]);
+    const pendingId = resource?.id;
+    if (onRejectPending && pendingId) {
+      onRejectPending(pendingId);
+    } else {
+      onIconIdChange(null);
+    }
+  }, [resource, onRejectPending, onIconIdChange]);
 
   // Convert icons array to IconItem format for SelectableGrid
   const iconItems = useMemo(() => {

@@ -47,6 +47,9 @@ export interface VoicesProps {
   required?: boolean;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
+  /** Per-field pending lifecycle (multi-select). See Departments.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Voices({
@@ -60,6 +63,8 @@ export function Voices({
   id = "voices",
   required = false,
   isAutosaveEnabled: _isAutosaveEnabled = true,
+  onAcceptPending,
+  onRejectPending,
 }: VoicesProps) {
   const ids = useMemo(() => voice_ids ?? [], [voice_ids]);
   const show = show_voices ?? false;
@@ -112,16 +117,23 @@ export function Voices({
   // Pending state
   const showDiff = pendingItems.length > 0;
 
-  // Accept pending — pending items are already in selection, just confirm (no-op for form state)
+  // Accept pending — pending items stay in selection. Parent hook
+  // strips pending ids from ``pending_ids``. See Departments.tsx.
   const handleAccept = useCallback(() => {
-    // Pending items are already in the selection; accepting is a no-op for form state.
-  }, []);
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
+  }, [onAcceptPending, pendingIds]);
 
-  // Reject pending — remove pending item IDs from selection
+  // Reject pending — drop them from selection AND from ``pending_ids``.
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     const currentIds = ids.filter((id) => !pendingIds.has(id));
     onVoiceIdsChange(currentIds);
-  }, [ids, pendingIds, onVoiceIdsChange]);
+  }, [ids, pendingIds, onRejectPending, onVoiceIdsChange]);
 
   // Don't render if show_voices is false (AFTER all hooks)
   if (!show) {

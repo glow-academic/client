@@ -45,6 +45,9 @@ export interface ParameterFieldsProps {
   isAutosaveEnabled?: boolean;
   required?: boolean;
   label?: string;
+  /** Per-field pending lifecycle (multi-select). See Departments.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 // Represents an available field option
@@ -69,6 +72,8 @@ export function ParameterFields({
   _isAutosaveEnabled = true,
   required = false,
   label = "Parameter Fields",
+  onAcceptPending,
+  onRejectPending,
 }: ParameterFieldsProps) {
   const availableFields = useMemo(() => availableFieldsProp ?? [], [availableFieldsProp]);
   const selectedResources = useMemo(() => parameterFieldResources ?? [], [parameterFieldResources]);
@@ -195,23 +200,37 @@ export function ParameterFields({
   );
   const showDiff = pendingItems.length > 0;
 
-  // Accept pending — pending items are already in selection, just confirm (no-op for form state)
+  // Accept pending — pending items stay in the selection. Parent hook
+  // strips the pending resource ids from ``pending_ids``. See
+  // Departments.tsx for the full pattern.
   const handleAccept = useCallback(() => {
-    // Pending items are already in the selection; accepting is a no-op for form state.
-  }, []);
+    if (onAcceptPending) {
+      const pendingResourceIds = pendingItems
+        .map((f) => f.id)
+        .filter((id): id is string => !!id);
+      if (pendingResourceIds.length > 0) {
+        onAcceptPending(pendingResourceIds);
+      }
+    }
+  }, [onAcceptPending, pendingItems]);
 
-  // Reject pending — remove pending item IDs from selection
+  // Reject pending — drop them from selection AND from ``pending_ids``.
   const handleReject = useCallback(() => {
     isDirtyRef.current = true;
-    const pendingResourceIds = new Set(
-      pendingItems.map((f) => f.id).filter((id): id is string => !!id)
-    );
+    const pendingResourceIds = pendingItems
+      .map((f) => f.id)
+      .filter((id): id is string => !!id);
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
+    const removeSet = new Set(pendingResourceIds);
     setResourceIds((prev) => {
       const next = new Map(prev);
-      pendingResourceIds.forEach((id) => next.delete(id));
+      removeSet.forEach((id) => next.delete(id));
       return next;
     });
-  }, [pendingItems]);
+  }, [onRejectPending, pendingItems]);
 
   // Group available fields by parameter_id
   const fieldOptionsByParameter = useMemo(() => {
