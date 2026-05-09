@@ -67,6 +67,7 @@ import {
 
 import { useProfile } from "@/contexts/profile-context";
 import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
+import { ackOperation } from "@/lib/api/ack";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
 
@@ -274,6 +275,34 @@ export default function Personas({
   // diff. The active list is the merged view (base + create overlays
   // − delete overlays).
   const personas = mergedPersonas;
+
+  // Unified ack: live in-flight ghosts go through the hook (optimistic
+  // overlay + ackOptimistic); server-side persistent pending rows
+  // (synthesized below from ``persona.pending_status === "pending"``)
+  // aren't in the hook's local state, so we ack them directly via the
+  // generic server action and refresh. Same Accept/Reject button can
+  // call this regardless of source.
+  const handlePersonaAck = useCallback(
+    async (callId: string, accept: boolean, op: Ghost<unknown>["op"]) => {
+      const live = personaGhosts.find((g) => g.callId === callId);
+      if (live) {
+        await ackPersonaGhost(callId, accept);
+        return;
+      }
+      try {
+        await ackOperation({
+          artifact: "persona",
+          operation: op,
+          idempotencyKey: callId,
+          accept,
+        });
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Ack failed");
+      }
+    },
+    [personaGhosts, ackPersonaGhost, router],
+  );
 
   // ---- Selection helpers ----------------------------------------
   // ``isSelected`` is the single read predicate every row uses; it
@@ -1315,7 +1344,7 @@ export default function Personas({
                     variant="default"
                     size="sm"
                     className="h-8"
-                    onClick={() => ackPersonaGhost(ghost.callId, true)}
+                    onClick={() => handlePersonaAck(ghost.callId, true, ghost.op)}
                   >
                     <Check className="mr-1 h-3.5 w-3.5" />
                     Accept
@@ -1325,7 +1354,7 @@ export default function Personas({
                     variant="outline"
                     size="sm"
                     className="h-8"
-                    onClick={() => ackPersonaGhost(ghost.callId, false)}
+                    onClick={() => handlePersonaAck(ghost.callId, false, ghost.op)}
                   >
                     <X className="mr-1 h-3.5 w-3.5" />
                     Reject
@@ -1733,7 +1762,30 @@ export default function Personas({
             tableRows.map((row) => {
               const persona = row.original;
               const key = persona.persona_id || `persona-${row.id}`;
-              return <div key={key}>{renderPersonaCard(persona)}</div>;
+              // Server-side pending status (from soft_calls_mv) — render
+              // the row as a pending ghost so Accept/Reject controls
+              // appear and the persona-card visual reflects the dormant
+              // state. Live in-flight ghosts continue to come from the
+              // audit hub (rendered above this block).
+              const persistentGhost: Ghost<(typeof personas)[0]> | undefined =
+                persona.pending_status === "pending" && persona.pending_call_id
+                  ? {
+                      callId: persona.pending_call_id,
+                      op: (persona.pending_operation as Ghost<(typeof personas)[0]>["op"]) ?? "create",
+                      state: "pending",
+                      rowId: persona.persona_id ?? null,
+                      partial: persona as unknown as Ghost<(typeof personas)[0]>["partial"],
+                      before: persona,
+                      tool: null,
+                      error: null,
+                      arguments: {},
+                    }
+                  : undefined;
+              return (
+                <div key={key}>
+                  {renderPersonaCard(persona, persistentGhost)}
+                </div>
+              );
             })
           ) : (
             personaGhosts.length === 0 && (

@@ -7135,7 +7135,7 @@ export interface paths {
         put?: never;
         /**
          * Chat Speak
-         * @description Push live audio or text into a conversation's inbound buffer.
+         * @description Push audio bytes into a conversation's inbound buffer.
          */
         post: operations["chat_speak_attempt_chat_speak_post"];
         delete?: never;
@@ -13188,9 +13188,7 @@ export interface components {
             /** Chat Id */
             chat_id?: string | null;
             /** Audio */
-            audio?: string | null;
-            /** Text */
-            text?: string | null;
+            audio: string;
         };
         /** ChatSpeakResponse */
         ChatSpeakResponse: {
@@ -14258,13 +14256,18 @@ export interface components {
         /**
          * CreateAuthApiRequest
          * @description Request model for bulk create auth endpoint.
+         *
+         *     Two body shapes:
+         *       - First call: ``auths`` required.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant artifact by ``idempotency_key``.
          */
         CreateAuthApiRequest: {
             /**
              * Auths
-             * @description List of auth providers to create
+             * @description List of auth providers to create (required on first call)
              */
-            auths: components["schemas"]["CreateAuthItem"][];
+            auths?: components["schemas"]["CreateAuthItem"][] | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant create
@@ -14273,9 +14276,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * CreateAuthApiResponse
@@ -14292,6 +14294,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Auths
+             * @description Hydrated rows for the successfully-created auths (mirrors /auth/search shape)
+             */
+            auths?: components["schemas"]["ListAuthApiAuth"][] | null;
         };
         /**
          * CreateAuthItem
@@ -14312,12 +14319,12 @@ export interface components {
             resource_id?: string | null;
             /**
              * Name Id
-             * @description UUID of the name resource
+             * @description REQUIRED FOR CREATE (or pass ``name``). UUID of an existing name resource.
              */
             name_id?: string | null;
             /**
              * Name
-             * @description Name value to resolve or create
+             * @description REQUIRED FOR CREATE (or pass ``name_id``). Display name text — creates a new name resource on the fly.
              */
             name?: string | null;
             /**
@@ -14530,9 +14537,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * CreateDepartmentApiResponse
@@ -14549,6 +14555,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Departments
+             * @description Hydrated rows for the successfully-created departments (mirrors /department/search shape)
+             */
+            departments?: components["schemas"]["ListDepartmentApiDepartment"][] | null;
         };
         /**
          * CreateDepartmentItem
@@ -14569,12 +14580,12 @@ export interface components {
             resource_id?: string | null;
             /**
              * Name Id
-             * @description UUID of the name resource
+             * @description REQUIRED FOR CREATE (or pass ``name``). UUID of an existing name resource.
              */
             name_id?: string | null;
             /**
              * Name
-             * @description Name value to resolve or create
+             * @description REQUIRED FOR CREATE (or pass ``name_id``). Display name text — creates a new name resource on the fly.
              */
             name?: string | null;
             /**
@@ -14752,9 +14763,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * CreateEvalApiResponse
@@ -14771,6 +14781,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Evals
+             * @description Hydrated list rows for the newly-created evals — same shape as ``/eval/search`` returns. Used by the client's ghost rail to materialize the new row from the audit ``.completed`` payload without a router refresh. ``None`` for soft-pending creates (dormant artifact, hydration runs on ack-accept).
+             */
+            evals?: components["schemas"]["ListEvalApiEval"][] | null;
         };
         /**
          * CreateEvalItem
@@ -14791,12 +14806,12 @@ export interface components {
             resource_id?: string | null;
             /**
              * Name Id
-             * @description Name resource UUID
+             * @description REQUIRED FOR CREATE (or pass `name`): UUID of an existing name resource
              */
             name_id?: string | null;
             /**
              * Name
-             * @description Name value for resolution
+             * @description REQUIRED FOR CREATE (or pass `name_id`): display name text — creates a new name resource if `name_id` is not provided
              */
             name?: string | null;
             /**
@@ -15072,13 +15087,18 @@ export interface components {
         /**
          * CreateModelApiRequest
          * @description Request model for bulk create model endpoint.
+         *
+         *     Two body shapes:
+         *       - First call: ``models`` required.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant artifact by ``idempotency_key``.
          */
         CreateModelApiRequest: {
             /**
              * Models
-             * @description List of models to create
+             * @description List of models to create (required on first call)
              */
-            models: components["schemas"]["CreateModelItem"][];
+            models?: components["schemas"]["CreateModelItem"][] | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant create
@@ -15087,9 +15107,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * CreateModelApiResponse
@@ -15106,12 +15125,19 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Models
+             * @description Hydrated rows for the successfully-created models (mirrors /model/search shape)
+             */
+            models?: components["schemas"]["ListModelApiModel"][] | null;
         };
         /**
          * CreateModelItem
          * @description Single model item for create — no model_id.
          *
-         *     Required fields (name): provide ID or value.
+         *     Required pair (name): provide ID or value. Strongly recommended:
+         *     pair ``value`` and ``provider_id`` so the resulting model is
+         *     actually callable.
          */
         CreateModelItem: {
             /**
@@ -15126,22 +15152,37 @@ export interface components {
             resource_id?: string | null;
             /**
              * Name Id
-             * @description Name resource identifier
+             * @description REQUIRED FOR CREATE (or pass ``name``). UUID of an existing name resource.
              */
             name_id?: string | null;
             /**
              * Name
-             * @description Display name value
+             * @description REQUIRED FOR CREATE (or pass ``name_id``). Display name text — creates a new name resource on the fly.
              */
             name?: string | null;
             /**
+             * Value Id
+             * @description UUID of an existing value resource (the API model identifier).
+             */
+            value_id?: string | null;
+            /**
+             * Value
+             * @description Direct model value/identifier (e.g. the actual API model name like 'gpt-4o'). Strongly recommended on create alongside ``provider_id`` so the model is callable.
+             */
+            value?: string | null;
+            /**
+             * Provider Id
+             * @description UUID of an existing provider resource. Strongly recommended on create alongside ``value`` so the model is callable.
+             */
+            provider_id?: string | null;
+            /**
              * Description Id
-             * @description Description resource identifier
+             * @description UUID of an existing description resource
              */
             description_id?: string | null;
             /**
              * Description
-             * @description Description text value
+             * @description Description text value (creates a new description resource if description_id not provided)
              */
             description?: string | null;
             /**
@@ -15170,11 +15211,6 @@ export interface components {
              */
             pricing_ids?: string[] | null;
             /**
-             * Provider Id
-             * @description Provider identifier
-             */
-            provider_id?: string | null;
-            /**
              * Quality Ids
              * @description Quality level identifiers
              */
@@ -15189,16 +15225,6 @@ export interface components {
              * @description Temperature level identifiers
              */
             temperature_level_ids?: string[] | null;
-            /**
-             * Value Id
-             * @description Value resource identifier
-             */
-            value_id?: string | null;
-            /**
-             * Value
-             * @description Direct model value/identifier (e.g. the actual API model name)
-             */
-            value?: string | null;
             /**
              * Voice Ids
              * @description Voice identifiers
@@ -15228,9 +15254,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * CreateParameterApiResponse
@@ -15243,6 +15268,11 @@ export interface components {
              */
             results: components["schemas"]["ParameterResultItem"][];
             /**
+             * Parameters
+             * @description Hydrated list rows for the just-created parameters — same shape as ``/parameter/search`` returns. Lets the client materialize the new rows directly from the response (or audit ``.completed`` payload) without a follow-up search burst. Omitted on the soft-pending (ack-shaped) paths — dormant rows aren't fully active until accepted.
+             */
+            parameters?: components["schemas"]["ListParameterApiParameter"][] | null;
+            /**
              * Idempotency Key
              * @description Idempotency key echoed back for client correlation
              */
@@ -15251,6 +15281,8 @@ export interface components {
         /**
          * CreateParameterItem
          * @description Single parameter item for create — no parameter_id.
+         *
+         *     Required fields (name): provide ID or value.
          */
         CreateParameterItem: {
             /**
@@ -15265,22 +15297,22 @@ export interface components {
             resource_id?: string | null;
             /**
              * Name Id
-             * @description Name resource identifier
+             * @description UUID of an existing name resource
              */
             name_id?: string | null;
             /**
              * Name
-             * @description Display name value
+             * @description REQUIRED FOR CREATE (or pass `name_id`) — display name text (creates new resource if name_id not provided)
              */
             name?: string | null;
             /**
              * Description Id
-             * @description Description resource identifier
+             * @description UUID of an existing description resource
              */
             description_id?: string | null;
             /**
              * Description
-             * @description Description text value
+             * @description Description text value (creates new resource if description_id not provided)
              */
             description?: string | null;
             /**
@@ -15507,9 +15539,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * CreateProfileApiResponse
@@ -15526,6 +15557,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Profiles
+             * @description Hydrated rows for the successfully-created profiles (mirrors /profile/search shape)
+             */
+            profiles?: components["schemas"]["ListProfilesApiProfile"][] | null;
         };
         /**
          * CreateProfileItem
@@ -15544,12 +15580,12 @@ export interface components {
             resource_id?: string | null;
             /**
              * Name Id
-             * @description UUID of the name resource
+             * @description REQUIRED FOR CREATE (or pass ``name``). UUID of an existing name resource.
              */
             name_id?: string | null;
             /**
              * Name
-             * @description Name value to resolve or create
+             * @description REQUIRED FOR CREATE (or pass ``name_id``). Display name text — creates a new name resource on the fly.
              */
             name?: string | null;
             /**
@@ -15629,9 +15665,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * CreateProviderApiResponse
@@ -15648,15 +15683,22 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Providers
+             * @description Hydrated rows for the successfully-created providers (mirrors /provider/search shape)
+             */
+            providers?: components["schemas"]["ListProviderApiProvider"][] | null;
         };
         /**
          * CreateProviderItem
          * @description Single provider item for create — no provider_id.
+         *
+         *     Required fields (name): provide ID or value.
          */
         CreateProviderItem: {
             /**
              * Id
-             * @description Optional pre-assigned identifier
+             * @description Client-provided UUID for the new provider
              */
             id?: string | null;
             /**
@@ -15666,12 +15708,12 @@ export interface components {
             resource_id?: string | null;
             /**
              * Name Id
-             * @description Name resource identifier
+             * @description REQUIRED FOR CREATE (or pass ``name``). UUID of an existing name resource.
              */
             name_id?: string | null;
             /**
              * Name
-             * @description Display name value
+             * @description REQUIRED FOR CREATE (or pass ``name_id``). Display name text — creates a new name resource on the fly.
              */
             name?: string | null;
             /**
@@ -15753,9 +15795,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * CreateRubricApiResponse
@@ -15768,6 +15809,11 @@ export interface components {
              */
             results: components["schemas"]["RubricResultItem"][];
             /**
+             * Rubrics
+             * @description Hydrated rubric rows for the rubrics just created (omitted on soft writes)
+             */
+            rubrics?: components["schemas"]["ListRubricApiRubric"][] | null;
+            /**
              * Idempotency Key
              * @description Idempotency key echoed back for client correlation
              */
@@ -15776,11 +15822,13 @@ export interface components {
         /**
          * CreateRubricItem
          * @description Single rubric item for create — no rubric_id.
+         *
+         *     Required fields (name): provide ID or value.
          */
         CreateRubricItem: {
             /**
              * Id
-             * @description Optional pre-assigned UUID
+             * @description Optional pre-assigned UUID for the new rubric
              */
             id?: string | null;
             /**
@@ -15790,22 +15838,22 @@ export interface components {
             resource_id?: string | null;
             /**
              * Name Id
-             * @description Name resource UUID
+             * @description REQUIRED FOR CREATE (or pass `name`): UUID of an existing name resource
              */
             name_id?: string | null;
             /**
              * Name
-             * @description Name value for resolution
+             * @description REQUIRED FOR CREATE (or pass `name_id`): display name text (creates new resource if name_id not provided)
              */
             name?: string | null;
             /**
              * Description Id
-             * @description Description resource UUID
+             * @description UUID of an existing description resource
              */
             description_id?: string | null;
             /**
              * Description
-             * @description Description value for resolution
+             * @description Rubric description text (creates new resource if description_id not provided)
              */
             description?: string | null;
             /**
@@ -15877,9 +15925,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * CreateScenarioApiResponse
@@ -15896,6 +15943,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Scenarios
+             * @description Hydrated rows for the successfully-created scenarios (mirrors /scenario/search shape)
+             */
+            scenarios?: components["schemas"]["ListScenarioApiScenario"][] | null;
         };
         /**
          * CreateScenarioItem
@@ -16063,9 +16115,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * CreateSettingApiResponse
@@ -16077,6 +16128,11 @@ export interface components {
              * @description Per-item creation results
              */
             results: components["schemas"]["SettingResultItem"][];
+            /**
+             * Settings
+             * @description Hydrated list rows for the newly-created settings. Mirrors the shape of ``/setting/search`` result rows so the client's ghost rail can materialize the new card directly from the audit ``.completed`` payload — no follow-up refresh needed.
+             */
+            settings?: components["schemas"]["ListSettingApiSetting"][] | null;
             /**
              * Idempotency Key
              * @description Idempotency key echoed back for client correlation
@@ -16102,12 +16158,12 @@ export interface components {
             resource_id?: string | null;
             /**
              * Name Id
-             * @description UUID of the name resource
+             * @description REQUIRED FOR CREATE (or pass `name`). UUID of an existing name resource
              */
             name_id?: string | null;
             /**
              * Name
-             * @description Name value to resolve or create
+             * @description REQUIRED FOR CREATE (or pass `name_id`). Name value to resolve or create
              */
             name?: string | null;
             /**
@@ -16340,9 +16396,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * CreateToolApiResponse
@@ -16359,6 +16414,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Tools
+             * @description Hydrated rows for the created tools (same shape as `/tool/search` returns)
+             */
+            tools?: components["schemas"]["ListToolApiTool"][] | null;
         };
         /**
          * CreateToolItem
@@ -16379,22 +16439,22 @@ export interface components {
             resource_id?: string | null;
             /**
              * Name Id
-             * @description Name resource identifier
+             * @description REQUIRED FOR CREATE (or pass `name`): UUID of an existing name resource
              */
             name_id?: string | null;
             /**
              * Name
-             * @description Display name value
+             * @description REQUIRED FOR CREATE (or pass `name_id`): display name text (creates new resource)
              */
             name?: string | null;
             /**
              * Description Id
-             * @description Description resource identifier
+             * @description UUID of an existing description resource
              */
             description_id?: string | null;
             /**
              * Description
-             * @description Description text value
+             * @description Description text value (creates new resource if description_id not provided)
              */
             description?: string | null;
             /**
@@ -17116,9 +17176,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DeleteAuthApiResponse
@@ -17325,9 +17384,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DeleteDepartmentApiResponse
@@ -17543,9 +17601,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DeleteEvalApiResponse
@@ -17781,9 +17838,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DeleteModelApiResponse
@@ -17900,9 +17956,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DeleteParameterApiResponse
@@ -18153,9 +18208,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DeleteProfileApiResponse
@@ -18267,9 +18321,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DeleteProviderApiResponse
@@ -18376,9 +18429,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DeleteRubricApiResponse
@@ -18495,9 +18547,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DeleteScenarioApiResponse
@@ -18630,9 +18681,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DeleteSettingApiResponse
@@ -18864,9 +18914,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DeleteToolApiResponse
@@ -20038,9 +20087,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DuplicateAuthApiResponse
@@ -20068,6 +20116,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Auths
+             * @description Hydrated row for the newly-created duplicate auth (mirrors /auth/search shape)
+             */
+            auths?: components["schemas"]["ListAuthApiAuth"][] | null;
         };
         /**
          * DuplicateCohortApiRequest
@@ -20135,9 +20188,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /** DuplicateDepartmentApiResponse */
         DuplicateDepartmentApiResponse: {
@@ -20162,6 +20214,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Departments
+             * @description Hydrated row for the newly-created duplicate department (mirrors /department/search shape)
+             */
+            departments?: components["schemas"]["ListDepartmentApiDepartment"][] | null;
         };
         /**
          * DuplicateDocumentApiRequest
@@ -20232,9 +20289,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DuplicateEvalApiResponse
@@ -20262,6 +20318,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Evals
+             * @description Hydrated list rows for the duplicated eval — single-element list, kept as a list for shape consistency with create/update. ``None`` for soft-pending duplicates.
+             */
+            evals?: components["schemas"]["ListEvalApiEval"][] | null;
         };
         /** DuplicateFieldApiRequest */
         DuplicateFieldApiRequest: {
@@ -20326,9 +20387,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DuplicateModelApiResponse
@@ -20356,6 +20416,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Models
+             * @description Hydrated row for the newly-created duplicate model (mirrors /model/search shape)
+             */
+            models?: components["schemas"]["ListModelApiModel"][] | null;
         };
         /** DuplicateParameterApiRequest */
         DuplicateParameterApiRequest: {
@@ -20373,9 +20438,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /** DuplicateParameterApiResponse */
         DuplicateParameterApiResponse: {
@@ -20395,6 +20459,11 @@ export interface components {
              * @description Result message
              */
             message: string;
+            /**
+             * Parameters
+             * @description Hydrated list row for the just-duplicated parameter — single-element list for shape consistency with create / update. Same shape as ``/parameter/search`` returns. Omitted on the soft-pending (ack-shaped) path.
+             */
+            parameters?: components["schemas"]["ListParameterApiParameter"][] | null;
             /**
              * Idempotency Key
              * @description Idempotency key echoed back for client correlation
@@ -20455,7 +20524,7 @@ export interface components {
             idempotency_key?: string | null;
             /**
              * Personas
-             * @description Hydrated row for the newly-created duplicate persona (mirrors /persona/search shape)
+             * @description Hydrated row for the newly-created duplicate persona (single-element list)
              */
             personas?: components["schemas"]["ListPersonaApiPersona"][] | null;
         };
@@ -20475,9 +20544,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /** DuplicateProfileApiResponse */
         DuplicateProfileApiResponse: {
@@ -20502,6 +20570,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Profiles
+             * @description Hydrated row for the newly-created duplicate profile (mirrors /profile/search shape)
+             */
+            profiles?: components["schemas"]["ListProfilesApiProfile"][] | null;
         };
         /**
          * DuplicateProviderApiRequest
@@ -20530,9 +20603,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /** DuplicateProviderApiResponse */
         DuplicateProviderApiResponse: {
@@ -20557,6 +20629,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Providers
+             * @description Hydrated row for the newly-created duplicate provider (mirrors /provider/search shape)
+             */
+            providers?: components["schemas"]["ListProviderApiProvider"][] | null;
         };
         /** DuplicateRubricApiRequest */
         DuplicateRubricApiRequest: {
@@ -20574,9 +20651,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /** DuplicateRubricApiResponse */
         DuplicateRubricApiResponse: {
@@ -20596,6 +20672,11 @@ export interface components {
              * @description Human-readable result message
              */
             message: string;
+            /**
+             * Rubrics
+             * @description Hydrated rubric row for the duplicate (single-element list; omitted on soft writes)
+             */
+            rubrics?: components["schemas"]["ListRubricApiRubric"][] | null;
             /**
              * Idempotency Key
              * @description Idempotency key echoed back for client correlation
@@ -20621,9 +20702,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DuplicateScenarioApiResponse
@@ -20651,6 +20731,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Scenarios
+             * @description Hydrated row for the newly-created duplicate scenario (single-element list)
+             */
+            scenarios?: components["schemas"]["ListScenarioApiScenario"][] | null;
         };
         /**
          * DuplicateSettingApiRequest
@@ -20671,9 +20756,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DuplicateSettingApiResponse
@@ -20696,6 +20780,11 @@ export interface components {
              * @description Result message
              */
             message: string;
+            /**
+             * Settings
+             * @description Hydrated list row(s) for the duplicated setting. Single-element list (kept as a list for shape consistency with create/update) so the client's ghost rail can materialize the new card directly.
+             */
+            settings?: components["schemas"]["ListSettingApiSetting"][] | null;
             /**
              * Idempotency Key
              * @description Idempotency key echoed back for client correlation
@@ -20768,9 +20857,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /** DuplicateToolApiResponse */
         DuplicateToolApiResponse: {
@@ -20795,6 +20883,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Tools
+             * @description Hydrated row for the duplicated tool (same shape as `/tool/search` returns)
+             */
+            tools?: components["schemas"]["ListToolApiTool"][] | null;
         };
         /**
          * DynamicRubricData
@@ -25155,6 +25248,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Name Ids
              * @description Associated name UUIDs
              */
@@ -25300,6 +25399,43 @@ export interface components {
              * @description Pending agent snapshot UUIDs
              */
             pending_agent_ids?: string[];
+        };
+        /**
+         * GetAgentDraftsApiRequest
+         * @description Request model for the agent drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsAgentApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetAgentDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetAgentDraftsApiResponse
@@ -25629,6 +25765,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -25705,6 +25847,43 @@ export interface components {
             pending_slug_ids?: string[];
         };
         /**
+         * GetAuthDraftsApiRequest
+         * @description Request model for the auth drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsAuthApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetAuthDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
          * GetAuthDraftsApiResponse
          * @description Response model for auth drafts list endpoint.
          */
@@ -25750,6 +25929,12 @@ export interface components {
              * @description Associated session UUID
              */
             session_id: string;
+            /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
             /**
              * Department Ids
              * @description Associated department UUIDs
@@ -25915,6 +26100,43 @@ export interface components {
              * @description Pending video UUIDs
              */
             pending_video_ids?: string[];
+        };
+        /**
+         * GetChatDraftsApiRequest
+         * @description Request model for the chat drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsChatApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetChatDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetChatDraftsApiResponse
@@ -26303,6 +26525,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -26392,6 +26620,43 @@ export interface components {
              * @description Pending simulation UUIDs
              */
             pending_simulation_ids?: string[];
+        };
+        /**
+         * GetCohortDraftsApiRequest
+         * @description Request model for the cohort drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsCohortApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetCohortDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetCohortDraftsApiResponse
@@ -26543,6 +26808,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Description Ids
              * @description Associated description UUIDs
              */
@@ -26587,6 +26858,43 @@ export interface components {
              * @description Inactive pending setting UUIDs
              */
             pending_setting_ids?: string[];
+        };
+        /**
+         * GetDepartmentDraftsApiRequest
+         * @description Request model for the department drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsDepartmentApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetDepartmentDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetDepartmentDraftsApiResponse
@@ -26779,6 +27087,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -26873,6 +27187,43 @@ export interface components {
              * @description Pending text UUIDs
              */
             pending_text_ids?: string[];
+        };
+        /**
+         * GetDocumentDraftsApiRequest
+         * @description Request model for the document drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsDocumentApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetDocumentDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetDocumentDraftsApiResponse
@@ -27064,6 +27415,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -27158,6 +27515,43 @@ export interface components {
              * @description Pending model rubric UUIDs
              */
             pending_model_rubric_ids?: string[];
+        };
+        /**
+         * GetEvalDraftsApiRequest
+         * @description Request model for the eval drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsEvalApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetEvalDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetEvalDraftsApiResponse
@@ -27328,6 +27722,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Conditional Parameter Ids
              * @description Associated conditional parameter UUIDs
              */
@@ -27382,6 +27782,43 @@ export interface components {
              * @description Pending name UUIDs
              */
             pending_name_ids?: string[];
+        };
+        /**
+         * GetFieldDraftsApiRequest
+         * @description Request model for the field drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsFieldApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetFieldDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetFieldDraftsApiResponse
@@ -27768,6 +28205,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -27932,6 +28375,43 @@ export interface components {
              * @description Pending endpoint UUIDs
              */
             pending_endpoint_ids?: string[];
+        };
+        /**
+         * GetInvocationDraftsApiRequest
+         * @description Request model for the invocation drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsInvocationApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetInvocationDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetInvocationDraftsApiResponse
@@ -28177,6 +28657,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -28301,6 +28787,43 @@ export interface components {
              * @description Pending voice UUIDs
              */
             pending_voice_ids?: string[];
+        };
+        /**
+         * GetModelDraftsApiRequest
+         * @description Request model for the model drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsModelApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetModelDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetModelDraftsApiResponse
@@ -28463,6 +28986,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -28517,6 +29046,43 @@ export interface components {
              * @description Pending name UUIDs
              */
             pending_name_ids?: string[];
+        };
+        /**
+         * GetParameterDraftsApiRequest
+         * @description Request model for the parameter drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsParameterApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetParameterDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetParameterDraftsApiResponse
@@ -28705,6 +29271,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Color Ids
              * @description Associated color UUIDs
              */
@@ -28809,6 +29381,43 @@ export interface components {
              * @description Pending voice UUIDs
              */
             pending_voice_ids?: string[];
+        };
+        /**
+         * GetPersonaDraftsApiRequest
+         * @description Request model for the persona drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsPersonaApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetPersonaDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetPersonaDraftsApiResponse
@@ -29024,6 +29633,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Profile Ids
              * @description Associated profile UUIDs
              */
@@ -29088,6 +29703,43 @@ export interface components {
              * @description Pending primary_departments UUIDs
              */
             pending_primary_department_ids?: string[];
+        };
+        /**
+         * GetProfileDraftsApiRequest
+         * @description Request model for the profile drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsProfileApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetProfileDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetProfileDraftsApiResponse
@@ -29267,6 +29919,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -29341,6 +29999,43 @@ export interface components {
              * @description Pending value UUIDs
              */
             pending_value_ids?: string[];
+        };
+        /**
+         * GetProviderDraftsApiRequest
+         * @description Request model for the provider drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsProviderApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetProviderDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetProviderDraftsApiResponse
@@ -29515,6 +30210,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -29589,6 +30290,43 @@ export interface components {
              * @description Associated pending standard UUIDs
              */
             pending_standard_ids?: string[];
+        };
+        /**
+         * GetRubricDraftsApiRequest
+         * @description Request model for the rubric drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsRubricApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetRubricDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetRubricDraftsApiResponse
@@ -29795,6 +30533,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -29929,6 +30673,43 @@ export interface components {
              * @description Pending parameter field UUIDs
              */
             pending_parameter_field_ids?: string[];
+        };
+        /**
+         * GetScenarioDraftsApiRequest
+         * @description Request model for the scenario drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsScenarioApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetScenarioDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetScenarioDraftsApiResponse
@@ -30263,6 +31044,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Agent Ids
              * @description Associated agent UUIDs
              */
@@ -30390,6 +31177,43 @@ export interface components {
             pending_mcp_ids?: string[] | null;
             /** Pending Logins Ids */
             pending_logins_ids?: string[] | null;
+        };
+        /**
+         * GetSettingDraftsApiRequest
+         * @description Request model for the setting drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsSettingApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetSettingDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetSettingDraftsApiResponse
@@ -30593,6 +31417,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -30687,6 +31517,43 @@ export interface components {
              * @description Pending scenario UUIDs
              */
             pending_scenario_ids?: string[];
+        };
+        /**
+         * GetSimulationDraftsApiRequest
+         * @description Request model for the simulation drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsSimulationApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetSimulationDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetSimulationDraftsApiResponse
@@ -31416,6 +32283,12 @@ export interface components {
              */
             session_id: string;
             /**
+             * Name
+             * @description Immutable draft label set at create time
+             * @default
+             */
+            name: string;
+            /**
              * Arg Position Ids
              * @description Associated arg position UUIDs
              */
@@ -31520,6 +32393,43 @@ export interface components {
              * @description Pending agent UUIDs
              */
             pending_agent_ids?: string[];
+        };
+        /**
+         * GetToolDraftsApiRequest
+         * @description Request model for the tool drafts list endpoint.
+         *
+         *     Mirrors ``GenerationsToolApiRequest`` — name search +
+         *     date window + pagination. All fields optional; an empty body
+         *     returns the caller's most recent drafts.
+         */
+        GetToolDraftsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE substring)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
         };
         /**
          * GetToolDraftsApiResponse
@@ -31772,6 +32682,14 @@ export interface components {
             tool?: {
                 [key: string]: unknown;
             } | null;
+            /** Ledger Status */
+            ledger_status?: string | null;
+            /** Ledger Operation */
+            ledger_operation?: string | null;
+            /** Ledger Artifact */
+            ledger_artifact?: string | null;
+            /** Ledger Artifact Id */
+            ledger_artifact_id?: string | null;
         };
         /**
          * GroupCohortApiRequest
@@ -35776,6 +36694,21 @@ export interface components {
              */
             is_inactive?: boolean | null;
             /**
+             * Pending Status
+             * @description Latest soft_calls_mv status: 'pending' / 'accepted' / 'rejected'
+             */
+            pending_status?: string | null;
+            /**
+             * Pending Operation
+             * @description Operation type ('create'|'update'|'delete'|'duplicate') of the pending op
+             */
+            pending_operation?: string | null;
+            /**
+             * Pending Call Id
+             * @description call_id (idempotency key for ack) of the pending op
+             */
+            pending_call_id?: string | null;
+            /**
              * Generated
              * @description Whether the persona was AI-generated
              */
@@ -38826,9 +39759,8 @@ export interface components {
             /**
              * Accept
              * @description Whether to accept a pending draft when acknowledging
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
             /**
              * Name
              * @description Name value to resolve or create
@@ -39258,9 +40190,8 @@ export interface components {
             /**
              * Accept
              * @description Accept or reject dormant state
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * PatchDepartmentDraftApiResponse
@@ -39535,9 +40466,8 @@ export interface components {
             /**
              * Accept
              * @description Accept or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * PatchEvalDraftApiResponse
@@ -39873,9 +40803,8 @@ export interface components {
             /**
              * Accept
              * @description Accept or reject when idempotency_key is supplied
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
             /**
              * Name
              * @description Display name value
@@ -40141,9 +41070,8 @@ export interface components {
             /**
              * Accept
              * @description Accept or reject dormant state
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * PatchParameterDraftApiResponse
@@ -40431,9 +41359,8 @@ export interface components {
             /**
              * Accept
              * @description Whether to accept the pending draft state
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * PatchProfileDraftApiResponse
@@ -40589,9 +41516,8 @@ export interface components {
             /**
              * Accept
              * @description Accept or reject acknowledgement when idempotency_key is supplied
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * PatchProviderDraftApiResponse
@@ -40739,9 +41665,8 @@ export interface components {
             /**
              * Accept
              * @description Accept or reject dormant state
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * PatchRubricDraftApiResponse
@@ -40942,9 +41867,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * PatchScenarioDraftApiResponse
@@ -40999,9 +41923,8 @@ export interface components {
             /**
              * Accept
              * @description Accept or reject pending draft state when used with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
             /**
              * Name
              * @description Name value to resolve or create
@@ -41447,9 +42370,8 @@ export interface components {
             /**
              * Accept
              * @description Accept or reject acknowledgement when idempotency_key is supplied
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * PatchToolDraftApiResponse
@@ -42484,9 +43406,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * ProblemAuthApiResponse
@@ -42596,9 +43517,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * ProblemDepartmentApiResponse
@@ -42708,9 +43628,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * ProblemEvalApiResponse
@@ -42820,9 +43739,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * ProblemModelApiResponse
@@ -42876,9 +43794,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * ProblemParameterApiResponse
@@ -42992,9 +43909,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * ProblemProfileApiResponse
@@ -43048,9 +43964,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * ProblemProviderApiResponse
@@ -43104,9 +44019,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * ProblemRubricApiResponse
@@ -43160,9 +44074,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * ProblemScenarioApiResponse
@@ -43216,9 +44129,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * ProblemSettingApiResponse
@@ -43424,9 +44336,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * ProblemToolApiResponse
@@ -52897,9 +53808,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * UpdateAuthApiResponse
@@ -52916,6 +53826,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Auths
+             * @description Hydrated rows for the successfully-updated auths (mirrors /auth/search shape)
+             */
+            auths?: components["schemas"]["ListAuthApiAuth"][] | null;
         };
         /**
          * UpdateAuthItem
@@ -53415,9 +54330,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * UpdateDepartmentApiResponse
@@ -53434,6 +54348,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Departments
+             * @description Hydrated rows for the successfully-updated departments (mirrors /department/search shape)
+             */
+            departments?: components["schemas"]["ListDepartmentApiDepartment"][] | null;
         };
         /**
          * UpdateDepartmentItem
@@ -53855,9 +54774,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * UpdateEvalApiResponse
@@ -53874,6 +54792,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Evals
+             * @description Hydrated list rows for the updated evals — same shape as ``/eval/search`` returns. Used by the client's ghost rail to materialize the changed row from the audit ``.completed`` payload without a router refresh. ``None`` for soft-pending updates.
+             */
+            evals?: components["schemas"]["ListEvalApiEval"][] | null;
         };
         /**
          * UpdateEvalItem
@@ -54337,9 +55260,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * UpdateModelApiResponse
@@ -54356,6 +55278,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Models
+             * @description Hydrated rows for the successfully-updated models (mirrors /model/search shape)
+             */
+            models?: components["schemas"]["ListModelApiModel"][] | null;
         };
         /**
          * UpdateModelItem
@@ -54628,9 +55555,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * UpdateParameterApiResponse
@@ -54642,6 +55568,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ParameterResultItem"][];
+            /**
+             * Parameters
+             * @description Hydrated list rows for the just-updated parameters — same shape as ``/parameter/search`` returns. Lets the client patch in updated rows directly from the response without a follow-up search. Omitted on the soft-pending (ack-shaped) paths.
+             */
+            parameters?: components["schemas"]["ListParameterApiParameter"][] | null;
             /**
              * Idempotency Key
              * @description Idempotency key echoed back for client correlation
@@ -55187,9 +56118,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * UpdateProfileApiResponse
@@ -55206,6 +56136,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Profiles
+             * @description Hydrated rows for the successfully-updated profiles (mirrors /profile/search shape)
+             */
+            profiles?: components["schemas"]["ListProfilesApiProfile"][] | null;
         };
         /**
          * UpdateProfileItem
@@ -55402,9 +56337,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * UpdateProviderApiResponse
@@ -55421,6 +56355,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Providers
+             * @description Hydrated rows for the successfully-updated providers (mirrors /provider/search shape)
+             */
+            providers?: components["schemas"]["ListProviderApiProvider"][] | null;
         };
         /**
          * UpdateProviderItem
@@ -55631,9 +56570,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * UpdateRubricApiResponse
@@ -55645,6 +56583,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["RubricResultItem"][];
+            /**
+             * Rubrics
+             * @description Hydrated rubric rows for the rubrics just updated (omitted on soft writes)
+             */
+            rubrics?: components["schemas"]["ListRubricApiRubric"][] | null;
             /**
              * Idempotency Key
              * @description Idempotency key echoed back for client correlation
@@ -55900,9 +56843,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * UpdateScenarioApiResponse
@@ -55919,6 +56861,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Scenarios
+             * @description Hydrated rows for the successfully-updated scenarios (mirrors /scenario/search shape)
+             */
+            scenarios?: components["schemas"]["ListScenarioApiScenario"][] | null;
         };
         /**
          * UpdateScenarioItem
@@ -56306,9 +57253,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * UpdateSettingApiResponse
@@ -56320,6 +57266,11 @@ export interface components {
              * @description Per-item update results
              */
             results: components["schemas"]["SettingResultItem"][];
+            /**
+             * Settings
+             * @description Hydrated list rows for the updated settings. Mirrors the shape of ``/setting/search`` result rows so the client's ghost rail can swap the live card without a refresh.
+             */
+            settings?: components["schemas"]["ListSettingApiSetting"][] | null;
             /**
              * Idempotency Key
              * @description Idempotency key echoed back for client correlation
@@ -56893,9 +57844,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * UpdateToolApiResponse
@@ -56912,6 +57862,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Tools
+             * @description Hydrated rows for the updated tools (same shape as `/tool/search` returns)
+             */
+            tools?: components["schemas"]["ListToolApiTool"][] | null;
         };
         /**
          * UpdateToolItem
@@ -59665,7 +60620,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetPersonaDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -59674,6 +60633,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetPersonaDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -60264,7 +61232,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetScenarioDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -60273,6 +61245,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetScenarioDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -61113,7 +62094,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetSimulationDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -61122,6 +62107,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetSimulationDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -61659,7 +62653,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetDocumentDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -61668,6 +62666,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetDocumentDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -62403,7 +63410,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetDepartmentDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -62412,6 +63423,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetDepartmentDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -63015,7 +64035,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetCohortDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -63024,6 +64048,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetCohortDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -63660,7 +64693,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetEvalDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -63669,6 +64706,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetEvalDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -64272,7 +65318,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetRubricDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -64281,6 +65331,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetRubricDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -64851,7 +65910,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetSettingDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -64860,6 +65923,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetSettingDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -65562,7 +66634,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetAgentDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -65571,6 +66647,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetAgentDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -66108,7 +67193,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetModelDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -66117,6 +67206,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetModelDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -66720,7 +67818,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetProviderDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -66729,6 +67831,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetProviderDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -67398,7 +68509,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetParameterDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -67407,6 +68522,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetParameterDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -67977,7 +69101,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetFieldDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -67986,6 +69114,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetFieldDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -68556,7 +69693,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetProfileDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -68565,6 +69706,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetProfileDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -69267,7 +70417,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetAuthDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -69276,6 +70430,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetAuthDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -69813,7 +70976,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetToolDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -69822,6 +70989,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetToolDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -71268,7 +72444,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetChatDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -71277,6 +72457,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetChatDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -73077,7 +74266,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetInvocationDraftsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -73086,6 +74279,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetInvocationDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
