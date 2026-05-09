@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { Edit, Eye, Pencil, Trash2, X } from "lucide-react";
+import { AlertCircle, Check, Edit, Eye, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -43,6 +43,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useEvalAi } from "@/hooks/use-eval-ai";
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -453,6 +454,7 @@ export default function Evals({
       await deleteEvalAction({
         body: {
           eval_ids: [deleteItem.id],
+          all: false,
           accept: true,
         },
       });
@@ -466,7 +468,40 @@ export default function Evals({
   };
 
   // Ensure evalsList is always an array for type safety
-  const evalsListArray = Array.isArray(evalsList) ? evalsList : [];
+  const baseEvalsArray = Array.isArray(evalsList) ? evalsList : [];
+
+  // SSR-seeded base list. The audit-driven ghost hook layers
+  // create/update/delete/duplicate lifecycle on top — committed rows
+  // get merged into ``mergedEvals`` directly so the table stays
+  // current without a ``router.refresh()`` (which would re-burst the
+  // page's SSR fetches — see GenerationPanel handleSend rationale).
+  const {
+    ghosts: evalGhosts,
+    mergedRows: mergedEvals,
+    ack: ackEvalGhost,
+  } = useArtifactGhosts({
+    artifactType: "eval",
+    // All four CRUD ops the LLM might invoke or the user might
+    // trigger from the toolbar/card. Each maps to a distinct ghost
+    // visual in ``renderEvalCard`` (creating / updating / deleting /
+    // duplicating skeleton + pending soft state). Without
+    // ``duplicate`` here the LLM's duplicate tool dispatch fires
+    // audit events that nothing is subscribed to → no ghost.
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseEvalsArray,
+    rowKey: "eval_id",
+    // ``evals`` plural matches the field name the create / duplicate
+    // / update impls now include on their responses (see
+    // ``hydrate_eval_list_rows``). The hook reads ``output.evals``
+    // from the audit ``.completed`` payload to materialize new/
+    // changed rows directly — no SSR refresh needed.
+    artifactPlural: "evals",
+  });
+
+  // Downstream code reads ``evalsListArray`` — keep that name to
+  // minimize diff. The active list is the merged view (base + create
+  // overlays − delete overlays).
+  const evalsListArray = mergedEvals;
 
   const selectAllOnPage = useCallback(() => {
     const pageIds = evalsListArray.filter((e) => e.eval_id).map((e) => e.eval_id!);
@@ -733,59 +768,125 @@ export default function Evals({
     pageCount,
   });
 
-  // Memoize table rows
+  // Memoize table rows. Including ``evalsListArray`` itself (not just
+  // ``.length``) so update events that mutate row content but not
+  // list cardinality still invalidate the memo. The reference is
+  // stabilized upstream by ``mergedEvals``'s useMemo.
   const sortingKey = JSON.stringify(sorting);
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortingKey, evalsListArray.length, pageIndex, pageSize]);
+  }, [sortingKey, evalsListArray, pageIndex, pageSize]);
 
-  const renderEvalCard = (evalItem: (typeof evalsListArray)[number]) => {
-    const evalId = evalItem.eval_id ?? "";
-    const evalName = evalItem.name ?? "";
+  const renderEvalCard = (
+    evalItem: (typeof evalsListArray)[number],
+    ghost?: Ghost<(typeof evalsListArray)[number]>,
+  ) => {
+    const isGhost = ghost != null;
+    const ghostState = ghost?.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
 
-    if (!evalId) return null;
-    const rowSelected = isSelected(evalId);
+    const evalId = evalItem?.eval_id ?? "";
+    const evalName = evalItem?.name ?? "";
+
+    // Real rows must have an id; ghosts may not yet (creating). Skip
+    // rendering only for non-ghost rows missing an id.
+    if (!evalId && !isGhost) return null;
+    const rowSelected = !isGhost && evalId ? isSelected(evalId) : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
+      if (isGhost) return;
       // Don't toggle selection if clicking action buttons
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
       toggleSelection(evalId);
     };
 
+    // Border tint reflects ghost lifecycle. ``animate-pulse`` while
+    // in-flight signals "this is provisional"; failed/pending hold
+    // a steady color so the user can decide.
+    const ghostBorderClass = isFailed
+      ? "border-destructive/40 bg-destructive/5"
+      : isPending
+      ? "border-amber-500/50 bg-amber-50/40 dark:bg-amber-950/20"
+      : ghostState === "deleting"
+      ? "border-destructive/30 bg-destructive/5 opacity-70"
+      : inFlight
+      ? "border-primary/40 bg-primary/5 animate-pulse"
+      : "";
+
     return (
       <Card
-        key={evalId}
-        className={`group relative flex flex-col h-full transition-all hover:shadow-md cursor-pointer ${
+        key={isGhost ? `ghost-${ghost.callId}` : evalId}
+        className={`group relative flex flex-col h-full transition-all hover:shadow-md ${
+          isGhost ? "" : "cursor-pointer"
+        } ${ghostBorderClass} ${
           rowSelected ? "ring-2 ring-primary" : ""
         }`}
-        data-testid="eval-card"
+        data-testid={isGhost ? "eval-ghost-card" : "eval-card"}
         data-eval-id={evalId}
+        data-ghost-state={ghostState}
         role="gridcell"
-        aria-label={`eval card ${evalName}`}
+        aria-label={`eval card ${evalName || (isGhost ? "Generating" : "")}`}
         aria-selected={rowSelected}
+        aria-busy={inFlight ? true : undefined}
         onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <CardTitle className="text-lg flex items-center gap-2">
-                <div
-                  className={`transition-all overflow-hidden flex-shrink-0 ${
-                    selectedCount > 0
-                      ? "w-5 opacity-100"
-                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
-                  }`}
-                  data-action-button
-                >
-                  <Checkbox
-                    checked={rowSelected}
-                    onCheckedChange={() => toggleSelection(evalId)}
-                    className="rounded-full h-5 w-5"
-                    aria-label={`Select eval ${evalName || "Unnamed"}`}
-                  />
-                </div>
-                <span className="line-clamp-2">{evalName}</span>
+                {/* Selection checkbox — hidden in ghost mode (no row id
+                    to select yet). */}
+                {!isGhost && (
+                  <div
+                    className={`transition-all overflow-hidden flex-shrink-0 ${
+                      selectedCount > 0
+                        ? "w-5 opacity-100"
+                        : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                    }`}
+                    data-action-button
+                  >
+                    <Checkbox
+                      checked={rowSelected}
+                      onCheckedChange={() => toggleSelection(evalId)}
+                      className="rounded-full h-5 w-5"
+                      aria-label={`Select eval ${evalName || "Unnamed"}`}
+                    />
+                  </div>
+                )}
+                {/* Spinner replaces the checkbox slot for in-flight
+                    create/duplicate ghosts so the visual mass is
+                    similar (otherwise the ghost card looks oddly
+                    smaller). */}
+                {isGhost && inFlight && (
+                  <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0" />
+                )}
+                <span className="line-clamp-2">
+                  {evalName || (isGhost ? "Generating…" : "")}
+                </span>
+                {isGhost && (
+                  <Badge
+                    variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                    className={
+                      isPending
+                        ? "border-amber-500 text-amber-700 dark:text-amber-400"
+                        : ""
+                    }
+                  >
+                    {ghostState === "creating" && "Creating…"}
+                    {ghostState === "duplicating" && "Duplicating…"}
+                    {ghostState === "updating" && "Updating…"}
+                    {ghostState === "deleting" && "Deleting…"}
+                    {ghostState === "pending" && "Pending"}
+                    {ghostState === "failed" && "Failed"}
+                  </Badge>
+                )}
               </CardTitle>
               <div className="mt-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
@@ -804,7 +905,41 @@ export default function Evals({
               </div>
             </div>
             <div className="flex items-center gap-2" data-action-button>
-              {evalItem.can_edit && evalId ? (
+              {/* Ghost-mode action area: status-aware. Pending →
+                  Accept/Reject for soft-write ack. Failed → error
+                  indicator. In-flight → no buttons (the streaming
+                  card is read-only until commit/failure). */}
+              {isGhost && isPending && ghost.callId && (
+                <>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackEvalGhost(ghost.callId, true)}
+                  >
+                    <Check className="mr-1 h-3.5 w-3.5" />
+                    Accept
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackEvalGhost(ghost.callId, false)}
+                  >
+                    <X className="mr-1 h-3.5 w-3.5" />
+                    Reject
+                  </Button>
+                </>
+              )}
+              {isGhost && isFailed && ghost.error && (
+                <span className="flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {ghost.error}
+                </span>
+              )}
+              {!isGhost && evalItem.can_edit && evalId ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -817,7 +952,7 @@ export default function Evals({
                   <Edit className="h-4 w-4 md:mr-0 mr-2" />
                   <span className="md:hidden">Edit</span>
                 </Button>
-              ) : evalId ? (
+              ) : !isGhost && evalId ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -831,7 +966,7 @@ export default function Evals({
                   <span className="md:hidden">View</span>
                 </Button>
               ) : null}
-              {evalItem.can_delete && deleteEvalAction && evalId && (
+              {!isGhost && evalItem.can_delete && deleteEvalAction && evalId && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -1052,12 +1187,40 @@ export default function Evals({
             aria-label="evals grid"
             data-testid="evals-grid"
           >
+            {/* Ghost cards from in-flight audited writes (create /
+                duplicate / update / delete in non-terminal states)
+                are prepended — same ``renderEvalCard`` so layout,
+                dimensions, and visual language match exactly. Once a
+                ghost commits, its hydrated row is in ``mergedRows``
+                (via ``state.added``) AND the ghost's ``state`` flips
+                to "committed" — we filter those out so the real row
+                replaces the ghost in place without a duplicate
+                frame. */}
+            {evalGhosts
+              .filter((g) => g.state !== "committed" && g.state !== "accepted")
+              .map((g) => {
+                // For update/delete, ``before`` is the snapshot
+                // lookup from baseRows (existing row) — gives us
+                // name, description so the ghost card shows what's
+                // being deleted/updated. For create/duplicate,
+                // ``before`` is null and ``partial`` carries the
+                // streaming args (often sparse for duplicate, richer
+                // for create).
+                const evalShell = (g.before ?? g.partial) as (typeof evalsListArray)[number];
+                return (
+                  <div key={`ghost-${g.callId}`}>
+                    {renderEvalCard(evalShell, g)}
+                  </div>
+                );
+              })}
             {tableRows.length ? (
               tableRows.map((row) => renderEvalCard(row.original))
             ) : (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
-                No evals match the current filters.
-              </div>
+              evalGhosts.length === 0 && (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  No evals match the current filters.
+                </div>
+              )
             )}
           </div>
         </div>

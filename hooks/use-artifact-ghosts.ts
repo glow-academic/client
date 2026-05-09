@@ -92,6 +92,22 @@ export interface UseArtifactGhostsConfig<TRow> {
    *  Defaults to baseRows scan by rowKey. Useful if your row identifier
    *  doesn't match the audit's `id` argument. */
   resolveBefore?: (rowId: string) => TRow | undefined;
+  /** Wire-payload field that carries the impl's hydrated rows on
+   *  ``.completed``. Defaults to ``${artifactType}s`` (e.g. "personas").
+   *  Override for irregular plurals. The impl's create/update/duplicate
+   *  responses must include this field with rows in the same shape as
+   *  the artifact's list endpoint — see ``hydrate_<X>_list_rows``. */
+  artifactPlural?: string;
+  /** Called once per ghost when its operation actually commits — i.e.
+   *  ``.completed`` arrived for an immediate write, OR an ``ack(true)``
+   *  was applied to a soft-pending one. Caller typically wires
+   *  ``router.refresh()`` here so the SSR list picks up the new/changed
+   *  row with all FK-resolved fields populated (the hook's local row
+   *  reconstruction only carries the LLM's streaming args + the impl's
+   *  status response, which lack denormalized labels like color hex,
+   *  icon SVG, scenario counts, etc.). Soft-skipped failures and
+   *  rejected acks do NOT fire this. */
+  onCommit?: (callId: string, op: GhostOp) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -118,9 +134,9 @@ interface State<TRow> {
 type Action<TRow> =
   | { type: "started"; op: GhostOp; callId: string; payload: Record<string, unknown>; before: TRow | null }
   | { type: "progress"; callId: string; payload: Record<string, unknown> }
-  | { type: "completed"; callId: string; payload: Record<string, unknown>; rowKey: string }
+  | { type: "completed"; callId: string; payload: Record<string, unknown>; rowKey: string; artifactPlural: string }
   | { type: "failed"; callId: string; payload: Record<string, unknown> }
-  | { type: "ackOptimistic"; callId: string; accept: boolean; rowKey: string }
+  | { type: "ackOptimistic"; callId: string; accept: boolean; rowKey: string; artifactPlural: string }
   | { type: "drop"; callId: string };
 
 function isSoft(args: Record<string, unknown>): boolean {
@@ -139,11 +155,26 @@ function reducer<TRow>(state: State<TRow>, action: Action<TRow>): State<TRow> {
         op === "update" ? "updating" :
         "deleting";
       const existing = state.byCallId[callId];
+      // Resolve the affected row id from the payload. Update/delete
+      // can carry ``id`` (single, e.g. /<X>/duplicate input) or
+      // ``ids`` (bulk, e.g. /<X>/delete with one or many ids). The
+      // ghost shows ONE card per callId, so we take the first id —
+      // bulk deletes that affect N rows still produce one ghost
+      // (matches the audit lifecycle which fires one ``.started``
+      // per call regardless of N).
+      const payloadId = payload["id"];
+      const payloadIds = payload["ids"];
+      const resolvedRowId =
+        typeof payloadId === "string"
+          ? payloadId
+          : Array.isArray(payloadIds) && payloadIds.length > 0 && typeof payloadIds[0] === "string"
+          ? (payloadIds[0] as string)
+          : (existing?.rowId ?? null);
       const ghost: Ghost<TRow> = {
         callId,
         op,
         state: stateMap,
-        rowId: typeof payload["id"] === "string" ? (payload["id"] as string) : (existing?.rowId ?? null),
+        rowId: resolvedRowId,
         partial: { ...payload } as Partial<TRow> & Record<string, unknown>,
         before: before ?? existing?.before ?? null,
         tool: (payload["tool"] as Record<string, unknown> | null) ?? null,
@@ -189,7 +220,7 @@ function reducer<TRow>(state: State<TRow>, action: Action<TRow>): State<TRow> {
       // Apply local overlay only for the immediate path. Soft pending
       // stays as a ghost-only entry until the ack fires.
       if (!soft) {
-        return applyOverlay(state, next, action.rowKey, action.payload);
+        return applyOverlay(state, next, action.rowKey, action.payload, action.artifactPlural);
       }
       return { ...state, byCallId: { ...state.byCallId, [action.callId]: next } };
     }
@@ -215,7 +246,7 @@ function reducer<TRow>(state: State<TRow>, action: Action<TRow>): State<TRow> {
       // Optimistic commit: on accept, materialize into mergedRows now.
       // On reject, restore any hidden delete row.
       if (action.accept) {
-        return applyOverlay(state, accepted, action.rowKey, existing.partial as Record<string, unknown>);
+        return applyOverlay(state, accepted, action.rowKey, existing.partial as Record<string, unknown>, action.artifactPlural);
       } else {
         const hiddenIds = new Set(state.hiddenIds);
         if (existing.op === "delete" && existing.rowId) hiddenIds.delete(existing.rowId);
@@ -235,31 +266,53 @@ function reducer<TRow>(state: State<TRow>, action: Action<TRow>): State<TRow> {
   }
 }
 
-/** Apply a committed/accepted ghost's effect to the local overlay maps. */
+/** Apply a committed/accepted ghost's effect to the local overlay maps.
+ *
+ *  Drives off ``output.<artifactPlural>`` — the impl's response field
+ *  carrying fully-hydrated rows (same shape ``/<artifact>/search``
+ *  returns). Per the bulk-write recipe, create/duplicate/update impls
+ *  call ``hydrate_<artifact>_list_rows`` and include the result here
+ *  so the audit ``.completed`` payload self-describes the new state.
+ *
+ *  Without those rows in ``output``, the hook falls back to a no-op
+ *  for create/update — the row will only appear after a separate
+ *  refresh. Delete is unaffected (row is already in baseRows; hide
+ *  by id from ``ghost.rowId``).
+ */
 function applyOverlay<TRow>(
   state: State<TRow>,
   ghost: Ghost<TRow>,
   rowKey: string,
   output: Record<string, unknown>,
+  artifactPlural: string,
 ): State<TRow> {
-  const id = (output[rowKey] as string | undefined) ?? ghost.rowId ?? null;
+  const hiddenIds = new Set(state.hiddenIds);
   let added = state.added;
   let replaced = state.replaced;
-  const hiddenIds = new Set(state.hiddenIds);
+
+  // Server-denormalized rows live under ``<artifactPlural>`` (e.g.
+  // ``personas`` for create/update/duplicate). Single-element list for
+  // duplicate; multi-element for bulk create/update.
+  const hydrated = output[artifactPlural];
+  const hydratedRows: TRow[] = Array.isArray(hydrated) ? (hydrated as TRow[]) : [];
 
   if (ghost.op === "create" || ghost.op === "duplicate") {
-    if (id) {
-      // Take the partial as the row content. The impl's return is the
-      // canonical shape — we accept it as-is.
-      added = [...added, { ...(ghost.partial as object), [rowKey]: id } as unknown as TRow];
+    if (hydratedRows.length > 0) {
+      added = [...added, ...hydratedRows];
     }
   } else if (ghost.op === "update") {
-    if (id) {
-      replaced = { ...replaced, [id]: { ...(ghost.before as object), ...(ghost.partial as object), [rowKey]: id } as unknown as TRow };
+    if (hydratedRows.length > 0) {
+      const next = { ...replaced };
+      for (const row of hydratedRows) {
+        const id = row[rowKey as keyof TRow] as unknown as string | undefined;
+        if (id) next[id] = row;
+      }
+      replaced = next;
     }
   } else if (ghost.op === "delete") {
     if (ghost.rowId) hiddenIds.add(ghost.rowId);
   }
+
   return {
     ...state,
     byCallId: { ...state.byCallId, [ghost.callId]: ghost },
@@ -284,7 +337,8 @@ const initialState = <TRow>(): State<TRow> => ({
 export function useArtifactGhosts<TRow extends Record<string, unknown>>(
   config: UseArtifactGhostsConfig<TRow>,
 ): UseArtifactGhostsResult<TRow> {
-  const { artifactType, ops, baseRows, rowKey = "id" as keyof TRow & string, resolveBefore } = config;
+  const { artifactType, ops, baseRows, rowKey = "id" as keyof TRow & string, resolveBefore, onCommit } = config;
+  const artifactPlural = config.artifactPlural ?? `${artifactType}s`;
 
   const transport = useTransport();
   const [state, dispatch] = useReducer(reducer<TRow>, undefined, initialState);
@@ -296,6 +350,8 @@ export function useArtifactGhosts<TRow extends Record<string, unknown>>(
   resolveBeforeRef.current = resolveBefore;
   const rowKeyRef = useRef(rowKey);
   rowKeyRef.current = rowKey;
+  const onCommitRef = useRef(onCommit);
+  onCommitRef.current = onCommit;
 
   useEffect(() => {
     const unsubs: Array<() => void> = [];
@@ -310,10 +366,20 @@ export function useArtifactGhosts<TRow extends Record<string, unknown>>(
         transport.on(startedEvent, (raw) => {
           const callId = raw["call_id"];
           if (typeof callId !== "string") return;
-          // Resolve "before" snapshot when the op needs one.
+          // Resolve "before" snapshot when the op needs one. Audit
+          // payloads spread the request body to top-level, so the
+          // affected row id is in either ``id`` (single — e.g.
+          // /X/duplicate input) or ``ids`` (bulk — e.g. /X/delete).
           let before: TRow | null = null;
           if ((op === "update" || op === "delete")) {
-            const rid = typeof raw["id"] === "string" ? (raw["id"] as string) : null;
+            const rawId = raw["id"];
+            const rawIds = raw["ids"];
+            const rid =
+              typeof rawId === "string"
+                ? rawId
+                : Array.isArray(rawIds) && rawIds.length > 0 && typeof rawIds[0] === "string"
+                ? (rawIds[0] as string)
+                : null;
             // Prefer server-denormalized snapshot when present, falling
             // back to local lookup. (Server denorm is the planned source
             // of truth for cross-page diff support — see open question
@@ -348,7 +414,16 @@ export function useArtifactGhosts<TRow extends Record<string, unknown>>(
           // ackOptimistic has already updated state; the server-side
           // commit is implicit.
           if ("accept" in raw) return;
-          dispatch({ type: "completed", callId, payload: raw, rowKey: rowKeyRef.current });
+          dispatch({ type: "completed", callId, payload: raw, rowKey: rowKeyRef.current, artifactPlural });
+          // Fire onCommit only for the immediate-write path (i.e. NOT
+          // soft). Mirrors the reducer's branching — soft completions
+          // park in "pending" state until ack(true) fires onCommit
+          // there. Outer `if (raw["soft"])` is the wire-level mirror
+          // of the reducer's ``isSoft(arguments)`` check; arguments
+          // are spread to top-level on completed events.
+          if (raw["soft"] !== true) {
+            onCommitRef.current?.(callId, op);
+          }
         }),
       );
       unsubs.push(
@@ -403,7 +478,13 @@ export function useArtifactGhosts<TRow extends Record<string, unknown>>(
     // server's second `.completed` lands the canonical post-ack
     // payload, but we drop those (see effect above) to avoid double-
     // applying the overlay.
-    dispatch({ type: "ackOptimistic", callId, accept, rowKey: rowKeyRef.current });
+    dispatch({ type: "ackOptimistic", callId, accept, rowKey: rowKeyRef.current, artifactPlural });
+    // Accept-ack is the soft-path equivalent of an immediate `.completed`
+    // — the ghost transitions to "accepted" and the row materializes.
+    // Reject-ack drops the ghost without committing; no fire.
+    if (accept) {
+      onCommitRef.current?.(callId, ghost.op);
+    }
     try {
       await ackOperation({
         artifact: artifactType,

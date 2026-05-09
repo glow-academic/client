@@ -3,7 +3,7 @@
  * Used to display the tools page with server-side filtering.
  */
 "use client";
-import { Copy, Edit, Eye, Pencil, Trash2, X } from "lucide-react";
+import { AlertCircle, Check, Copy, Edit, Eye, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -51,6 +51,7 @@ import { Input } from "@/components/ui/input";
 import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 import { useToolAi } from "@/hooks/use-tool-ai";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
@@ -105,9 +106,14 @@ export default function Tools({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  useToolAi({
-    onComplete: () => router.refresh(),
-  });
+  // ``useToolAi`` previously listened for ``tool.generate.completed``
+  // and called ``router.refresh()`` so the list view updated after
+  // generation. Removed — the audit framework already surfaces every
+  // operation in the activity rail, and the duplicate-SSR-burst on
+  // every generate cycle was visible noise. The ghost rail
+  // (``useArtifactGhosts``) materializes fresh rows directly from the
+  // ``output.tools`` payload — no SSR refresh needed.
+  useToolAi({});
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -147,9 +153,43 @@ export default function Tools({
   // Use server-provided data directly
   const toolsData = serverListData;
 
-  // Extract data from response
-  const tools = toolsData?.tools || [];
-  const toolsArray = Array.isArray(tools) ? tools : [];
+  // SSR-seeded base list. The audit-driven ghost hook layers
+  // create/update/delete/duplicate lifecycle on top — committed rows
+  // get merged into ``mergedTools`` directly so the table stays current
+  // without a ``router.refresh()`` (which would re-burst the page's
+  // SSR fetches).
+  const baseTools = useMemo(() => {
+    return toolsData?.tools || [];
+  }, [toolsData?.tools]);
+
+  const {
+    ghosts: toolGhosts,
+    mergedRows: mergedTools,
+    ack: ackToolGhost,
+  } = useArtifactGhosts({
+    artifactType: "tool",
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar/card. Each maps to a distinct ghost visual in
+    // ``renderToolCard`` (creating / updating / deleting / duplicating
+    // skeleton + pending soft state). Without ``duplicate`` here the
+    // LLM's duplicate dispatch fires audit events that nothing is
+    // subscribed to → no ghost.
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseTools,
+    rowKey: "tool_id",
+    // ``tools`` plural is auto-derived as ``tool`` + "s" — kept
+    // explicit here for clarity; matches the field name the create /
+    // duplicate / update impls now include on their responses (see
+    // ``hydrate_tool_list_rows``). The hook reads ``output.tools`` from
+    // the audit ``.completed`` payload to materialize new/changed rows
+    // directly — no SSR refresh needed.
+    artifactPlural: "tools",
+  });
+
+  // Downstream code reads ``toolsArray`` — keep that name to minimize
+  // diff. The active list is the merged view (base + create overlays
+  // − delete overlays).
+  const toolsArray = mergedTools;
 
   // Flag catalog (e.g. tool_active) — used to reconstruct flag_ids on bulk edit.
   const flagOptions = useMemo(() => {
@@ -603,12 +643,17 @@ export default function Tools({
     pageCount,
   });
 
-  // Memoize table rows
+  // Memoize table rows. Including ``toolsArray`` itself (not just
+  // ``toolsArray.length``) so update events that mutate row content
+  // but not list cardinality still invalidate the memo. ``toolsArray``
+  // is stabilized upstream by ``mergedTools``'s useMemo, so a new
+  // reference only appears when ``state.added``/``replaced``/
+  // ``hiddenIds`` actually change — no spurious recomputes.
   const sortingKey = JSON.stringify(sorting);
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortingKey, toolsArray.length, pageIndex, pageSize]);
+  }, [sortingKey, toolsArray, pageIndex, pageSize]);
 
   const handleDuplicate = async (toolId: string) => {
     if (isDuplicating === toolId || !duplicateToolAction) return;
@@ -763,55 +808,112 @@ export default function Tools({
     setShowBulkEditDialog(true);
   };
 
-  const renderToolCard = (tool: (typeof toolsArray)[number]) => {
-    const toolId = tool.tool_id ?? "";
-    const toolName = tool.name ?? "";
+  const renderToolCard = (
+    tool: (typeof toolsArray)[number],
+    ghost?: Ghost<(typeof toolsArray)[number]>,
+  ) => {
+    // Same card visual for real rows and in-flight ghosts — single
+    // source of truth for layout, dimensions, badges. Ghost mode swaps
+    // action buttons for a status badge (and Accept/Reject for
+    // soft-pending), disables selection/click, and tints the border
+    // based on lifecycle state.
+    const isGhost = ghost != null;
+    const ghostState = ghost?.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
 
-    if (!toolId) return null;
+    const toolId = tool?.tool_id ?? "";
+    const toolName = tool?.name ?? "";
 
-    const rowSelected = isSelected(toolId);
+    if (!isGhost && !toolId) return null;
+
+    const rowSelected = !isGhost && toolId ? isSelected(toolId) : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
+      if (isGhost) return;
       // Don't toggle selection if clicking action buttons
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
-      toggleSelection(toolId);
+      if (toolId) toggleSelection(toolId);
     };
+
+    // Border tint reflects ghost lifecycle. ``animate-pulse`` while
+    // in-flight signals "this is provisional"; failed/pending hold a
+    // steady color so the user can decide.
+    const ghostBorderClass = isFailed
+      ? "border-destructive/40 bg-destructive/5"
+      : isPending
+      ? "border-amber-500/50 bg-amber-50/40 dark:bg-amber-950/20"
+      : ghostState === "deleting"
+      ? "border-destructive/30 bg-destructive/5 opacity-70"
+      : inFlight
+      ? "border-primary/40 bg-primary/5 animate-pulse"
+      : "";
 
     return (
       <Card
-        key={toolId}
-        className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
-          rowSelected ? "ring-2 ring-primary" : ""
-        }`}
-        data-testid="tool-card"
+        key={isGhost ? `ghost-${ghost?.callId ?? toolId}` : toolId}
+        className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
+          isGhost ? "" : "cursor-pointer"
+        } ${ghostBorderClass} ${rowSelected ? "ring-2 ring-primary" : ""}`}
+        data-testid={isGhost ? "tool-ghost-card" : "tool-card"}
         data-tool-id={toolId}
+        data-ghost-state={ghostState}
         role="gridcell"
-        aria-label={`tool card ${toolName}`}
+        aria-label={`tool card ${toolName || (isGhost ? "Generating" : "Unnamed Tool")}`}
         aria-selected={rowSelected}
+        aria-busy={inFlight ? true : undefined}
         onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <CardTitle className="text-lg line-clamp-2 flex items-center gap-2">
-                <div
-                  className={`transition-all overflow-hidden flex-shrink-0 ${
-                    selectedCount > 0
-                      ? "w-5 opacity-100"
-                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
-                  }`}
-                  data-action-button
-                >
-                  <Checkbox
-                    checked={rowSelected}
-                    onCheckedChange={() => toggleSelection(toolId)}
-                    className="rounded-full h-5 w-5"
-                    aria-label={`Select tool ${toolName || "Unnamed"}`}
-                  />
-                </div>
-                <span className="truncate">{toolName}</span>
+                {/* Selection checkbox — hidden in ghost mode (no row id
+                    to select yet). */}
+                {!isGhost && (
+                  <div
+                    className={`transition-all overflow-hidden flex-shrink-0 ${
+                      selectedCount > 0
+                        ? "w-5 opacity-100"
+                        : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                    }`}
+                    data-action-button
+                  >
+                    <Checkbox
+                      checked={rowSelected}
+                      onCheckedChange={() => toggleSelection(toolId)}
+                      className="rounded-full h-5 w-5"
+                      aria-label={`Select tool ${toolName || "Unnamed"}`}
+                    />
+                  </div>
+                )}
+                {/* In-flight ghost without a streamed name yet → spinner. */}
+                {inFlight && !toolName && (
+                  <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0" />
+                )}
+                <span className="truncate">
+                  {toolName || (isGhost ? "Generating…" : "")}
+                </span>
+                {isGhost && (
+                  <Badge
+                    variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                    className={isPending ? "border-amber-500 text-amber-700 dark:text-amber-400" : ""}
+                  >
+                    {ghostState === "creating" && "Creating…"}
+                    {ghostState === "duplicating" && "Duplicating…"}
+                    {ghostState === "updating" && "Updating…"}
+                    {ghostState === "deleting" && "Deleting…"}
+                    {ghostState === "pending" && "Pending"}
+                    {ghostState === "failed" && "Failed"}
+                  </Badge>
+                )}
               </CardTitle>
-              {columnVisibility["status_badge"] !== false && (
+              {!isGhost && columnVisibility["status_badge"] !== false && (
                 <div className="mt-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge
@@ -825,7 +927,40 @@ export default function Tools({
               )}
             </div>
             <div className="flex items-center gap-2" data-action-button>
-              {tool.can_edit && toolId ? (
+              {/* Ghost-mode action area: status-aware. Pending →
+                  Accept/Reject for soft-write ack. Failed → error
+                  indicator. In-flight → no buttons. */}
+              {isGhost && isPending && ghost?.callId && (
+                <>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackToolGhost(ghost.callId, true)}
+                  >
+                    <Check className="mr-1 h-3.5 w-3.5" />
+                    Accept
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackToolGhost(ghost.callId, false)}
+                  >
+                    <X className="mr-1 h-3.5 w-3.5" />
+                    Reject
+                  </Button>
+                </>
+              )}
+              {isGhost && isFailed && ghost?.error && (
+                <span className="flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {ghost.error}
+                </span>
+              )}
+              {!isGhost && (tool.can_edit && toolId ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -851,8 +986,8 @@ export default function Tools({
                   <Eye className="h-4 w-4 md:mr-0 mr-2" />
                   <span className="md:hidden">View</span>
                 </Button>
-              ) : null}
-              {tool.can_duplicate && duplicateToolAction && toolId && (
+              ) : null)}
+              {!isGhost && tool.can_duplicate && duplicateToolAction && toolId && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -876,7 +1011,7 @@ export default function Tools({
                   )}
                 </Button>
               )}
-              {tool.can_delete && deleteToolAction && toolId && (
+              {!isGhost && tool.can_delete && deleteToolAction && toolId && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -900,7 +1035,7 @@ export default function Tools({
         {columnVisibility["card_description"] !== false && (
           <CardContent className="pt-0 flex-1 flex flex-col">
             <p className="text-sm text-muted-foreground line-clamp-2">
-              {tool.description || "No description"}
+              {tool?.description || (isGhost ? "" : "No description")}
             </p>
           </CardContent>
         )}
@@ -913,7 +1048,7 @@ export default function Tools({
     setIsDeleting(true);
     try {
       await deleteToolAction({
-        body: { tool_ids: [deleteItem.id], accept: true },
+        body: { tool_ids: [deleteItem.id], all: false, accept: true },
       });
       toast.success(`Tool '${deleteItem.name}' deleted successfully`);
       setShowDeleteDialog(false);
@@ -1111,7 +1246,16 @@ export default function Tools({
           </div>
         )}
 
-        {/* Cards Grid — container-query driven; scales with content area width */}
+        {/* Cards Grid — container-query driven; scales with content area width.
+
+            Ghost cards from in-flight audited writes (create/duplicate/
+            update/delete in non-terminal states) are prepended — same
+            ``renderToolCard`` so layout, dimensions, and visual
+            language match exactly. Once a ghost commits, its hydrated
+            row is in ``mergedRows`` (via ``state.added``) AND the
+            ghost's ``state`` flips to "committed" — we filter those
+            out so the real row replaces the ghost in place without a
+            duplicate frame. */}
         <div className="@container">
           <div
             className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4"
@@ -1119,12 +1263,29 @@ export default function Tools({
             aria-label="tools grid"
             data-testid="tools-grid"
           >
+            {toolGhosts
+              .filter((g) => g.state !== "committed" && g.state !== "accepted")
+              .map((g) => {
+                // For update/delete, ``before`` is the snapshot lookup
+                // from baseRows (existing row); for create/duplicate,
+                // ``before`` is null and ``partial`` carries the
+                // streaming args (often sparse for duplicate, richer
+                // for create).
+                const toolShell = (g.before ?? g.partial) as (typeof toolsArray)[number];
+                return (
+                  <div key={`ghost-${g.callId}`}>
+                    {renderToolCard(toolShell, g)}
+                  </div>
+                );
+              })}
             {tableRows.length ? (
               tableRows.map((row) => renderToolCard(row.original))
             ) : (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
-                No tools match the current filters.
-              </div>
+              toolGhosts.length === 0 && (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  No tools match the current filters.
+                </div>
+              )
             )}
           </div>
         </div>

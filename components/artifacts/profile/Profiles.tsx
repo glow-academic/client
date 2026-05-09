@@ -89,6 +89,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useArtifactGhosts } from "@/hooks/use-artifact-ghosts";
 import { useProfileAi } from "@/hooks/use-profile-ai";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { useProfile } from "@/contexts/profile-context";
@@ -528,11 +529,38 @@ export default function Profiles({
     { id: "name", desc: false },
   ]);
 
-  // Extract data from server-provided data
-  const profiles = useMemo(
+  // SSR-seeded base list. The audit-driven ghost hook layers
+  // create/update/delete/duplicate lifecycle on top — committed rows
+  // get merged into ``mergedProfiles`` directly so the table stays
+  // current without a ``router.refresh()`` (which would re-burst the
+  // page's SSR fetches — see GenerationPanel handleSend rationale).
+  const baseProfiles = useMemo(
     () => serverListData?.profiles || [],
     [serverListData?.profiles]
   );
+
+  const { mergedRows: mergedProfiles } = useArtifactGhosts({
+    artifactType: "profile",
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar. Each emits audit events that the hook overlays
+    // onto ``baseRows``. Without ``duplicate`` here the LLM's duplicate
+    // tool dispatch fires audit events that nothing is subscribed to.
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseProfiles,
+    rowKey: "profile_id",
+    // ``profiles`` plural matches the field name the create / duplicate
+    // / update impls now include on their responses (see
+    // ``hydrate_profile_list_rows``). The hook reads ``output.profiles``
+    // from the audit ``.completed`` payload to materialize new/changed
+    // rows directly — no SSR refresh needed.
+    artifactPlural: "profiles",
+  });
+
+  // Downstream code reads ``profiles`` — keep that name to minimize
+  // diff. The active list is the merged view (base + create overlays
+  // − delete overlays).
+  const profiles = mergedProfiles;
+
   const departments = useMemo(
     () =>
       (serverListData?.department_filter?.options || []).map((opt) => ({
@@ -1447,7 +1475,12 @@ export default function Profiles({
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortingKey, columnFiltersKey, profiles.length, pageIndex, pageSize]);
+    // ``profiles`` (the full merged reference) — not ``profiles.length``
+    // — keeps tableRows in sync when an update mutates row content
+    // (length unchanged). ``mergedProfiles`` is stable upstream via its
+    // own useMemo, so no spurious recomputes. Mirrors the persona
+    // pattern fix.
+  }, [sortingKey, columnFiltersKey, profiles, pageIndex, pageSize]);
 
   // Toolbar state
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -2749,6 +2782,7 @@ export default function Profiles({
                     await deleteProfileAction({
                       body: {
                         profile_ids: [deleteProfileMember.profile_id],
+                        all: false,
                         accept: true,
                       },
                     });

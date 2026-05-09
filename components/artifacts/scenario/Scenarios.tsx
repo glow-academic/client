@@ -7,6 +7,8 @@
  */
 "use client";
 import {
+  AlertCircle,
+  Check,
   CheckCircle,
   ChevronDown,
   ChevronRight,
@@ -14,6 +16,7 @@ import {
   Edit,
   Eye,
   FileSpreadsheet,
+  Loader2,
   Pencil,
   Sparkles,
   Trash2,
@@ -26,6 +29,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useScenarioAi } from "@/hooks/use-scenario-ai";
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
 import type {
@@ -242,11 +246,44 @@ export function Scenarios({
   // Use server-provided data directly
   const scenariosData = serverListData;
 
-  // Extract data from response - scenarios from paginated page
-  const scenarios = useMemo(
+  // SSR-seeded base list. The audit-driven ghost hook layers
+  // create/update/delete/duplicate lifecycle on top — committed rows
+  // get merged into ``mergedScenarios`` directly so the table stays
+  // current without a ``router.refresh()`` (which would re-burst the
+  // page's SSR fetches — see GenerationPanel handleSend rationale).
+  const baseScenarios = useMemo(
     () => scenariosData?.scenarios || [],
     [scenariosData?.scenarios],
   );
+
+  const {
+    ghosts: scenarioGhosts,
+    mergedRows: mergedScenarios,
+    ack: ackScenarioGhost,
+    drop: _dropScenarioGhost,
+  } = useArtifactGhosts({
+    artifactType: "scenario",
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar/card. Each maps to a distinct ghost visual in
+    // ``renderScenarioCard`` (creating / updating / deleting /
+    // duplicating skeleton + pending soft state). Without
+    // ``duplicate`` here the LLM's duplicate tool dispatch fires
+    // audit events that nothing is subscribed to → no ghost.
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseScenarios,
+    rowKey: "scenario_id",
+    // ``scenarios`` plural matches the field name the create /
+    // duplicate / update impls now include on their responses (see
+    // ``hydrate_scenario_list_rows``). The hook reads
+    // ``output.scenarios`` from the audit ``.completed`` payload to
+    // materialize new/changed rows directly — no SSR refresh needed.
+    artifactPlural: "scenarios",
+  });
+
+  // Downstream code reads ``scenarios`` — keep that name to minimize
+  // diff. The active list is the merged view (base + create overlays
+  // − delete overlays).
+  const scenarios = mergedScenarios;
   const personaMapping = useMemo(
     () => {
       const data = scenariosData;
@@ -983,11 +1020,29 @@ export function Scenarios({
     showDropdown?: boolean,
     isCollapsed?: boolean,
     onToggleCollapse?: () => void,
+    ghost?: Ghost<(typeof scenarios)[number]>,
   ) => {
-    const isSelectedRow = !isChild && scenario.scenario_id ? isSelected(scenario.scenario_id) : false;
+    // Same card visual for real rows and in-flight ghosts — single
+    // source of truth for layout, badges, dimensions. Ghost mode swaps
+    // action buttons for a status badge (and Accept/Reject for soft-
+    // pending), disables selection/click, and tints the border based on
+    // lifecycle state.
+    const isGhost = ghost != null;
+    const ghostState = ghost?.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
+
+    const isSelectedRow = !isGhost && !isChild && scenario.scenario_id ? isSelected(scenario.scenario_id) : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
-      // Don't toggle selection if clicking action buttons or if it's a child scenario
+      // Don't toggle selection if clicking action buttons, on a child,
+      // or when rendering as a ghost (no real id to select).
+      if (isGhost) return;
       if (isChild) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
       if (scenario.scenario_id) {
@@ -995,23 +1050,39 @@ export function Scenarios({
       }
     };
 
+    // Border tint reflects ghost lifecycle. ``animate-pulse`` while
+    // in-flight signals "this is provisional"; failed/pending hold a
+    // steady color so the user can decide.
+    const ghostBorderClass = isFailed
+      ? "border-destructive/40 bg-destructive/5"
+      : isPending
+      ? "border-amber-500/50 bg-amber-50/40 dark:bg-amber-950/20"
+      : ghostState === "deleting"
+      ? "border-destructive/30 bg-destructive/5 opacity-70"
+      : inFlight
+      ? "border-primary/40 bg-primary/5 animate-pulse"
+      : "";
+
     return (
       <Card
         key={scenario.scenario_id}
-        data-testid="scenario-card"
+        data-testid={isGhost ? "scenario-ghost-card" : "scenario-card"}
         data-scenario-id={scenario.scenario_id}
+        data-ghost-state={ghostState}
         className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
-          isChild ? "ml-8 border-l-2 border-l-blue-200" : "cursor-pointer"
-        } ${isSelectedRow ? "ring-2 ring-primary" : ""}`}
-        aria-selected={!isChild ? isSelectedRow : undefined}
+          isChild ? "ml-8 border-l-2 border-l-blue-200" : isGhost ? "" : "cursor-pointer"
+        } ${ghostBorderClass} ${isSelectedRow ? "ring-2 ring-primary" : ""}`}
+        aria-selected={!isChild && !isGhost ? isSelectedRow : undefined}
+        aria-busy={inFlight ? true : undefined}
         onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="space-y-2 flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                {/* Selection checkbox — inline before name (parent only) */}
-                {!isChild && (
+                {/* Selection checkbox — inline before name (parent only).
+                    Hidden in ghost mode (no row id to select yet). */}
+                {!isChild && !isGhost && (
                   <div
                     className={`transition-all overflow-hidden flex-shrink-0 ${
                       selectedCount > 0 ? "w-5 opacity-100" : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
@@ -1027,6 +1098,10 @@ export function Scenarios({
                       aria-label={`Select scenario ${scenario.name || "Unnamed"}`}
                     />
                   </div>
+                )}
+                {/* In-flight ghost without a streamed name yet → spinner. */}
+                {isGhost && inFlight && (
+                  <Loader2 className="h-4 w-4 animate-spin flex-shrink-0 text-muted-foreground" />
                 )}
                 {showDropdown && (
                   <Button
@@ -1044,23 +1119,70 @@ export function Scenarios({
                   </Button>
                 )}
                 <CardTitle className="text-lg flex-1 min-w-0 truncate">
-                  {scenario.name || "Unnamed Scenario"}
+                  {scenario.name || (isGhost ? "Generating…" : "Unnamed Scenario")}
                 </CardTitle>
                 <div className="flex gap-1 flex-wrap flex-shrink-0">
-                  {columnVisibility.ai_badge !== false && scenario.generated && (
+                  {isGhost && (
+                    <Badge
+                      variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                      className={isPending ? "border-amber-500 text-amber-700 dark:text-amber-400" : ""}
+                    >
+                      {ghostState === "creating" && "Creating…"}
+                      {ghostState === "duplicating" && "Duplicating…"}
+                      {ghostState === "updating" && "Updating…"}
+                      {ghostState === "deleting" && "Deleting…"}
+                      {ghostState === "pending" && "Pending"}
+                      {ghostState === "failed" && "Failed"}
+                    </Badge>
+                  )}
+                  {!isGhost && columnVisibility.ai_badge !== false && scenario.generated && (
                     <Badge variant="default">
                       <Sparkles className="h-3 w-3 mr-1" />
                       {scenario.mcp ? "MCP" : "AI"}
                     </Badge>
                   )}
-                  {columnVisibility.status_badge !== false && scenario.is_inactive && (
+                  {!isGhost && columnVisibility.status_badge !== false && scenario.is_inactive && (
                     <Badge variant="secondary">Inactive</Badge>
                   )}
                 </div>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 items-center" data-action-button>
-              {scenario.generated ? (
+              {/* Ghost-mode action area: status-aware. Pending → Accept/
+                  Reject for soft-write ack. Failed → error indicator.
+                  In-flight → no buttons (the streaming card is read-only
+                  until commit/failure). */}
+              {isGhost && isPending && ghost.callId && (
+                <>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackScenarioGhost(ghost.callId, true)}
+                  >
+                    <Check className="mr-1 h-3.5 w-3.5" />
+                    Accept
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackScenarioGhost(ghost.callId, false)}
+                  >
+                    <X className="mr-1 h-3.5 w-3.5" />
+                    Reject
+                  </Button>
+                </>
+              )}
+              {isGhost && isFailed && ghost.error && (
+                <span className="flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {ghost.error}
+                </span>
+              )}
+              {!isGhost && (scenario.generated ? (
                 // For generated scenarios: only show preview and duplicate
                 <>
                   <Tooltip>
@@ -1219,7 +1341,7 @@ export function Scenarios({
                     </Tooltip>
                   )}
                 </>
-              )}
+              ))}
             </div>
           </div>
         </CardHeader>
@@ -1528,19 +1650,45 @@ export function Scenarios({
           </div>
           )}
 
-          {/* Grouped Scenarios */}
+          {/* Grouped Scenarios
+
+              Ghost cards from in-flight audited writes (create/duplicate/
+              update/delete in non-terminal states) are prepended — same
+              ``renderScenarioCard`` so layout, dimensions, and visual
+              language match exactly. Once a ghost commits, its hydrated
+              row is in ``mergedRows`` (via ``state.added``) AND the
+              ghost's ``state`` flips to "committed" — we filter those
+              out so the real row replaces the ghost in place without a
+              duplicate frame. */}
           <div
             className="space-y-4"
             role="grid"
             aria-label="scenarios grid"
             data-testid="scenarios-grid"
           >
+            {scenarioGhosts
+              .filter((g) => g.state !== "committed" && g.state !== "accepted")
+              .map((g) => {
+                // For update/delete, ``before`` is the snapshot lookup
+                // from baseRows (existing row) — gives us name,
+                // problem_statement so the ghost card shows what's being
+                // deleted/updated. For create/duplicate, ``before`` is
+                // null and ``partial`` carries the streaming args.
+                const scenarioShell = (g.before ?? g.partial) as (typeof scenarios)[number];
+                return (
+                  <div key={`ghost-${g.callId}`}>
+                    {renderScenarioCard(scenarioShell, false, false, false, undefined, g)}
+                  </div>
+                );
+              })}
             {currentPageGroupedScenarios.length > 0 ? (
               renderGroupedScenarios()
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No scenarios match the current filters.
-              </div>
+              scenarioGhosts.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No scenarios match the current filters.
+                </div>
+              )
             )}
           </div>
 

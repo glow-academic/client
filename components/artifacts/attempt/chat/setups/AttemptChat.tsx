@@ -753,6 +753,7 @@ export function AttemptChat({
   const { startAudio, stopAudio, sendFrame, setMicMute } = useAttemptVoice({
     transport,
     chatIdRef: currentChatIdRef,
+    groupId: attemptData?.group_id ?? null,
     attemptIdRef,
     userPersonaIdRef,
     // Same hints gate as the text reply path — keep the two surfaces
@@ -782,7 +783,7 @@ export function AttemptChat({
         return newMap;
       });
 
-      const itemId = (data.item_id as string | undefined) ?? "";
+      const itemId = (data["item_id"] as string | undefined) ?? "";
       if (itemId) {
         itemIdToOptimisticIdRef.current.set(itemId, optimisticMessageId);
       }
@@ -799,21 +800,42 @@ export function AttemptChat({
         return newMap;
       });
     }, [setOptimisticMessages]),
-    onUserMessagePersisted: useCallback(() => {
-      // The persisted message will stream in via the canonical chat_message
-      // path — drop any lingering "…" optimistic placeholders.
+    onUserMessagePersisted: useCallback((data: {
+      chat_id: string;
+      message_id: string;
+      audios_id: string;
+      text: string;
+    }) => {
+      // Keep a completed local row keyed by the persisted message id while
+      // the server-component refresh catches up. The canonical DB row has
+      // the same id, so the normal dedupe path removes this shortly after.
       setOptimisticMessages((prev) => {
         const newMap = new Map(prev);
+        let replacement: MessageData | null = null;
         for (const [id, msg] of newMap.entries()) {
           if (id.startsWith("optimistic-user-voice-") && !msg.completed) {
             newMap.delete(id);
+            replacement = msg;
           }
         }
+        const completedVoiceMessage: MessageData = {
+          id: data.message_id,
+          chat_id: data.chat_id,
+          type: "query",
+          created_at: replacement?.created_at ?? new Date().toISOString(),
+          completed: true,
+          contents: [{ content: data.text, name: "You" }],
+        };
+        newMap.set(data.message_id, completedVoiceMessage);
         return newMap;
       });
-    }, [setOptimisticMessages]),
+      router.refresh();
+    }, [router, setOptimisticMessages]),
     onAudioChunk: useCallback((data: AttemptAssistantAudioEvent) => {
-      voiceInputRef.current?.enqueue_audio_delta(data.audio);
+      const audio = data["audio"];
+      if (typeof audio === "string" || audio instanceof ArrayBuffer) {
+        voiceInputRef.current?.enqueue_audio_delta(audio);
+      }
     }, []),
   });
 

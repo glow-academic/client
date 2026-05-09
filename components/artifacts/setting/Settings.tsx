@@ -4,11 +4,13 @@
  * List-only component following Personas.tsx pattern
  */
 "use client";
-import { Edit, Eye, Pencil, Settings as SettingsIcon, Trash2, X } from "lucide-react";
+import { AlertCircle, Check, Edit, Eye, Loader2, Pencil, Settings as SettingsIcon, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 
 import {
   ColumnDef,
@@ -106,9 +108,43 @@ export default function Settings({
   // Use server-provided data directly
   const settingsData = serverListData;
 
-  // Extract data from response
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const settings = settingsData?.settings || [];
+  // SSR-seeded base list. The audit-driven ghost hook layers
+  // create/update/delete/duplicate lifecycle on top — committed rows
+  // get merged into ``mergedSettings`` directly so the table stays
+  // current without a ``router.refresh()`` (which would re-burst the
+  // page's SSR fetches — see GenerationPanel handleSend rationale).
+  const baseSettings = useMemo(() => {
+    return settingsData?.settings || [];
+  }, [settingsData?.settings]);
+
+  const {
+    ghosts: settingGhosts,
+    mergedRows: mergedSettings,
+    ack: ackSettingGhost,
+    drop: _dropSettingGhost,
+  } = useArtifactGhosts({
+    artifactType: "setting",
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar/card. Each maps to a distinct ghost visual in
+    // ``renderSettingCard`` (creating / updating / deleting /
+    // duplicating skeleton + pending soft state). Without
+    // ``duplicate`` here the LLM's duplicate tool dispatch fires
+    // audit events that nothing is subscribed to → no ghost.
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseSettings,
+    rowKey: "settings_id",
+    // ``settings`` plural matches the field name the create /
+    // duplicate / update impls now include on their responses (see
+    // ``hydrate_setting_list_rows``). The hook reads ``output.settings``
+    // from the audit ``.completed`` payload to materialize new/changed
+    // rows directly — no SSR refresh needed.
+    artifactPlural: "settings",
+  });
+
+  // Downstream code reads ``settings`` — keep that name to minimize
+  // diff. The active list is the merged view (base + create overlays
+  // − delete overlays).
+  const settings = mergedSettings;
 
   // Flag catalog (e.g. setting_active) — used to look up the active flag id for bulk edit.
   const flagOptions = useMemo(() => {
@@ -573,7 +609,12 @@ export default function Settings({
     },
   });
 
-  // Memoize table rows to avoid calling getRowModel() multiple times
+  // Memoize table rows. Including ``settings`` itself (not just
+  // ``settings.length``) so update events that mutate row content but
+  // not list cardinality still invalidate the memo. ``settings`` is
+  // stabilized upstream by ``mergedSettings``'s useMemo, so a new
+  // reference only appears when ``state.added`` / ``replaced`` /
+  // ``hiddenIds`` actually change — no spurious recomputes.
   const pageIndex = table.getState().pagination.pageIndex;
   const pageSize = table.getState().pagination.pageSize;
   const sortingKey = JSON.stringify(sorting);
@@ -581,7 +622,7 @@ export default function Settings({
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortingKey, columnFiltersKey, settings.length, pageIndex, pageSize]);
+  }, [sortingKey, columnFiltersKey, settings, pageIndex, pageSize]);
 
   const handleEdit = (id: string) => {
     router.push(`/settings/${id}`);
@@ -591,71 +632,130 @@ export default function Settings({
     router.push(`/settings/${id}`);
   };
 
-  const renderSettingCard = (setting: (typeof settings)[0]) => {
-    const settingsId = setting.settings_id;
+  const renderSettingCard = (
+    setting: (typeof settings)[0],
+    ghost?: Ghost<(typeof settings)[0]>,
+  ) => {
+    const settingsId = setting?.settings_id;
+    // Same card visual for real rows and in-flight ghosts — single
+    // source of truth for layout, dimensions, badges. Ghost mode swaps
+    // action buttons for a status badge (and Accept/Reject for soft-
+    // pending), disables selection/click, and tints the border based
+    // on lifecycle state.
+    const isGhost = ghost != null;
+    const ghostState = ghost?.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
+
     // Mode-aware: under all-matching, every loaded row whose id isn't
     // in ``excludedSettingIds`` reads as selected; under explicit it's
     // the straight ``selectedSettingIds.includes`` check. Delegated to
     // the outer ``isSelected`` so the row branch stays single-source.
-    const isCardSelected = isSelected(settingsId);
+    const isCardSelected = !isGhost && isSelected(settingsId);
     const handleCardClick = (e: React.MouseEvent) => {
-      // Don't toggle selection if clicking action buttons
+      // Don't toggle selection if clicking action buttons or when
+      // rendering as a ghost (no real id to select yet).
+      if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
       if (settingsId) {
         toggleSelection(settingsId);
       }
     };
+
+    // Border tint reflects ghost lifecycle. ``animate-pulse`` while
+    // in-flight signals "this is provisional"; failed/pending hold a
+    // steady color so the user can decide.
+    const ghostBorderClass = isFailed
+      ? "border-destructive/40 bg-destructive/5"
+      : isPending
+      ? "border-amber-500/50 bg-amber-50/40 dark:bg-amber-950/20"
+      : ghostState === "deleting"
+      ? "border-destructive/30 bg-destructive/5 opacity-70"
+      : inFlight
+      ? "border-primary/40 bg-primary/5 animate-pulse"
+      : "";
+
     return (
       <Card
-        key={setting.settings_id}
-        className={`group hover:shadow-md transition-all cursor-pointer ${
-          isCardSelected ? "ring-2 ring-primary" : ""
-        }`}
-        data-testid="setting-card"
-        data-setting-id={setting.settings_id}
+        key={settingsId}
+        className={`group hover:shadow-md transition-all ${
+          isGhost ? "" : "cursor-pointer"
+        } ${ghostBorderClass} ${isCardSelected ? "ring-2 ring-primary" : ""}`}
+        data-testid={isGhost ? "setting-ghost-card" : "setting-card"}
+        data-setting-id={settingsId}
+        data-ghost-state={ghostState}
         role="gridcell"
-        aria-label={`setting card ${setting.name || "Unnamed Setting"}`}
+        aria-label={`setting card ${setting?.name || (isGhost ? "Generating" : "Unnamed Setting")}`}
         aria-selected={isCardSelected}
+        aria-busy={inFlight ? true : undefined}
         onClick={handleCardClick}
       >
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="space-y-2 flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <div
-                  className={`transition-all overflow-hidden flex-shrink-0 ${
-                    selectedCount > 0
-                      ? "w-5 opacity-100"
-                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
-                  }`}
-                  data-action-button
-                >
-                  <Checkbox
-                    checked={isCardSelected}
-                    onCheckedChange={() => {
-                      if (settingsId) toggleSelection(settingsId);
-                    }}
-                    className="rounded-full h-5 w-5"
-                    aria-label={`Select setting ${setting.name || "Unnamed"}`}
-                  />
-                </div>
+                {/* Selection checkbox — inline before icon. Hidden in
+                    ghost mode (no row id to select yet). */}
+                {!isGhost && (
+                  <div
+                    className={`transition-all overflow-hidden flex-shrink-0 ${
+                      selectedCount > 0
+                        ? "w-5 opacity-100"
+                        : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                    }`}
+                    data-action-button
+                  >
+                    <Checkbox
+                      checked={isCardSelected}
+                      onCheckedChange={() => {
+                        if (settingsId) toggleSelection(settingsId);
+                      }}
+                      className="rounded-full h-5 w-5"
+                      aria-label={`Select setting ${setting?.name || "Unnamed"}`}
+                    />
+                  </div>
+                )}
                 <div className="p-2 rounded-lg shadow-lg flex-shrink-0 bg-primary/10">
-                  <SettingsIcon className="h-4 w-4 text-primary" />
+                  {/* In-flight ghost without a hydrated row yet → spinner.
+                      Once the row commits, the regular gear icon returns. */}
+                  {inFlight && !setting?.name ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  ) : (
+                    <SettingsIcon className="h-4 w-4 text-primary" />
+                  )}
                 </div>
                 <CardTitle className="text-lg truncate">
-                  {setting.name || "Unnamed Setting"}
+                  {setting?.name || (isGhost ? "Generating…" : "Unnamed Setting")}
                 </CardTitle>
+                {isGhost && (
+                  <Badge
+                    variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                    className={isPending ? "border-amber-500 text-amber-700 dark:text-amber-400" : ""}
+                  >
+                    {ghostState === "creating" && "Creating…"}
+                    {ghostState === "duplicating" && "Duplicating…"}
+                    {ghostState === "updating" && "Updating…"}
+                    {ghostState === "deleting" && "Deleting…"}
+                    {ghostState === "pending" && "Pending"}
+                    {ghostState === "failed" && "Failed"}
+                  </Badge>
+                )}
               </div>
               <div className="mt-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                   {columnVisibility["status_badge"] !== false && (
-                    setting.active ? (
+                    setting?.active ? (
                       <Badge variant="default">Active</Badge>
                     ) : (
                       <Badge variant="secondary">Inactive</Badge>
                     )
                   )}
-                  {columnVisibility["departments_count"] !== false && setting.department_ids && setting.department_ids.length > 0 && (
+                  {columnVisibility["departments_count"] !== false && setting?.department_ids && setting.department_ids.length > 0 && (
                     <Badge variant="outline" className="text-xs">
                       {setting.department_ids.length} department
                       {setting.department_ids.length !== 1 ? "s" : ""}
@@ -665,45 +765,83 @@ export default function Settings({
               </div>
             </div>
             <div className="flex flex-wrap gap-2 items-center" data-action-button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (setting.settings_id) {
-                    handleEdit(setting.settings_id);
-                  }
-                }}
-                aria-label={`Edit setting ${setting.name || "Unnamed"}`}
-                data-testid="btn-edit-setting"
-                title={`Edit setting ${setting.name || "Unnamed"}`}
-                className="h-9 px-3"
-              >
-                <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                <span className="md:hidden">Edit</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (setting.settings_id) {
-                    handleView(setting.settings_id);
-                  }
-                }}
-                aria-label={`View setting ${setting.name || "Unnamed"}`}
-                data-testid="btn-view-setting"
-                title={`View setting ${setting.name || "Unnamed"}`}
-                className="h-9 px-3"
-              >
-                <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                <span className="md:hidden">View</span>
-              </Button>
+              {/* Ghost-mode action area: status-aware. Pending → Accept/
+                  Reject for soft-write ack. Failed → error indicator.
+                  In-flight → no buttons (the streaming card is read-only
+                  until commit/failure). */}
+              {isGhost && isPending && ghost.callId && (
+                <>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackSettingGhost(ghost.callId, true)}
+                  >
+                    <Check className="mr-1 h-3.5 w-3.5" />
+                    Accept
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackSettingGhost(ghost.callId, false)}
+                  >
+                    <X className="mr-1 h-3.5 w-3.5" />
+                    Reject
+                  </Button>
+                </>
+              )}
+              {isGhost && isFailed && ghost.error && (
+                <span className="flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {ghost.error}
+                </span>
+              )}
+              {!isGhost && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (settingsId) {
+                        handleEdit(settingsId);
+                      }
+                    }}
+                    aria-label={`Edit setting ${setting?.name || "Unnamed"}`}
+                    data-testid="btn-edit-setting"
+                    title={`Edit setting ${setting?.name || "Unnamed"}`}
+                    className="h-9 px-3"
+                  >
+                    <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">Edit</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (settingsId) {
+                        handleView(settingsId);
+                      }
+                    }}
+                    aria-label={`View setting ${setting?.name || "Unnamed"}`}
+                    data-testid="btn-view-setting"
+                    title={`View setting ${setting?.name || "Unnamed"}`}
+                    className="h-9 px-3"
+                  >
+                    <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">View</span>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </CardHeader>
         {columnVisibility["card_description"] !== false && (
           <CardContent className="pt-0 flex-grow flex flex-col">
             <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
-              {setting.description || "No description available"}
+              {setting?.description || "No description available"}
             </p>
           </CardContent>
         )}
@@ -875,7 +1013,16 @@ export default function Settings({
         </div>
         )}
 
-        {/* Cards Grid — container-query driven; scales with content area width */}
+        {/* Cards Grid — container-query driven; scales with content area width.
+
+            Ghost cards from in-flight audited writes (create/duplicate/
+            update/delete in non-terminal states) are prepended — same
+            ``renderSettingCard`` so layout, dimensions, and visual
+            language match exactly. Once a ghost commits, its hydrated
+            row is in ``mergedRows`` (via ``state.added``) AND the
+            ghost's ``state`` flips to "committed" — we filter those
+            out so the real row replaces the ghost in place without a
+            duplicate frame. */}
         <div className="@container">
           <div
             className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4"
@@ -883,12 +1030,29 @@ export default function Settings({
             aria-label="settings grid"
             data-testid="settings-grid"
           >
+            {settingGhosts
+              .filter((g) => g.state !== "committed" && g.state !== "accepted")
+              .map((g) => {
+                // For update/delete, ``before`` is the snapshot lookup
+                // from baseRows (existing row) — gives us name/desc/
+                // status so the ghost card shows what's being deleted/
+                // updated. For create/duplicate, ``before`` is null
+                // and ``partial`` carries the streaming args.
+                const settingShell = (g.before ?? g.partial) as (typeof settings)[number];
+                return (
+                  <div key={`ghost-${g.callId}`}>
+                    {renderSettingCard(settingShell, g)}
+                  </div>
+                );
+              })}
             {tableRows.length ? (
               tableRows.map((row) => renderSettingCard(row.original))
             ) : (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
-                No settings match the current filters.
-              </div>
+              settingGhosts.length === 0 && (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  No settings match the current filters.
+                </div>
+              )
             )}
           </div>
         </div>

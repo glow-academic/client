@@ -7135,7 +7135,7 @@ export interface paths {
         put?: never;
         /**
          * Chat Speak
-         * @description Push audio bytes into a conversation's inbound buffer.
+         * @description Push live audio or text into a conversation's inbound buffer.
          */
         post: operations["chat_speak_attempt_chat_speak_post"];
         delete?: never;
@@ -13188,7 +13188,9 @@ export interface components {
             /** Chat Id */
             chat_id?: string | null;
             /** Audio */
-            audio: string;
+            audio?: string | null;
+            /** Text */
+            text?: string | null;
         };
         /** ChatSpeakResponse */
         ChatSpeakResponse: {
@@ -15345,9 +15347,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * CreatePersonaApiResponse
@@ -15364,6 +15365,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Personas
+             * @description Hydrated rows for the successfully-created personas (mirrors /persona/search shape)
+             */
+            personas?: components["schemas"]["ListPersonaApiPersona"][] | null;
         };
         /**
          * CreatePersonaItem
@@ -16935,13 +16941,73 @@ export interface components {
         /**
          * DeleteAgentApiRequest
          * @description Request model for bulk delete agent endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``agent_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/agent/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteAgentApiRequest: {
             /**
              * Agent Ids
-             * @description UUIDs of agents to delete
+             * @description UUIDs of agents to delete (required on first call when ``all`` is false)
              */
-            agent_ids: string[];
+            agent_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every agent matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Filter Model Ids
+             * @description Filter by model UUIDs
+             */
+            filter_model_ids?: string[] | null;
+            /**
+             * Filter Tool Ids
+             * @description Filter by tool UUIDs
+             */
+            filter_tool_ids?: string[] | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Model Search
+             * @description Search text for model facet (no-op for row filtering)
+             */
+            model_search?: string | null;
+            /**
+             * Tool Search
+             * @description Search text for tool facet (no-op for row filtering)
+             */
+            tool_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -16995,13 +17061,53 @@ export interface components {
         /**
          * DeleteAuthApiRequest
          * @description Request model for bulk delete auth endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``auth_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/auth/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteAuthApiRequest: {
             /**
              * Auth Ids
-             * @description UUIDs of auth providers to delete
+             * @description UUIDs of auth providers to delete (required on first call when ``all`` is false)
              */
-            auth_ids: string[];
+            auth_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every auth matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -17042,10 +17148,9 @@ export interface components {
             success: boolean;
             /**
              * Auth Id
-             * Format: uuid
              * @description UUID of the deleted auth provider
              */
-            auth_id: string;
+            auth_id?: string | null;
             /**
              * Message
              * @description Result message
@@ -17055,13 +17160,73 @@ export interface components {
         /**
          * DeleteCohortApiRequest
          * @description Request model for bulk delete cohort endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``cohort_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/cohort/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteCohortApiRequest: {
             /**
              * Cohort Ids
-             * @description Cohort UUIDs to delete
+             * @description Cohort UUIDs to delete (required on first call when ``all`` is false)
              */
-            cohort_ids: string[];
+            cohort_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every cohort matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Profile Ids
+             * @description Filter by profile UUIDs
+             */
+            filter_profile_ids?: string[] | null;
+            /**
+             * Filter Simulation Ids
+             * @description Filter by simulation UUIDs
+             */
+            filter_simulation_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Profile Search
+             * @description Search text for profile facet (no-op for row filtering)
+             */
+            profile_search?: string | null;
+            /**
+             * Simulation Search
+             * @description Search text for simulation facet (no-op for row filtering)
+             */
+            simulation_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -17115,13 +17280,43 @@ export interface components {
         /**
          * DeleteDepartmentApiRequest
          * @description Request model for bulk delete department endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``department_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/department/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteDepartmentApiRequest: {
             /**
              * Department Ids
-             * @description UUIDs of departments to delete
+             * @description UUIDs of departments to delete (required on first call when ``all`` is false)
              */
-            department_ids: string[];
+            department_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every department matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -17162,10 +17357,9 @@ export interface components {
             success: boolean;
             /**
              * Department Id
-             * Format: uuid
              * @description UUID of the deleted department
              */
-            department_id: string;
+            department_id?: string | null;
             /**
              * Message
              * @description Result message
@@ -17175,13 +17369,73 @@ export interface components {
         /**
          * DeleteDocumentApiRequest
          * @description Request model for bulk delete document endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``document_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/document/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteDocumentApiRequest: {
             /**
              * Document Ids
-             * @description Document UUIDs to delete
+             * @description Document UUIDs to delete (required on first call when ``all`` is false)
              */
-            document_ids: string[];
+            document_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every document matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Scenario Ids
+             * @description Filter by scenario UUIDs
+             */
+            scenario_ids?: string[] | null;
+            /**
+             * Field Ids
+             * @description Filter by field UUIDs
+             */
+            field_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Scenario Search
+             * @description Search text for scenario facet (no-op for row filtering)
+             */
+            scenario_search?: string | null;
+            /**
+             * Field Search
+             * @description Search text for field facet (no-op for row filtering)
+             */
+            field_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -17222,10 +17476,9 @@ export interface components {
             success: boolean;
             /**
              * Document Id
-             * Format: uuid
              * @description Document UUID
              */
-            document_id: string;
+            document_id?: string | null;
             /**
              * Message
              * @description Human-readable result message
@@ -17235,13 +17488,53 @@ export interface components {
         /**
          * DeleteEvalApiRequest
          * @description Request model for bulk delete eval endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``eval_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/eval/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteEvalApiRequest: {
             /**
              * Eval Ids
-             * @description Eval UUIDs to delete
+             * @description List of eval UUIDs to delete (required on first call when ``all`` is false)
              */
-            eval_ids: string[];
+            eval_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every eval matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -17282,10 +17575,9 @@ export interface components {
             success: boolean;
             /**
              * Eval Id
-             * Format: uuid
-             * @description Eval UUID
+             * @description Eval UUID (None only for soft-skipped rows)
              */
-            eval_id: string;
+            eval_id?: string | null;
             /**
              * Message
              * @description Human-readable result message
@@ -17295,13 +17587,73 @@ export interface components {
         /**
          * DeleteFieldApiRequest
          * @description Request model for bulk delete field endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``field_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/field/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteFieldApiRequest: {
             /**
              * Field Ids
-             * @description UUIDs of fields to delete
+             * @description UUIDs of fields to delete (required on first call when ``all`` is false)
              */
-            field_ids: string[];
+            field_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every field matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Parameter Ids
+             * @description Filter by parameter UUIDs
+             */
+            parameter_ids?: string[] | null;
+            /**
+             * Persona Ids
+             * @description Filter by persona UUIDs
+             */
+            persona_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Parameter Search
+             * @description Search text for parameter facet (no-op for row filtering)
+             */
+            parameter_search?: string | null;
+            /**
+             * Persona Search
+             * @description Search text for persona facet (no-op for row filtering)
+             */
+            persona_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -17342,10 +17694,9 @@ export interface components {
             success: boolean;
             /**
              * Field Id
-             * Format: uuid
              * @description UUID of the deleted field
              */
-            field_id: string;
+            field_id?: string | null;
             /**
              * Message
              * @description Result message
@@ -17355,13 +17706,73 @@ export interface components {
         /**
          * DeleteModelApiRequest
          * @description Request model for bulk delete model endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``model_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/model/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteModelApiRequest: {
             /**
              * Model Ids
-             * @description List of model IDs to delete
+             * @description List of model IDs to delete (required on first call when ``all`` is false)
              */
-            model_ids: string[];
+            model_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every model matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Provider Ids
+             * @description Filter by provider UUIDs
+             */
+            filter_provider_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Filter Agent Ids
+             * @description Filter by agent UUIDs
+             */
+            filter_agent_ids?: string[] | null;
+            /**
+             * Provider Search
+             * @description Search text for provider facet (no-op for row filtering)
+             */
+            provider_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Agent Search
+             * @description Search text for agent facet (no-op for row filtering)
+             */
+            agent_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -17402,10 +17813,9 @@ export interface components {
             success: boolean;
             /**
              * Model Id
-             * Format: uuid
-             * @description Deleted model identifier
+             * @description Deleted model identifier (None for soft-skipped not-found rows under all-matching mode)
              */
-            model_id: string;
+            model_id?: string | null;
             /**
              * Message
              * @description Result message
@@ -17415,13 +17825,73 @@ export interface components {
         /**
          * DeleteParameterApiRequest
          * @description Request model for bulk delete parameter endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``parameter_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/parameter/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteParameterApiRequest: {
             /**
              * Parameter Ids
-             * @description List of parameter IDs to delete
+             * @description UUIDs of parameters to delete (required on first call when ``all`` is false)
              */
-            parameter_ids: string[];
+            parameter_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every parameter matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Scenario Ids
+             * @description Filter by scenario UUIDs
+             */
+            scenario_ids?: string[] | null;
+            /**
+             * Field Ids
+             * @description Filter by field UUIDs
+             */
+            field_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Scenario Search
+             * @description Search text for scenario facet (no-op for row filtering)
+             */
+            scenario_search?: string | null;
+            /**
+             * Field Search
+             * @description Search text for field facet (no-op for row filtering)
+             */
+            field_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -17462,10 +17932,9 @@ export interface components {
             success: boolean;
             /**
              * Parameter Id
-             * Format: uuid
-             * @description Deleted parameter identifier
+             * @description Deleted parameter identifier (None for soft-skipped not-found rows)
              */
-            parameter_id: string;
+            parameter_id?: string | null;
             /**
              * Message
              * @description Result message
@@ -17565,9 +18034,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DeletePersonaApiResponse
@@ -17610,13 +18078,73 @@ export interface components {
         /**
          * DeleteProfileApiRequest
          * @description Request model for bulk delete profile endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``profile_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/profile/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteProfileApiRequest: {
             /**
              * Profile Ids
-             * @description UUIDs of profiles to delete
+             * @description UUIDs of profiles to delete (required on first call when ``all`` is false)
              */
-            profile_ids: string[];
+            profile_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every profile matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Cohort Ids
+             * @description Filter by cohort UUIDs
+             */
+            cohort_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Role Filter
+             * @description Filter by role name
+             */
+            role_filter?: string | null;
+            /**
+             * Cohort Search
+             * @description Search text for cohort facet (no-op for row filtering)
+             */
+            cohort_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Role Search
+             * @description Search text for role facet (no-op for row filtering)
+             */
+            role_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -17657,10 +18185,9 @@ export interface components {
             success: boolean;
             /**
              * Profile Id
-             * Format: uuid
-             * @description UUID of the deleted profile
+             * @description UUID of the deleted profile (None if soft-skipped under all-matching mode)
              */
-            profile_id: string;
+            profile_id?: string | null;
             /**
              * Message
              * @description Result message
@@ -17670,13 +18197,68 @@ export interface components {
         /**
          * DeleteProviderApiRequest
          * @description Request model for bulk delete provider endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``provider_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/provider/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteProviderApiRequest: {
             /**
              * Provider Ids
-             * @description List of provider IDs to delete
+             * @description UUIDs of providers to delete (required on first call when ``all`` is false)
              */
-            provider_ids: string[];
+            provider_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every provider matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Filter Model Ids
+             * @description Filter by model UUIDs
+             */
+            filter_model_ids?: string[] | null;
+            /**
+             * Filter Status
+             * @description Filter by status values (active/inactive)
+             */
+            filter_status?: string[] | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Model Search
+             * @description Search text for model facet (no-op for row filtering)
+             */
+            model_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -17717,10 +18299,9 @@ export interface components {
             success: boolean;
             /**
              * Provider Id
-             * Format: uuid
-             * @description Deleted provider identifier
+             * @description Deleted provider identifier (None for soft-skipped not-found rows under ``all=true``)
              */
-            provider_id: string;
+            provider_id?: string | null;
             /**
              * Message
              * @description Result message
@@ -17730,13 +18311,63 @@ export interface components {
         /**
          * DeleteRubricApiRequest
          * @description Request model for bulk delete rubric endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``rubric_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/rubric/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteRubricApiRequest: {
             /**
              * Rubric Ids
-             * @description Rubric UUIDs to delete
+             * @description Rubric UUIDs to delete (required on first call when ``all`` is false)
              */
-            rubric_ids: string[];
+            rubric_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every rubric matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Filter Simulation Ids
+             * @description Filter by simulation UUIDs
+             */
+            filter_simulation_ids?: string[] | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Simulation Search
+             * @description Search text for simulation facet (no-op for row filtering)
+             */
+            simulation_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -17777,10 +18408,9 @@ export interface components {
             success: boolean;
             /**
              * Rubric Id
-             * Format: uuid
              * @description Rubric UUID
              */
-            rubric_id: string;
+            rubric_id?: string | null;
             /**
              * Message
              * @description Human-readable result message
@@ -17789,14 +18419,74 @@ export interface components {
         };
         /**
          * DeleteScenarioApiRequest
-         * @description Bulk delete request.
+         * @description Request model for bulk delete scenario endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``scenario_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/scenario/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteScenarioApiRequest: {
             /**
              * Scenario Ids
-             * @description UUIDs of scenarios to delete
+             * @description UUIDs of scenarios to delete (required on first call when ``all`` is false)
              */
-            scenario_ids: string[];
+            scenario_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every scenario matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Persona Ids
+             * @description Filter by persona UUIDs
+             */
+            persona_ids?: string[] | null;
+            /**
+             * Simulation Ids
+             * @description Filter by simulation UUIDs
+             */
+            simulation_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Persona Search
+             * @description Search text for persona facet (no-op for row filtering)
+             */
+            persona_search?: string | null;
+            /**
+             * Simulation Search
+             * @description Search text for simulation facet (no-op for row filtering)
+             */
+            simulation_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -17850,13 +18540,88 @@ export interface components {
         /**
          * DeleteSettingApiRequest
          * @description Request model for bulk delete setting endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``setting_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/setting/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteSettingApiRequest: {
             /**
              * Setting Ids
-             * @description UUIDs of settings to delete
+             * @description UUIDs of settings to delete (required on first call when ``all`` is false)
              */
-            setting_ids: string[];
+            setting_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every setting matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Flag Ids
+             * @description Filter by flag UUIDs
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Provider Ids
+             * @description Filter by provider UUIDs
+             */
+            provider_ids?: string[] | null;
+            /**
+             * Auth Ids
+             * @description Filter by auth UUIDs
+             */
+            auth_ids?: string[] | null;
+            /**
+             * System Ids
+             * @description Filter by system UUIDs
+             */
+            system_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
+            /**
+             * Provider Search
+             * @description Search text for provider facet (no-op for row filtering)
+             */
+            provider_search?: string | null;
+            /**
+             * Auth Search
+             * @description Search text for auth facet (no-op for row filtering)
+             */
+            auth_search?: string | null;
+            /**
+             * System Search
+             * @description Search text for system facet (no-op for row filtering)
+             */
+            system_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -17897,10 +18662,9 @@ export interface components {
             success: boolean;
             /**
              * Setting Id
-             * Format: uuid
-             * @description UUID of the deleted setting
+             * @description UUID of the deleted setting (None when soft-skipped due to not-found)
              */
-            setting_id: string;
+            setting_id?: string | null;
             /**
              * Message
              * @description Result message
@@ -17910,13 +18674,73 @@ export interface components {
         /**
          * DeleteSimulationApiRequest
          * @description Request model for bulk delete simulation endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``simulation_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/simulation/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteSimulationApiRequest: {
             /**
              * Simulation Ids
-             * @description UUIDs of simulations to delete
+             * @description UUIDs of simulations to delete (required on first call when ``all`` is false)
              */
-            simulation_ids: string[];
+            simulation_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every simulation matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Scenario Ids
+             * @description Filter by scenario UUIDs
+             */
+            filter_scenario_ids?: string[] | null;
+            /**
+             * Filter Cohort Ids
+             * @description Filter by cohort UUIDs
+             */
+            filter_cohort_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Scenario Search
+             * @description Search text for scenario facet (no-op for row filtering)
+             */
+            scenario_search?: string | null;
+            /**
+             * Cohort Search
+             * @description Search text for cohort facet (no-op for row filtering)
+             */
+            cohort_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -17970,13 +18794,68 @@ export interface components {
         /**
          * DeleteToolApiRequest
          * @description Request model for bulk delete tool endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``tool_ids`` required.
+         *       - First call (all-matching): ``all=true`` plus the same filter
+         *         fields ``/tool/search`` accepts. The impl resolves every
+         *         matching id server-side, subtracts ``excluded_ids``, and runs
+         *         the existing per-row delete flow.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant deletion by ``idempotency_key``.
          */
         DeleteToolApiRequest: {
             /**
              * Tool Ids
-             * @description List of tool IDs to delete
+             * @description List of tool IDs to delete (required on first call when ``all`` is false)
              */
-            tool_ids: string[];
+            tool_ids?: string[] | null;
+            /**
+             * All
+             * @description When true, delete every tool matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Filter Creatable
+             * @description Filter by creatable flag (no-op for row filtering today; accepted for forward compatibility)
+             */
+            filter_creatable?: string[] | null;
+            /**
+             * Filter Agent Ids
+             * @description Filter by agent UUIDs that reference these tools (no-op for row filtering today; accepted for forward compatibility)
+             */
+            filter_agent_ids?: string[] | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
+            /**
+             * Agent Search
+             * @description Search text for agent facet (no-op for row filtering)
+             */
+            agent_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — confirms or rejects a dormant delete
@@ -18017,10 +18896,9 @@ export interface components {
             success: boolean;
             /**
              * Tool Id
-             * Format: uuid
-             * @description Deleted tool identifier
+             * @description Deleted tool identifier (None when soft-skipped without resolution)
              */
-            tool_id: string;
+            tool_id?: string | null;
             /**
              * Message
              * @description Result message
@@ -19546,9 +20424,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * DuplicatePersonaApiResponse
@@ -19576,6 +20453,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Personas
+             * @description Hydrated row for the newly-created duplicate persona (mirrors /persona/search shape)
+             */
+            personas?: components["schemas"]["ListPersonaApiPersona"][] | null;
         };
         /** DuplicateProfileApiRequest */
         DuplicateProfileApiRequest: {
@@ -39419,9 +40301,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * PatchPersonaDraftApiResponse
@@ -42056,9 +42937,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * ProblemPersonaApiResponse
@@ -51690,13 +52570,76 @@ export interface components {
         /**
          * UpdateAgentApiRequest
          * @description Request model for bulk update agent endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``agents`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/agent/search`` accepts plus a single shared ``patch`` that
+         *         every matched row receives. The impl resolves matching ids,
+         *         subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateAgentApiRequest: {
             /**
              * Agents
-             * @description List of agents to update
+             * @description List of agents to update (required on first call when ``all`` is false)
              */
-            agents: components["schemas"]["UpdateAgentItem"][];
+            agents?: components["schemas"]["UpdateAgentItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every agent matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateAgentPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Filter Model Ids
+             * @description Filter by model UUIDs
+             */
+            filter_model_ids?: string[] | null;
+            /**
+             * Filter Tool Ids
+             * @description Filter by tool UUIDs
+             */
+            filter_tool_ids?: string[] | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Model Search
+             * @description Search text for model facet (no-op for row filtering)
+             */
+            model_search?: string | null;
+            /**
+             * Tool Search
+             * @description Search text for tool facet (no-op for row filtering)
+             */
+            tool_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -51808,15 +52751,144 @@ export interface components {
             agent_ids?: string[] | null;
         };
         /**
+         * UpdateAgentPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateAgentItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateAgentPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved agent id per matched row
+             */
+            id?: string | null;
+            /**
+             * Name Id
+             * @description UUID of the name resource
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Display name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description UUID of the description resource
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description text value
+             */
+            description?: string | null;
+            /**
+             * Department Ids
+             * @description Associated department UUIDs
+             */
+            department_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names for matching
+             */
+            departments?: string[] | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized agent_active flag state
+             */
+            active?: boolean | null;
+            /**
+             * Model Id
+             * @description Associated model UUID
+             */
+            model_id?: string | null;
+            /**
+             * Reasoning Level Ids
+             * @description Associated reasoning level UUIDs
+             */
+            reasoning_level_ids?: string[] | null;
+            /**
+             * Temperature Level Ids
+             * @description Associated temperature level UUIDs
+             */
+            temperature_level_ids?: string[] | null;
+            /**
+             * Tool Ids
+             * @description Associated tool UUIDs
+             */
+            tool_ids?: string[] | null;
+            /**
+             * Voice Ids
+             * @description Associated voice UUIDs
+             */
+            voice_ids?: string[] | null;
+            /**
+             * Agent Ids
+             * @description Associated agent resource UUIDs
+             */
+            agent_ids?: string[] | null;
+        };
+        /**
          * UpdateAuthApiRequest
          * @description Request model for bulk update auth endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``auths`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/auth/search`` accepts plus a single shared ``patch`` that
+         *         every matched row receives. The impl resolves matching ids,
+         *         subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateAuthApiRequest: {
             /**
              * Auths
-             * @description List of auth providers to update
+             * @description List of auth providers to update (required on first call when ``all`` is false)
              */
-            auths: components["schemas"]["UpdateAuthItem"][];
+            auths?: components["schemas"]["UpdateAuthItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every auth matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateAuthPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -51928,15 +53000,164 @@ export interface components {
             auth_resource_ids?: string[] | null;
         };
         /**
+         * UpdateAuthPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateAuthItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateAuthPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved auth id per matched row
+             */
+            id?: string | null;
+            /**
+             * Name Id
+             * @description UUID of the name resource
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Name value to resolve or create
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description UUID of the description resource
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description value to resolve or create
+             */
+            description?: string | null;
+            /**
+             * Slug Id
+             * @description UUID of the slug resource
+             */
+            slug_id?: string | null;
+            /**
+             * Slug
+             * @description Slug value to resolve or create
+             */
+            slug?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized auth_active flag state
+             */
+            active?: boolean | null;
+            /**
+             * Department Ids
+             * @description Department UUIDs to assign
+             */
+            department_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names to resolve
+             */
+            departments?: string[] | null;
+            /**
+             * Protocol Ids
+             * @description Protocol resource UUIDs
+             */
+            protocol_ids?: string[] | null;
+            /**
+             * Protocol
+             * @description Protocol value to resolve
+             */
+            protocol?: string | null;
+            /**
+             * Item Ids
+             * @description Auth item UUIDs
+             */
+            item_ids?: string[] | null;
+            /**
+             * Auth Resource Ids
+             * @description Auth resource UUIDs
+             */
+            auth_resource_ids?: string[] | null;
+        };
+        /**
          * UpdateCohortApiRequest
          * @description Request model for bulk update cohort endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``cohorts`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/cohort/search`` accepts plus a single shared ``patch`` that
+         *         every matched row receives. The impl resolves matching ids,
+         *         subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateCohortApiRequest: {
             /**
              * Cohorts
-             * @description List of cohorts to update
+             * @description List of cohorts to update (required on first call when ``all`` is false)
              */
-            cohorts: components["schemas"]["UpdateCohortItem"][];
+            cohorts?: components["schemas"]["UpdateCohortItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every cohort matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateCohortPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Profile Ids
+             * @description Filter by profile UUIDs
+             */
+            filter_profile_ids?: string[] | null;
+            /**
+             * Filter Simulation Ids
+             * @description Filter by simulation UUIDs
+             */
+            filter_simulation_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Profile Search
+             * @description Search text for profile facet (no-op for row filtering)
+             */
+            profile_search?: string | null;
+            /**
+             * Simulation Search
+             * @description Search text for simulation facet (no-op for row filtering)
+             */
+            simulation_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -52053,15 +53274,139 @@ export interface components {
             profiles?: string[] | null;
         };
         /**
+         * UpdateCohortPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateCohortItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateCohortPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved cohort id per matched row
+             */
+            id?: string | null;
+            /**
+             * Name Id
+             * @description Name resource UUID
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Name value for resolution
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Description resource UUID
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description value for resolution
+             */
+            description?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized cohort_active flag state; resolved to a flag_ids entry server-side
+             */
+            active?: boolean | null;
+            /**
+             * Department Ids
+             * @description Department UUIDs
+             */
+            department_ids?: string[] | null;
+            /**
+             * Simulation Ids
+             * @description Simulation UUIDs
+             */
+            simulation_ids?: string[] | null;
+            /**
+             * Simulation Position Ids
+             * @description Simulation position UUIDs
+             */
+            simulation_position_ids?: string[] | null;
+            /**
+             * Simulation Availability Ids
+             * @description Simulation availability UUIDs
+             */
+            simulation_availability_ids?: string[] | null;
+            /**
+             * Profile Ids
+             * @description Profile UUIDs
+             */
+            profile_ids?: string[] | null;
+            /**
+             * Profile Persona Ids
+             * @description Profile persona UUIDs
+             */
+            profile_persona_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names for resolution
+             */
+            departments?: string[] | null;
+            /**
+             * Simulations
+             * @description Simulation names for resolution
+             */
+            simulations?: string[] | null;
+            /**
+             * Profiles
+             * @description Profile names for resolution
+             */
+            profiles?: string[] | null;
+        };
+        /**
          * UpdateDepartmentApiRequest
          * @description Request model for bulk update department endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``departments`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/department/search`` accepts plus a single shared ``patch``
+         *         that every matched row receives. The impl resolves matching
+         *         ids, subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateDepartmentApiRequest: {
             /**
              * Departments
-             * @description List of departments to update
+             * @description List of departments to update (required on first call when ``all`` is false)
              */
-            departments: components["schemas"]["UpdateDepartmentItem"][];
+            departments?: components["schemas"]["UpdateDepartmentItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every department matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateDepartmentPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -52143,15 +53488,134 @@ export interface components {
             department_ids?: string[] | null;
         };
         /**
+         * UpdateDepartmentPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Mirrors every field of ``UpdateDepartmentItem`` but with ``id``
+         *     relaxed to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateDepartmentPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved department id per matched row
+             */
+            id?: string | null;
+            /**
+             * Name Id
+             * @description UUID of the name resource
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Name value to resolve or create
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description UUID of the description resource
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description value to resolve or create
+             */
+            description?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized department_active flag state; resolved to a flag_ids entry server-side
+             */
+            active?: boolean | null;
+            /**
+             * Settings Ids
+             * @description Setting UUIDs to assign
+             */
+            settings_ids?: string[] | null;
+            /**
+             * Department Ids
+             * @description Sub-department UUIDs to assign
+             */
+            department_ids?: string[] | null;
+        };
+        /**
          * UpdateDocumentApiRequest
          * @description Request model for bulk update document endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``documents`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/document/search`` accepts plus a single shared ``patch`` that
+         *         every matched row receives. The impl resolves matching ids,
+         *         subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateDocumentApiRequest: {
             /**
              * Documents
-             * @description List of documents to update
+             * @description List of documents to update (required on first call when ``all`` is false)
              */
-            documents: components["schemas"]["UpdateDocumentItem"][];
+            documents?: components["schemas"]["UpdateDocumentItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every document matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateDocumentPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Scenario Ids
+             * @description Filter by scenario UUIDs
+             */
+            scenario_ids?: string[] | null;
+            /**
+             * Field Ids
+             * @description Filter by field UUIDs
+             */
+            field_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Scenario Search
+             * @description Search text for scenario facet (no-op for row filtering)
+             */
+            scenario_search?: string | null;
+            /**
+             * Field Search
+             * @description Search text for field facet (no-op for row filtering)
+             */
+            field_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -52255,15 +53719,134 @@ export interface components {
             text_ids?: string[] | null;
         };
         /**
+         * UpdateDocumentPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateDocumentItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateDocumentPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved document id per matched row
+             */
+            id?: string | null;
+            /**
+             * Name Id
+             * @description Name resource UUID
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Name value for resolution
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Description resource UUID
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description value for resolution
+             */
+            description?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized document_active flag state; resolved to a flag_ids entry server-side
+             */
+            active?: boolean | null;
+            /**
+             * Department Ids
+             * @description Department UUIDs
+             */
+            department_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names for resolution
+             */
+            departments?: string[] | null;
+            /**
+             * Parameter Field Ids
+             * @description Parameter field UUIDs
+             */
+            parameter_field_ids?: string[] | null;
+            /**
+             * Upload Ids
+             * @description File upload UUIDs
+             */
+            upload_ids?: string[] | null;
+            /**
+             * Image Ids
+             * @description Image UUIDs
+             */
+            image_ids?: string[] | null;
+            /**
+             * Text Ids
+             * @description Text resource UUIDs
+             */
+            text_ids?: string[] | null;
+        };
+        /**
          * UpdateEvalApiRequest
          * @description Request model for bulk update eval endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``evals`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/eval/search`` accepts plus a single shared ``patch`` that
+         *         every matched row receives. The impl resolves matching ids,
+         *         subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateEvalApiRequest: {
             /**
              * Evals
-             * @description List of evals to update
+             * @description List of evals to update (required on first call when ``all`` is false)
              */
-            evals: components["schemas"]["UpdateEvalItem"][];
+            evals?: components["schemas"]["UpdateEvalItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every eval matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateEvalPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -52367,15 +53950,154 @@ export interface components {
             active?: boolean | null;
         };
         /**
+         * UpdateEvalPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateEvalItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateEvalPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved eval id per matched row
+             */
+            id?: string | null;
+            /**
+             * Name Id
+             * @description Name resource UUID
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Name value for resolution
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Description resource UUID
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description value for resolution
+             */
+            description?: string | null;
+            /**
+             * Flag Ids
+             * @description Flag option UUIDs
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Department Ids
+             * @description Department UUIDs
+             */
+            department_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names for resolution
+             */
+            departments?: string[] | null;
+            /**
+             * Model Ids
+             * @description Model UUIDs
+             */
+            model_ids?: string[] | null;
+            /**
+             * Model Flag Ids
+             * @description Model flag UUIDs
+             */
+            model_flag_ids?: string[] | null;
+            /**
+             * Model Rubric Ids
+             * @description Model rubric UUIDs
+             */
+            model_rubric_ids?: string[] | null;
+            /**
+             * Model Position Ids
+             * @description Model position UUIDs
+             */
+            model_position_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized eval_active flag state; resolved to a flag_ids entry server-side
+             */
+            active?: boolean | null;
+        };
+        /**
          * UpdateFieldApiRequest
          * @description Request model for bulk update field endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``fields`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/field/search`` accepts plus a single shared ``patch`` that
+         *         every matched row receives. The impl resolves matching ids,
+         *         subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateFieldApiRequest: {
             /**
              * Fields
-             * @description List of fields to update
+             * @description List of fields to update (required on first call when ``all`` is false)
              */
-            fields: components["schemas"]["UpdateFieldItem"][];
+            fields?: components["schemas"]["UpdateFieldItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every field matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateFieldPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Parameter Ids
+             * @description Filter by parameter UUIDs
+             */
+            parameter_ids?: string[] | null;
+            /**
+             * Persona Ids
+             * @description Filter by persona UUIDs
+             */
+            persona_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Parameter Search
+             * @description Search text for parameter facet (no-op for row filtering)
+             */
+            parameter_search?: string | null;
+            /**
+             * Persona Search
+             * @description Search text for persona facet (no-op for row filtering)
+             */
+            persona_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -52469,15 +54191,144 @@ export interface components {
             field_ids?: string[] | null;
         };
         /**
+         * UpdateFieldPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateFieldItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateFieldPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved field id per matched row
+             */
+            id?: string | null;
+            /**
+             * Name Id
+             * @description UUID of the name resource
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Name value to resolve or create
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description UUID of the description resource
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description value to resolve or create
+             */
+            description?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized field_active flag state; resolved to a flag_ids entry server-side
+             */
+            active?: boolean | null;
+            /**
+             * Department Ids
+             * @description Department UUIDs to assign
+             */
+            department_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names to resolve
+             */
+            departments?: string[] | null;
+            /**
+             * Conditional Parameter Ids
+             * @description Conditional parameter UUIDs
+             */
+            conditional_parameter_ids?: string[] | null;
+            /**
+             * Field Ids
+             * @description Related field UUIDs
+             */
+            field_ids?: string[] | null;
+        };
+        /**
          * UpdateModelApiRequest
          * @description Request model for bulk update model endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``models`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/model/search`` accepts plus a single shared ``patch`` that
+         *         every matched row receives. The impl resolves matching ids,
+         *         subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateModelApiRequest: {
             /**
              * Models
-             * @description List of models to update
+             * @description List of models to update (required on first call when ``all`` is false)
              */
-            models: components["schemas"]["UpdateModelItem"][];
+            models?: components["schemas"]["UpdateModelItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every model matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateModelPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Provider Ids
+             * @description Filter by provider UUIDs
+             */
+            filter_provider_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Filter Agent Ids
+             * @description Filter by agent UUIDs
+             */
+            filter_agent_ids?: string[] | null;
+            /**
+             * Provider Search
+             * @description Search text for provider facet (no-op for row filtering)
+             */
+            provider_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Agent Search
+             * @description Search text for agent facet (no-op for row filtering)
+             */
+            agent_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -52601,15 +54452,174 @@ export interface components {
             model_ids?: string[] | null;
         };
         /**
+         * UpdateModelPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateModelItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateModelPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved model id per matched row
+             */
+            id?: string | null;
+            /**
+             * Name Id
+             * @description Name resource identifier
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Display name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Description resource identifier
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description text value
+             */
+            description?: string | null;
+            /**
+             * Department Ids
+             * @description Department identifiers
+             */
+            department_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names to match
+             */
+            departments?: string[] | null;
+            /**
+             * Flag Ids
+             * @description Flag option identifiers
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Modality Ids
+             * @description Modality identifiers
+             */
+            modality_ids?: string[] | null;
+            /**
+             * Pricing Ids
+             * @description Pricing tier identifiers
+             */
+            pricing_ids?: string[] | null;
+            /**
+             * Provider Id
+             * @description Provider identifier
+             */
+            provider_id?: string | null;
+            /**
+             * Quality Ids
+             * @description Quality level identifiers
+             */
+            quality_ids?: string[] | null;
+            /**
+             * Reasoning Level Ids
+             * @description Reasoning level identifiers
+             */
+            reasoning_level_ids?: string[] | null;
+            /**
+             * Temperature Level Ids
+             * @description Temperature level identifiers
+             */
+            temperature_level_ids?: string[] | null;
+            /**
+             * Value Id
+             * @description Value resource identifier
+             */
+            value_id?: string | null;
+            /**
+             * Voice Ids
+             * @description Voice identifiers
+             */
+            voice_ids?: string[] | null;
+            /**
+             * Model Ids
+             * @description Related model identifiers
+             */
+            model_ids?: string[] | null;
+        };
+        /**
          * UpdateParameterApiRequest
          * @description Request model for bulk update parameter endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``parameters`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/parameter/search`` accepts plus a single shared ``patch``
+         *         that every matched row receives. The impl resolves matching
+         *         ids, subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateParameterApiRequest: {
             /**
              * Parameters
-             * @description List of parameters to update
+             * @description List of parameters to update (required on first call when ``all`` is false)
              */
-            parameters: components["schemas"]["UpdateParameterItem"][];
+            parameters?: components["schemas"]["UpdateParameterItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every parameter matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateParameterPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Scenario Ids
+             * @description Filter by scenario UUIDs
+             */
+            scenario_ids?: string[] | null;
+            /**
+             * Field Ids
+             * @description Filter by field UUIDs
+             */
+            field_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Scenario Search
+             * @description Search text for scenario facet (no-op for row filtering)
+             */
+            scenario_search?: string | null;
+            /**
+             * Field Search
+             * @description Search text for field facet (no-op for row filtering)
+             */
+            field_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -52649,6 +54659,62 @@ export interface components {
              * @description Target parameter identifier to update
              */
             id: string;
+            /**
+             * Name Id
+             * @description Name resource identifier
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Display name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Description resource identifier
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description text value
+             */
+            description?: string | null;
+            /**
+             * Department Ids
+             * @description Department identifiers
+             */
+            department_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names to match
+             */
+            departments?: string[] | null;
+            /**
+             * Flag Ids
+             * @description Flag option identifiers
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Field Ids
+             * @description Field identifiers
+             */
+            field_ids?: string[] | null;
+        };
+        /**
+         * UpdateParameterPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateParameterItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateParameterPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved parameter id per matched row
+             */
+            id?: string | null;
             /**
              * Name Id
              * @description Name resource identifier
@@ -52786,9 +54852,8 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
-             * @default true
              */
-            accept: boolean;
+            accept?: boolean | null;
         };
         /**
          * UpdatePersonaApiResponse
@@ -52805,6 +54870,11 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+            /**
+             * Personas
+             * @description Hydrated rows for the successfully-updated personas (mirrors /persona/search shape)
+             */
+            personas?: components["schemas"]["ListPersonaApiPersona"][] | null;
         };
         /**
          * UpdatePersonaItem
@@ -53039,13 +55109,76 @@ export interface components {
         /**
          * UpdateProfileApiRequest
          * @description Request model for bulk update profile endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``profiles`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/profile/search`` accepts plus a single shared ``patch`` that
+         *         every matched row receives. The impl resolves matching ids,
+         *         subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateProfileApiRequest: {
             /**
              * Profiles
-             * @description List of profiles to update
+             * @description List of profiles to update (required on first call when ``all`` is false)
              */
-            profiles: components["schemas"]["UpdateProfileItem"][];
+            profiles?: components["schemas"]["UpdateProfileItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every profile matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.profile_id`` ignored) */
+            patch?: components["schemas"]["UpdateProfilePatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Cohort Ids
+             * @description Filter by cohort UUIDs
+             */
+            cohort_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Role Filter
+             * @description Filter by role name
+             */
+            role_filter?: string | null;
+            /**
+             * Cohort Search
+             * @description Search text for cohort facet (no-op for row filtering)
+             */
+            cohort_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Role Search
+             * @description Search text for role facet (no-op for row filtering)
+             */
+            role_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -53132,15 +55265,135 @@ export interface components {
             primary_department_id?: string | null;
         };
         /**
+         * UpdateProfilePatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateProfileItem`` and just relaxes
+         *     ``profile_id`` to optional — the bulk impl stamps the resolved id
+         *     onto a clone of the patch per matched row, so any client-supplied
+         *     id is ignored. Sparse semantics: only fields the client sets are
+         *     written.
+         */
+        UpdateProfilePatch: {
+            /**
+             * Profile Id
+             * @description Ignored — bulk impl stamps the resolved profile id per matched row
+             */
+            profile_id?: string | null;
+            /**
+             * Name Id
+             * @description UUID of the name resource
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Name value to resolve or create
+             */
+            name?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized profile_active flag state
+             */
+            active?: boolean | null;
+            /**
+             * Department Ids
+             * @description Department UUIDs to assign
+             */
+            department_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names to resolve
+             */
+            departments?: string[] | null;
+            /**
+             * Email Ids
+             * @description Email resource UUIDs
+             */
+            email_ids?: string[] | null;
+            /**
+             * Role Id
+             * @description Role resource UUID
+             */
+            role_id?: string | null;
+            /**
+             * Primary Department Id
+             * @description UUID of the department to designate as primary
+             */
+            primary_department_id?: string | null;
+        };
+        /**
          * UpdateProviderApiRequest
          * @description Request model for bulk update provider endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``providers`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/provider/search`` accepts plus a single shared ``patch`` that
+         *         every matched row receives. The impl resolves matching ids,
+         *         subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateProviderApiRequest: {
             /**
              * Providers
-             * @description List of providers to update
+             * @description List of providers to update (required on first call when ``all`` is false)
              */
-            providers: components["schemas"]["UpdateProviderItem"][];
+            providers?: components["schemas"]["UpdateProviderItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every provider matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateProviderPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Filter Model Ids
+             * @description Filter by model UUIDs
+             */
+            filter_model_ids?: string[] | null;
+            /**
+             * Filter Status
+             * @description Filter by status values (active/inactive)
+             */
+            filter_status?: string[] | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Model Search
+             * @description Search text for model facet (no-op for row filtering)
+             */
+            model_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -53237,15 +55490,139 @@ export interface components {
             value_id?: string | null;
         };
         /**
+         * UpdateProviderPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateProviderItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateProviderPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved provider id per matched row
+             */
+            id?: string | null;
+            /**
+             * Name Id
+             * @description Name resource identifier
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Display name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Description resource identifier
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description text value
+             */
+            description?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized provider_active flag state
+             */
+            active?: boolean | null;
+            /**
+             * Department Ids
+             * @description Department identifiers
+             */
+            department_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names to match
+             */
+            departments?: string[] | null;
+            /**
+             * Endpoint Ids
+             * @description Endpoint resource identifiers
+             */
+            endpoint_ids?: string[] | null;
+            /**
+             * Key Ids
+             * @description API key resource identifiers
+             */
+            key_ids?: string[] | null;
+            /**
+             * Value Id
+             * @description Value resource identifier
+             */
+            value_id?: string | null;
+        };
+        /**
          * UpdateRubricApiRequest
          * @description Request model for bulk update rubric endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``rubrics`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/rubric/search`` accepts plus a single shared ``patch`` that
+         *         every matched row receives. The impl resolves matching ids,
+         *         subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateRubricApiRequest: {
             /**
              * Rubrics
-             * @description List of rubrics to update
+             * @description List of rubrics to update (required on first call when ``all`` is false)
              */
-            rubrics: components["schemas"]["UpdateRubricItem"][];
+            rubrics?: components["schemas"]["UpdateRubricItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every rubric matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateRubricPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Filter Simulation Ids
+             * @description Filter by simulation UUIDs
+             */
+            filter_simulation_ids?: string[] | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Simulation Search
+             * @description Search text for simulation facet (no-op for row filtering)
+             */
+            simulation_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -53357,15 +55734,164 @@ export interface components {
             standard_ids?: string[] | null;
         };
         /**
+         * UpdateRubricPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateRubricItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateRubricPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved rubric id per matched row
+             */
+            id?: string | null;
+            /**
+             * Name Id
+             * @description Name resource UUID
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Name value for resolution
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Description resource UUID
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description value for resolution
+             */
+            description?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Active
+             * @description Denormalized rubric_active flag state; resolved to a flag_ids entry server-side
+             */
+            active?: boolean | null;
+            /**
+             * Simulation Rubric
+             * @description Denormalized simulation_rubric flag state; resolved to a flag_ids entry server-side
+             */
+            simulation_rubric?: boolean | null;
+            /**
+             * Video Rubric
+             * @description Denormalized video_rubric flag state; resolved to a flag_ids entry server-side
+             */
+            video_rubric?: boolean | null;
+            /**
+             * Department Ids
+             * @description Department UUIDs
+             */
+            department_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names for resolution
+             */
+            departments?: string[] | null;
+            /**
+             * Pass Points Id
+             * @description Pass-type Points resource UUID
+             */
+            pass_points_id?: string | null;
+            /**
+             * Pass Points
+             * @description Pass points value (resolves to a pass-type Points resource)
+             */
+            pass_points?: number | null;
+            /**
+             * Standard Group Ids
+             * @description Standard group UUIDs
+             */
+            standard_group_ids?: string[] | null;
+            /**
+             * Standard Ids
+             * @description Standard UUIDs
+             */
+            standard_ids?: string[] | null;
+        };
+        /**
          * UpdateScenarioApiRequest
          * @description Request model for bulk update scenario endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``scenarios`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/scenario/search`` accepts plus a single shared ``patch`` that
+         *         every matched row receives. The impl resolves matching ids,
+         *         subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateScenarioApiRequest: {
             /**
              * Scenarios
-             * @description List of scenarios to update
+             * @description List of scenarios to update (required on first call when ``all`` is false)
              */
-            scenarios: components["schemas"]["UpdateScenarioItem"][];
+            scenarios?: components["schemas"]["UpdateScenarioItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every scenario matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateScenarioPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Persona Ids
+             * @description Filter by persona UUIDs
+             */
+            persona_ids?: string[] | null;
+            /**
+             * Simulation Ids
+             * @description Filter by simulation UUIDs
+             */
+            simulation_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Persona Search
+             * @description Search text for persona facet (no-op for row filtering)
+             */
+            persona_search?: string | null;
+            /**
+             * Simulation Search
+             * @description Search text for simulation facet (no-op for row filtering)
+             */
+            simulation_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -53539,15 +56065,239 @@ export interface components {
             options?: string[] | null;
         };
         /**
+         * UpdateScenarioPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateScenarioItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateScenarioPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved scenario id per matched row
+             */
+            id?: string | null;
+            /**
+             * Name Id
+             * @description UUID of the name resource
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Display name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description UUID of the description resource
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description text value
+             */
+            description?: string | null;
+            /**
+             * Problem Statement Id
+             * @description UUID of the problem statement resource
+             */
+            problem_statement_id?: string | null;
+            /**
+             * Problem Statement
+             * @description Problem statement text value
+             */
+            problem_statement?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Department Ids
+             * @description Associated department UUIDs
+             */
+            department_ids?: string[] | null;
+            /**
+             * Persona Ids
+             * @description Associated persona UUIDs
+             */
+            persona_ids?: string[] | null;
+            /**
+             * Document Ids
+             * @description Associated document UUIDs
+             */
+            document_ids?: string[] | null;
+            /**
+             * Parameter Ids
+             * @description Associated parameter UUIDs
+             */
+            parameter_ids?: string[] | null;
+            /**
+             * Parameter Field Ids
+             * @description Associated parameter field UUIDs
+             */
+            parameter_field_ids?: string[] | null;
+            /**
+             * Image Ids
+             * @description Associated image UUIDs
+             */
+            image_ids?: string[] | null;
+            /**
+             * Objective Ids
+             * @description Associated objective UUIDs
+             */
+            objective_ids?: string[] | null;
+            /**
+             * Video Ids
+             * @description Associated video UUIDs
+             */
+            video_ids?: string[] | null;
+            /**
+             * Question Ids
+             * @description Associated question UUIDs
+             */
+            question_ids?: string[] | null;
+            /**
+             * Option Ids
+             * @description Associated option UUIDs
+             */
+            option_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names for matching
+             */
+            departments?: string[] | null;
+            /**
+             * Personas
+             * @description Persona names for matching
+             */
+            personas?: string[] | null;
+            /**
+             * Documents
+             * @description Document names for matching
+             */
+            documents?: string[] | null;
+            /**
+             * Parameter Fields
+             * @description Parameter field names for matching
+             */
+            parameter_fields?: string[] | null;
+            /**
+             * Objectives
+             * @description Objective texts for matching
+             */
+            objectives?: string[] | null;
+            /**
+             * Images
+             * @description Image names for matching
+             */
+            images?: string[] | null;
+            /**
+             * Videos
+             * @description Video names for matching
+             */
+            videos?: string[] | null;
+            /**
+             * Questions
+             * @description Question texts for matching
+             */
+            questions?: string[] | null;
+            /**
+             * Options
+             * @description Option texts for matching
+             */
+            options?: string[] | null;
+        };
+        /**
          * UpdateSettingApiRequest
          * @description Request model for bulk update setting endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``settings`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/setting/search`` accepts plus a single shared ``patch`` that
+         *         every matched row receives. The impl resolves matching ids,
+         *         subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateSettingApiRequest: {
             /**
              * Settings
-             * @description List of settings to update
+             * @description List of settings to update (required on first call when ``all`` is false)
              */
-            settings: components["schemas"]["UpdateSettingItem"][];
+            settings?: components["schemas"]["UpdateSettingItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every setting matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateSettingPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Flag Ids
+             * @description Filter by flag UUIDs
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Provider Ids
+             * @description Filter by provider UUIDs
+             */
+            provider_ids?: string[] | null;
+            /**
+             * Auth Ids
+             * @description Filter by auth UUIDs
+             */
+            auth_ids?: string[] | null;
+            /**
+             * System Ids
+             * @description Filter by system UUIDs
+             */
+            system_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
+            /**
+             * Provider Search
+             * @description Search text for provider facet (no-op for row filtering)
+             */
+            provider_search?: string | null;
+            /**
+             * Auth Search
+             * @description Search text for auth facet (no-op for row filtering)
+             */
+            auth_search?: string | null;
+            /**
+             * System Search
+             * @description Search text for system facet (no-op for row filtering)
+             */
+            system_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -53691,15 +56441,194 @@ export interface components {
             setting_resource_ids?: string[] | null;
         };
         /**
+         * UpdateSettingPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateSettingItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateSettingPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved setting id per matched row
+             */
+            id?: string | null;
+            /**
+             * Name Id
+             * @description UUID of the name resource
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Name value to resolve or create
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description UUID of the description resource
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description value to resolve or create
+             */
+            description?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Active Flag Id
+             * @description DEPRECATED — use flag_ids. UUID of the active flag option
+             */
+            active_flag_id?: string | null;
+            /**
+             * Active Flag
+             * @description DEPRECATED — use flag_ids. Whether the setting is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Department Ids
+             * @description Department UUIDs to assign
+             */
+            department_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names to resolve
+             */
+            departments?: string[] | null;
+            /**
+             * Color Ids
+             * @description Color resource UUIDs
+             */
+            color_ids?: string[] | null;
+            /**
+             * Logins Ids
+             * @description Logins resource UUIDs to assign
+             */
+            logins_ids?: string[] | null;
+            /**
+             * System Ids
+             * @description System UUIDs to assign
+             */
+            system_ids?: string[] | null;
+            /**
+             * Mcp Id
+             * @description MCP resource UUID to assign (single)
+             */
+            mcp_id?: string | null;
+            /**
+             * Threshold Ids
+             * @description Threshold UUIDs to assign
+             */
+            threshold_ids?: string[] | null;
+            /**
+             * Provider Key Ids
+             * @description Provider key UUIDs
+             */
+            provider_key_ids?: string[] | null;
+            /**
+             * Auth Item Key Ids
+             * @description Auth item key UUIDs
+             */
+            auth_item_key_ids?: string[] | null;
+            /**
+             * Auth Item Value Ids
+             * @description Auth item value UUIDs
+             */
+            auth_item_value_ids?: string[] | null;
+            /**
+             * Auth Ids
+             * @description Auth resource UUIDs to assign
+             */
+            auth_ids?: string[] | null;
+            /**
+             * Provider Ids
+             * @description Provider resource UUIDs to assign
+             */
+            provider_ids?: string[] | null;
+            /**
+             * Setting Resource Ids
+             * @description Setting resource UUIDs
+             */
+            setting_resource_ids?: string[] | null;
+        };
+        /**
          * UpdateSimulationApiRequest
          * @description Request model for bulk update simulation endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``simulations`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/simulation/search`` accepts plus a single shared ``patch``
+         *         that every matched row receives. The impl resolves matching
+         *         ids, subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateSimulationApiRequest: {
             /**
              * Simulations
-             * @description List of simulations to update
+             * @description List of simulations to update (required on first call when ``all`` is false)
              */
-            simulations: components["schemas"]["UpdateSimulationItem"][];
+            simulations?: components["schemas"]["UpdateSimulationItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every simulation matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateSimulationPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Scenario Ids
+             * @description Filter by scenario UUIDs
+             */
+            filter_scenario_ids?: string[] | null;
+            /**
+             * Filter Cohort Ids
+             * @description Filter by cohort UUIDs
+             */
+            filter_cohort_ids?: string[] | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Scenario Search
+             * @description Search text for scenario facet (no-op for row filtering)
+             */
+            scenario_search?: string | null;
+            /**
+             * Cohort Search
+             * @description Search text for cohort facet (no-op for row filtering)
+             */
+            cohort_search?: string | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -53808,15 +56737,154 @@ export interface components {
             scenarios?: string[] | null;
         };
         /**
+         * UpdateSimulationPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateSimulationItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateSimulationPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved simulation id per matched row
+             */
+            id?: string | null;
+            /**
+             * Name Id
+             * @description UUID of the name resource
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Display name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description UUID of the description resource
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description text value
+             */
+            description?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag option UUIDs — canonical; server derives semantics by flag type/value
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Department Ids
+             * @description Associated department UUIDs
+             */
+            department_ids?: string[] | null;
+            /**
+             * Scenario Ids
+             * @description Associated scenario UUIDs
+             */
+            scenario_ids?: string[] | null;
+            /**
+             * Scenario Flag Ids
+             * @description Associated scenario flag UUIDs
+             */
+            scenario_flag_ids?: string[] | null;
+            /**
+             * Scenario Position Ids
+             * @description Associated scenario position UUIDs
+             */
+            scenario_position_ids?: string[] | null;
+            /**
+             * Scenario Rubric Ids
+             * @description Associated scenario rubric UUIDs
+             */
+            scenario_rubric_ids?: string[] | null;
+            /**
+             * Scenario Time Limit Ids
+             * @description Associated scenario time limit UUIDs
+             */
+            scenario_time_limit_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names for matching
+             */
+            departments?: string[] | null;
+            /**
+             * Scenarios
+             * @description Scenario names for matching
+             */
+            scenarios?: string[] | null;
+        };
+        /**
          * UpdateToolApiRequest
          * @description Request model for bulk update tool endpoint.
+         *
+         *     Three body shapes:
+         *       - First call (explicit): ``tools`` required — per-row patches.
+         *       - First call (all-matching): ``all=true`` plus the filter fields
+         *         ``/tool/search`` accepts plus a single shared ``patch`` that
+         *         every matched row receives. The impl resolves matching ids,
+         *         subtracts ``excluded_ids``, and runs the existing per-row
+         *         update flow with the patch cloned per id.
+         *       - Ack call: ``{idempotency_key, accept}`` only — the impl locates
+         *         the dormant update by ``idempotency_key``.
          */
         UpdateToolApiRequest: {
             /**
              * Tools
-             * @description List of tools to update
+             * @description List of tools to update (required on first call when ``all`` is false)
              */
-            tools: components["schemas"]["UpdateToolItem"][];
+            tools?: components["schemas"]["UpdateToolItem"][] | null;
+            /**
+             * All
+             * @description When true, apply ``patch`` to every tool matching the filter fields below (minus ``excluded_ids``)
+             * @default false
+             */
+            all: boolean | null;
+            /**
+             * Excluded Ids
+             * @description UUIDs to skip even when matched by ``all``-mode filters
+             */
+            excluded_ids?: string[] | null;
+            /** @description Shared change set applied to every matched row when ``all=true`` (sparse — only set fields are updated; ``patch.id`` ignored) */
+            patch?: components["schemas"]["UpdateToolPatch"] | null;
+            /**
+             * Search
+             * @description Full-text search query
+             */
+            search?: string | null;
+            /**
+             * Filter Department Ids
+             * @description Filter by department UUIDs
+             */
+            filter_department_ids?: string[] | null;
+            /**
+             * Filter Creatable
+             * @description Filter by creatable flag (no-op for row filtering today; accepted for forward compatibility)
+             */
+            filter_creatable?: string[] | null;
+            /**
+             * Filter Agent Ids
+             * @description Filter by agent UUIDs that reference these tools (no-op for row filtering today; accepted for forward compatibility)
+             */
+            filter_agent_ids?: string[] | null;
+            /**
+             * Department Search
+             * @description Search text for department facet (no-op for row filtering)
+             */
+            department_search?: string | null;
+            /**
+             * Flag Search
+             * @description Search text for flag facet (no-op for row filtering)
+             */
+            flag_search?: string | null;
+            /**
+             * Agent Search
+             * @description Search text for agent facet (no-op for row filtering)
+             */
+            agent_search?: string | null;
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant update
@@ -53858,6 +56926,82 @@ export interface components {
              * @description Target tool identifier to update
              */
             id: string;
+            /**
+             * Name Id
+             * @description Name resource identifier
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Display name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Description resource identifier
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description text value
+             */
+            description?: string | null;
+            /**
+             * Department Ids
+             * @description Department identifiers
+             */
+            department_ids?: string[] | null;
+            /**
+             * Flag Ids
+             * @description Flag option identifiers
+             */
+            flag_ids?: string[] | null;
+            /**
+             * Arg Positions Ids
+             * @description Argument position identifiers
+             */
+            arg_positions_ids?: string[] | null;
+            /**
+             * Args Ids
+             * @description Argument identifiers
+             */
+            args_ids?: string[] | null;
+            /**
+             * Args Outputs Ids
+             * @description Argument output identifiers
+             */
+            args_outputs_ids?: string[] | null;
+            /**
+             * Permission Ids
+             * @description Permission identifiers
+             */
+            permission_ids?: string[] | null;
+            /**
+             * Instruction Id
+             * @description Response template instruction resource UUID
+             */
+            instruction_id?: string | null;
+            /**
+             * Tool Ids
+             * @description Related tool identifiers
+             */
+            tool_ids?: string[] | null;
+        };
+        /**
+         * UpdateToolPatch
+         * @description Shared patch for bulk-update-all-matching mode.
+         *
+         *     Inherits every field from ``UpdateToolItem`` and just relaxes
+         *     ``id`` to optional — the bulk impl stamps the resolved id onto a
+         *     clone of the patch per matched row, so any client-supplied id is
+         *     ignored. Sparse semantics: only fields the client sets are written.
+         */
+        UpdateToolPatch: {
+            /**
+             * Id
+             * @description Ignored — bulk impl stamps the resolved tool id per matched row
+             */
+            id?: string | null;
             /**
              * Name Id
              * @description Name resource identifier

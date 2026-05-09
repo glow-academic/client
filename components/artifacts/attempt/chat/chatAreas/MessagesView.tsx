@@ -251,12 +251,15 @@ export function MessagesView({
       return msg;
     });
 
-    // Deduplicate user messages by first content text
+    // Deduplicate optimistic user echoes by first content text. Persisted
+    // repeated utterances are valid chat turns and must remain in the tree.
     const deduplicatedMessages: typeof messagesWithStreaming = [];
     const seenContent = new Map<string, string>();
 
     for (const msg of messagesWithStreaming) {
-      if (msg.type === "query") {
+      const isOptimisticQuery =
+        msg.type === "query" && msg.id.startsWith("optimistic-user-");
+      if (isOptimisticQuery) {
         const normalizedContent = normalizeMessageContent(getFirstContentText(msg));
         const existingMessageId = seenContent.get(normalizedContent);
 
@@ -302,6 +305,12 @@ export function MessagesView({
           deduplicatedMessages.push(msg);
         }
       } else {
+        if (msg.type === "query") {
+          const normalizedContent = normalizeMessageContent(getFirstContentText(msg));
+          if (normalizedContent) {
+            seenContent.set(normalizedContent, msg.id);
+          }
+        }
         deduplicatedMessages.push(msg);
       }
     }

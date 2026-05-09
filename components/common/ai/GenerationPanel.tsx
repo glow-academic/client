@@ -728,11 +728,14 @@ export function GenerationPanel({
   );
   const activeGroupId = selectedGroupId ?? groupIdProp;
 
-  // Listen for group completed event via transport
+  // Header rename channel. ``*_Title`` is now the canonical rename op
+  // (write); ``*_Group`` is read-only and its completed event represents
+  // a fetch, not a rename, so it doesn't belong here. Payload key is
+  // ``title``.
   useEffect(() => {
-    return transport.on(`${artifactType}.group.completed`, (data) => {
-      const name = data.name as string;
-      if (name) setSelectedGroupName(name);
+    return transport.on(`${artifactType}.title.completed`, (data) => {
+      const title = data.title as string;
+      if (title) setSelectedGroupName(title);
     });
   }, [transport, artifactType]);
 

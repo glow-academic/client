@@ -3,7 +3,18 @@
  * Auth component showing overview of auth entries
  */
 "use client";
-import { Copy, Edit, Eye, Key, Pencil, Trash2, X } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  Copy,
+  Edit,
+  Eye,
+  Key,
+  Loader2,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
@@ -40,6 +51,7 @@ import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
 import { useAuthAi } from "@/hooks/use-auth-ai";
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { useProfile } from "@/contexts/profile-context";
 
@@ -92,9 +104,11 @@ export default function Auths({
   const router = useRouter();
   const { profile } = useProfile();
 
-  useAuthAi({
-    onComplete: () => router.refresh(),
-  });
+  // Ghost-rail materializes audit-driven create/update/delete/duplicate
+  // outcomes directly from `.completed` payloads, so the page no longer
+  // needs to ``router.refresh()`` on AI generation completion (which
+  // would re-burst the SSR fetches).
+  useAuthAi({});
 
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -106,7 +120,37 @@ export default function Auths({
   // Use server-provided data directly
   const authsData = serverListData;
 
-  const auths = useMemo(() => authsData?.auths || [], [authsData]);
+  // SSR-seeded base list. The audit-driven ghost hook layers
+  // create/update/delete/duplicate lifecycle on top — committed rows
+  // get merged into ``mergedAuths`` directly so the table stays
+  // current without a ``router.refresh()`` (which would re-burst the
+  // page's SSR fetches).
+  const baseAuths = useMemo(() => authsData?.auths || [], [authsData?.auths]);
+
+  const {
+    ghosts: authGhosts,
+    mergedRows: mergedAuths,
+    ack: ackAuthGhost,
+  } = useArtifactGhosts({
+    artifactType: "auth",
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar/card. Each maps to a distinct ghost visual in
+    // ``renderAuthCard`` (creating / updating / deleting /
+    // duplicating skeleton + pending soft state).
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseAuths,
+    rowKey: "auth_id",
+    // ``auths`` plural matches the field name the create / duplicate /
+    // update impls now include on their responses (see
+    // ``hydrate_auth_list_rows``). The hook reads ``output.auths``
+    // from the audit ``.completed`` payload to materialize new/changed
+    // rows directly — no SSR refresh needed.
+    artifactPlural: "auths",
+  });
+
+  // Downstream code reads ``auths`` — keep that name to minimize diff.
+  // Active list is the merged view (base + create overlays − delete overlays).
+  const auths = mergedAuths;
 
   // Flag catalog (e.g. auth_active) — used to reconstruct flag_ids on bulk edit.
   const flagOptions = useMemo(() => {
@@ -409,10 +453,11 @@ export default function Auths({
 
     try {
       await deleteAuthAction({
-        body: { auth_ids: [deleteItem.id], accept: true },
+        body: { auth_ids: [deleteItem.id], all: false, accept: true },
       });
       toast.success(`Auth "${deleteItem.name}" deleted successfully`);
-      router.refresh();
+      // Ghost rail materializes the deletion via the audit ``.completed``
+      // payload — no router.refresh() needed.
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete auth entry"
@@ -572,62 +617,123 @@ export default function Auths({
     setShowBulkEditDialog(true);
   };
 
-  const renderAuthCard = (auth: (typeof auths)[number]) => {
+  const renderAuthCard = (
+    auth: (typeof auths)[number],
+    ghost?: Ghost<(typeof auths)[0]>,
+  ) => {
+    // Same card visual for real rows and in-flight ghosts — single
+    // source of truth for layout, dimensions, badges. Ghost mode swaps
+    // action buttons for a status badge (and Accept/Reject for soft-
+    // pending), disables selection/click, and tints the border based
+    // on lifecycle state.
+    const isGhost = ghost != null;
+    const ghostState = ghost?.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
+
     const count = auth.item_count ?? 0;
-    const isCardSelected = isSelected(auth.auth_id);
+    const isCardSelected =
+      !isGhost && auth.auth_id ? isSelected(auth.auth_id) : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
-      // Don't toggle selection if clicking action buttons
+      // Don't toggle selection if clicking action buttons or when
+      // rendering as a ghost (no real id to select yet).
+      if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
       if (auth.auth_id) {
         toggleSelection(auth.auth_id);
       }
     };
 
+    // Border tint reflects ghost lifecycle. ``animate-pulse`` while
+    // in-flight signals "this is provisional"; failed/pending hold a
+    // steady color so the user can decide.
+    const ghostBorderClass = isFailed
+      ? "border-destructive/40 bg-destructive/5"
+      : isPending
+      ? "border-amber-500/50 bg-amber-50/40 dark:bg-amber-950/20"
+      : ghostState === "deleting"
+      ? "border-destructive/30 bg-destructive/5 opacity-70"
+      : inFlight
+      ? "border-primary/40 bg-primary/5 animate-pulse"
+      : "";
+
     return (
       <Card
         key={auth.auth_id}
-        className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
-          isCardSelected ? "ring-2 ring-primary" : ""
-        }`}
-        data-testid="auth-card"
+        className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
+          isGhost ? "" : "cursor-pointer"
+        } ${ghostBorderClass} ${isCardSelected ? "ring-2 ring-primary" : ""}`}
+        data-testid={isGhost ? "auth-ghost-card" : "auth-card"}
         data-auth-id={auth.auth_id}
+        data-ghost-state={ghostState}
         role="gridcell"
-        aria-label={`auth card ${auth.name}`}
+        aria-label={`auth card ${auth.name || (isGhost ? "Generating" : "Unnamed Auth")}`}
         aria-selected={isCardSelected}
+        aria-busy={inFlight ? true : undefined}
         onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex-1 min-w-0">
               <CardTitle className="text-lg flex items-center gap-2">
-                <div
-                  className={`transition-all overflow-hidden flex-shrink-0 ${
-                    selectedCount > 0
-                      ? "w-5 opacity-100"
-                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
-                  }`}
-                  data-action-button
-                >
-                  <Checkbox
-                    checked={isCardSelected}
-                    onCheckedChange={() => {
-                      if (auth.auth_id) toggleSelection(auth.auth_id);
-                    }}
-                    className="rounded-full h-5 w-5"
-                    aria-label={`Select auth ${auth.name || "Unnamed"}`}
-                  />
-                </div>
-                <Key className="h-5 w-5" />
-                <span className="truncate">{auth.name}</span>
+                {/* Selection checkbox — hidden in ghost mode (no row
+                    id to select yet). */}
+                {!isGhost && (
+                  <div
+                    className={`transition-all overflow-hidden flex-shrink-0 ${
+                      selectedCount > 0
+                        ? "w-5 opacity-100"
+                        : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                    }`}
+                    data-action-button
+                  >
+                    <Checkbox
+                      checked={isCardSelected}
+                      onCheckedChange={() => {
+                        if (auth.auth_id) toggleSelection(auth.auth_id);
+                      }}
+                      className="rounded-full h-5 w-5"
+                      aria-label={`Select auth ${auth.name || "Unnamed"}`}
+                    />
+                  </div>
+                )}
+                {/* In-flight ghost without a streamed name yet → spinner
+                    in the title slot. */}
+                {inFlight && !auth.name ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground flex-shrink-0" />
+                ) : (
+                  <Key className="h-5 w-5" />
+                )}
+                <span className="truncate">
+                  {auth.name || (isGhost ? "Generating…" : "")}
+                </span>
+                {isGhost && (
+                  <Badge
+                    variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                    className={isPending ? "border-amber-500 text-amber-700 dark:text-amber-400" : ""}
+                  >
+                    {ghostState === "creating" && "Creating…"}
+                    {ghostState === "duplicating" && "Duplicating…"}
+                    {ghostState === "updating" && "Updating…"}
+                    {ghostState === "deleting" && "Deleting…"}
+                    {ghostState === "pending" && "Pending"}
+                    {ghostState === "failed" && "Failed"}
+                  </Badge>
+                )}
               </CardTitle>
               <div className="flex flex-wrap items-center gap-2 mt-1">
-                {columnVisibility["num_items"] !== false && (
+                {columnVisibility["num_items"] !== false && !isGhost && (
                   <Badge variant="outline">
                     {count} {count === 1 ? "item" : "items"}
                   </Badge>
                 )}
-                {columnVisibility["status_badge"] !== false && auth.is_inactive && (
+                {columnVisibility["status_badge"] !== false && !isGhost && auth.is_inactive && (
                   <Badge variant="secondary" className="text-xs">
                     Inactive
                   </Badge>
@@ -635,72 +741,110 @@ export default function Auths({
               </div>
             </div>
             <div className="flex flex-wrap gap-2" data-action-button>
-              {auth.can_edit ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => router.push(`/system/auth/${auth.auth_id}`)}
-                  aria-label={`Edit ${auth.name}`}
-                  data-testid="btn-edit-auth"
-                  title={`Edit ${auth.name}`}
-                  className="h-9 px-3"
-                >
-                  <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                  <span className="md:hidden">Edit</span>
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => router.push(`/system/auth/${auth.auth_id}`)}
-                  aria-label={`View ${auth.name}`}
-                  data-testid="btn-view-auth"
-                  title={`View ${auth.name}`}
-                  className="h-9 px-3"
-                >
-                  <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                  <span className="md:hidden">View</span>
-                </Button>
+              {/* Ghost-mode action area: status-aware. Pending →
+                  Accept/Reject for soft-write ack. Failed → error
+                  indicator. In-flight → no buttons (the streaming
+                  card is read-only until commit/failure). */}
+              {isGhost && isPending && ghost.callId && (
+                <>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackAuthGhost(ghost.callId, true)}
+                  >
+                    <Check className="mr-1 h-3.5 w-3.5" />
+                    Accept
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackAuthGhost(ghost.callId, false)}
+                  >
+                    <X className="mr-1 h-3.5 w-3.5" />
+                    Reject
+                  </Button>
+                </>
               )}
-              {auth.can_duplicate && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDuplicate(auth)}
-                  disabled={isDuplicating === auth.auth_id}
-                  aria-busy={isDuplicating === auth.auth_id ? true : undefined}
-                  aria-label={`Duplicate ${auth.name}`}
-                  data-testid="btn-duplicate-auth"
-                  title={`Duplicate ${auth.name}`}
-                  className="h-9 px-3"
-                >
-                  {isDuplicating === auth.auth_id ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
+              {isGhost && isFailed && ghost.error && (
+                <span className="flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {ghost.error}
+                </span>
+              )}
+              {!isGhost && (
+                <>
+                  {auth.can_edit ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/system/auth/${auth.auth_id}`)}
+                      aria-label={`Edit ${auth.name}`}
+                      data-testid="btn-edit-auth"
+                      title={`Edit ${auth.name}`}
+                      className="h-9 px-3"
+                    >
+                      <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                      <span className="md:hidden">Edit</span>
+                    </Button>
                   ) : (
-                    <Copy className="h-4 w-4 md:mr-0 mr-2" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/system/auth/${auth.auth_id}`)}
+                      aria-label={`View ${auth.name}`}
+                      data-testid="btn-view-auth"
+                      title={`View ${auth.name}`}
+                      className="h-9 px-3"
+                    >
+                      <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                      <span className="md:hidden">View</span>
+                    </Button>
                   )}
-                  <span className="md:hidden">
-                    {isDuplicating === auth.auth_id
-                      ? "Duplicating..."
-                      : "Duplicate"}
-                  </span>
-                </Button>
-              )}
-              {auth.can_delete && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    handleDeleteClick(auth.auth_id || "", auth.name || "")
-                  }
-                  aria-label={`Delete ${auth.name}`}
-                  data-testid="btn-delete-auth"
-                  title={`Delete ${auth.name}`}
-                  className="h-9 px-3"
-                >
-                  <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
-                  <span className="md:hidden">Delete</span>
-                </Button>
+                  {auth.can_duplicate && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDuplicate(auth)}
+                      disabled={isDuplicating === auth.auth_id}
+                      aria-busy={isDuplicating === auth.auth_id ? true : undefined}
+                      aria-label={`Duplicate ${auth.name}`}
+                      data-testid="btn-duplicate-auth"
+                      title={`Duplicate ${auth.name}`}
+                      className="h-9 px-3"
+                    >
+                      {isDuplicating === auth.auth_id ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
+                      ) : (
+                        <Copy className="h-4 w-4 md:mr-0 mr-2" />
+                      )}
+                      <span className="md:hidden">
+                        {isDuplicating === auth.auth_id
+                          ? "Duplicating..."
+                          : "Duplicate"}
+                      </span>
+                    </Button>
+                  )}
+                  {auth.can_delete && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleDeleteClick(auth.auth_id || "", auth.name || "")
+                      }
+                      aria-label={`Delete ${auth.name}`}
+                      data-testid="btn-delete-auth"
+                      title={`Delete ${auth.name}`}
+                      className="h-9 px-3"
+                    >
+                      <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
+                      <span className="md:hidden">Delete</span>
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -715,6 +859,18 @@ export default function Auths({
       </Card>
     );
   };
+
+  // Visible ghosts (non-terminal states) — used to keep the grid
+  // rendered even when the SSR result is empty so the user sees the
+  // in-flight create card immediately. ``committed``/``accepted`` are
+  // dropped — the real row has already merged into ``mergedAuths``.
+  const visibleAuthGhosts = useMemo(
+    () =>
+      authGhosts.filter(
+        (g) => g.state !== "committed" && g.state !== "accepted",
+      ),
+    [authGhosts],
+  );
 
   return (
     <div className="space-y-6">
@@ -852,8 +1008,15 @@ export default function Auths({
         </div>
       )}
 
-      {/* Auth Cards Grid */}
-      {table.getRowModel().rows.length === 0 ? (
+      {/* Auth Cards Grid — ghost cards from in-flight audited writes
+          (create/duplicate/update/delete in non-terminal states) are
+          prepended via the same ``renderAuthCard`` so layout, dimensions,
+          and visual language match exactly. Once a ghost commits, its
+          hydrated row is in ``mergedAuths`` (via ``state.added``) AND
+          the ghost's ``state`` flips to "committed" — we filter those
+          out so the real row replaces the ghost in place without a
+          duplicate frame. */}
+      {table.getRowModel().rows.length === 0 && visibleAuthGhosts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12">
           <p className="text-muted-foreground">
             {auths.length === 0 ? "No auth entries found" : "No auth entries match the current filters."}
@@ -862,6 +1025,19 @@ export default function Auths({
       ) : (
         <div className="@container">
           <div className="grid grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4 gap-4">
+            {visibleAuthGhosts.map((g) => {
+              // For update/delete, ``before`` is the snapshot lookup
+              // from baseRows (existing row) — gives us name,
+              // description so the ghost card shows what's being
+              // deleted/updated. For create/duplicate, ``before`` is
+              // null and ``partial`` carries the streaming args.
+              const authShell = (g.before ?? g.partial) as (typeof auths)[0];
+              return (
+                <div key={`ghost-${g.callId}`}>
+                  {renderAuthCard(authShell, g)}
+                </div>
+              );
+            })}
             {table.getRowModel().rows.map((row) => renderAuthCard(row.original))}
           </div>
         </div>

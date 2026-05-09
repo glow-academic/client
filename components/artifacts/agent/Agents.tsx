@@ -5,7 +5,7 @@
  * 07/20/2025
  */
 "use client";
-import { Brain, Copy, Edit, Eye, Pencil, Thermometer, Trash2, X } from "lucide-react";
+import { AlertCircle, Brain, Check, Copy, Edit, Eye, Loader2, Pencil, Thermometer, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -52,6 +52,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useAgentAi } from "@/hooks/use-agent-ai";
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { useProfile } from "@/contexts/profile-context";
 
@@ -148,16 +149,43 @@ export default function Agents({
   // Use server-provided data directly
   const agentsData = serverListData;
 
-  // Extract data from response - agents is now an array (composite types)
-  const agents = useMemo(() => {
+  // SSR-seeded base list. The audit-driven ghost hook layers
+  // create/update/delete/duplicate lifecycle on top — committed rows
+  // get merged into ``mergedAgents`` directly so the table stays
+  // current without a ``router.refresh()`` (which would re-burst the
+  // page's SSR fetches — see GenerationPanel handleSend rationale).
+  const baseAgents = useMemo(() => {
     const agentsArray = agentsData?.agents || [];
-    return agentsArray.sort((a, b) => {
+    return [...agentsArray].sort((a, b) => {
       if (a.updated_at && b.updated_at) {
         return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
       }
       return 0;
     });
   }, [agentsData?.agents]);
+
+  const {
+    ghosts: agentGhosts,
+    mergedRows: mergedAgents,
+    ack: ackAgentGhost,
+  } = useArtifactGhosts({
+    artifactType: "agent",
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar/card. Each maps to a distinct ghost visual in
+    // ``renderAgentCard`` (creating / updating / deleting /
+    // duplicating skeleton + pending soft state). The hook reads
+    // ``output.agents`` from the audit ``.completed`` payload to
+    // materialize new/changed rows directly — no SSR refresh needed.
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseAgents,
+    rowKey: "agent_id",
+    artifactPlural: "agents",
+  });
+
+  // Downstream code reads ``agents`` — keep that name to minimize
+  // diff. The active list is the merged view (base + create overlays
+  // − delete overlays).
+  const agents = mergedAgents;
 
   // Build model mapping from agents array (for per-card model name display)
   const modelMapping = useMemo(() => {
@@ -660,12 +688,17 @@ export default function Agents({
     pageCount,
   });
 
-  // Memoize table rows
+  // Memoize table rows. Including ``agents`` itself (not just
+  // ``agents.length``) so update events that mutate row content but
+  // not list cardinality still invalidate the memo. ``agents`` is
+  // stabilized upstream by ``mergedAgents``'s useMemo, so a new
+  // reference only appears when ``state.added``/``replaced``/
+  // ``hiddenIds`` actually change — no spurious recomputes.
   const sortingKey = JSON.stringify(sorting);
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortingKey, agents.length, pageIndex, pageSize]);
+  }, [sortingKey, agents, pageIndex, pageSize]);
 
   const handleEdit = (id: string) => {
     router.push(`/intelligence/agents/${id}`);
@@ -860,50 +893,108 @@ export default function Agents({
     setShowBulkEditDialog(true);
   };
 
-  const renderAgentCard = (agent: (typeof agents)[0]) => {
-    const cardSelected = agent.agent_id ? isSelected(agent.agent_id) : false;
+  const renderAgentCard = (
+    agent: (typeof agents)[0],
+    ghost?: Ghost<(typeof agents)[0]>,
+  ) => {
+    // Same card visual for real rows and in-flight ghosts — single
+    // source of truth for layout/dimensions/badges. Ghost mode swaps
+    // action buttons for a status badge (Accept/Reject for soft-
+    // pending), disables selection/click, and tints the border by
+    // lifecycle state.
+    const isGhost = ghost != null;
+    const ghostState = ghost?.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
+
+    const cardSelected = !isGhost && agent.agent_id ? isSelected(agent.agent_id) : false;
     const handleCardClick = (e: React.MouseEvent) => {
-      // Don't toggle selection if clicking action buttons
+      // Don't toggle selection if clicking action buttons or when
+      // rendering as a ghost (no real id to select yet).
+      if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
       if (agent.agent_id) {
         toggleSelection(agent.agent_id);
       }
     };
+
+    // Border tint reflects ghost lifecycle. ``animate-pulse`` while
+    // in-flight signals "this is provisional"; failed/pending hold a
+    // steady color so the user can decide.
+    const ghostBorderClass = isFailed
+      ? "border-destructive/40 bg-destructive/5"
+      : isPending
+      ? "border-amber-500/50 bg-amber-50/40 dark:bg-amber-950/20"
+      : ghostState === "deleting"
+      ? "border-destructive/30 bg-destructive/5 opacity-70"
+      : inFlight
+      ? "border-primary/40 bg-primary/5 animate-pulse"
+      : "";
     return (
     <Card
       key={agent.agent_id}
-      className={`group hover:shadow-md transition-all cursor-pointer ${
+      className={`group hover:shadow-md transition-all ${
+        isGhost ? "" : "cursor-pointer"
+      } ${ghostBorderClass} ${
         cardSelected ? "ring-2 ring-primary" : ""
       }`}
-      data-testid="agent-card"
+      data-testid={isGhost ? "agent-ghost-card" : "agent-card"}
       data-agent-id={agent.agent_id}
+      data-ghost-state={ghostState}
       role="gridcell"
-      aria-label={`agent card ${agent.name || "Unnamed Agent"}`}
+      aria-label={`agent card ${agent.name || (isGhost ? "Generating" : "Unnamed Agent")}`}
       aria-selected={cardSelected}
+      aria-busy={inFlight ? true : undefined}
       onClick={handleCardClick}
     >
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="space-y-2 flex-1 min-w-0">
             <CardTitle className="text-base truncate flex items-center gap-2">
-              <div
-                className={`transition-all overflow-hidden flex-shrink-0 ${
-                  selectedCount > 0
-                    ? "w-5 opacity-100"
-                    : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
-                }`}
-                data-action-button
-              >
-                <Checkbox
-                  checked={cardSelected}
-                  onCheckedChange={() => {
-                    if (agent.agent_id) toggleSelection(agent.agent_id);
-                  }}
-                  className="rounded-full h-5 w-5"
-                  aria-label={`Select agent ${agent.name || "Unnamed"}`}
-                />
-              </div>
-              <span className="truncate">{agent.name || "Unnamed Agent"}</span>
+              {/* Selection checkbox — hidden in ghost mode (no row id
+                  to select yet). */}
+              {!isGhost && (
+                <div
+                  className={`transition-all overflow-hidden flex-shrink-0 ${
+                    selectedCount > 0
+                      ? "w-5 opacity-100"
+                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                  }`}
+                  data-action-button
+                >
+                  <Checkbox
+                    checked={cardSelected}
+                    onCheckedChange={() => {
+                      if (agent.agent_id) toggleSelection(agent.agent_id);
+                    }}
+                    className="rounded-full h-5 w-5"
+                    aria-label={`Select agent ${agent.name || "Unnamed"}`}
+                  />
+                </div>
+              )}
+              {/* In-flight ghost without a streamed name yet → spinner. */}
+              {isGhost && inFlight && !agent.name && (
+                <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0" />
+              )}
+              <span className="truncate">{agent.name || (isGhost ? "Generating…" : "Unnamed Agent")}</span>
+              {isGhost && (
+                <Badge
+                  variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                  className={isPending ? "border-amber-500 text-amber-700 dark:text-amber-400" : ""}
+                >
+                  {ghostState === "creating" && "Creating…"}
+                  {ghostState === "duplicating" && "Duplicating…"}
+                  {ghostState === "updating" && "Updating…"}
+                  {ghostState === "deleting" && "Deleting…"}
+                  {ghostState === "pending" && "Pending"}
+                  {ghostState === "failed" && "Failed"}
+                </Badge>
+              )}
             </CardTitle>
             <div className="mt-1 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
@@ -928,7 +1019,41 @@ export default function Agents({
             )}
           </div>
           <div className="flex flex-wrap gap-2 items-center" data-action-button>
-            {agent.can_edit && agent.agent_id ? (
+            {/* Ghost-mode action area: status-aware. Pending → Accept/
+                Reject for soft-write ack. Failed → error indicator.
+                In-flight → no buttons (the streaming card is read-only
+                until commit/failure). */}
+            {isGhost && isPending && ghost.callId && (
+              <>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => ackAgentGhost(ghost.callId, true)}
+                >
+                  <Check className="mr-1 h-3.5 w-3.5" />
+                  Accept
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => ackAgentGhost(ghost.callId, false)}
+                >
+                  <X className="mr-1 h-3.5 w-3.5" />
+                  Reject
+                </Button>
+              </>
+            )}
+            {isGhost && isFailed && ghost.error && (
+              <span className="flex items-center gap-1 text-xs text-destructive">
+                <AlertCircle className="h-3.5 w-3.5" />
+                {ghost.error}
+              </span>
+            )}
+            {!isGhost && agent.can_edit && agent.agent_id ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -941,7 +1066,7 @@ export default function Agents({
                 <Edit className="h-4 w-4 md:mr-0 mr-2" />
                 <span className="md:hidden">Edit</span>
               </Button>
-            ) : agent.agent_id ? (
+            ) : !isGhost && agent.agent_id ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -955,7 +1080,7 @@ export default function Agents({
                 <span className="md:hidden">View</span>
               </Button>
             ) : null}
-            {agent.can_duplicate && agent.agent_id && (
+            {!isGhost && agent.can_duplicate && agent.agent_id && (
               <Button
                 variant="outline"
                 size="sm"
@@ -970,7 +1095,7 @@ export default function Agents({
                 <span className="md:hidden">Duplicate</span>
               </Button>
             )}
-            {agent.can_delete && agent.agent_id && (
+            {!isGhost && agent.can_delete && agent.agent_id && (
               <Button
                 variant="outline"
                 size="sm"
@@ -1196,7 +1321,15 @@ export default function Agents({
           </div>
         )}
 
-        {/* Cards Grid — container-query driven; scales with content area width */}
+        {/* Cards Grid — container-query driven; scales with content area width.
+            Ghost cards from in-flight audited writes (create/duplicate/
+            update/delete in non-terminal states) are prepended — same
+            ``renderAgentCard`` so layout, dimensions, and visual
+            language match exactly. Once a ghost commits, its hydrated
+            row is in ``mergedRows`` (via ``state.added``) AND the
+            ghost's ``state`` flips to "committed"/"accepted" — we
+            filter those out so the real row replaces the ghost in
+            place without a duplicate frame. */}
         <div className="@container">
           <div
             className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4"
@@ -1204,12 +1337,28 @@ export default function Agents({
             aria-label="agents grid"
             data-testid="agents-grid"
           >
+            {agentGhosts
+              .filter((g) => g.state !== "committed" && g.state !== "accepted")
+              .map((g) => {
+                // For update/delete, ``before`` is the snapshot lookup
+                // from baseRows (existing row). For create/duplicate,
+                // ``before`` is null and ``partial`` carries the
+                // streaming args.
+                const agentShell = (g.before ?? g.partial) as (typeof agents)[0];
+                return (
+                  <div key={`ghost-${g.callId}`}>
+                    {renderAgentCard(agentShell, g)}
+                  </div>
+                );
+              })}
             {tableRows.length ? (
               tableRows.map((row) => renderAgentCard(row.original))
             ) : (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
-                No system agents match the current filters.
-              </div>
+              agentGhosts.length === 0 && (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  No system agents match the current filters.
+                </div>
+              )
             )}
           </div>
         </div>

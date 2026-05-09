@@ -6,7 +6,7 @@
  * 06/07/2025
  */
 "use client";
-import { CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Pencil, Search, Sparkles, Trash2, Users, X } from "lucide-react";
+import { AlertCircle, Check, CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Search, Sparkles, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -30,6 +30,7 @@ import type {
   SimulationsListOut,
   SimulationsListBody,
 } from "@/app/(main)/training/simulations/page";
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
@@ -228,11 +229,46 @@ export function Simulations({
   // Use server-provided data directly
   const simulationsData = serverListData;
 
-  // Extract data from response - arrays directly (composite types)
-  const simulations = useMemo(
+  // SSR-seeded base list. The audit-driven ghost hook layers
+  // create/update/delete/duplicate lifecycle on top — committed rows
+  // get merged into ``mergedSimulations`` directly so the table stays
+  // current without a ``router.refresh()`` (which would re-burst the
+  // page's SSR fetches — see GenerationPanel handleSend rationale).
+  const baseSimulations = useMemo(
     () => simulationsData?.simulations || [],
     [simulationsData?.simulations],
   );
+
+  const {
+    ghosts: simulationGhosts,
+    mergedRows: mergedSimulations,
+    ack: ackSimulationGhost,
+    drop: _dropSimulationGhost,
+  } = useArtifactGhosts({
+    artifactType: "simulation",
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar/card. Each maps to a distinct ghost visual in
+    // ``renderSimulationCard`` (creating / updating / deleting /
+    // duplicating skeleton + pending soft state). Without
+    // ``duplicate`` here the LLM's duplicate tool dispatch fires
+    // audit events that nothing is subscribed to → no ghost.
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseSimulations,
+    rowKey: "simulation_id",
+    // ``simulations`` plural is auto-derived as ``simulation`` + "s" —
+    // kept explicit here for clarity; matches the field name the
+    // create / duplicate / update impls now include on their
+    // responses (see ``hydrate_simulation_list_rows``). The hook
+    // reads ``output.simulations`` from the audit ``.completed``
+    // payload to materialize new/changed rows directly — no SSR
+    // refresh needed.
+    artifactPlural: "simulations",
+  });
+
+  // Downstream code reads ``simulations`` — keep that name to
+  // minimize diff. The active list is the merged view (base +
+  // create overlays − delete overlays).
+  const simulations = mergedSimulations;
 
   // ---- Selection helpers ----------------------------------------
   // ``isSelected`` is the single read predicate every row uses; it
@@ -551,6 +587,18 @@ export function Simulations({
     getSortedRowModel: getSortedRowModel(),
   });
 
+  // Memoize table rows. Including ``simulations`` itself (not just
+  // ``simulations.length``) so update events that mutate row content
+  // but not list cardinality still invalidate the memo. ``simulations``
+  // is stabilized upstream by ``mergedSimulations``'s useMemo, so a
+  // new reference only appears when ``state.added``/``replaced``/
+  // ``hiddenIds`` actually change — no spurious recomputes.
+  const sortingKey = JSON.stringify(sorting);
+  const tableRows = useMemo(() => {
+    return table.getRowModel().rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortingKey, simulations, pageIndex, pageSize]);
+
   // Debounced search handler
   const handleSearchChange = useCallback(
     (value: string) => {
@@ -858,55 +906,112 @@ export function Simulations({
     }
   };
 
-  const renderSimulationCard = (simulation: (typeof simulations)[number]) => {
-    if (!simulation.simulation_id) return null;
+  const renderSimulationCard = (
+    simulation: (typeof simulations)[number],
+    ghost?: Ghost<(typeof simulations)[number]>,
+  ) => {
+    // Same card visual for real rows and in-flight ghosts — single
+    // source of truth for layout, dimensions, badges. Ghost mode
+    // swaps action buttons for a status badge (and Accept/Reject for
+    // soft-pending), disables selection/click, and tints the border
+    // based on lifecycle state.
+    const isGhost = ghost != null;
+    const ghostState = ghost?.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
 
-    const isSelected = selectedSimulationIds.includes(simulation.simulation_id);
+    if (!isGhost && !simulation.simulation_id) return null;
+
+    const isSelected = !isGhost && simulation.simulation_id
+      ? selectedSimulationIds.includes(simulation.simulation_id)
+      : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
-      // Don't toggle selection if clicking action buttons
+      // Don't toggle selection if clicking action buttons or when
+      // rendering as a ghost (no real id to select yet).
+      if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
       if (simulation.simulation_id) {
         toggleSelection(simulation.simulation_id);
       }
     };
 
+    // Border tint reflects ghost lifecycle. ``animate-pulse`` while
+    // in-flight signals "this is provisional"; failed/pending hold a
+    // steady color so the user can decide.
+    const ghostBorderClass = isFailed
+      ? "border-destructive/40 bg-destructive/5"
+      : isPending
+      ? "border-amber-500/50 bg-amber-50/40 dark:bg-amber-950/20"
+      : ghostState === "deleting"
+      ? "border-destructive/30 bg-destructive/5 opacity-70"
+      : inFlight
+      ? "border-primary/40 bg-primary/5 animate-pulse"
+      : "";
+
     return (
     <Card
-      key={simulation.simulation_id}
-      aria-label={simulation.name || undefined}
-      data-testid="simulation-card"
+      key={simulation.simulation_id || ghost?.callId}
+      aria-label={simulation.name || (isGhost ? "Generating" : undefined)}
+      data-testid={isGhost ? "simulation-ghost-card" : "simulation-card"}
       data-simulation-id={simulation.simulation_id}
-      className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
-        isSelected ? "ring-2 ring-primary" : ""
-      }`}
+      data-ghost-state={ghostState}
+      className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
+        isGhost ? "" : "cursor-pointer"
+      } ${ghostBorderClass} ${isSelected ? "ring-2 ring-primary" : ""}`}
       role="gridcell"
       aria-selected={isSelected}
+      aria-busy={inFlight ? true : undefined}
       onClick={handleCardClick}
     >
       <CardHeader className="pb-3">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              {/* Selection checkbox — inline before name */}
-              <div
-                className={`transition-all overflow-hidden flex-shrink-0 ${
-                  selectedCount > 0 ? "w-5 opacity-100" : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
-                }`}
-                data-action-button
-              >
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={() => {
-                    if (simulation.simulation_id) toggleSelection(simulation.simulation_id);
-                  }}
-                  className="rounded-full h-5 w-5"
-                  aria-label={`Select simulation ${simulation.name || "Unnamed"}`}
-                />
-              </div>
+              {/* Selection checkbox — inline before name. Hidden in
+                  ghost mode (no row id to select yet). */}
+              {!isGhost && (
+                <div
+                  className={`transition-all overflow-hidden flex-shrink-0 ${
+                    selectedCount > 0 ? "w-5 opacity-100" : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                  }`}
+                  data-action-button
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => {
+                      if (simulation.simulation_id) toggleSelection(simulation.simulation_id);
+                    }}
+                    className="rounded-full h-5 w-5"
+                    aria-label={`Select simulation ${simulation.name || "Unnamed"}`}
+                  />
+                </div>
+              )}
+              {/* In-flight ghost without a streamed name yet → spinner. */}
+              {inFlight && !simulation.name && (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              )}
               <CardTitle className="text-lg truncate">
-                {simulation.name}
+                {simulation.name || (isGhost ? "Generating…" : "")}
               </CardTitle>
+              {isGhost && (
+                <Badge
+                  variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                  className={isPending ? "border-amber-500 text-amber-700 dark:text-amber-400" : ""}
+                >
+                  {ghostState === "creating" && "Creating…"}
+                  {ghostState === "duplicating" && "Duplicating…"}
+                  {ghostState === "updating" && "Updating…"}
+                  {ghostState === "deleting" && "Deleting…"}
+                  {ghostState === "pending" && "Pending"}
+                  {ghostState === "failed" && "Failed"}
+                </Badge>
+              )}
             </div>
             {((columnVisibility.ai_badge !== false && simulation.generated) || (columnVisibility.practice_badge !== false && simulation.practice_simulation) || (columnVisibility.status_badge !== false && simulation.is_inactive)) && (
             <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -928,7 +1033,41 @@ export function Simulations({
             )}
           </div>
           <div className="flex flex-wrap items-center gap-1" data-action-button>
-            {simulation.can_edit ? (
+            {/* Ghost-mode action area: status-aware. Pending → Accept/
+                Reject for soft-write ack. Failed → error indicator.
+                In-flight → no buttons (the streaming card is read-only
+                until commit/failure). */}
+            {isGhost && isPending && ghost.callId && (
+              <>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => ackSimulationGhost(ghost.callId, true)}
+                >
+                  <Check className="mr-1 h-3.5 w-3.5" />
+                  Accept
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => ackSimulationGhost(ghost.callId, false)}
+                >
+                  <X className="mr-1 h-3.5 w-3.5" />
+                  Reject
+                </Button>
+              </>
+            )}
+            {isGhost && isFailed && ghost.error && (
+              <span className="flex items-center gap-1 text-xs text-destructive">
+                <AlertCircle className="h-3.5 w-3.5" />
+                {ghost.error}
+              </span>
+            )}
+            {!isGhost && (<>{simulation.can_edit ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -1033,7 +1172,7 @@ export function Simulations({
                 </TooltipTrigger>
                 <TooltipContent>Delete</TooltipContent>
               </Tooltip>
-            )}
+            )}</>)}
           </div>
         </div>
       </CardHeader>
@@ -1282,7 +1421,17 @@ export function Simulations({
           </div>
           )}
 
-          {/* Cards Grid — container-query driven; scales with content area width */}
+          {/* Cards Grid — container-query driven; scales with content
+              area width.
+
+              Ghost cards from in-flight audited writes (create/duplicate/
+              update/delete in non-terminal states) are prepended — same
+              ``renderSimulationCard`` so layout, dimensions, and visual
+              language match exactly. Once a ghost commits, its hydrated
+              row is in ``mergedRows`` (via ``state.added``) AND the
+              ghost's ``state`` flips to "committed" — we filter those
+              out so the real row replaces the ghost in place without a
+              duplicate frame. */}
           <div className="@container">
             <div
               className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4"
@@ -1290,14 +1439,33 @@ export function Simulations({
               aria-label="simulations grid"
               data-testid="simulations-grid"
             >
-              {simulations.length ? (
-                simulations.map((simulation) => (
-                  <div key={simulation.simulation_id}>{renderSimulationCard(simulation)}</div>
-                ))
+              {simulationGhosts
+                .filter((g) => g.state !== "committed" && g.state !== "accepted")
+                .map((g) => {
+                  // For update/delete, ``before`` is the snapshot lookup
+                  // from baseRows (existing row) — gives us name/desc
+                  // so the ghost card shows what's being deleted/updated.
+                  // For create/duplicate, ``before`` is null and
+                  // ``partial`` carries the streaming args.
+                  const simulationShell = (g.before ?? g.partial) as (typeof simulations)[number];
+                  return (
+                    <div key={`ghost-${g.callId}`}>
+                      {renderSimulationCard(simulationShell, g)}
+                    </div>
+                  );
+                })}
+              {tableRows.length ? (
+                tableRows.map((row) => {
+                  const simulation = row.original;
+                  const key = simulation.simulation_id || `simulation-${row.id}`;
+                  return <div key={key}>{renderSimulationCard(simulation)}</div>;
+                })
               ) : (
-                <div className="col-span-full text-center py-8 text-muted-foreground">
-                  No simulations match the current filters.
-                </div>
+                simulationGhosts.length === 0 && (
+                  <div className="col-span-full text-center py-8 text-muted-foreground">
+                    No simulations match the current filters.
+                  </div>
+                )
               )}
             </div>
           </div>

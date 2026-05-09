@@ -7,7 +7,7 @@
  * 06/18/2025
  */
 "use client";
-import { Copy, Edit, Eye, FileCheck, Pencil, Star, Trash2, X } from "lucide-react";
+import { AlertCircle, Check, Copy, Edit, Eye, FileCheck, Loader2, Pencil, Star, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -39,9 +39,11 @@ import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
+import { Badge } from "@/components/ui/badge";
 import { useProfile } from "@/contexts/profile-context";
 import {
   AlertDialog,
@@ -119,6 +121,40 @@ export default function Rubrics({
     onComplete: () => router.refresh(),
   });
 
+  // Use server-provided data directly
+  const rubricsData = serverListData;
+
+  // SSR-seeded base list. The audit-driven ghost hook layers
+  // create/update/delete/duplicate lifecycle on top — committed rows
+  // get merged into ``mergedRubrics`` directly so the table stays
+  // current without a ``router.refresh()`` (which would re-burst the
+  // page's SSR fetches — see GenerationPanel handleSend rationale).
+  const baseRubrics = useMemo(() => {
+    return rubricsData?.rubrics || [];
+  }, [rubricsData?.rubrics]);
+
+  const {
+    ghosts: rubricGhosts,
+    mergedRows: mergedRubrics,
+    ack: ackRubricGhost,
+    drop: _dropRubricGhost,
+  } = useArtifactGhosts({
+    artifactType: "rubric",
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar/card. Each maps to a distinct ghost visual in
+    // ``renderRubricCard`` (creating / updating / deleting /
+    // duplicating skeleton + pending soft state).
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseRubrics,
+    rowKey: "rubric_id",
+    // ``rubrics`` plural is auto-derived but kept explicit; matches
+    // the response field on create/update/duplicate populated by
+    // ``hydrate_rubric_list_rows``. The hook reads ``output.rubrics``
+    // from the audit ``.completed`` payload to materialize new/changed
+    // rows directly — no SSR refresh needed.
+    artifactPlural: "rubrics",
+  });
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -153,10 +189,10 @@ export default function Rubrics({
     { id: "name", desc: false },
   ]);
 
-  // Use server-provided data directly
-  const rubricsData = serverListData;
-
-  const rubrics = useMemo(() => rubricsData?.rubrics || [], [rubricsData]);
+  // Downstream code reads ``rubrics`` — keep that name to minimize
+  // diff. The active list is the merged view (base + create overlays
+  // − delete overlays).
+  const rubrics = mergedRubrics;
   const standardGroups = useMemo(
     () => rubricsData?.standard_groups || [],
     [rubricsData],
@@ -657,13 +693,18 @@ export default function Rubrics({
     pageCount,
   });
 
-  // Memoize table rows
+  // Memoize table rows. Including ``rubrics`` itself (not just
+  // ``rubrics.length``) so update events that mutate row content but
+  // not list cardinality still invalidate the memo. ``rubrics`` is
+  // stabilized upstream by ``mergedRubrics``'s useMemo, so a new
+  // reference only appears when ``state.added``/``replaced``/
+  // ``hiddenIds`` actually change — no spurious recomputes.
   const sortingKey = JSON.stringify(sorting);
   const columnFiltersKey = JSON.stringify(columnFilters);
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortingKey, columnFiltersKey, rubrics.length, pageIndex, pageSize]);
+  }, [sortingKey, columnFiltersKey, rubrics, pageIndex, pageSize]);
 
   const handleDelete = async () => {
     if (!deleteItem || !deleteRubricAction) return;
@@ -676,7 +717,7 @@ export default function Rubrics({
     setIsDeleting(true);
     try {
       await deleteRubricAction({
-        body: { rubric_ids: [deleteItem.id], accept: true },
+        body: { rubric_ids: [deleteItem.id], all: false, accept: true },
       });
       toast.success("Rubric deleted successfully");
       router.refresh();
@@ -868,7 +909,25 @@ export default function Rubrics({
     setShowBulkEditDialog(true);
   };
 
-  const renderRubricCard = (rubric: (typeof rubrics)[number]) => {
+  const renderRubricCard = (
+    rubric: (typeof rubrics)[number],
+    ghost?: Ghost<(typeof rubrics)[number]>,
+  ) => {
+    // Same card visual for real rows and in-flight ghosts — single
+    // source of truth for layout, dimensions, badges. Ghost mode swaps
+    // action buttons for a status badge (and Accept/Reject for
+    // soft-pending), disables selection/click, and tints the border
+    // based on lifecycle state.
+    const isGhost = ghost != null;
+    const ghostState = ghost?.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
+
     const groupIds = rubric.standard_group_ids || [];
     let totalPoints = 0;
     let totalPassPoints = 0;
@@ -886,23 +945,43 @@ export default function Rubrics({
         ? Math.round((totalPassPoints / totalPoints) * 100)
         : (rubric.pass_percentage ?? 0);
 
-    const cardIsSelected = isSelected(rubric.rubric_id);
+    const cardIsSelected = !isGhost && isSelected(rubric.rubric_id);
     const handleCardClick = (e: React.MouseEvent) => {
-      // Don't toggle selection if clicking action buttons
+      // Don't toggle selection if clicking action buttons or when
+      // rendering as a ghost (no real id to select).
+      if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
       if (rubric.rubric_id) {
         toggleSelection(rubric.rubric_id);
       }
     };
+
+    // Border tint reflects ghost lifecycle. ``animate-pulse`` while
+    // in-flight signals "this is provisional"; failed/pending hold a
+    // steady color so the user can decide.
+    const ghostBorderClass = isFailed
+      ? "border-destructive/40 bg-destructive/5"
+      : isPending
+      ? "border-amber-500/50 bg-amber-50/40 dark:bg-amber-950/20"
+      : ghostState === "deleting"
+      ? "border-destructive/30 bg-destructive/5 opacity-70"
+      : inFlight
+      ? "border-primary/40 bg-primary/5 animate-pulse"
+      : "";
+
     return (
       <Card
         key={rubric.rubric_id}
-        className={`group w-full hover:shadow-md transition-all cursor-pointer ${cardIsSelected ? "ring-2 ring-primary" : ""}`}
-        data-testid="rubric-card"
+        className={`group w-full hover:shadow-md transition-all ${
+          isGhost ? "" : "cursor-pointer"
+        } ${ghostBorderClass} ${cardIsSelected ? "ring-2 ring-primary" : ""}`}
+        data-testid={isGhost ? "rubric-ghost-card" : "rubric-card"}
         data-rubric-id={rubric.rubric_id}
+        data-ghost-state={ghostState}
         role="gridcell"
-        aria-label={`rubric card ${rubric.name || "Unnamed Rubric"}`}
+        aria-label={`rubric card ${rubric.name || (isGhost ? "Generating" : "Unnamed Rubric")}`}
         aria-selected={cardIsSelected}
+        aria-busy={inFlight ? true : undefined}
         onClick={handleCardClick}
       >
         {/* Header */}
@@ -910,26 +989,47 @@ export default function Rubrics({
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="space-y-2 flex-1">
               <div className="flex items-center gap-2">
-                <div
-                  className={`transition-all overflow-hidden flex-shrink-0 ${
-                    selectedCount > 0
-                      ? "w-5 opacity-100"
-                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
-                  }`}
-                  data-action-button
-                >
-                  <Checkbox
-                    checked={cardIsSelected}
-                    onCheckedChange={() => {
-                      if (rubric.rubric_id) toggleSelection(rubric.rubric_id);
-                    }}
-                    className="rounded-full h-5 w-5"
-                    aria-label={`Select rubric ${rubric.name || "Unnamed"}`}
-                  />
-                </div>
+                {/* Selection checkbox — hidden in ghost mode (no real
+                    row id to select yet). */}
+                {!isGhost && (
+                  <div
+                    className={`transition-all overflow-hidden flex-shrink-0 ${
+                      selectedCount > 0
+                        ? "w-5 opacity-100"
+                        : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                    }`}
+                    data-action-button
+                  >
+                    <Checkbox
+                      checked={cardIsSelected}
+                      onCheckedChange={() => {
+                        if (rubric.rubric_id) toggleSelection(rubric.rubric_id);
+                      }}
+                      className="rounded-full h-5 w-5"
+                      aria-label={`Select rubric ${rubric.name || "Unnamed"}`}
+                    />
+                  </div>
+                )}
+                {/* In-flight ghost without a streamed name yet → spinner. */}
+                {inFlight && !rubric.name && (
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                )}
                 <CardTitle className="text-2xl font-bold">
-                  {rubric.name}
+                  {rubric.name || (isGhost ? "Generating…" : "Unnamed Rubric")}
                 </CardTitle>
+                {isGhost && (
+                  <Badge
+                    variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                    className={isPending ? "border-amber-500 text-amber-700 dark:text-amber-400" : ""}
+                  >
+                    {ghostState === "creating" && "Creating…"}
+                    {ghostState === "duplicating" && "Duplicating…"}
+                    {ghostState === "updating" && "Updating…"}
+                    {ghostState === "deleting" && "Deleting…"}
+                    {ghostState === "pending" && "Pending"}
+                    {ghostState === "failed" && "Failed"}
+                  </Badge>
+                )}
               </div>
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 {columnVisibility["points_summary"] !== false && (
@@ -952,66 +1052,104 @@ export default function Rubrics({
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2" data-action-button>
-              {rubric.can_edit ? (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (rubric.rubric_id) handleEdit(rubric.rubric_id);
-                  }}
-                  data-testid="btn-edit-rubric"
-                  aria-label="Edit rubric"
-                >
-                  <Edit className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
-                  <span className="md:hidden">Edit</span>
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (rubric.rubric_id) handleEdit(rubric.rubric_id);
-                  }}
-                  aria-label={`View ${rubric.name}`}
-                  data-testid="btn-view-rubric"
-                >
-                  <Eye className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
-                  <span className="md:hidden">View</span>
-                </Button>
+              {/* Ghost-mode action area: status-aware. Pending →
+                  Accept/Reject for soft-write ack. Failed → error
+                  indicator. In-flight → no buttons (read-only until
+                  commit/failure). */}
+              {isGhost && isPending && ghost.callId && (
+                <>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackRubricGhost(ghost.callId, true)}
+                  >
+                    <Check className="mr-1 h-3.5 w-3.5" />
+                    Accept
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackRubricGhost(ghost.callId, false)}
+                  >
+                    <X className="mr-1 h-3.5 w-3.5" />
+                    Reject
+                  </Button>
+                </>
               )}
-              {rubric.can_duplicate && (
-                <Button
-                  variant="outline"
-                  onClick={() => handleDuplicate(rubric)}
-                  disabled={isDuplicating === rubric.rubric_id}
-                  data-testid="btn-duplicate-rubric"
-                  aria-label="Duplicate rubric"
-                >
-                  {isDuplicating === rubric.rubric_id ? (
-                    <>
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 md:ml-0 mr-2" />
-                      <span className="md:hidden">Duplicating...</span>
-                    </>
+              {isGhost && isFailed && ghost.error && (
+                <span className="flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {ghost.error}
+                </span>
+              )}
+              {!isGhost && (
+                <>
+                  {rubric.can_edit ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        if (rubric.rubric_id) handleEdit(rubric.rubric_id);
+                      }}
+                      data-testid="btn-edit-rubric"
+                      aria-label="Edit rubric"
+                    >
+                      <Edit className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
+                      <span className="md:hidden">Edit</span>
+                    </Button>
                   ) : (
-                    <>
-                      <Copy className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
-                      <span className="md:hidden">Duplicate</span>
-                    </>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        if (rubric.rubric_id) handleEdit(rubric.rubric_id);
+                      }}
+                      aria-label={`View ${rubric.name}`}
+                      data-testid="btn-view-rubric"
+                    >
+                      <Eye className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
+                      <span className="md:hidden">View</span>
+                    </Button>
                   )}
-                </Button>
-              )}
-              {rubric.can_delete && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (rubric.rubric_id) {
-                      handleDeleteClick(rubric.rubric_id, rubric.name ?? "");
-                    }
-                  }}
-                  data-testid="btn-delete-rubric"
-                  aria-label="Delete rubric"
-                >
-                  <Trash2 className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
-                  <span className="md:hidden">Delete</span>
-                </Button>
+                  {rubric.can_duplicate && (
+                    <Button
+                      variant="outline"
+                      onClick={() => handleDuplicate(rubric)}
+                      disabled={isDuplicating === rubric.rubric_id}
+                      data-testid="btn-duplicate-rubric"
+                      aria-label="Duplicate rubric"
+                    >
+                      {isDuplicating === rubric.rubric_id ? (
+                        <>
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 md:ml-0 mr-2" />
+                          <span className="md:hidden">Duplicating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
+                          <span className="md:hidden">Duplicate</span>
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {rubric.can_delete && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        if (rubric.rubric_id) {
+                          handleDeleteClick(rubric.rubric_id, rubric.name ?? "");
+                        }
+                      }}
+                      data-testid="btn-delete-rubric"
+                      aria-label="Delete rubric"
+                    >
+                      <Trash2 className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
+                      <span className="md:hidden">Delete</span>
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -1252,14 +1390,40 @@ export default function Rubrics({
         </div>
         )}
 
-        {/* Rubrics cards */}
+        {/* Rubrics cards.
+
+            Ghost cards from in-flight audited writes
+            (create/duplicate/update/delete in non-terminal states) are
+            prepended — same ``renderRubricCard`` so layout matches
+            exactly. Once a ghost commits, its hydrated row is in
+            ``mergedRows`` (via ``state.added``) AND the ghost's
+            ``state`` flips to "committed" — we filter those out so the
+            real row replaces the ghost in place without a duplicate
+            frame. */}
         <div className="space-y-4" data-testid="rubrics-grid">
+          {rubricGhosts
+            .filter((g) => g.state !== "committed" && g.state !== "accepted")
+            .map((g) => {
+              // For update/delete, ``before`` is the snapshot lookup
+              // from baseRows (existing row) — gives us name and
+              // description so the ghost shows what's being
+              // deleted/updated. For create/duplicate, ``before`` is
+              // null and ``partial`` carries the streaming args.
+              const rubricShell = (g.before ?? g.partial) as (typeof rubrics)[number];
+              return (
+                <div key={`ghost-${g.callId}`}>
+                  {renderRubricCard(rubricShell, g)}
+                </div>
+              );
+            })}
           {tableRows.length ? (
             tableRows.map((row) => renderRubricCard(row.original))
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No rubrics match the current filters.
-            </div>
+            rubricGhosts.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No rubrics match the current filters.
+              </div>
+            )
           )}
         </div>
 

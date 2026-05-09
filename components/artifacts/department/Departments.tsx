@@ -5,11 +5,13 @@
  * 07/20/2025
  */
 "use client";
-import { Copy, Edit, Eye, Pencil, Trash2, Users, X } from "lucide-react";
+import { AlertCircle, Check, Copy, Edit, Eye, Loader2, Pencil, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 
 import {
   AlertDialog,
@@ -126,11 +128,41 @@ export default function Departments({
   // Use server-provided data directly
   const departmentsData = serverListData;
 
-  // Extract data from response - arrays instead of dicts (composite types)
-  const departments = useMemo(
+  // SSR-seeded base list. The audit-driven ghost hook layers
+  // create/update/delete/duplicate lifecycle on top — committed rows
+  // get merged into ``mergedDepartments`` directly so the table stays
+  // current without a ``router.refresh()`` (which would re-burst the
+  // page's SSR fetches).
+  const baseDepartments = useMemo(
     () => departmentsData?.departments || [],
     [departmentsData?.departments],
   );
+
+  const {
+    ghosts: departmentGhosts,
+    mergedRows: mergedDepartments,
+    ack: ackDepartmentGhost,
+  } = useArtifactGhosts({
+    artifactType: "department",
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar/card. Each maps to a distinct ghost visual in
+    // ``renderDepartmentCard``. Without ``duplicate`` here the LLM's
+    // duplicate tool dispatch fires audit events that nothing is
+    // subscribed to → no ghost.
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseDepartments,
+    rowKey: "department_id",
+    // Plural matches the response field name on
+    // ``hydrate_department_list_rows`` payloads — the hook reads
+    // ``output.departments`` from the audit ``.completed`` payload to
+    // materialize new/changed rows directly, no SSR refresh needed.
+    artifactPlural: "departments",
+  });
+
+  // Downstream code reads ``departments`` — keep that name to minimize
+  // diff. The active list is the merged view (base + create overlays
+  // − delete overlays).
+  const departments = mergedDepartments;
   // Note: cohort/profile filter options removed since faceted filtering
   // is no longer supported without cohort_ids/profile_ids per row
 
@@ -445,6 +477,12 @@ export default function Departments({
   // Stringify arrays for stable comparison (arrays are compared by reference)
   const sortingKey = JSON.stringify(sorting);
   const columnFiltersKey = JSON.stringify(columnFilters);
+  // Including ``departments`` itself (not just ``departments.length``)
+  // so update events that mutate row content but not list cardinality
+  // still invalidate the memo. ``departments`` is stabilized upstream
+  // by ``mergedDepartments``'s useMemo, so a new reference only
+  // appears when ``state.added``/``replaced``/``hiddenIds`` actually
+  // change — no spurious recomputes.
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -452,7 +490,7 @@ export default function Departments({
     // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
     sortingKey,
     columnFiltersKey,
-    departments.length,
+    departments,
     // Use pagination primitives directly (not object references)
     pageIndex,
     pageSize,
@@ -494,7 +532,7 @@ export default function Departments({
 
     try {
       await deleteDepartmentAction({
-        body: { department_ids: [deleteItem.id], accept: true },
+        body: { department_ids: [deleteItem.id], all: false, accept: true },
       });
       toast.success(`Department "${deleteItem.name || "Unknown"}" deleted successfully`);
       router.refresh();
@@ -645,62 +683,118 @@ export default function Departments({
     return new Date(dateString).toLocaleDateString();
   };
 
-  const renderDepartmentCard = (department: (typeof departments)[0]) => {
-    const cardSelected = isSelected(department.department_id);
+  const renderDepartmentCard = (
+    department: (typeof departments)[0],
+    ghost?: Ghost<(typeof departments)[0]>,
+  ) => {
+    // Same card visual for real rows and in-flight ghosts — single
+    // source of truth for layout, dimensions, badges. Ghost mode swaps
+    // action buttons for a status badge (and Accept/Reject for soft-
+    // pending), disables selection/click, and tints the border based
+    // on lifecycle state.
+    const isGhost = ghost != null;
+    const ghostState = ghost?.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
+
+    const cardSelected = !isGhost && isSelected(department.department_id);
     const handleCardClick = (e: React.MouseEvent) => {
-      // Don't toggle selection if clicking action buttons
+      // Don't toggle selection if clicking action buttons or rendering
+      // as a ghost (no real id to select yet).
+      if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
       if (department.department_id) {
         toggleSelection(department.department_id);
       }
     };
+
+    // Border tint reflects ghost lifecycle. ``animate-pulse`` while
+    // in-flight signals "this is provisional"; failed/pending hold a
+    // steady color so the user can decide.
+    const ghostBorderClass = isFailed
+      ? "border-destructive/40 bg-destructive/5"
+      : isPending
+      ? "border-amber-500/50 bg-amber-50/40 dark:bg-amber-950/20"
+      : ghostState === "deleting"
+      ? "border-destructive/30 bg-destructive/5 opacity-70"
+      : inFlight
+      ? "border-primary/40 bg-primary/5 animate-pulse"
+      : "";
+
     return (
     <Card
       key={department.department_id}
-      className={`group hover:shadow-md transition-all cursor-pointer ${
-        cardSelected ? "ring-2 ring-primary" : ""
-      }`}
-      data-testid="department-card"
+      className={`group hover:shadow-md transition-all ${
+        isGhost ? "" : "cursor-pointer"
+      } ${ghostBorderClass} ${cardSelected ? "ring-2 ring-primary" : ""}`}
+      data-testid={isGhost ? "department-ghost-card" : "department-card"}
       data-department-id={department.department_id}
+      data-ghost-state={ghostState}
       role="gridcell"
-      aria-label={`department card ${department.name || "Unnamed Department"}`}
+      aria-label={`department card ${department.name || (isGhost ? "Generating" : "Unnamed Department")}`}
       aria-selected={cardSelected}
+      aria-busy={inFlight ? true : undefined}
       onClick={handleCardClick}
     >
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="space-y-2 flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <div
-                className={`transition-all overflow-hidden flex-shrink-0 ${
-                  selectedCount > 0
-                    ? "w-5 opacity-100"
-                    : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
-                }`}
-                data-action-button
-              >
-                <Checkbox
-                  checked={cardSelected}
-                  onCheckedChange={() => {
-                    if (department.department_id) toggleSelection(department.department_id);
-                  }}
-                  className="rounded-full h-5 w-5"
-                  aria-label={`Select department ${department.name || "Unnamed"}`}
-                />
-              </div>
+              {/* Selection checkbox — hidden in ghost mode (no row id
+                  to select yet). */}
+              {!isGhost && (
+                <div
+                  className={`transition-all overflow-hidden flex-shrink-0 ${
+                    selectedCount > 0
+                      ? "w-5 opacity-100"
+                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                  }`}
+                  data-action-button
+                >
+                  <Checkbox
+                    checked={cardSelected}
+                    onCheckedChange={() => {
+                      if (department.department_id) toggleSelection(department.department_id);
+                    }}
+                    className="rounded-full h-5 w-5"
+                    aria-label={`Select department ${department.name || "Unnamed"}`}
+                  />
+                </div>
+              )}
+              {inFlight && !department.name && (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground flex-shrink-0" />
+              )}
               <CardTitle className="text-base line-clamp-2">
-                {department.name || "Unnamed Department"}
+                {department.name || (isGhost ? "Generating…" : "Unnamed Department")}
               </CardTitle>
+              {isGhost && (
+                <Badge
+                  variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                  className={isPending ? "border-amber-500 text-amber-700 dark:text-amber-400" : ""}
+                >
+                  {ghostState === "creating" && "Creating…"}
+                  {ghostState === "duplicating" && "Duplicating…"}
+                  {ghostState === "updating" && "Updating…"}
+                  {ghostState === "deleting" && "Deleting…"}
+                  {ghostState === "pending" && "Pending"}
+                  {ghostState === "failed" && "Failed"}
+                </Badge>
+              )}
             </div>
             <div className="mt-1 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                {columnVisibility["staff_count"] !== false && (
+                {!isGhost && columnVisibility["staff_count"] !== false && (
                   <Badge variant="outline" className="text-xs">
                     <Users className="h-3 w-3 mr-1" />
                     {department.staff_count} staff
                   </Badge>
                 )}
-                {columnVisibility["status_badge"] !== false && department.is_inactive && (
+                {!isGhost && columnVisibility["status_badge"] !== false && department.is_inactive && (
                   <Badge variant="secondary" className="text-xs">
                     Inactive
                   </Badge>
@@ -709,12 +803,45 @@ export default function Departments({
             </div>
             {columnVisibility["card_description"] !== false && (
               <p className="text-sm text-muted-foreground mt-2">
-                {department.description || "No description available"}
+                {department.description || (isGhost ? "" : "No description available")}
               </p>
             )}
           </div>
           <div className="flex flex-wrap gap-2 items-center" data-action-button>
-            {department.can_edit && department.department_id ? (
+            {/* Ghost-mode action area: status-aware. Pending →
+                Accept/Reject for soft-write ack. Failed → error
+                indicator. In-flight → no buttons. */}
+            {isGhost && isPending && ghost.callId && (
+              <>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => ackDepartmentGhost(ghost.callId, true)}
+                >
+                  <Check className="mr-1 h-3.5 w-3.5" />
+                  Accept
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => ackDepartmentGhost(ghost.callId, false)}
+                >
+                  <X className="mr-1 h-3.5 w-3.5" />
+                  Reject
+                </Button>
+              </>
+            )}
+            {isGhost && isFailed && ghost.error && (
+              <span className="flex items-center gap-1 text-xs text-destructive">
+                <AlertCircle className="h-3.5 w-3.5" />
+                {ghost.error}
+              </span>
+            )}
+            {!isGhost && (department.can_edit && department.department_id ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -740,8 +867,8 @@ export default function Departments({
                 <Eye className="h-4 w-4 md:mr-0 mr-2" />
                 <span className="md:hidden">View</span>
               </Button>
-            ) : null}
-            {department.can_duplicate && department.department_id && (
+            ) : null)}
+            {!isGhost && department.can_duplicate && department.department_id && (
               <Button
                 variant="outline"
                 size="sm"
@@ -767,7 +894,7 @@ export default function Departments({
                 </span>
               </Button>
             )}
-            {department.can_delete && department.department_id && (
+            {!isGhost && department.can_delete && department.department_id && (
               <Button
                 variant="outline"
                 size="sm"
@@ -963,7 +1090,15 @@ export default function Departments({
           </div>
         )}
 
-        {/* Cards Grid — container-query driven; scales with content area width */}
+        {/* Cards Grid — container-query driven; scales with content area width.
+            Ghost cards from in-flight audited writes (create/duplicate/
+            update/delete in non-terminal states) are prepended — same
+            ``renderDepartmentCard`` so layout, dimensions, and visual
+            language match exactly. Once a ghost commits, its hydrated
+            row is in ``mergedRows`` (via ``state.added``) AND the
+            ghost's ``state`` flips to "committed" — we filter those
+            out so the real row replaces the ghost in place without a
+            duplicate frame. */}
         <div className="@container">
           <div
             className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4"
@@ -971,12 +1106,27 @@ export default function Departments({
             aria-label="departments grid"
             data-testid="departments-grid"
           >
+            {departmentGhosts
+              .filter((g) => g.state !== "committed" && g.state !== "accepted")
+              .map((g) => {
+                // For update/delete, ``before`` is the snapshot lookup
+                // from baseRows; for create/duplicate, ``partial`` is
+                // the streaming args (often sparse).
+                const departmentShell = (g.before ?? g.partial) as (typeof departments)[0];
+                return (
+                  <div key={`ghost-${g.callId}`}>
+                    {renderDepartmentCard(departmentShell, g)}
+                  </div>
+                );
+              })}
             {tableRows.length ? (
               tableRows.map((row) => renderDepartmentCard(row.original))
             ) : (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
-                No departments match the current filters.
-              </div>
+              departmentGhosts.length === 0 && (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  No departments match the current filters.
+                </div>
+              )
             )}
           </div>
         </div>

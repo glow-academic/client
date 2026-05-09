@@ -6,13 +6,16 @@
  */
 "use client";
 import {
+  AlertCircle,
   Book,
   Calendar,
+  Check,
   Clock,
   Copy,
   Edit,
   Eye,
   List,
+  Loader2,
   MapPin,
   Pencil,
   Trash2,
@@ -40,6 +43,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 import { useParameterAi } from "@/hooks/use-parameter-ai";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { useProfile } from "@/contexts/profile-context";
@@ -137,10 +141,43 @@ export default function Parameters({
   // Use server-provided data directly
   const parametersData = serverListData;
 
-  const parameters = useMemo(
+  // ``baseParameters`` is the SSR-rendered table; ``useArtifactGhosts``
+  // overlays create/update/delete/duplicate lifecycle on top — committed
+  // rows get merged into ``mergedParameters`` directly so the table
+  // stays current without a ``router.refresh()`` (which would re-burst
+  // the page's SSR fetches). Same shape applied to persona/scenario.
+  const baseParameters = useMemo(
     () => parametersData?.parameters || [],
-    [parametersData]
+    [parametersData?.parameters]
   );
+
+  const {
+    ghosts: parameterGhosts,
+    mergedRows: mergedParameters,
+    ack: ackParameterGhost,
+    drop: _dropParameterGhost,
+  } = useArtifactGhosts({
+    artifactType: "parameter",
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar/card. Each maps to a distinct ghost visual in
+    // ``renderParameterCard``. Without ``duplicate`` here the LLM's
+    // duplicate tool dispatch fires audit events that nothing is
+    // subscribed to → no ghost.
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseParameters,
+    rowKey: "parameter_id",
+    // ``parameters`` plural matches the field name the create / update
+    // / duplicate impls now include on their responses (see
+    // ``hydrate_parameter_list_rows``). The hook reads
+    // ``output.parameters`` from the audit ``.completed`` payload to
+    // materialize new/changed rows directly — no SSR refresh needed.
+    artifactPlural: "parameters",
+  });
+
+  // Downstream code reads ``parameters`` — keep that name to minimize
+  // diff. The active list is the merged view (base + create overlays
+  // − delete overlays).
+  const parameters = mergedParameters;
 
   // Flag catalog (e.g. parameter_active) — used to reconstruct flag_ids on bulk edit.
   const flagOptions = useMemo(() => {
@@ -438,22 +475,23 @@ export default function Parameters({
     },
   });
 
-  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
+  // Memoize table rows. Including ``parameters`` itself (not just
+  // ``parameters.length``) so update events that mutate row content
+  // but not list cardinality still invalidate the memo. ``parameters``
+  // is stabilized upstream by ``mergedParameters``'s useMemo, so a new
+  // reference only appears when ``state.added`` / ``replaced`` /
+  // ``hiddenIds`` actually change — no spurious recomputes.
   const pageIndex = table.getState().pagination.pageIndex;
   const pageSize = table.getState().pagination.pageSize;
-  // Stringify arrays for stable comparison (arrays are compared by reference)
   const sortingKey = JSON.stringify(sorting);
   const columnFiltersKey = JSON.stringify(columnFilters);
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
     sortingKey,
     columnFiltersKey,
-    parameters.length,
-    // Use pagination primitives directly (not object references)
+    parameters,
     pageIndex,
     pageSize,
   ]);
@@ -504,7 +542,7 @@ export default function Parameters({
 
     try {
       await deleteParameterAction({
-        body: { parameter_ids: [deleteItem.id], accept: true },
+        body: { parameter_ids: [deleteItem.id], all: false, accept: true },
       });
       // profileId comes from X-Profile-Id header automatically
       toast.success(`Parameter "${deleteItem.name}" deleted successfully`);
@@ -695,56 +733,116 @@ export default function Parameters({
     );
   };
 
-  const renderParameterCard = (parameter: (typeof parameters)[number]) => {
+  const renderParameterCard = (
+    parameter: (typeof parameters)[number],
+    ghost?: Ghost<(typeof parameters)[number]>,
+  ) => {
+    // Same card visual for real rows and in-flight ghosts — single
+    // source of truth for layout, dimensions, badges. Ghost mode swaps
+    // action buttons for a status badge (and Accept/Reject for
+    // soft-pending), disables selection/click, and tints the border
+    // based on lifecycle state.
+    const isGhost = ghost != null;
+    const ghostState = ghost?.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
+
     const count = parameter.num_items; // Pre-calculated from server
     // Use the mode-aware ``isSelected`` predicate (handles both
     // explicit and all-matching modes uniformly).
-    const rowSelected = isSelected(parameter.parameter_id);
+    const rowSelected = !isGhost && isSelected(parameter.parameter_id);
 
     const handleCardClick = (e: React.MouseEvent) => {
-      // Don't toggle selection if clicking action buttons
+      // Don't toggle selection if clicking action buttons or when
+      // rendering as a ghost (no real id to select).
+      if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
       if (parameter.parameter_id) {
         toggleSelection(parameter.parameter_id);
       }
     };
 
+    // Border tint reflects ghost lifecycle. ``animate-pulse`` while
+    // in-flight signals "this is provisional"; failed/pending hold a
+    // steady color so the user can decide.
+    const ghostBorderClass = isFailed
+      ? "border-destructive/40 bg-destructive/5"
+      : isPending
+      ? "border-amber-500/50 bg-amber-50/40 dark:bg-amber-950/20"
+      : ghostState === "deleting"
+      ? "border-destructive/30 bg-destructive/5 opacity-70"
+      : inFlight
+      ? "border-primary/40 bg-primary/5 animate-pulse"
+      : "";
+
     return (
       <Card
         key={parameter.parameter_id}
-        className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
-          rowSelected ? "ring-2 ring-primary" : ""
-        }`}
-        data-testid="parameter-card"
+        className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
+          isGhost ? "" : "cursor-pointer"
+        } ${ghostBorderClass} ${rowSelected ? "ring-2 ring-primary" : ""}`}
+        data-testid={isGhost ? "parameter-ghost-card" : "parameter-card"}
         data-parameter-id={parameter.parameter_id}
+        data-ghost-state={ghostState}
         role="gridcell"
-        aria-label={`parameter card ${parameter.name}`}
+        aria-label={`parameter card ${parameter.name || (isGhost ? "Generating" : "Unnamed Parameter")}`}
         aria-selected={rowSelected}
+        aria-busy={inFlight ? true : undefined}
         onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex-1 min-w-0">
               <CardTitle className="text-lg flex items-center gap-2">
-                <div
-                  className={`transition-all overflow-hidden flex-shrink-0 ${
-                    selectedCount > 0
-                      ? "w-5 opacity-100"
-                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
-                  }`}
-                  data-action-button
-                >
-                  <Checkbox
-                    checked={rowSelected}
-                    onCheckedChange={() => {
-                      if (parameter.parameter_id) toggleSelection(parameter.parameter_id);
-                    }}
-                    className="rounded-full h-5 w-5"
-                    aria-label={`Select parameter ${parameter.name || "Unnamed"}`}
-                  />
-                </div>
-                {getParameterIcon(parameter)}
-                <span className="truncate">{parameter.name}</span>
+                {/* Selection checkbox — hidden in ghost mode (no row id
+                    to select yet). */}
+                {!isGhost && (
+                  <div
+                    className={`transition-all overflow-hidden flex-shrink-0 ${
+                      selectedCount > 0
+                        ? "w-5 opacity-100"
+                        : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                    }`}
+                    data-action-button
+                  >
+                    <Checkbox
+                      checked={rowSelected}
+                      onCheckedChange={() => {
+                        if (parameter.parameter_id) toggleSelection(parameter.parameter_id);
+                      }}
+                      className="rounded-full h-5 w-5"
+                      aria-label={`Select parameter ${parameter.name || "Unnamed"}`}
+                    />
+                  </div>
+                )}
+                {/* In-flight ghost without details yet → spinner. Once
+                    partial/output arrives, render the regular icon. */}
+                {inFlight && !parameter.name ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  getParameterIcon(parameter)
+                )}
+                <span className="truncate">
+                  {parameter.name || (isGhost ? "Generating…" : "Unnamed Parameter")}
+                </span>
+                {isGhost && (
+                  <Badge
+                    variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                    className={isPending ? "border-amber-500 text-amber-700 dark:text-amber-400" : ""}
+                  >
+                    {ghostState === "creating" && "Creating…"}
+                    {ghostState === "duplicating" && "Duplicating…"}
+                    {ghostState === "updating" && "Updating…"}
+                    {ghostState === "deleting" && "Deleting…"}
+                    {ghostState === "pending" && "Pending"}
+                    {ghostState === "failed" && "Failed"}
+                  </Badge>
+                )}
               </CardTitle>
               <div className="flex flex-wrap items-center gap-2 mt-1">
                 {columnVisibility["num_items"] !== false && (
@@ -765,7 +863,41 @@ export default function Parameters({
               </div>
             </div>
             <div className="flex flex-wrap gap-2" data-action-button>
-              {parameter.can_edit ? (
+              {/* Ghost-mode action area: status-aware. Pending →
+                  Accept/Reject for soft-write ack. Failed → error
+                  indicator. In-flight → no buttons (read-only until
+                  commit/failure). */}
+              {isGhost && isPending && ghost.callId && (
+                <>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackParameterGhost(ghost.callId, true)}
+                  >
+                    <Check className="mr-1 h-3.5 w-3.5" />
+                    Accept
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackParameterGhost(ghost.callId, false)}
+                  >
+                    <X className="mr-1 h-3.5 w-3.5" />
+                    Reject
+                  </Button>
+                </>
+              )}
+              {isGhost && isFailed && ghost.error && (
+                <span className="flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {ghost.error}
+                </span>
+              )}
+              {!isGhost && (parameter.can_edit ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -799,8 +931,8 @@ export default function Parameters({
                   <Eye className="h-4 w-4 md:mr-0 mr-2" />
                   <span className="md:hidden">View</span>
                 </Button>
-              )}
-              {parameter.can_duplicate && (
+              ))}
+              {!isGhost && parameter.can_duplicate && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -826,7 +958,7 @@ export default function Parameters({
                   </span>
                 </Button>
               )}
-              {parameter.can_delete && (
+              {!isGhost && parameter.can_delete && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -872,9 +1004,16 @@ export default function Parameters({
   const departmentsColumn = table.getColumn("departments");
   const isFiltered = table.getState().columnFilters.length > 0;
 
+  // Show empty state only when there are no rows AND no in-flight
+  // ghosts (a fresh create from an empty list should still render the
+  // ghost rather than the empty placeholder).
+  const hasActiveGhosts = parameterGhosts.some(
+    (g) => g.state !== "committed" && g.state !== "accepted",
+  );
+
   return (
     <div className="space-y-8">
-      {parameters.length === 0 ? (
+      {parameters.length === 0 && !hasActiveGhosts ? (
         <div className="flex flex-col items-center justify-center py-12">
           <p className="text-muted-foreground">No parameters found</p>
         </div>
@@ -1034,7 +1173,15 @@ export default function Parameters({
             </div>
           )}
 
-          {/* Cards Grid — container-query driven; scales with content area width */}
+          {/* Cards Grid — container-query driven; scales with content area width.
+              Ghost cards from in-flight audited writes (create/duplicate/
+              update/delete in non-terminal states) are prepended — same
+              ``renderParameterCard`` so layout, dimensions, and visual
+              language match exactly. Once a ghost commits, its hydrated
+              row is in ``mergedRows`` (via ``state.added``) AND the
+              ghost's ``state`` flips to "committed" — we filter those
+              out so the real row replaces the ghost in place without a
+              duplicate frame. */}
           <div className="@container">
             <div
               className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4"
@@ -1042,12 +1189,28 @@ export default function Parameters({
               aria-label="parameters grid"
               data-testid="parameters-grid"
             >
+              {parameterGhosts
+                .filter((g) => g.state !== "committed" && g.state !== "accepted")
+                .map((g) => {
+                  // For update/delete, ``before`` is the snapshot lookup
+                  // from baseRows (existing row). For create/duplicate,
+                  // ``before`` is null and ``partial`` carries streaming
+                  // args (often sparse for duplicate, richer for create).
+                  const parameterShell = (g.before ?? g.partial) as (typeof parameters)[number];
+                  return (
+                    <div key={`ghost-${g.callId}`}>
+                      {renderParameterCard(parameterShell, g)}
+                    </div>
+                  );
+                })}
               {tableRows.length ? (
                 tableRows.map((row) => renderParameterCard(row.original))
               ) : (
-                <div className="col-span-full text-center py-8 text-muted-foreground">
-                  No parameters match the current filters.
-                </div>
+                parameterGhosts.length === 0 && (
+                  <div className="col-span-full text-center py-8 text-muted-foreground">
+                    No parameters match the current filters.
+                  </div>
+                )
               )}
             </div>
           </div>

@@ -5,7 +5,7 @@
  * 06/07/2025
  */
 "use client";
-import { Brain, Check, CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Pencil, Sparkles, Trash2, Users, X } from "lucide-react";
+import { AlertCircle, Brain, Check, CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Sparkles, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -66,9 +66,8 @@ import {
 } from "@/components/ui/tooltip";
 
 import { useProfile } from "@/contexts/profile-context";
-import { useArtifactGhosts } from "@/hooks/use-artifact-ghosts";
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
-import { PersonaGhostRail } from "@/components/artifacts/persona/PersonaGhostRail";
 
 
 // Utility function to generate gradient from hex color
@@ -250,12 +249,25 @@ export default function Personas({
     ghosts: personaGhosts,
     mergedRows: mergedPersonas,
     ack: ackPersonaGhost,
-    drop: dropPersonaGhost,
+    drop: _dropPersonaGhost,
   } = useArtifactGhosts({
     artifactType: "persona",
-    ops: ["create", "delete"],
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar/card. Each maps to a distinct ghost visual in
+    // ``renderPersonaCard`` (creating / updating / deleting /
+    // duplicating skeleton + pending soft state). Without
+    // ``duplicate`` here the LLM's duplicate tool dispatch fires
+    // audit events that nothing is subscribed to → no ghost.
+    ops: ["create", "update", "delete", "duplicate"],
     baseRows: basePersonas,
     rowKey: "persona_id",
+    // ``personas`` plural is auto-derived as ``persona`` + "s" — kept
+    // explicit here for clarity; matches the field name the create /
+    // duplicate / update impls now include on their responses (see
+    // ``hydrate_persona_list_rows``). The hook reads
+    // ``output.personas`` from the audit ``.completed`` payload to
+    // materialize new/changed rows directly — no SSR refresh needed.
+    artifactPlural: "personas",
   });
 
   // Downstream code reads ``personas`` — keep that name to minimize
@@ -882,12 +894,17 @@ export default function Personas({
     pageCount,
   });
 
-  // Memoize table rows
+  // Memoize table rows. Including ``personas`` itself (not just
+  // ``personas.length``) so update events that mutate row content but
+  // not list cardinality still invalidate the memo. ``personas`` is
+  // stabilized upstream by ``mergedPersonas``'s useMemo, so a new
+  // reference only appears when ``state.added``/``replaced``/
+  // ``hiddenIds`` actually change — no spurious recomputes.
   const sortingKey = JSON.stringify(sorting);
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortingKey, personas.length, pageIndex, pageSize]);
+  }, [sortingKey, personas, pageIndex, pageSize]);
 
   const handleDelete = async () => {
     if (!deleteItem || !deletePersonaAction) return;
@@ -902,6 +919,7 @@ export default function Personas({
       await deletePersonaAction({
         body: {
           ids: [deleteItem.id],
+          all: false,
           accept: true,
         },
       });
@@ -1143,71 +1161,133 @@ export default function Personas({
     router.push(`/training/personas/${id}`);
   };
 
-  const renderPersonaCard = (persona: (typeof personas)[0]) => {
+  const renderPersonaCard = (
+    persona: (typeof personas)[0],
+    ghost?: Ghost<(typeof personas)[0]>,
+  ) => {
+    // Same card visual for real rows and in-flight ghosts — single
+    // source of truth for layout, icon styling, dimensions, badges.
+    // Ghost mode swaps action buttons for a status badge (and Accept/
+    // Reject for soft-pending), disables selection/click, and tints
+    // the border based on lifecycle state. Avoids the prior banner
+    // approach where the ghost was a full-width row that didn't match
+    // the persona-card visual language.
+    const isGhost = ghost != null;
+    const ghostState = ghost?.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
+
     // Get the icon component from the persona's stored icon name
     // Use the hex color directly with CSS custom properties
     const hexColor = persona.color || "#64748b"; // Default to slate if no color
     const gradientStyle = generateGradientFromHex(hexColor);
     const iconColor = "#ffffff";
 
-    const isSelected = persona.persona_id ? selectedPersonaIds.includes(persona.persona_id) : false;
+    const isSelected = !isGhost && persona.persona_id
+      ? selectedPersonaIds.includes(persona.persona_id)
+      : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
-      // Don't toggle selection if clicking action buttons
+      // Don't toggle selection if clicking action buttons or when
+      // rendering as a ghost (no real id to select).
+      if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
       if (persona.persona_id) {
         toggleSelection(persona.persona_id);
       }
     };
 
+    // Border tint reflects ghost lifecycle. ``animate-pulse`` while
+    // in-flight signals "this is provisional"; failed/pending hold a
+    // steady color so the user can decide.
+    const ghostBorderClass = isFailed
+      ? "border-destructive/40 bg-destructive/5"
+      : isPending
+      ? "border-amber-500/50 bg-amber-50/40 dark:bg-amber-950/20"
+      : ghostState === "deleting"
+      ? "border-destructive/30 bg-destructive/5 opacity-70"
+      : inFlight
+      ? "border-primary/40 bg-primary/5 animate-pulse"
+      : "";
+
     return (
       <Card
-        className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
-          isSelected ? "ring-2 ring-primary" : ""
-        }`}
-        data-testid="persona-card"
+        className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
+          isGhost ? "" : "cursor-pointer"
+        } ${ghostBorderClass} ${isSelected ? "ring-2 ring-primary" : ""}`}
+        data-testid={isGhost ? "persona-ghost-card" : "persona-card"}
         data-persona-id={persona.persona_id}
+        data-ghost-state={ghostState}
         role="gridcell"
-        aria-label={`persona card ${persona.name || "Unnamed Persona"}`}
+        aria-label={`persona card ${persona.name || (isGhost ? "Generating" : "Unnamed Persona")}`}
         aria-selected={isSelected}
+        aria-busy={inFlight ? true : undefined}
         onClick={handleCardClick}
       >
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="space-y-2 flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                {/* Selection checkbox — inline before icon */}
-                <div
-                  className={`transition-all overflow-hidden flex-shrink-0 ${
-                    selectedCount > 0 ? "w-5 opacity-100" : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
-                  }`}
-                  data-action-button
-                >
-                  <Checkbox
-                    checked={isSelected}
-                    onCheckedChange={() => {
-                      if (persona.persona_id) toggleSelection(persona.persona_id);
-                    }}
-                    className="rounded-full h-5 w-5"
-                    aria-label={`Select persona ${persona.name || "Unnamed"}`}
-                  />
-                </div>
+                {/* Selection checkbox — inline before icon. Hidden in
+                    ghost mode (no row id to select yet). */}
+                {!isGhost && (
+                  <div
+                    className={`transition-all overflow-hidden flex-shrink-0 ${
+                      selectedCount > 0 ? "w-5 opacity-100" : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                    }`}
+                    data-action-button
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => {
+                        if (persona.persona_id) toggleSelection(persona.persona_id);
+                      }}
+                      className="rounded-full h-5 w-5"
+                      aria-label={`Select persona ${persona.name || "Unnamed"}`}
+                    />
+                  </div>
+                )}
                 <div
                   className="p-2 rounded-lg shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0"
                   style={{
                     background: gradientStyle,
                   }}
                 >
-                  <SvgIcon
-                    svg={persona.icon}
-                    className="h-4 w-4"
-                    style={{ color: iconColor }}
-                    fallback={<Brain className="h-4 w-4" style={{ color: iconColor }} />}
-                  />
+                  {/* In-flight ghost without a streamed icon yet → spinner.
+                      Once partial/output carries the icon SVG, render it
+                      via the same ``SvgIcon`` path. */}
+                  {inFlight && !persona.icon ? (
+                    <Loader2 className="h-4 w-4 animate-spin" style={{ color: iconColor }} />
+                  ) : (
+                    <SvgIcon
+                      svg={persona.icon}
+                      className="h-4 w-4"
+                      style={{ color: iconColor }}
+                      fallback={<Brain className="h-4 w-4" style={{ color: iconColor }} />}
+                    />
+                  )}
                 </div>
                 <CardTitle className="text-lg truncate">
-                  {persona.name || "Unnamed Persona"}
+                  {persona.name || (isGhost ? "Generating…" : "Unnamed Persona")}
                 </CardTitle>
+                {isGhost && (
+                  <Badge
+                    variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                    className={isPending ? "border-amber-500 text-amber-700 dark:text-amber-400" : ""}
+                  >
+                    {ghostState === "creating" && "Creating…"}
+                    {ghostState === "duplicating" && "Duplicating…"}
+                    {ghostState === "updating" && "Updating…"}
+                    {ghostState === "deleting" && "Deleting…"}
+                    {ghostState === "pending" && "Pending"}
+                    {ghostState === "failed" && "Failed"}
+                  </Badge>
+                )}
               </div>
               {((columnVisibility.ai_badge !== false && persona.generated) || (columnVisibility.status_badge !== false && persona.is_inactive)) && (
                 <div className="mt-1 flex items-center gap-2">
@@ -1224,7 +1304,41 @@ export default function Personas({
               )}
             </div>
             <div className="flex flex-wrap gap-2 items-center" data-action-button>
-              {persona.can_edit ? (
+              {/* Ghost-mode action area: status-aware. Pending → Accept/
+                  Reject for soft-write ack. Failed → error indicator.
+                  In-flight → no buttons (the streaming card is read-only
+                  until commit/failure). */}
+              {isGhost && isPending && ghost.callId && (
+                <>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackPersonaGhost(ghost.callId, true)}
+                  >
+                    <Check className="mr-1 h-3.5 w-3.5" />
+                    Accept
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackPersonaGhost(ghost.callId, false)}
+                  >
+                    <X className="mr-1 h-3.5 w-3.5" />
+                    Reject
+                  </Button>
+                </>
+              )}
+              {isGhost && isFailed && ghost.error && (
+                <span className="flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {ghost.error}
+                </span>
+              )}
+              {!isGhost && (<>{persona.can_edit ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -1332,7 +1446,7 @@ export default function Personas({
                   </TooltipTrigger>
                   <TooltipContent>Delete</TooltipContent>
                 </Tooltip>
-              )}
+              )}</>)}
             </div>
           </div>
         </CardHeader>
@@ -1578,22 +1692,20 @@ export default function Personas({
           </div>
         )}
 
-        {/* Ghost rail — live overlay for in-flight create/delete (and
-            soft-pending Accept/Reject) sourced from the audit event
-            stream. Always pinned above the table so it survives
-            pagination/filtering — the design rule is "always visible
-            on page 1, regardless of where the row would naturally sort." */}
-        <PersonaGhostRail
-          ghosts={personaGhosts}
-          ack={ackPersonaGhost}
-          onDrop={dropPersonaGhost}
-        />
-
         {/* Cards Grid — container-query driven so it scales to available width
             (e.g. when the right AI panel opens, the grid drops a column smoothly
             rather than waiting on a viewport breakpoint).
             Note: @container must be on a PARENT — the @ modifiers query the
-            nearest ancestor with container-type, not the element itself. */}
+            nearest ancestor with container-type, not the element itself.
+
+            Ghost cards from in-flight audited writes (create/duplicate/
+            update/delete in non-terminal states) are prepended — same
+            ``renderPersonaCard`` so layout, dimensions, and visual
+            language match exactly. Once a ghost commits, its hydrated
+            row is in ``mergedRows`` (via ``state.added``) AND the
+            ghost's ``state`` flips to "committed" — we filter those
+            out so the real row replaces the ghost in place without a
+            duplicate frame. */}
         <div className="@container">
           <div
             className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4"
@@ -1601,6 +1713,22 @@ export default function Personas({
             aria-label="personas grid"
             data-testid="personas-grid"
           >
+          {personaGhosts
+            .filter((g) => g.state !== "committed" && g.state !== "accepted")
+            .map((g) => {
+              // For update/delete, ``before`` is the snapshot lookup
+              // from baseRows (existing row) — gives us icon, name,
+              // description so the ghost card shows what's being
+              // deleted/updated. For create/duplicate, ``before`` is
+              // null and ``partial`` carries the streaming args
+              // (often sparse for duplicate, richer for create).
+              const personaShell = (g.before ?? g.partial) as (typeof personas)[0];
+              return (
+                <div key={`ghost-${g.callId}`}>
+                  {renderPersonaCard(personaShell, g)}
+                </div>
+              );
+            })}
           {tableRows.length ? (
             tableRows.map((row) => {
               const persona = row.original;
@@ -1608,9 +1736,11 @@ export default function Personas({
               return <div key={key}>{renderPersonaCard(persona)}</div>;
             })
           ) : (
-            <div className="col-span-full text-center py-8 text-muted-foreground">
-              No personas match the current filters.
-            </div>
+            personaGhosts.length === 0 && (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                No personas match the current filters.
+              </div>
+            )
           )}
           </div>
         </div>

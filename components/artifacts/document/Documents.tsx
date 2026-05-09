@@ -84,6 +84,8 @@ import {
 } from "@/components/ui/table";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDocumentAi } from "@/hooks/use-document-ai";
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 
@@ -187,11 +189,43 @@ export default function Documents({
   // Use server-provided data directly
   const documentsData = serverListData;
 
-  // Extract data from V3 response - arrays directly (composite types)
-  const documents = useMemo(
+  // Extract data from V3 response - arrays directly (composite types).
+  // ``baseDocuments`` is the SSR-fetched truth; ``useArtifactGhosts``
+  // layers a per-call CRUD lifecycle on top so committed rows merge
+  // into the table without a ``router.refresh()`` (which would re-burst
+  // the page's SSR fetches — same rationale as Personas.tsx /
+  // Scenarios.tsx).
+  const baseDocuments = useMemo(
     () => documentsData?.documents || [],
     [documentsData]
   );
+
+  const {
+    ghosts: documentGhosts,
+    mergedRows: mergedDocuments,
+  } = useArtifactGhosts({
+    artifactType: "document",
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar/row. Each maps to a distinct ghost visual in
+    // the inline ghost rows (creating / updating / deleting /
+    // duplicating skeleton). Without ``duplicate`` here the LLM's
+    // duplicate tool dispatch fires audit events that nothing is
+    // subscribed to → no ghost.
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseDocuments,
+    rowKey: "document_id",
+    // ``documents`` plural matches the field name the create /
+    // duplicate / update impls now include on their responses (see
+    // ``hydrate_document_list_rows``). The hook reads
+    // ``output.documents`` from the audit ``.completed`` payload to
+    // materialize new/changed rows directly — no SSR refresh needed.
+    artifactPlural: "documents",
+  });
+
+  // Downstream code reads ``documents`` — keep that name to minimize
+  // diff. The active list is the merged view (base + create overlays
+  // − delete overlays).
+  const documents = mergedDocuments;
   const scenarios = useMemo(
     () =>
       (documentsData?.scenario_filter?.options || []).map((opt) => ({
@@ -738,7 +772,13 @@ export default function Documents({
     // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
     sortingKey,
     columnFiltersKey,
-    documents.length,
+    // Depend on the ``documents`` array reference (not just length) so
+    // updates that mutate row content but not list cardinality still
+    // invalidate the memo. ``documents`` is stabilized upstream by
+    // ``mergedDocuments``'s useMemo, so a new reference only appears
+    // when state.added/replaced/hiddenIds actually change — no
+    // spurious recomputes.
+    documents,
     // Use pagination primitives directly (not object references)
     pageIndex,
     pageSize,
@@ -924,6 +964,119 @@ export default function Documents({
     [departmentOptions],
   );
 
+  // Render a ghost table row for an in-flight CRUD operation.
+  // Mirrors the persona/scenario card-ghost pattern but adapted to a
+  // table layout: we still get a status badge, lifecycle-tinted
+  // background, spinner placeholder where the thumbnail would be,
+  // and the row's existing-content (for update/delete via
+  // ``g.before``) or streaming args (for create/duplicate via
+  // ``g.partial``). Selection checkbox + actions are suppressed —
+  // there's no committed id yet to act on.
+  const renderDocumentGhostRow = (
+    ghost: Ghost<DocumentRow>,
+  ) => {
+    const ghostState = ghost.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
+
+    // ``before`` is populated for update/delete from baseRows
+    // lookup; ``partial`` is the LLM streaming args for
+    // create/duplicate. Either way we display whatever the hook
+    // exposes — sparse fields render as muted placeholders.
+    const shell = (ghost.before ?? ghost.partial ?? {}) as Partial<DocumentRow>;
+    const docName = shell.name || (inFlight ? "Generating…" : "Pending");
+
+    const ghostTintClass = isFailed
+      ? "bg-destructive/5 border-l-4 border-l-destructive/40"
+      : isPending
+      ? "bg-amber-50/40 dark:bg-amber-950/20 border-l-4 border-l-amber-500/50"
+      : ghostState === "deleting"
+      ? "bg-destructive/5 opacity-70 border-l-4 border-l-destructive/30"
+      : inFlight
+      ? "bg-primary/5 animate-pulse border-l-4 border-l-primary/40"
+      : "";
+
+    const visibleCols = table.getVisibleLeafColumns();
+    return (
+      <TableRow
+        key={`ghost-${ghost.callId}`}
+        className={`transition-colors ${ghostTintClass}`}
+        data-testid="document-ghost-row"
+        data-ghost-state={ghostState}
+        aria-busy={inFlight ? true : undefined}
+      >
+        {visibleCols.map((col) => {
+          // Select column: no checkbox while ghost (no row id yet).
+          if (col.id === "select") {
+            return (
+              <TableCell key={`ghost-${ghost.callId}-${col.id}`} className="border-r px-3 py-2 text-center" />
+            );
+          }
+          // Name column: spinner placeholder for the thumbnail +
+          // streaming/before name + status badge.
+          if (col.id === "name") {
+            return (
+              <TableCell key={`ghost-${ghost.callId}-${col.id}`} className="border-r px-3 py-2">
+                <div className="flex items-center gap-3 min-w-[240px]">
+                  <div className="h-12 w-10 rounded border bg-muted/40 flex items-center justify-center">
+                    {inFlight ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div
+                      title={docName}
+                      className="text-sm font-medium truncate max-w-[260px]"
+                    >
+                      {truncateText(docName, 32)}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Badge
+                        variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                        className={`text-[10px] ${isPending ? "border-amber-500 text-amber-700 dark:text-amber-400" : ""}`}
+                      >
+                        {ghostState === "creating" && "Creating…"}
+                        {ghostState === "duplicating" && "Duplicating…"}
+                        {ghostState === "updating" && "Updating…"}
+                        {ghostState === "deleting" && "Deleting…"}
+                        {ghostState === "pending" && "Pending"}
+                        {ghostState === "failed" && "Failed"}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </TableCell>
+            );
+          }
+          // Actions column: suppressed during ghost lifecycle. Once
+          // ack/soft-write is wired (see project_persona_live_pattern
+          // memory), Pending state would expose Accept/Reject here.
+          if (col.id === "actions") {
+            return (
+              <TableCell key={`ghost-${ghost.callId}-${col.id}`} className="border-r px-3 py-2 text-center" />
+            );
+          }
+          // Default cell: render an empty placeholder (most facet
+          // columns aren't streamed by the LLM, so showing the
+          // before-row's value would be misleading for update/delete
+          // already covered by the row tint).
+          return (
+            <TableCell key={`ghost-${ghost.callId}-${col.id}`} className="border-r px-3 py-2 text-center">
+              <span className="text-xs text-muted-foreground">—</span>
+            </TableCell>
+          );
+        })}
+      </TableRow>
+    );
+  };
+
   // Handle document delete
   const handleDelete = async () => {
     if (!deletingDocument || !deletingDocument.document_id) return;
@@ -959,7 +1112,7 @@ export default function Documents({
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {documents.length === 0 ? (
+        {documents.length === 0 && documentGhosts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground">No documents found</p>
           </div>
@@ -1155,6 +1308,16 @@ export default function Documents({
                   ))}
                 </TableHeader>
                 <TableBody>
+                  {/* In-flight ghost rows from audited writes
+                      (create/duplicate/update/delete in non-terminal
+                      states). Once a ghost commits, its hydrated row
+                      is in mergedDocuments (via state.added) AND the
+                      ghost's state flips to "committed" — we filter
+                      those out so the real row replaces the ghost in
+                      place without a duplicate frame. */}
+                  {documentGhosts
+                    .filter((g) => g.state !== "committed" && g.state !== "accepted")
+                    .map((g) => renderDocumentGhostRow(g))}
                   {tableRows.length ? (
                     tableRows.map((row) => (
                       <TableRow
@@ -1177,14 +1340,16 @@ export default function Documents({
                       </TableRow>
                     ))
                   ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={table.getVisibleLeafColumns().length}
-                        className="h-24 text-center px-6"
-                      >
-                        No documents match the current filters.
-                      </TableCell>
-                    </TableRow>
+                    documentGhosts.length === 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={table.getVisibleLeafColumns().length}
+                          className="h-24 text-center px-6"
+                        >
+                          No documents match the current filters.
+                        </TableCell>
+                      </TableRow>
+                    )
                   )}
                 </TableBody>
               </Table>

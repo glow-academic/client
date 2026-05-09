@@ -5,7 +5,7 @@
  * 12/05/2025
  */
 "use client";
-import { Copy, Edit, Eye, Pencil, Trash2, X } from "lucide-react";
+import { AlertCircle, Check, Copy, Edit, Eye, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
@@ -57,6 +57,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 import { useFieldAi } from "@/hooks/use-field-ai";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
@@ -94,9 +95,17 @@ export default function Fields({
 }: FieldsProps) {
   const router = useRouter();
 
-  useFieldAi({
-    onComplete: () => router.refresh(),
-  });
+  // ``useFieldAi`` previously listened for ``field.generate.completed``
+  // and called ``router.refresh()`` so the list view updated after
+  // generation. Removed — the audit framework already surfaces every
+  // operation in the activity rail (so the user knows it happened),
+  // and the duplicate-SSR-burst on every generate cycle was visible
+  // noise. Newly-generated fields appear on next manual refresh or
+  // when the user navigates back to this page. The ghost rail
+  // (``useArtifactGhosts`` below) materializes create/update/delete/
+  // duplicate write outcomes directly from the audit ``.completed``
+  // payloads — no SSR refresh needed.
+  useFieldAi({});
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -121,8 +130,44 @@ export default function Fields({
   const fieldsData = serverListData;
   const isLoading = false; // No loading when using server data
 
-  // Extract data from response
-  const fields = useMemo(() => fieldsData?.fields || [], [fieldsData?.fields]);
+  // SSR-seeded base list. The audit-driven ghost hook layers
+  // create/update/delete/duplicate lifecycle on top — committed rows
+  // get merged into ``mergedFields`` directly so the table stays
+  // current without a ``router.refresh()`` (which would re-burst the
+  // page's SSR fetches).
+  const baseFields = useMemo(
+    () => fieldsData?.fields || [],
+    [fieldsData?.fields],
+  );
+
+  const {
+    ghosts: fieldGhosts,
+    mergedRows: mergedFields,
+    ack: ackFieldGhost,
+    drop: _dropFieldGhost,
+  } = useArtifactGhosts({
+    artifactType: "field",
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar/card. Each maps to a distinct ghost visual in
+    // ``renderFieldCard`` (creating / updating / deleting /
+    // duplicating skeleton + pending soft state). Without
+    // ``duplicate`` here the LLM's duplicate tool dispatch fires
+    // audit events that nothing is subscribed to → no ghost.
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseFields,
+    rowKey: "field_id",
+    // ``fields`` plural matches the field name the create / duplicate /
+    // update impls now include on their responses (see
+    // ``hydrate_field_list_rows``). The hook reads ``output.fields``
+    // from the audit ``.completed`` payload to materialize new/changed
+    // rows directly — no SSR refresh needed.
+    artifactPlural: "fields",
+  });
+
+  // Downstream code reads ``fields`` — keep that name to minimize
+  // diff. The active list is the merged view (base + create overlays
+  // − delete overlays).
+  const fields = mergedFields;
 
   // Flag catalog (e.g. field_active) — used to reconstruct flag_ids on bulk edit.
   const flagOptions = useMemo(() => {
@@ -411,7 +456,12 @@ export default function Fields({
     },
   });
 
-  // Memoize table rows
+  // Memoize table rows. Including ``fields`` itself (not just
+  // ``fields.length``) so update events that mutate row content but
+  // not list cardinality still invalidate the memo. ``fields`` is
+  // stabilized upstream by ``mergedFields``'s useMemo, so a new
+  // reference only appears when ``state.added``/``replaced``/
+  // ``hiddenIds`` actually change — no spurious recomputes.
   const pageIndex = table.getState().pagination.pageIndex;
   const pageSize = table.getState().pagination.pageSize;
   const sortingKey = JSON.stringify(sorting);
@@ -419,7 +469,7 @@ export default function Fields({
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortingKey, columnFiltersKey, fields.length, pageIndex, pageSize]);
+  }, [sortingKey, columnFiltersKey, fields, pageIndex, pageSize]);
 
   // Convert filter options to mappings for UI display (must be before early return)
   const parameterMapping = useMemo(() => {
@@ -485,7 +535,7 @@ export default function Fields({
     setIsDeleting(true);
     try {
       await deleteFieldAction({
-        body: { field_ids: [deleteItem.id], accept: true },
+        body: { field_ids: [deleteItem.id], all: false, accept: true },
       });
       // profileId comes from X-Profile-Id header automatically
       toast.success(`Field '${deleteItem.name}' deleted successfully`);
@@ -660,113 +710,211 @@ export default function Fields({
     setShowBulkEditDialog(true);
   };
 
-  const renderFieldCard = (field: (typeof fields)[number]) => {
-    const isRowSelected = field.field_id ? isSelected(field.field_id) : false;
+  const renderFieldCard = (
+    field: (typeof fields)[number],
+    ghost?: Ghost<(typeof fields)[0]>,
+  ) => {
+    // Same card visual for real rows and in-flight ghosts — single
+    // source of truth for layout, dimensions, badges. Ghost mode swaps
+    // action buttons for a status badge (and Accept/Reject for soft-
+    // pending), disables selection/click, and tints the border based
+    // on lifecycle state.
+    const isGhost = ghost != null;
+    const ghostState = ghost?.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
+
+    const isRowSelected =
+      !isGhost && field.field_id ? isSelected(field.field_id) : false;
     const handleCardClick = (e: React.MouseEvent) => {
-      // Don't toggle selection if clicking action buttons
+      // Don't toggle selection if clicking action buttons or when
+      // rendering as a ghost (no real id to select yet).
+      if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
       if (field.field_id) {
         toggleSelection(field.field_id);
       }
     };
+
+    // Border tint reflects ghost lifecycle. ``animate-pulse`` while
+    // in-flight signals "this is provisional"; failed/pending hold a
+    // steady color so the user can decide.
+    const ghostBorderClass = isFailed
+      ? "border-destructive/40 bg-destructive/5"
+      : isPending
+      ? "border-amber-500/50 bg-amber-50/40 dark:bg-amber-950/20"
+      : ghostState === "deleting"
+      ? "border-destructive/30 bg-destructive/5 opacity-70"
+      : inFlight
+      ? "border-primary/40 bg-primary/5 animate-pulse"
+      : "";
+
     return (
       <Card
         key={field.field_id}
-        className={`group flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
-          isRowSelected ? "ring-2 ring-primary" : ""
-        }`}
-        data-testid={`field-card-${field.field_id}`}
+        className={`group flex flex-col h-full hover:shadow-md transition-all ${
+          isGhost ? "" : "cursor-pointer"
+        } ${ghostBorderClass} ${isRowSelected ? "ring-2 ring-primary" : ""}`}
+        data-testid={isGhost ? "field-ghost-card" : `field-card-${field.field_id}`}
+        data-field-id={field.field_id}
+        data-ghost-state={ghostState}
         role="gridcell"
-        aria-label={`field card ${field.name || "Unnamed Field"}`}
+        aria-label={`field card ${field.name || (isGhost ? "Generating" : "Unnamed Field")}`}
         aria-selected={isRowSelected}
+        aria-busy={inFlight ? true : undefined}
         onClick={handleCardClick}
       >
         <CardHeader className="pb-4 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0 flex items-center gap-2">
-              <div
-                className={`transition-all overflow-hidden flex-shrink-0 ${
-                  selectedCount > 0
-                    ? "w-5 opacity-100"
-                    : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
-                }`}
-                data-action-button
-              >
-                <Checkbox
-                  checked={isRowSelected}
-                  onCheckedChange={() => {
-                    if (field.field_id) toggleSelection(field.field_id);
-                  }}
-                  className="rounded-full h-5 w-5"
-                  aria-label={`Select field ${field.name || "Unnamed"}`}
-                />
-              </div>
+              {/* Selection checkbox — hidden in ghost mode (no row id
+                  to select yet). */}
+              {!isGhost && (
+                <div
+                  className={`transition-all overflow-hidden flex-shrink-0 ${
+                    selectedCount > 0
+                      ? "w-5 opacity-100"
+                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                  }`}
+                  data-action-button
+                >
+                  <Checkbox
+                    checked={isRowSelected}
+                    onCheckedChange={() => {
+                      if (field.field_id) toggleSelection(field.field_id);
+                    }}
+                    className="rounded-full h-5 w-5"
+                    aria-label={`Select field ${field.name || "Unnamed"}`}
+                  />
+                </div>
+              )}
+              {/* In-flight ghost without a streamed name yet → spinner
+                  in the title slot via inline icon. */}
+              {inFlight && !field.name && (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground flex-shrink-0" />
+              )}
               <CardTitle className="text-lg font-semibold truncate">
-                {field.name}
+                {field.name || (isGhost ? "Generating…" : "Unnamed Field")}
               </CardTitle>
+              {isGhost && (
+                <Badge
+                  variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                  className={isPending ? "border-amber-500 text-amber-700 dark:text-amber-400" : ""}
+                >
+                  {ghostState === "creating" && "Creating…"}
+                  {ghostState === "duplicating" && "Duplicating…"}
+                  {ghostState === "updating" && "Updating…"}
+                  {ghostState === "deleting" && "Deleting…"}
+                  {ghostState === "pending" && "Pending"}
+                  {ghostState === "failed" && "Failed"}
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-1 ml-2 flex-shrink-0" data-action-button>
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid={`view-${field.field_id}`}
-                onClick={() => {
-                  const fieldId = field.field_id;
-                  if (fieldId) router.push(`/management/fields/${fieldId}`);
-                }}
-                aria-label={`View ${field.name ?? ""}`}
-                title="View"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-              {field.can_edit && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  data-testid={`edit-${field.field_id}`}
-                  onClick={() => {
-                    const fieldId = field.field_id;
-                    if (fieldId) handleEdit(fieldId);
-                  }}
-                  aria-label={`Edit ${field.name ?? ""}`}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
+              {/* Ghost-mode action area: status-aware. Pending →
+                  Accept/Reject for soft-write ack. Failed → error
+                  indicator. In-flight → no buttons (the streaming
+                  card is read-only until commit/failure). */}
+              {isGhost && isPending && ghost.callId && (
+                <>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackFieldGhost(ghost.callId, true)}
+                  >
+                    <Check className="mr-1 h-3.5 w-3.5" />
+                    Accept
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackFieldGhost(ghost.callId, false)}
+                  >
+                    <X className="mr-1 h-3.5 w-3.5" />
+                    Reject
+                  </Button>
+                </>
               )}
-              {field.can_duplicate && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const fieldId = field.field_id;
-                    const fieldName = field.name ?? "";
-                    if (fieldId) handleDuplicate(fieldId, fieldName);
-                  }}
-                  disabled={isDuplicating === field.field_id}
-                  aria-label={`Duplicate ${field.name}`}
-                  data-testid="btn-duplicate-field"
-                >
-                  {isDuplicating === field.field_id ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
+              {isGhost && isFailed && ghost.error && (
+                <span className="flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {ghost.error}
+                </span>
+              )}
+              {!isGhost && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid={`view-${field.field_id}`}
+                    onClick={() => {
+                      const fieldId = field.field_id;
+                      if (fieldId) router.push(`/management/fields/${fieldId}`);
+                    }}
+                    aria-label={`View ${field.name ?? ""}`}
+                    title="View"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  {field.can_edit && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      data-testid={`edit-${field.field_id}`}
+                      onClick={() => {
+                        const fieldId = field.field_id;
+                        if (fieldId) handleEdit(fieldId);
+                      }}
+                      aria-label={`Edit ${field.name ?? ""}`}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
                   )}
-                </Button>
-              )}
-              {field.can_delete && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  data-testid={`delete-${field.field_id}`}
-                  onClick={() => {
-                    const fieldId = field.field_id;
-                    const fieldName = field.name ?? "";
-                    if (fieldId) handleDeleteClick(fieldId, fieldName);
-                  }}
-                  aria-label={`Delete ${field.name}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                  {field.can_duplicate && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const fieldId = field.field_id;
+                        const fieldName = field.name ?? "";
+                        if (fieldId) handleDuplicate(fieldId, fieldName);
+                      }}
+                      disabled={isDuplicating === field.field_id}
+                      aria-label={`Duplicate ${field.name}`}
+                      data-testid="btn-duplicate-field"
+                    >
+                      {isDuplicating === field.field_id ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                  {field.can_delete && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      data-testid={`delete-${field.field_id}`}
+                      onClick={() => {
+                        const fieldId = field.field_id;
+                        const fieldName = field.name ?? "";
+                        if (fieldId) handleDeleteClick(fieldId, fieldName);
+                      }}
+                      aria-label={`Delete ${field.name}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -822,9 +970,22 @@ export default function Fields({
   const departmentsColumn = table.getColumn("departments");
   const isFiltered = table.getState().columnFilters.length > 0;
 
+  // Visible ghosts (non-terminal states) — used to keep the grid
+  // rendered even when the SSR result is empty so the user sees the
+  // in-flight create card immediately (e.g. first field on a fresh
+  // org). ``committed``/``accepted`` are dropped — the real row has
+  // already merged into ``mergedFields``.
+  const visibleGhosts = useMemo(
+    () =>
+      fieldGhosts.filter(
+        (g) => g.state !== "committed" && g.state !== "accepted",
+      ),
+    [fieldGhosts],
+  );
+
   return (
     <div className="space-y-6">
-      {fields.length === 0 ? (
+      {fields.length === 0 && visibleGhosts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12">
           <p className="text-muted-foreground">No fields found</p>
         </div>
@@ -984,7 +1145,15 @@ export default function Fields({
             </div>
           )}
 
-          {/* Cards Grid — container-query driven; scales with content area width */}
+          {/* Cards Grid — container-query driven; scales with content area width.
+              Ghost cards from in-flight audited writes (create/duplicate/
+              update/delete in non-terminal states) are prepended — same
+              ``renderFieldCard`` so layout, dimensions, and visual
+              language match exactly. Once a ghost commits, its
+              hydrated row is in ``mergedRows`` (via ``state.added``)
+              AND the ghost's ``state`` flips to "committed" — we
+              filter those out so the real row replaces the ghost in
+              place without a duplicate frame. */}
           <div className="@container">
             <div
               className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4"
@@ -992,12 +1161,28 @@ export default function Fields({
               aria-label="fields grid"
               data-testid="fields-grid"
             >
+              {visibleGhosts.map((g) => {
+                // For update/delete, ``before`` is the snapshot lookup
+                // from baseRows (existing row) — gives us name,
+                // description so the ghost card shows what's being
+                // deleted/updated. For create/duplicate, ``before`` is
+                // null and ``partial`` carries the streaming args
+                // (often sparse for duplicate, richer for create).
+                const fieldShell = (g.before ?? g.partial) as (typeof fields)[0];
+                return (
+                  <div key={`ghost-${g.callId}`}>
+                    {renderFieldCard(fieldShell, g)}
+                  </div>
+                );
+              })}
               {tableRows.length ? (
                 tableRows.map((row) => renderFieldCard(row.original))
               ) : (
-                <div className="col-span-full text-center py-8 text-muted-foreground">
-                  No fields match the current filters.
-                </div>
+                visibleGhosts.length === 0 && (
+                  <div className="col-span-full text-center py-8 text-muted-foreground">
+                    No fields match the current filters.
+                  </div>
+                )
               )}
             </div>
           </div>

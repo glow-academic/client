@@ -3,11 +3,13 @@
  * Used to display the providers page with server-side filtering.
  */
 "use client";
-import { Edit, Eye, Pencil, Trash2, X } from "lucide-react";
+import { AlertCircle, Check, Edit, Eye, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 
 import type {
   DeleteProviderIn,
@@ -99,9 +101,13 @@ export default function Providers({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  useProviderAi({
-    onComplete: () => router.refresh(),
-  });
+  // ``useProviderAi`` previously listened for ``provider.generate.completed``
+  // and called ``router.refresh()`` so the list view updated after
+  // generation. Removed — the audit framework already surfaces every
+  // operation in the activity rail (so the user knows it happened),
+  // and the ghost hook materializes new/updated rows directly from
+  // ``output.providers`` (see ``hydrate_provider_list_rows``).
+  useProviderAi({});
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -139,11 +145,42 @@ export default function Providers({
   // Use server-provided data directly
   const providersData = serverListData;
 
-  // Extract data from response
-  const providers = useMemo(
+  // ``baseProviders`` is the SSR-fetched list; the ghost hook layers
+  // create/update/delete/duplicate lifecycle on top — committed rows
+  // get merged into ``mergedProviders`` directly so the table stays
+  // current without a ``router.refresh()`` (which would re-burst the
+  // page's SSR fetches — see GenerationPanel handleSend rationale).
+  const baseProviders = useMemo(
     () => providersData?.providers || [],
     [providersData?.providers]
   );
+
+  const {
+    ghosts: providerGhosts,
+    mergedRows: mergedProviders,
+    ack: ackProviderGhost,
+    drop: _dropProviderGhost,
+  } = useArtifactGhosts({
+    artifactType: "provider",
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar/card. Each maps to a distinct ghost visual in
+    // ``renderProviderCard`` (creating / updating / deleting /
+    // duplicating skeleton + pending soft state).
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseProviders,
+    rowKey: "provider_id",
+    // ``providers`` plural matches the field name the create /
+    // duplicate / update impls now include on their responses (see
+    // ``hydrate_provider_list_rows``). The hook reads
+    // ``output.providers`` from the audit ``.completed`` payload to
+    // materialize new/changed rows directly — no SSR refresh needed.
+    artifactPlural: "providers",
+  });
+
+  // Downstream code reads ``providers`` — keep that name to minimize
+  // diff. The active list is the merged view (base + create overlays
+  // − delete overlays).
+  const providers = mergedProviders;
 
   // Filter options from server-provided ListFilterSection
   const departmentOptions = useMemo(
@@ -603,12 +640,17 @@ export default function Providers({
     pageCount,
   });
 
-  // Memoize table rows
+  // Memoize table rows. Including ``providers`` itself (not just
+  // ``providers.length``) so update events that mutate row content
+  // but not list cardinality still invalidate the memo. ``providers``
+  // is stabilized upstream by ``mergedProviders``'s useMemo, so a new
+  // reference only appears when ``state.added``/``replaced``/
+  // ``hiddenIds`` actually change — no spurious recomputes.
   const sortingKey = JSON.stringify(sorting);
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortingKey, providers.length, pageIndex, pageSize]);
+  }, [sortingKey, providers, pageIndex, pageSize]);
 
   const handleDelete = async () => {
     if (!deleteItem || !deleteProviderAction) return;
@@ -616,7 +658,7 @@ export default function Providers({
     setIsDeleting(true);
     try {
       await deleteProviderAction({
-        body: { provider_ids: [deleteItem.id], accept: true },
+        body: { provider_ids: [deleteItem.id], all: false, accept: true },
       } as DeleteProviderIn);
       toast.success("Provider deleted successfully");
       router.refresh();
@@ -770,101 +812,199 @@ export default function Providers({
     router.push(`/intelligence/providers/${id}`);
   };
 
-  const renderProviderCard = (provider: (typeof providers)[number]) => {
-    const providerId = provider.provider_id;
-    const providerName = provider.name;
-    if (!providerId) return null;
-    const isSelectedRow = isSelected(providerId);
+  const renderProviderCard = (
+    provider: (typeof providers)[number],
+    ghost?: Ghost<(typeof providers)[number]>,
+  ) => {
+    // Same card visual for real rows and in-flight ghosts — single
+    // source of truth for layout, dimensions, badges. Ghost mode
+    // swaps action buttons for a status badge (and Accept/Reject for
+    // soft-pending), disables selection/click, and tints the border
+    // based on lifecycle state.
+    const isGhost = ghost != null;
+    const ghostState = ghost?.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
+
+    const providerId = provider?.provider_id;
+    const providerName = provider?.name;
+    const isSelectedRow = !isGhost && providerId ? isSelected(providerId) : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
-      // Don't toggle selection if clicking action buttons
+      // Don't toggle selection if clicking action buttons or when
+      // rendering as a ghost (no real id to select).
+      if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
-      toggleSelection(providerId);
+      if (providerId) toggleSelection(providerId);
     };
+
+    // Border tint reflects ghost lifecycle. ``animate-pulse`` while
+    // in-flight signals "this is provisional"; failed/pending hold a
+    // steady color so the user can decide.
+    const ghostBorderClass = isFailed
+      ? "border-destructive/40 bg-destructive/5"
+      : isPending
+      ? "border-amber-500/50 bg-amber-50/40 dark:bg-amber-950/20"
+      : ghostState === "deleting"
+      ? "border-destructive/30 bg-destructive/5 opacity-70"
+      : inFlight
+      ? "border-primary/40 bg-primary/5 animate-pulse"
+      : "";
 
     return (
       <Card
-        key={providerId}
-        aria-label={providerName ? `provider card ${providerName}` : undefined}
-        data-testid="provider-card"
+        key={providerId ?? `ghost-${ghost?.callId}`}
+        aria-label={
+          providerName
+            ? `provider card ${providerName}`
+            : isGhost
+            ? "provider card Generating"
+            : undefined
+        }
+        data-testid={isGhost ? "provider-ghost-card" : "provider-card"}
         data-provider-id={providerId}
-        className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
-          isSelectedRow ? "ring-2 ring-primary" : ""
-        }`}
+        data-ghost-state={ghostState}
+        className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
+          isGhost ? "" : "cursor-pointer"
+        } ${ghostBorderClass} ${isSelectedRow ? "ring-2 ring-primary" : ""}`}
         role="gridcell"
         aria-selected={isSelectedRow}
+        aria-busy={inFlight ? true : undefined}
         onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <CardTitle className="text-lg flex items-center gap-2">
-                <div
-                  className={`transition-all overflow-hidden flex-shrink-0 ${
-                    selectedCount > 0
-                      ? "w-5 opacity-100"
-                      : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
-                  }`}
-                  data-action-button
-                >
-                  <Checkbox
-                    checked={isSelectedRow}
-                    onCheckedChange={() => toggleSelection(providerId)}
-                    className="rounded-full h-5 w-5"
-                    aria-label={`Select provider ${providerName || "Unnamed"}`}
-                  />
-                </div>
-                <span className="truncate">{provider.name}</span>
+                {/* Selection checkbox — hidden in ghost mode (no row id
+                    to select yet). */}
+                {!isGhost && providerId && (
+                  <div
+                    className={`transition-all overflow-hidden flex-shrink-0 ${
+                      selectedCount > 0
+                        ? "w-5 opacity-100"
+                        : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                    }`}
+                    data-action-button
+                  >
+                    <Checkbox
+                      checked={isSelectedRow}
+                      onCheckedChange={() => toggleSelection(providerId)}
+                      className="rounded-full h-5 w-5"
+                      aria-label={`Select provider ${providerName || "Unnamed"}`}
+                    />
+                  </div>
+                )}
+                {inFlight && !providerName && (
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                )}
+                <span className="truncate">
+                  {providerName || (isGhost ? "Generating…" : "Unnamed Provider")}
+                </span>
+                {isGhost && (
+                  <Badge
+                    variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                    className={isPending ? "border-amber-500 text-amber-700 dark:text-amber-400" : ""}
+                  >
+                    {ghostState === "creating" && "Creating…"}
+                    {ghostState === "duplicating" && "Duplicating…"}
+                    {ghostState === "updating" && "Updating…"}
+                    {ghostState === "deleting" && "Deleting…"}
+                    {ghostState === "pending" && "Pending"}
+                    {ghostState === "failed" && "Failed"}
+                  </Badge>
+                )}
               </CardTitle>
               <div className="mt-1 space-y-2">
                 <div className="flex items-center gap-2">
-                  {columnVisibility["status_badge"] !== false && !provider.active && (
+                  {columnVisibility["status_badge"] !== false && !isGhost && provider?.active === false && (
                     <Badge variant="secondary">Inactive</Badge>
                   )}
-                  {columnVisibility["value_badge"] !== false && (
+                  {columnVisibility["value_badge"] !== false && provider?.value && (
                     <Badge variant="outline">{provider.value}</Badge>
                   )}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2" data-action-button>
-              {providerId && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => router.push(`/intelligence/providers/${providerId}`)}
-                  aria-label={providerName ? `View ${providerName}` : undefined}
-                  data-testid={`btn-view-provider-${providerId}`}
-                  title="View"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
+              {/* Ghost-mode action area: status-aware. Pending →
+                  Accept/Reject for soft-write ack. Failed → error
+                  indicator. In-flight → no buttons (the streaming
+                  card is read-only until commit/failure). */}
+              {isGhost && isPending && ghost.callId && (
+                <>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackProviderGhost(ghost.callId, true)}
+                  >
+                    <Check className="mr-1 h-3.5 w-3.5" />
+                    Accept
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => ackProviderGhost(ghost.callId, false)}
+                  >
+                    <X className="mr-1 h-3.5 w-3.5" />
+                    Reject
+                  </Button>
+                </>
               )}
-              {provider.can_edit && providerId && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleEdit(providerId)}
-                  aria-label={providerName ? `Edit ${providerName}` : undefined}
-                  data-testid={`btn-edit-provider-${providerId}`}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
+              {isGhost && isFailed && ghost.error && (
+                <span className="flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {ghost.error}
+                </span>
               )}
-              {provider.can_delete && providerId && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() =>
-                    handleDeleteClick(providerId, providerName ?? "")
-                  }
-                  aria-label={
-                    providerName ? `Delete ${providerName}` : undefined
-                  }
-                  data-testid={`btn-delete-provider-${providerId}`}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+              {!isGhost && providerId && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => router.push(`/intelligence/providers/${providerId}`)}
+                    aria-label={providerName ? `View ${providerName}` : undefined}
+                    data-testid={`btn-view-provider-${providerId}`}
+                    title="View"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  {provider.can_edit && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(providerId)}
+                      aria-label={providerName ? `Edit ${providerName}` : undefined}
+                      data-testid={`btn-edit-provider-${providerId}`}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {provider.can_delete && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        handleDeleteClick(providerId, providerName ?? "")
+                      }
+                      aria-label={
+                        providerName ? `Delete ${providerName}` : undefined
+                      }
+                      data-testid={`btn-delete-provider-${providerId}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -872,7 +1012,7 @@ export default function Providers({
         {columnVisibility["card_description"] !== false && (
           <CardContent className="pt-0 flex-1 flex flex-col">
             <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-              {provider.description || "No description"}
+              {provider?.description || "No description"}
             </p>
           </CardContent>
         )}
@@ -1054,21 +1194,47 @@ export default function Providers({
       </div>
       )}
 
-      {/* Providers Grid */}
-      {tableRows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12">
-          <p className="text-muted-foreground">No providers found</p>
+      {/* Providers Grid.
+          Ghost cards from in-flight audited writes (create/duplicate/
+          update/delete in non-terminal states) are prepended — same
+          ``renderProviderCard`` so layout, dimensions, and visual
+          language match exactly. Once a ghost commits, its hydrated
+          row is in ``mergedRows`` (via ``state.added``) AND the
+          ghost's ``state`` flips to "committed" — we filter those
+          out so the real row replaces the ghost in place without a
+          duplicate frame. */}
+      <div className="@container">
+        <div className="grid grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4 gap-6">
+          {providerGhosts
+            .filter((g) => g.state !== "committed" && g.state !== "accepted")
+            .map((g) => {
+              // For update/delete, ``before`` is the snapshot lookup
+              // from baseRows (existing row). For create/duplicate,
+              // ``before`` is null and ``partial`` carries the
+              // streaming args.
+              const providerShell = (g.before ?? g.partial) as (typeof providers)[number];
+              return (
+                <div key={`ghost-${g.callId}`}>
+                  {renderProviderCard(providerShell, g)}
+                </div>
+              );
+            })}
+          {tableRows.length > 0 ? (
+            tableRows.map((row) => {
+              const provider = row.original;
+              const key = provider.provider_id || `provider-${row.id}`;
+              return <div key={key}>{renderProviderCard(provider)}</div>;
+            })
+          ) : (
+            providerGhosts.length === 0 && (
+              <div className="col-span-full flex flex-col items-center justify-center py-12">
+                <p className="text-muted-foreground">No providers found</p>
+              </div>
+            )
+          )}
         </div>
-      ) : (
-        <>
-          <div className="@container">
-            <div className="grid grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4 gap-6">
-              {tableRows.map((row) => renderProviderCard(row.original))}
-            </div>
-          </div>
-          <DataTablePagination table={table} />
-        </>
-      )}
+      </div>
+      {tableRows.length > 0 && <DataTablePagination table={table} />}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

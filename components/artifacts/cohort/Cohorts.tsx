@@ -6,7 +6,7 @@
  * 06/18/2025
  */
 "use client";
-import { CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Pencil, Play, Search, Sparkles, Trash2, Users, X } from "lucide-react";
+import { AlertCircle, Check, CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Play, Search, Sparkles, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -64,6 +64,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useArtifactGhosts, type Ghost } from "@/hooks/use-artifact-ghosts";
 import { useCohortAi } from "@/hooks/use-cohort-ai";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
@@ -225,11 +226,44 @@ export default function Cohorts({
   // Use server-provided data directly
   const cohortsData = serverListData;
 
-  // Extract data from response
-  const cohorts = useMemo(
+  // Base server-rendered rows. ``useArtifactGhosts`` overlays the
+  // create/update/delete/duplicate lifecycle on top — committed rows
+  // get merged into ``mergedCohorts`` directly so the table stays
+  // current without a ``router.refresh()`` (which would re-burst the
+  // page's SSR fetches — see GenerationPanel handleSend rationale).
+  const baseCohorts = useMemo(
     () => cohortsData?.cohorts || [],
     [cohortsData?.cohorts],
   );
+
+  const {
+    ghosts: cohortGhosts,
+    mergedRows: mergedCohorts,
+    ack: ackCohortGhost,
+    drop: _dropCohortGhost,
+  } = useArtifactGhosts({
+    artifactType: "cohort",
+    // All four CRUD ops the LLM might invoke or the user might trigger
+    // from the toolbar/card. Each maps to a distinct ghost visual in
+    // ``renderCohortCard`` (creating / updating / deleting /
+    // duplicating skeleton + pending soft state). Without
+    // ``duplicate`` here the LLM's duplicate tool dispatch fires
+    // audit events that nothing is subscribed to → no ghost.
+    ops: ["create", "update", "delete", "duplicate"],
+    baseRows: baseCohorts,
+    rowKey: "cohort_id",
+    // ``cohorts`` plural matches the field name the create /
+    // duplicate / update impls now include on their responses (see
+    // ``hydrate_cohort_list_rows``). The hook reads
+    // ``output.cohorts`` from the audit ``.completed`` payload to
+    // materialize new/changed rows directly — no SSR refresh needed.
+    artifactPlural: "cohorts",
+  });
+
+  // Downstream code reads ``cohorts`` — keep that name to minimize
+  // diff. The active list is the merged view (base + create overlays
+  // − delete overlays).
+  const cohorts = mergedCohorts;
 
   // ---- Selection helpers ----------------------------------------
   // ``isSelected`` is the single read predicate every row uses; it
@@ -529,6 +563,18 @@ export default function Cohorts({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
+
+  // Memoize table rows. Including ``cohorts`` itself (not just
+  // ``cohorts.length``) so update events that mutate row content but
+  // not list cardinality still invalidate the memo. ``cohorts`` is
+  // stabilized upstream by ``mergedCohorts``'s useMemo, so a new
+  // reference only appears when ``state.added``/``replaced``/
+  // ``hiddenIds`` actually change — no spurious recomputes.
+  const sortingKey = JSON.stringify(sorting);
+  const tableRows = useMemo(() => {
+    return table.getRowModel().rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortingKey, cohorts, pageIndex, pageSize]);
 
   // Debounced search handler
   const handleSearchChange = useCallback(
@@ -832,50 +878,108 @@ export default function Cohorts({
     router.push(`/training/cohorts/${id}`);
   };
 
-  const renderCohortCard = (cohort: (typeof cohorts)[number]) => {
-    const isSelectedRow = cohort.cohort_id ? isSelected(cohort.cohort_id) : false;
+  const renderCohortCard = (
+    cohort: (typeof cohorts)[number],
+    ghost?: Ghost<(typeof cohorts)[number]>,
+  ) => {
+    // Same card visual for real rows and in-flight ghosts — single
+    // source of truth for layout, dimensions, badges. Ghost mode swaps
+    // action buttons for a status badge (and Accept/Reject for soft-
+    // pending), disables selection/click, and tints the border based
+    // on lifecycle state. Avoids the prior banner approach where the
+    // ghost was a full-width row that didn't match the cohort-card
+    // visual language.
+    const isGhost = ghost != null;
+    const ghostState = ghost?.state;
+    const inFlight =
+      ghostState === "creating" ||
+      ghostState === "duplicating" ||
+      ghostState === "updating" ||
+      ghostState === "deleting";
+    const isPending = ghostState === "pending";
+    const isFailed = ghostState === "failed";
+
+    const isSelectedRow = !isGhost && cohort.cohort_id ? isSelected(cohort.cohort_id) : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
-      // Don't toggle selection if clicking action buttons
+      // Don't toggle selection if clicking action buttons or when
+      // rendering as a ghost (no real id to select).
+      if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
       if (cohort.cohort_id) {
         toggleSelection(cohort.cohort_id);
       }
     };
 
+    // Border tint reflects ghost lifecycle. ``animate-pulse`` while
+    // in-flight signals "this is provisional"; failed/pending hold a
+    // steady color so the user can decide.
+    const ghostBorderClass = isFailed
+      ? "border-destructive/40 bg-destructive/5"
+      : isPending
+      ? "border-amber-500/50 bg-amber-50/40 dark:bg-amber-950/20"
+      : ghostState === "deleting"
+      ? "border-destructive/30 bg-destructive/5 opacity-70"
+      : inFlight
+      ? "border-primary/40 bg-primary/5 animate-pulse"
+      : "";
+
     return (
     <Card
       key={cohort.cohort_id || ""}
       {...(cohort.name ? { "aria-label": cohort.name } : {})}
-      data-testid="cohort-card"
+      data-testid={isGhost ? "cohort-ghost-card" : "cohort-card"}
       {...(cohort.cohort_id ? { "data-cohort-id": cohort.cohort_id } : {})}
-      className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
-        isSelectedRow ? "ring-2 ring-primary" : ""
-      }`}
+      data-ghost-state={ghostState}
+      className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
+        isGhost ? "" : "cursor-pointer"
+      } ${ghostBorderClass} ${isSelectedRow ? "ring-2 ring-primary" : ""}`}
       aria-selected={isSelectedRow}
+      aria-busy={inFlight ? true : undefined}
       onClick={handleCardClick}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              {/* Selection checkbox — inline before name */}
-              <div
-                className={`transition-all overflow-hidden flex-shrink-0 ${
-                  selectedCount > 0 ? "w-5 opacity-100" : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
-                }`}
-                data-action-button
-              >
-                <Checkbox
-                  checked={isSelectedRow}
-                  onCheckedChange={() => {
-                    if (cohort.cohort_id) toggleSelection(cohort.cohort_id);
-                  }}
-                  className="rounded-full h-5 w-5"
-                  aria-label={`Select cohort ${cohort.name || "Unnamed"}`}
-                />
-              </div>
-              <CardTitle className="text-lg">{cohort.name}</CardTitle>
+              {/* Selection checkbox — inline before name. Hidden in
+                  ghost mode (no row id to select yet). */}
+              {!isGhost && (
+                <div
+                  className={`transition-all overflow-hidden flex-shrink-0 ${
+                    selectedCount > 0 ? "w-5 opacity-100" : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                  }`}
+                  data-action-button
+                >
+                  <Checkbox
+                    checked={isSelectedRow}
+                    onCheckedChange={() => {
+                      if (cohort.cohort_id) toggleSelection(cohort.cohort_id);
+                    }}
+                    className="rounded-full h-5 w-5"
+                    aria-label={`Select cohort ${cohort.name || "Unnamed"}`}
+                  />
+                </div>
+              )}
+              {inFlight && (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground flex-shrink-0" />
+              )}
+              <CardTitle className="text-lg">
+                {cohort.name || (isGhost ? "Generating…" : "")}
+              </CardTitle>
+              {isGhost && (
+                <Badge
+                  variant={isFailed ? "destructive" : isPending ? "outline" : "secondary"}
+                  className={isPending ? "border-amber-500 text-amber-700 dark:text-amber-400" : ""}
+                >
+                  {ghostState === "creating" && "Creating…"}
+                  {ghostState === "duplicating" && "Duplicating…"}
+                  {ghostState === "updating" && "Updating…"}
+                  {ghostState === "deleting" && "Deleting…"}
+                  {ghostState === "pending" && "Pending"}
+                  {ghostState === "failed" && "Failed"}
+                </Badge>
+              )}
             </div>
             {((columnVisibility.ai_badge !== false && cohort.generated) || (columnVisibility.status_badge !== false && cohort.is_inactive)) && (
               <div className="mt-1 flex items-center gap-2">
@@ -892,7 +996,41 @@ export default function Cohorts({
             )}
           </div>
           <div className="flex items-center gap-1" data-action-button>
-            {cohort.can_edit ? (
+            {/* Ghost-mode action area: status-aware. Pending → Accept/
+                Reject for soft-write ack. Failed → error indicator.
+                In-flight → no buttons (the streaming card is read-only
+                until commit/failure). */}
+            {isGhost && isPending && ghost.callId && (
+              <>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => ackCohortGhost(ghost.callId, true)}
+                >
+                  <Check className="mr-1 h-3.5 w-3.5" />
+                  Accept
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => ackCohortGhost(ghost.callId, false)}
+                >
+                  <X className="mr-1 h-3.5 w-3.5" />
+                  Reject
+                </Button>
+              </>
+            )}
+            {isGhost && isFailed && ghost.error && (
+              <span className="flex items-center gap-1 text-xs text-destructive">
+                <AlertCircle className="h-3.5 w-3.5" />
+                {ghost.error}
+              </span>
+            )}
+            {!isGhost && (<>{cohort.can_edit ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -981,7 +1119,7 @@ export default function Cohorts({
                 </TooltipTrigger>
                 <TooltipContent>Delete</TooltipContent>
               </Tooltip>
-            )}
+            )}</>)}
           </div>
         </div>
       </CardHeader>
@@ -1207,7 +1345,16 @@ export default function Cohorts({
           </div>
           )}
 
-          {/* Cards Grid — container-query driven; scales with content area width */}
+          {/* Cards Grid — container-query driven; scales with content area width.
+
+              Ghost cards from in-flight audited writes (create/duplicate/
+              update/delete in non-terminal states) are prepended — same
+              ``renderCohortCard`` so layout, dimensions, and visual
+              language match exactly. Once a ghost commits, its hydrated
+              row is in ``mergedRows`` (via ``state.added``) AND the
+              ghost's ``state`` flips to "committed" — we filter those
+              out so the real row replaces the ghost in place without a
+              duplicate frame. */}
           <div className="@container">
             <div
               className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4"
@@ -1215,14 +1362,33 @@ export default function Cohorts({
               aria-label="cohorts grid"
               data-testid="cohorts-grid"
             >
-              {cohorts.length ? (
-                cohorts.map((cohort) => (
-                  <div key={cohort.cohort_id}>{renderCohortCard(cohort)}</div>
-                ))
+              {cohortGhosts
+                .filter((g) => g.state !== "committed" && g.state !== "accepted")
+                .map((g) => {
+                  // For update/delete, ``before`` is the snapshot lookup
+                  // from baseRows (existing row) — gives us name and
+                  // counts so the ghost card shows what's being
+                  // deleted/updated. For create/duplicate, ``before`` is
+                  // null and ``partial`` carries the streaming args.
+                  const cohortShell = (g.before ?? g.partial) as (typeof cohorts)[number];
+                  return (
+                    <div key={`ghost-${g.callId}`}>
+                      {renderCohortCard(cohortShell, g)}
+                    </div>
+                  );
+                })}
+              {tableRows.length ? (
+                tableRows.map((row) => {
+                  const cohort = row.original;
+                  const key = cohort.cohort_id || `cohort-${row.id}`;
+                  return <div key={key}>{renderCohortCard(cohort)}</div>;
+                })
               ) : (
-                <div className="col-span-full text-center py-8 text-muted-foreground">
-                  No cohorts match the current filters.
-                </div>
+                cohortGhosts.length === 0 && (
+                  <div className="col-span-full text-center py-8 text-muted-foreground">
+                    No cohorts match the current filters.
+                  </div>
+                )
               )}
             </div>
           </div>
