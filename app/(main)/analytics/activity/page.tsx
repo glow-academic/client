@@ -112,11 +112,12 @@ export default async function ActivityPage({
     // Activity-specific params with defaults
     const activityPage = q.activityPage ?? 0;
     const activityPageSize = q.activityPageSize ?? 50;
+    const roleIds = q.role_ids ?? q.roles ?? [];
 
     // Profile summary filter from search params
     const rawParams = await searchParams;
-    const summaryProfileId = typeof rawParams.summaryProfileId === "string"
-      ? rawParams.summaryProfileId
+    const summaryProfileId = typeof rawParams["summaryProfileId"] === "string"
+      ? rawParams["summaryProfileId"]
       : undefined;
 
     // Fetch bundle + embedded session history and group in parallel
@@ -126,10 +127,10 @@ export default async function ActivityPage({
           ...(q.startDate && { date_from: q.startDate }),
           ...(q.endDate && { date_to: q.endDate }),
           ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
-          ...(q.roles?.length && { roles: q.roles }),
+          ...(roleIds.length && { role_ids: roleIds }),
           page_limit: 50,
           page_offset: 0,
-          summary_profile_id: summaryProfileId,
+          ...(summaryProfileId && { summary_profile_id: summaryProfileId }),
           // Embedded session history params
           history_page: activityPage,
           history_page_size: activityPageSize,

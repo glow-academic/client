@@ -119,10 +119,9 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
     const [pricingData, initialColumnVisibility, groupResult] = await Promise.all([
       getPricingAnalytics({
         body: {
-          start_date: q.startDate ?? undefined,
-          end_date: q.endDate ?? undefined,
-          department_ids: q.departmentIds ?? [],
-          roles: q.roles ?? [],
+          ...(q.startDate && { start_date: q.startDate }),
+          ...(q.endDate && { end_date: q.endDate }),
+          ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
           page_limit: 100,
           page_offset: 0,
           // Embedded group history params
@@ -147,6 +146,9 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
     const runsData: PricingRunsOut = pricingData.history ?? {
       items: [],
       total_count: 0,
+      page: pricingPage,
+      page_size: pricingPageSize,
+      total_pages: 0,
     };
 
     return (

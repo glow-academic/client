@@ -127,7 +127,7 @@ export default async function ReportsFullPage({
       endDate: defaultEndDate,
       cohortIds: q.cohortIds ?? ([] as string[]),
       departmentIds: q.departmentIds ?? ([] as string[]),
-      roles: q.roles ?? ([] as string[]),
+      roleIds: q.role_ids ?? q.roles ?? ([] as string[]),
       simulationFilters: q.simulationFilters ?? (["general"] as string[]),
     };
 
@@ -149,7 +149,7 @@ export default async function ReportsFullPage({
           end_date: filters.endDate,
           ...(filters.cohortIds.length > 0 && { cohort_ids: filters.cohortIds }),
           ...(filters.departmentIds.length > 0 && { department_ids: filters.departmentIds }),
-          ...(filters.roles.length > 0 && { roles: filters.roles }),
+          ...(filters.roleIds.length > 0 && { role_ids: filters.roleIds }),
           ...(filters.simulationFilters.length > 0 && { simulation_filters: filters.simulationFilters }),
           page_limit: reportsPageSize,
           page_offset: reportsPage * reportsPageSize,

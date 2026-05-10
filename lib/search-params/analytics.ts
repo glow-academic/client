@@ -37,7 +37,8 @@ export const analyticsSearchParams = {
   endDate: parseAsString,
   cohortIds: parseAsCommaSeparatedArray,
   departmentIds: parseAsCommaSeparatedArray,
-  roles: parseAsCommaSeparatedArray,
+  role_ids: parseAsCommaSeparatedArray,
+  roles: parseAsCommaSeparatedArray, // legacy URL param; read as fallback
   simulationFilters: parseAsCommaSeparatedArray,
 };
 

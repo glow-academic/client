@@ -28,8 +28,14 @@ import {
   type ModelRubricViewProps,
 } from "../chatAreas/ModelRubricView";
 import { RunSelector, type RunSelectorProps } from "../inputAreas/RunSelector";
-import { useTestRun } from "@/hooks/use-test-run";
-import { parseAsInteger, parseAsString, useQueryStates } from "nuqs";
+import { useTestRun, type RunPanelState } from "@/hooks/use-test-run";
+import {
+  parseAsArrayOf,
+  parseAsInteger,
+  parseAsString,
+  useQueryState,
+  useQueryStates,
+} from "nuqs";
 import {
   ResourcePanel,
   type ResourcePanelProps,
@@ -63,11 +69,14 @@ export default function TestChat({
   const [showResources, setShowResources] = useState(false);
   const [isLobbyStarting, setIsLobbyStarting] = useState(false);
 
-  // Agent-config form state for the right rail. Local-only for now —
-  // server-side wiring (accepting these on /test/run) is a follow-up.
-  const [formState, setFormState] = useState<AgentConfigFormState>(
-    EMPTY_AGENT_CONFIG,
-  );
+  // Per-run agent-config override drafts. Keyed by config run_id.
+  // Each entry is the user's tweaked form state for that selected run;
+  // missing entries fall back to the prefill derived from the config's
+  // historical agent_resource snapshot. Local-only — selection lives
+  // in the URL (configsSelected nuqs), draft tweaks are ephemeral.
+  const [draftsByRunId, setDraftsByRunId] = useState<
+    Record<string, AgentConfigFormState>
+  >({});
 
   // Invocation id = the benchmark template invocation. Server emits it
   // as `current_invocation_id` on /test/get; using it lets us fire runs
@@ -123,6 +132,11 @@ export default function TestChat({
      *  Used to filter the tools picker so the user only sees tools
      *  that grant operations the replay tape can serve. */
     permissions?: [string, string][];
+    /** Snapshot of historical agent_resource tunables. */
+    model_id?: string | null;
+    temperature?: number | null;
+    reasoning?: string | null;
+    quality?: string | null;
   };
   type ServerConfigGroup = {
     group_id: string;
@@ -164,7 +178,28 @@ export default function TestChat({
   // Composer-style selection — empty by default. The picker is the
   // source of truth for what runs to queue on the next Run, NOT a
   // filter for the history list. History always shows everything.
-  const [selectedRunIds, setSelectedRunIds] = useState<string[]>([]);
+  // URL-backed via nuqs so refresh / link-share preserves which runs'
+  // panels + preview cards are open. ``shallow: false`` so each
+  // selection change re-runs the server component; /test/get loads
+  // historical messages for the selected run_ids and the main area
+  // renders dashed-border preview cards alongside real bindings.
+  const [configsSelectedRaw, setConfigsSelectedRaw] = useQueryState(
+    "configsSelected",
+    parseAsArrayOf(parseAsString).withOptions({
+      shallow: false,
+      history: "replace",
+    }),
+  );
+  const selectedRunIds = useMemo(
+    () => configsSelectedRaw ?? [],
+    [configsSelectedRaw],
+  );
+  const setSelectedRunIds = useCallback(
+    (ids: string[]) => {
+      void setConfigsSelectedRaw(ids.length > 0 ? ids : null);
+    },
+    [setConfigsSelectedRaw],
+  );
 
   // History list (top zone) = every binding row, regardless of status.
   // Each binding is one actual past execution (a trace+run pair). Sort
@@ -172,12 +207,43 @@ export default function TestChat({
   // chat-message style. Drafts no longer live in the history list —
   // the bottom picker now sources configs from test_data.configs.
   const filteredRuns = useMemo(() => {
-    return [...runs].sort((a, b) => {
+    const sortedHistory = [...runs].sort((a, b) => {
       const at = (a.run_id ?? "") + (a.chat_id ?? "");
       const bt = (b.run_id ?? "") + (b.chat_id ?? "");
       return at.localeCompare(bt);
     });
-  }, [runs]);
+
+    // Preview rows: synthesize a RunItem-shaped record per selected
+    // config that isn't already represented in actual history. The
+    // server preloads each selected config's historical messages
+    // (via configs_selected on /test/get), so the existing
+    // messagesByRun slice in ModelHistoryView will hydrate the
+    // transcript automatically off this synthetic row's run_id.
+    const historyRunIds = new Set(
+      runs.map((r) => r.run_id).filter(Boolean) as string[],
+    );
+    const previewRows: RunItem[] = [];
+    for (const rid of selectedRunIds) {
+      if (historyRunIds.has(rid)) continue;
+      const cfg = configs.find((c) => c.run_id === rid);
+      if (!cfg) continue;
+      previewRows.push({
+        chat_id: `preview::${rid}`,
+        invocation_id: invocationId ?? "",
+        run_id: rid,
+        group_id: cfg.group_id ?? null,
+        suite_entry_id: null,
+        model_name: cfg.model_name ?? null,
+        agent_name: cfg.agent_name ?? null,
+        status: "preview",
+        grade_score: null,
+        grade_passed: null,
+      });
+    }
+    // Previews land at the bottom of the list (closest to the
+    // composer) so they read as "next up to run."
+    return [...sortedHistory, ...previewRows];
+  }, [runs, selectedRunIds, configs, invocationId]);
 
   // Messages list — passed into ModelHistoryView for per-run transcript rendering.
   // Source: /test/get's entries.messages (already filtered server-side to runs in this test).
@@ -382,38 +448,130 @@ export default function TestChat({
       }
       const configsByRunId = new Map(configs.map((c) => [c.run_id, c]));
       for (const configRunId of selectedRunIds) {
-        // Faithful replay: pull the bundle ids the server projected
-        // onto this config (sourced from the historical run's agent
-        // resource) and pass them as panel state. /test/trace stores
-        // them verbatim on the new trace's connection tables; the
-        // dispatcher reads them off the trace bundle.
+        // Faithful replay + user overrides: start from the historical
+        // bundle (prompt/tool/instruction ids) and overlay any draft
+        // tweaks from the per-run resource panel. Whichever fields
+        // the user touched ride as panel state to /test/trace; the
+        // server stores them verbatim and falls back to the snapshot
+        // for untouched fields.
         const cfg = configsByRunId.get(configRunId);
-        const panel = cfg
-          ? {
-              ...(cfg.prompt_ids && cfg.prompt_ids.length > 0 && {
-                prompt_ids: cfg.prompt_ids,
-              }),
-              ...(cfg.tool_ids && cfg.tool_ids.length > 0 && {
-                tool_ids: cfg.tool_ids,
-              }),
-              ...(cfg.instruction_ids && cfg.instruction_ids.length > 0 && {
-                instruction_ids: cfg.instruction_ids,
-              }),
+        const draft = draftsByRunId[configRunId];
+        const panel: RunPanelState = {};
+        if (cfg) {
+          // Default ids from the snapshot — overridden below if the
+          // user changed them.
+          if (cfg.prompt_ids && cfg.prompt_ids.length > 0) {
+            panel.prompt_ids = cfg.prompt_ids;
+          }
+          if (cfg.tool_ids && cfg.tool_ids.length > 0) {
+            panel.tool_ids = cfg.tool_ids;
+          }
+          if (cfg.instruction_ids && cfg.instruction_ids.length > 0) {
+            panel.instruction_ids = cfg.instruction_ids;
+          }
+        }
+        if (draft && cfg) {
+          // Tools: form state is the canonical id list when touched.
+          panel.tool_ids = draft.tool_ids;
+
+          // Prompt: only send free-text when it differs from the
+          // snapshot's body. /test/trace appends prompt_text to
+          // prompt_ids — sending both with identical content would
+          // attach the snapshot prompt twice. Drop snapshot ids on
+          // override so the trace records the user's edit cleanly.
+          const promptsMap = (test_data.resources?.prompts ?? null) as
+            | Record<string, { system_prompt?: string }>
+            | null;
+          const snapshotPromptText =
+            cfg.prompt_ids && cfg.prompt_ids.length > 0 && promptsMap
+              ? (promptsMap[cfg.prompt_ids[0] as string]?.system_prompt ?? "")
+              : "";
+          const draftPromptText = draft.prompt_text ?? "";
+          if (draftPromptText.trim() !== snapshotPromptText.trim()) {
+            if (draftPromptText.trim() !== "") {
+              panel.prompt_text = draftPromptText;
             }
-          : undefined;
+            delete panel.prompt_ids;
+          }
+
+          // Instructions: same shape — compare cleaned draft to
+          // snapshot bodies; replace ids only when the texts differ.
+          const instructionsMap = (test_data.resources?.instructions ??
+            null) as Record<string, { template?: string }> | null;
+          const snapshotInstructions =
+            cfg.instruction_ids && instructionsMap
+              ? cfg.instruction_ids.map(
+                  (iid) => instructionsMap[iid]?.template ?? "",
+                )
+              : [];
+          const cleanInstructions = draft.instructions.filter(
+            (s) => s.trim() !== "",
+          );
+          const sameInstructions =
+            cleanInstructions.length === snapshotInstructions.length &&
+            cleanInstructions.every(
+              (s, i) => s.trim() === (snapshotInstructions[i] ?? "").trim(),
+            );
+          if (!sameInstructions && cleanInstructions.length > 0) {
+            panel.instructions = cleanInstructions;
+            delete panel.instruction_ids;
+          }
+          // Reasoning / quality — form holds resource ids; pass them
+          // through verbatim to /test/trace (which expects *_level_ids).
+          if (draft.reasoning_level) {
+            panel.reasoning_level_ids = [draft.reasoning_level];
+          }
+          if (draft.quality_ids.length > 0) {
+            panel.quality_ids = draft.quality_ids;
+          }
+          if (draft.modality_ids.length > 0) {
+            panel.modality_ids = draft.modality_ids;
+          }
+          // Temperature is a raw float on the form, but /test/trace
+          // accepts temperature_level_ids. We resolve to the closest
+          // level id at render time via the resources map.
+          const tempLevels = (test_data.resources?.temperature_levels ??
+            null) as Record<string, { temperature?: number }> | null;
+          if (tempLevels) {
+            let bestId: string | null = null;
+            let bestDelta = Number.POSITIVE_INFINITY;
+            for (const [tid, v] of Object.entries(tempLevels)) {
+              if (typeof v?.temperature !== "number") continue;
+              const d = Math.abs(v.temperature - draft.temperature);
+              if (d < bestDelta) {
+                bestDelta = d;
+                bestId = tid;
+              }
+            }
+            if (bestId) panel.temperature_level_ids = [bestId];
+          }
+        }
         // Fire-and-forget; useTestRun handles its own staging + errors.
         void testRunner.run({
           testId: test_id,
           testInvocationId: invocationId,
           historicalRunId: configRunId,
-          ...(panel && Object.keys(panel).length > 0 && { panel }),
+          ...(Object.keys(panel).length > 0 && { panel }),
         });
       }
       // Reset selection so the composer is clean for the next round —
       // mirrors how a chat input clears after sending a message.
       setSelectedRunIds([]);
+      // nuqs setter is fire-and-forget; URL clears on the next tick.
+      setDraftsByRunId({});
     },
-    [configs, invocationId, selectedRunIds, test_id, testRunner],
+    [
+      configs,
+      draftsByRunId,
+      invocationId,
+      selectedRunIds,
+      setSelectedRunIds,
+      test_data.resources?.instructions,
+      test_data.resources?.prompts,
+      test_data.resources?.temperature_levels,
+      test_id,
+      testRunner,
+    ],
   );
 
   // is_starting = true while any selected config has fired and is still
@@ -475,7 +633,7 @@ export default function TestChat({
     per_group_total: configsPerGroupTotal,
     total_runs: configsTotal,
     selected_run_ids: selectedRunIds,
-    on_select_runs: (ids: string[]) => setSelectedRunIds(ids),
+    on_select_runs: setSelectedRunIds,
     pagination: {
       groups_page: currentGroupsPage,
       groups_page_size: currentGroupsPageSize,
@@ -496,39 +654,174 @@ export default function TestChat({
     },
   };
 
-  // Filter the tools picker by the union of currently-selected runs'
-  // historical permissions. The benchmark replay tape is keyed by
-  // (artifact, operation) — a tool only makes sense in this picker if
-  // it grants at least one of the historical operations. When nothing
-  // is selected (or selected runs lack permissions data — older
-  // payload), fall back to the full tool catalog.
-  const filteredTools = useMemo(() => {
-    const allTools = test_data.resources?.tools ?? null;
-    if (!allTools) return null;
-    if (selectedRunIds.length === 0) return allTools;
-    const allowed = new Set<string>();
-    for (const cfg of configs) {
-      if (!selectedRunIds.includes(cfg.run_id)) continue;
+  // Per-run tools picker catalog. Visible = any tool whose permissions
+  // intersect with the operations the run actually exercised
+  // (cfg.permissions, derived server-side from the run's calls). This
+  // is the replay-safe set: tools the tape can serve. New tools with
+  // matching permissions are welcome here too — the user can add them
+  // freely. The earlier "agent's full bundle" prefill is dropped in
+  // favour of "tools that were actually called" (see ``prefillForConfig``
+  // below), so count and visible state stay aligned.
+  const allTools = test_data.resources?.tools ?? null;
+  const filterToolsForRun = useCallback(
+    (runId: string): Record<string, Record<string, unknown>> | null => {
+      if (!allTools) return null;
+      const cfg = configs.find((c) => c.run_id === runId);
+      if (!cfg) return allTools;
+      const allowed = new Set<string>();
       for (const [artifact, operation] of cfg.permissions ?? []) {
         allowed.add(`${artifact}.${operation}`);
       }
-    }
-    if (allowed.size === 0) return allTools;
-    const out: Record<string, Record<string, unknown>> = {};
-    for (const [id, tool] of Object.entries(allTools)) {
-      const perms = (tool as { permissions?: [string, string][] }).permissions ?? [];
-      if (perms.some(([a, o]) => allowed.has(`${a}.${o}`))) {
-        out[id] = tool as Record<string, unknown>;
+      if (allowed.size === 0) return allTools;
+      const out: Record<string, Record<string, unknown>> = {};
+      for (const [id, tool] of Object.entries(allTools)) {
+        const perms =
+          (tool as { permissions?: [string, string][] }).permissions ?? [];
+        if (perms.some(([a, o]) => allowed.has(`${a}.${o}`))) {
+          out[id] = tool as Record<string, unknown>;
+        }
       }
-    }
-    return out;
-  }, [test_data.resources?.tools, selectedRunIds, configs]);
+      return out;
+    },
+    [allTools, configs],
+  );
+
+  // Derive a prefilled AgentConfigFormState for one historical config,
+  // mirroring exactly what the run executed against. Maps raw
+  // ``reasoning`` / ``quality`` strings on the config back to the
+  // matching resource id (form fields hold ids, not raw strings).
+  const prefillForConfig = useCallback(
+    (cfg: ServerConfig): AgentConfigFormState => {
+      const promptsMap = (test_data.resources?.prompts ?? null) as
+        | Record<string, { system_prompt?: string }>
+        | null;
+      const instructionsMap = (test_data.resources?.instructions ?? null) as
+        | Record<string, { template?: string }>
+        | null;
+      const reasoningMap = (test_data.resources?.reasoning_levels ?? null) as
+        | Record<string, { reasoning_level?: string }>
+        | null;
+      const qualitiesMap = (test_data.resources?.qualities ?? null) as
+        | Record<string, { quality?: string }>
+        | null;
+
+      const promptText =
+        cfg.prompt_ids && cfg.prompt_ids.length > 0 && promptsMap
+          ? (promptsMap[cfg.prompt_ids[0] as string]?.system_prompt ?? "")
+          : "";
+      const instructionTexts =
+        cfg.instruction_ids && cfg.instruction_ids.length > 0 && instructionsMap
+          ? cfg.instruction_ids
+              .map((iid) => instructionsMap[iid]?.template ?? "")
+              .filter((s): s is string => typeof s === "string")
+          : [];
+
+      let reasoningLevelId = "";
+      if (cfg.reasoning && reasoningMap) {
+        const match = Object.entries(reasoningMap).find(
+          ([, v]) => v?.reasoning_level === cfg.reasoning,
+        );
+        if (match) reasoningLevelId = match[0];
+      }
+
+      let qualityIds: string[] = [];
+      if (cfg.quality && qualitiesMap) {
+        const match = Object.entries(qualitiesMap).find(
+          ([, v]) => v?.quality === cfg.quality,
+        );
+        if (match) qualityIds = [match[0]];
+      }
+
+      // Prefill tools = the agent's bundle ∩ tools whose permissions
+      // overlap with the operations the run actually exercised.
+      // ``cfg.tool_ids`` alone is the agent's full surface (~17 for
+      // Persona) which would pre-check far more than the user expects;
+      // narrowing to "tools that were actually called" matches the
+      // visible catalog (filterToolsForRun) and the user's mental model
+      // of "what this run did". The user can still toggle anything in
+      // the visible catalog.
+      const allToolsMap = (test_data.resources?.tools ?? null) as
+        | Record<string, { permissions?: [string, string][] }>
+        | null;
+      let prefillToolIds: string[] = cfg.tool_ids ?? [];
+      if (allToolsMap && cfg.permissions && cfg.permissions.length > 0) {
+        const allowed = new Set(
+          cfg.permissions.map(([a, o]) => `${a}.${o}`),
+        );
+        prefillToolIds = (cfg.tool_ids ?? []).filter((tid) => {
+          const perms = allToolsMap[tid]?.permissions ?? [];
+          return perms.some(([a, o]) => allowed.has(`${a}.${o}`));
+        });
+      }
+
+      return {
+        tool_ids: prefillToolIds,
+        prompt_text: promptText,
+        instructions: instructionTexts.length > 0 ? instructionTexts : [""],
+        temperature:
+          typeof cfg.temperature === "number" ? cfg.temperature : 0.7,
+        reasoning_level: reasoningLevelId,
+        quality_ids: qualityIds,
+        modality_ids: [],
+      };
+    },
+    [
+      test_data.resources?.prompts,
+      test_data.resources?.instructions,
+      test_data.resources?.reasoning_levels,
+      test_data.resources?.qualities,
+      test_data.resources?.tools,
+    ],
+  );
+
+  // Effective form state for a selected run = override draft if the
+  // user has touched it, else the prefill derived from the historical
+  // config. Looked up at render time so prefill stays reactive to
+  // resource map updates.
+  const effectiveFormState = useCallback(
+    (runId: string): AgentConfigFormState => {
+      const draft = draftsByRunId[runId];
+      if (draft) return draft;
+      const cfg = configs.find((c) => c.run_id === runId);
+      if (!cfg) return EMPTY_AGENT_CONFIG;
+      return prefillForConfig(cfg);
+    },
+    [draftsByRunId, configs, prefillForConfig],
+  );
+
+  const panelEntries = useMemo(() => {
+    return selectedRunIds.flatMap((rid) => {
+      const cfg = configs.find((c) => c.run_id === rid);
+      if (!cfg) return [];
+      return [
+        {
+          run_id: rid,
+          label: cfg.label,
+          form_state: effectiveFormState(rid),
+          on_form_change: (
+            updater: (
+              prev: AgentConfigFormState,
+            ) => AgentConfigFormState,
+          ) =>
+            setDraftsByRunId((prev) => ({
+              ...prev,
+              [rid]: updater(prev[rid] ?? prefillForConfig(cfg)),
+            })),
+          tools: filterToolsForRun(rid),
+        },
+      ];
+    });
+  }, [
+    selectedRunIds,
+    configs,
+    effectiveFormState,
+    filterToolsForRun,
+    prefillForConfig,
+  ]);
 
   const documentAreaProps: ResourcePanelProps = {
     visible: showResources,
-    form_state: formState,
-    on_form_change: setFormState,
-    tools: filteredTools,
+    panels: panelEntries,
     qualities: test_data.resources?.qualities ?? null,
     modalities: test_data.resources?.modalities ?? null,
     reasoning_levels: test_data.resources?.reasoning_levels ?? null,

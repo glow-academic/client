@@ -25,19 +25,23 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  ROLE_LABEL,
-  type ProfileRole,
-} from "@/components/common/forms/profile-roles";
 import { cn } from "@/lib/utils";
 
+export interface RoleOption {
+  id: string;
+  label: string;
+  description?: string | null;
+  iconId?: string | null;
+  colorId?: string | null;
+  level?: number;
+}
+
 export interface RoleSelectorProps extends PopoverProps {
-  roles: ProfileRole[];
+  roles: RoleOption[];
   placeholder?: string;
-  onSelect?: (roles: ProfileRole[]) => void;
-  selectedRoles?: ProfileRole[];
+  onSelect?: (roles: string[]) => void;
+  selectedRoles?: string[];
   hideSelectedChips?: boolean;
-  roleLabels?: Partial<Record<ProfileRole, string>>;
 }
 
 export function RoleSelector({
@@ -46,23 +50,25 @@ export function RoleSelector({
   onSelect,
   selectedRoles = [],
   hideSelectedChips = true,
-  roleLabels,
   ...props
 }: RoleSelectorProps) {
-  const getLabel = (role: ProfileRole) =>
-    roleLabels?.[role] ?? ROLE_LABEL[role];
+  const labelById = React.useMemo(
+    () => new Map(roles.map((role) => [role.id, role.label])),
+    [roles],
+  );
+  const getLabel = (roleId: string) => labelById.get(roleId) ?? roleId;
   const [open, setOpen] = React.useState(false);
 
-  const handleSelect = (role: ProfileRole) => {
-    const isSelected = selectedRoles.includes(role);
-    let newSelectedRoles: ProfileRole[];
+  const handleSelect = (roleId: string) => {
+    const isSelected = selectedRoles.includes(roleId);
+    let newSelectedRoles: string[];
 
     if (isSelected) {
       // Remove from selection
-      newSelectedRoles = selectedRoles.filter((r) => r !== role);
+      newSelectedRoles = selectedRoles.filter((r) => r !== roleId);
     } else {
       // Add to selection
-      newSelectedRoles = [...selectedRoles, role];
+      newSelectedRoles = [...selectedRoles, roleId];
     }
 
     onSelect?.(newSelectedRoles);
@@ -77,7 +83,7 @@ export function RoleSelector({
 
   // Remove individual item
   const handleRemoveItem = (
-    roleToRemove: ProfileRole,
+    roleToRemove: string,
     e: React.MouseEvent,
   ) => {
     e.stopPropagation();
@@ -154,11 +160,11 @@ export function RoleSelector({
               <CommandGroup heading="Roles">
                 {roles.map((role) => (
                   <RoleItem
-                    key={role}
-                    role={role}
-                    label={getLabel(role)}
-                    isSelected={selectedRoles.includes(role)}
-                    onSelect={() => handleSelect(role)}
+                    key={role.id}
+                    role={role.id}
+                    label={role.label}
+                    isSelected={selectedRoles.includes(role.id)}
+                    onSelect={() => handleSelect(role.id)}
                   />
                 ))}
               </CommandGroup>
@@ -171,7 +177,7 @@ export function RoleSelector({
 }
 
 interface RoleItemProps {
-  role: ProfileRole;
+  role: string;
   label: string;
   isSelected: boolean;
   onSelect: () => void;
@@ -189,4 +195,3 @@ function RoleItem({ role, label, isSelected, onSelect }: RoleItemProps) {
     </CommandItem>
   );
 }
-

@@ -165,6 +165,7 @@ export default async function RecordPage({
     const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
     const historySortBy = q.historySortBy ?? "date";
     const historySortOrder = q.historySortOrder ?? "desc";
+    const roleIds = q.role_ids ?? q.roles ?? [];
 
     // Single API call returning all dashboard data
     const [data, context, groupResult] = await Promise.all([
@@ -174,7 +175,7 @@ export default async function RecordPage({
           end_date: defaultEndDate,
           ...(q.cohortIds && q.cohortIds.length > 0 && { cohort_ids: q.cohortIds }),
           ...(q.departmentIds && q.departmentIds.length > 0 && { department_ids: q.departmentIds }),
-          ...(q.roles && q.roles.length > 0 && { roles: q.roles }),
+          ...(roleIds.length > 0 && { role_ids: roleIds }),
           ...(q.simulationFilters && q.simulationFilters.length > 0 && { simulation_filters: q.simulationFilters }),
           target_profile_id: recordId,
           actor_profile_id: pageContext.profile.id || recordId,
@@ -190,6 +191,8 @@ export default async function RecordPage({
           ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
           ...(scenarioSearch && { scenario_search: scenarioSearch }),
           // History
+          history_practice: false,
+          history_show_archived: false,
           history_page: historyPage,
           history_page_size: historyPageSize,
           history_sort_by: historySortBy,
@@ -215,7 +218,7 @@ export default async function RecordPage({
       endDate: defaultEndDate,
       cohortIds: q.cohortIds ?? [],
       departmentIds: q.departmentIds ?? [],
-      roles: q.roles ?? [],
+      roles: roleIds,
       simulationFilters: q.simulationFilters ?? ["general"],
     };
 

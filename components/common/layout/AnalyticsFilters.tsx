@@ -7,13 +7,8 @@
 
 "use client";
 
-import {
-  PROFILE_ROLES,
-  type ProfileRole,
-} from "@/components/common/forms/profile-roles";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
-import { useProfile } from "@/contexts/profile-context";
 import {
   type SimulationFilter,
   useAnalyticsParams,
@@ -43,7 +38,16 @@ export interface AnalyticsFacetsData {
   } | null;
   department_options?: Array<{ value: string; label?: string | null }>;
   cohort_options?: Array<{ value: string; label?: string | null }>;
-  role_options?: string[];
+  role_options?: Array<{
+    value: string;
+    label?: string | null;
+    id?: string;
+    name?: string;
+    description?: string | null;
+    icon_id?: string | null;
+    color_id?: string | null;
+    level?: number;
+  }>;
   attempt_options?: string[];
   date_range_earliest?: string | null;
   date_range_latest?: string | null;
@@ -74,10 +78,10 @@ export function AnalyticsFilters({ refreshAction, analyticsFilters }: AnalyticsF
     simulationFilters,
     setSimulationFilters,
   } = useAnalyticsParams({
-    dateRangeEarliest: analyticsFilters?.date_range_earliest,
+    ...(analyticsFilters?.date_range_earliest !== undefined && {
+      dateRangeEarliest: analyticsFilters.date_range_earliest,
+    }),
   });
-
-  const { scopedRoles } = useProfile();
 
   // Server-driven field visibility
   const filterFields = analyticsFilters?.fields;
@@ -210,21 +214,6 @@ export function AnalyticsFilters({ refreshAction, analyticsFilters }: AnalyticsF
     selectedCohortIds.includes(cohort.id)
   );
 
-  // Automatically filter available roles and remove invalid selections when cohorts are selected
-  useEffect(() => {
-    if (selectedCohortIds.length > 0) {
-      // When cohorts are selected, only allow "member" and "instructional" roles
-      // Remove any existing selections that aren't "member" or "instructional"
-      const validRoles = selectedRoles.filter(
-        (role) => role === "member" || role === "instructional"
-      );
-      if (validRoles.length !== selectedRoles.length) {
-        setSelectedRoles(validRoles);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCohortIds, selectedRoles]);
-
   const handleCohortSelect = (cohorts: CohortSelectorCohort[]) => {
     setSelectedCohortIds(cohorts.map((c) => c.id));
   };
@@ -246,7 +235,16 @@ export function AnalyticsFilters({ refreshAction, analyticsFilters }: AnalyticsF
     setSelectedDepartmentIds(selectedDepts.map((d) => d.id));
   };
 
-  const handleRoleSelect = (roles: ProfileRole[]) => {
+  const roleOptions = (analyticsFilters?.role_options ?? []).map((o) => ({
+    id: o.id || o.value,
+    label: o.name || o.label || o.value,
+    ...(o.description !== undefined && { description: o.description }),
+    ...(o.icon_id !== undefined && { iconId: o.icon_id }),
+    ...(o.color_id !== undefined && { colorId: o.color_id }),
+    ...(o.level !== undefined && { level: o.level }),
+  }));
+
+  const handleRoleSelect = (roles: string[]) => {
     setSelectedRoles(roles);
   };
 
@@ -361,15 +359,9 @@ export function AnalyticsFilters({ refreshAction, analyticsFilters }: AnalyticsF
             )}
 
             {/* Role Picker - server-driven visibility */}
-            {showRoles && (
+            {showRoles && roleOptions.length > 0 && (
               <RoleSelector
-                roles={
-                  selectedCohortIds.length > 0
-                    ? PROFILE_ROLES.filter(
-                        (role) => role === "instructional" || role === "member"
-                      )
-                    : PROFILE_ROLES.filter((role) => scopedRoles.includes(role))
-                }
+                roles={roleOptions}
                 selectedRoles={selectedRoles}
                 onSelect={handleRoleSelect}
                 placeholder="Roles"

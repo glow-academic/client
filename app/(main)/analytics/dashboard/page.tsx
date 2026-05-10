@@ -134,6 +134,7 @@ export default async function DashboardPage({
     const historyProfileSearch = q.historyProfileSearch ?? undefined;
     const historySimulationSearch = q.historySimulationSearch ?? undefined;
     const historyScenarioSearch = q.historyScenarioSearch ?? undefined;
+    const roleIds = q.role_ids ?? q.roles ?? [];
 
     // Parallel fetch: dashboard data + history search + group
     type SearchIn = InputOf<"/attempt/dashboard/search", "post">;
@@ -145,7 +146,7 @@ export default async function DashboardPage({
           ...(q.endDate && { end_date: q.endDate }),
           ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
           ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
-          ...(q.roles?.length && { roles: q.roles }),
+          ...(roleIds.length && { role_ids: roleIds }),
           ...(q.simulationFilters?.length && { simulation_filters: q.simulationFilters }),
           page_limit: 50,
           page_offset: 0,
@@ -158,6 +159,12 @@ export default async function DashboardPage({
           ...(parameterSearch && { parameter_search: parameterSearch }),
           ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
           ...(scenarioSearch && { scenario_search: scenarioSearch }),
+          history_practice: false,
+          history_show_archived: false,
+          history_sort_by: historySortBy,
+          history_sort_order: historySortOrder,
+          history_page: historyPage,
+          history_page_size: historyPageSize,
         },
       }),
       api.post("/attempt/dashboard/search", {
@@ -176,6 +183,7 @@ export default async function DashboardPage({
           ...(q.endDate && { end_date: q.endDate }),
           ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
           ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
+          ...(roleIds.length && { role_ids: roleIds }),
         },
       } as SearchIn) as SearchOut,
       readViewCookie("history"),
@@ -212,7 +220,7 @@ export default async function DashboardPage({
       endDate: defaultEndDate,
       cohortIds: q.cohortIds ?? [],
       departmentIds: q.departmentIds ?? [],
-      roles: q.roles ?? [],
+      roles: roleIds,
     };
 
     return (

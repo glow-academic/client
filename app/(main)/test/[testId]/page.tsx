@@ -44,6 +44,7 @@ const getTestArtifact = async (
     configs_expanded?: string[] | null;
     configs_expanded_page_size?: number;
     configs_search?: string | null;
+    configs_selected?: string[] | null;
   },
 ): Promise<TestArtifactOut> => {
   const body = { test_id: testId } as TestGetBody;
@@ -59,6 +60,8 @@ const getTestArtifact = async (
   if (configsArgs?.configs_expanded_page_size !== undefined)
     extra["configs_expanded_page_size"] = configsArgs.configs_expanded_page_size;
   if (configsArgs?.configs_search) extra["configs_search"] = configsArgs.configs_search;
+  if (configsArgs?.configs_selected && configsArgs.configs_selected.length > 0)
+    extra["configs_selected"] = configsArgs.configs_selected;
   return api.post(
     "/test/get",
     { body },
@@ -154,6 +157,7 @@ export default async function TestPage({
         configs_expanded: q.configsExpanded ?? null,
         configs_expanded_page_size: q.configsExpandedPageSize ?? 20,
         configs_search: q.configsSearch ?? null,
+        configs_selected: q.configsSelected ?? null,
       }),
       getTestContextById(testId) as Promise<ContextOut>,
       api.post(

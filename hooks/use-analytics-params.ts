@@ -6,19 +6,12 @@
 
 "use client";
 
-import { useProfile } from "@/contexts/profile-context";
 import { subDays } from "date-fns";
 import { usePathname } from "next/navigation";
 import { createParser, parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useMemo } from "react";
 
-type ProfileRole =
-  | "superadmin"
-  | "admin"
-  | "instructional"
-  | "member"
-  | "guest"
-  | "custom";
+type ProfileRole = string;
 
 export type SimulationFilter = "practice" | "general" | "archived";
 
@@ -43,7 +36,8 @@ const analyticsParamsClient = {
   endDate: parseAsString,
   cohortIds: parseAsCommaSeparatedArray,
   departmentIds: parseAsCommaSeparatedArray,
-  roles: parseAsCommaSeparatedArray,
+  role_ids: parseAsCommaSeparatedArray,
+  roles: parseAsCommaSeparatedArray, // legacy URL param; read-only fallback
   simulationFilters: parseAsCommaSeparatedArray,
 } as const;
 
@@ -54,7 +48,6 @@ export interface UseAnalyticsParamsOptions {
 
 export function useAnalyticsParams(options: UseAnalyticsParamsOptions = {}) {
   const pathname = usePathname();
-  const { profile } = useProfile();
 
   const [params, setParams] = useQueryStates(analyticsParamsClient, {
     shallow: false,
@@ -89,7 +82,7 @@ export function useAnalyticsParams(options: UseAnalyticsParamsOptions = {}) {
   // Selected values (empty array means "all")
   const selectedCohortIds = params.cohortIds || [];
   const selectedDepartmentIds = params.departmentIds || [];
-  const selectedRoles = (params.roles || []) as ProfileRole[];
+  const selectedRoles = (params.role_ids || params.roles || []) as ProfileRole[];
   const simulationFilters = (params.simulationFilters || [
     "general",
   ]) as SimulationFilter[];
@@ -104,12 +97,8 @@ export function useAnalyticsParams(options: UseAnalyticsParamsOptions = {}) {
   const effectiveDepartmentIds = selectedDepartmentIds;
 
   const effectiveRoles = useMemo<ProfileRole[]>(() => {
-    if (profile?.role === "member") return ["member"];
-    if (selectedRoles.length === 0) {
-      return ["superadmin", "admin", "instructional", "member", "guest"];
-    }
     return selectedRoles;
-  }, [profile?.role, selectedRoles]);
+  }, [selectedRoles]);
 
   const effectiveSimulationFilters = useMemo<SimulationFilter[]>(() => {
     if (isPracticePage) return ["practice"];
@@ -151,7 +140,10 @@ export function useAnalyticsParams(options: UseAnalyticsParamsOptions = {}) {
 
   const setSelectedRoles = useCallback(
     (roles: ProfileRole[]) => {
-      setParams({ roles: roles.length > 0 ? roles : null });
+      setParams({
+        role_ids: roles.length > 0 ? roles : null,
+        roles: null,
+      });
     },
     [setParams],
   );
@@ -174,6 +166,7 @@ export function useAnalyticsParams(options: UseAnalyticsParamsOptions = {}) {
       endDate: null,
       cohortIds: null,
       departmentIds: null,
+      role_ids: null,
       roles: null,
       simulationFilters: null,
     });

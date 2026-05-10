@@ -9598,6 +9598,41 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * ActivityHistoryResponse
+         * @description Embedded activity session history for the activity bundle endpoint.
+         */
+        ActivityHistoryResponse: {
+            /**
+             * Items
+             * @description Session history items
+             */
+            items?: components["schemas"]["SessionListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching records
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Page
+             * @description Current page number
+             * @default 0
+             */
+            page: number;
+            /**
+             * Page Size
+             * @description Items per page
+             * @default 50
+             */
+            page_size: number;
+            /**
+             * Total Pages
+             * @description Total number of pages
+             * @default 0
+             */
+            total_pages: number;
+        };
+        /**
          * ActivityRequest
          * @description Request for getting activity data (top cards).
          */
@@ -9618,10 +9653,51 @@ export interface components {
              */
             department_ids?: string[];
             /**
-             * Roles
-             * @description Roles to filter by
+             * Role Ids
+             * @description Role resource IDs to filter profiles by
              */
-            roles?: string[];
+            role_ids?: string[];
+            /**
+             * Page Limit
+             * @description Max summary items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Summary pagination offset
+             * @default 0
+             */
+            page_offset: number;
+            /**
+             * Summary Profile Id
+             * @description Profile ID to focus the summary card
+             */
+            summary_profile_id?: string | null;
+            /**
+             * History Page
+             * @description Embedded history page number
+             * @default 0
+             */
+            history_page: number;
+            /**
+             * History Page Size
+             * @description Embedded history items per page
+             * @default 50
+             */
+            history_page_size: number;
+            /**
+             * History Sort By
+             * @description Embedded history sort field
+             * @default date
+             */
+            history_sort_by: string;
+            /**
+             * History Sort Order
+             * @description Embedded history sort direction
+             * @default desc
+             */
+            history_sort_order: string;
         };
         /**
          * ActivityResources
@@ -9676,6 +9752,8 @@ export interface components {
             resources?: components["schemas"]["ActivityResources"];
             /** @description Inline analytics facets for SSR */
             analytics?: components["schemas"]["AnalyticsFacets"] | null;
+            /** @description Embedded session history */
+            history?: components["schemas"]["ActivityHistoryResponse"] | null;
         };
         /** AgentDepartmentResource */
         AgentDepartmentResource: {
@@ -10415,9 +10493,9 @@ export interface components {
             cohort_options?: components["schemas"]["AnalyticsFilterOption"][];
             /**
              * Role Options
-             * @description Available role options
+             * @description Available role resource options
              */
-            role_options?: string[];
+            role_options?: components["schemas"]["AnalyticsRoleOption"][];
             /**
              * Attempt Options
              * @description Available attempt options
@@ -10483,6 +10561,52 @@ export interface components {
              * @description Human-readable option label
              */
             label: string;
+        };
+        /**
+         * AnalyticsRoleOption
+         * @description Hydrated role resource option for analytics role filters.
+         */
+        AnalyticsRoleOption: {
+            /**
+             * Value
+             * @description Option value for the filter
+             */
+            value: string;
+            /**
+             * Label
+             * @description Human-readable option label
+             */
+            label: string;
+            /**
+             * Id
+             * @description Role resource UUID
+             */
+            id: string;
+            /**
+             * Name
+             * @description Role resource name
+             */
+            name: string;
+            /**
+             * Description
+             * @description Role description
+             */
+            description?: string | null;
+            /**
+             * Icon Id
+             * @description Icon resource UUID
+             */
+            icon_id?: string | null;
+            /**
+             * Color Id
+             * @description Color resource UUID
+             */
+            color_id?: string | null;
+            /**
+             * Level
+             * @description Role privilege level
+             */
+            level: number;
         };
         /** ArchiveAttemptsRequest */
         ArchiveAttemptsRequest: {
@@ -16768,6 +16892,170 @@ export interface components {
             rubric_trend?: components["schemas"]["PrimaryRubricTrend"];
             /** @description Skill performance radar data */
             skill_performance?: components["schemas"]["SecondarySkillPerformance"];
+        };
+        /**
+         * DashboardRequest
+         * @description Request for getting dashboard data (get.py scope only).
+         */
+        DashboardRequest: {
+            /**
+             * Start Date
+             * @description Filter start date
+             */
+            start_date?: string | null;
+            /**
+             * End Date
+             * @description Filter end date
+             */
+            end_date?: string | null;
+            /**
+             * Cohort Ids
+             * @description Cohort IDs to filter by
+             */
+            cohort_ids?: string[] | null;
+            /**
+             * Simulation Ids
+             * @description Simulation IDs to filter by
+             */
+            simulation_ids?: string[] | null;
+            /**
+             * Department Ids
+             * @description Department IDs to filter by
+             */
+            department_ids?: string[] | null;
+            /**
+             * Role Ids
+             * @description Role resource IDs to filter profiles by
+             */
+            role_ids?: string[] | null;
+            /**
+             * Simulation Filters
+             * @description Simulation filter strings
+             */
+            simulation_filters?: string[] | null;
+            /**
+             * Actor Profile Id
+             * @description Acting user profile ID
+             */
+            actor_profile_id?: string | null;
+            /**
+             * Target Profile Id
+             * @description Target profile ID to scope data
+             */
+            target_profile_id?: string | null;
+            /**
+             * Page Limit
+             * @description Max items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Pagination offset
+             * @default 0
+             */
+            page_offset: number;
+            /**
+             * Rubric Ids
+             * @description Rubric IDs for section picker
+             */
+            rubric_ids?: string[] | null;
+            /**
+             * Rubric Search
+             * @description Search string for rubrics
+             */
+            rubric_search?: string | null;
+            /**
+             * Simulation Picker Ids
+             * @description Simulation picker IDs
+             */
+            simulation_picker_ids?: string[] | null;
+            /**
+             * Simulation Picker Search
+             * @description Search string for simulations
+             */
+            simulation_picker_search?: string | null;
+            /**
+             * Parameter Ids
+             * @description Parameter IDs for section picker
+             */
+            parameter_ids?: string[] | null;
+            /**
+             * Parameter Search
+             * @description Search string for parameters
+             */
+            parameter_search?: string | null;
+            /**
+             * Scenario Ids
+             * @description Scenario IDs for section picker
+             */
+            scenario_ids?: string[] | null;
+            /**
+             * Scenario Search
+             * @description Search string for scenarios
+             */
+            scenario_search?: string | null;
+            /**
+             * History Practice
+             * @description Filter to practice attempts only
+             * @default false
+             */
+            history_practice: boolean;
+            /**
+             * History Scenario Ids
+             * @description Scenario IDs for history filter
+             */
+            history_scenario_ids?: string[] | null;
+            /**
+             * History Infinite Mode
+             * @description Filter by infinite mode status
+             */
+            history_infinite_mode?: boolean | null;
+            /**
+             * History Show Archived
+             * @description Include archived attempts
+             * @default false
+             */
+            history_show_archived: boolean;
+            /**
+             * History Sort By
+             * @description History sort field
+             * @default date
+             */
+            history_sort_by: string | null;
+            /**
+             * History Sort Order
+             * @description History sort direction
+             * @default desc
+             */
+            history_sort_order: string | null;
+            /**
+             * History Page
+             * @description History pagination page number
+             * @default 0
+             */
+            history_page: number;
+            /**
+             * History Page Size
+             * @description History items per page
+             * @default 20
+             */
+            history_page_size: number;
+            /**
+             * History Simulation Search
+             * @description Search string for history simulations
+             */
+            history_simulation_search?: string | null;
+            /**
+             * History Scenario Search
+             * @description Search string for history scenarios
+             */
+            history_scenario_search?: string | null;
+            /**
+             * History Profile Search
+             * @description Search string for history profiles
+             */
+            history_profile_search?: string | null;
         };
         /** DashboardRubricMeta */
         DashboardRubricMeta: {
@@ -25577,6 +25865,8 @@ export interface components {
             simulation_id: string | null;
             /** Profile Id */
             profile_id: string | null;
+            /** Role Id */
+            role_id?: string | null;
             /** User Persona Id */
             user_persona_id: string | null;
             /** Personas Id */
@@ -31812,6 +32102,11 @@ export interface components {
              * @description Free-text filter on group name
              */
             configs_search?: string | null;
+            /**
+             * Configs Selected
+             * @description Run IDs currently selected in the picker; messages preloaded for preview
+             */
+            configs_selected?: string[];
         };
         /**
          * GetTestArtifactResponse
@@ -35277,10 +35572,10 @@ export interface components {
              */
             department_ids?: string[];
             /**
-             * Roles
-             * @description Roles to filter by
+             * Role Ids
+             * @description Role resource IDs to filter profiles by
              */
-            roles?: string[];
+            role_ids?: string[];
             /**
              * Active
              * @description Filter by active status
@@ -35432,7 +35727,7 @@ export interface components {
             can_delete?: boolean | null;
             /**
              * Pending Status
-             * @description Soft-call ledger status for the latest pending op on this row
+             * @description Soft-call ledger status (pending/accepted/rejected) for the latest pending op on this row
              */
             pending_status?: string | null;
             /**
@@ -35537,7 +35832,7 @@ export interface components {
             can_delete?: boolean | null;
             /**
              * Pending Status
-             * @description Soft-call ledger status for the latest pending op on this row
+             * @description Soft-call ledger status (pending/accepted/rejected) for the latest pending op on this row
              */
             pending_status?: string | null;
             /**
@@ -35667,7 +35962,7 @@ export interface components {
             updated_at?: string | null;
             /**
              * Pending Status
-             * @description Soft-call ledger status for the latest pending op on this row
+             * @description Soft-call ledger status (pending/accepted/rejected) for the latest pending op on this row
              */
             pending_status?: string | null;
             /**
@@ -35824,6 +36119,11 @@ export interface components {
              */
             department_ids?: string[] | null;
             /**
+             * Role Ids
+             * @description Role resource IDs to filter profiles by
+             */
+            role_ids?: string[] | null;
+            /**
              * Target Profile Id
              * @description Target profile ID to scope data
              */
@@ -35954,7 +36254,7 @@ export interface components {
             updated_at?: string | null;
             /**
              * Pending Status
-             * @description Soft-call ledger status for the latest pending op on this row
+             * @description Soft-call ledger status (pending/accepted/rejected) for the latest pending op on this row
              */
             pending_status?: string | null;
             /**
@@ -37464,6 +37764,11 @@ export interface components {
              * @description Department IDs to filter by
              */
             department_ids?: string[] | null;
+            /**
+             * Role Ids
+             * @description Role resource IDs to filter profiles by
+             */
+            role_ids?: string[] | null;
             /**
              * Practice
              * @description Filter to practice attempts only
@@ -43447,6 +43752,41 @@ export interface components {
             model_names?: string[] | null;
         };
         /**
+         * PricingHistoryResponse
+         * @description Embedded pricing group history for the pricing bundle endpoint.
+         */
+        PricingHistoryResponse: {
+            /**
+             * Items
+             * @description Pricing group rows
+             */
+            items?: components["schemas"]["PricingGroupItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching records
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Page
+             * @description Current page number
+             * @default 0
+             */
+            page: number;
+            /**
+             * Page Size
+             * @description Items per page
+             * @default 50
+             */
+            page_size: number;
+            /**
+             * Total Pages
+             * @description Total number of pages
+             * @default 0
+             */
+            total_pages: number;
+        };
+        /**
          * PricingRequest
          * @description Request for pricing get endpoint (top chart).
          */
@@ -43471,6 +43811,52 @@ export interface components {
              * @description Alias for end date
              */
             date_to?: string | null;
+            /**
+             * Department Ids
+             * @description Department IDs to filter by
+             */
+            department_ids?: string[];
+            /**
+             * Page Limit
+             * @description Max chart items per page
+             * @default 100
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Chart pagination offset
+             * @default 0
+             */
+            page_offset: number;
+            /**
+             * History Page
+             * @description Embedded history page number
+             * @default 0
+             */
+            history_page: number;
+            /**
+             * History Page Size
+             * @description Embedded history items per page
+             * @default 50
+             */
+            history_page_size: number;
+            /**
+             * History Sort By
+             * @description Embedded history sort field
+             * @default date
+             */
+            history_sort_by: string;
+            /**
+             * History Sort Order
+             * @description Embedded history sort direction
+             * @default desc
+             */
+            history_sort_order: string;
+            /**
+             * History Model Id
+             * @description Model UUID to filter embedded history by
+             */
+            history_model_id?: string | null;
         };
         /**
          * PricingResources
@@ -43526,6 +43912,8 @@ export interface components {
             agent_options?: components["schemas"]["FilterOption"][];
             /** @description Inline analytics facets for SSR */
             analytics?: components["schemas"]["AnalyticsFacets"] | null;
+            /** @description Embedded pricing group history */
+            history?: components["schemas"]["PricingHistoryResponse"] | null;
         };
         /** PrimaryPersonaPerformance */
         PrimaryPersonaPerformance: {
@@ -45730,6 +46118,11 @@ export interface components {
              */
             department_ids?: string[] | null;
             /**
+             * Role Ids
+             * @description Role resource IDs to filter profiles by
+             */
+            role_ids?: string[] | null;
+            /**
              * Simulation Filters
              * @description Simulation filter strings
              */
@@ -46793,6 +47186,11 @@ export interface components {
              */
             name?: string | null;
             /**
+             * Role Id
+             * @description Assigned role resource UUID
+             */
+            role_id?: string | null;
+            /**
              * Role
              * @description Profile role
              */
@@ -46839,10 +47237,10 @@ export interface components {
              */
             department_ids?: string[] | null;
             /**
-             * Roles
-             * @description Roles to filter by
+             * Role Ids
+             * @description Role resource IDs to filter profiles by
              */
-            roles?: string[] | null;
+            role_ids?: string[] | null;
             /**
              * Simulation Filters
              * @description Simulation filter strings
@@ -46918,6 +47316,13 @@ export interface components {
                 [key: string]: components["schemas"]["ReportsProfileResource"];
             };
             /**
+             * Roles
+             * @description Role resources keyed by ID
+             */
+            roles?: {
+                [key: string]: components["schemas"]["ReportsRoleResource"];
+            };
+            /**
              * Scenarios
              * @description Scenario resources keyed by ID
              */
@@ -46980,6 +47385,39 @@ export interface components {
             scenario_options?: components["schemas"]["FilterOption"][];
             /** @description Inline analytics facets for SSR */
             analytics?: components["schemas"]["AnalyticsFacets"] | null;
+        };
+        /** ReportsRoleResource */
+        ReportsRoleResource: {
+            /**
+             * Role Id
+             * @description Role resource identifier
+             */
+            role_id?: string | null;
+            /**
+             * Name
+             * @description Role display name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Role description
+             */
+            description?: string | null;
+            /**
+             * Icon Id
+             * @description Icon resource UUID
+             */
+            icon_id?: string | null;
+            /**
+             * Color Id
+             * @description Color resource UUID
+             */
+            color_id?: string | null;
+            /**
+             * Level
+             * @description Role privilege level
+             */
+            level?: number | null;
         };
         /** ReportsRubricResource */
         ReportsRubricResource: {
@@ -52330,6 +52768,34 @@ export interface components {
              * @description Instruction resource ids from the historical agent
              */
             instruction_ids?: string[];
+            /**
+             * Model Id
+             * @description Model id from the historical agent
+             */
+            model_id?: string | null;
+            /**
+             * Temperature
+             * @description Temperature value from the historical agent
+             */
+            temperature?: number | null;
+            /**
+             * Reasoning
+             * @description Reasoning level value from the historical agent
+             */
+            reasoning?: string | null;
+            /**
+             * Quality
+             * @description Quality value from the historical agent
+             */
+            quality?: string | null;
+            /**
+             * Permissions
+             * @description Historical (artifact, operation) pairs this run executed
+             */
+            permissions?: [
+                string,
+                string
+            ][];
         };
         /**
          * TestEntries
@@ -73014,7 +73480,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -73022,7 +73492,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["DashboardBundleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

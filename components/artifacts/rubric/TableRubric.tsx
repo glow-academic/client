@@ -136,7 +136,7 @@ export default function TableRubric({
       return {
         groupId,
         groupInfo,
-        standardIds: standardIds.sort((a, b) => {
+        standardIds: [...standardIds].sort((a, b) => {
           // Sort by points descending (Level 5 to Level 1)
           const aPoints = standardsMapping[a]?.points || 0;
           const bPoints = standardsMapping[b]?.points || 0;
@@ -146,11 +146,27 @@ export default function TableRubric({
     },
   );
 
+  const scoreColumns = Array.from(
+    groupedStandards
+      .flatMap((group) =>
+        group.standardIds
+          .map((standardId) => standardsMapping[standardId])
+          .filter((standard): standard is StandardMappingItem =>
+            Boolean(standard),
+          ),
+      )
+      .reduce((columns, standard) => {
+        const existing = columns.get(standard.points);
+        if (!existing || standard.name.length > existing.name.length) {
+          columns.set(standard.points, standard);
+        }
+        return columns;
+      }, new Map<number, StandardMappingItem>())
+      .values(),
+  ).sort((a, b) => b.points - a.points);
+
   // Determine the maximum number of standards across all groups for consistent column count
-  const maxStandards = Math.max(
-    ...groupedStandards.map((g) => g.standardIds.length),
-    0,
-  );
+  const maxStandards = scoreColumns.length;
 
   // Mobile-only "Open Full Rubric" affordance. Matches v1 — the
   // simplified 2-column mobile view can't show per-cell feedback
@@ -315,24 +331,17 @@ export default function TableRubric({
                     >
                       Criteria
                     </TableHead>
-                    {Array.from({ length: maxStandards }, (_, i) => {
-                      const firstGroupStandardId =
-                        groupedStandards[0]?.standardIds[i];
-                      const standardInfo = firstGroupStandardId
-                        ? standardsMapping[firstGroupStandardId]
-                        : null;
+                    {scoreColumns.map((standardInfo, i) => {
                       const isLast = i === maxStandards - 1;
                       return (
                         <TableHead
-                          key={i}
+                          key={standardInfo.points}
                           className={`bg-primary text-primary-foreground font-semibold text-sm px-2 py-3 ${
                             !isLast ? "border-r border-border" : ""
                           }`}
                           style={{ width: `${(100 - 20) / maxStandards}%` }}
                         >
-                          {standardInfo
-                            ? `${standardInfo.name} (${standardInfo.points})`
-                            : ""}
+                          {`${standardInfo.name} (${standardInfo.points})`}
                         </TableHead>
                       );
                     })}
@@ -358,7 +367,12 @@ export default function TableRubric({
                         {Array.from(
                           { length: maxStandards },
                           (_, standardIndex) => {
-                            const standardId = standardIds[standardIndex];
+                            const scoreColumn = scoreColumns[standardIndex];
+                            const standardId = standardIds.find(
+                              (id) =>
+                                standardsMapping[id]?.points ===
+                                scoreColumn?.points,
+                            );
                             const isLast = standardIndex === maxStandards - 1;
                             if (!standardId) {
                               return (

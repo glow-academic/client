@@ -64,6 +64,18 @@ export default function PracticeZone({
     }
   }, [canScrollRight, carouselIndex]);
 
+  const rubricsByStandardGroups = useCallback(
+    (itemStandardGroups?: string[] | null) => {
+      const itemGroupIds = new Set((itemStandardGroups || []).map(String));
+      if (itemGroupIds.size === 0) return [];
+
+      return (rubrics || []).filter((rubric) =>
+        rubric.standard_group_ids.some((groupId) => itemGroupIds.has(groupId))
+      );
+    },
+    [rubrics]
+  );
+
   if (!simulations || simulations.length === 0) return null;
 
   // Get simulations for current page
@@ -143,7 +155,7 @@ export default function PracticeZone({
                 standard_groups={standardGroupsDict}
                 standardGroupsMapping={standardGroupsMapping}
                 standardsMapping={standardsMapping}
-                rubrics={rubrics}
+                rubrics={rubricsByStandardGroups(simulation.standard_groups)}
                 {...(simulation.color && { color: simulation.color })}
                 {...(simulation.icon && { icon: simulation.icon })}
                 {...(typeof simulation.has_passed === "boolean" && {

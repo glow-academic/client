@@ -20,9 +20,11 @@ import {
   CheckCircle2,
   ChevronDown,
   Clock,
+  Eye,
   Loader2,
   Square,
 } from "lucide-react";
+import MarkdownInline from "@/components/common/markdown/MarkdownInline";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type TestArtifactOut = OutputOf<"/test/get", "post">;
@@ -47,6 +49,8 @@ function statusIcon(status: string) {
       return <CheckCircle2 className="h-4 w-4 text-green-500" />;
     case "in_progress":
       return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
+    case "preview":
+      return <Eye className="h-4 w-4 text-muted-foreground" />;
     default:
       return <Clock className="h-4 w-4 text-muted-foreground" />;
   }
@@ -66,6 +70,13 @@ function statusBadge(status: string) {
         <Badge variant="secondary" className="text-xs">
           <Clock className="h-3 w-3 mr-1" />
           Running
+        </Badge>
+      );
+    case "preview":
+      return (
+        <Badge variant="outline" className="text-xs border-dashed">
+          <Eye className="h-3 w-3 mr-1" />
+          Preview
         </Badge>
       );
     default:
@@ -219,8 +230,15 @@ function RunRow({
     };
   }, [open, run_messages]);
 
+  const isPreview = status === "preview";
   return (
-    <Card className="border">
+    <Card
+      className={
+        isPreview
+          ? "border border-dashed border-muted-foreground/40 bg-muted/20"
+          : "border"
+      }
+    >
       <Collapsible open={open} onOpenChange={setOpen}>
         <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between gap-2">
@@ -328,9 +346,9 @@ function RunRow({
                           (no text)
                         </span>
                       ) : text ? (
-                        <span className="whitespace-pre-wrap text-foreground">
-                          {text}
-                        </span>
+                        <div className="text-foreground min-w-0 w-full overflow-x-auto [&_pre]:max-w-full [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_code]:break-words">
+                          <MarkdownInline>{text}</MarkdownInline>
+                        </div>
                       ) : loading ? (
                         <span className="text-muted-foreground italic">
                           Loading…

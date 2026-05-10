@@ -27,6 +27,10 @@ export const testSearchParams = {
   configsExpanded: parseAsCommaSeparatedArray,
   configsExpandedPageSize: parseAsInteger,
   configsSearch: parseAsString,
+  // Currently-selected picker run_ids — server loads each one's
+  // historical messages so the main area can render dashed-border
+  // preview cards interleaved with the test's actual bindings.
+  configsSelected: parseAsCommaSeparatedArray,
 };
 
 export const loadTestSearchParams = createLoader(testSearchParams);

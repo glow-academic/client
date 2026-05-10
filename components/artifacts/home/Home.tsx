@@ -92,6 +92,18 @@ export default function Home({ homeData }: HomeProps) {
     }));
   }, [homeOverview?.rubrics]);
 
+  const buildRubricsForStandardGroups = useCallback(
+    (itemStandardGroups?: string[] | null) => {
+      const itemGroupIds = new Set((itemStandardGroups || []).map(String));
+      if (itemGroupIds.size === 0) return [];
+
+      return rubricItems.filter((rubric) =>
+        rubric.standard_group_ids.some((groupId) => itemGroupIds.has(groupId))
+      );
+    },
+    [rubricItems]
+  );
+
   const [carouselIndex, setCarouselIndex] = useState(0);
 
   // Use data directly from the hook
@@ -342,7 +354,7 @@ export default function Home({ homeData }: HomeProps) {
                           { name: string; description: string; points: number }
                         >
                       }
-                      rubrics={rubricItems}
+                      rubrics={buildRubricsForStandardGroups(item.standard_groups)}
                       {...(item.color && { color: item.color })}
                       {...(item.icon && { icon: item.icon })}
                       {...(typeof item.has_passed === "boolean" && {

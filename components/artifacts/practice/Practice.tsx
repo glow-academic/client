@@ -21,7 +21,6 @@ export interface PracticeProps {
 
 export default function Practice({
   practiceData,
-  _isGuest = false,
 }: PracticeProps) {
   const { profile } = useProfile();
 
@@ -31,14 +30,16 @@ export default function Practice({
 
   // Build standard_groups mapping from standards array (for SimulationCard compatibility)
   // API returns arrays, but SimulationCard expects a dict mapping standard_group_id -> array of standard_ids
-  // Note: Server response doesn't include standard_group_id in standards array, so we build an empty mapping
-  // This mapping may need to be built differently if the server adds standard_group_id to the response
   const standardGroupsToStandards = useMemo(() => {
     const mapping: Record<string, string[]> = {};
-    // Since standards array doesn't include standard_group_id, we can't build this mapping
-    // Return empty mapping for now - this may need server-side changes to include standard_group_id
+    for (const st of practiceOverview?.standards || []) {
+      if (!st.standard_group_id || !st.standard_id) continue;
+      const groupId = String(st.standard_group_id);
+      mapping[groupId] = mapping[groupId] || [];
+      mapping[groupId]!.push(String(st.standard_id));
+    }
     return mapping;
-  }, []);
+  }, [practiceOverview?.standards]);
 
   // Convert arrays to dicts for backward compatibility with SimulationCard
   // API now returns arrays (standard_groups, standards) instead of mappings
