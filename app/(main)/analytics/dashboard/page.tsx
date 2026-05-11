@@ -125,8 +125,8 @@ export default async function DashboardPage({
     const historyPage = q.historyPage ?? 0;
     const historyPageSize = q.historyPageSize ?? 10;
     const historySearch = q.historySearch ?? undefined;
-    const _historyProfileIds = q.historyProfileIds ?? undefined;
-    const _historySimulationIds = q.historySimulationIds ?? undefined;
+    const historyProfileIds = q.historyProfileIds ?? undefined;
+    const historySimulationIds = q.historySimulationIds ?? undefined;
     const historyScenarioIds = q.historyScenarioIds ?? undefined;
     const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
     const historySortBy = q.historySortBy ?? "date";
@@ -135,7 +135,12 @@ export default async function DashboardPage({
     const historySimulationSearch = q.historySimulationSearch ?? undefined;
     const historyScenarioSearch = q.historyScenarioSearch ?? undefined;
     const roleIds = q.role_ids ?? q.roles ?? [];
-    const simulationFilters = q.simulationFilters ?? ["general"];
+    // simulationFilters default = ["general"] (per product intent). Treat empty
+    // array and missing identically so the server never has to guess and we
+    // don't fragment the cache between "missing" and "explicitly cleared".
+    const simulationFilters = q.simulationFilters?.length
+      ? q.simulationFilters
+      : ["general"];
     const hasGeneralFilter = simulationFilters.includes("general");
     const hasPracticeFilter = simulationFilters.includes("practice");
     const historyPractice =
@@ -165,12 +170,8 @@ export default async function DashboardPage({
           ...(parameterSearch && { parameter_search: parameterSearch }),
           ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
           ...(scenarioSearch && { scenario_search: scenarioSearch }),
-          history_practice: historyPractice ?? null,
-          history_show_archived: historyShowArchived,
-          history_sort_by: historySortBy,
-          history_sort_order: historySortOrder,
-          history_page: historyPage,
-          history_page_size: historyPageSize,
+          // History filters omitted — fetched via /attempt/dashboard/search
+          // below in parallel (canonical history surface).
         },
       }),
       api.post("/attempt/dashboard/search", {
@@ -181,11 +182,19 @@ export default async function DashboardPage({
           sort_order: historySortOrder,
           practice: historyPractice ?? null,
           ...(historyShowArchived && { show_archived: true }),
-          ...(historySearch && { simulation_search: historySearch }),
+          // `historySearch` is the generic top-bar input ("Search by name,
+          // simulation, or scenarios..."). `historySimulationSearch` is the
+          // column-level facet. They share one server field (simulation_search)
+          // until/unless the server gains a multi-target search; column-level
+          // wins when both are set, generic falls through otherwise.
+          ...(((historySimulationSearch || historySearch) && {
+            simulation_search: historySimulationSearch || historySearch,
+          })),
+          ...(historyProfileIds?.length && { profile_ids: historyProfileIds }),
+          ...(historySimulationIds?.length && { simulation_ids: historySimulationIds }),
           ...(historyScenarioIds?.length && { scenario_ids: historyScenarioIds }),
           ...(historyInfiniteMode !== undefined && { infinite_mode: historyInfiniteMode }),
           ...(historyProfileSearch && { profile_search: historyProfileSearch }),
-          ...(historySimulationSearch && { simulation_search: historySimulationSearch }),
           ...(historyScenarioSearch && { scenario_search: historyScenarioSearch }),
           ...(q.startDate && { start_date: q.startDate }),
           ...(q.endDate && { end_date: q.endDate }),

@@ -106,14 +106,14 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
     const pricingPage = q.pricingPage ?? 0;
     const pricingPageSize = q.pricingPageSize ?? 10;
     const pricingModelIds = q.pricingModelIds ?? undefined;
+    const pricingProfileIds = q.pricingProfileIds ?? undefined;
+    const pricingActorIds = q.pricingActorIds ?? undefined;
+    const pricingSearch = q.pricingSearch ?? undefined;
     const pricingSortBy = q.pricingSortBy ?? "date";
     const pricingSortOrder = q.pricingSortOrder ?? "desc";
 
     // Map frontend sort field to backend field name
     const sortBy = pricingSortBy === "createdAt" ? "date" : pricingSortBy;
-
-    // Use first model ID if provided (endpoint accepts single model_id)
-    const modelId = pricingModelIds?.[0] ?? null;
 
     // Fetch pricing data, view cookie, and group in parallel
     const [pricingData, initialColumnVisibility, groupResult] = await Promise.all([
@@ -129,7 +129,21 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
           history_page_size: pricingPageSize,
           history_sort_by: sortBy,
           history_sort_order: pricingSortOrder,
-          history_model_id: modelId,
+          // Multi-model filter (server takes precedence over legacy
+          // singular `history_model_id`). We send the array shape so all
+          // selected models filter pricing rows together.
+          ...(pricingModelIds?.length && {
+            history_model_ids: pricingModelIds,
+          }),
+          // Profile = human user; actor = LLM agent. Distinct server filters
+          // mirror the existing column accessors in RunsDataTable.
+          ...(pricingProfileIds?.length && {
+            history_profile_ids: pricingProfileIds,
+          }),
+          ...(pricingActorIds?.length && {
+            history_agent_ids: pricingActorIds,
+          }),
+          ...(pricingSearch && { history_search: pricingSearch }),
         },
       }),
       readViewCookie("pricing"),

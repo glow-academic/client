@@ -175,15 +175,28 @@ export default async function RecordPage({
     const historyPage = q.historyPage ?? 0;
     const historyPageSize = q.historyPageSize ?? 10;
     const historySearch = q.historySearch ?? undefined;
-    const _historySimulationIds = q.historySimulationIds ?? undefined;
     const historyScenarioIds = q.historyScenarioIds ?? undefined;
+    const historySimulationIds = q.historySimulationIds ?? undefined;
+    const historyScenarioSearch = q.historyScenarioSearch ?? undefined;
     const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
     const historySortBy = q.historySortBy ?? "date";
     const historySortOrder = q.historySortOrder ?? "desc";
     const roleIds = q.role_ids ?? q.roles ?? [];
 
+    // Derive history_practice from simulationFilters (mirror dashboard page).
+    // simulationFilters default = ["general"] (per product intent), so missing/empty
+    // URL state lands on general-only attempts rather than thrashing the cache.
+    const simulationFilters = q.simulationFilters?.length
+      ? q.simulationFilters
+      : ["general"];
+    const hasGeneralFilter = simulationFilters.includes("general");
+    const hasPracticeFilter = simulationFilters.includes("practice");
+    const historyPractice =
+      hasGeneralFilter === hasPracticeFilter ? undefined : hasPracticeFilter;
+    const historyShowArchived = simulationFilters.includes("archived");
+
     // Single API call returning all dashboard data
-    const [data, context, groupResult] = await Promise.all([
+    const [data, historyResult, context, groupResult] = await Promise.all([
       getDashboard({
         body: {
           start_date: defaultStartDate,
@@ -191,7 +204,7 @@ export default async function RecordPage({
           ...(q.cohortIds && q.cohortIds.length > 0 && { cohort_ids: q.cohortIds }),
           ...(q.departmentIds && q.departmentIds.length > 0 && { department_ids: q.departmentIds }),
           ...(roleIds.length > 0 && { role_ids: roleIds }),
-          ...(q.simulationFilters && q.simulationFilters.length > 0 && { simulation_filters: q.simulationFilters }),
+          simulation_filters: simulationFilters,
           target_profile_id: recordId,
           actor_profile_id: pageContext.profile.id || recordId,
           page_limit: 50,
@@ -205,24 +218,44 @@ export default async function RecordPage({
           ...(parameterSearch && { parameter_search: parameterSearch }),
           ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
           ...(scenarioSearch && { scenario_search: scenarioSearch }),
-          // History
-          history_practice: false,
-          history_show_archived: false,
-          history_page: historyPage,
-          history_page_size: historyPageSize,
-          history_sort_by: historySortBy,
-          history_sort_order: historySortOrder,
-          ...(historySearch && { history_simulation_search: historySearch }),
-          ...(historyScenarioIds?.length && { history_scenario_ids: historyScenarioIds }),
-          ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
+          // History filters omitted — fetched via /attempt/dashboard/search
+          // below in parallel (canonical history surface, scoped to recordId
+          // via target_profile_id above).
         },
       }),
+      // Parallel history fetch — mirrors dashboard page pattern. /search is
+      // the canonical history endpoint; /get no longer returns inline history.
+      api.post("/attempt/dashboard/search", {
+        body: {
+          target_profile_id: recordId,
+          page: historyPage,
+          page_size: historyPageSize,
+          sort_by: historySortBy,
+          sort_order: historySortOrder,
+          practice: historyPractice ?? null,
+          ...(historyShowArchived && { show_archived: true }),
+          ...(historySearch && { simulation_search: historySearch }),
+          ...(historyScenarioSearch && { scenario_search: historyScenarioSearch }),
+          ...(historyScenarioIds?.length && { scenario_ids: historyScenarioIds }),
+          ...(historySimulationIds?.length && { simulation_ids: historySimulationIds }),
+          ...(historyInfiniteMode !== undefined && { infinite_mode: historyInfiniteMode }),
+          ...(q.startDate && { start_date: q.startDate }),
+          ...(q.endDate && { end_date: q.endDate }),
+          ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
+          ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
+          ...(roleIds.length && { role_ids: roleIds }),
+        },
+      } as InputOf<"/attempt/dashboard/search", "post">) as Promise<OutputOf<"/attempt/dashboard/search", "post">>,
       getAttemptContextById(recordId) as Promise<ContextOut>,
       api.post(
         "/attempt/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupRecordIn,
       ),
     ]);
+
+    // Inject history into bundle so Record component reads `data.history`
+    // exactly as before (lossless contract for the consumer component).
+    (data as Record<string, unknown>).history = historyResult;
 
     const _entityName = context.page_metadata?.detail.title;
 
@@ -234,7 +267,7 @@ export default async function RecordPage({
       cohortIds: q.cohortIds ?? [],
       departmentIds: q.departmentIds ?? [],
       roles: roleIds,
-      simulationFilters: q.simulationFilters ?? ["general"],
+      simulationFilters,
     };
 
     const recordProfileData = {

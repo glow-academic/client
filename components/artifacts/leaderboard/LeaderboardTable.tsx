@@ -62,6 +62,12 @@ export interface LeaderboardTableProps {
   currentUserId: string;
   simulations?: Array<{ simulation_id: string; name: string; description?: string }>;
   scenarios?: Array<{ scenario_id: string; name: string; description?: string }>;
+  // Server-supplied filter options computed over the FULL corpus (not just the
+  // paginated page). When present these win over the page-1 fallback below so
+  // filter dropdowns stay correct on cohorts larger than the visible page.
+  serverProfileOptions?: Array<{ value: string; label: string }>;
+  serverSimulationOptions?: Array<{ value: string; label: string }>;
+  totalCount?: number;
   onViewReport?: (profileId: string) => void;
   initialColumnVisibility?: VisibilityState;
 }
@@ -78,6 +84,9 @@ export default function LeaderboardTable({
   currentUserId,
   simulations = [],
   scenarios = [],
+  serverProfileOptions,
+  serverSimulationOptions,
+  totalCount,
   onViewReport,
   initialColumnVisibility,
 }: LeaderboardTableProps) {
@@ -353,20 +362,27 @@ export default function LeaderboardTable({
   const simulationIdsColumn = table.getColumn("simulationIds");
   const scenarioIdsColumn = table.getColumn("scenarioIds");
 
-  // Build filter options from mappings
+  // Build filter options. Prefer server-supplied (full-corpus) options when
+  // available; otherwise derive from the current paginated rows.
   const profileOptions = useMemo(() => {
+    if (serverProfileOptions && serverProfileOptions.length > 0) {
+      return serverProfileOptions;
+    }
     return data.map((row) => ({
       value: row.profileId,
       label: row.name,
     }));
-  }, [data]);
+  }, [serverProfileOptions, data]);
 
   const simulationOptions = useMemo(() => {
+    if (serverSimulationOptions && serverSimulationOptions.length > 0) {
+      return serverSimulationOptions;
+    }
     return simulations.map((sim) => ({
       value: sim.simulation_id,
       label: sim.name,
     }));
-  }, [simulations]);
+  }, [serverSimulationOptions, simulations]);
 
   const scenarioOptions = useMemo(() => {
     return scenarios.map((scenario) => ({
@@ -441,6 +457,11 @@ export default function LeaderboardTable({
         </div>
 
         <div className="flex items-center space-x-2 mb-2">
+          {totalCount != null && totalCount > data.length && (
+            <span className="text-xs text-muted-foreground">
+              Showing top {data.length} of {totalCount}
+            </span>
+          )}
           <DataTableViewOptions
             table={table}
             hiddenColumns={["simulationIds", "scenarioIds"]}

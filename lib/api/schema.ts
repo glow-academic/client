@@ -7098,7 +7098,11 @@ export interface paths {
         put?: never;
         /**
          * Export Attempt
-         * @description Export attempt data as a clean, denormalized ZIP.
+         * @description Artifact-level attempt export.
+         *
+         *     Dispatches on ``body.view`` to per-view exports and returns
+         *     ``{file_id, file_name, row_count}``. Client downloads via
+         *     ``/api/attempt/download/{file_id}`` (BFF) → ``/attempt/file/download``.
          */
         post: operations["export_attempt_attempt_export_post"];
         delete?: never;
@@ -7684,46 +7688,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/home/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Home Refresh
-         * @description Refresh home materialized views and invalidate caches.
-         */
-        post: operations["home_refresh_attempt_home_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/home/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Home
-         * @description Export all home data as a clean, denormalized ZIP with certificate.
-         */
-        post: operations["export_home_attempt_home_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/attempt/practice/get": {
         parameters: {
             query?: never;
@@ -7758,46 +7722,6 @@ export interface paths {
          * @description Get paginated attempt history for practice.
          */
         post: operations["search_practice_attempt_practice_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/practice/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Practice Refresh
-         * @description Refresh practice materialized views and invalidate caches.
-         */
-        post: operations["practice_refresh_attempt_practice_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/practice/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Practice
-         * @description Export all practice data as a clean, denormalized ZIP.
-         */
-        post: operations["export_practice_attempt_practice_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7841,46 +7765,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/dashboard/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Dashboard Refresh
-         * @description Refresh dashboard caches (no materialized views).
-         */
-        post: operations["dashboard_refresh_attempt_dashboard_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/dashboard/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Dashboard
-         * @description Export all dashboard data as a clean, denormalized ZIP.
-         */
-        post: operations["export_dashboard_attempt_dashboard_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/attempt/leaderboard/get": {
         parameters: {
             query?: never;
@@ -7912,46 +7796,6 @@ export interface paths {
          * @description Get leaderboard profile rows (bottom table, paginated).
          */
         post: operations["search_leaderboard_attempt_leaderboard_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/leaderboard/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Leaderboard Refresh
-         * @description Refresh leaderboard caches.
-         */
-        post: operations["leaderboard_refresh_attempt_leaderboard_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/leaderboard/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Leaderboard
-         * @description Export all leaderboard data as a clean, denormalized ZIP.
-         */
-        post: operations["export_leaderboard_attempt_leaderboard_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7998,66 +7842,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/record/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Record Refresh
-         * @description Refresh record caches.
-         */
-        post: operations["record_refresh_attempt_record_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/record/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Record
-         * @description Export record data (dashboard for one profile) as a clean, denormalized ZIP.
-         */
-        post: operations["export_record_attempt_record_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/report/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Reports
-         * @description Export all reports data as a clean, denormalized ZIP.
-         */
-        post: operations["export_reports_attempt_report_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/attempt/report/search": {
         parameters: {
             query?: never;
@@ -8072,26 +7856,6 @@ export interface paths {
          * @description Get reports artifact data via composable context resolver.
          */
         post: operations["get_reports_attempt_report_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/report/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Reports Refresh
-         * @description Refresh reports caches.
-         */
-        post: operations["reports_refresh_attempt_report_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8342,7 +8106,11 @@ export interface paths {
         put?: never;
         /**
          * Export Test
-         * @description Export test data as a clean, denormalized ZIP.
+         * @description Artifact-level test export.
+         *
+         *     Dispatches on ``body.view`` to per-view exports and returns
+         *     ``{file_id, file_name, row_count}``. Client downloads via
+         *     ``/api/test/download/{file_id}`` (BFF) → ``/test/file/download``.
          */
         post: operations["export_test_test_export_post"];
         delete?: never;
@@ -8679,6 +8447,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/test/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_test_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/test/benchmark/get": {
         parameters: {
             query?: never;
@@ -8713,46 +8501,6 @@ export interface paths {
          * @description Search benchmark test history with pagination and filters.
          */
         post: operations["search_benchmark_history_test_benchmark_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/benchmark/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Benchmark Refresh
-         * @description Refresh benchmark materialized views and invalidate caches.
-         */
-        post: operations["benchmark_refresh_test_benchmark_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/benchmark/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Benchmark
-         * @description Export all benchmark data as a clean, denormalized ZIP.
-         */
-        post: operations["export_benchmark_test_benchmark_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8856,46 +8604,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/test/invocation/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Invocation Refresh
-         * @description Refresh invocation materialized views and invalidate caches.
-         */
-        post: operations["invocation_refresh_test_invocation_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/invocation/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Invocation
-         * @description Export a single invocation as a clean, denormalized CSV.
-         */
-        post: operations["export_invocation_test_invocation_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/test/invocation/decrypt": {
         parameters: {
             query?: never;
@@ -8933,6 +8641,31 @@ export interface paths {
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
         post: operations["get_system_context_system_context_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/system/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export System
+         * @description Artifact-level system export.
+         *
+         *     Dispatches on ``body.view`` to per-view exports (activity, pricing,
+         *     group, session, health) and returns ``{file_id, file_name, row_count}``.
+         *     Client downloads via ``/api/system/download/{file_id}`` (BFF) →
+         *     ``/system/file/download``.
+         */
+        post: operations["export_system_system_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9079,46 +8812,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/group/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Refresh
-         * @description Refresh group materialized views and invalidate caches.
-         */
-        post: operations["group_refresh_system_group_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/group/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Group
-         * @description Export group data as a clean, denormalized ZIP.
-         */
-        post: operations["export_group_system_group_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/system/group/name": {
         parameters: {
             query?: never;
@@ -9159,46 +8852,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/session/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Session Refresh
-         * @description Refresh session materialized views and invalidate caches.
-         */
-        post: operations["session_refresh_system_session_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/session/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Session
-         * @description Export session data as a clean, denormalized ZIP.
-         */
-        post: operations["export_session_system_session_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/system/health/get": {
         parameters: {
             query?: never;
@@ -9213,46 +8866,6 @@ export interface paths {
          * @description Get health artifact data.
          */
         post: operations["get_health_system_health_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/health/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Health Refresh
-         * @description Refresh health materialized views and invalidate caches.
-         */
-        post: operations["health_refresh_system_health_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/health/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Health
-         * @description Export all health data as a clean, denormalized ZIP.
-         */
-        post: operations["export_health_system_health_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9296,26 +8909,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/activity/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Activity Refresh
-         * @description Refresh activity materialized views and invalidate caches.
-         */
-        post: operations["activity_refresh_system_activity_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/system/activity/resolve": {
         parameters: {
             query?: never;
@@ -9330,26 +8923,6 @@ export interface paths {
          * @description Resolve or unresolve a problem entry.
          */
         post: operations["resolve_problem_system_activity_resolve_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/activity/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Activity
-         * @description Export all activity data as a clean, denormalized ZIP.
-         */
-        post: operations["export_activity_system_activity_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9390,46 +8963,6 @@ export interface paths {
          * @description Get pricing group history (bottom table, paginated).
          */
         post: operations["search_pricing_system_pricing_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/pricing/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Pricing Refresh
-         * @description Refresh pricing materialized views and invalidate caches.
-         */
-        post: operations["pricing_refresh_system_pricing_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/pricing/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Pricing
-         * @description Export all pricing data as a clean, denormalized ZIP.
-         */
-        post: operations["export_pricing_system_pricing_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -17025,7 +16558,7 @@ export interface components {
             profile_role?: string | null;
             /** @description Inline analytics facets for SSR */
             analytics?: components["schemas"]["AnalyticsFacets"] | null;
-            /** @description Inline attempt history response */
+            /** @description Always null on /get — use /attempt/dashboard/search instead */
             history?: components["schemas"]["HistoryResponse"] | null;
         };
         /** DashboardFieldMeta */
@@ -17329,66 +16862,6 @@ export interface components {
              * @description Search string for scenarios
              */
             scenario_search?: string | null;
-            /**
-             * History Practice
-             * @description Filter to practice attempts only
-             */
-            history_practice?: boolean | null;
-            /**
-             * History Scenario Ids
-             * @description Scenario IDs for history filter
-             */
-            history_scenario_ids?: string[] | null;
-            /**
-             * History Infinite Mode
-             * @description Filter by infinite mode status
-             */
-            history_infinite_mode?: boolean | null;
-            /**
-             * History Show Archived
-             * @description Include archived attempts
-             * @default false
-             */
-            history_show_archived: boolean;
-            /**
-             * History Sort By
-             * @description History sort field
-             * @default date
-             */
-            history_sort_by: string | null;
-            /**
-             * History Sort Order
-             * @description History sort direction
-             * @default desc
-             */
-            history_sort_order: string | null;
-            /**
-             * History Page
-             * @description History pagination page number
-             * @default 0
-             */
-            history_page: number;
-            /**
-             * History Page Size
-             * @description History items per page
-             * @default 20
-             */
-            history_page_size: number;
-            /**
-             * History Simulation Search
-             * @description Search string for history simulations
-             */
-            history_simulation_search?: string | null;
-            /**
-             * History Scenario Search
-             * @description Search string for history scenarios
-             */
-            history_scenario_search?: string | null;
-            /**
-             * History Profile Search
-             * @description Search string for history profiles
-             */
-            history_profile_search?: string | null;
         };
         /** DashboardRubricMeta */
         DashboardRubricMeta: {
@@ -22101,32 +21574,6 @@ export interface components {
             description?: string | null;
         };
         /**
-         * ExportActivityApiResponse
-         * @description Response model for activity export.
-         */
-        ExportActivityApiResponse: {
-            /**
-             * Content
-             * @description Base64-encoded file content
-             */
-            content: string;
-            /**
-             * File Name
-             * @description Suggested download file name
-             */
-            file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the export file
-             */
-            mime_type: string;
-            /**
-             * Row Count
-             * @description Number of rows in the export
-             */
-            row_count: number;
-        };
-        /**
          * ExportAgentApiRequest
          * @description Request model for export agent endpoint.
          */
@@ -22159,37 +21606,85 @@ export interface components {
              */
             row_count: number;
         };
-        /** ExportAttemptApiRequest */
+        /**
+         * ExportAttemptApiRequest
+         * @description Request model for attempt export.
+         *
+         *     View-aware: dispatches to per-view exports under a single artifact-level
+         *     endpoint. ``view='single'`` exports one attempt (legacy shape); the other
+         *     views are analytics surfaces (``/home``, ``/practice``, ``/leaderboard``,
+         *     ``/analytics/dashboard``, ``/analytics/reports``, ``/analytics/reports/[recordId]``).
+         *
+         *     All views return the same canonical file-modality response
+         *     (``{file_id, file_name, row_count}``).
+         */
         ExportAttemptApiRequest: {
             /**
-             * Attempt Id
-             * Format: uuid
+             * View
+             * @description View discriminator: 'single' | 'dashboard' | 'reports' | 'leaderboard' | 'home' | 'practice' | 'record' | 'report'
+             * @default single
              */
-            attempt_id: string;
+            view: string;
+            /**
+             * Attempt Id
+             * @description UUID of a single attempt (required for view='single')
+             */
+            attempt_id?: string | null;
+            /**
+             * Record Id
+             * @description UUID of the target profile (required for view='record')
+             */
+            record_id?: string | null;
+            /**
+             * Date From
+             * @description Optional date window start
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description Optional date window end
+             */
+            date_to?: string | null;
+            /**
+             * Department Ids
+             * @description Optional department filter
+             */
+            department_ids?: string[] | null;
+            /**
+             * Simulation Ids
+             * @description Optional simulation filter
+             */
+            simulation_ids?: string[] | null;
+            /**
+             * Mode
+             * @description Optional sub-mode within a view. Currently recognized: view=reports → mode='brightspace' (gradebook CSV only); view=home → mode='certificate' (PDF cert only) or 'attempts' (CSV only). Default (None) returns the full per-view bundle.
+             */
+            mode?: string | null;
         };
         /**
          * ExportAttemptApiResponse
-         * @description Response model for attempt export.
+         * @description Response model for attempt export — canonical file modality.
+         *
+         *     File-modality: the server writes the export to disk, registers it as a
+         *     ``files_resource`` row joined to an ``uploads_entry``, and returns the
+         *     ``file_id``. The client downloads via ``/attempt/file/download`` (and the
+         *     BFF wrapper at ``/api/attempt/download/{file_id}``).
          */
         ExportAttemptApiResponse: {
             /**
-             * Content
-             * @description Exported file content
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export bytes
              */
-            content: string;
+            file_id: string;
             /**
              * File Name
-             * @description Name of the exported file
+             * @description Suggested download file name
              */
             file_name: string;
             /**
-             * Mime Type
-             * @description MIME type of the exported file
-             */
-            mime_type: string;
-            /**
              * Row Count
-             * @description Number of rows in the export
+             * @description Number of data rows in the export
              */
             row_count: number;
         };
@@ -22222,32 +21717,6 @@ export interface components {
             /**
              * Mime Type
              * @description MIME type of the exported content
-             */
-            mime_type: string;
-            /**
-             * Row Count
-             * @description Number of rows in the export
-             */
-            row_count: number;
-        };
-        /**
-         * ExportBenchmarkApiResponse
-         * @description Response model for benchmark export.
-         */
-        ExportBenchmarkApiResponse: {
-            /**
-             * Content
-             * @description Base64-encoded file content
-             */
-            content: string;
-            /**
-             * File Name
-             * @description Suggested download file name
-             */
-            file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the export file
              */
             mime_type: string;
             /**
@@ -22324,32 +21793,6 @@ export interface components {
             /**
              * Row Count
              * @description Number of data rows in the export
-             */
-            row_count: number;
-        };
-        /**
-         * ExportDashboardApiResponse
-         * @description Response model for dashboard export.
-         */
-        ExportDashboardApiResponse: {
-            /**
-             * Content
-             * @description Base64-encoded file content
-             */
-            content: string;
-            /**
-             * File Name
-             * @description Suggested download file name
-             */
-            file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the export file
-             */
-            mime_type: string;
-            /**
-             * Row Count
-             * @description Number of rows in the export
              */
             row_count: number;
         };
@@ -22486,159 +21929,6 @@ export interface components {
              */
             row_count: number;
         };
-        /** ExportGroupApiRequest */
-        ExportGroupApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-        };
-        /**
-         * ExportGroupApiResponse
-         * @description Response model for group export.
-         */
-        ExportGroupApiResponse: {
-            /**
-             * Content
-             * @description Exported file content
-             */
-            content: string;
-            /**
-             * File Name
-             * @description Name of the exported file
-             */
-            file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the exported file
-             */
-            mime_type: string;
-            /**
-             * Row Count
-             * @description Number of rows in the export
-             */
-            row_count: number;
-        };
-        /**
-         * ExportHealthApiResponse
-         * @description Response model for health export.
-         */
-        ExportHealthApiResponse: {
-            /**
-             * Content
-             * @description Exported file content
-             */
-            content: string;
-            /**
-             * File Name
-             * @description Name of the exported file
-             */
-            file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the exported file
-             */
-            mime_type: string;
-            /**
-             * Row Count
-             * @description Number of rows in the export
-             */
-            row_count: number;
-        };
-        /**
-         * ExportHomeApiResponse
-         * @description Response model for home certificate export.
-         */
-        ExportHomeApiResponse: {
-            /**
-             * Content
-             * @description Base64-encoded file content
-             */
-            content: string;
-            /**
-             * File Name
-             * @description Suggested download file name
-             */
-            file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the export file
-             */
-            mime_type: string;
-            /**
-             * Row Count
-             * @description Number of rows in the export
-             */
-            row_count: number;
-        };
-        /**
-         * ExportInvocationApiRequest
-         * @description Request model for invocation export.
-         */
-        ExportInvocationApiRequest: {
-            /**
-             * Test Id
-             * Format: uuid
-             */
-            test_id: string;
-            /** Invocation Entry Id */
-            invocation_entry_id?: string | null;
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /**
-         * ExportInvocationApiResponse
-         * @description Response model for invocation export.
-         */
-        ExportInvocationApiResponse: {
-            /**
-             * Content
-             * @description Base64-encoded file content
-             */
-            content: string;
-            /**
-             * File Name
-             * @description Suggested download file name
-             */
-            file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the export file
-             */
-            mime_type: string;
-            /**
-             * Row Count
-             * @description Number of rows in the export
-             */
-            row_count: number;
-        };
-        /**
-         * ExportLeaderboardApiResponse
-         * @description Response model for leaderboard export.
-         */
-        ExportLeaderboardApiResponse: {
-            /**
-             * Content
-             * @description Base64-encoded file content
-             */
-            content: string;
-            /**
-             * File Name
-             * @description Suggested download file name
-             */
-            file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the export file
-             */
-            mime_type: string;
-            /**
-             * Row Count
-             * @description Number of rows in the export
-             */
-            row_count: number;
-        };
         /**
          * ExportModelApiRequest
          * @description Request model for model export.
@@ -22769,58 +22059,6 @@ export interface components {
             row_count: number;
         };
         /**
-         * ExportPracticeApiResponse
-         * @description Response model for practice export.
-         */
-        ExportPracticeApiResponse: {
-            /**
-             * Content
-             * @description Base64-encoded file content
-             */
-            content: string;
-            /**
-             * File Name
-             * @description Suggested download file name
-             */
-            file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the export file
-             */
-            mime_type: string;
-            /**
-             * Row Count
-             * @description Number of rows in the export
-             */
-            row_count: number;
-        };
-        /**
-         * ExportPricingApiResponse
-         * @description Response model for pricing export.
-         */
-        ExportPricingApiResponse: {
-            /**
-             * Content
-             * @description Base64-encoded file content
-             */
-            content: string;
-            /**
-             * File Name
-             * @description Suggested download file name
-             */
-            file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the export file
-             */
-            mime_type: string;
-            /**
-             * Row Count
-             * @description Number of rows in the export
-             */
-            row_count: number;
-        };
-        /**
          * ExportProfileApiRequest
          * @description Request model for profile export.
          */
@@ -22887,66 +22125,6 @@ export interface components {
             /**
              * Row Count
              * @description Number of data rows in the export
-             */
-            row_count: number;
-        };
-        /** ExportRecordApiRequest */
-        ExportRecordApiRequest: {
-            /**
-             * Target Profile Id
-             * Format: uuid
-             */
-            target_profile_id: string;
-        };
-        /**
-         * ExportRecordApiResponse
-         * @description Response model for record export.
-         */
-        ExportRecordApiResponse: {
-            /**
-             * Content
-             * @description Base64-encoded file content
-             */
-            content: string;
-            /**
-             * File Name
-             * @description Suggested download file name
-             */
-            file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the export file
-             */
-            mime_type: string;
-            /**
-             * Row Count
-             * @description Number of rows in the export
-             */
-            row_count: number;
-        };
-        /**
-         * ExportReportsApiResponse
-         * @description Response model for reports export.
-         */
-        ExportReportsApiResponse: {
-            /**
-             * Content
-             * @description Base64-encoded file content
-             */
-            content: string;
-            /**
-             * File Name
-             * @description Suggested download file name
-             */
-            file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the export file
-             */
-            mime_type: string;
-            /**
-             * Row Count
-             * @description Number of rows in the export
              */
             row_count: number;
         };
@@ -23052,40 +22230,6 @@ export interface components {
              */
             row_count: number;
         };
-        /** ExportSessionApiRequest */
-        ExportSessionApiRequest: {
-            /**
-             * Target Session Id
-             * Format: uuid
-             */
-            target_session_id: string;
-        };
-        /**
-         * ExportSessionApiResponse
-         * @description Response model for session export.
-         */
-        ExportSessionApiResponse: {
-            /**
-             * Content
-             * @description Exported file content
-             */
-            content: string;
-            /**
-             * File Name
-             * @description Name of the exported file
-             */
-            file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the exported file
-             */
-            mime_type: string;
-            /**
-             * Row Count
-             * @description Number of rows in the export
-             */
-            row_count: number;
-        };
         /**
          * ExportSettingApiRequest
          * @description Request model for setting export.
@@ -23172,37 +22316,113 @@ export interface components {
              */
             row_count: number;
         };
-        /** ExportTestApiRequest */
-        ExportTestApiRequest: {
+        /**
+         * ExportSystemApiRequest
+         * @description Request model for view-aware system export.
+         *
+         *     Views: ``activity`` | ``pricing`` | ``group`` | ``session`` | ``health``.
+         *     All views return canonical ``{file_id, file_name, row_count}``; client
+         *     downloads via ``/api/system/download/{file_id}``.
+         */
+        ExportSystemApiRequest: {
             /**
-             * Test Id
-             * Format: uuid
+             * View
+             * @description View discriminator: 'activity' | 'pricing' | 'group' | 'session' | 'health'
              */
-            test_id: string;
+            view: string;
+            /**
+             * Session Id
+             * @description Target session UUID (required for view='session')
+             */
+            session_id?: string | null;
+            /**
+             * Group Id
+             * @description Target group UUID (required for view='group')
+             */
+            group_id?: string | null;
+            /**
+             * Mode
+             * @description Optional sub-mode within a view. Currently recognized: view=reports → mode='brightspace' (gradebook CSV only); view=home → mode='certificate' (PDF cert only) or 'attempts' (CSV only). Default (None) returns the full per-view bundle.
+             */
+            mode?: string | null;
         };
         /**
-         * ExportTestApiResponse
-         * @description Response model for test export.
+         * ExportSystemApiResponse
+         * @description Response model for system export — canonical file modality.
          */
-        ExportTestApiResponse: {
+        ExportSystemApiResponse: {
             /**
-             * Content
-             * @description Exported file content
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export bytes
              */
-            content: string;
+            file_id: string;
             /**
              * File Name
-             * @description Name of the exported file
+             * @description Suggested download file name
              */
             file_name: string;
             /**
-             * Mime Type
-             * @description MIME type of the exported file
+             * Row Count
+             * @description Number of data rows in the export
              */
-            mime_type: string;
+            row_count: number;
+        };
+        /**
+         * ExportTestApiRequest
+         * @description Request model for view-aware test export.
+         *
+         *     Views: ``single`` (one test_id), ``benchmark`` (analytics), ``invocation``.
+         *     All views return the canonical ``{file_id, file_name, row_count}`` shape;
+         *     client downloads via ``/api/test/download/{file_id}``.
+         */
+        ExportTestApiRequest: {
+            /**
+             * View
+             * @description View discriminator: 'single' | 'benchmark' | 'invocation'
+             * @default single
+             */
+            view: string;
+            /**
+             * Test Id
+             * @description UUID of the target test (required for 'single' and 'invocation')
+             */
+            test_id?: string | null;
+            /**
+             * Invocation Id
+             * @description UUID of the target invocation entry (optional for 'invocation')
+             */
+            invocation_id?: string | null;
+            /**
+             * Draft Id
+             * @description Optional draft id for 'invocation' view
+             */
+            draft_id?: string | null;
+            /**
+             * Mode
+             * @description Optional sub-mode within a view. Currently recognized: view=reports → mode='brightspace' (gradebook CSV only); view=home → mode='certificate' (PDF cert only) or 'attempts' (CSV only). Default (None) returns the full per-view bundle.
+             */
+            mode?: string | null;
+        };
+        /**
+         * ExportTestApiResponse
+         * @description Response model for test export — canonical file modality.
+         */
+        ExportTestApiResponse: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export bytes
+             */
+            file_id: string;
+            /**
+             * File Name
+             * @description Suggested download file name
+             */
+            file_name: string;
             /**
              * Row Count
-             * @description Number of rows in the export
+             * @description Number of data rows in the export
              */
             row_count: number;
         };
@@ -23729,6 +22949,18 @@ export interface components {
          * @description Request model for simulation file download endpoint.
          */
         FileDownloadSimulationApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadTestApiRequest
+         * @description Request model for test file download endpoint.
+         */
+        FileDownloadTestApiRequest: {
             /**
              * File Id
              * Format: uuid
@@ -36790,6 +36022,16 @@ export interface components {
              */
             scenario_ids?: string[] | null;
             /**
+             * Simulation Ids
+             * @description Simulation IDs to filter by
+             */
+            simulation_ids?: string[] | null;
+            /**
+             * Profile Ids
+             * @description Profile resource IDs to filter by (intersected with visible profiles)
+             */
+            profile_ids?: string[] | null;
+            /**
              * Infinite Mode
              * @description Filter by infinite mode status
              */
@@ -38470,6 +37712,11 @@ export interface components {
              * @description Scenario IDs to filter by
              */
             scenario_ids?: string[] | null;
+            /**
+             * Simulation Ids
+             * @description Simulation IDs to filter by
+             */
+            simulation_ids?: string[] | null;
             /**
              * Infinite Mode
              * @description Filter by infinite mode status
@@ -44456,6 +43703,11 @@ export interface components {
              */
             model_ids?: string[] | null;
             /**
+             * Profile Ids
+             * @description Profile IDs (human users) who triggered runs in this group
+             */
+            profile_ids?: string[] | null;
+            /**
              * Agent Names
              * @description Associated agent names
              */
@@ -44557,7 +43809,7 @@ export interface components {
             history_page_size: number;
             /**
              * History Sort By
-             * @description Embedded history sort field
+             * @description Embedded history sort field (date | total_cost | total_tokens | run_count)
              * @default date
              */
             history_sort_by: string;
@@ -44569,9 +43821,29 @@ export interface components {
             history_sort_order: string;
             /**
              * History Model Id
-             * @description Model UUID to filter embedded history by
+             * @description Model UUID to filter embedded history by (legacy single)
              */
             history_model_id?: string | null;
+            /**
+             * History Model Ids
+             * @description Model UUIDs to filter embedded history by (multi). Takes precedence over history_model_id when set.
+             */
+            history_model_ids?: string[] | null;
+            /**
+             * History Profile Ids
+             * @description Profile UUIDs (human users) to filter embedded history by
+             */
+            history_profile_ids?: string[] | null;
+            /**
+             * History Agent Ids
+             * @description Agent UUIDs (LLM agents) to filter embedded history by
+             */
+            history_agent_ids?: string[] | null;
+            /**
+             * History Search
+             * @description Group name search (ILIKE) for embedded history
+             */
+            history_search?: string | null;
         };
         /**
          * PricingResources
@@ -46887,67 +46159,6 @@ export interface components {
              * @description Search string for scenarios
              */
             scenario_search?: string | null;
-            /**
-             * History Practice
-             * @description Filter to practice attempts only
-             * @default false
-             */
-            history_practice: boolean;
-            /**
-             * History Scenario Ids
-             * @description Scenario IDs for history filter
-             */
-            history_scenario_ids?: string[] | null;
-            /**
-             * History Infinite Mode
-             * @description Filter by infinite mode status
-             */
-            history_infinite_mode?: boolean | null;
-            /**
-             * History Show Archived
-             * @description Include archived attempts
-             * @default false
-             */
-            history_show_archived: boolean;
-            /**
-             * History Sort By
-             * @description History sort field
-             * @default date
-             */
-            history_sort_by: string | null;
-            /**
-             * History Sort Order
-             * @description History sort direction
-             * @default desc
-             */
-            history_sort_order: string | null;
-            /**
-             * History Page
-             * @description History pagination page number
-             * @default 0
-             */
-            history_page: number;
-            /**
-             * History Page Size
-             * @description History items per page
-             * @default 20
-             */
-            history_page_size: number;
-            /**
-             * History Simulation Search
-             * @description Search string for history simulations
-             */
-            history_simulation_search?: string | null;
-            /**
-             * History Scenario Search
-             * @description Search string for history scenarios
-             */
-            history_scenario_search?: string | null;
-            /**
-             * History Profile Search
-             * @description Search string for history profiles
-             */
-            history_profile_search?: string | null;
         };
         /**
          * RefreshAgentApiRequest
@@ -47111,28 +46322,6 @@ export interface components {
             /**
              * Targets
              * @description MV targets to refresh (omit for all). Options: field_drafts_mv
-             */
-            targets?: string[] | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept or reject. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
-        };
-        /**
-         * RefreshInvocationApiRequest
-         * @description Request model for invocation refresh endpoint.
-         */
-        RefreshInvocationApiRequest: {
-            /**
-             * Targets
-             * @description MV targets to refresh (omit for all). Options: invocation_mv, invocation_drafts_mv
              */
             targets?: string[] | null;
             /**
@@ -74480,46 +73669,6 @@ export interface operations {
             };
         };
     };
-    home_refresh_attempt_home_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-        };
-    };
-    export_home_attempt_home_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExportHomeApiResponse"];
-                };
-            };
-        };
-    };
     practice_get_attempt_practice_get_post: {
         parameters: {
             query?: never;
@@ -74582,46 +73731,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    practice_refresh_attempt_practice_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-        };
-    };
-    export_practice_attempt_practice_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExportPracticeApiResponse"];
                 };
             };
         };
@@ -74692,46 +73801,6 @@ export interface operations {
             };
         };
     };
-    dashboard_refresh_attempt_dashboard_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-        };
-    };
-    export_dashboard_attempt_dashboard_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExportDashboardApiResponse"];
-                };
-            };
-        };
-    };
     get_leaderboard_attempt_leaderboard_get_post: {
         parameters: {
             query?: never;
@@ -74794,46 +73863,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    leaderboard_refresh_attempt_leaderboard_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-        };
-    };
-    export_leaderboard_attempt_leaderboard_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExportLeaderboardApiResponse"];
                 };
             };
         };
@@ -74904,79 +73933,6 @@ export interface operations {
             };
         };
     };
-    record_refresh_attempt_record_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-        };
-    };
-    export_record_attempt_record_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExportRecordApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExportRecordApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    export_reports_attempt_report_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExportReportsApiResponse"];
-                };
-            };
-        };
-    };
     get_reports_attempt_report_search_post: {
         parameters: {
             query?: never;
@@ -75006,26 +73962,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    reports_refresh_attempt_report_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
         };
@@ -75978,6 +74914,39 @@ export interface operations {
             };
         };
     };
+    download_file_test_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadTestApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_benchmark_test_benchmark_get_post: {
         parameters: {
             query?: never;
@@ -76040,46 +75009,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    benchmark_refresh_test_benchmark_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-        };
-    };
-    export_benchmark_test_benchmark_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExportBenchmarkApiResponse"];
                 };
             };
         };
@@ -76249,72 +75178,6 @@ export interface operations {
             };
         };
     };
-    invocation_refresh_test_invocation_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RefreshInvocationApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    export_invocation_test_invocation_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExportInvocationApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExportInvocationApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     decrypt_invocation_key_test_invocation_decrypt_post: {
         parameters: {
             query?: never;
@@ -76368,6 +75231,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ComposedContextResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_system_system_export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportSystemApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportSystemApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76599,59 +75495,6 @@ export interface operations {
             };
         };
     };
-    group_refresh_system_group_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-        };
-    };
-    export_group_system_group_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExportGroupApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExportGroupApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     name_group_system_group_name_post: {
         parameters: {
             query?: never;
@@ -76718,59 +75561,6 @@ export interface operations {
             };
         };
     };
-    session_refresh_system_session_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-        };
-    };
-    export_session_system_session_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExportSessionApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExportSessionApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_health_system_health_get_post: {
         parameters: {
             query?: never;
@@ -76800,46 +75590,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    health_refresh_system_health_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-        };
-    };
-    export_health_system_health_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExportHealthApiResponse"];
                 };
             };
         };
@@ -76910,26 +75660,6 @@ export interface operations {
             };
         };
     };
-    activity_refresh_system_activity_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-        };
-    };
     resolve_problem_system_activity_resolve_post: {
         parameters: {
             query?: never;
@@ -76959,26 +75689,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    export_activity_system_activity_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExportActivityApiResponse"];
                 };
             };
         };
@@ -77045,46 +75755,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    pricing_refresh_system_pricing_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-        };
-    };
-    export_pricing_system_pricing_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExportPricingApiResponse"];
                 };
             };
         };

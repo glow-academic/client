@@ -42,8 +42,12 @@ export function PricingRunsClient({
           totalInputTokens: group.total_input_tokens ?? 0,
           totalOutputTokens: group.total_output_tokens ?? 0,
           totalCost: Number(group.total_cost ?? 0),
-          // No nested runs in group list response
+          // No nested runs in group list response — instead surface
+          // aggregated id arrays from the server so faceted filters work.
           runs: [],
+          profileIds: group.profile_ids ?? [],
+          agentIds: group.agent_ids ?? [],
+          modelIds: group.model_ids ?? [],
           // Include hydrated names if available
           modelNames: group.model_names ?? [],
           agentNames: group.agent_names ?? [],

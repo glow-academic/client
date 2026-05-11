@@ -91,6 +91,12 @@ export interface GroupRunRow {
     cost: number;
     debugInfo?: DebugInfoItem[];
   }>;
+  // Aggregated IDs from server (PricingGroupItem). Used by faceted filter
+  // accessors below — runs[] is empty in the bundle response, so without
+  // these arrays the profile / actor filters had nothing to read.
+  profileIds?: string[];
+  agentIds?: string[];
+  modelIds?: string[];
   // Hydrated names from group list endpoint
   profileName?: string;
   modelNames?: string[];
@@ -439,11 +445,13 @@ export function RunsDataTable({
         enableHiding: true,
         enableSorting: false,
         accessorFn: (row: GroupRunRow) => {
+          // Prefer aggregated IDs from server (the bundle response no longer
+          // hydrates per-run nested data). Fall back to runs[] for callers
+          // that still populate it.
+          if (row.profileIds && row.profileIds.length > 0) return row.profileIds;
           const profileIds = new Set<string>();
           row.runs.forEach((run) => {
-            if (run.profileId) {
-              profileIds.add(run.profileId);
-            }
+            if (run.profileId) profileIds.add(run.profileId);
           });
           return Array.from(profileIds);
         },
@@ -456,11 +464,10 @@ export function RunsDataTable({
         enableHiding: true,
         enableSorting: false,
         accessorFn: (row: GroupRunRow) => {
+          if (row.agentIds && row.agentIds.length > 0) return row.agentIds;
           const actorIds = new Set<string>();
           row.runs.forEach((run) => {
-            if (run.agentId) {
-              actorIds.add(run.agentId);
-            }
+            if (run.agentId) actorIds.add(run.agentId);
           });
           return Array.from(actorIds);
         },
