@@ -10,6 +10,7 @@ import { getSession } from "@/auth";
 import Invocation, {
   type InvocationData,
 } from "@/components/artifacts/invocation/Invocation";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -65,6 +66,23 @@ async function patchBenchmarkDraft(
 ): Promise<PatchBenchmarkDraftOut> {
   "use server";
   return api.patch("/test/invocation/draft", input);
+}
+
+async function exportInvocation(
+  targetTestId: string,
+  targetInvocationId: string,
+): Promise<{ file_id: string; file_name?: string }> {
+  "use server";
+  return api.post(
+    "/test/export" as Parameters<typeof api.post>[0],
+    {
+      body: {
+        view: "invocation",
+        test_id: targetTestId,
+        invocation_id: targetInvocationId,
+      } as unknown as InputOf<"/test/export", "post">,
+    },
+  ) as Promise<{ file_id: string; file_name?: string }>;
 }
 
 async function createTestProblem(input: ProblemTestIn): Promise<ProblemTestOut> {
@@ -133,6 +151,12 @@ export default async function InvocationPage({
           { title: "Test", url: `/test/${testId}` },
           { title: "Invocation" },
         ]}
+        toolbar={
+          <ArtifactToolbarActions
+            exportAction={exportInvocation.bind(null, testId, invocationId)}
+            bffDownloadPrefix="/api/test/download"
+          />
+        }
       >
         <div className="px-4">
           <Invocation

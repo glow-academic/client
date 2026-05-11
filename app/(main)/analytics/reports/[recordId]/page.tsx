@@ -52,6 +52,21 @@ async function refreshReports(): Promise<void> {
   await api.post("/attempt/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
+async function exportRecord(
+  recordId: string,
+): Promise<{ file_id: string; file_name?: string }> {
+  "use server";
+  return api.post(
+    "/attempt/export" as Parameters<typeof api.post>[0],
+    {
+      body: {
+        view: "record",
+        record_id: recordId,
+      } as unknown as InputOf<"/attempt/export", "post">,
+    },
+  ) as Promise<{ file_id: string; file_name?: string }>;
+}
+
 async function getAttemptGroup(input: GroupRecordIn): Promise<GroupRecordOut> {
   "use server";
   return api.post("/attempt/group", input);
@@ -248,6 +263,8 @@ export default async function RecordPage({
           <AnalyticsFilters
             refreshAction={refreshReports}
             analyticsFilters={facets}
+            exportAction={exportRecord.bind(null, recordId)}
+            bffDownloadPrefix="/api/attempt/download"
           />
         }
         panelProps={{

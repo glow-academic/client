@@ -7,6 +7,7 @@
 
 import { getSession } from "@/auth";
 import TestChat from "@/components/artifacts/test/setups/TestChat";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { InvocationControls } from "@/components/common/InvocationControls";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
@@ -78,6 +79,21 @@ const getTestArtifact = async (
 async function createTestProblem(input: ProblemTestIn): Promise<ProblemTestOut> {
   "use server";
   return api.post("/test/problem", input);
+}
+
+async function exportTestSingle(
+  targetTestId: string,
+): Promise<{ file_id: string; file_name?: string }> {
+  "use server";
+  return api.post(
+    "/test/export" as Parameters<typeof api.post>[0],
+    {
+      body: {
+        view: "single",
+        test_id: targetTestId,
+      } as unknown as InputOf<"/test/export", "post">,
+    },
+  ) as Promise<{ file_id: string; file_name?: string }>;
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -184,13 +200,19 @@ export default async function TestPage({
           { title: entityName ?? "Test" },
         ]}
         toolbar={
-          testData.show_controls && testData.current_invocation_id ? (
-            <InvocationControls
-              testId={testId}
-              currentInvocationId={testData.current_invocation_id}
-              hasRunsOrGroups={testData.has_runs_or_groups ?? false}
+          <div className="flex items-center gap-2">
+            {testData.show_controls && testData.current_invocation_id && (
+              <InvocationControls
+                testId={testId}
+                currentInvocationId={testData.current_invocation_id}
+                hasRunsOrGroups={testData.has_runs_or_groups ?? false}
+              />
+            )}
+            <ArtifactToolbarActions
+              exportAction={exportTestSingle.bind(null, testId)}
+              bffDownloadPrefix="/api/test/download"
             />
-          ) : undefined
+          </div>
         }
         panelProps={{
           artifactType: "test",

@@ -171,6 +171,8 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
           <AnalyticsFilters
             refreshAction={refreshPricing}
             analyticsFilters={facets}
+            exportAction={exportPricing}
+            bffDownloadPrefix="/api/system/download"
           />
         }
         panelProps={{
@@ -228,6 +230,14 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
 async function refreshPricing(): Promise<void> {
   "use server";
   await api.post("/system/refresh" as Parameters<typeof api.post>[0], { body: {} });
+}
+
+async function exportPricing(): Promise<{ file_id: string; file_name?: string }> {
+  "use server";
+  return api.post(
+    "/system/export" as Parameters<typeof api.post>[0],
+    { body: { view: "pricing" } } as unknown as Parameters<typeof api.post>[1],
+  ) as Promise<{ file_id: string; file_name?: string }>;
 }
 
 async function getSystemGroup(input: SystemGroupIn): Promise<SystemGroupOut> {

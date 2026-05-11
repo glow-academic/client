@@ -176,6 +176,8 @@ export default async function ActivityPage({
           <AnalyticsFilters
             refreshAction={refreshActivity}
             analyticsFilters={facets}
+            exportAction={exportActivity}
+            bffDownloadPrefix="/api/system/download"
           />
         }
         panelProps={{
@@ -234,6 +236,14 @@ export default async function ActivityPage({
 async function refreshActivity(): Promise<void> {
   "use server";
   await api.post("/system/refresh" as Parameters<typeof api.post>[0], { body: {} });
+}
+
+async function exportActivity(): Promise<{ file_id: string; file_name?: string }> {
+  "use server";
+  return api.post(
+    "/system/export" as Parameters<typeof api.post>[0],
+    { body: { view: "activity" } } as unknown as Parameters<typeof api.post>[1],
+  ) as Promise<{ file_id: string; file_name?: string }>;
 }
 
 async function getSystemGroup(input: SystemGroupIn): Promise<SystemGroupOut> {

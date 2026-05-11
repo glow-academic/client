@@ -259,15 +259,67 @@ export default function TestChat({
     test_data.status === "completed" ? "rubric" : "messages",
   );
 
-  // Grade entries + feedback for the rubric view (filtered to runs of the
-  // selected model on render, but indexed once here).
-  const grades = useMemo(
-    () => test_data.entries?.grades ?? [],
-    [test_data.entries?.grades],
+  // Per-invocation graded payload (mirrors attempt's entries.attempt_chat[]).
+  // Each entry carries rubric_structure + per-run grading_state so the
+  // rubric view renders the TableRubric without server round-trips.
+  const invocationDetails = useMemo(
+    () => test_data.invocation_details ?? [],
+    [test_data.invocation_details],
   );
-  const feedback = useMemo(
-    () => test_data.entries?.feedback ?? [],
-    [test_data.entries?.feedback],
+
+  // URL-backed graded-view selection (?invocationId & ?runId). Two-axis:
+  //   • invocationId — the global switcher (config under test)
+  //   • runId — the local switcher (which execution of that config)
+  // Setting invocationId clears runId so the view re-defaults to the
+  // new invocation's primary run instead of leaving a stale id from a
+  // different invocation. Atomic update via useQueryStates avoids a
+  // mid-render state where invocationId points to inv A but runId is
+  // still inv B's run.
+  const [{ invocationId: urlInvocationId, runId: urlRunId }, setSelection] =
+    useQueryStates({
+      invocationId: parseAsString,
+      runId: parseAsString,
+    });
+
+  // Effective selection — URL overrides server defaults, server defaults
+  // override invocationId (which falls back to first invocation).
+  const selectedInvocationId = useMemo(
+    () =>
+      urlInvocationId ??
+      test_data.current_invocation_id ??
+      invocationId,
+    [urlInvocationId, test_data.current_invocation_id, invocationId],
+  );
+  const selectedInvocation = useMemo(
+    () =>
+      invocationDetails.find(
+        (d) => d.invocation_id === selectedInvocationId,
+      ) ?? invocationDetails[0],
+    [invocationDetails, selectedInvocationId],
+  );
+  const selectedRunId = useMemo(
+    () =>
+      urlRunId ??
+      selectedInvocation?.primary_run_id ??
+      selectedInvocation?.runs?.[0]?.run_id ??
+      null,
+    [urlRunId, selectedInvocation],
+  );
+
+  // Atomic selection setters — invocation change resets runId to null
+  // so the URL doesn't carry a stale local selection into the new
+  // invocation. Run-only change leaves invocationId untouched.
+  const handleSelectInvocation = useCallback(
+    (id: string) => {
+      void setSelection({ invocationId: id, runId: null });
+    },
+    [setSelection],
+  );
+  const handleSelectRun = useCallback(
+    (id: string) => {
+      void setSelection({ runId: id });
+    },
+    [setSelection],
   );
 
   // ---- Transport lifecycle ----
@@ -400,8 +452,51 @@ export default function TestChat({
 
   // ---- Build props for GenericChatInterface ----
 
-  // Header is now a read-only history caption ("History · N").
-  // Run picker moved to the bottom composer (inputAreaProps).
+  // Two-axis switcher options for the graded view:
+  //   • invocations (global) — one per InvocationDetail. Subtitle
+  //     surfaces the agent/model under test so users can tell configs
+  //     apart at a glance.
+  //   • runs (local) — runs within the selected invocation, hidden
+  //     when ≤1 so single-execution benchmarks read like AttemptChat.
+  const headerInvocationOptions = useMemo(
+    () =>
+      invocationDetails.map((d) => {
+        const agentName =
+          (d.agent_id &&
+            (test_data.resources?.agents?.[d.agent_id] as
+              | { name?: string }
+              | undefined)?.name) ||
+          null;
+        const modelName =
+          (d.model_id &&
+            (test_data.resources?.models?.[d.model_id] as
+              | { name?: string }
+              | undefined)?.name) ||
+          null;
+        const subtitle = [agentName, modelName].filter(Boolean).join(" · ");
+        return {
+          id: d.invocation_id,
+          // Fall back to a short id when no title is available — the
+          // invocation row may not surface a friendly label.
+          title:
+            (d.invocation_id ?? "").toString().slice(0, 8) +
+            (agentName ? ` · ${agentName}` : ""),
+          subtitle: subtitle || null,
+        };
+      }),
+    [invocationDetails, test_data.resources?.agents, test_data.resources?.models],
+  );
+  const headerRunOptions = useMemo(
+    () =>
+      (selectedInvocation?.runs ?? []).map((r) => ({
+        id: r.run_id,
+        score: r.grade?.score ?? null,
+        passed: r.grade?.passed ?? null,
+        created_at: r.created_at ?? null,
+      })),
+    [selectedInvocation],
+  );
+
   const chatHeaderProps = {
     show_documents: showResources,
     show_objectives: false,
@@ -413,6 +508,14 @@ export default function TestChat({
     eval_name: test_data.eval_name ?? null,
     status_summary: statusSummary,
     history_count: filteredRuns.length,
+    invocations: headerInvocationOptions,
+    selected_invocation_id: selectedInvocationId,
+    on_select_invocation: handleSelectInvocation,
+    runs: headerRunOptions,
+    selected_run_id: selectedRunId,
+    on_select_run: handleSelectRun,
+    view_mode: viewMode,
+    on_toggle_view_mode: setViewMode,
   };
 
   const historyAreaProps: ModelHistoryViewProps = {
@@ -422,12 +525,14 @@ export default function TestChat({
     stopping_run_ids: stoppingRunIds,
     on_stop_run: handleStopRun,
     is_connected: true,
+    selected_run_id: selectedRunId,
   };
 
   const rubricAreaProps: ModelRubricViewProps = {
-    runs: filteredRuns,
-    grades,
-    feedback,
+    invocation_details: invocationDetails,
+    selected_invocation_id: selectedInvocationId,
+    selected_run_id: selectedRunId,
+    test: test_data.test,
   };
 
   // useTestRun.run drives the canonical 3-step fire:
@@ -819,12 +924,36 @@ export default function TestChat({
     prefillForConfig,
   ]);
 
+  // Snapshot mode (graded view): when the user has no new-run configs
+  // queued in the picker and an invocation is selected, show the
+  // selected invocation's historical bundle in the right panel. As
+  // soon as they pick a config from the picker, the form re-takes the
+  // panel for the next-run flow.
+  const showSnapshot = panelEntries.length === 0 && !!selectedInvocation;
+
   const documentAreaProps: ResourcePanelProps = {
     visible: showResources,
     panels: panelEntries,
     qualities: test_data.resources?.qualities ?? null,
     modalities: test_data.resources?.modalities ?? null,
     reasoning_levels: test_data.resources?.reasoning_levels ?? null,
+    snapshot: showSnapshot ? selectedInvocation : null,
+    // ``exactOptionalPropertyTypes`` rejects ``: undefined`` — only set
+    // ``snapshot_resources`` when we're actually rendering the snapshot.
+    ...(showSnapshot && {
+      snapshot_resources: {
+        agents: test_data.resources?.agents ?? null,
+        models: test_data.resources?.models ?? null,
+        prompts: test_data.resources?.prompts ?? null,
+        tools: test_data.resources?.tools ?? null,
+        instructions: test_data.resources?.instructions ?? null,
+        voices: test_data.resources?.voices ?? null,
+        temperature_levels: test_data.resources?.temperature_levels ?? null,
+        reasoning_levels: test_data.resources?.reasoning_levels ?? null,
+        qualities: test_data.resources?.qualities ?? null,
+        modalities: test_data.resources?.modalities ?? null,
+      },
+    }),
   };
 
   return (

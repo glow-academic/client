@@ -42,6 +42,7 @@ export interface LeaderboardData {
   id: string;
   name: string;
   profileId: string;
+  rank: number;
   simulationIds: string[];
   scenarioIds: string[];
   highestScoreAvg: number;
@@ -477,23 +478,27 @@ export default function LeaderboardTable({
                   onClick={() => onViewReport?.(row.original.id)}
                   data-testid={`leaderboard-row-${row.original.id}`}
                 >
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells().map((cell) => {
+                    const serverRank = row.original.rank;
+                    const displayRank = serverRank > 0 ? serverRank : index + 1;
+                    const medalIndex = displayRank - 1;
+                    return (
                     <TableCell key={cell.id}>
                       {cell.column.id === "rank" ? (
                         <div className="flex items-center gap-2 w-[120px]">
-                          <span className="font-bold text-lg">{index + 1}</span>
-                          {index < 3 ? (
+                          <span className="font-bold text-lg">{displayRank}</span>
+                          {medalIndex < 3 ? (
                             <span
                               aria-label="medal"
                               title={
-                                index === 0
+                                medalIndex === 0
                                   ? "Gold"
-                                  : index === 1
+                                  : medalIndex === 1
                                     ? "Silver"
                                     : "Bronze"
                               }
                             >
-                              {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
+                              {medalIndex === 0 ? "🥇" : medalIndex === 1 ? "🥈" : "🥉"}
                             </span>
                           ) : null}
                         </div>
@@ -504,7 +509,8 @@ export default function LeaderboardTable({
                         )
                       )}
                     </TableCell>
-                  ))}
+                    );
+                  })}
                 </TableRow>
               ))
             ) : (

@@ -56,6 +56,14 @@ async function refreshHome(): Promise<void> {
   await api.post("/attempt/home/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
+async function exportHome(): Promise<{ file_id: string; file_name?: string }> {
+  "use server";
+  return api.post(
+    "/attempt/export" as Parameters<typeof api.post>[0],
+    { body: { view: "home" } as unknown as InputOf<"/attempt/export", "post"> },
+  ) as Promise<{ file_id: string; file_name?: string }>;
+}
+
 async function createHomeProblem(input: ProblemIn): Promise<ProblemOut> {
   "use server";
   return api.post("/attempt/problem", input);
@@ -246,6 +254,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <AnalyticsFilters
           refreshAction={refreshHome}
           analyticsFilters={facets}
+          exportAction={exportHome}
+          bffDownloadPrefix="/api/attempt/download"
         />
       }
       panelProps={{

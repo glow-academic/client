@@ -1324,7 +1324,7 @@ export default function Profiles({
                   onClick={() => {
                     if (!profile.profile_id) return;
                     window.open(
-                      `/record/${profile.profile_id}`,
+                      `/analytics/reports/${profile.profile_id}`,
                       "_blank",
                       "noopener,noreferrer"
                     );

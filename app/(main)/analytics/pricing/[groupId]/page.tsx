@@ -79,6 +79,21 @@ async function refreshSystem(): Promise<unknown> {
   );
 }
 
+async function exportGroup(
+  targetGroupId: string,
+): Promise<{ file_id: string; file_name?: string }> {
+  "use server";
+  return api.post(
+    "/system/export" as Parameters<typeof api.post>[0],
+    {
+      body: {
+        view: "group",
+        group_id: targetGroupId,
+      },
+    } as unknown as Parameters<typeof api.post>[1],
+  ) as Promise<{ file_id: string; file_name?: string }>;
+}
+
 /** ---- Request-scoped context fetch ----
  * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
  * component share one network call per request. Server-only; not a
@@ -170,6 +185,8 @@ export default async function PricingGroupPage({
         toolbar={
           <ArtifactToolbarActions
             refreshAction={refreshSystem}
+            exportAction={exportGroup.bind(null, groupId)}
+            bffDownloadPrefix="/api/system/download"
           />
         }
         panelProps={{

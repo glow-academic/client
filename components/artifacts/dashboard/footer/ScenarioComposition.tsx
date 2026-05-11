@@ -233,7 +233,7 @@ export default function ScenarioComposition({
             itemIds={validScenarioIds}
             selectedIds={selectedScenarioId ? [selectedScenarioId] : []}
             onSelect={(ids) => setSelectedScenarioId(ids[0] || "")}
-            getId={(s) => (s as unknown as { id: string }).id}
+            getId={(s) => (s as unknown as { scenario_id: string }).scenario_id}
             getLabel={(s) => s.name || ""}
             getSearchText={(s) => `${s.name} ${s.description || ""}`}
             renderPreview={(s) => (

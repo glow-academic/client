@@ -249,6 +249,8 @@ export default async function DashboardPage({
           <AnalyticsFilters
             refreshAction={refreshDashboard}
             analyticsFilters={facets}
+            exportAction={exportDashboard}
+            bffDownloadPrefix="/api/attempt/download"
           />
         }
         panelProps={{
@@ -320,6 +322,14 @@ export default async function DashboardPage({
 async function refreshDashboard(): Promise<void> {
   "use server";
   await api.post("/attempt/refresh" as Parameters<typeof api.post>[0], { body: {} });
+}
+
+async function exportDashboard(): Promise<{ file_id: string; file_name?: string }> {
+  "use server";
+  return api.post(
+    "/attempt/export" as Parameters<typeof api.post>[0],
+    { body: { view: "dashboard" } as unknown as InputOf<"/attempt/export", "post"> },
+  ) as Promise<{ file_id: string; file_name?: string }>;
 }
 
 async function bulkArchiveAttempts(

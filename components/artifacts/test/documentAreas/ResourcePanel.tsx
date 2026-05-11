@@ -9,6 +9,7 @@
  */
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
@@ -20,7 +21,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import MarkdownInline from "@/components/common/markdown/MarkdownInline";
 import { Eye, Pencil, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { components } from "@/lib/api/schema";
+
+type InvocationDetail = components["schemas"]["InvocationDetail"];
 
 export type AgentConfigFormState = {
   tool_ids: string[];
@@ -68,6 +72,29 @@ export interface ResourcePanelProps {
   qualities?: ResourceMap | null | undefined;
   modalities?: ResourceMap | null | undefined;
   reasoning_levels?: ResourceMap | null | undefined;
+  /** Read-only snapshot mode. When provided, renders the historical
+   *  config bundle for this invocation instead of the editable form —
+   *  matches the user's "show the historical things used for that run"
+   *  pattern. Form mode is preserved for picker-driven new-run flows
+   *  (when ``snapshot`` is null/undefined). */
+  snapshot?: InvocationDetail | null;
+  /** Resource maps from /test/get's ``resources`` field. Used by the
+   *  snapshot renderer to resolve agent_id / model_id / prompt_id /
+   *  tool_ids / instruction_ids / voice_id / temperature_level_id /
+   *  reasoning_level_id / quality_id / modality_ids to display labels.
+   *  Each is the same dict[id, dict] shape the server emits. */
+  snapshot_resources?: {
+    agents?: ResourceMap | null;
+    models?: ResourceMap | null;
+    prompts?: ResourceMap | null;
+    tools?: ResourceMap | null;
+    instructions?: ResourceMap | null;
+    voices?: ResourceMap | null;
+    temperature_levels?: ResourceMap | null;
+    reasoning_levels?: ResourceMap | null;
+    qualities?: ResourceMap | null;
+    modalities?: ResourceMap | null;
+  };
   disabled?: boolean;
 }
 
@@ -97,6 +124,8 @@ export function ResourcePanel({
   qualities,
   modalities,
   reasoning_levels,
+  snapshot,
+  snapshot_resources,
   disabled,
 }: ResourcePanelProps) {
   if (!visible) return null;
@@ -118,7 +147,16 @@ export function ResourcePanel({
           <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
             <ScrollArea className="h-full">
               <div className="space-y-6 p-4">
-                {panels.length === 0 ? (
+                {snapshot ? (
+                  // Snapshot mode (graded view): read-only summary of the
+                  // historical config bundle. The form panels are
+                  // intentionally suppressed here — this view is for
+                  // inspecting what was tested, not queueing new runs.
+                  <AgentSnapshotView
+                    snapshot={snapshot}
+                    resources={snapshot_resources ?? {}}
+                  />
+                ) : panels.length === 0 ? (
                   <div className="text-xs text-muted-foreground">
                     Select a run from the picker to customize its agent
                     resources.
@@ -151,6 +189,190 @@ export function ResourcePanel({
         </Card>
       </ResizablePanel>
     </>
+  );
+}
+
+// =============================================================================
+// Snapshot view — read-only render of an invocation's historical bundle
+// =============================================================================
+
+function lookupLabel(
+  map: ResourceMap | null | undefined,
+  id: string | null | undefined,
+  field: string,
+): string | null {
+  if (!map || !id) return null;
+  const row = map[id] as Record<string, unknown> | undefined;
+  if (!row) return null;
+  const val = row[field];
+  return typeof val === "string" && val ? val : null;
+}
+
+function lookupString(
+  map: ResourceMap | null | undefined,
+  id: string | null | undefined,
+  field: string,
+): string | null {
+  return lookupLabel(map, id, field);
+}
+
+interface AgentSnapshotViewProps {
+  snapshot: InvocationDetail;
+  resources: NonNullable<ResourcePanelProps["snapshot_resources"]>;
+}
+
+function SnapshotRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+        {label}
+      </Label>
+      <div className="text-sm">{value}</div>
+    </div>
+  );
+}
+
+function AgentSnapshotView({ snapshot, resources }: AgentSnapshotViewProps) {
+  // Resolve the agent first — its bundle (prompt_id / tool_ids /
+  // instruction_ids / model_id / etc.) is the historical truth. The
+  // invocation row carries the agent's id directly so this resolves
+  // even when the agent isn't the test's default target (e.g. replay /
+  // picker fan-out flows that swapped the agent).
+  const agentRow = useMemo(() => {
+    if (!snapshot.agent_id || !resources.agents) return null;
+    const row = resources.agents[snapshot.agent_id];
+    return (row as Record<string, unknown>) ?? null;
+  }, [snapshot.agent_id, resources.agents]);
+
+  const agentName =
+    lookupString(resources.agents, snapshot.agent_id, "name") ?? "Agent";
+  const modelName =
+    lookupString(resources.models, snapshot.model_id, "name") ?? "—";
+  const voiceName = lookupString(resources.voices, snapshot.voice_id, "voice");
+  const tempValue = lookupString(
+    resources.temperature_levels,
+    snapshot.temperature_level_id,
+    "temperature",
+  );
+  const reasoningValue = lookupString(
+    resources.reasoning_levels,
+    snapshot.reasoning_level_id,
+    "reasoning_level",
+  );
+  const qualityValue = lookupString(
+    resources.qualities,
+    snapshot.quality_id,
+    "quality",
+  );
+  const modalityLabels = (snapshot.modality_ids ?? [])
+    .map((mid) => lookupString(resources.modalities, mid, "name"))
+    .filter((s): s is string => !!s);
+
+  // Bundle from the agent row — prompt / tools / instructions are the
+  // historical things the LLM was given to work with. Falls back to
+  // empty arrays when the agent row isn't in the resources map.
+  // Bracket-access required because the row type is dict[string, unknown].
+  const promptId =
+    typeof agentRow?.["prompt_id"] === "string"
+      ? (agentRow["prompt_id"] as string)
+      : null;
+  const promptText = lookupString(resources.prompts, promptId, "prompt");
+  const toolIds = Array.isArray(agentRow?.["tool_ids"])
+    ? (agentRow["tool_ids"] as string[])
+    : [];
+  const instructionIds = Array.isArray(agentRow?.["instruction_ids"])
+    ? (agentRow["instruction_ids"] as string[])
+    : [];
+  const toolNames = toolIds
+    .map((tid) => lookupString(resources.tools, tid, "name"))
+    .filter((s): s is string => !!s);
+  const instructionTexts = instructionIds
+    .map((iid) => lookupString(resources.instructions, iid, "instruction"))
+    .filter((s): s is string => !!s);
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold truncate">{agentName}</h3>
+        <Badge variant="outline" className="text-[10px]">
+          Snapshot
+        </Badge>
+      </div>
+
+      <SnapshotRow label="Model" value={modelName} />
+
+      {voiceName && <SnapshotRow label="Voice" value={voiceName} />}
+      {tempValue && <SnapshotRow label="Temperature" value={tempValue} />}
+      {reasoningValue && (
+        <SnapshotRow label="Reasoning" value={reasoningValue} />
+      )}
+      {qualityValue && <SnapshotRow label="Quality" value={qualityValue} />}
+
+      {modalityLabels.length > 0 && (
+        <SnapshotRow
+          label="Modalities"
+          value={
+            <div className="flex flex-wrap gap-1">
+              {modalityLabels.map((m) => (
+                <Badge key={m} variant="secondary" className="text-[10px]">
+                  {m}
+                </Badge>
+              ))}
+            </div>
+          }
+        />
+      )}
+
+      {toolNames.length > 0 && (
+        <SnapshotRow
+          label={`Tools · ${toolNames.length}`}
+          value={
+            <div className="flex flex-wrap gap-1">
+              {toolNames.map((t) => (
+                <Badge key={t} variant="outline" className="text-[10px]">
+                  {t}
+                </Badge>
+              ))}
+            </div>
+          }
+        />
+      )}
+
+      {promptText && (
+        <SnapshotRow
+          label="Prompt"
+          value={
+            <div className="rounded border bg-muted/30 px-2 py-2 text-xs max-h-[280px] overflow-y-auto whitespace-pre-wrap">
+              <MarkdownInline>{promptText}</MarkdownInline>
+            </div>
+          }
+        />
+      )}
+
+      {instructionTexts.length > 0 && (
+        <SnapshotRow
+          label={`Instructions · ${instructionTexts.length}`}
+          value={
+            <div className="space-y-2">
+              {instructionTexts.map((text, i) => (
+                <div
+                  key={i}
+                  className="rounded border bg-muted/30 px-2 py-2 text-xs max-h-[180px] overflow-y-auto whitespace-pre-wrap"
+                >
+                  <MarkdownInline>{text}</MarkdownInline>
+                </div>
+              ))}
+            </div>
+          }
+        />
+      )}
+    </div>
   );
 }
 

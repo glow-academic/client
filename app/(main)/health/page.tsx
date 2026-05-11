@@ -54,6 +54,14 @@ async function refreshHealth(): Promise<void> {
   await api.post("/system/health/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
+async function exportHealth(): Promise<{ file_id: string; file_name?: string }> {
+  "use server";
+  return api.post(
+    "/system/export" as Parameters<typeof api.post>[0],
+    { body: { view: "health" } } as unknown as Parameters<typeof api.post>[1],
+  ) as Promise<{ file_id: string; file_name?: string }>;
+}
+
 async function createHealthProblem(input: ProblemHealthIn): Promise<ProblemHealthOut> {
   "use server";
   return api.post("/system/problem", input);
@@ -154,6 +162,8 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
           <AnalyticsFilters
             refreshAction={refreshHealth}
             analyticsFilters={facets}
+            exportAction={exportHealth}
+            bffDownloadPrefix="/api/system/download"
           />
         }
         panelProps={{

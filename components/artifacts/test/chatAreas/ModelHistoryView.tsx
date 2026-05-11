@@ -40,6 +40,10 @@ export interface ModelHistoryViewProps {
   stopping_run_ids: Set<string>;
   on_stop_run: (invocationId: string) => void;
   is_connected: boolean;
+  /** When set, narrows the rendered run list to just the matching run.
+   *  Drives the local-switcher view: pick a run, see only its
+   *  transcript. Leave unset for the multi-run history overview. */
+  selected_run_id?: string | null;
   disabled?: boolean;
 }
 
@@ -111,6 +115,7 @@ export function ModelHistoryView({
   stopping_run_ids,
   on_stop_run,
   is_connected,
+  selected_run_id,
   disabled,
 }: ModelHistoryViewProps) {
   // Group messages by run_id once per messages prop change.
@@ -129,7 +134,19 @@ export function ModelHistoryView({
     return out;
   }, [messages]);
 
-  if (runs.length === 0) {
+  // Local-switcher narrowing — when a run is selected upstream, show
+  // only its transcript. When unset, fall back to the multi-run history
+  // overview (preserves the previous behavior for the picker preview
+  // flow). Selection from the header dropdown picks one run; if it
+  // doesn't match anything in ``runs`` (e.g. mid-selection state), we
+  // also fall back to the full list rather than showing an empty pane.
+  const displayedRuns = useMemo(() => {
+    if (!selected_run_id) return runs;
+    const match = runs.find((r) => r.run_id === selected_run_id);
+    return match ? [match] : runs;
+  }, [runs, selected_run_id]);
+
+  if (displayedRuns.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground p-8">
         <p className="text-sm">
@@ -141,7 +158,7 @@ export function ModelHistoryView({
 
   return (
     <div className="flex flex-col gap-3 p-4 h-full overflow-y-auto">
-      {runs.map((run) => (
+      {displayedRuns.map((run) => (
         <RunRow
           key={`${run.chat_id ?? ""}::${run.run_id ?? "none"}`}
           run={run}

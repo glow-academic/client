@@ -56,6 +56,14 @@ async function refreshChat(): Promise<void> {
   await api.post("/chat/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
+async function exportPractice(): Promise<{ file_id: string; file_name?: string }> {
+  "use server";
+  return api.post(
+    "/attempt/export" as Parameters<typeof api.post>[0],
+    { body: { view: "practice" } as unknown as InputOf<"/attempt/export", "post"> },
+  ) as Promise<{ file_id: string; file_name?: string }>;
+}
+
 async function createPracticeProblem(input: ProblemIn): Promise<ProblemOut> {
   "use server";
   return api.post("/attempt/problem", input);
@@ -252,6 +260,8 @@ export default async function PracticePage({
         <AnalyticsFilters
           refreshAction={refreshChat}
           analyticsFilters={facets}
+          exportAction={exportPractice}
+          bffDownloadPrefix="/api/attempt/download"
         />
       }
       panelProps={{

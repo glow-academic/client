@@ -63,6 +63,14 @@ async function refreshLeaderboard(): Promise<void> {
   await api.post("/attempt/leaderboard/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
+async function exportLeaderboard(): Promise<{ file_id: string; file_name?: string }> {
+  "use server";
+  return api.post(
+    "/attempt/export" as Parameters<typeof api.post>[0],
+    { body: { view: "leaderboard" } as unknown as InputOf<"/attempt/export", "post"> },
+  ) as Promise<{ file_id: string; file_name?: string }>;
+}
+
 async function createLeaderboardProblem(input: ProblemLeaderboardIn): Promise<ProblemLeaderboardOut> {
   "use server";
   return api.post("/attempt/problem", input);
@@ -196,6 +204,8 @@ export default async function LeaderboardPage({
           <AnalyticsFilters
             refreshAction={refreshLeaderboard}
             analyticsFilters={facets}
+            exportAction={exportLeaderboard}
+            bffDownloadPrefix="/api/attempt/download"
           />
         }
         panelProps={{

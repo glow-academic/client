@@ -384,6 +384,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/persona/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_persona_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/scenario/get": {
         parameters: {
             query?: never;
@@ -1244,6 +1264,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/simulation/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_simulation_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/simulation/call/download": {
         parameters: {
             query?: never;
@@ -2084,6 +2124,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/department/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_department_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/department/call/download": {
         parameters: {
             query?: never;
@@ -2458,6 +2518,26 @@ export interface paths {
          * @description Download a text file by text resource ID.
          */
         post: operations["download_text_cohort_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cohort/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_cohort_file_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2844,6 +2924,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/eval/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_eval_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/eval/call/download": {
         parameters: {
             query?: never;
@@ -3058,7 +3158,7 @@ export interface paths {
         put?: never;
         /**
          * Export Rubrics
-         * @description Export a rubric as a PDF (optionally filled with grade data).
+         * @description Render a rubric PDF and register it as a downloadable file.
          */
         post: operations["export_rubrics_rubric_export_post"];
         delete?: never;
@@ -3218,6 +3318,26 @@ export interface paths {
          * @description Download a text file by text resource ID.
          */
         post: operations["download_text_rubric_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rubric/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_rubric_file_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3624,6 +3744,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/setting/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_setting_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/setting/call/download": {
         parameters: {
             query?: never;
@@ -4004,6 +4144,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/agent/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_agent_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/agent/call/download": {
         parameters: {
             query?: never;
@@ -4378,6 +4538,26 @@ export interface paths {
          * @description Download a text file by text resource ID.
          */
         post: operations["download_text_model_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/model/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_model_file_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4784,6 +4964,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/provider/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_provider_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/provider/call/download": {
         parameters: {
             query?: never;
@@ -5164,6 +5364,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/parameter/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_parameter_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/parameter/call/download": {
         parameters: {
             query?: never;
@@ -5538,6 +5758,26 @@ export interface paths {
          * @description Download a text file by text resource ID.
          */
         post: operations["download_text_field_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/field/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_field_file_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6698,6 +6938,26 @@ export interface paths {
          * @description Download a text file by text resource ID.
          */
         post: operations["download_text_tool_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tool/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_tool_file_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8739,6 +8999,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/system/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * System Refresh
+         * @description Refresh system-scope caches (Phase A: invalidate tags only).
+         */
+        post: operations["system_refresh_system_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/system/group": {
         parameters: {
             query?: never;
@@ -9633,6 +9913,55 @@ export interface components {
             total_pages: number;
         };
         /**
+         * ActivityProblemItem
+         * @description Recent problem displayed on the activity page.
+         */
+        ActivityProblemItem: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description Problem identifier
+             */
+            problem_id: string;
+            /**
+             * Profile Id
+             * @description Profile that reported the problem
+             */
+            profile_id?: string | null;
+            /**
+             * Profile Name
+             * @description Profile display name
+             */
+            profile_name?: string | null;
+            /**
+             * Session Id
+             * @description Associated session
+             */
+            session_id?: string | null;
+            /**
+             * Type
+             * @description Problem type
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem message
+             */
+            message: string;
+            /**
+             * Resolved
+             * @description Whether the problem is resolved
+             * @default false
+             */
+            resolved: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             * @description Problem creation timestamp
+             */
+            created_at: string;
+        };
+        /**
          * ActivityRequest
          * @description Request for getting activity data (top cards).
          */
@@ -9748,6 +10077,11 @@ export interface components {
              * @description Per-profile activity summaries
              */
             profile_summary?: components["schemas"]["ProfileSummaryItem"][];
+            /**
+             * Problems
+             * @description Recent problems for the activity panel
+             */
+            problems?: components["schemas"]["ActivityProblemItem"][];
             /** @description Activity resource metadata */
             resources?: components["schemas"]["ActivityResources"];
             /** @description Inline analytics facets for SSR */
@@ -11683,7 +12017,7 @@ export interface components {
             model_names?: string[] | null;
             /**
              * Score
-             * @description Overall test score (0-100)
+             * @description Overall test score percent (0-100)
              */
             score?: number | null;
             /**
@@ -21809,23 +22143,19 @@ export interface components {
          */
         ExportAgentApiResponse: {
             /**
-             * Content
-             * @description Exported file content
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export CSV
              */
-            content: string;
+            file_id: string;
             /**
              * File Name
-             * @description Suggested file name for download
+             * @description Suggested download file name
              */
             file_name: string;
             /**
-             * Mime Type
-             * @description MIME type of the exported content
-             */
-            mime_type: string;
-            /**
              * Row Count
-             * @description Total number of exported rows
+             * @description Number of data rows in the export
              */
             row_count: number;
         };
@@ -21981,23 +22311,19 @@ export interface components {
          */
         ExportCohortApiResponse: {
             /**
-             * Content
-             * @description Exported file content
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export CSV
              */
-            content: string;
+            file_id: string;
             /**
              * File Name
-             * @description Suggested file name for download
+             * @description Suggested download file name
              */
             file_name: string;
             /**
-             * Mime Type
-             * @description MIME type of the exported content
-             */
-            mime_type: string;
-            /**
              * Row Count
-             * @description Number of rows in the export
+             * @description Number of data rows in the export
              */
             row_count: number;
         };
@@ -22044,23 +22370,19 @@ export interface components {
          */
         ExportDepartmentApiResponse: {
             /**
-             * Content
-             * @description Exported file content
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export CSV
              */
-            content: string;
+            file_id: string;
             /**
              * File Name
-             * @description Suggested file name for download
+             * @description Suggested download file name
              */
             file_name: string;
             /**
-             * Mime Type
-             * @description MIME type of the exported content
-             */
-            mime_type: string;
-            /**
              * Row Count
-             * @description Number of rows in the export
+             * @description Number of data rows in the export
              */
             row_count: number;
         };
@@ -22115,23 +22437,19 @@ export interface components {
          */
         ExportEvalApiResponse: {
             /**
-             * Content
-             * @description Exported file content
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export CSV
              */
-            content: string;
+            file_id: string;
             /**
              * File Name
-             * @description Suggested file name for download
+             * @description Suggested download file name
              */
             file_name: string;
             /**
-             * Mime Type
-             * @description MIME type of the exported content
-             */
-            mime_type: string;
-            /**
              * Row Count
-             * @description Number of rows in the export
+             * @description Number of data rows in the export
              */
             row_count: number;
         };
@@ -22152,23 +22470,19 @@ export interface components {
          */
         ExportFieldApiResponse: {
             /**
-             * Content
-             * @description Exported file content
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export CSV
              */
-            content: string;
+            file_id: string;
             /**
              * File Name
-             * @description Suggested file name for download
+             * @description Suggested download file name
              */
             file_name: string;
             /**
-             * Mime Type
-             * @description MIME type of the exported content
-             */
-            mime_type: string;
-            /**
              * Row Count
-             * @description Number of rows in the export
+             * @description Number of data rows in the export
              */
             row_count: number;
         };
@@ -22342,23 +22656,19 @@ export interface components {
          */
         ExportModelApiResponse: {
             /**
-             * Content
-             * @description Exported file content
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export CSV
              */
-            content: string;
+            file_id: string;
             /**
              * File Name
-             * @description Suggested file name for download
+             * @description Suggested download file name
              */
             file_name: string;
             /**
-             * Mime Type
-             * @description MIME type of the exported content
-             */
-            mime_type: string;
-            /**
              * Row Count
-             * @description Number of rows in the export
+             * @description Number of data rows in the export
              */
             row_count: number;
         };
@@ -22379,23 +22689,19 @@ export interface components {
          */
         ExportParameterApiResponse: {
             /**
-             * Content
-             * @description Exported file content
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export CSV
              */
-            content: string;
+            file_id: string;
             /**
              * File Name
-             * @description Suggested file name for download
+             * @description Suggested download file name
              */
             file_name: string;
             /**
-             * Mime Type
-             * @description MIME type of the exported content
-             */
-            mime_type: string;
-            /**
              * Row Count
-             * @description Number of rows in the export
+             * @description Number of data rows in the export
              */
             row_count: number;
         };
@@ -22438,23 +22744,24 @@ export interface components {
         /**
          * ExportPersonaApiResponse
          * @description Response model for export persona endpoint.
+         *
+         *     File-modality: the server writes the CSV to disk, registers it as a
+         *     ``files_resource`` row joined to an ``uploads_entry``, and returns
+         *     the ``file_id``. The client downloads via ``/persona/file/download``
+         *     (and the BFF wrapper at ``/api/persona/download/{file_id}``).
          */
         ExportPersonaApiResponse: {
             /**
-             * Content
-             * @description CSV content as a string
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export CSV
              */
-            content: string;
+            file_id: string;
             /**
              * File Name
              * @description Suggested download file name
              */
             file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the export (text/csv)
-             */
-            mime_type: string;
             /**
              * Row Count
              * @description Number of data rows in the export
@@ -22567,23 +22874,19 @@ export interface components {
          */
         ExportProviderApiResponse: {
             /**
-             * Content
-             * @description Exported file content
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export CSV
              */
-            content: string;
+            file_id: string;
             /**
              * File Name
-             * @description Suggested file name for download
+             * @description Suggested download file name
              */
             file_name: string;
             /**
-             * Mime Type
-             * @description MIME type of the exported content
-             */
-            mime_type: string;
-            /**
              * Row Count
-             * @description Number of rows in the export
+             * @description Number of data rows in the export
              */
             row_count: number;
         };
@@ -22663,6 +22966,34 @@ export interface components {
              * @description Optional attempt chat UUID. When provided, the PDF highlights achieved/passed standards and renders per-standard feedback resolved from the chat's latest grade. Without it, an empty rubric template is returned.
              */
             chat_id?: string | null;
+        };
+        /**
+         * ExportRubricApiResponse
+         * @description Response model for export rubric endpoint.
+         *
+         *     File modality: the server writes the rendered PDF to disk, registers
+         *     it as a ``files_resource`` row joined to an ``uploads_entry``, and
+         *     returns the ``file_id``. Same shape as every other artifact's export
+         *     — only the upload's ``mime_type`` differs (``application/pdf`` here,
+         *     ``text/csv`` elsewhere).
+         */
+        ExportRubricApiResponse: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export
+             */
+            file_id: string;
+            /**
+             * File Name
+             * @description Suggested download file name
+             */
+            file_name: string;
+            /**
+             * Row Count
+             * @description Number of rows in the export (rubric standards)
+             */
+            row_count: number;
         };
         /**
          * ExportScenarioApiRequest
@@ -22772,23 +23103,19 @@ export interface components {
          */
         ExportSettingApiResponse: {
             /**
-             * Content
-             * @description Exported file content
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export CSV
              */
-            content: string;
+            file_id: string;
             /**
              * File Name
-             * @description Suggested file name for download
+             * @description Suggested download file name
              */
             file_name: string;
             /**
-             * Mime Type
-             * @description MIME type of the exported content
-             */
-            mime_type: string;
-            /**
              * Row Count
-             * @description Number of rows in the export
+             * @description Number of data rows in the export
              */
             row_count: number;
         };
@@ -22829,23 +23156,19 @@ export interface components {
          */
         ExportSimulationApiResponse: {
             /**
-             * Content
-             * @description Exported file content
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export CSV
              */
-            content: string;
+            file_id: string;
             /**
              * File Name
-             * @description Suggested file name for download
+             * @description Suggested download file name
              */
             file_name: string;
             /**
-             * Mime Type
-             * @description MIME type of the exported content
-             */
-            mime_type: string;
-            /**
              * Row Count
-             * @description Total number of exported rows
+             * @description Number of data rows in the export
              */
             row_count: number;
         };
@@ -22900,23 +23223,19 @@ export interface components {
          */
         ExportToolApiResponse: {
             /**
-             * Content
-             * @description Exported file content
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource holding the export CSV
              */
-            content: string;
+            file_id: string;
             /**
              * File Name
-             * @description Suggested file name for download
+             * @description Suggested download file name
              */
             file_name: string;
             /**
-             * Mime Type
-             * @description MIME type of the exported content
-             */
-            mime_type: string;
-            /**
              * Row Count
-             * @description Number of rows in the export
+             * @description Number of data rows in the export
              */
             row_count: number;
         };
@@ -23226,6 +23545,18 @@ export interface components {
             errors?: components["schemas"]["FieldFieldError"][] | null;
         };
         /**
+         * FileDownloadAgentApiRequest
+         * @description Request model for agent file download endpoint.
+         */
+        FileDownloadAgentApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
          * FileDownloadAttemptApiRequest
          * @description Request model for attempt file download endpoint.
          */
@@ -23238,10 +23569,58 @@ export interface components {
             file_id: string;
         };
         /**
+         * FileDownloadCohortApiRequest
+         * @description Request model for cohort file download endpoint.
+         */
+        FileDownloadCohortApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadDepartmentApiRequest
+         * @description Request model for department file download endpoint.
+         */
+        FileDownloadDepartmentApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
          * FileDownloadDocumentApiRequest
          * @description Request model for document file download endpoint.
          */
         FileDownloadDocumentApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadEvalApiRequest
+         * @description Request model for eval file download endpoint.
+         */
+        FileDownloadEvalApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadFieldApiRequest
+         * @description Request model for field file download endpoint.
+         */
+        FileDownloadFieldApiRequest: {
             /**
              * File Id
              * Format: uuid
@@ -23262,10 +23641,106 @@ export interface components {
             file_id: string;
         };
         /**
+         * FileDownloadModelApiRequest
+         * @description Request model for model file download endpoint.
+         */
+        FileDownloadModelApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadParameterApiRequest
+         * @description Request model for parameter file download endpoint.
+         */
+        FileDownloadParameterApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadPersonaApiRequest
+         * @description Request model for persona file download endpoint.
+         */
+        FileDownloadPersonaApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadProviderApiRequest
+         * @description Request model for provider file download endpoint.
+         */
+        FileDownloadProviderApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadRubricApiRequest
+         * @description Request model for rubric file download endpoint.
+         */
+        FileDownloadRubricApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
          * FileDownloadScenarioApiRequest
          * @description Request model for scenario file download endpoint.
          */
         FileDownloadScenarioApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadSettingApiRequest
+         * @description Request model for setting file download endpoint.
+         */
+        FileDownloadSettingApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadSimulationApiRequest
+         * @description Request model for simulation file download endpoint.
+         */
+        FileDownloadSimulationApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadToolApiRequest
+         * @description Request model for tool file download endpoint.
+         */
+        FileDownloadToolApiRequest: {
             /**
              * File Id
              * Format: uuid
@@ -32204,6 +32679,11 @@ export interface components {
              * @description UUID of the next uncompleted invocation, or null if all are done
              */
             next_invocation_id?: string | null;
+            /**
+             * Invocation Details
+             * @description Per-invocation graded payloads (rubric_structure + runs[] with grading_state)
+             */
+            invocation_details?: components["schemas"]["InvocationDetail"][];
             /** @description Entry payloads by type */
             entries?: components["schemas"]["TestEntries"] | null;
             /** @description Resource maps keyed by ID */
@@ -32231,6 +32711,8 @@ export interface components {
              * Format: uuid
              */
             tool_call_id: string;
+            /** Standard Id */
+            standard_id?: string | null;
             /** Total */
             total: number;
             /** Feedback */
@@ -34598,6 +35080,75 @@ export interface components {
              */
             pending: boolean;
         };
+        /**
+         * InvocationDetail
+         * @description Per-invocation graded-view payload.
+         *
+         *     Mirrors ``ChatData`` from attempt — one of these per invocation,
+         *     each carrying its rubric structure and the list of runs that
+         *     executed against it. ``primary_run_id`` is the default local
+         *     selection (usually the most recent / row-summary grade).
+         */
+        InvocationDetail: {
+            /**
+             * Invocation Id
+             * Format: uuid
+             * @description UUID of the test_invocation_entry
+             */
+            invocation_id: string;
+            /**
+             * Rubric Id
+             * @description UUID of the rubric used to grade this invocation
+             */
+            rubric_id?: string | null;
+            /** @description Rubric structure for TableRubric (standards / groups / mappings) */
+            rubric_structure?: components["schemas"]["RubricStructureData"] | null;
+            /**
+             * Primary Run Id
+             * @description Default selected run for this invocation
+             */
+            primary_run_id?: string | null;
+            /**
+             * Agent Id
+             * @description UUID of the agent under test
+             */
+            agent_id?: string | null;
+            /**
+             * Model Id
+             * @description UUID of the model the agent is set up with
+             */
+            model_id?: string | null;
+            /**
+             * Voice Id
+             * @description UUID of the voice resource
+             */
+            voice_id?: string | null;
+            /**
+             * Temperature Level Id
+             * @description UUID of the temperature level
+             */
+            temperature_level_id?: string | null;
+            /**
+             * Reasoning Level Id
+             * @description UUID of the reasoning level
+             */
+            reasoning_level_id?: string | null;
+            /**
+             * Quality Id
+             * @description UUID of the quality level
+             */
+            quality_id?: string | null;
+            /**
+             * Modality Ids
+             * @description Modality resource ids
+             */
+            modality_ids?: string[];
+            /**
+             * Runs
+             * @description Per-execution detail
+             */
+            runs?: components["schemas"]["InvocationRunDetail"][];
+        };
         /** InvocationEndpointResource */
         InvocationEndpointResource: {
             /**
@@ -35130,6 +35681,68 @@ export interface components {
              * @default false
              */
             pending: boolean;
+        };
+        /**
+         * InvocationRunDetail
+         * @description Per-run grade + replay detail within an invocation.
+         *
+         *     One row per ``test_invocation_runs_entry`` binding. Carries the
+         *     TableRubric-ready ``grading_state`` plus the message/call ids the
+         *     client uses to slice ``entries.messages`` / ``entries.calls``.
+         */
+        InvocationRunDetail: {
+            /**
+             * Run Id
+             * Format: uuid
+             * @description UUID of the runs_entry row this binding executed
+             */
+            run_id: string;
+            /**
+             * Binding Id
+             * Format: uuid
+             * @description UUID of the test_invocation_runs_entry binding row
+             */
+            binding_id: string;
+            /**
+             * Grade Id
+             * @description UUID of the test_grade_entry, if graded
+             */
+            grade_id?: string | null;
+            /**
+             * Created At
+             * @description When the binding was created
+             */
+            created_at?: string | null;
+            /**
+             * Completed
+             * @description Whether the binding has a completion record
+             * @default false
+             */
+            completed: boolean;
+            /** @description Score / passed / time_taken summary */
+            grade?: components["schemas"]["GradeData"] | null;
+            /** @description Achieved/passed/feedback maps keyed by standard_id */
+            grading_state?: components["schemas"]["GradingStateData"] | null;
+            /**
+             * Feedbacks
+             * @description Per-standard feedback rows
+             */
+            feedbacks?: components["schemas"]["FeedbackEntry"][] | null;
+            /**
+             * Analyses
+             * @description Chat-level analysis content (currently unused for tests)
+             */
+            analyses?: components["schemas"]["AnalysisEntry"][] | null;
+            /**
+             * Message Ids
+             * @description Message ids belonging to this run
+             */
+            message_ids?: string[] | null;
+            /**
+             * Call Ids
+             * @description Tool-call ids belonging to this run
+             */
+            call_ids?: string[] | null;
         };
         /** InvocationTemperatureLevelResource */
         InvocationTemperatureLevelResource: {
@@ -53107,6 +53720,15 @@ export interface components {
                     [key: string]: unknown;
                 };
             } | null;
+            /**
+             * Standards
+             * @description Standard resources keyed by ID
+             */
+            standards?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            } | null;
         };
         /** TestRunEndPayload */
         TestRunEndPayload: {
@@ -60673,7 +61295,7 @@ export interface components {
             total_points_id?: string | null;
             /**
              * Total Points
-             * @description Denormalized total points value (sum of standards)
+             * @description Denormalized total points value (sum of standard groups)
              */
             total_points?: number | null;
             /**
@@ -61831,6 +62453,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CallDownloadPersonaApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_file_persona_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadPersonaApiRequest"];
             };
         };
         responses: {
@@ -63275,6 +63930,39 @@ export interface operations {
             };
         };
     };
+    download_file_simulation_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadSimulationApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     download_call_simulation_call_download_post: {
         parameters: {
             query?: never;
@@ -64657,6 +65345,39 @@ export interface operations {
             };
         };
     };
+    download_file_department_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadDepartmentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     download_call_department_call_download_post: {
         parameters: {
             query?: never;
@@ -65259,6 +65980,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TextDownloadCohortApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_file_cohort_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadCohortApiRequest"];
             };
         };
         responses: {
@@ -65907,6 +66661,39 @@ export interface operations {
             };
         };
     };
+    download_file_eval_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadEvalApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     download_call_eval_call_download_post: {
         parameters: {
             query?: never;
@@ -66256,7 +67043,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/pdf": unknown;
+                    "application/json": components["schemas"]["ExportRubricApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66509,6 +67296,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TextDownloadRubricApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_file_rubric_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadRubricApiRequest"];
             };
         };
         responses: {
@@ -67190,6 +68010,39 @@ export interface operations {
             };
         };
     };
+    download_file_setting_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadSettingApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     download_call_setting_call_download_post: {
         parameters: {
             query?: never;
@@ -67815,6 +68668,39 @@ export interface operations {
             };
         };
     };
+    download_file_agent_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadAgentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     download_call_agent_call_download_post: {
         parameters: {
             query?: never;
@@ -68417,6 +69303,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TextDownloadModelApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_file_model_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadModelApiRequest"];
             };
         };
         responses: {
@@ -69098,6 +70017,39 @@ export interface operations {
             };
         };
     };
+    download_file_provider_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadProviderApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     download_call_provider_call_download_post: {
         parameters: {
             query?: never;
@@ -69723,6 +70675,39 @@ export interface operations {
             };
         };
     };
+    download_file_parameter_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadParameterApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     download_call_parameter_call_download_post: {
         parameters: {
             query?: never;
@@ -70325,6 +71310,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TextDownloadFieldApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_file_field_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadFieldApiRequest"];
             };
         };
         responses: {
@@ -72233,6 +73251,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TextDownloadToolApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_file_tool_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadToolApiRequest"];
             };
         };
         responses: {
@@ -75425,6 +76476,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_refresh_system_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
         };

@@ -14,7 +14,7 @@ import {
   useAnalyticsParams,
 } from "@/hooks/use-analytics-params";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { RefreshCw, X } from "lucide-react";
+import { Download, Loader2, RefreshCw, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { DateRange } from "react-day-picker";
@@ -57,9 +57,21 @@ export interface AnalyticsFiltersProps {
   refreshAction: () => Promise<void>;
   /** Inline facets from the page's artifact endpoint */
   analyticsFilters: AnalyticsFacetsData | null | undefined;
+  /** Optional server action that posts to the artifact-level
+   *  ``/{artifact}/export`` and returns ``{file_id, file_name?}``.
+   *  When provided alongside ``bffDownloadPrefix``, the toolbar renders
+   *  a Download button that triggers a browser download via the BFF. */
+  exportAction?: () => Promise<{ file_id: string; file_name?: string }>;
+  /** BFF download path prefix — e.g. ``/api/attempt/download``. */
+  bffDownloadPrefix?: string;
 }
 
-export function AnalyticsFilters({ refreshAction, analyticsFilters }: AnalyticsFiltersProps) {
+export function AnalyticsFilters({
+  refreshAction,
+  analyticsFilters,
+  exportAction,
+  bffDownloadPrefix,
+}: AnalyticsFiltersProps) {
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const router = useRouter();
@@ -91,6 +103,24 @@ export function AnalyticsFilters({ refreshAction, analyticsFilters }: AnalyticsF
   const showDepartments = filterFields?.departments?.visible ?? false;
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (!exportAction || !bffDownloadPrefix) return;
+    setIsExporting(true);
+    try {
+      const result = await exportAction();
+      if (!result.file_id) {
+        toast.error("Export returned no file_id");
+        return;
+      }
+      window.location.href = `${bffDownloadPrefix}/${result.file_id}`;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Export failed");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Stable spinner that respects pending mutation, in-flight queries, and a min duration
   const [spinning, setSpinning] = useState(false);
@@ -283,6 +313,25 @@ export function AnalyticsFilters({ refreshAction, analyticsFilters }: AnalyticsF
               className="w-auto"
             />
 
+            {/* Download (artifact-level export) */}
+            {exportAction && bffDownloadPrefix && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={handleExport}
+                disabled={isExporting}
+                title="Download CSV"
+                aria-label="Download CSV"
+              >
+                {isExporting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+
             {/* Refresh Button */}
             <Button
               variant="outline"
@@ -397,6 +446,25 @@ export function AnalyticsFilters({ refreshAction, analyticsFilters }: AnalyticsF
               setDateRange={handleDateRangeChange}
               className="w-auto"
             />
+
+            {/* Download (artifact-level export) */}
+            {exportAction && bffDownloadPrefix && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={handleExport}
+                disabled={isExporting}
+                title="Download CSV"
+                aria-label="Download CSV"
+              >
+                {isExporting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+              </Button>
+            )}
 
             {/* Refresh Button */}
             <Button

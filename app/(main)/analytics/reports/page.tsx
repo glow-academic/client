@@ -242,6 +242,8 @@ export default async function ReportsFullPage({
           <AnalyticsFilters
             refreshAction={refreshReports}
             analyticsFilters={facets}
+            exportAction={exportReports}
+            bffDownloadPrefix="/api/attempt/download"
           />
         }
         panelProps={{
@@ -299,6 +301,14 @@ export default async function ReportsFullPage({
 async function refreshReports(): Promise<void> {
   "use server";
   await api.post("/attempt/refresh" as Parameters<typeof api.post>[0], { body: {} });
+}
+
+async function exportReports(): Promise<{ file_id: string; file_name?: string }> {
+  "use server";
+  return api.post(
+    "/attempt/export" as Parameters<typeof api.post>[0],
+    { body: { view: "reports" } as unknown as InputOf<"/attempt/export", "post"> },
+  ) as Promise<{ file_id: string; file_name?: string }>;
 }
 
 async function createReportsProblem(input: ProblemReportsIn): Promise<ProblemReportsOut> {

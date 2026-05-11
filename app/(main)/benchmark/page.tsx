@@ -81,6 +81,14 @@ async function refreshBenchmark(): Promise<void> {
   await api.post("/test/benchmark/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
+async function exportBenchmark(): Promise<{ file_id: string; file_name?: string }> {
+  "use server";
+  return api.post(
+    "/test/export" as Parameters<typeof api.post>[0],
+    { body: { view: "benchmark" } as unknown as InputOf<"/test/export", "post"> },
+  ) as Promise<{ file_id: string; file_name?: string }>;
+}
+
 /** Bulk archive/unarchive benchmark tests by IDs. */
 type BulkArchiveTestsIn = InputOf<"/test/archive", "post">;
 type BulkArchiveTestsOut = OutputOf<"/test/archive", "post">;
@@ -432,6 +440,8 @@ export default async function BenchmarkPage({
           <AnalyticsFilters
             refreshAction={refreshBenchmark}
             analyticsFilters={facets}
+            exportAction={exportBenchmark}
+            bffDownloadPrefix="/api/test/download"
           />
         }
         panelProps={{
