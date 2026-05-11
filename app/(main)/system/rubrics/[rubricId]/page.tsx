@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Rubric from "@/components/artifacts/rubric/Rubric";
@@ -118,6 +119,32 @@ async function searchRubricGroups(query: string): Promise<GenerationsOut> {
 async function createRubricProblem(input: ProblemRubricIn): Promise<ProblemRubricOut> {
   "use server";
   return api.post("/rubric/problem", input);
+}
+
+/** Per-item export — scopes to a single ``rubric_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportRubricById(rubricId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/rubric/export", {
+    body: { rubric_id: rubricId },
+  } as unknown as InputOf<"/rubric/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshRubric(): Promise<unknown> {
+  "use server";
+  return api.post("/rubric/refresh", {
+    body: {},
+  } as unknown as InputOf<"/rubric/refresh", "post">);
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -248,7 +275,14 @@ export default async function EditRubricPage({
               { title: "Rubrics", section: "rubrics", url: "/system/rubrics" },
               { title: entityName },
             ],
-            toolbar: <SaveToolbar />,
+            toolbar: (
+              <ArtifactToolbarActions
+                leftSlot={<SaveToolbar />}
+                exportAction={exportRubricById.bind(null, rubricId)}
+                refreshAction={refreshRubric}
+                bffDownloadPrefix="/api/rubric/download"
+              />
+            ),
             panelProps: {
               artifactType: "rubric",
               initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -289,16 +323,27 @@ export default async function EditRubricPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="rubric"
-          redirectPath="/system/rubrics"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/system/rubrics/${rubricId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="rubric"
+            redirectPath="/system/rubrics"
+          />
+        );
+      }
     }
     throw error;
   }

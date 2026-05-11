@@ -9,6 +9,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Auth from "@/components/artifacts/auth/Auth";
@@ -76,6 +77,35 @@ async function searchAuthGroups(query: string): Promise<GenerationsOut> {
 async function createAuthProblem(input: ProblemAuthIn): Promise<ProblemAuthOut> {
   "use server";
   return api.post("/auth/problem", input);
+}
+
+/** Export-all — used by the /new page's Download button to fetch
+ *  the current full dataset as a CSV template. No per-item id
+ *  since the user hasn't created the new artifact yet. Cast through
+ *  ``unknown`` while openapi.json catches up to the file-modality
+ *  response shape. */
+async function exportAuths(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/auth/export", {
+    body: {},
+  } as unknown as InputOf<"/auth/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshAuths(): Promise<unknown> {
+  "use server";
+  return api.post("/auth/refresh", {
+    body: {},
+  } as unknown as InputOf<"/auth/refresh", "post">);
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -186,7 +216,14 @@ export default async function AuthCreatePage({
         { title: "Auth", section: "auth", url: "/system/auth" },
         { title: "New Auth" },
       ],
-      toolbar: <SaveToolbar />,
+      toolbar: (
+        <ArtifactToolbarActions
+          leftSlot={<SaveToolbar />}
+          exportAction={exportAuths}
+          refreshAction={refreshAuths}
+          bffDownloadPrefix="/api/auth/download"
+        />
+      ),
       panelProps: {
         artifactType: "auth",
         initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -220,15 +257,27 @@ export default async function AuthCreatePage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/system/auth/new"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/system/auth/new"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="auth"
+            redirectPath="/system/auth"
+          />
+        );
+      }
     }
     throw error;
   }

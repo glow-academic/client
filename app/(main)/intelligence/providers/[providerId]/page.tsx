@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Provider from "@/components/artifacts/provider/Provider";
@@ -95,6 +96,32 @@ async function searchProviderGroups(query: string): Promise<GenerationsOut> {
 async function createProviderProblem(input: ProblemProviderIn): Promise<ProblemProviderOut> {
   "use server";
   return api.post("/provider/problem", input);
+}
+
+/** Per-item export — scopes to a single ``provider_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportProviderById(providerId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/provider/export", {
+    body: { provider_id: providerId },
+  } as unknown as InputOf<"/provider/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshProvider(): Promise<unknown> {
+  "use server";
+  return api.post("/provider/refresh", {
+    body: {},
+  } as unknown as InputOf<"/provider/refresh", "post">);
 }
 
 async function decryptProvider(input: DecryptProviderIn): Promise<DecryptProviderOut> {
@@ -228,7 +255,7 @@ export default async function EditProviderPage({
     const [providerDetail, context, draftsResult, groupResult] = await Promise.all([
       getProvider(input).catch(() => null),
       getProviderContextById(providerId) as Promise<ContextOut>,
-      api.post("/provider/drafts", {}),
+      api.post("/provider/drafts", { body: {} } as any),
       api.post(
         "/provider/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupProviderIn,
@@ -259,7 +286,14 @@ export default async function EditProviderPage({
               { title: "Providers", section: "providers", url: "/intelligence/providers" },
               { title: entityName },
             ],
-            toolbar: <SaveToolbar />,
+            toolbar: (
+              <ArtifactToolbarActions
+                leftSlot={<SaveToolbar />}
+                exportAction={exportProviderById.bind(null, providerId)}
+                refreshAction={refreshProvider}
+                bffDownloadPrefix="/api/provider/download"
+              />
+            ),
             panelProps: {
               artifactType: "provider",
               initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -294,20 +328,30 @@ export default async function EditProviderPage({
       </DraftProviderClient>
     );
   } catch (error: unknown) {
-    // Check if it's a 403 error (department access denied)
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="provider"
-          redirectPath="/intelligence/providers"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/intelligence/providers/${providerId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="provider"
+            redirectPath="/intelligence/providers"
+          />
+        );
+      }
     }
     // Re-throw other errors
     throw error;

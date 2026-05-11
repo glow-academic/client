@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
-import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import Agents from "@/components/artifacts/agent/Agents";
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
@@ -22,6 +22,7 @@ import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { loadAgentsSearchParams } from "@/lib/search-params/agents";
 import { readViewCookie } from "@/lib/view-cookie";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
@@ -33,6 +34,8 @@ type DeleteAgentIn = InputOf<"/agent/delete", "post">;
 type DeleteAgentOut = OutputOf<"/agent/delete", "post">;
 type UpdateAgentIn = InputOf<"/agent/update", "post">;
 type UpdateAgentOut = OutputOf<"/agent/update", "post">;
+type CreateAgentIn = InputOf<"/agent/create", "post">;
+type CreateAgentOut = OutputOf<"/agent/create", "post">;
 type GroupAgentIn = InputOf<"/agent/group", "post">;
 type GroupAgentOut = OutputOf<"/agent/group", "post">;
 type GenerationsIn = InputOf<"/agent/generations", "post">;
@@ -86,6 +89,40 @@ async function deleteAgent(input: DeleteAgentIn): Promise<DeleteAgentOut> {
 async function updateAgent(input: UpdateAgentIn): Promise<UpdateAgentOut> {
   "use server";
   return api.post("/agent/update", input);
+}
+
+async function createAgent(input: CreateAgentIn): Promise<CreateAgentOut> {
+  "use server";
+  return api.post("/agent/create", input);
+}
+
+async function exportAgents(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/agent/export", {
+    body: {},
+  } as unknown as InputOf<"/agent/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshAgents(): Promise<unknown> {
+  "use server";
+  return api.post("/agent/refresh", {
+    body: {},
+  } as unknown as InputOf<"/agent/refresh", "post">);
+}
+
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
+  "use server";
+  return api.post("/agent/csv", { formData });
 }
 
 
@@ -219,7 +256,14 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
           { title: "Agents" },
         ]}
-        toolbar={<NewArtifactButton label="New Agent" href="/intelligence/agents/new" />}
+        toolbar={
+          <ArtifactToolbarActions
+            newButton={{ label: "New Agent", href: "/intelligence/agents/new" }}
+            exportAction={exportAgents}
+            refreshAction={refreshAgents}
+            bffDownloadPrefix="/api/agent/download"
+          />
+        }
         panelProps={{
           artifactType: "agent",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -247,6 +291,9 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
             duplicateAgentAction={duplicateAgent}
             deleteAgentAction={deleteAgent}
             updateAgentAction={updateAgent}
+            createAgentAction={createAgent}
+            parseCsvAction={parseCsv}
+            importFields={listData.import_fields ?? undefined}
             currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}
@@ -262,15 +309,27 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/intelligence/agents"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/intelligence/agents"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="agent"
+            redirectPath="/intelligence/agents"
+          />
+        );
+      }
     }
     throw error;
   }
@@ -286,4 +345,6 @@ export type {
   DuplicateAgentOut,
   UpdateAgentIn,
   UpdateAgentOut,
+  CreateAgentIn,
+  CreateAgentOut,
 };

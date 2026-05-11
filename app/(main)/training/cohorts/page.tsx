@@ -8,7 +8,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
-import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import Cohorts from "@/components/artifacts/cohort/Cohorts";
 
 import { api } from "@/lib/api/client";
@@ -99,6 +99,30 @@ async function createCohort(input: CreateCohortIn): Promise<CreateCohortOut> {
 async function updateCohort(input: UpdateCohortIn): Promise<UpdateCohortOut> {
   "use server";
   return api.post("/cohort/update", input);
+}
+
+async function exportCohorts(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/cohort/export", {
+    body: {},
+  } as unknown as InputOf<"/cohort/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshCohorts(): Promise<unknown> {
+  "use server";
+  return api.post("/cohort/refresh", {
+    body: {},
+  } as unknown as InputOf<"/cohort/refresh", "post">);
 }
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
@@ -238,7 +262,14 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
           { title: "Training", section: "training", url: "/training" },
           { title: "Cohorts" },
         ]}
-        toolbar={<NewArtifactButton label="New Cohort" href="/training/cohorts/new" />}
+        toolbar={
+          <ArtifactToolbarActions
+            newButton={{ label: "New Cohort", href: "/training/cohorts/new" }}
+            exportAction={exportCohorts}
+            refreshAction={refreshCohorts}
+            bffDownloadPrefix="/api/cohort/download"
+          />
+        }
         panelProps={{
           artifactType: "cohort",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -285,15 +316,27 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/training/cohorts"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/training/cohorts"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="cohort"
+            redirectPath="/training/cohorts"
+          />
+        );
+      }
     }
     throw error;
   }

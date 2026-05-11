@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Tool from "@/components/artifacts/tool/Tool";
@@ -90,6 +91,32 @@ async function searchToolGroups(query: string): Promise<GenerationsOut> {
 async function createToolProblem(input: ProblemToolIn): Promise<ProblemToolOut> {
   "use server";
   return api.post("/tool/problem", input);
+}
+
+/** Per-item export — scopes to a single ``tool_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportToolById(toolId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/tool/export", {
+    body: { tool_id: toolId },
+  } as unknown as InputOf<"/tool/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshTool(): Promise<unknown> {
+  "use server";
+  return api.post("/tool/refresh", {
+    body: {},
+  } as unknown as InputOf<"/tool/refresh", "post">);
 }
 
 async function previewTool(input: PreviewToolIn): Promise<PreviewToolOut> {
@@ -256,7 +283,14 @@ export default async function ToolDetailPage({
         { title: "Tools", section: "tools", url: "/intelligence/tools" },
         { title: entityName ?? "Tool" },
       ],
-      toolbar: <SaveToolbar />,
+      toolbar: (
+        <ArtifactToolbarActions
+          leftSlot={<SaveToolbar />}
+          exportAction={exportToolById.bind(null, toolId)}
+          refreshAction={refreshTool}
+          bffDownloadPrefix="/api/tool/download"
+        />
+      ),
       panelProps: {
         artifactType: "tool",
         initialPanelPrefs: await readGenerationPanelPrefs(),

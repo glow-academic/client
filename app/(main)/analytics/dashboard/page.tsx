@@ -135,6 +135,12 @@ export default async function DashboardPage({
     const historySimulationSearch = q.historySimulationSearch ?? undefined;
     const historyScenarioSearch = q.historyScenarioSearch ?? undefined;
     const roleIds = q.role_ids ?? q.roles ?? [];
+    const simulationFilters = q.simulationFilters ?? ["general"];
+    const hasGeneralFilter = simulationFilters.includes("general");
+    const hasPracticeFilter = simulationFilters.includes("practice");
+    const historyPractice =
+      hasGeneralFilter === hasPracticeFilter ? undefined : hasPracticeFilter;
+    const historyShowArchived = simulationFilters.includes("archived");
 
     // Parallel fetch: dashboard data + history search + group
     type SearchIn = InputOf<"/attempt/dashboard/search", "post">;
@@ -147,7 +153,7 @@ export default async function DashboardPage({
           ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
           ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
           ...(roleIds.length && { role_ids: roleIds }),
-          ...(q.simulationFilters?.length && { simulation_filters: q.simulationFilters }),
+          ...(simulationFilters.length && { simulation_filters: simulationFilters }),
           page_limit: 50,
           page_offset: 0,
           // Section pickers (canonical)
@@ -159,8 +165,8 @@ export default async function DashboardPage({
           ...(parameterSearch && { parameter_search: parameterSearch }),
           ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
           ...(scenarioSearch && { scenario_search: scenarioSearch }),
-          history_practice: false,
-          history_show_archived: false,
+          history_practice: historyPractice ?? null,
+          history_show_archived: historyShowArchived,
           history_sort_by: historySortBy,
           history_sort_order: historySortOrder,
           history_page: historyPage,
@@ -173,6 +179,8 @@ export default async function DashboardPage({
           page_size: historyPageSize,
           sort_by: historySortBy,
           sort_order: historySortOrder,
+          practice: historyPractice ?? null,
+          ...(historyShowArchived && { show_archived: true }),
           ...(historySearch && { simulation_search: historySearch }),
           ...(historyScenarioIds?.length && { scenario_ids: historyScenarioIds }),
           ...(historyInfiniteMode !== undefined && { infinite_mode: historyInfiniteMode }),
@@ -293,8 +301,10 @@ export default async function DashboardPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      (error.status === 401 || error.status === 403)
+      error.status === 401
     ) {
+      // 401 → not logged in. Analytics pages have no single-resource concept,
+      // so 403 (wrong department) doesn't apply here — fall through and throw.
       return (
         <UnifiedAccessDenied
           reason="not-logged-in"
@@ -309,7 +319,7 @@ export default async function DashboardPage({
 /** ---- Strongly-typed server actions ---- */
 async function refreshDashboard(): Promise<void> {
   "use server";
-  await api.post("/attempt/dashboard/refresh" as Parameters<typeof api.post>[0], { body: {} });
+  await api.post("/attempt/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
 async function bulkArchiveAttempts(

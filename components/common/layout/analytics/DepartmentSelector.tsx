@@ -127,7 +127,7 @@ export function DepartmentSelector({
       <Popover open={open} onOpenChange={setOpen} {...props}>
         <PopoverTrigger asChild>
           <Button
-            variant="secondary"
+            variant="outline"
             role="combobox"
             aria-expanded={open}
             aria-label="Select departments"

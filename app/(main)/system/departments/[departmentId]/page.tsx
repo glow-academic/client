@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Department from "@/components/artifacts/department/Department";
@@ -76,6 +77,32 @@ async function patchDepartmentDraft(
 async function createDepartmentProblem(input: ProblemDepartmentIn): Promise<ProblemDepartmentOut> {
   "use server";
   return api.post("/department/problem", input);
+}
+
+/** Per-item export — scopes to a single ``department_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportDepartmentById(departmentId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/department/export", {
+    body: { department_id: departmentId },
+  } as unknown as InputOf<"/department/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshDepartment(): Promise<unknown> {
+  "use server";
+  return api.post("/department/refresh", {
+    body: {},
+  } as unknown as InputOf<"/department/refresh", "post">);
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -200,7 +227,14 @@ export default async function DepartmentEditPage({
             { title: "Departments", section: "departments", url: "/system/departments" },
             { title: entityName },
           ]}
-          toolbar={<SaveToolbar />}
+          toolbar={
+            <ArtifactToolbarActions
+              leftSlot={<SaveToolbar />}
+              exportAction={exportDepartmentById.bind(null, departmentId)}
+              refreshAction={refreshDepartment}
+              bffDownloadPrefix="/api/department/download"
+            />
+          }
           panelProps={{
             artifactType: "department",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -239,20 +273,30 @@ export default async function DepartmentEditPage({
       </DraftProviderClient>
     );
   } catch (error: unknown) {
-    // Check if it's a 403 error (department access denied)
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="department"
-          redirectPath="/system/departments"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/system/departments/${departmentId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="department"
+            redirectPath="/system/departments"
+          />
+        );
+      }
     }
     // Re-throw other errors
     throw error;

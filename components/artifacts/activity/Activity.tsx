@@ -36,10 +36,24 @@ type SessionRow = {
   profile_name: string;
   profile_id: string;
   active: boolean;
-  chat_count: number;
-  attempt_count: number;
-  message_count: number;
+  group_count: number;
+  run_count: number;
+  total_tokens: number;
+  total_cost: number | string;
   problem_count: number;
+};
+
+type ActivityProblem = {
+  problem_id?: string | null;
+  profile_name?: string | null;
+  type?: string | null;
+  message?: string | null;
+  resolved?: boolean | null;
+  created_at?: string | null;
+};
+
+type ActivityBundleWithProblems = NonNullable<ActivityOut["bundleData"]> & {
+  problems?: ActivityProblem[];
 };
 
 function formatDuration(start: string | null | undefined, end: string | null | undefined): string {
@@ -64,9 +78,10 @@ export default function Activity({ activityData, isLoading = false }: ActivityPr
     return items.map((item) => ({
       ...item,
       created_at: item.session_created_at ?? "",
-      chat_count: item.chat_count ?? 0,
-      attempt_count: item.attempt_count ?? 0,
-      message_count: item.message_count ?? 0,
+      group_count: item.group_count ?? 0,
+      run_count: item.run_count ?? 0,
+      total_tokens: item.total_tokens ?? 0,
+      total_cost: item.total_cost ?? 0,
       problem_count: item.problem_count ?? 0,
     }));
   }, [activityData.activityData?.items]);
@@ -123,7 +138,10 @@ export default function Activity({ activityData, isLoading = false }: ActivityPr
     [commitSearch]
   );
 
-  const problems = useMemo(() => bundleData?.problems || [], [bundleData?.problems]);
+  const problems = useMemo(
+    () => (bundleData as ActivityBundleWithProblems | null)?.problems || [],
+    [bundleData],
+  );
   const profileSummary = useMemo(() => bundleData?.profile_summary || [], [bundleData?.profile_summary]);
 
   const profileOptions = useMemo(() => {
@@ -182,19 +200,35 @@ export default function Activity({ activityData, isLoading = false }: ActivityPr
       },
     },
     {
-      accessorKey: "chat_count",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Chats" />,
-      cell: ({ row }) => <div className="text-sm tabular-nums">{row.getValue("chat_count")}</div>,
+      accessorKey: "group_count",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Groups" />,
+      cell: ({ row }) => <div className="text-sm tabular-nums">{row.getValue("group_count")}</div>,
     },
     {
-      accessorKey: "attempt_count",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Attempts" />,
-      cell: ({ row }) => <div className="text-sm tabular-nums">{row.getValue("attempt_count")}</div>,
+      accessorKey: "run_count",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Runs" />,
+      cell: ({ row }) => <div className="text-sm tabular-nums">{row.getValue("run_count")}</div>,
     },
     {
-      accessorKey: "message_count",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Messages" />,
-      cell: ({ row }) => <div className="text-sm tabular-nums">{row.getValue("message_count")}</div>,
+      accessorKey: "total_tokens",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Tokens" />,
+      cell: ({ row }) => {
+        const value = row.getValue("total_tokens") as number;
+        return <div className="text-sm tabular-nums">{value.toLocaleString()}</div>;
+      },
+    },
+    {
+      accessorKey: "total_cost",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Cost" />,
+      cell: ({ row }) => {
+        const raw = row.getValue("total_cost") as number | string;
+        const value = typeof raw === "number" ? raw : Number(raw);
+        return (
+          <div className="text-sm tabular-nums">
+            {Number.isFinite(value) ? `$${value.toFixed(4)}` : "-"}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "problem_count",
@@ -278,7 +312,7 @@ export default function Activity({ activityData, isLoading = false }: ActivityPr
         <div className="flex-[2]">
           <ProfileSummaryCard
             items={profileSummary}
-            selectedProfileId={summaryProfileId}
+            {...(summaryProfileId && { selectedProfileId: summaryProfileId })}
           />
         </div>
         <div className="flex-1">
@@ -297,7 +331,7 @@ export default function Activity({ activityData, isLoading = false }: ActivityPr
                 {problems.length === 0 ? (
                   <div className="text-center text-muted-foreground py-8">No problems found.</div>
                 ) : (
-                  problems.map((item) => (
+                  problems.map((item: ActivityProblem) => (
                     <div
                       key={item.problem_id}
                       className={`p-4 border rounded-lg ${item.resolved ? "opacity-60" : ""}`}
@@ -365,7 +399,7 @@ export default function Activity({ activityData, isLoading = false }: ActivityPr
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => router.push(`/session/${row.original.session_id}`)}
+                    onClick={() => router.push(`/analytics/activity/${row.original.session_id}`)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>

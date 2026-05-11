@@ -8,7 +8,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
-import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import Settings from "@/components/artifacts/setting/Settings";
 
 import { api } from "@/lib/api/client";
@@ -21,6 +21,7 @@ import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
 import { loadSettingsSearchParams } from "@/lib/search-params/settings";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
@@ -30,6 +31,8 @@ type DeleteSettingIn = InputOf<"/setting/delete", "post">;
 type DeleteSettingOut = OutputOf<"/setting/delete", "post">;
 type UpdateSettingIn = InputOf<"/setting/update", "post">;
 type UpdateSettingOut = OutputOf<"/setting/update", "post">;
+type CreateSettingIn = InputOf<"/setting/create", "post">;
+type CreateSettingOut = OutputOf<"/setting/create", "post">;
 type GroupSettingIn = InputOf<"/setting/group", "post">;
 type GroupSettingOut = OutputOf<"/setting/group", "post">;
 type GenerationsIn = InputOf<"/setting/generations", "post">;
@@ -96,6 +99,40 @@ async function updateSetting(
 ): Promise<UpdateSettingOut> {
   "use server";
   return api.post("/setting/update", input);
+}
+
+async function createSetting(input: CreateSettingIn): Promise<CreateSettingOut> {
+  "use server";
+  return api.post("/setting/create", input);
+}
+
+async function exportSettings(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/setting/export", {
+    body: {},
+  } as unknown as InputOf<"/setting/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshSettings(): Promise<unknown> {
+  "use server";
+  return api.post("/setting/refresh", {
+    body: {},
+  } as unknown as InputOf<"/setting/refresh", "post">);
+}
+
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
+  "use server";
+  return api.post("/setting/csv", { formData });
 }
 
 
@@ -204,7 +241,14 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         breadcrumbs={[
           { title: "Settings" },
         ]}
-        toolbar={<NewArtifactButton label="New Setting" href="/settings/new" />}
+        toolbar={
+          <ArtifactToolbarActions
+            newButton={{ label: "New Setting", href: "/settings/new" }}
+            exportAction={exportSettings}
+            refreshAction={refreshSettings}
+            bffDownloadPrefix="/api/setting/download"
+          />
+        }
         panelProps={{
           artifactType: "setting",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -231,6 +275,9 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             initialColumnVisibility={initialColumnVisibility}
             deleteSettingAction={deleteSetting}
             updateSettingAction={updateSetting}
+            createSettingAction={createSetting}
+            parseCsvAction={parseCsv}
+            importFields={listData.import_fields ?? undefined}
             currentSearchBody={currentSearchBody}
             totalCount={listData.settings?.length ?? 0}
           />
@@ -241,15 +288,27 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/settings"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/settings"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="setting"
+            redirectPath="/settings"
+          />
+        );
+      }
     }
     throw error;
   }
@@ -263,4 +322,6 @@ export type {
   DeleteSettingOut,
   UpdateSettingIn,
   UpdateSettingOut,
+  CreateSettingIn,
+  CreateSettingOut,
 };

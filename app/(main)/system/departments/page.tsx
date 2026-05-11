@@ -8,7 +8,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
-import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import Departments from "@/components/artifacts/department/Departments";
 
 import { api } from "@/lib/api/client";
@@ -21,6 +21,7 @@ import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
 import { loadDepartmentsSearchParams } from "@/lib/search-params/departments";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
@@ -39,6 +40,8 @@ type DeleteDepartmentIn = InputOf<"/department/delete", "post">;
 type DeleteDepartmentOut = OutputOf<"/department/delete", "post">;
 type UpdateDepartmentIn = InputOf<"/department/update", "post">;
 type UpdateDepartmentOut = OutputOf<"/department/update", "post">;
+type CreateDepartmentIn = InputOf<"/department/create", "post">;
+type CreateDepartmentOut = OutputOf<"/department/create", "post">;
 type GroupDepartmentIn = InputOf<"/department/group", "post">;
 type GroupDepartmentOut = OutputOf<"/department/group", "post">;
 type GenerationsIn = InputOf<"/department/generations", "post">;
@@ -92,6 +95,40 @@ async function updateDepartment(
 ): Promise<UpdateDepartmentOut> {
   "use server";
   return api.post("/department/update", input);
+}
+
+async function createDepartment(input: CreateDepartmentIn): Promise<CreateDepartmentOut> {
+  "use server";
+  return api.post("/department/create", input);
+}
+
+async function exportDepartments(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/department/export", {
+    body: {},
+  } as unknown as InputOf<"/department/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshDepartments(): Promise<unknown> {
+  "use server";
+  return api.post("/department/refresh", {
+    body: {},
+  } as unknown as InputOf<"/department/refresh", "post">);
+}
+
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
+  "use server";
+  return api.post("/department/csv", { formData });
 }
 
 
@@ -205,7 +242,14 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
           { title: "System", section: "system", url: "/system" },
           { title: "Departments" },
         ]}
-        toolbar={<NewArtifactButton label="New Department" href="/system/departments/new" />}
+        toolbar={
+          <ArtifactToolbarActions
+            newButton={{ label: "New Department", href: "/system/departments/new" }}
+            exportAction={exportDepartments}
+            refreshAction={refreshDepartments}
+            bffDownloadPrefix="/api/department/download"
+          />
+        }
         panelProps={{
           artifactType: "department",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -233,6 +277,9 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
             duplicateDepartmentAction={duplicateDepartment}
             deleteDepartmentAction={deleteDepartment}
             updateDepartmentAction={updateDepartment}
+            createDepartmentAction={createDepartment}
+            parseCsvAction={parseCsv}
+            importFields={listData.import_fields ?? undefined}
             currentSearchBody={body}
           />
         </div>
@@ -242,15 +289,27 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/system/departments"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/system/departments"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="department"
+            redirectPath="/system/departments"
+          />
+        );
+      }
     }
     throw error;
   }
@@ -266,4 +325,6 @@ export type {
   DuplicateDepartmentOut,
   UpdateDepartmentIn,
   UpdateDepartmentOut,
+  CreateDepartmentIn,
+  CreateDepartmentOut,
 };

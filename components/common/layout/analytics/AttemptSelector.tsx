@@ -101,7 +101,7 @@ export default function AttemptSelector({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant="secondary"
+            variant="outline"
             role="combobox"
             aria-expanded={open}
             aria-label="Select content type"

@@ -5,7 +5,7 @@
  * 07/20/2025
  */
 "use client";
-import { AlertCircle, Check, Copy, Edit, Eye, Loader2, Pencil, Trash2, Users, X } from "lucide-react";
+import { AlertCircle, Check, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
@@ -43,7 +43,10 @@ import type {
   DuplicateDepartmentOut,
   UpdateDepartmentIn,
   UpdateDepartmentOut,
+  CreateDepartmentIn,
+  CreateDepartmentOut,
 } from "@/app/(main)/system/departments/page";
+import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
@@ -75,6 +78,9 @@ export interface DepartmentsProps {
   updateDepartmentAction?: (
     input: UpdateDepartmentIn,
   ) => Promise<UpdateDepartmentOut>;
+  createDepartmentAction?: (input: CreateDepartmentIn) => Promise<CreateDepartmentOut>;
+  parseCsvAction?: (formData: FormData) => Promise<ParseCsvResult>;
+  importFields?: ImportFieldDef[];
   /** The body the page used for its SSR ``/department/search`` call.
    *  Forwarded as the filter envelope on bulk delete/update calls
    *  when the user is in ``selectAll=1`` mode — the server resolves
@@ -100,6 +106,9 @@ export default function Departments({
   duplicateDepartmentAction,
   deleteDepartmentAction,
   updateDepartmentAction,
+  createDepartmentAction,
+  parseCsvAction,
+  importFields,
   currentSearchBody,
 }: DepartmentsProps) {
   const router = useRouter();
@@ -109,6 +118,7 @@ export default function Departments({
   });
 
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -1109,6 +1119,17 @@ export default function Departments({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {parseCsvAction && importFields && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setShowBulkImportDialog(true)}
+                >
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Import CSV
+                </Button>
+              )}
               <DataTableViewOptions
                 table={table}
                 hiddenColumns={["name", "updated_at", "profile_ids", "setting_ids", "login_ids"]}
@@ -1296,6 +1317,28 @@ export default function Departments({
           onChange={setBulkEditActiveStatus}
         />
       </BulkEditDialog>
+
+      {/* Bulk Import Dialog */}
+      {parseCsvAction && importFields && (
+        <BulkImport
+          open={showBulkImportDialog}
+          onClose={() => {
+            setShowBulkImportDialog(false);
+            router.refresh();
+          }}
+          fields={importFields}
+          artifactName="Departments"
+          parseCsvAction={parseCsvAction}
+          onSave={async (items) => {
+            if (!createDepartmentAction) throw new Error("Create action not available");
+            const departments = items.map((item) => ({
+              name: item["name"] as string | undefined,
+              description: item["description"] as string | undefined,
+            }));
+            return createDepartmentAction({ body: { departments } } as CreateDepartmentIn);
+          }}
+        />
+      )}
     </div>
   );
 }

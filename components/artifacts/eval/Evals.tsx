@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { AlertCircle, Check, Edit, Eye, Loader2, Pencil, Trash2, X } from "lucide-react";
+import { AlertCircle, Check, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -19,7 +19,10 @@ import type {
   EvalsListBody,
   UpdateEvalIn,
   UpdateEvalOut,
+  CreateEvalIn,
+  CreateEvalOut,
 } from "@/app/(main)/system/evals/page";
+import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
@@ -62,6 +65,9 @@ export interface EvalsProps {
   initialColumnVisibility?: VisibilityState;
   deleteEvalAction?: (input: DeleteEvalIn) => Promise<DeleteEvalOut>;
   updateEvalAction?: (input: UpdateEvalIn) => Promise<UpdateEvalOut>;
+  createEvalAction?: (input: CreateEvalIn) => Promise<CreateEvalOut>;
+  parseCsvAction?: (formData: FormData) => Promise<ParseCsvResult>;
+  importFields?: ImportFieldDef[];
   /** The body the page used for its SSR ``/eval/search`` call.
    *  Forwarded as flat filter fields on bulk delete/update calls when
    *  the user is in ``selectAll=1`` mode — the server resolves matching
@@ -92,6 +98,9 @@ export default function Evals({
   initialColumnVisibility,
   deleteEvalAction,
   updateEvalAction,
+  createEvalAction,
+  parseCsvAction,
+  importFields,
   currentSearchBody,
   pageIndex,
   pageSize,
@@ -106,6 +115,7 @@ export default function Evals({
     onComplete: () => router.refresh(),
   });
 
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -1197,6 +1207,17 @@ export default function Evals({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {parseCsvAction && importFields && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => setShowBulkImportDialog(true)}
+              >
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Import CSV
+              </Button>
+            )}
             <DataTableViewOptions
               table={table}
               hiddenColumns={["name", "departments", "model_ids", "rubric_ids", "updated_at"]}
@@ -1374,6 +1395,30 @@ export default function Evals({
           onChange={setBulkEditActiveStatus}
         />
       </BulkEditDialog>
+
+      {/* Bulk Import Dialog */}
+      {parseCsvAction && importFields && (
+        <BulkImport
+          open={showBulkImportDialog}
+          onClose={() => {
+            setShowBulkImportDialog(false);
+            router.refresh();
+          }}
+          fields={importFields}
+          artifactName="Evals"
+          parseCsvAction={parseCsvAction}
+          onSave={async (items) => {
+            if (!createEvalAction) throw new Error("Create action not available");
+            const evals = items.map((item) => ({
+              name: item["name"] as string | undefined,
+              description: item["description"] as string | undefined,
+              active: item["active"] as boolean | undefined,
+              departments: item["departments"] as string[] | undefined,
+            }));
+            return createEvalAction({ body: { evals } } as CreateEvalIn);
+          }}
+        />
+      )}
 
     </div>
   );

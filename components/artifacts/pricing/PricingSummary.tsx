@@ -125,7 +125,7 @@ interface PricingSummaryProps {
 export function PricingSummary({ pricingData }: PricingSummaryProps) {
   // Extract data from artifacts/pricing response
   const dailyItems = useMemo(
-    () => pricingData?.views?.daily || [],
+    () => pricingData?.daily || [],
     [pricingData]
   );
   const modelResources = useMemo(
@@ -216,8 +216,12 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
     let colorIdx = 0;
     for (const id of modelIds) {
       const resolved = modelResources[id];
+      const label =
+        resolved && typeof resolved["name"] === "string"
+          ? resolved["name"]
+          : id;
       config[id] = {
-        label: resolved?.name || id,
+        label,
         color: chartColors[colorIdx % chartColors.length] ?? "#999999",
       };
       colorIdx += 1;

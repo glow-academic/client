@@ -16998,9 +16998,8 @@ export interface components {
             /**
              * History Practice
              * @description Filter to practice attempts only
-             * @default false
              */
-            history_practice: boolean;
+            history_practice?: boolean | null;
             /**
              * History Scenario Ids
              * @description Scenario IDs for history filter
@@ -34493,6 +34492,35 @@ export interface components {
              */
             upload_id: string;
         };
+        /**
+         * ImportField
+         * @description Field descriptor for CSV import column mapping.
+         */
+        ImportField: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Multi
+             * @default false
+             */
+            multi: boolean;
+            /**
+             * Type
+             * @default string
+             */
+            type: string;
+            /** Example */
+            example?: string | null;
+            /** Description */
+            description?: string | null;
+        };
         /** InvocationDepartmentResource */
         InvocationDepartmentResource: {
             /**
@@ -35769,6 +35797,11 @@ export interface components {
              * @description Total number of matching records
              */
             total_count?: number | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /**
          * ListAuthApiAuth
@@ -36066,6 +36099,11 @@ export interface components {
              * @description Total number of matching records
              */
             total_count?: number | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /**
          * ListCohortApiSimulation
@@ -36131,9 +36169,8 @@ export interface components {
             /**
              * Practice
              * @description Filter to practice attempts only
-             * @default false
              */
-            practice: boolean;
+            practice?: boolean | null;
             /**
              * Scenario Ids
              * @description Scenario IDs to filter by
@@ -36293,6 +36330,11 @@ export interface components {
              * @description Total number of departments
              */
             total_count?: number | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /**
          * ListDocumentApiDocument
@@ -36428,6 +36470,11 @@ export interface components {
              * @description Total number of matching records
              */
             total_count?: number | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /**
          * ListEvalApiEval
@@ -36558,6 +36605,11 @@ export interface components {
              * @description Role of the current user
              */
             user_role?: string | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /** ListFieldApiField */
         ListFieldApiField: {
@@ -36657,6 +36709,11 @@ export interface components {
              * @description Total number of fields
              */
             total_count?: number | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /**
          * ListFilterOption
@@ -37048,6 +37105,11 @@ export interface components {
              * @description Total number of models
              */
             total_count?: number | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /** ListParameterApiParameter */
         ListParameterApiParameter: {
@@ -37162,6 +37224,11 @@ export interface components {
              * @description Total number of parameters
              */
             total_count?: number | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /**
          * ListPersonaApiPersona
@@ -37305,6 +37372,11 @@ export interface components {
              * @description Total number of personas matching filters
              */
             total_count?: number | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /**
          * ListPracticeRequest
@@ -37732,6 +37804,11 @@ export interface components {
              * @description Total number of providers
              */
             total_count?: number | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /**
          * ListRecordRequest
@@ -37861,6 +37938,11 @@ export interface components {
              * @description Total number of matching records
              */
             total_count?: number | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /** ListRubricApiRubric */
         ListRubricApiRubric: {
@@ -38189,6 +38271,11 @@ export interface components {
              * @description Total number of matching records
              */
             total_count?: number | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /**
          * ListScenarioApiScenario
@@ -38396,6 +38483,11 @@ export interface components {
             auth_filter?: components["schemas"]["ListFilterSection"] | null;
             /** @description Filter options for systems in list UI */
             systems_filter?: components["schemas"]["ListFilterSection"] | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /**
          * ListSettingApiSetting
@@ -38532,6 +38624,11 @@ export interface components {
              * @description Total number of matching records
              */
             total_count?: number | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /**
          * ListSimulationApiScenario
@@ -38697,6 +38794,11 @@ export interface components {
              * @description Total number of tools
              */
             total_count?: number | null;
+            /**
+             * Import Fields
+             * @description CSV import column schema for the bulk-import dialog
+             */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /** ListToolApiTool */
         ListToolApiTool: {

@@ -18,6 +18,14 @@ type ProfileSummaryItemType = {
   activity_count?: number;
 };
 
+type ProfileSummaryCounts = {
+  sessions_count: number;
+  logins_count: number;
+  grants_count: number;
+  problems_count: number;
+  activity_count: number;
+};
+
 interface ProfileSummaryCardProps {
   items: ProfileSummaryItemType[];
   selectedProfileId?: string | null;
@@ -52,7 +60,7 @@ export default function ProfileSummaryCard({ items, selectedProfileId }: Profile
   // Aggregate all items if no specific profile selected, or show the selected one
   const aggregated = selectedProfileId
     ? items.find((i) => i.profile_id === selectedProfileId) || null
-    : items.reduce(
+    : items.reduce<ProfileSummaryCounts>(
         (acc, i) => ({
           sessions_count: acc.sessions_count + (i.sessions_count ?? 0),
           logins_count: acc.logins_count + (i.logins_count ?? 0),

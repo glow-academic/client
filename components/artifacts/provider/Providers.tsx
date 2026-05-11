@@ -3,7 +3,7 @@
  * Used to display the providers page with server-side filtering.
  */
 "use client";
-import { AlertCircle, Check, Edit, Eye, Loader2, Pencil, Trash2, X } from "lucide-react";
+import { AlertCircle, Check, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -18,7 +18,10 @@ import type {
   ProvidersListOut,
   UpdateProviderIn,
   UpdateProviderOut,
+  CreateProviderIn,
+  CreateProviderOut,
 } from "@/app/(main)/intelligence/providers/page";
+import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
@@ -65,6 +68,9 @@ export interface ProvidersProps {
   updateProviderAction?: (
     input: UpdateProviderIn
   ) => Promise<UpdateProviderOut>;
+  createProviderAction?: (input: CreateProviderIn) => Promise<CreateProviderOut>;
+  parseCsvAction?: (formData: FormData) => Promise<ParseCsvResult>;
+  importFields?: ImportFieldDef[];
   /** The body the page used for its SSR ``/provider/search`` call.
    *  Forwarded as the filter envelope on bulk delete/update calls
    *  when the user is in ``selectAll=1`` mode — the server resolves
@@ -90,6 +96,9 @@ export default function Providers({
   initialColumnVisibility,
   deleteProviderAction,
   updateProviderAction,
+  createProviderAction,
+  parseCsvAction,
+  importFields,
   currentSearchBody,
   pageIndex,
   pageSize,
@@ -109,6 +118,7 @@ export default function Providers({
   // ``output.providers`` (see ``hydrate_provider_list_rows``).
   useProviderAi({});
 
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -1186,6 +1196,17 @@ export default function Providers({
           )}
         </div>
         <div className="flex items-center gap-2">
+          {parseCsvAction && importFields && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => setShowBulkImportDialog(true)}
+            >
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Import CSV
+            </Button>
+          )}
           <DataTableViewOptions
             table={table}
             hiddenColumns={["name", "description", "value", "departments", "models", "status", "updated_at"]}
@@ -1350,6 +1371,29 @@ export default function Providers({
           onChange={setBulkEditActiveStatus}
         />
       </BulkEditDialog>
+
+      {/* Bulk Import Dialog */}
+      {parseCsvAction && importFields && (
+        <BulkImport
+          open={showBulkImportDialog}
+          onClose={() => {
+            setShowBulkImportDialog(false);
+            router.refresh();
+          }}
+          fields={importFields}
+          artifactName="Providers"
+          parseCsvAction={parseCsvAction}
+          onSave={async (items) => {
+            if (!createProviderAction) throw new Error("Create action not available");
+            const providers = items.map((item) => ({
+              name: item["name"] as string | undefined,
+              description: item["description"] as string | undefined,
+              departments: item["departments"] as string[] | undefined,
+            }));
+            return createProviderAction({ body: { providers } } as CreateProviderIn);
+          }}
+        />
+      )}
 
     </div>
   );

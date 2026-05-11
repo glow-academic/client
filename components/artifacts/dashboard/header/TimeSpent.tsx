@@ -53,7 +53,7 @@ export default function TimeSpent({
 
   // Get chart colors and pick one based on colorIndex
   const chartColors = useChartColors();
-  const chartColor = chartColors[colorIndex % 5];
+  const chartColor = chartColors[colorIndex % 5] ?? chartColors[0] ?? "#f59e0b";
 
   const statusDotClass =
     status === "success"
@@ -66,14 +66,15 @@ export default function TimeSpent({
 
   // Format time for display
   const formatTime = (seconds: number) => {
-    if (seconds < 60) return `${seconds}s`;
-    if (seconds < 3600) {
-      const minutes = Math.floor(seconds / 60);
-      const remainingSeconds = seconds % 60;
+    const totalSeconds = Math.max(0, Math.round(seconds));
+    if (totalSeconds < 60) return `${totalSeconds}s`;
+    if (totalSeconds < 3600) {
+      const minutes = Math.floor(totalSeconds / 60);
+      const remainingSeconds = totalSeconds % 60;
       return `${minutes}m ${remainingSeconds}s`;
     }
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
     if (hours >= 24) {
       const days = Math.floor(hours / 24);
       const remainingHours = hours % 24;

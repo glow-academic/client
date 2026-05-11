@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Parameter from "@/components/artifacts/parameter/Parameter";
@@ -81,6 +82,32 @@ async function searchParameterGroups(query: string): Promise<GenerationsOut> {
 async function createParameterProblem(input: ProblemParameterIn): Promise<ProblemParameterOut> {
   "use server";
   return api.post("/parameter/problem", input);
+}
+
+/** Per-item export — scopes to a single ``parameter_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportParameterById(parameterId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/parameter/export", {
+    body: { parameter_id: parameterId },
+  } as unknown as InputOf<"/parameter/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshParameter(): Promise<unknown> {
+  "use server";
+  return api.post("/parameter/refresh", {
+    body: {},
+  } as unknown as InputOf<"/parameter/refresh", "post">);
 }
 
 /** ---- Request-scoped context fetch ----
@@ -181,7 +208,7 @@ export default async function ParameterEditPage({
     const [parameterDetail, context, draftsResult, groupResult] = await Promise.all([
       getParameter(input),
       getParameterContextById(parameterId) as Promise<ContextOut>,
-      api.post("/parameter/drafts", {}),
+      api.post("/parameter/drafts", { body: {} } as any),
       api.post("/parameter/group", { body: {} } as GroupParameterIn),
     ]);
 
@@ -208,7 +235,14 @@ export default async function ParameterEditPage({
               },
               { title: entityName },
             ],
-            toolbar: <SaveToolbar />,
+            toolbar: (
+              <ArtifactToolbarActions
+                leftSlot={<SaveToolbar />}
+                exportAction={exportParameterById.bind(null, parameterId)}
+                refreshAction={refreshParameter}
+                bffDownloadPrefix="/api/parameter/download"
+              />
+            ),
             panelProps: {
               artifactType: "parameter",
               initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -239,20 +273,30 @@ export default async function ParameterEditPage({
       </DraftProviderClient>
     );
   } catch (error: unknown) {
-    // Check if it's a 403 error (department access denied)
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="parameter"
-          redirectPath="/management/parameters"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/management/parameters/${parameterId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="parameter"
+            redirectPath="/management/parameters"
+          />
+        );
+      }
     }
     // Re-throw other errors
     throw error;

@@ -489,8 +489,10 @@ export default async function BenchmarkPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      (error.status === 401 || error.status === 403)
+      error.status === 401
     ) {
+      // 401 → not logged in. /benchmark has no single-resource concept,
+      // so 403 (wrong department) doesn't apply here — fall through and throw.
       return (
         <UnifiedAccessDenied
           reason="not-logged-in"

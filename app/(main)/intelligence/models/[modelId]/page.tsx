@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Model from "@/components/artifacts/model/Model";
@@ -68,6 +69,32 @@ async function patchModelDraft(
 async function createModelProblem(input: ProblemModelIn): Promise<ProblemModelOut> {
   "use server";
   return api.post("/model/problem", input);
+}
+
+/** Per-item export — scopes to a single ``model_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportModelById(modelId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/model/export", {
+    body: { model_id: modelId },
+  } as unknown as InputOf<"/model/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshModel(): Promise<unknown> {
+  "use server";
+  return api.post("/model/refresh", {
+    body: {},
+  } as unknown as InputOf<"/model/refresh", "post">);
 }
 
 /** ---- Request-scoped context fetch ----
@@ -192,7 +219,14 @@ export default async function ModelEditPage({
             { title: "Models", section: "models", url: "/intelligence/models" },
             { title: entityName },
           ]}
-          toolbar={<SaveToolbar />}
+          toolbar={
+            <ArtifactToolbarActions
+              leftSlot={<SaveToolbar />}
+              exportAction={exportModelById.bind(null, modelId)}
+              refreshAction={refreshModel}
+              bffDownloadPrefix="/api/model/download"
+            />
+          }
           panelProps={
             {
               artifactType: "model",
@@ -227,16 +261,27 @@ export default async function ModelEditPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType={"model" as any}
-          redirectPath="/intelligence/models"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/intelligence/models/${modelId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="model"
+            redirectPath="/intelligence/models"
+          />
+        );
+      }
     }
     throw error;
   }

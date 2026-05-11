@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Scenario from "@/components/artifacts/scenario/Scenario";
@@ -134,6 +135,32 @@ async function createScenarioProblem(input: ProblemScenarioIn): Promise<ProblemS
   return api.post("/scenario/problem", input);
 }
 
+/** Per-item export — scopes to a single ``scenario_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportScenarioById(scenarioId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/scenario/export", {
+    body: { scenario_id: scenarioId },
+  } as unknown as InputOf<"/scenario/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshScenario(): Promise<unknown> {
+  "use server";
+  return api.post("/scenario/refresh", {
+    body: {},
+  } as unknown as InputOf<"/scenario/refresh", "post">);
+}
+
 /** ---- Request-scoped context fetch ----
  * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
  * component share one network call per request. Server-only; not a
@@ -248,7 +275,7 @@ export default async function EditScenarioPage({
     const [scenarioDetail, context, draftsResult, groupResult] = await Promise.all([
       getScenario(input),
       getScenarioContextById(scenarioId) as Promise<ContextOut>,
-      api.post("/scenario/drafts", {}),
+      api.post("/scenario/drafts", { body: {} } as any),
       api.post(
         "/scenario/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupScenarioIn,
@@ -275,7 +302,14 @@ export default async function EditScenarioPage({
             { title: "Scenarios", section: "scenarios", url: "/training/scenarios" },
             { title: entityName },
           ]}
-          toolbar={<SaveToolbar />}
+          toolbar={
+            <ArtifactToolbarActions
+              leftSlot={<SaveToolbar />}
+              exportAction={exportScenarioById.bind(null, scenarioId)}
+              refreshAction={refreshScenario}
+              bffDownloadPrefix="/api/scenario/download"
+            />
+          }
           panelProps={{
             artifactType: "scenario",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -314,20 +348,30 @@ export default async function EditScenarioPage({
       </DraftProviderClient>
     );
   } catch (error: unknown) {
-    // Check if it's a 403 error (department access denied)
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="scenario"
-          redirectPath="/training/scenarios"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/training/scenarios/${scenarioId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="scenario"
+            redirectPath="/training/scenarios"
+          />
+        );
+      }
     }
     // Re-throw other errors
     throw error;

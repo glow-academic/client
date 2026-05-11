@@ -54,7 +54,11 @@ interface UnifiedAccessDeniedProps {
     | "video"
     | "eval"
     | "setting"
-    | "test";
+    | "test"
+    | "model"
+    | "tool"
+    | "profile"
+    | "auth";
   fullWidth?: boolean; // If true, use full-width container (for not-logged-in state)
 }
 
@@ -134,6 +138,14 @@ export function UnifiedAccessDenied({
           return "eval";
         case "test":
           return "test";
+        case "model":
+          return "model";
+        case "tool":
+          return "tool";
+        case "profile":
+          return "profile";
+        case "auth":
+          return "auth";
         default:
           return "resource";
       }
@@ -167,6 +179,14 @@ export function UnifiedAccessDenied({
           return "/management/evals";
         case "test":
           return "/benchmark";
+        case "model":
+          return "/intelligence/models";
+        case "tool":
+          return "/intelligence/tools";
+        case "profile":
+          return "/management/profiles";
+        case "auth":
+          return "/system/auth";
         default:
           return "/";
       }

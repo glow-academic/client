@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Agent from "@/components/artifacts/agent/Agent";
@@ -71,6 +72,32 @@ async function patchAgentDraft(
 async function createAgentProblem(input: ProblemAgentIn): Promise<ProblemAgentOut> {
   "use server";
   return api.post("/agent/problem", input);
+}
+
+/** Per-item export — scopes to a single ``agent_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportAgentById(agentId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/agent/export", {
+    body: { agent_id: agentId },
+  } as unknown as InputOf<"/agent/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshAgent(): Promise<unknown> {
+  "use server";
+  return api.post("/agent/refresh", {
+    body: {},
+  } as unknown as InputOf<"/agent/refresh", "post">);
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -220,7 +247,14 @@ export default async function AgentEditPage({
             { title: "Agents", section: "agents", url: "/intelligence/agents" },
             { title: entityName },
           ]}
-          toolbar={<SaveToolbar />}
+          toolbar={
+            <ArtifactToolbarActions
+              leftSlot={<SaveToolbar />}
+              exportAction={exportAgentById.bind(null, agentId)}
+              refreshAction={refreshAgent}
+              bffDownloadPrefix="/api/agent/download"
+            />
+          }
           panelProps={
             {
               artifactType: "agent",
@@ -254,16 +288,27 @@ export default async function AgentEditPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="agent"
-          redirectPath="/intelligence/agents"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/intelligence/agents/${agentId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="agent"
+            redirectPath="/intelligence/agents"
+          />
+        );
+      }
     }
     throw error;
   }

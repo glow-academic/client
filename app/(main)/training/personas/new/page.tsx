@@ -9,6 +9,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Persona from "@/components/artifacts/persona/Persona";
@@ -79,6 +80,35 @@ async function patchPersonaDraft(
 async function createPersonaProblem(input: ProblemPersonaIn): Promise<ProblemPersonaOut> {
   "use server";
   return api.post("/persona/problem", input);
+}
+
+/** Export-all — used by the /new page's Download button to fetch
+ *  the current full dataset as a CSV template. No per-item id
+ *  since the user hasn't created the new artifact yet. Cast through
+ *  ``unknown`` while openapi.json catches up to the file-modality
+ *  response shape. */
+async function exportPersonas(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/persona/export", {
+    body: {},
+  } as unknown as InputOf<"/persona/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshPersonas(): Promise<unknown> {
+  "use server";
+  return api.post("/persona/refresh", {
+    body: {},
+  } as unknown as InputOf<"/persona/refresh", "post">);
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -232,7 +262,14 @@ export default async function NewPersonaPage({
             { title: "Personas", section: "personas", url: "/training/personas" },
             { title: "New Persona" },
           ]}
-          toolbar={<SaveToolbar />}
+          toolbar={
+            <ArtifactToolbarActions
+              leftSlot={<SaveToolbar />}
+              exportAction={exportPersonas}
+              refreshAction={refreshPersonas}
+              bffDownloadPrefix="/api/persona/download"
+            />
+          }
           panelProps={{
             artifactType: "persona",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -270,15 +307,27 @@ export default async function NewPersonaPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/training/personas/new"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/training/personas/new"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="persona"
+            redirectPath="/training/personas"
+          />
+        );
+      }
     }
     throw error;
   }

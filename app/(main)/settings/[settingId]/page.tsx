@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Setting from "@/components/artifacts/setting/Setting";
@@ -87,6 +88,32 @@ async function searchSettingGroups(query: string): Promise<GenerationsOut> {
 async function createSettingProblem(input: ProblemSettingIn): Promise<ProblemSettingOut> {
   "use server";
   return api.post("/setting/problem", input);
+}
+
+/** Per-item export — scopes to a single ``setting_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportSettingById(settingId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/setting/export", {
+    body: { setting_id: settingId },
+  } as unknown as InputOf<"/setting/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshSetting(): Promise<unknown> {
+  "use server";
+  return api.post("/setting/refresh", {
+    body: {},
+  } as unknown as InputOf<"/setting/refresh", "post">);
 }
 
 async function decryptSetting(input: DecryptSettingIn): Promise<DecryptSettingOut> {
@@ -218,7 +245,14 @@ export default async function SettingEditPage({
             { title: "Settings", section: "settings", url: "/settings" },
             { title: entityName },
           ]}
-          toolbar={<SaveToolbar />}
+          toolbar={
+            <ArtifactToolbarActions
+              leftSlot={<SaveToolbar />}
+              exportAction={exportSettingById.bind(null, settingId)}
+              refreshAction={refreshSetting}
+              bffDownloadPrefix="/api/setting/download"
+            />
+          }
           panelProps={{
             artifactType: "setting",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -257,20 +291,30 @@ export default async function SettingEditPage({
       </DraftProviderClient>
     );
   } catch (error: unknown) {
-    // Check if it's a 403 error (department access denied)
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="setting"
-          redirectPath="/settings"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/settings/${settingId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="setting"
+            redirectPath="/settings"
+          />
+        );
+      }
     }
     // Re-throw other errors
     throw error;

@@ -7,7 +7,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
-import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import Evals from "@/components/artifacts/eval/Evals";
 
 import { api } from "@/lib/api/client";
@@ -20,6 +20,7 @@ import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { loadEvalsSearchParams } from "@/lib/search-params/evals";
 import { readViewCookie } from "@/lib/view-cookie";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
@@ -29,6 +30,8 @@ type DeleteEvalIn = InputOf<"/eval/delete", "post">;
 type DeleteEvalOut = OutputOf<"/eval/delete", "post">;
 type UpdateEvalIn = InputOf<"/eval/update", "post">;
 type UpdateEvalOut = OutputOf<"/eval/update", "post">;
+type CreateEvalIn = InputOf<"/eval/create", "post">;
+type CreateEvalOut = OutputOf<"/eval/create", "post">;
 type GroupEvalIn = InputOf<"/eval/group", "post">;
 type GroupEvalOut = OutputOf<"/eval/group", "post">;
 type GenerationsIn = InputOf<"/eval/generations", "post">;
@@ -73,6 +76,40 @@ async function deleteEval(input: DeleteEvalIn): Promise<DeleteEvalOut> {
 async function updateEval(input: UpdateEvalIn): Promise<UpdateEvalOut> {
   "use server";
   return api.post("/eval/update", input);
+}
+
+async function createEval(input: CreateEvalIn): Promise<CreateEvalOut> {
+  "use server";
+  return api.post("/eval/create", input);
+}
+
+async function exportEvals(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/eval/export", {
+    body: {},
+  } as unknown as InputOf<"/eval/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshEvals(): Promise<unknown> {
+  "use server";
+  return api.post("/eval/refresh", {
+    body: {},
+  } as unknown as InputOf<"/eval/refresh", "post">);
+}
+
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
+  "use server";
+  return api.post("/eval/csv", { formData });
 }
 
 
@@ -202,7 +239,14 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
           { title: "System", section: "system", url: "/system" },
           { title: "Evals" },
         ]}
-        toolbar={<NewArtifactButton label="New Eval" href="/system/evals/new" />}
+        toolbar={
+          <ArtifactToolbarActions
+            newButton={{ label: "New Eval", href: "/system/evals/new" }}
+            exportAction={exportEvals}
+            refreshAction={refreshEvals}
+            bffDownloadPrefix="/api/eval/download"
+          />
+        }
         panelProps={{
           artifactType: "eval",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -229,6 +273,9 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
             initialColumnVisibility={initialColumnVisibility}
             deleteEvalAction={deleteEval}
             updateEvalAction={updateEval}
+            createEvalAction={createEval}
+            parseCsvAction={parseCsv}
+            importFields={listData.import_fields ?? undefined}
             currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}
@@ -242,15 +289,27 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/system/evals"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/system/evals"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="eval"
+            redirectPath="/system/evals"
+          />
+        );
+      }
     }
     throw error;
   }
@@ -264,4 +323,6 @@ export type {
   EvalsListBody,
   UpdateEvalIn,
   UpdateEvalOut,
+  CreateEvalIn,
+  CreateEvalOut,
 };

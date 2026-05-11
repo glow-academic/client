@@ -289,10 +289,10 @@ function TimelineEventCard({ event, groupData }: { event: TimelineEvent; groupDa
 
   // Wrap linkable events
   if (eventType === "group" && event.entity_id) {
-    return <Link href={`/group/${event.entity_id}`} className="block hover:opacity-90 transition-opacity">{content}</Link>;
+    return <Link href={`/analytics/pricing/${event.entity_id}`} className="block hover:opacity-90 transition-opacity">{content}</Link>;
   }
   if (eventType === "chat" && event.entity_id) {
-    return <Link href={`/chat/${event.entity_id}`} className="block hover:opacity-90 transition-opacity">{content}</Link>;
+    return <Link href={`/attempt/${event.entity_id}`} className="block hover:opacity-90 transition-opacity">{content}</Link>;
   }
   if (eventType === "attempt" && event.entity_id) {
     return <Link href={`/attempt/${event.entity_id}`} className="block hover:opacity-90 transition-opacity">{content}</Link>;

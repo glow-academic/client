@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Provider from "@/components/artifacts/provider/Provider";
@@ -85,6 +86,35 @@ async function searchProviderGroups(query: string): Promise<GenerationsOut> {
 async function createProviderProblem(input: ProblemProviderIn): Promise<ProblemProviderOut> {
   "use server";
   return api.post("/provider/problem", input);
+}
+
+/** Export-all — used by the /new page's Download button to fetch
+ *  the current full dataset as a CSV template. No per-item id
+ *  since the user hasn't created the new artifact yet. Cast through
+ *  ``unknown`` while openapi.json catches up to the file-modality
+ *  response shape. */
+async function exportProviders(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/provider/export", {
+    body: {},
+  } as unknown as InputOf<"/provider/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshProviders(): Promise<unknown> {
+  "use server";
+  return api.post("/provider/refresh", {
+    body: {},
+  } as unknown as InputOf<"/provider/refresh", "post">);
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -207,7 +237,7 @@ export default async function NewProviderPage({
     } as GetProviderIn;
     const [providerDetailDefault, draftsResult, groupResult] = await Promise.all([
       getProviderDefault(input),
-      api.post("/provider/drafts", {}),
+      api.post("/provider/drafts", { body: {} } as any),
       api.post(
         "/provider/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupProviderIn,
@@ -231,7 +261,14 @@ export default async function NewProviderPage({
               { title: "Providers", section: "providers", url: "/intelligence/providers" },
               { title: "New Provider" },
             ],
-            toolbar: <SaveToolbar />,
+            toolbar: (
+              <ArtifactToolbarActions
+                leftSlot={<SaveToolbar />}
+                exportAction={exportProviders}
+                refreshAction={refreshProviders}
+                bffDownloadPrefix="/api/provider/download"
+              />
+            ),
             panelProps: {
               artifactType: "provider",
               initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -266,15 +303,27 @@ export default async function NewProviderPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/intelligence/providers/new"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/intelligence/providers/new"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="provider"
+            redirectPath="/intelligence/providers"
+          />
+        );
+      }
     }
     throw error;
   }

@@ -9,6 +9,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Document from "@/components/artifacts/document/Document";
@@ -115,6 +116,35 @@ async function uploadFile(formData: FormData): Promise<UploadResult> {
 async function createDocumentProblem(input: ProblemDocumentIn): Promise<ProblemDocumentOut> {
   "use server";
   return api.post("/document/problem", input);
+}
+
+/** Export-all — used by the /new page's Download button to fetch
+ *  the current full dataset as a CSV template. No per-item id
+ *  since the user hasn't created the new artifact yet. Cast through
+ *  ``unknown`` while openapi.json catches up to the file-modality
+ *  response shape. */
+async function exportDocuments(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/document/export", {
+    body: {},
+  } as unknown as InputOf<"/document/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshDocuments(): Promise<unknown> {
+  "use server";
+  return api.post("/document/refresh", {
+    body: {},
+  } as unknown as InputOf<"/document/refresh", "post">);
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -265,7 +295,14 @@ export default async function NewDocumentPage({
             { title: "Documents", section: "documents", url: "/management/documents" },
             { title: "New Document" },
           ]}
-          toolbar={<SaveToolbar />}
+          toolbar={
+            <ArtifactToolbarActions
+              leftSlot={<SaveToolbar />}
+              exportAction={exportDocuments}
+              refreshAction={refreshDocuments}
+              bffDownloadPrefix="/api/document/download"
+            />
+          }
           panelProps={{
             artifactType: "document",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -305,15 +342,27 @@ export default async function NewDocumentPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/management/documents/new"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/management/documents/new"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="document"
+            redirectPath="/management/documents"
+          />
+        );
+      }
     }
     throw error;
   }

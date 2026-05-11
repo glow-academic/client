@@ -6,7 +6,11 @@
  */
 "use client";
 
-import type { LeaderboardOut } from "@/app/(main)/leaderboard/page";
+import type {
+  LeaderboardOut,
+  LeaderboardSearchIn,
+  LeaderboardSearchOut,
+} from "@/app/(main)/leaderboard/page";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useProfile } from "@/contexts/profile-context";
 import { AnimatePresence, motion } from "framer-motion";
@@ -24,38 +28,31 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import AccoladeCard, { AccoladeCardSkeleton } from "./AccoladeCard";
 import LeaderboardTable, { LeaderboardTableSkeleton } from "./LeaderboardTable";
-type ProfileRole =
-  | "superadmin"
-  | "admin"
-  | "instructional"
-  | "member"
-  | "guest"
-  | "custom";
 
 type LeaderboardMetric = {
-  has_data: boolean | null;
-  method: string | null;
-  current_value: number | null;
+  has_data?: boolean | null;
+  method?: string | null;
+  current_value?: number | null;
   key_field?: string | null;
-  trend_data: string[] | null;
-  data_points: string[] | null;
-  hover: string | null;
+  trend_data?: string[] | null;
+  data_points?: string[] | null;
+  hover?: string | null;
 };
 
 type LeaderboardRow = {
-  profile_id: string | null;
-  name: string | null;
-  simulation_ids: string[] | null;
-  scenario_ids: string[] | null;
-  metrics_entry: {
-    total_attempts: LeaderboardMetric | null;
-    highest_score_avg: LeaderboardMetric | null;
-    messages_per_session: LeaderboardMetric | null;
-    persona_response_seconds: LeaderboardMetric | null;
-    time_spent_minutes: LeaderboardMetric | null;
-    improvement_rate_per_day: LeaderboardMetric | null;
-    perfect_score_count: LeaderboardMetric | null;
-    quickest_pass_minutes: LeaderboardMetric | null;
+  profile_id?: string | null;
+  name?: string | null;
+  simulation_ids?: string[] | null;
+  scenario_ids?: string[] | null;
+  metrics_entry?: {
+    total_attempts?: LeaderboardMetric | null;
+    highest_score_avg?: LeaderboardMetric | null;
+    messages_per_session?: LeaderboardMetric | null;
+    persona_response_seconds?: LeaderboardMetric | null;
+    time_spent_minutes?: LeaderboardMetric | null;
+    improvement_rate_per_day?: LeaderboardMetric | null;
+    perfect_score_count?: LeaderboardMetric | null;
+    quickest_pass_minutes?: LeaderboardMetric | null;
   } | null;
 };
 
@@ -74,31 +71,83 @@ const getInitials = (name: string | null): string => {
 export interface LeaderboardProps {
   cohortId?: string;
   leaderboardData: LeaderboardOut;
+  searchLeaderboardAction?: (
+    input: LeaderboardSearchIn,
+  ) => Promise<LeaderboardSearchOut>;
+  initialSearchInput?: LeaderboardSearchIn;
   initialColumnVisibility?: Record<string, boolean>;
 }
 
 export default function Leaderboard({
   cohortId,
   leaderboardData,
+  searchLeaderboardAction,
+  initialSearchInput,
   initialColumnVisibility,
 }: LeaderboardProps) {
   const { profile } = useProfile();
   const router = useRouter();
   const pathname = usePathname();
 
-  // Use the data directly from props (fetched server-side)
+  const [leaderboardRows, setLeaderboardRows] =
+    useState<LeaderboardSearchOut | null>(null);
+  const [isRowsLoading, setIsRowsLoading] = useState(
+    Boolean(searchLeaderboardAction && initialSearchInput),
+  );
+  const [isRowsError, setIsRowsError] = useState(false);
+
+  useEffect(() => {
+    if (!searchLeaderboardAction || !initialSearchInput) {
+      setIsRowsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsRowsLoading(true);
+    setIsRowsError(false);
+
+    searchLeaderboardAction(initialSearchInput)
+      .then((result) => {
+        if (!cancelled) setLeaderboardRows(result);
+      })
+      .catch(() => {
+        if (!cancelled) setIsRowsError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setIsRowsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchLeaderboardAction, initialSearchInput]);
+
+  // Rows come from the canonical leaderboard search server action.
   const hydratedRows = useMemo(() => {
-    return leaderboardData?.data || [];
-  }, [leaderboardData?.data]);
+    return leaderboardRows?.data || [];
+  }, [leaderboardRows?.data]);
+
+  const leaderboardResources = leaderboardRows?.resources;
+  const leaderboardSimulations = useMemo(
+    () => Object.values(leaderboardResources?.simulations ?? {}),
+    [leaderboardResources?.simulations],
+  );
+  const leaderboardScenarios = useMemo(
+    () => Object.values(leaderboardResources?.scenarios ?? {}),
+    [leaderboardResources?.scenarios],
+  );
 
   // Extract gradient colors from leaderboardData
+  const themeData = leaderboardData as LeaderboardOut & {
+    primary_color?: string | null;
+    accent_color?: string | null;
+  };
   const gradientStartColor =
-    leaderboardData?.primary_color || "rgba(59, 130, 246, 0.8)";
+    themeData?.primary_color || "rgba(59, 130, 246, 0.8)";
   const gradientEndColor =
-    leaderboardData?.accent_color || "rgba(59, 130, 246, 0.8)";
+    themeData?.accent_color || "rgba(59, 130, 246, 0.8)";
 
-  // Data is always available from server-side fetch
-  const isError = false;
+  const isError = isRowsError;
 
   // Randomize order on mount
   const [seed, setSeed] = useState(0);
@@ -136,7 +185,7 @@ export default function Leaderboard({
     const getCurrentValue = (
       metric:
         | {
-            has_data: boolean | null;
+            has_data?: boolean | null;
             current_value?: number | null;
           }
         | null
@@ -372,7 +421,7 @@ export default function Leaderboard({
     const getCurrentValue = (
       metric:
         | {
-            has_data: boolean | null;
+            has_data?: boolean | null;
             current_value?: number | null;
           }
         | null
@@ -527,7 +576,7 @@ export default function Leaderboard({
       const getCurrentValue = (
         metric:
           | {
-              has_data: boolean | null;
+              has_data?: boolean | null;
               current_value?: number | null;
             }
           | null
@@ -540,7 +589,7 @@ export default function Leaderboard({
       };
 
       const rows = hydratedRows
-        .filter((r) => r.metrics_entry !== null && r.profile_id !== null)
+        .filter((r) => r.metrics_entry != null && r.profile_id != null)
         .map((r) => ({
           id: r.profile_id!,
           name: r.name || r.profile_id!,
@@ -574,6 +623,10 @@ export default function Leaderboard({
     }
     return [];
   }, [hydratedRows]);
+
+  if (isRowsLoading) {
+    return <LeaderboardSkeleton />;
+  }
 
   if (isError || !hydratedRows.length) {
     return (
@@ -613,17 +666,9 @@ export default function Leaderboard({
                       accolade?.holder && accolade.holder.profile_id
                         ? {
                             id: accolade.holder.profile_id,
-                            name: accolade.holder.name ?? null,
-                            emails: [],
-                            primary_email: null,
-                            role: "guest" as ProfileRole,
+                            name: accolade.holder.name ?? "",
+                            role: "guest",
                             active: true,
-                            created_at: new Date().toISOString(),
-                            last_active: null,
-                            last_login: new Date().toISOString(),
-                            req_per_day: 0,
-                            updated_at: new Date().toISOString(),
-                            primary_department_id: null,
                           }
                         : undefined
                     }
@@ -789,19 +834,17 @@ export default function Leaderboard({
           <LeaderboardTable
             data={processedLeaderboardData}
             currentUserId={profile?.id || ""}
-            initialColumnVisibility={initialColumnVisibility}
-            {...(leaderboardData?.simulations && {
-              simulations: leaderboardData.simulations
+            {...(initialColumnVisibility && { initialColumnVisibility })}
+            {...(leaderboardSimulations.length > 0 && {
+              simulations: leaderboardSimulations
                 .filter(
                   (
                     s
                   ): s is {
-                    simulation_id: string | null;
-                    name: string | null;
-                    description: string | null;
-                    time_limit: number | null;
-                    department_ids: string[] | null;
-                  } => s.simulation_id !== null && s.name !== null
+                    simulation_id?: string | null;
+                    name?: string | null;
+                    description?: string | null;
+                  } => s.simulation_id != null && s.name != null
                 )
                 .map((s) => {
                   const result: {
@@ -815,16 +858,16 @@ export default function Leaderboard({
                   return result;
                 }),
             })}
-            {...(leaderboardData?.scenarios && {
-              scenarios: leaderboardData.scenarios
+            {...(leaderboardScenarios.length > 0 && {
+              scenarios: leaderboardScenarios
                 .filter(
                   (
                     s
                   ): s is {
-                    scenario_id: string | null;
-                    name: string | null;
-                    description: string | null;
-                  } => s.scenario_id !== null && s.name !== null
+                    scenario_id?: string | null;
+                    name?: string | null;
+                    description?: string | null;
+                  } => s.scenario_id != null && s.name != null
                 )
                 .map((s) => {
                   const result: {

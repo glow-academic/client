@@ -51,14 +51,13 @@ export function PricingRunsClient({
 
         // Add optional properties only when defined
         if (group.group_name) row.groupName = group.group_name;
-        if (group.profile_name) row.profileName = group.profile_name;
 
         return row;
       });
   }, [runsData?.items]);
 
   // Calculate total pages from total_count
-  const pageSize = 10; // Default page size
+  const pageSize = runsData?.page_size || 10;
   const totalPages = Math.ceil((runsData?.total_count || 0) / pageSize);
 
   return (
@@ -74,7 +73,7 @@ export function PricingRunsClient({
         actorOptions={[]}
         totalCount={runsData?.total_count || 0}
         totalPages={totalPages}
-        initialColumnVisibility={initialColumnVisibility}
+        {...(initialColumnVisibility && { initialColumnVisibility })}
       />
     </div>
   );

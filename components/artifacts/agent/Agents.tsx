@@ -5,7 +5,7 @@
  * 07/20/2025
  */
 "use client";
-import { AlertCircle, Brain, Check, Copy, Edit, Eye, Loader2, Pencil, Thermometer, Trash2, X } from "lucide-react";
+import { AlertCircle, Brain, Check, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Thermometer, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -21,7 +21,10 @@ import type {
   DuplicateAgentOut,
   UpdateAgentIn,
   UpdateAgentOut,
+  CreateAgentIn,
+  CreateAgentOut,
 } from "@/app/(main)/intelligence/agents/page";
+import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
@@ -68,6 +71,9 @@ export interface AgentsProps {
   ) => Promise<DuplicateAgentOut>;
   deleteAgentAction?: (input: DeleteAgentIn) => Promise<DeleteAgentOut>;
   updateAgentAction?: (input: UpdateAgentIn) => Promise<UpdateAgentOut>;
+  createAgentAction?: (input: CreateAgentIn) => Promise<CreateAgentOut>;
+  parseCsvAction?: (formData: FormData) => Promise<ParseCsvResult>;
+  importFields?: ImportFieldDef[];
   /** The body the page used for its SSR ``/agent/search`` call.
    *  Spread into bulk delete/update calls when the user is in
    *  ``selectAll=1`` mode — the server resolves matching rows
@@ -96,6 +102,9 @@ export default function Agents({
   duplicateAgentAction,
   deleteAgentAction,
   updateAgentAction,
+  createAgentAction,
+  parseCsvAction,
+  importFields,
   currentSearchBody,
   pageIndex,
   pageSize,
@@ -114,6 +123,7 @@ export default function Agents({
   });
 
   // Delete dialog state
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -1340,6 +1350,17 @@ export default function Agents({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {parseCsvAction && importFields && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setShowBulkImportDialog(true)}
+                >
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Import CSV
+                </Button>
+              )}
               <DataTableViewOptions
                 table={table}
                 hiddenColumns={["name", "model_id", "departments", "tools", "updated_at"]}
@@ -1543,6 +1564,29 @@ export default function Agents({
           onChange={setBulkEditMcpStatus}
         />
       </BulkEditDialog>
+
+      {/* Bulk Import Dialog */}
+      {parseCsvAction && importFields && (
+        <BulkImport
+          open={showBulkImportDialog}
+          onClose={() => {
+            setShowBulkImportDialog(false);
+            router.refresh();
+          }}
+          fields={importFields}
+          artifactName="Agents"
+          parseCsvAction={parseCsvAction}
+          onSave={async (items) => {
+            if (!createAgentAction) throw new Error("Create action not available");
+            const agents = items.map((item) => ({
+              name: item["name"] as string | undefined,
+              description: item["description"] as string | undefined,
+              departments: item["departments"] as string[] | undefined,
+            }));
+            return createAgentAction({ body: { agents } } as CreateAgentIn);
+          }}
+        />
+      )}
 
     </div>
   );

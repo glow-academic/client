@@ -9,6 +9,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Department from "@/components/artifacts/department/Department";
@@ -67,6 +68,35 @@ async function patchDepartmentDraft(
 async function createDepartmentProblem(input: ProblemDepartmentIn): Promise<ProblemDepartmentOut> {
   "use server";
   return api.post("/department/problem", input);
+}
+
+/** Export-all — used by the /new page's Download button to fetch
+ *  the current full dataset as a CSV template. No per-item id
+ *  since the user hasn't created the new artifact yet. Cast through
+ *  ``unknown`` while openapi.json catches up to the file-modality
+ *  response shape. */
+async function exportDepartments(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/department/export", {
+    body: {},
+  } as unknown as InputOf<"/department/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshDepartments(): Promise<unknown> {
+  "use server";
+  return api.post("/department/refresh", {
+    body: {},
+  } as unknown as InputOf<"/department/refresh", "post">);
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -183,7 +213,14 @@ export default async function NewDepartmentPage({
             { title: "Departments", section: "departments", url: "/system/departments" },
             { title: "New Department" },
           ]}
-          toolbar={<SaveToolbar />}
+          toolbar={
+            <ArtifactToolbarActions
+              leftSlot={<SaveToolbar />}
+              exportAction={exportDepartments}
+              refreshAction={refreshDepartments}
+              bffDownloadPrefix="/api/department/download"
+            />
+          }
           panelProps={{
             artifactType: "department",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -222,15 +259,27 @@ export default async function NewDepartmentPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/system/departments/new"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/system/departments/new"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="department"
+            redirectPath="/system/departments"
+          />
+        );
+      }
     }
     throw error;
   }

@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import Session from "@/components/artifacts/session/Session";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -67,6 +68,18 @@ async function searchSystemGenerations(input: SystemGenerationsIn): Promise<Syst
 async function createSessionProblem(input: ProblemSessionIn): Promise<ProblemSessionOut> {
   "use server";
   return api.post("/system/problem", input);
+}
+
+async function refreshSystem(): Promise<unknown> {
+  "use server";
+  // NOTE: `/system/refresh` is a Phase-A endpoint not yet in the
+  // generated OpenAPI types; cast through PathKey to match the same
+  // pattern used by the other analytics list pages until the next
+  // type-gen pass picks it up.
+  return api.post(
+    "/system/refresh" as Parameters<typeof api.post>[0],
+    { body: {} },
+  );
 }
 
 /** ---- Request-scoped context fetch ----
@@ -154,6 +167,11 @@ export default async function SessionDetailPage({
           { title: "Activity", section: "activity", url: "/analytics/activity" },
           { title: "Session" },
         ]}
+        toolbar={
+          <ArtifactToolbarActions
+            refreshAction={refreshSystem}
+          />
+        }
         panelProps={{
           artifactType: "session",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -181,8 +199,10 @@ export default async function SessionDetailPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      (error.status === 401 || error.status === 403)
+      error.status === 401
     ) {
+      // 401 → not logged in. Analytics pages have no single-resource concept,
+      // so 403 (wrong department) doesn't apply here — fall through and throw.
       return (
         <UnifiedAccessDenied
           reason="not-logged-in"

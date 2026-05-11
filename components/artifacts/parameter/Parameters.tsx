@@ -14,6 +14,7 @@ import {
   Copy,
   Edit,
   Eye,
+  FileSpreadsheet,
   List,
   Loader2,
   MapPin,
@@ -71,7 +72,10 @@ import type {
   ParametersListOut,
   UpdateParameterIn,
   UpdateParameterOut,
+  CreateParameterIn,
+  CreateParameterOut,
 } from "@/app/(main)/management/parameters/page";
+import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
@@ -92,6 +96,9 @@ export interface ParametersProps {
   updateParameterAction?: (
     input: UpdateParameterIn
   ) => Promise<UpdateParameterOut>;
+  createParameterAction?: (input: CreateParameterIn) => Promise<CreateParameterOut>;
+  parseCsvAction?: (formData: FormData) => Promise<ParseCsvResult>;
+  importFields?: ImportFieldDef[];
   /** The body the page used for its SSR ``/parameter/search`` call.
    *  Forwarded as filter fields on bulk delete/update calls when the
    *  user is in ``selectAll=1`` mode — the server resolves matching
@@ -112,11 +119,15 @@ export default function Parameters({
   duplicateParameterAction,
   deleteParameterAction,
   updateParameterAction,
+  createParameterAction,
+  parseCsvAction,
+  importFields,
   currentSearchBody,
 }: ParametersProps) {
   const router = useRouter();
   const { profile } = useProfile();
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
 
   useParameterAi({
     onComplete: () => router.refresh(),
@@ -1165,6 +1176,17 @@ export default function Parameters({
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {parseCsvAction && importFields && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setShowBulkImportDialog(true)}
+                  >
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    Import CSV
+                  </Button>
+                )}
                 <DataTableViewOptions
                   table={table}
                   hiddenColumns={["name", "updated_at", "scenarios", "fields", "departments"]}
@@ -1337,6 +1359,29 @@ export default function Parameters({
           onChange={setBulkEditActiveStatus}
         />
       </BulkEditDialog>
+
+      {/* Bulk Import Dialog */}
+      {parseCsvAction && importFields && (
+        <BulkImport
+          open={showBulkImportDialog}
+          onClose={() => {
+            setShowBulkImportDialog(false);
+            router.refresh();
+          }}
+          fields={importFields}
+          artifactName="Parameters"
+          parseCsvAction={parseCsvAction}
+          onSave={async (items) => {
+            if (!createParameterAction) throw new Error("Create action not available");
+            const parameters = items.map((item) => ({
+              name: item["name"] as string | undefined,
+              description: item["description"] as string | undefined,
+              departments: item["departments"] as string[] | undefined,
+            }));
+            return createParameterAction({ body: { parameters } } as CreateParameterIn);
+          }}
+        />
+      )}
 
     </div>
   );

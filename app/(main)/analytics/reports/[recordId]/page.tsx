@@ -49,7 +49,7 @@ const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function refreshReports(): Promise<void> {
   "use server";
-  await api.post("/attempt/report/refresh" as Parameters<typeof api.post>[0], { body: {} });
+  await api.post("/attempt/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
 async function getAttemptGroup(input: GroupRecordIn): Promise<GroupRecordOut> {
@@ -298,8 +298,10 @@ export default async function RecordPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      (error.status === 401 || error.status === 403)
+      error.status === 401
     ) {
+      // 401 → not logged in. Analytics pages have no single-resource concept,
+      // so 403 (wrong department) doesn't apply here — fall through and throw.
       return (
         <UnifiedAccessDenied
           reason="not-logged-in"

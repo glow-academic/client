@@ -9,6 +9,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Cohort from "@/components/artifacts/cohort/Cohort";
@@ -77,6 +78,35 @@ async function searchCohortGroups(query: string): Promise<GenerationsOut> {
 async function createCohortProblem(input: ProblemCohortIn): Promise<ProblemCohortOut> {
   "use server";
   return api.post("/cohort/problem", input);
+}
+
+/** Export-all — used by the /new page's Download button to fetch
+ *  the current full dataset as a CSV template. No per-item id
+ *  since the user hasn't created the new artifact yet. Cast through
+ *  ``unknown`` while openapi.json catches up to the file-modality
+ *  response shape. */
+async function exportCohorts(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/cohort/export", {
+    body: {},
+  } as unknown as InputOf<"/cohort/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshCohorts(): Promise<unknown> {
+  "use server";
+  return api.post("/cohort/refresh", {
+    body: {},
+  } as unknown as InputOf<"/cohort/refresh", "post">);
 }
 
 /** ---- Request-scoped context fetch ----
@@ -189,7 +219,7 @@ export default async function NewCohortPage({
 
     const [cohortData, draftsResult, groupResult] = await Promise.all([
       getCohortDefault(input),
-      api.post("/cohort/drafts", {}),
+      api.post("/cohort/drafts", { body: {} } as any),
       api.post("/cohort/group", { body: {} } as GroupCohortIn),
     ]);
 
@@ -210,7 +240,14 @@ export default async function NewCohortPage({
               { title: "Cohorts", section: "cohorts", url: "/training/cohorts" },
               { title: "New Cohort" },
             ],
-            toolbar: <SaveToolbar />,
+            toolbar: (
+              <ArtifactToolbarActions
+                leftSlot={<SaveToolbar />}
+                exportAction={exportCohorts}
+                refreshAction={refreshCohorts}
+                bffDownloadPrefix="/api/cohort/download"
+              />
+            ),
             panelProps: {
               artifactType: "cohort",
               initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -242,15 +279,27 @@ export default async function NewCohortPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/training/cohorts/new"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/training/cohorts/new"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="cohort"
+            redirectPath="/training/cohorts"
+          />
+        );
+      }
     }
     throw error;
   }

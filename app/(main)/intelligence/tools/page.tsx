@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
-import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import Tools from "@/components/artifacts/tool/Tools";
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
@@ -22,6 +22,7 @@ import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { loadToolsSearchParams } from "@/lib/search-params/tools";
 import { readViewCookie } from "@/lib/view-cookie";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
@@ -34,6 +35,8 @@ type DuplicateToolIn = InputOf<"/tool/duplicate", "post">;
 type DuplicateToolOut = OutputOf<"/tool/duplicate", "post">;
 type UpdateToolIn = InputOf<"/tool/update", "post">;
 type UpdateToolOut = OutputOf<"/tool/update", "post">;
+type CreateToolIn = InputOf<"/tool/create", "post">;
+type CreateToolOut = OutputOf<"/tool/create", "post">;
 type GroupToolIn = InputOf<"/tool/group", "post">;
 type GroupToolOut = OutputOf<"/tool/group", "post">;
 type GenerationsIn = InputOf<"/tool/generations", "post">;
@@ -91,6 +94,40 @@ async function duplicateTool(
 async function updateTool(input: UpdateToolIn): Promise<UpdateToolOut> {
   "use server";
   return api.post("/tool/update", input);
+}
+
+async function createTool(input: CreateToolIn): Promise<CreateToolOut> {
+  "use server";
+  return api.post("/tool/create", input);
+}
+
+async function exportTools(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/tool/export", {
+    body: {},
+  } as unknown as InputOf<"/tool/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshTools(): Promise<unknown> {
+  "use server";
+  return api.post("/tool/refresh", {
+    body: {},
+  } as unknown as InputOf<"/tool/refresh", "post">);
+}
+
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
+  "use server";
+  return api.post("/tool/csv", { formData });
 }
 
 
@@ -223,7 +260,14 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
           { title: "Tools" },
         ]}
-        toolbar={<NewArtifactButton label="New Tool" href="/intelligence/tools/new" />}
+        toolbar={
+          <ArtifactToolbarActions
+            newButton={{ label: "New Tool", href: "/intelligence/tools/new" }}
+            exportAction={exportTools}
+            refreshAction={refreshTools}
+            bffDownloadPrefix="/api/tool/download"
+          />
+        }
         panelProps={{
           artifactType: "tool",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -251,6 +295,9 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
             deleteToolAction={deleteTool}
             duplicateToolAction={duplicateTool}
             updateToolAction={updateTool}
+            createToolAction={createTool}
+            parseCsvAction={parseCsv}
+            importFields={listData.import_fields ?? undefined}
             currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}
@@ -265,15 +312,27 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/intelligence/tools"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/intelligence/tools"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="tool"
+            redirectPath="/intelligence/tools"
+          />
+        );
+      }
     }
     throw error;
   }
@@ -289,4 +348,6 @@ export type {
   ToolsListBody,
   UpdateToolIn,
   UpdateToolOut,
+  CreateToolIn,
+  CreateToolOut,
 };

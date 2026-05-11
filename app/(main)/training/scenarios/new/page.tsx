@@ -9,6 +9,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Scenario from "@/components/artifacts/scenario/Scenario";
@@ -125,6 +126,35 @@ async function createScenarioProblem(input: ProblemScenarioIn): Promise<ProblemS
   return api.post("/scenario/problem", input);
 }
 
+/** Export-all — used by the /new page's Download button to fetch
+ *  the current full dataset as a CSV template. No per-item id
+ *  since the user hasn't created the new artifact yet. Cast through
+ *  ``unknown`` while openapi.json catches up to the file-modality
+ *  response shape. */
+async function exportScenarios(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/scenario/export", {
+    body: {},
+  } as unknown as InputOf<"/scenario/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshScenarios(): Promise<unknown> {
+  "use server";
+  return api.post("/scenario/refresh", {
+    body: {},
+  } as unknown as InputOf<"/scenario/refresh", "post">);
+}
+
 /** ---- Request-scoped context fetch ----
  * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
  * component share one network call per request. Server-only; not a
@@ -231,7 +261,7 @@ export default async function NewScenarioPage({
         } : undefined,
       } as GetScenarioIn["body"],
     }),
-      api.post("/scenario/drafts", {}),
+      api.post("/scenario/drafts", { body: {} } as any),
       api.post(
         "/scenario/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupScenarioIn,
@@ -254,7 +284,14 @@ export default async function NewScenarioPage({
             { title: "Scenarios", section: "scenarios", url: "/training/scenarios" },
             { title: "New Scenario" },
           ]}
-          toolbar={<SaveToolbar />}
+          toolbar={
+            <ArtifactToolbarActions
+              leftSlot={<SaveToolbar />}
+              exportAction={exportScenarios}
+              refreshAction={refreshScenarios}
+              bffDownloadPrefix="/api/scenario/download"
+            />
+          }
           panelProps={{
             artifactType: "scenario",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -295,15 +332,27 @@ export default async function NewScenarioPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/training/scenarios/new"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/training/scenarios/new"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="scenario"
+            redirectPath="/training/scenarios"
+          />
+        );
+      }
     }
     throw error;
   }

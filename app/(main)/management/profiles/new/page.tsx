@@ -9,6 +9,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Profile from "@/components/artifacts/profile/Profile";
@@ -79,6 +80,35 @@ async function searchProfileGroups(query: string): Promise<GenerationsOut> {
 async function createProfileProblem(input: ProblemProfileIn): Promise<ProblemProfileOut> {
   "use server";
   return api.post("/profile/problem", input);
+}
+
+/** Export-all — used by the /new page's Download button to fetch
+ *  the current full dataset as a CSV template. No per-item id
+ *  since the user hasn't created the new artifact yet. Cast through
+ *  ``unknown`` while openapi.json catches up to the file-modality
+ *  response shape. */
+async function exportProfiles(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/profile/export", {
+    body: {},
+  } as unknown as InputOf<"/profile/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshProfiles(): Promise<unknown> {
+  "use server";
+  return api.post("/profile/refresh", {
+    body: {},
+  } as unknown as InputOf<"/profile/refresh", "post">);
 }
 
 /** ---- Page metadata ---- */
@@ -158,7 +188,7 @@ export default async function NewProfilePage({
 
     const [profileDetailDefault, draftsResult, groupResult] = await Promise.all([
       getProfileDefault(input),
-      api.post("/profile/drafts", {}),
+      api.post("/profile/drafts", { body: {} } as any),
       api.post("/profile/group", { body: {} } as GroupProfileIn),
     ]);
 
@@ -179,7 +209,14 @@ export default async function NewProfilePage({
               { title: "Profiles", section: "profiles", url: "/management/profiles" },
               { title: "New Profile" },
             ],
-            toolbar: <SaveToolbar />,
+            toolbar: (
+              <ArtifactToolbarActions
+                leftSlot={<SaveToolbar />}
+                exportAction={exportProfiles}
+                refreshAction={refreshProfiles}
+                bffDownloadPrefix="/api/profile/download"
+              />
+            ),
             panelProps: {
               artifactType: "profile",
               initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -212,15 +249,27 @@ export default async function NewProfilePage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/management/profiles/new"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/management/profiles/new"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="profile"
+            redirectPath="/management/profiles"
+          />
+        );
+      }
     }
     throw error;
   }

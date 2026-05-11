@@ -7,6 +7,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Eval from "@/components/artifacts/eval/Eval";
@@ -83,6 +84,32 @@ async function searchEvalGroups(query: string): Promise<GenerationsOut> {
 async function createEvalProblem(input: ProblemEvalIn): Promise<ProblemEvalOut> {
   "use server";
   return api.post("/eval/problem", input);
+}
+
+/** Per-item export — scopes to a single ``eval_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportEvalById(evalId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/eval/export", {
+    body: { eval_id: evalId },
+  } as unknown as InputOf<"/eval/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshEval(): Promise<unknown> {
+  "use server";
+  return api.post("/eval/refresh", {
+    body: {},
+  } as unknown as InputOf<"/eval/refresh", "post">);
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -214,7 +241,14 @@ export default async function EvalDetailPage({
             { title: "Evals", section: "evals", url: "/system/evals" },
             { title: entityName ?? "Eval" },
           ]}
-          toolbar={<SaveToolbar />}
+          toolbar={
+            <ArtifactToolbarActions
+              leftSlot={<SaveToolbar />}
+              exportAction={exportEvalById.bind(null, evalId)}
+              refreshAction={refreshEval}
+              bffDownloadPrefix="/api/eval/download"
+            />
+          }
           panelProps={{
             artifactType: "eval",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -259,16 +293,27 @@ export default async function EvalDetailPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="eval"
-          redirectPath="/system/evals"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/system/evals/${evalId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="eval"
+            redirectPath="/system/evals"
+          />
+        );
+      }
     }
     throw error;
   }

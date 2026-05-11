@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
-import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import Providers from "@/components/artifacts/provider/Providers";
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
@@ -22,6 +22,7 @@ import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { loadProvidersSearchParams } from "@/lib/search-params/providers";
 import { readViewCookie } from "@/lib/view-cookie";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
@@ -31,6 +32,8 @@ type DeleteProviderIn = InputOf<"/provider/delete", "post">;
 type DeleteProviderOut = OutputOf<"/provider/delete", "post">;
 type UpdateProviderIn = InputOf<"/provider/update", "post">;
 type UpdateProviderOut = OutputOf<"/provider/update", "post">;
+type CreateProviderIn = InputOf<"/provider/create", "post">;
+type CreateProviderOut = OutputOf<"/provider/create", "post">;
 type GroupProviderIn = InputOf<"/provider/group", "post">;
 type GroupProviderOut = OutputOf<"/provider/group", "post">;
 type GenerationsIn = InputOf<"/provider/generations", "post">;
@@ -89,6 +92,40 @@ async function updateProvider(
 ): Promise<UpdateProviderOut> {
   "use server";
   return api.post("/provider/update", input);
+}
+
+async function createProvider(input: CreateProviderIn): Promise<CreateProviderOut> {
+  "use server";
+  return api.post("/provider/create", input);
+}
+
+async function exportProviders(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/provider/export", {
+    body: {},
+  } as unknown as InputOf<"/provider/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshProviders(): Promise<unknown> {
+  "use server";
+  return api.post("/provider/refresh", {
+    body: {},
+  } as unknown as InputOf<"/provider/refresh", "post">);
+}
+
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
+  "use server";
+  return api.post("/provider/csv", { formData });
 }
 
 
@@ -221,7 +258,14 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
           { title: "Providers" },
         ]}
-        toolbar={<NewArtifactButton label="New Provider" href="/intelligence/providers/new" />}
+        toolbar={
+          <ArtifactToolbarActions
+            newButton={{ label: "New Provider", href: "/intelligence/providers/new" }}
+            exportAction={exportProviders}
+            refreshAction={refreshProviders}
+            bffDownloadPrefix="/api/provider/download"
+          />
+        }
         panelProps={{
           artifactType: "provider",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -248,6 +292,9 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
             initialColumnVisibility={initialColumnVisibility}
             deleteProviderAction={deleteProvider}
             updateProviderAction={updateProvider}
+            createProviderAction={createProvider}
+            parseCsvAction={parseCsv}
+            importFields={listData.import_fields ?? undefined}
             currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}
@@ -262,15 +309,27 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/intelligence/providers"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/intelligence/providers"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="provider"
+            redirectPath="/intelligence/providers"
+          />
+        );
+      }
     }
     throw error;
   }
@@ -284,4 +343,6 @@ export type {
   ProvidersListOut,
   UpdateProviderIn,
   UpdateProviderOut,
+  CreateProviderIn,
+  CreateProviderOut,
 };

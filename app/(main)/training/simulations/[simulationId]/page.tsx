@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Simulation from "@/components/artifacts/simulation/Simulation";
@@ -116,6 +117,32 @@ async function searchSimulationGenerations(input: GenerationsIn): Promise<Genera
 async function createSimulationProblem(input: ProblemSimulationIn): Promise<ProblemSimulationOut> {
   "use server";
   return api.post("/simulation/problem", input);
+}
+
+/** Per-item export — scopes to a single ``simulation_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportSimulationById(simulationId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/simulation/export", {
+    body: { simulation_id: simulationId },
+  } as unknown as InputOf<"/simulation/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshSimulation(): Promise<unknown> {
+  "use server";
+  return api.post("/simulation/refresh", {
+    body: {},
+  } as unknown as InputOf<"/simulation/refresh", "post">);
 }
 
 /** ---- Request-scoped context fetch ----
@@ -234,7 +261,14 @@ export default async function EditSimulationPage({
             { title: "Simulations", section: "simulations", url: "/training/simulations" },
             { title: entityName ?? "Simulation" },
           ]}
-          toolbar={<SaveToolbar />}
+          toolbar={
+            <ArtifactToolbarActions
+              leftSlot={<SaveToolbar />}
+              exportAction={exportSimulationById.bind(null, simulationId)}
+              refreshAction={refreshSimulation}
+              bffDownloadPrefix="/api/simulation/download"
+            />
+          }
           panelProps={{
             artifactType: "simulation",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -274,16 +308,27 @@ export default async function EditSimulationPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="simulation"
-          redirectPath="/training/simulations"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/training/simulations/${simulationId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="simulation"
+            redirectPath="/training/simulations"
+          />
+        );
+      }
     }
     throw error;
   }

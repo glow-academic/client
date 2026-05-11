@@ -9,6 +9,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Rubric from "@/components/artifacts/rubric/Rubric";
@@ -110,6 +111,17 @@ async function searchRubricGroups(query: string): Promise<GenerationsOut> {
 async function createRubricProblem(input: ProblemRubricIn): Promise<ProblemRubricOut> {
   "use server";
   return api.post("/rubric/problem", input);
+}
+
+// NOTE: /rubric/export REQUIRES a ``rubric_id`` and we don't have one
+// here on the /new page. Omit ``exportAction``/``bffDownloadPrefix`` so
+// the toolbar renders only [Drafts ▾] (leftSlot) + [↻ Refresh]. The
+// list/detail pages still wire export normally.
+async function refreshRubrics(): Promise<unknown> {
+  "use server";
+  return api.post("/rubric/refresh", {
+    body: {},
+  } as unknown as InputOf<"/rubric/refresh", "post">);
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -232,7 +244,12 @@ export default async function NewRubricPage({
               { title: "Rubrics", section: "rubrics", url: "/system/rubrics" },
               { title: "New Rubric" },
             ],
-            toolbar: <SaveToolbar />,
+            toolbar: (
+              <ArtifactToolbarActions
+                leftSlot={<SaveToolbar />}
+                refreshAction={refreshRubrics}
+              />
+            ),
             panelProps: {
               artifactType: "rubric",
               initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -267,15 +284,27 @@ export default async function NewRubricPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/system/rubrics/new"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/system/rubrics/new"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="rubric"
+            redirectPath="/system/rubrics"
+          />
+        );
+      }
     }
     throw error;
   }

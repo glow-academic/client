@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Field from "@/components/artifacts/field/Field";
@@ -91,6 +92,32 @@ async function searchFieldGroups(query: string): Promise<GenerationsOut> {
 async function createFieldProblem(input: ProblemFieldIn): Promise<ProblemFieldOut> {
   "use server";
   return api.post("/field/problem", input);
+}
+
+/** Per-item export — scopes to a single ``field_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportFieldById(fieldId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/field/export", {
+    body: { field_id: fieldId },
+  } as unknown as InputOf<"/field/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshField(): Promise<unknown> {
+  "use server";
+  return api.post("/field/refresh", {
+    body: {},
+  } as unknown as InputOf<"/field/refresh", "post">);
 }
 
 /** ---- Request-scoped context fetch ----
@@ -198,7 +225,7 @@ export default async function FieldEditPage({
     const [fieldData, context, draftsResult, groupResult] = await Promise.all([
       getField(input),
       getFieldContextById(fieldId) as Promise<ContextOut>,
-      api.post("/field/drafts", {}),
+      api.post("/field/drafts", { body: {} } as any),
       api.post("/field/group", { body: {} } as GroupFieldIn),
     ]);
     const snapshot = buildSnapshot(session, context.profile);
@@ -222,7 +249,14 @@ export default async function FieldEditPage({
               { title: "Fields", section: "fields", url: "/management/fields" },
               { title: entityName },
             ],
-            toolbar: <SaveToolbar />,
+            toolbar: (
+              <ArtifactToolbarActions
+                leftSlot={<SaveToolbar />}
+                exportAction={exportFieldById.bind(null, fieldId)}
+                refreshAction={refreshField}
+                bffDownloadPrefix="/api/field/download"
+              />
+            ),
             panelProps: {
               artifactType: "field",
               initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -257,16 +291,27 @@ export default async function FieldEditPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="field"
-          redirectPath="/management/fields"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/management/fields/${fieldId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="field"
+            redirectPath="/management/fields"
+          />
+        );
+      }
     }
     throw error;
   }

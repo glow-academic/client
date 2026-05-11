@@ -160,11 +160,13 @@ export default async function ActivityPage({
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "activity",
-          createFeedback: createActivityProblem,
+          createFeedback: createActivityProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Analytics", section: "analytics", url: "/analytics" },
@@ -188,9 +190,13 @@ export default async function ActivityPage({
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          prompts: context.prompts?.prompts,
-          getGroupAction: getSystemGroup as PanelProps["getGroupAction"],
-          searchGenerationsAction: searchSystemGenerations as PanelProps["searchGenerationsAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getSystemGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
+          searchGenerationsAction: searchSystemGenerations as unknown as NonNullable<
+            PanelProps["searchGenerationsAction"]
+          >,
         }}
       >
         <div className="space-y-6 px-4" data-page="activity-index">
@@ -209,8 +215,10 @@ export default async function ActivityPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      (error.status === 401 || error.status === 403)
+      error.status === 401
     ) {
+      // 401 → not logged in. Analytics pages have no single-resource concept,
+      // so 403 (wrong department) doesn't apply here — fall through and throw.
       return (
         <UnifiedAccessDenied
           reason="not-logged-in"
@@ -225,7 +233,7 @@ export default async function ActivityPage({
 /** ---- Strongly-typed server actions ---- */
 async function refreshActivity(): Promise<void> {
   "use server";
-  await api.post("/system/activity/refresh" as Parameters<typeof api.post>[0], { body: {} });
+  await api.post("/system/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
 async function getSystemGroup(input: SystemGroupIn): Promise<SystemGroupOut> {

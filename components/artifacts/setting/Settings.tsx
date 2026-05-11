@@ -4,7 +4,7 @@
  * List-only component following Personas.tsx pattern
  */
 "use client";
-import { AlertCircle, Check, Edit, Eye, Loader2, Pencil, Settings as SettingsIcon, Trash2, X } from "lucide-react";
+import { AlertCircle, Check, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Settings as SettingsIcon, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
@@ -34,7 +34,10 @@ import type {
   DeleteSettingOut,
   UpdateSettingIn,
   UpdateSettingOut,
+  CreateSettingIn,
+  CreateSettingOut,
 } from "@/app/(main)/settings/page";
+import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
@@ -57,6 +60,9 @@ export interface SettingsProps {
   initialColumnVisibility?: VisibilityState;
   deleteSettingAction?: (input: DeleteSettingIn) => Promise<DeleteSettingOut>;
   updateSettingAction?: (input: UpdateSettingIn) => Promise<UpdateSettingOut>;
+  createSettingAction?: (input: CreateSettingIn) => Promise<CreateSettingOut>;
+  parseCsvAction?: (formData: FormData) => Promise<ParseCsvResult>;
+  importFields?: ImportFieldDef[];
   /** The body the page used for its SSR ``/setting/search`` call.
    *  Forwarded as the filter envelope on bulk delete/update calls
    *  when the user is in ``selectAll=1`` mode — the server resolves
@@ -85,6 +91,9 @@ export default function Settings({
   initialColumnVisibility,
   deleteSettingAction,
   updateSettingAction,
+  createSettingAction,
+  parseCsvAction,
+  importFields,
   currentSearchBody,
   totalCount,
 }: SettingsProps) {
@@ -96,6 +105,7 @@ export default function Settings({
   });
 
   // Table state
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useColumnVisibility(
     "settings",
@@ -1029,6 +1039,17 @@ export default function Settings({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {parseCsvAction && importFields && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => setShowBulkImportDialog(true)}
+              >
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Import CSV
+              </Button>
+            )}
             <DataTableViewOptions
               table={table}
               hiddenColumns={["name", "description", "active", "created_at", "departments", "provider_ids", "auth_ids", "system_ids"]}
@@ -1189,6 +1210,29 @@ export default function Settings({
           onChange={setBulkEditActiveStatus}
         />
       </BulkEditDialog>
+
+      {/* Bulk Import Dialog */}
+      {parseCsvAction && importFields && (
+        <BulkImport
+          open={showBulkImportDialog}
+          onClose={() => {
+            setShowBulkImportDialog(false);
+            router.refresh();
+          }}
+          fields={importFields}
+          artifactName="Settings"
+          parseCsvAction={parseCsvAction}
+          onSave={async (items) => {
+            if (!createSettingAction) throw new Error("Create action not available");
+            const settings = items.map((item) => ({
+              name: item["name"] as string | undefined,
+              description: item["description"] as string | undefined,
+              departments: item["departments"] as string[] | undefined,
+            }));
+            return createSettingAction({ body: { settings } } as CreateSettingIn);
+          }}
+        />
+      )}
     </div>
   );
 }

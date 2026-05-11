@@ -8,7 +8,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
-import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { Scenarios } from "@/components/artifacts/scenario/Scenarios";
 
 import { api } from "@/lib/api/client";
@@ -101,6 +101,30 @@ async function createScenario(input: CreateScenarioIn): Promise<CreateScenarioOu
 async function updateScenario(input: UpdateScenarioIn): Promise<UpdateScenarioOut> {
   "use server";
   return api.post("/scenario/update", input);
+}
+
+async function exportScenarios(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/scenario/export", {
+    body: {},
+  } as unknown as InputOf<"/scenario/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshScenarios(): Promise<unknown> {
+  "use server";
+  return api.post("/scenario/refresh", {
+    body: {},
+  } as unknown as InputOf<"/scenario/refresh", "post">);
 }
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
@@ -240,7 +264,14 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
           { title: "Training", section: "training", url: "/training" },
           { title: "Scenarios" },
         ]}
-        toolbar={<NewArtifactButton label="New Scenario" href="/training/scenarios/new" />}
+        toolbar={
+          <ArtifactToolbarActions
+            newButton={{ label: "New Scenario", href: "/training/scenarios/new" }}
+            exportAction={exportScenarios}
+            refreshAction={refreshScenarios}
+            bffDownloadPrefix="/api/scenario/download"
+          />
+        }
         panelProps={{
           artifactType: "scenario",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -287,15 +318,27 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/training/scenarios"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/training/scenarios"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="scenario"
+            redirectPath="/training/scenarios"
+          />
+        );
+      }
     }
     throw error;
   }

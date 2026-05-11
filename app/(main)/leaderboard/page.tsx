@@ -26,6 +26,8 @@ import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type LeaderboardIn = InputOf<"/attempt/leaderboard/get", "post">;
 type LeaderboardOut = OutputOf<"/attempt/leaderboard/get", "post">;
+type LeaderboardSearchIn = InputOf<"/attempt/leaderboard/search", "post">;
+type LeaderboardSearchOut = OutputOf<"/attempt/leaderboard/search", "post">;
 type GenerationsIn = InputOf<"/attempt/generations", "post">;
 type GenerationsOut = OutputOf<"/attempt/generations", "post">;
 type GroupLeaderboardIn = InputOf<"/attempt/group", "post">;
@@ -64,6 +66,11 @@ async function refreshLeaderboard(): Promise<void> {
 async function createLeaderboardProblem(input: ProblemLeaderboardIn): Promise<ProblemLeaderboardOut> {
   "use server";
   return api.post("/attempt/problem", input);
+}
+
+async function searchLeaderboardRows(input: LeaderboardSearchIn): Promise<LeaderboardSearchOut> {
+  "use server";
+  return api.post("/attempt/leaderboard/search", input);
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -130,23 +137,35 @@ export default async function LeaderboardPage({
 
     // Parse search params via nuqs loader
     const q = loadLeaderboardSearchParams(await searchParams);
+    const simulationFilters = q.simulationFilters ?? ["general"];
 
     // Read view cookie for column visibility
     const initialColumnVisibility = await readViewCookie("leaderboard");
 
-    // Fetch leaderboard data and group in parallel
+    const leaderboardSearchInput = {
+      body: {
+        ...(q.startDate && { start_date: q.startDate }),
+        ...(q.endDate && { end_date: q.endDate }),
+        ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
+        ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
+        simulation_filters: simulationFilters,
+        sort_by: "highest_score",
+        sort_order: "desc",
+        page_limit: 50,
+        page_offset: 0,
+      },
+    } as LeaderboardSearchIn;
+
+    // Fetch leaderboard section data and group in parallel. Rows are loaded
+    // through the server action passed to the client component.
     const [leaderboardData, groupResult] = await Promise.all([
       getLeaderboard({
         body: {
-          start_date: q.startDate ?? undefined,
-          end_date: q.endDate ?? undefined,
-          cohort_ids: q.cohortIds ?? undefined,
-          department_ids: q.departmentIds ?? undefined,
-          simulation_filters: q.simulationFilters ?? undefined,
-          sort_by: "highest_score",
-          sort_order: "desc",
-          page_limit: 50,
-          page_offset: 0,
+          ...(q.startDate && { start_date: q.startDate }),
+          ...(q.endDate && { end_date: q.endDate }),
+          ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
+          ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
+          simulation_filters: simulationFilters,
         },
       }),
       api.post(
@@ -162,11 +181,13 @@ export default async function LeaderboardPage({
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "leaderboard",
-          createFeedback: createLeaderboardProblem,
+          createFeedback: createLeaderboardProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Leaderboard", section: "leaderboard", url: "/leaderboard" },
@@ -189,14 +210,23 @@ export default async function LeaderboardPage({
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          prompts: context.prompts?.prompts,
-          getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getAttemptGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
           searchGenerationsAction:
-            searchAttemptGenerations as PanelProps["searchGenerationsAction"],
+            searchAttemptGenerations as unknown as NonNullable<
+              PanelProps["searchGenerationsAction"]
+            >,
         }}
       >
         <div className="space-y-6 px-4" data-page="leaderboard-index">
-          <Leaderboard leaderboardData={leaderboardData} initialColumnVisibility={initialColumnVisibility} />
+          <Leaderboard
+            leaderboardData={leaderboardData}
+            searchLeaderboardAction={searchLeaderboardRows}
+            initialSearchInput={leaderboardSearchInput}
+            {...(initialColumnVisibility && { initialColumnVisibility })}
+          />
         </div>
       </FullPageLayout>
     );
@@ -205,8 +235,10 @@ export default async function LeaderboardPage({
       error &&
       typeof error === "object" &&
       "status" in error &&
-      (error.status === 401 || error.status === 403)
+      error.status === 401
     ) {
+      // 401 → not logged in. /leaderboard has no single-resource concept,
+      // so 403 (wrong department) doesn't apply here — fall through and throw.
       return (
         <UnifiedAccessDenied
           reason="not-logged-in"
@@ -219,4 +251,4 @@ export default async function LeaderboardPage({
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { LeaderboardIn, LeaderboardOut };
+export type { LeaderboardIn, LeaderboardOut, LeaderboardSearchIn, LeaderboardSearchOut };

@@ -8,7 +8,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
-import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import Fields from "@/components/artifacts/field/Fields";
 
 import { api } from "@/lib/api/client";
@@ -21,6 +21,7 @@ import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
 import { loadFieldsSearchParams } from "@/lib/search-params/fields";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
@@ -32,6 +33,8 @@ type DeleteFieldIn = InputOf<"/field/delete", "post">;
 type DeleteFieldOut = OutputOf<"/field/delete", "post">;
 type UpdateFieldIn = InputOf<"/field/update", "post">;
 type UpdateFieldOut = OutputOf<"/field/update", "post">;
+type CreateFieldIn = InputOf<"/field/create", "post">;
+type CreateFieldOut = OutputOf<"/field/create", "post">;
 type GroupFieldIn = InputOf<"/field/group", "post">;
 type GroupFieldOut = OutputOf<"/field/group", "post">;
 type GenerationsIn = InputOf<"/field/generations", "post">;
@@ -96,6 +99,40 @@ async function deleteField(input: DeleteFieldIn): Promise<DeleteFieldOut> {
 async function updateField(input: UpdateFieldIn): Promise<UpdateFieldOut> {
   "use server";
   return api.post("/field/update", input);
+}
+
+async function createField(input: CreateFieldIn): Promise<CreateFieldOut> {
+  "use server";
+  return api.post("/field/create", input);
+}
+
+async function exportFields(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/field/export", {
+    body: {},
+  } as unknown as InputOf<"/field/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshFields(): Promise<unknown> {
+  "use server";
+  return api.post("/field/refresh", {
+    body: {},
+  } as unknown as InputOf<"/field/refresh", "post">);
+}
+
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
+  "use server";
+  return api.post("/field/csv", { formData });
 }
 
 
@@ -207,7 +244,14 @@ export default async function FieldsPage({ searchParams }: FieldsPageProps) {
           { title: "Management", section: "management", url: "/management" },
           { title: "Fields" },
         ]}
-        toolbar={<NewArtifactButton label="New Field" href="/management/fields/new" />}
+        toolbar={
+          <ArtifactToolbarActions
+            newButton={{ label: "New Field", href: "/management/fields/new" }}
+            exportAction={exportFields}
+            refreshAction={refreshFields}
+            bffDownloadPrefix="/api/field/download"
+          />
+        }
         panelProps={{
           artifactType: "field",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -235,6 +279,9 @@ export default async function FieldsPage({ searchParams }: FieldsPageProps) {
             duplicateFieldAction={duplicateField}
             deleteFieldAction={deleteField}
             updateFieldAction={updateField}
+            createFieldAction={createField}
+            parseCsvAction={parseCsv}
+            importFields={listData.import_fields ?? undefined}
             currentSearchBody={body}
           />
         </div>
@@ -244,15 +291,27 @@ export default async function FieldsPage({ searchParams }: FieldsPageProps) {
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/management/fields"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/management/fields"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="field"
+            redirectPath="/management/fields"
+          />
+        );
+      }
     }
     throw error;
   }
@@ -268,4 +327,6 @@ export type {
   DuplicateFieldOut,
   UpdateFieldIn,
   UpdateFieldOut,
+  CreateFieldIn,
+  CreateFieldOut,
 };

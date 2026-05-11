@@ -8,7 +8,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
-import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import Documents from "@/components/artifacts/document/Documents";
 
 import { api } from "@/lib/api/client";
@@ -21,6 +21,7 @@ import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
 import { loadDocumentsSearchParams } from "@/lib/search-params/documents";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
@@ -31,6 +32,8 @@ type DeleteDocumentIn = InputOf<"/document/delete", "post">;
 type DeleteDocumentOut = OutputOf<"/document/delete", "post">;
 type UpdateDocumentIn = InputOf<"/document/update", "post">;
 type UpdateDocumentOut = OutputOf<"/document/update", "post">;
+type CreateDocumentIn = InputOf<"/document/create", "post">;
+type CreateDocumentOut = OutputOf<"/document/create", "post">;
 // GenerateTemplate types removed - now using WebSocket
 type GenerateTemplateIn = never;
 type GenerateTemplateOut = never;
@@ -82,6 +85,40 @@ async function updateDocument(
 ): Promise<UpdateDocumentOut> {
   "use server";
   return api.post("/document/update", input);
+}
+
+async function createDocument(input: CreateDocumentIn): Promise<CreateDocumentOut> {
+  "use server";
+  return api.post("/document/create", input);
+}
+
+async function exportDocuments(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/document/export", {
+    body: {},
+  } as unknown as InputOf<"/document/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshDocuments(): Promise<unknown> {
+  "use server";
+  return api.post("/document/refresh", {
+    body: {},
+  } as unknown as InputOf<"/document/refresh", "post">);
+}
+
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
+  "use server";
+  return api.post("/document/csv", { formData });
 }
 
 
@@ -195,7 +232,14 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
           { title: "Management", section: "management", url: "/management" },
           { title: "Documents" },
         ]}
-        toolbar={<NewArtifactButton label="New Document" href="/management/documents/new" />}
+        toolbar={
+          <ArtifactToolbarActions
+            newButton={{ label: "New Document", href: "/management/documents/new" }}
+            exportAction={exportDocuments}
+            refreshAction={refreshDocuments}
+            bffDownloadPrefix="/api/document/download"
+          />
+        }
         panelProps={{
           artifactType: "document",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -222,6 +266,9 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
             initialColumnVisibility={initialColumnVisibility}
             deleteDocumentAction={deleteDocument}
             updateDocumentAction={updateDocument}
+            createDocumentAction={createDocument}
+            parseCsvAction={parseCsv}
+            importFields={listData.import_fields ?? undefined}
             currentSearchBody={body}
           />
         </div>
@@ -231,15 +278,27 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/management/documents"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/management/documents"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="document"
+            redirectPath="/management/documents"
+          />
+        );
+      }
     }
     throw error;
   }
@@ -256,4 +315,6 @@ export type {
   GenerateTemplateOut,
   UpdateDocumentIn,
   UpdateDocumentOut,
+  CreateDocumentIn,
+  CreateDocumentOut,
 };

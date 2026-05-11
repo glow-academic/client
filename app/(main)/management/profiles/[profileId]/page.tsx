@@ -167,7 +167,7 @@ export default async function ProfileEditPage({
     const [profileDetail, context, draftsResult, groupResult] = await Promise.all([
       getProfile(input),
       getProfileContextById(profileId) as Promise<ContextOut>,
-      api.post("/profile/drafts", {}),
+      api.post("/profile/drafts", { body: {} } as any),
       api.post("/profile/group", { body: {} } as GroupProfileIn),
     ]);
     const snapshot = buildSnapshot(session, context.profile);
@@ -226,16 +226,27 @@ export default async function ProfileEditPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="department"
-          redirectPath="/management/profiles"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/management/profiles/${profileId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="profile"
+            redirectPath="/management/profiles"
+          />
+        );
+      }
     }
     throw error;
   }

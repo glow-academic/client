@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
 import Tool from "@/components/artifacts/tool/Tool";
@@ -82,6 +83,35 @@ async function searchToolGroups(query: string): Promise<GenerationsOut> {
 async function createToolProblem(input: ProblemToolIn): Promise<ProblemToolOut> {
   "use server";
   return api.post("/tool/problem", input);
+}
+
+/** Export-all — used by the /new page's Download button to fetch
+ *  the current full dataset as a CSV template. No per-item id
+ *  since the user hasn't created the new artifact yet. Cast through
+ *  ``unknown`` while openapi.json catches up to the file-modality
+ *  response shape. */
+async function exportTools(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/tool/export", {
+    body: {},
+  } as unknown as InputOf<"/tool/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshTools(): Promise<unknown> {
+  "use server";
+  return api.post("/tool/refresh", {
+    body: {},
+  } as unknown as InputOf<"/tool/refresh", "post">);
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -230,7 +260,14 @@ export default async function NewToolPage({
         { title: "Tools", section: "tools", url: "/intelligence/tools" },
         { title: "New Tool" },
       ],
-      toolbar: <SaveToolbar />,
+      toolbar: (
+        <ArtifactToolbarActions
+          leftSlot={<SaveToolbar />}
+          exportAction={exportTools}
+          refreshAction={refreshTools}
+          bffDownloadPrefix="/api/tool/download"
+        />
+      ),
       panelProps: {
         artifactType: "tool",
         initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -268,15 +305,27 @@ export default async function NewToolPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/intelligence/tools/new"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/intelligence/tools/new"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="tool"
+            redirectPath="/intelligence/tools"
+          />
+        );
+      }
     }
     throw error;
   }

@@ -8,7 +8,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
-import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import Rubrics from "@/components/artifacts/rubric/Rubrics";
 
 import { api } from "@/lib/api/client";
@@ -21,6 +21,7 @@ import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { loadRubricsSearchParams } from "@/lib/search-params/rubrics";
 import { readViewCookie } from "@/lib/view-cookie";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
@@ -32,6 +33,8 @@ type DeleteRubricIn = InputOf<"/rubric/delete", "post">;
 type DeleteRubricOut = OutputOf<"/rubric/delete", "post">;
 type UpdateRubricIn = InputOf<"/rubric/update", "post">;
 type UpdateRubricOut = OutputOf<"/rubric/update", "post">;
+type CreateRubricIn = InputOf<"/rubric/create", "post">;
+type CreateRubricOut = OutputOf<"/rubric/create", "post">;
 type GroupRubricIn = InputOf<"/rubric/group", "post">;
 type GroupRubricOut = OutputOf<"/rubric/group", "post">;
 type GenerationsIn = InputOf<"/rubric/generations", "post">;
@@ -87,6 +90,32 @@ async function updateRubric(
 ): Promise<UpdateRubricOut> {
   "use server";
   return api.post("/rubric/update", input);
+}
+
+async function createRubric(input: CreateRubricIn): Promise<CreateRubricOut> {
+  "use server";
+  return api.post("/rubric/create", input);
+}
+
+async function refreshRubrics(): Promise<unknown> {
+  "use server";
+  return api.post("/rubric/refresh", {
+    body: {},
+  } as unknown as InputOf<"/rubric/refresh", "post">);
+}
+
+// Rubric export now follows the canonical file modality: server
+// returns {file_id, file_name, row_count} (PDF lives on disk, served
+// via /api/rubric/download/{file_id}). The export body needs a
+// ``rubric_id`` — but the toolbar's bulk Download button has no
+// specific rubric to target. Until we wire per-row download, this
+// list-level action is hidden by omitting ``exportAction``. Per-row
+// download buttons on individual rubrics still hit /rubric/export
+// directly with their rubric_id.
+
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
+  "use server";
+  return api.post("/rubric/csv", { formData });
 }
 
 
@@ -218,7 +247,12 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
           { title: "System", section: "system", url: "/system" },
           { title: "Rubrics" },
         ]}
-        toolbar={<NewArtifactButton label="New Rubric" href="/system/rubrics/new" />}
+        toolbar={
+          <ArtifactToolbarActions
+            newButton={{ label: "New Rubric", href: "/system/rubrics/new" }}
+            refreshAction={refreshRubrics}
+          />
+        }
         panelProps={{
           artifactType: "rubric",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -246,6 +280,9 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
             duplicateRubricAction={duplicateRubric}
             deleteRubricAction={deleteRubric}
             updateRubricAction={updateRubric}
+            createRubricAction={createRubric}
+            parseCsvAction={parseCsv}
+            importFields={listData.import_fields ?? undefined}
             currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}
@@ -260,15 +297,27 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/system/rubrics"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/system/rubrics"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="rubric"
+            redirectPath="/system/rubrics"
+          />
+        );
+      }
     }
     throw error;
   }
@@ -283,5 +332,7 @@ export type {
   RubricsListOut,
   UpdateRubricIn,
   UpdateRubricOut,
+  CreateRubricIn,
+  CreateRubricOut,
   RubricsListBody,
 };

@@ -8,7 +8,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
-import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { Simulations } from "@/components/artifacts/simulation/Simulations";
 
 import { api } from "@/lib/api/client";
@@ -101,6 +101,30 @@ async function createSimulation(input: CreateSimulationIn): Promise<CreateSimula
 async function updateSimulation(input: UpdateSimulationIn): Promise<UpdateSimulationOut> {
   "use server";
   return api.post("/simulation/update", input);
+}
+
+async function exportSimulations(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/simulation/export", {
+    body: {},
+  } as unknown as InputOf<"/simulation/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshSimulations(): Promise<unknown> {
+  "use server";
+  return api.post("/simulation/refresh", {
+    body: {},
+  } as unknown as InputOf<"/simulation/refresh", "post">);
 }
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
@@ -240,7 +264,14 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
           { title: "Training", section: "training", url: "/training" },
           { title: "Simulations" },
         ]}
-        toolbar={<NewArtifactButton label="New Simulation" href="/training/simulations/new" />}
+        toolbar={
+          <ArtifactToolbarActions
+            newButton={{ label: "New Simulation", href: "/training/simulations/new" }}
+            exportAction={exportSimulations}
+            refreshAction={refreshSimulations}
+            bffDownloadPrefix="/api/simulation/download"
+          />
+        }
         panelProps={{
           artifactType: "simulation",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -287,15 +318,27 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/training/simulations"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/training/simulations"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="simulation"
+            redirectPath="/training/simulations"
+          />
+        );
+      }
     }
     throw error;
   }

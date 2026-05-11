@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Cohort from "@/components/artifacts/cohort/Cohort";
@@ -77,6 +78,32 @@ async function searchCohortGroups(query: string): Promise<GenerationsOut> {
 async function createCohortProblem(input: ProblemCohortIn): Promise<ProblemCohortOut> {
   "use server";
   return api.post("/cohort/problem", input);
+}
+
+/** Per-item export — scopes to a single ``cohort_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportCohortById(cohortId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/cohort/export", {
+    body: { cohort_id: cohortId },
+  } as unknown as InputOf<"/cohort/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshCohort(): Promise<unknown> {
+  "use server";
+  return api.post("/cohort/refresh", {
+    body: {},
+  } as unknown as InputOf<"/cohort/refresh", "post">);
 }
 
 /** ---- Request-scoped context fetch ----
@@ -195,7 +222,7 @@ export default async function CohortEditPage({
     const [cohortData, context, draftsResult, groupResult] = await Promise.all([
       getCohort(input),
       getCohortContextById(cohortId) as Promise<ContextOut>,
-      api.post("/cohort/drafts", {}),
+      api.post("/cohort/drafts", { body: {} } as any),
       api.post("/cohort/group", { body: {} } as GroupCohortIn),
     ]);
 
@@ -219,7 +246,14 @@ export default async function CohortEditPage({
               { title: "Cohorts", section: "cohorts", url: "/training/cohorts" },
               { title: entityName },
             ],
-            toolbar: <SaveToolbar />,
+            toolbar: (
+              <ArtifactToolbarActions
+                leftSlot={<SaveToolbar />}
+                exportAction={exportCohortById.bind(null, cohortId)}
+                refreshAction={refreshCohort}
+                bffDownloadPrefix="/api/cohort/download"
+              />
+            ),
             panelProps: {
               artifactType: "cohort",
               initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -250,20 +284,30 @@ export default async function CohortEditPage({
       </DraftProviderClient>
     );
   } catch (error: unknown) {
-    // Check if it's a 403 error (department access denied)
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="cohort"
-          redirectPath="/training/cohorts"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/training/cohorts/${cohortId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="cohort"
+            redirectPath="/training/cohorts"
+          />
+        );
+      }
     }
     // Re-throw other errors
     throw error;

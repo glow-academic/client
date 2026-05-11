@@ -266,7 +266,7 @@ export function AnalyticsFilters({ refreshAction, analyticsFilters }: AnalyticsF
             {/* Reset Button - only show when search params exist */}
             {hasNonDefaultFilters && (
               <Button
-                variant="ghost"
+                variant="outline"
                 onClick={handleReset}
                 className="h-8 px-2 lg:px-3 hidden md:flex"
                 title="Reset filters to defaults"
@@ -285,7 +285,7 @@ export function AnalyticsFilters({ refreshAction, analyticsFilters }: AnalyticsF
 
             {/* Refresh Button */}
             <Button
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={handleRefresh}
               disabled={isRefreshing}
@@ -317,7 +317,7 @@ export function AnalyticsFilters({ refreshAction, analyticsFilters }: AnalyticsF
             {/* Reset Button - only show when search params exist */}
             {hasNonDefaultFilters && (
               <Button
-                variant="ghost"
+                variant="outline"
                 onClick={handleReset}
                 className="h-8 px-2 lg:px-3 hidden md:flex"
                 title="Reset filters to defaults"
@@ -400,7 +400,7 @@ export function AnalyticsFilters({ refreshAction, analyticsFilters }: AnalyticsF
 
             {/* Refresh Button */}
             <Button
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={handleRefresh}
               disabled={isRefreshing}

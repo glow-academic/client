@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Persona from "@/components/artifacts/persona/Persona";
@@ -68,6 +69,35 @@ async function patchPersonaDraft(
 async function createPersonaProblem(input: ProblemPersonaIn): Promise<ProblemPersonaOut> {
   "use server";
   return api.post("/persona/problem", input);
+}
+
+/** Per-item export — scopes to a single ``persona_id`` so the AI
+ *  consumer downstream only sees the row the user is editing.
+ *  Cast through ``unknown`` while openapi.json catches up to the
+ *  file-modality response shape.
+ */
+async function exportPersonaById(personaId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/persona/export", {
+    body: { persona_id: personaId },
+  } as unknown as InputOf<"/persona/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshPersona(): Promise<unknown> {
+  "use server";
+  return api.post("/persona/refresh", {
+    body: {},
+  } as unknown as InputOf<"/persona/refresh", "post">);
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -192,7 +222,7 @@ export default async function PersonaEditPage({
     const [personaDetail, context, draftsResult, groupResult] = await Promise.all([
       getPersona(input),
       getPersonaContextById(personaId) as Promise<ContextOut>,
-      api.post("/persona/drafts", {}),
+      api.post("/persona/drafts", { body: {} } as unknown as InputOf<"/persona/drafts", "post">),
       api.post(
         "/persona/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupPersonaIn,
@@ -218,7 +248,14 @@ export default async function PersonaEditPage({
             { title: "Personas", section: "personas", url: "/training/personas" },
             { title: entityName },
           ]}
-          toolbar={<SaveToolbar />}
+          toolbar={
+            <ArtifactToolbarActions
+              leftSlot={<SaveToolbar />}
+              exportAction={exportPersonaById.bind(null, personaId)}
+              refreshAction={refreshPersona}
+              bffDownloadPrefix="/api/persona/download"
+            />
+          }
           panelProps={{
             artifactType: "persona",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -257,16 +294,27 @@ export default async function PersonaEditPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="persona"
-          redirectPath="/training/personas"
-        />
-      );
+      // 401 → not logged in (matches /home, /practice). 403 → resource
+      // belongs to a department the user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/training/personas/${personaId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="persona"
+            redirectPath="/training/personas"
+          />
+        );
+      }
     }
     throw error;
   }

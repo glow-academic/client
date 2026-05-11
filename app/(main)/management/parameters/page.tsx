@@ -8,7 +8,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
-import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import Parameters from "@/components/artifacts/parameter/Parameters";
 
 import { api } from "@/lib/api/client";
@@ -21,6 +21,7 @@ import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { readViewCookie } from "@/lib/view-cookie";
 import { loadParametersSearchParams } from "@/lib/search-params/parameters";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
@@ -53,6 +54,8 @@ type DeleteParameterIn = InputOf<"/parameter/delete", "post">;
 type DeleteParameterOut = OutputOf<"/parameter/delete", "post">;
 type UpdateParameterIn = InputOf<"/parameter/update", "post">;
 type UpdateParameterOut = OutputOf<"/parameter/update", "post">;
+type CreateParameterIn = InputOf<"/parameter/create", "post">;
+type CreateParameterOut = OutputOf<"/parameter/create", "post">;
 type GroupParameterIn = InputOf<"/parameter/group", "post">;
 type GroupParameterOut = OutputOf<"/parameter/group", "post">;
 type GenerationsIn = InputOf<"/parameter/generations", "post">;
@@ -104,6 +107,40 @@ async function updateParameter(
 ): Promise<UpdateParameterOut> {
   "use server";
   return api.post("/parameter/update", input);
+}
+
+async function createParameter(input: CreateParameterIn): Promise<CreateParameterOut> {
+  "use server";
+  return api.post("/parameter/create", input);
+}
+
+async function exportParameters(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/parameter/export", {
+    body: {},
+  } as unknown as InputOf<"/parameter/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshParameters(): Promise<unknown> {
+  "use server";
+  return api.post("/parameter/refresh", {
+    body: {},
+  } as unknown as InputOf<"/parameter/refresh", "post">);
+}
+
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
+  "use server";
+  return api.post("/parameter/csv", { formData });
 }
 
 
@@ -212,7 +249,14 @@ export default async function ContextPage({ searchParams }: ParametersPageProps)
           { title: "Management", section: "management", url: "/management" },
           { title: "Parameters" },
         ]}
-        toolbar={<NewArtifactButton label="New Parameter" href="/management/parameters/new" />}
+        toolbar={
+          <ArtifactToolbarActions
+            newButton={{ label: "New Parameter", href: "/management/parameters/new" }}
+            exportAction={exportParameters}
+            refreshAction={refreshParameters}
+            bffDownloadPrefix="/api/parameter/download"
+          />
+        }
         panelProps={{
           artifactType: "parameter",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -240,6 +284,9 @@ export default async function ContextPage({ searchParams }: ParametersPageProps)
             duplicateParameterAction={duplicateParameter}
             deleteParameterAction={deleteParameter}
             updateParameterAction={updateParameter}
+            createParameterAction={createParameter}
+            parseCsvAction={parseCsv}
+            importFields={listData.import_fields ?? undefined}
             currentSearchBody={body}
           />
         </div>
@@ -249,15 +296,27 @@ export default async function ContextPage({ searchParams }: ParametersPageProps)
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/management/parameters"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/management/parameters"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="parameter"
+            redirectPath="/management/parameters"
+          />
+        );
+      }
     }
     throw error;
   }
@@ -273,4 +332,6 @@ export type {
   ParametersListBody,
   UpdateParameterIn,
   UpdateParameterOut,
+  CreateParameterIn,
+  CreateParameterOut,
 };

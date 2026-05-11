@@ -8,6 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Document from "@/components/artifacts/document/Document";
@@ -123,6 +124,32 @@ async function uploadFile(formData: FormData): Promise<UploadResult> {
 async function createDocumentProblem(input: ProblemDocumentIn): Promise<ProblemDocumentOut> {
   "use server";
   return api.post("/document/problem", input);
+}
+
+/** Per-item export — scopes to a single ``document_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportDocumentById(documentId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/document/export", {
+    body: { document_id: documentId },
+  } as unknown as InputOf<"/document/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshDocument(): Promise<unknown> {
+  "use server";
+  return api.post("/document/refresh", {
+    body: {},
+  } as unknown as InputOf<"/document/refresh", "post">);
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -281,7 +308,14 @@ export default async function DocumentEditPage({
             { title: "Documents", section: "documents", url: "/management/documents" },
             { title: entityName ?? "Document" },
           ]}
-          toolbar={<SaveToolbar />}
+          toolbar={
+            <ArtifactToolbarActions
+              leftSlot={<SaveToolbar />}
+              exportAction={exportDocumentById.bind(null, documentId)}
+              refreshAction={refreshDocument}
+              bffDownloadPrefix="/api/document/download"
+            />
+          }
           panelProps={{
             artifactType: "document",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -324,16 +358,27 @@ export default async function DocumentEditPage({
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="department"
-          resourceType="document"
-          redirectPath="/management/documents"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/management/documents/${documentId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="document"
+            redirectPath="/management/documents"
+          />
+        );
+      }
     }
     throw error;
   }

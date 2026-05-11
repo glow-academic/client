@@ -55,7 +55,7 @@ export function PageHeader({ breadcrumbs, toolbar, onToggleLeftSidebar, hasPanel
           <NavigationBreadcrumbs breadcrumbs={breadcrumbs} />
         </div>
       </div>
-      {toolbar && <div className="flex items-center gap-2 pr-2 shrink-0">{toolbar}</div>}
+      {toolbar && <div className="flex items-center gap-2 shrink-0">{toolbar}</div>}
       {hasPanel && (
         <div className="pr-4 shrink-0">
           <Button

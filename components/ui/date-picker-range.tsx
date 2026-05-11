@@ -109,7 +109,7 @@ export function DatePickerWithRange({
   const dateButton = (
     <Button
       id="date"
-      variant={"secondary"}
+      variant={"outline"}
       size="sm"
       className={cn(
         "justify-start text-left font-normal h-8",

@@ -210,7 +210,7 @@ export function FullPageLayout({
                             onToggleLeftSidebar={toggleLeftSidebar}
                             hasPanel={!!panelProps}
                           />
-                          <div className="flex flex-1 flex-col gap-4">
+                          <div className="flex flex-1 flex-col gap-4 pb-2">
                             {children}
                           </div>
                         </SidebarInset>
@@ -238,7 +238,7 @@ export function FullPageLayout({
                           onToggleLeftSidebar={toggleLeftSidebar}
                           hasPanel={false}
                         />
-                        <div className="flex flex-1 flex-col gap-4">
+                        <div className="flex flex-1 flex-col gap-4 pb-2">
                           {children}
                         </div>
                       </SidebarInset>

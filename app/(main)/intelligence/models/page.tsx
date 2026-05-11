@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
-import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import Models from "@/components/artifacts/model/Models";
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
@@ -22,6 +22,7 @@ import { buildSnapshot } from "@/lib/auth";
 import { guardPage } from "@/lib/permissions";
 import { loadModelsSearchParams } from "@/lib/search-params/models";
 import { readViewCookie } from "@/lib/view-cookie";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
@@ -33,6 +34,8 @@ type DeleteModelIn = InputOf<"/model/delete", "post">;
 type DeleteModelOut = OutputOf<"/model/delete", "post">;
 type UpdateModelIn = InputOf<"/model/update", "post">;
 type UpdateModelOut = OutputOf<"/model/update", "post">;
+type CreateModelIn = InputOf<"/model/create", "post">;
+type CreateModelOut = OutputOf<"/model/create", "post">;
 type GroupModelIn = InputOf<"/model/group", "post">;
 type GroupModelOut = OutputOf<"/model/group", "post">;
 type GenerationsIn = InputOf<"/model/generations", "post">;
@@ -86,6 +89,40 @@ async function deleteModel(input: DeleteModelIn): Promise<DeleteModelOut> {
 async function updateModel(input: UpdateModelIn): Promise<UpdateModelOut> {
   "use server";
   return api.post("/model/update", input);
+}
+
+async function createModel(input: CreateModelIn): Promise<CreateModelOut> {
+  "use server";
+  return api.post("/model/create", input);
+}
+
+async function exportModels(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/model/export", {
+    body: {},
+  } as unknown as InputOf<"/model/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshModels(): Promise<unknown> {
+  "use server";
+  return api.post("/model/refresh", {
+    body: {},
+  } as unknown as InputOf<"/model/refresh", "post">);
+}
+
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
+  "use server";
+  return api.post("/model/csv", { formData });
 }
 
 
@@ -219,7 +256,14 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
           { title: "Models" },
         ]}
-        toolbar={<NewArtifactButton label="New Model" href="/intelligence/models/new" />}
+        toolbar={
+          <ArtifactToolbarActions
+            newButton={{ label: "New Model", href: "/intelligence/models/new" }}
+            exportAction={exportModels}
+            refreshAction={refreshModels}
+            bffDownloadPrefix="/api/model/download"
+          />
+        }
         panelProps={{
           artifactType: "model",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -247,6 +291,9 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
             duplicateModelAction={duplicateModel}
             deleteModelAction={deleteModel}
             updateModelAction={updateModel}
+            createModelAction={createModel}
+            parseCsvAction={parseCsv}
+            importFields={listData.import_fields ?? undefined}
             currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}
@@ -262,15 +309,27 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
     if (
       error &&
       typeof error === "object" &&
-      "status" in error &&
-      (error.status === 401 || error.status === 403)
+      "status" in error
     ) {
-      return (
-        <UnifiedAccessDenied
-          reason="not-logged-in"
-          pathname="/intelligence/models"
-        />
-      );
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname="/intelligence/models"
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="model"
+            redirectPath="/intelligence/models"
+          />
+        );
+      }
     }
     throw error;
   }
@@ -286,4 +345,6 @@ export type {
   ModelsListOut,
   UpdateModelIn,
   UpdateModelOut,
+  CreateModelIn,
+  CreateModelOut,
 };
