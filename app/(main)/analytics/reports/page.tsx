@@ -24,8 +24,8 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
-type ReportsIn = InputOf<"/attempt/report/search", "post">;
-type ReportsOut = OutputOf<"/attempt/report/search", "post">;
+type ReportsIn = InputOf<"/attempt/report", "post">;
+type ReportsOut = OutputOf<"/attempt/report", "post">;
 
 /** ---- Generation types ---- */
 type ContextIn = InputOf<"/attempt/context", "post">;
@@ -45,7 +45,7 @@ type ProblemReportsOut = OutputOf<"/attempt/problem", "post">;
 const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/attempt/report/search", input, {
+  return api.post("/attempt/report", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

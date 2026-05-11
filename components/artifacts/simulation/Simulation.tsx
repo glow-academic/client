@@ -49,11 +49,11 @@ type UpdateSimulationIn = InputOf<"/simulation/update", "post">;
 type UpdateSimulationOut = OutputOf<"/simulation/update", "post">;
 type PatchSimulationDraftIn = InputOf<
   "/simulation/draft",
-  "patch"
+  "post"
 >;
 type PatchSimulationDraftOut = OutputOf<
   "/simulation/draft",
-  "patch"
+  "post"
 >;
 
 type SimulationData = OutputOf<"/simulation/get", "post">;

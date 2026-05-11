@@ -24,16 +24,16 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 type ContextIn = InputOf<"/test/context", "post">;
 type ContextOut = OutputOf<"/test/context", "post">;
 type GetBenchmarkBundleOut = OutputOf<
-  "/test/invocation/get",
+  "/test/invocation_get",
   "post"
 > & InvocationData;
 type PatchBenchmarkDraftIn = InputOf<
-  "/test/invocation/draft",
-  "patch"
+  "/test/draft",
+  "post"
 >;
 type PatchBenchmarkDraftOut = OutputOf<
-  "/test/invocation/draft",
-  "patch"
+  "/test/draft",
+  "post"
 >;
 type ProblemTestIn = InputOf<"/test/problem", "post">;
 type ProblemTestOut = OutputOf<"/test/problem", "post">;
@@ -44,14 +44,14 @@ const getBenchmarkBundle = async (
   draftId: string | null,
 ): Promise<GetBenchmarkBundleOut> => {
   return (await api.post(
-    "/test/invocation/get",
+    "/test/invocation_get",
     ({
       body: {
         test_id: testId,
         invocation_id: bundleId,
         draft_id: draftId,
       },
-    } as unknown as InputOf<"/test/invocation/get", "post">),
+    } as unknown as InputOf<"/test/invocation_get", "post">),
     {
       cache: "no-store",
       headers: {
@@ -65,7 +65,7 @@ async function patchBenchmarkDraft(
   input: PatchBenchmarkDraftIn,
 ): Promise<PatchBenchmarkDraftOut> {
   "use server";
-  return api.patch("/test/invocation/draft", input);
+  return api.post("/test/draft", input);
 }
 
 async function exportInvocation(

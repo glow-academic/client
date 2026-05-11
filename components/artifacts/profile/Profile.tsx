@@ -36,8 +36,8 @@ type CreateProfileIn = InputOf<"/profile/create", "post">;
 type CreateProfileOut = OutputOf<"/profile/create", "post">;
 type UpdateProfileIn = InputOf<"/profile/update", "post">;
 type UpdateProfileOut = OutputOf<"/profile/update", "post">;
-type PatchProfileDraftIn = InputOf<"/profile/draft", "patch">;
-type PatchProfileDraftOut = OutputOf<"/profile/draft", "patch">;
+type PatchProfileDraftIn = InputOf<"/profile/draft", "post">;
+type PatchProfileDraftOut = OutputOf<"/profile/draft", "post">;
 
 type ProfileData = OutputOf<"/profile/get", "post">;
 

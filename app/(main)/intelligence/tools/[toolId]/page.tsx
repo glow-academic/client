@@ -31,8 +31,8 @@ type CreateToolIn = InputOf<"/tool/create", "post">;
 type CreateToolOut = OutputOf<"/tool/create", "post">;
 type UpdateToolIn = InputOf<"/tool/update", "post">;
 type UpdateToolOut = OutputOf<"/tool/update", "post">;
-type PatchToolDraftIn = InputOf<"/tool/draft", "patch">;
-type PatchToolDraftOut = OutputOf<"/tool/draft", "patch">;
+type PatchToolDraftIn = InputOf<"/tool/draft", "post">;
+type PatchToolDraftOut = OutputOf<"/tool/draft", "post">;
 
 type GroupToolIn = InputOf<"/tool/group", "post">;
 type GroupToolOut = OutputOf<"/tool/group", "post">;
@@ -70,7 +70,7 @@ async function patchToolDraft(
   input: PatchToolDraftIn
 ): Promise<PatchToolDraftOut> {
   "use server";
-  return api.patch("/tool/draft", input);
+  return api.post("/tool/draft", input);
 }
 
 

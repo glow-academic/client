@@ -31,8 +31,8 @@ type CreateDepartmentIn = InputOf<"/department/create", "post">;
 type CreateDepartmentOut = OutputOf<"/department/create", "post">;
 type UpdateDepartmentIn = InputOf<"/department/update", "post">;
 type UpdateDepartmentOut = OutputOf<"/department/update", "post">;
-type PatchDepartmentDraftIn = InputOf<"/department/draft", "patch">;
-type PatchDepartmentDraftOut = OutputOf<"/department/draft", "patch">;
+type PatchDepartmentDraftIn = InputOf<"/department/draft", "post">;
+type PatchDepartmentDraftOut = OutputOf<"/department/draft", "post">;
 type GroupDepartmentIn = InputOf<"/department/group", "post">;
 type GroupDepartmentOut = OutputOf<"/department/group", "post">;
 type GenerationsIn = InputOf<"/department/generations", "post">;
@@ -71,7 +71,7 @@ async function patchDepartmentDraft(
   input: PatchDepartmentDraftIn
 ): Promise<PatchDepartmentDraftOut> {
   "use server";
-  return api.patch("/department/draft", input);
+  return api.post("/department/draft", input);
 }
 
 async function createDepartmentProblem(input: ProblemDepartmentIn): Promise<ProblemDepartmentOut> {

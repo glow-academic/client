@@ -242,7 +242,7 @@ export function useTestLifecycle({
       invocationId: string;
       message?: string;
     }) => {
-      transport.send("/test/invocation/complete", {
+      transport.send("/test/invocation_complete", {
         test_id: params.testId,
         test_invocation_id: params.invocationId,
         ...(params.message !== undefined && { message: params.message }),
@@ -267,7 +267,7 @@ export function useTestLifecycle({
 
   const runInvocation = useCallback(
     (params: { testId: string; invocationId: string; runId: string }) => {
-      transport.send("/test/run", {
+      transport.send("/test/invocation_run", {
         test_id: params.testId,
         test_invocation_id: params.invocationId,
         run_id: params.runId,

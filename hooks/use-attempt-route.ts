@@ -34,7 +34,7 @@ export function useAttemptRoute(): UseAttemptRouteReturn {
       try {
         setError(null);
         setStage("loading");
-        const chat = await transport.send("/attempt/chat/get", {
+        const chat = await transport.send("/attempt/chat_get", {
           chat_entry_id: params.chatId,
         });
 

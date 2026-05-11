@@ -24,9 +24,10 @@ import { loadPracticeSearchParams } from "@/lib/search-params/practice";
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
-type PracticeIn = InputOf<"/attempt/practice/get", "post">;
-type PracticeOut = OutputOf<"/attempt/practice/get", "post">;
-type PracticeHistoryOut = NonNullable<PracticeOut["history"]>;
+type PracticeIn = InputOf<"/attempt/practice", "post">;
+type PracticeOut = OutputOf<"/attempt/practice", "post">;
+// History now comes from /attempt/search, not embedded on /attempt/practice/get.
+type PracticeHistoryOut = OutputOf<"/attempt/search", "post">;
 type ContextIn = InputOf<"/attempt/context", "post">;
 type ContextOut = OutputOf<"/attempt/context", "post">;
 type GroupIn = InputOf<"/attempt/group", "post">;
@@ -40,7 +41,7 @@ type ProblemOut = OutputOf<"/attempt/problem", "post">;
 const getPracticeData = async (input: PracticeIn): Promise<PracticeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/attempt/practice/get", input, {
+  return api.post("/attempt/practice", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -53,7 +54,8 @@ const getPracticeData = async (input: PracticeIn): Promise<PracticeOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function refreshChat(): Promise<void> {
   "use server";
-  await api.post("/chat/refresh" as Parameters<typeof api.post>[0], { body: {} });
+  // Was /chat/refresh — collapsed into the attempt-root /attempt/refresh.
+  await api.post("/attempt/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
 async function exportPractice(): Promise<{ file_id: string; file_name?: string }> {
@@ -138,19 +140,24 @@ export default async function PracticePage({
   const historyPage = q.historyPage ?? 0;
   const historyPageSize = q.historyPageSize ?? 10;
   const historySearch = q.historySearch ?? undefined;
+  void historySearch;
   const _historySimulationIds = q.historySimulationIds ?? undefined;
   const historyScenarioIds = q.historyScenarioIds ?? undefined;
   const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
   const historySortBy = q.historySortBy ?? "date";
   const historySortOrder = q.historySortOrder ?? "desc";
 
-  // Parallel fetch: cards + history search + group
-  type SearchIn = InputOf<"/attempt/practice/search", "post">;
-  type SearchOut = OutputOf<"/attempt/practice/search", "post">;
+  // Parallel fetch: cards + history search + group. History flows through
+  // the canonical /attempt/search endpoint (the per-view /attempt/practice/search
+  // route was collapsed in). `practice=true` keeps this scoped to practice
+  // attempts — the practice page's defining filter.
+  type SearchIn = InputOf<"/attempt/search", "post">;
+  type SearchOut = OutputOf<"/attempt/search", "post">;
   const [practiceData, historyResult, groupResult] = await Promise.all([
     getPracticeData({ body: {} }),
-    api.post("/attempt/practice/search", {
+    api.post("/attempt/search", {
       body: {
+        practice: true,
         page: historyPage,
         page_size: historyPageSize,
         sort_by: historySortBy,

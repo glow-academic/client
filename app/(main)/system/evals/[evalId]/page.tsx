@@ -30,8 +30,8 @@ type CreateEvalIn = InputOf<"/eval/create", "post">;
 type CreateEvalOut = OutputOf<"/eval/create", "post">;
 type UpdateEvalIn = InputOf<"/eval/update", "post">;
 type UpdateEvalOut = OutputOf<"/eval/update", "post">;
-type PatchEvalDraftIn = InputOf<"/eval/draft", "patch">;
-type PatchEvalDraftOut = OutputOf<"/eval/draft", "patch">;
+type PatchEvalDraftIn = InputOf<"/eval/draft", "post">;
+type PatchEvalDraftOut = OutputOf<"/eval/draft", "post">;
 type GroupEvalIn = InputOf<"/eval/group", "post">;
 type GroupEvalOut = OutputOf<"/eval/group", "post">;
 type GenerationsIn = InputOf<"/eval/generations", "post">;
@@ -67,7 +67,7 @@ async function patchEvalDraft(
   input: PatchEvalDraftIn
 ): Promise<PatchEvalDraftOut> {
   "use server";
-  return api.patch("/eval/draft", input);
+  return api.post("/eval/draft", input);
 }
 
 

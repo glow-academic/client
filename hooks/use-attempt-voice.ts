@@ -286,7 +286,7 @@ export function useAttemptVoice({
           text_preview: transcript.slice(0, 60),
           persona_id: userPersonaId,
         });
-        const msgResult = await transport.send("/attempt/chat/message", {
+        const msgResult = await transport.send("/attempt/chat_message", {
           chat_id: chatId,
           text: transcript,
           ...(userPersonaId ? { persona_id: userPersonaId } : {}),
@@ -302,7 +302,7 @@ export function useAttemptVoice({
         }
 
         // (3) Attach the audio to the message.
-        const audioResult = await transport.send("/attempt/chat/audio", {
+        const audioResult = await transport.send("/attempt/chat_audio", {
           chat_id: chatId,
           message_id: messageId,
           audios_id: audiosId,
@@ -425,7 +425,7 @@ export function useAttemptVoice({
       const startPromise = (async () => {
         try {
           // Step 1: open the realtime conversation (no AI yet).
-          const voiceResult = await transport.send("/attempt/chat/voice", {
+          const voiceResult = await transport.send("/attempt/chat_voice", {
             chat_id: chatId,
           });
           const conversationId = voiceResult["conversation_id"] as
@@ -490,7 +490,7 @@ export function useAttemptVoice({
         await startPromiseRef.current.catch(() => undefined);
       }
       if (!conversationIdRef.current) return;
-      transport.send("/attempt/chat/silence", { chat_id: chatId });
+      transport.send("/attempt/chat_silence", { chat_id: chatId });
       await waitForAudioEnded(
         chatId,
         10000,
@@ -506,7 +506,7 @@ export function useAttemptVoice({
   const sendFrame = useCallback(
     (audio: ArrayBuffer) => {
       if (!chatIdRef.current) return;
-      transport.send("/attempt/chat/speak", {
+      transport.send("/attempt/chat_speak", {
         chat_id: chatIdRef.current,
         ...(conversationIdRef.current
           ? { conversation_id: conversationIdRef.current }
@@ -520,7 +520,7 @@ export function useAttemptVoice({
   const setMicMute = useCallback(
     (muted: boolean) => {
       if (!chatIdRef.current) return;
-      transport.send("/attempt/chat/mute", {
+      transport.send("/attempt/chat_mute", {
         chat_id: chatIdRef.current,
         muted,
       });

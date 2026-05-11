@@ -85,7 +85,7 @@ export function AttemptLobby({
       await generate({ attemptId, chatId: chatEntryId, chatConfig: {}, draftId });
     } else {
       // Fetch chat config, then generate
-      const chat = await transport.send("/attempt/chat/get", { id: chatEntryId });
+      const chat = await transport.send("/attempt/chat_get", { id: chatEntryId });
       await generate({ attemptId, chatId: chatEntryId, chatConfig: chat });
     }
   }, [attemptId, chatEntryId, draftId, generate, transport]);

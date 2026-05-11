@@ -29,8 +29,8 @@ type GetCohortIn = InputOf<"/cohort/get", "post">;
 type GetCohortOut = OutputOf<"/cohort/get", "post">;
 type UpdateCohortIn = InputOf<"/cohort/update", "post">;
 type UpdateCohortOut = OutputOf<"/cohort/update", "post">;
-type PatchCohortDraftIn = InputOf<"/cohort/draft", "patch">;
-type PatchCohortDraftOut = OutputOf<"/cohort/draft", "patch">;
+type PatchCohortDraftIn = InputOf<"/cohort/draft", "post">;
+type PatchCohortDraftOut = OutputOf<"/cohort/draft", "post">;
 type GroupCohortIn = InputOf<"/cohort/group", "post">;
 type GroupCohortOut = OutputOf<"/cohort/group", "post">;
 type ProblemCohortIn = InputOf<"/cohort/problem", "post">;
@@ -58,7 +58,7 @@ async function patchCohortDraft(
   input: PatchCohortDraftIn
 ): Promise<PatchCohortDraftOut> {
   "use server";
-  return api.patch("/cohort/draft", input);
+  return api.post("/cohort/draft", input);
 }
 
 

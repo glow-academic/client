@@ -45,8 +45,8 @@ type CreateEvalIn = InputOf<"/eval/create", "post">;
 type CreateEvalOut = OutputOf<"/eval/create", "post">;
 type UpdateEvalIn = InputOf<"/eval/update", "post">;
 type UpdateEvalOut = OutputOf<"/eval/update", "post">;
-type PatchEvalDraftIn = InputOf<"/eval/draft", "patch">;
-type PatchEvalDraftOut = OutputOf<"/eval/draft", "patch">;
+type PatchEvalDraftIn = InputOf<"/eval/draft", "post">;
+type PatchEvalDraftOut = OutputOf<"/eval/draft", "post">;
 type EvalData = OutputOf<"/eval/get", "post">;
 
 type EvalNameItem = {

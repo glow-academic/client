@@ -24,9 +24,10 @@ import { loadHomeSearchParams } from "@/lib/search-params/home";
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
-type HomeIn = InputOf<"/attempt/home/get", "post">;
-type HomeOut = OutputOf<"/attempt/home/get", "post">;
-type HomeHistoryOut = NonNullable<HomeOut["history"]>;
+type HomeIn = InputOf<"/attempt/home", "post">;
+type HomeOut = OutputOf<"/attempt/home", "post">;
+// History now comes from /attempt/search, not embedded on /attempt/home/get.
+type HomeHistoryOut = OutputOf<"/attempt/search", "post">;
 type ContextIn = InputOf<"/attempt/context", "post">;
 type ContextOut = OutputOf<"/attempt/context", "post">;
 type GroupIn = InputOf<"/attempt/group", "post">;
@@ -40,7 +41,7 @@ type ProblemOut = OutputOf<"/attempt/problem", "post">;
 const getHomeData = async (input: HomeIn): Promise<HomeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/attempt/home/get", input, {
+  return api.post("/attempt/home", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -137,19 +138,24 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const historyPage = q.historyPage ?? 0;
   const historyPageSize = q.historyPageSize ?? 10;
   const historySearch = q.historySearch ?? undefined;
+  void historySearch;
   const _historySimulationIds = q.historySimulationIds ?? undefined;
   const historyScenarioIds = q.historyScenarioIds ?? undefined;
   const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
   const historySortBy = q.historySortBy ?? "date";
   const historySortOrder = q.historySortOrder ?? "desc";
 
-  // Parallel fetch: cards + history search + group
-  type SearchIn = InputOf<"/attempt/home/search", "post">;
-  type SearchOut = OutputOf<"/attempt/home/search", "post">;
+  // Parallel fetch: cards + history search + group. History flows through
+  // the canonical /attempt/search endpoint (the per-view /attempt/home/search
+  // route was collapsed in). `practice=false` keeps this scoped to general
+  // attempts — the home page's defining filter.
+  type SearchIn = InputOf<"/attempt/search", "post">;
+  type SearchOut = OutputOf<"/attempt/search", "post">;
   const [homeData, historyResult, groupResult] = await Promise.all([
     getHomeData({ body: {} }),
-    api.post("/attempt/home/search", {
+    api.post("/attempt/search", {
       body: {
+        practice: false,
         page: historyPage,
         page_size: historyPageSize,
         sort_by: historySortBy,

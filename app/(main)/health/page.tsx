@@ -21,8 +21,8 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 
 /** ---- Strong types from OpenAPI ---- */
-type HealthBundleIn = InputOf<"/system/health/get", "post">;
-type HealthBundleOut = OutputOf<"/system/health/get", "post">;
+type HealthBundleIn = InputOf<"/system/health", "post">;
+type HealthBundleOut = OutputOf<"/system/health", "post">;
 type ContextIn = InputOf<"/system/context", "post">;
 type ContextOut = OutputOf<"/system/context", "post">;
 type SystemGroupIn = InputOf<"/system/group", "post">;
@@ -37,7 +37,7 @@ const getHealthBundle = cache(
   async (input: HealthBundleIn): Promise<HealthBundleOut> => {
     const bypassCache = await isHardRefresh();
 
-    return api.post("/system/health/get", input, {
+    return api.post("/system/health", input, {
       cache: "no-store",
       ...(bypassCache && {
         headers: {

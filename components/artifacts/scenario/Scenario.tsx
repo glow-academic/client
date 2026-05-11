@@ -57,11 +57,11 @@ type UpdateScenarioIn = InputOf<"/scenario/update", "post">;
 type UpdateScenarioOut = OutputOf<"/scenario/update", "post">;
 type PatchScenarioDraftIn = InputOf<
   "/scenario/draft",
-  "patch"
+  "post"
 >;
 type PatchScenarioDraftOut = OutputOf<
   "/scenario/draft",
-  "patch"
+  "post"
 >;
 
 type ScenarioResourceType =

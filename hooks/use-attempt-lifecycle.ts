@@ -147,7 +147,7 @@ export function useAttemptLifecycle({
 
   const completeChat = useCallback(
     (chatIdArg: string) => {
-      transport.send("/attempt/chat/complete", {
+      transport.send("/attempt/chat_complete", {
         chat_id: chatIdArg,
       });
     },

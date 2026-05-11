@@ -33,8 +33,8 @@ type GetScenarioIn = InputOf<"/scenario/get", "post">;
 type GetScenarioOut = OutputOf<"/scenario/get", "post">;
 type CreateScenarioIn = InputOf<"/scenario/create", "post">;
 type CreateScenarioOut = OutputOf<"/scenario/create", "post">;
-type PatchScenarioDraftIn = InputOf<"/scenario/draft", "patch">;
-type PatchScenarioDraftOut = OutputOf<"/scenario/draft", "patch">;
+type PatchScenarioDraftIn = InputOf<"/scenario/draft", "post">;
+type PatchScenarioDraftOut = OutputOf<"/scenario/draft", "post">;
 type GroupScenarioIn = InputOf<"/scenario/group", "post">;
 type GroupScenarioOut = OutputOf<"/scenario/group", "post">;
 type ProblemScenarioIn = InputOf<"/scenario/problem", "post">;
@@ -59,7 +59,7 @@ async function patchScenarioDraft(
   input: PatchScenarioDraftIn
 ): Promise<PatchScenarioDraftOut> {
   "use server";
-  return api.patch("/scenario/draft", input);
+  return api.post("/scenario/draft", input);
 }
 
 async function uploadFile(formData: FormData): Promise<UploadResult> {

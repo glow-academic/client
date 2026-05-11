@@ -25,8 +25,10 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
-type PricingIn = InputOf<"/system/pricing/get", "post">;
-type PricingOut = OutputOf<"/system/pricing/get", "post">;
+type PricingIn = InputOf<"/system/pricing", "post">;
+type PricingOut = OutputOf<"/system/pricing", "post">;
+type GroupsIn = InputOf<"/system/groups", "post">;
+type GroupsOut = OutputOf<"/system/groups", "post">;
 type PricingRunsOut = NonNullable<PricingOut["history"]>;
 
 /** ---- Generation types ---- */
@@ -52,7 +54,7 @@ const getSystemContext = cache(
 const getPricingAnalytics = async (input: PricingIn): Promise<PricingOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/system/pricing/get", input, {
+  return api.post("/system/pricing", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -115,8 +117,9 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
     // Map frontend sort field to backend field name
     const sortBy = pricingSortBy === "createdAt" ? "date" : pricingSortBy;
 
-    // Fetch pricing data, view cookie, and group in parallel
-    const [pricingData, initialColumnVisibility, groupResult] = await Promise.all([
+    // Fetch in parallel: pricing bundle (chart/facets), groups list (paginated
+    // rows, was bundle.history), view cookie, and audit-linking group resolve.
+    const [pricingData, groupsResult, initialColumnVisibility, groupResult] = await Promise.all([
       getPricingAnalytics({
         body: {
           ...(q.startDate && { start_date: q.startDate }),
@@ -124,28 +127,26 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
           ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
           page_limit: 100,
           page_offset: 0,
-          // Embedded group history params
-          history_page: pricingPage,
-          history_page_size: pricingPageSize,
-          history_sort_by: sortBy,
-          history_sort_order: pricingSortOrder,
-          // Multi-model filter (server takes precedence over legacy
-          // singular `history_model_id`). We send the array shape so all
-          // selected models filter pricing rows together.
-          ...(pricingModelIds?.length && {
-            history_model_ids: pricingModelIds,
-          }),
-          // Profile = human user; actor = LLM agent. Distinct server filters
-          // mirror the existing column accessors in RunsDataTable.
-          ...(pricingProfileIds?.length && {
-            history_profile_ids: pricingProfileIds,
-          }),
-          ...(pricingActorIds?.length && {
-            history_agent_ids: pricingActorIds,
-          }),
-          ...(pricingSearch && { history_search: pricingSearch }),
         },
       }),
+      api.post("/system/groups", {
+        body: {
+          ...(q.startDate && { start_date: q.startDate }),
+          ...(q.endDate && { end_date: q.endDate }),
+          ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
+          page: pricingPage,
+          page_size: pricingPageSize,
+          sort_by: sortBy,
+          sort_order: pricingSortOrder,
+          // Multi-model filter (canonical multi shape).
+          ...(pricingModelIds?.length && { model_ids: pricingModelIds }),
+          // Profile = human user; actor = LLM agent. Distinct server filters
+          // mirror the existing column accessors in RunsDataTable.
+          ...(pricingProfileIds?.length && { profile_ids: pricingProfileIds }),
+          ...(pricingActorIds?.length && { agent_ids: pricingActorIds }),
+          ...(pricingSearch && { search: pricingSearch }),
+        },
+      } as GroupsIn) as Promise<GroupsOut>,
       readViewCookie("pricing"),
       api.post(
         "/system/group",
@@ -156,13 +157,15 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
     // Extract inline analytics facets
     const facets = pricingData.analytics;
 
-    // Extract embedded history or use empty fallback
-    const runsData: PricingRunsOut = pricingData.history ?? {
-      items: [],
-      total_count: 0,
-      page: pricingPage,
-      page_size: pricingPageSize,
-      total_pages: 0,
+    // Reshape /system/groups result into PricingRunsOut for component compat.
+    // (Was previously delivered as pricingData.history; same fields, just
+    // sourced from the dedicated endpoint now.)
+    const runsData: PricingRunsOut = {
+      items: groupsResult?.data ?? [],
+      total_count: groupsResult?.total_count ?? 0,
+      page: groupsResult?.page ?? pricingPage,
+      page_size: groupsResult?.page_size ?? pricingPageSize,
+      total_pages: groupsResult?.total_pages ?? 0,
     };
 
     return (

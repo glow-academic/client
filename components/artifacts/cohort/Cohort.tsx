@@ -53,8 +53,8 @@ type CreateCohortIn = InputOf<"/cohort/create", "post">;
 type CreateCohortOut = OutputOf<"/cohort/create", "post">;
 type UpdateCohortIn = InputOf<"/cohort/update", "post">;
 type UpdateCohortOut = OutputOf<"/cohort/update", "post">;
-type PatchCohortDraftIn = InputOf<"/cohort/draft", "patch">;
-type PatchCohortDraftOut = OutputOf<"/cohort/draft", "patch">;
+type PatchCohortDraftIn = InputOf<"/cohort/draft", "post">;
+type PatchCohortDraftOut = OutputOf<"/cohort/draft", "post">;
 
 type CohortData = OutputOf<"/cohort/get", "post">;
 

@@ -69,7 +69,7 @@ export function useTestGenerate(
           // /attempt/draft from chat config).
           setStage("drafting");
           const cfg = params.invocationConfig;
-          const draftResult = await transport.send("/test/invocation/draft", {
+          const draftResult = await transport.send("/test/draft", {
             invocation_id: params.invocationId,
             agent_ids: cfg["agent_ids"],
             rubric_ids: cfg["rubric_ids"],

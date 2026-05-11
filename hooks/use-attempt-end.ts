@@ -188,7 +188,7 @@ export function useAttemptEnd(): UseAttemptEndReturn {
       try {
         setStage("ending");
         // Mark the chat as completed (idempotent — safe if grading already did this)
-        await transport.send("/attempt/chat/complete", {
+        await transport.send("/attempt/chat_complete", {
           chat_id: params.chatId,
         });
         await findNextAndRoute(params.attemptId);
@@ -237,7 +237,7 @@ export function useAttemptEnd(): UseAttemptEndReturn {
           params.previousChatMap,
         )) {
           if (!attemptChatId) continue;
-          await transport.send("/attempt/chat/create", {
+          await transport.send("/attempt/chat_create", {
             attempt_id: params.attemptId,
             chat_id: chatEntryId,
             previous_attempt_chat_id: attemptChatId,

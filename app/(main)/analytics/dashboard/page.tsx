@@ -25,8 +25,8 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
-type DashboardIn = InputOf<"/attempt/dashboard/get", "post">;
-type DashboardOut = OutputOf<"/attempt/dashboard/get", "post">;
+type DashboardIn = InputOf<"/attempt/dashboard", "post">;
+type DashboardOut = OutputOf<"/attempt/dashboard", "post">;
 type DashboardHistoryOut = NonNullable<DashboardOut["history"]>;
 type BulkArchiveAttemptsIn = InputOf<
   "/api/v5/attempts/simulation/archive",
@@ -59,7 +59,7 @@ const getAttemptContext = cache(
 /** ---- Fetch function ---- */
 const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
   const bypassCache = await isHardRefresh();
-  return api.post("/attempt/dashboard/get", input, {
+  return api.post("/attempt/dashboard", input, {
     cache: "no-store",
     ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
   });
@@ -148,8 +148,8 @@ export default async function DashboardPage({
     const historyShowArchived = simulationFilters.includes("archived");
 
     // Parallel fetch: dashboard data + history search + group
-    type SearchIn = InputOf<"/attempt/dashboard/search", "post">;
-    type SearchOut = OutputOf<"/attempt/dashboard/search", "post">;
+    type SearchIn = InputOf<"/attempt/search", "post">;
+    type SearchOut = OutputOf<"/attempt/search", "post">;
     const [data, historyResult, initialHistoryVisibility, groupResult] = await Promise.all([
       getDashboard({
         body: {
@@ -170,11 +170,11 @@ export default async function DashboardPage({
           ...(parameterSearch && { parameter_search: parameterSearch }),
           ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
           ...(scenarioSearch && { scenario_search: scenarioSearch }),
-          // History filters omitted — fetched via /attempt/dashboard/search
+          // History filters omitted — fetched via /attempt/search
           // below in parallel (canonical history surface).
         },
       }),
-      api.post("/attempt/dashboard/search", {
+      api.post("/attempt/search", {
         body: {
           page: historyPage,
           page_size: historyPageSize,

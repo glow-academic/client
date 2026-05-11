@@ -29,8 +29,8 @@ type ParameterGetIn = InputOf<"/parameter/get", "post">;
 type ParameterGetOut = OutputOf<"/parameter/get", "post">;
 type CreateParameterIn = InputOf<"/parameter/create", "post">;
 type CreateParameterOut = OutputOf<"/parameter/create", "post">;
-type PatchParameterDraftIn = InputOf<"/parameter/draft", "patch">;
-type PatchParameterDraftOut = OutputOf<"/parameter/draft", "patch">;
+type PatchParameterDraftIn = InputOf<"/parameter/draft", "post">;
+type PatchParameterDraftOut = OutputOf<"/parameter/draft", "post">;
 type GroupParameterIn = InputOf<"/parameter/group", "post">;
 type GroupParameterOut = OutputOf<"/parameter/group", "post">;
 type ProblemParameterIn = InputOf<"/parameter/problem", "post">;
@@ -62,7 +62,7 @@ async function createParameter(
 
 async function patchParameterDraft(input: PatchParameterDraftIn): Promise<PatchParameterDraftOut> {
   "use server";
-  return api.patch("/parameter/draft", input);
+  return api.post("/parameter/draft", input);
 }
 
 

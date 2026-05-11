@@ -31,8 +31,8 @@ type CreateProviderIn = InputOf<"/provider/create", "post">;
 type CreateProviderOut = OutputOf<"/provider/create", "post">;
 type UpdateProviderIn = InputOf<"/provider/update", "post">;
 type UpdateProviderOut = OutputOf<"/provider/update", "post">;
-type PatchProviderDraftIn = InputOf<"/provider/draft", "patch">;
-type PatchProviderDraftOut = OutputOf<"/provider/draft", "patch">;
+type PatchProviderDraftIn = InputOf<"/provider/draft", "post">;
+type PatchProviderDraftOut = OutputOf<"/provider/draft", "post">;
 type GroupProviderIn = InputOf<"/provider/group", "post">;
 type GroupProviderOut = OutputOf<"/provider/group", "post">;
 type ProblemProviderIn = InputOf<"/provider/problem", "post">;
@@ -76,7 +76,7 @@ async function patchProviderDraft(
   input: PatchProviderDraftIn
 ): Promise<PatchProviderDraftOut> {
   "use server";
-  return api.patch("/provider/draft", input);
+  return api.post("/provider/draft", input);
 }
 
 

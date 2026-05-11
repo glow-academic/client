@@ -31,8 +31,8 @@ type CreateAgentIn = InputOf<"/agent/create", "post">;
 type CreateAgentOut = OutputOf<"/agent/create", "post">;
 type UpdateAgentIn = InputOf<"/agent/update", "post">;
 type UpdateAgentOut = OutputOf<"/agent/update", "post">;
-type PatchAgentDraftIn = InputOf<"/agent/draft", "patch">;
-type PatchAgentDraftOut = OutputOf<"/agent/draft", "patch">;
+type PatchAgentDraftIn = InputOf<"/agent/draft", "post">;
+type PatchAgentDraftOut = OutputOf<"/agent/draft", "post">;
 type GroupAgentIn = InputOf<"/agent/group", "post">;
 type GroupAgentOut = OutputOf<"/agent/group", "post">;
 type GenerationsIn = InputOf<"/agent/generations", "post">;
@@ -65,7 +65,7 @@ async function patchAgentDraft(
   input: PatchAgentDraftIn
 ): Promise<PatchAgentDraftOut> {
   "use server";
-  return api.patch("/agent/draft", input);
+  return api.post("/agent/draft", input);
 }
 
 

@@ -25,8 +25,8 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
-type DashboardIn = InputOf<"/attempt/dashboard/get", "post">;
-type DashboardOut = OutputOf<"/attempt/dashboard/get", "post">;
+type DashboardIn = InputOf<"/attempt/dashboard", "post">;
+type DashboardOut = OutputOf<"/attempt/dashboard", "post">;
 type ReportHistoryOut = NonNullable<DashboardOut["history"]>;
 type ContextIn = InputOf<"/attempt/context", "post">;
 type ContextOut = OutputOf<"/attempt/context", "post">;
@@ -40,7 +40,7 @@ type ProblemRecordOut = OutputOf<"/attempt/problem", "post">;
 /** ---- Fetch function ---- */
 const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
   const bypassCache = await isHardRefresh();
-  return api.post("/attempt/dashboard/get", input, {
+  return api.post("/attempt/dashboard", input, {
     cache: "no-store",
     ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
   });
@@ -218,14 +218,14 @@ export default async function RecordPage({
           ...(parameterSearch && { parameter_search: parameterSearch }),
           ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
           ...(scenarioSearch && { scenario_search: scenarioSearch }),
-          // History filters omitted — fetched via /attempt/dashboard/search
+          // History filters omitted — fetched via /attempt/search
           // below in parallel (canonical history surface, scoped to recordId
           // via target_profile_id above).
         },
       }),
       // Parallel history fetch — mirrors dashboard page pattern. /search is
       // the canonical history endpoint; /get no longer returns inline history.
-      api.post("/attempt/dashboard/search", {
+      api.post("/attempt/search", {
         body: {
           target_profile_id: recordId,
           page: historyPage,
@@ -245,7 +245,7 @@ export default async function RecordPage({
           ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
           ...(roleIds.length && { role_ids: roleIds }),
         },
-      } as InputOf<"/attempt/dashboard/search", "post">) as Promise<OutputOf<"/attempt/dashboard/search", "post">>,
+      } as InputOf<"/attempt/search", "post">) as Promise<OutputOf<"/attempt/search", "post">>,
       getAttemptContextById(recordId) as Promise<ContextOut>,
       api.post(
         "/attempt/group",

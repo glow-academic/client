@@ -74,7 +74,7 @@ export function useTestComplete(): UseTestCompleteReturn {
       try {
         setError(null);
         setStage("completing_invocation");
-        await transport.send("/test/invocation/complete", {
+        await transport.send("/test/invocation_complete", {
           test_id: params.testId,
           test_invocation_id: params.invocationId,
           ...(params.message !== undefined && { message: params.message }),

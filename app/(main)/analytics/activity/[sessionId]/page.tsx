@@ -23,8 +23,8 @@ import { loadSessionSearchParams } from "@/lib/search-params/session";
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
-type SessionDetailIn = InputOf<"/system/session/get", "post">;
-type SessionDetailOut = OutputOf<"/system/session/get", "post">;
+type SessionDetailIn = InputOf<"/system/session", "post">;
+type SessionDetailOut = OutputOf<"/system/session", "post">;
 type ContextIn = InputOf<"/system/context", "post">;
 type ContextOut = OutputOf<"/system/context", "post">;
 type SystemGroupIn = InputOf<"/system/group", "post">;
@@ -43,7 +43,7 @@ const getSessionDetail = async (
 ): Promise<SessionDetailOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/system/session/get", input, {
+  return api.post("/system/session", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

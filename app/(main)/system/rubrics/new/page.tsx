@@ -29,8 +29,8 @@ type GetRubricIn = InputOf<"/rubric/get", "post">;
 type GetRubricOut = OutputOf<"/rubric/get", "post">;
 type CreateRubricIn = InputOf<"/rubric/create", "post">;
 type CreateRubricOut = OutputOf<"/rubric/create", "post">;
-type PatchRubricDraftIn = InputOf<"/rubric/draft", "patch">;
-type PatchRubricDraftOut = OutputOf<"/rubric/draft", "patch">;
+type PatchRubricDraftIn = InputOf<"/rubric/draft", "post">;
+type PatchRubricDraftOut = OutputOf<"/rubric/draft", "post">;
 type GroupRubricIn = InputOf<"/rubric/group", "post">;
 type GroupRubricOut = OutputOf<"/rubric/group", "post">;
 type GenerationsIn = InputOf<"/rubric/generations", "post">;
@@ -94,7 +94,7 @@ async function patchRubricDraft(
   input: PatchRubricDraftIn
 ): Promise<PatchRubricDraftOut> {
   "use server";
-  return api.patch("/rubric/draft", input);
+  return api.post("/rubric/draft", input);
 }
 
 

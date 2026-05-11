@@ -24,8 +24,8 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
-type BenchmarkOverviewIn = InputOf<"/test/benchmark/get", "post">;
-type BenchmarkOverviewOut = OutputOf<"/test/benchmark/get", "post">;
+type BenchmarkOverviewIn = InputOf<"/test/benchmark", "post">;
+type BenchmarkOverviewOut = OutputOf<"/test/benchmark", "post">;
 // For backward compatibility, extract evals list structure from overview
 type EvalsListOut = {
   evals: BenchmarkOverviewOut["evals"];
@@ -65,7 +65,7 @@ const getBenchmarkOverview = async (
   "use server";
   const bypassCache = await isHardRefresh();
 
-  return api.post("/test/benchmark/get", input, {
+  return api.post("/test/benchmark", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

@@ -36,8 +36,8 @@ type CreateDepartmentIn = InputOf<"/department/create", "post">;
 type CreateDepartmentOut = OutputOf<"/department/create", "post">;
 type UpdateDepartmentIn = InputOf<"/department/update", "post">;
 type UpdateDepartmentOut = OutputOf<"/department/update", "post">;
-type PatchDepartmentDraftIn = InputOf<"/department/draft", "patch">;
-type PatchDepartmentDraftOut = OutputOf<"/department/draft", "patch">;
+type PatchDepartmentDraftIn = InputOf<"/department/draft", "post">;
+type PatchDepartmentDraftOut = OutputOf<"/department/draft", "post">;
 
 type DepartmentData = OutputOf<"/department/get", "post">;
 

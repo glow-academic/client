@@ -344,7 +344,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/persona/text/download": {
+    "/persona/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -364,7 +364,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/persona/call/download": {
+    "/persona/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -384,7 +384,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/persona/file/download": {
+    "/persona/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -553,15 +553,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Scenario Draft
          * @description Patch scenario draft — composable infra architecture.
          */
-        patch: operations["patch_scenario_draft_scenario_draft_patch"];
+        post: operations["patch_scenario_draft_scenario_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/scenario/drafts": {
@@ -744,27 +744,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scenario/image/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Upload Image
-         * @description Upload an image for later use in scenarios.
-         */
-        post: operations["upload_image_scenario_image_upload_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/scenario/image/download": {
+    "/scenario/image_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -784,7 +764,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scenario/video/upload": {
+    "/scenario/image_upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -794,17 +774,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Upload Video
-         * @description Upload a video for later use in scenarios.
+         * Upload Image
+         * @description Upload an image for later use in scenarios.
          */
-        post: operations["upload_video_scenario_video_upload_post"];
+        post: operations["upload_image_scenario_image_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenario/video/download": {
+    "/scenario/video_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -824,7 +804,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scenario/text/download": {
+    "/scenario/video_upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Video
+         * @description Upload a video for later use in scenarios.
+         */
+        post: operations["upload_video_scenario_video_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scenario/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -844,7 +844,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scenario/file/download": {
+    "/scenario/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -864,7 +864,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scenario/file/preview": {
+    "/scenario/file_preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -884,7 +884,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scenario/call/download": {
+    "/scenario/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -1076,15 +1076,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Simulation Draft
          * @description Patch simulation draft — composable infra architecture.
          */
-        patch: operations["patch_simulation_draft_simulation_draft_patch"];
+        post: operations["patch_simulation_draft_simulation_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/simulation/drafts": {
@@ -1244,7 +1244,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/simulation/text/download": {
+    "/simulation/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -1264,7 +1264,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/simulation/file/download": {
+    "/simulation/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -1284,7 +1284,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/simulation/call/download": {
+    "/simulation/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -1433,15 +1433,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Document Draft
          * @description Patch document draft — composable infra architecture.
          */
-        patch: operations["patch_document_draft_document_draft_patch"];
+        post: operations["patch_document_draft_document_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/document/drafts": {
@@ -1644,27 +1644,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/document/text/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Upload Text
-         * @description Upload a text file for later use in documents.
-         */
-        post: operations["upload_text_document_text_upload_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/document/text/download": {
+    "/document/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -1684,7 +1664,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/document/file/upload": {
+    "/document/text_upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -1694,17 +1674,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Upload File
-         * @description Upload a file for later use in documents.
+         * Upload Text
+         * @description Upload a text file for later use in documents.
          */
-        post: operations["upload_file_document_file_upload_post"];
+        post: operations["upload_text_document_text_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/document/file/download": {
+    "/document/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -1724,7 +1704,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/document/file/preview": {
+    "/document/file_preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -1744,7 +1724,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/document/call/download": {
+    "/document/file_upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload File
+         * @description Upload a file for later use in documents.
+         */
+        post: operations["upload_file_document_file_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/document/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -1893,15 +1893,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Department Draft
          * @description Patch department draft — composable infra architecture.
          */
-        patch: operations["patch_department_draft_department_draft_patch"];
+        post: operations["patch_department_draft_department_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/department/drafts": {
@@ -2104,7 +2104,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/department/text/download": {
+    "/department/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -2124,7 +2124,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/department/file/download": {
+    "/department/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -2144,7 +2144,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/department/call/download": {
+    "/department/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -2293,15 +2293,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Cohort Draft
          * @description Patch cohort draft — composable infra architecture.
          */
-        patch: operations["patch_cohort_draft_cohort_draft_patch"];
+        post: operations["patch_cohort_draft_cohort_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/cohort/drafts": {
@@ -2504,7 +2504,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/cohort/text/download": {
+    "/cohort/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -2524,7 +2524,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/cohort/file/download": {
+    "/cohort/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -2544,7 +2544,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/cohort/call/download": {
+    "/cohort/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -2713,15 +2713,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Eval Draft
          * @description Patch eval draft — composable infra architecture.
          */
-        patch: operations["patch_eval_draft_eval_draft_patch"];
+        post: operations["patch_eval_draft_eval_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/eval/drafts": {
@@ -2904,7 +2904,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/eval/text/download": {
+    "/eval/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -2924,7 +2924,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/eval/file/download": {
+    "/eval/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -2944,7 +2944,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/eval/call/download": {
+    "/eval/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -3116,15 +3116,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Rubric Draft
          * @description Patch rubric draft — composable infra architecture.
          */
-        patch: operations["patch_rubric_draft_rubric_draft_patch"];
+        post: operations["patch_rubric_draft_rubric_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/rubric/drafts": {
@@ -3304,7 +3304,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/rubric/text/download": {
+    "/rubric/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -3324,7 +3324,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/rubric/file/download": {
+    "/rubric/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -3344,7 +3344,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/rubric/call/download": {
+    "/rubric/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -3493,15 +3493,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Setting Draft
          * @description Patch setting draft — composable infra architecture.
          */
-        patch: operations["patch_setting_draft_setting_draft_patch"];
+        post: operations["patch_setting_draft_setting_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/setting/drafts": {
@@ -3724,7 +3724,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/setting/text/download": {
+    "/setting/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -3744,7 +3744,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/setting/file/download": {
+    "/setting/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -3764,7 +3764,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/setting/call/download": {
+    "/setting/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -3956,15 +3956,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Agent Draft
          * @description Patch agent draft — composable infra architecture.
          */
-        patch: operations["patch_agent_draft_agent_draft_patch"];
+        post: operations["patch_agent_draft_agent_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/agent/drafts": {
@@ -4124,7 +4124,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/agent/text/download": {
+    "/agent/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -4144,7 +4144,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/agent/file/download": {
+    "/agent/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -4164,7 +4164,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/agent/call/download": {
+    "/agent/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -4313,15 +4313,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Model Draft
          * @description Patch model draft — composable infra architecture.
          */
-        patch: operations["patch_model_draft_model_draft_patch"];
+        post: operations["patch_model_draft_model_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/model/drafts": {
@@ -4524,7 +4524,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/model/text/download": {
+    "/model/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -4544,7 +4544,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/model/file/download": {
+    "/model/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -4564,7 +4564,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/model/call/download": {
+    "/model/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -4713,15 +4713,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Provider Draft
          * @description Patch provider draft — composable infra architecture.
          */
-        patch: operations["patch_provider_draft_provider_draft_patch"];
+        post: operations["patch_provider_draft_provider_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/provider/drafts": {
@@ -4944,7 +4944,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/provider/text/download": {
+    "/provider/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -4964,7 +4964,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/provider/file/download": {
+    "/provider/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -4984,7 +4984,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/provider/call/download": {
+    "/provider/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -5156,15 +5156,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Parameter Draft
          * @description Patch parameter draft — composable infra architecture.
          */
-        patch: operations["patch_parameter_draft_parameter_draft_patch"];
+        post: operations["patch_parameter_draft_parameter_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/parameter/drafts": {
@@ -5344,7 +5344,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/parameter/text/download": {
+    "/parameter/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -5364,7 +5364,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/parameter/file/download": {
+    "/parameter/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -5384,7 +5384,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/parameter/call/download": {
+    "/parameter/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -5533,15 +5533,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Field Draft
          * @description Patch field draft — composable infra architecture.
          */
-        patch: operations["patch_field_draft_field_draft_patch"];
+        post: operations["patch_field_draft_field_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/field/drafts": {
@@ -5744,7 +5744,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/field/text/download": {
+    "/field/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -5764,7 +5764,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/field/file/download": {
+    "/field/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -5784,7 +5784,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/field/call/download": {
+    "/field/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -5913,15 +5913,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Profile Draft
          * @description Patch profile draft — composable infra architecture.
          */
-        patch: operations["patch_profile_draft_profile_draft_patch"];
+        post: operations["patch_profile_draft_profile_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/profile/drafts": {
@@ -6164,7 +6164,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/profile/text/download": {
+    "/profile/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -6184,7 +6184,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/profile/call/download": {
+    "/profile/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -6356,15 +6356,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Auth Draft
          * @description Patch auth draft — composable infra architecture.
          */
-        patch: operations["patch_auth_draft_auth_draft_patch"];
+        post: operations["patch_auth_draft_auth_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/auth/drafts": {
@@ -6524,7 +6524,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/text/download": {
+    "/auth/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -6544,7 +6544,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/call/download": {
+    "/auth/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -6693,15 +6693,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Tool Draft
          * @description Patch tool draft — composable infra architecture.
          */
-        patch: operations["patch_tool_draft_tool_draft_patch"];
+        post: operations["patch_tool_draft_tool_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/tool/drafts": {
@@ -6924,7 +6924,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tool/text/download": {
+    "/tool/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -6944,7 +6944,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tool/file/download": {
+    "/tool/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -6964,7 +6964,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tool/call/download": {
+    "/tool/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -7015,7 +7015,7 @@ export interface paths {
         put?: never;
         /**
          * Search Attempt
-         * @description Search attempts — composable infra architecture.
+         * @description Search paginated attempt history. Canonical for all view contexts.
          */
         post: operations["search_attempt_attempt_search_post"];
         delete?: never;
@@ -7268,247 +7268,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/chat/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Attempt Chat Endpoint
-         * @description Create a chat within an attempt.
-         */
-        post: operations["create_attempt_chat_endpoint_attempt_chat_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/chat/message": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Chat Message
-         * @description Create a message in an attempt chat.
-         */
-        post: operations["chat_message_attempt_chat_message_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/chat/audio": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Chat Audio
-         * @description Attach an audios_id to an attempt chat message.
-         */
-        post: operations["chat_audio_attempt_chat_audio_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/chat/grade": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Chat Grade
-         * @description Manually grade an attempt chat with a score.
-         */
-        post: operations["chat_grade_attempt_chat_grade_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/chat/response": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Chat Response
-         * @description Submit a video question response.
-         */
-        post: operations["chat_response_attempt_chat_response_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/chat/voice": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Chat Voice
-         * @description Start a voice session for an attempt chat.
-         */
-        post: operations["chat_voice_attempt_chat_voice_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/chat/speak": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Chat Speak
-         * @description Push audio bytes into a conversation's inbound buffer.
-         */
-        post: operations["chat_speak_attempt_chat_speak_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/chat/silence": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Chat Silence
-         * @description End a voice session for an attempt chat.
-         */
-        post: operations["chat_silence_attempt_chat_silence_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/chat/complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Chat Complete
-         * @description Mark an attempt chat as completed — final step after grading.
-         */
-        post: operations["chat_complete_attempt_chat_complete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/chat/feedback": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Chat Feedback
-         * @description Create feedback items for the latest grade on a chat.
-         */
-        post: operations["chat_feedback_attempt_chat_feedback_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/chat/strengths": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Chat Strengths
-         * @description Create strength items (with optional inline highlights) for the latest grade.
-         */
-        post: operations["chat_strengths_attempt_chat_strengths_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/chat/improvements": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Chat Improvements
-         * @description Create improvement items (with optional inline replacements) for the latest grade.
-         */
-        post: operations["chat_improvements_attempt_chat_improvements_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/chat/analyses": {
+    "/attempt/chat_analyses": {
         parameters: {
             query?: never;
             header?: never;
@@ -7528,7 +7288,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/chat/hints": {
+    "/attempt/chat_audio": {
         parameters: {
             query?: never;
             header?: never;
@@ -7538,17 +7298,77 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Chat Hints
-         * @description Create hint items for messages in a chat.
+         * Chat Audio
+         * @description Attach an audios_id to an attempt chat message.
          */
-        post: operations["chat_hints_attempt_chat_hints_post"];
+        post: operations["chat_audio_attempt_chat_audio_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/attempt/chat/get": {
+    "/attempt/chat_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Complete
+         * @description Mark an attempt chat as completed — final step after grading.
+         */
+        post: operations["chat_complete_attempt_chat_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat_create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Attempt Chat Endpoint
+         * @description Create a chat within an attempt.
+         */
+        post: operations["create_attempt_chat_endpoint_attempt_chat_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat_feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Feedback
+         * @description Create feedback items for the latest grade on a chat.
+         */
+        post: operations["chat_feedback_attempt_chat_feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat_get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7568,7 +7388,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/chat/refresh": {
+    "/attempt/chat_grade": {
         parameters: {
             query?: never;
             header?: never;
@@ -7578,17 +7398,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Chat Refresh
-         * @description Refresh chat materialized views and invalidate caches.
+         * Chat Grade
+         * @description Manually grade an attempt chat with a score.
          */
-        post: operations["chat_refresh_attempt_chat_refresh_post"];
+        post: operations["chat_grade_attempt_chat_grade_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/attempt/chat/export": {
+    "/attempt/chat_hints": {
         parameters: {
             query?: never;
             header?: never;
@@ -7598,10 +7418,150 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Export Chat
-         * @description Export a single chat as a clean, denormalized CSV.
+         * Chat Hints
+         * @description Create hint items for messages in a chat.
          */
-        post: operations["export_chat_attempt_chat_export_post"];
+        post: operations["chat_hints_attempt_chat_hints_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat_improvements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Improvements
+         * @description Create improvement items (with optional inline replacements) for the latest grade.
+         */
+        post: operations["chat_improvements_attempt_chat_improvements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat_message": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Message
+         * @description Create a message in an attempt chat.
+         */
+        post: operations["chat_message_attempt_chat_message_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat_response": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Response
+         * @description Submit a video question response.
+         */
+        post: operations["chat_response_attempt_chat_response_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat_silence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Silence
+         * @description End a voice session for an attempt chat.
+         */
+        post: operations["chat_silence_attempt_chat_silence_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat_speak": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Speak
+         * @description Push audio bytes into a conversation's inbound buffer.
+         */
+        post: operations["chat_speak_attempt_chat_speak_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat_strengths": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Strengths
+         * @description Create strength items (with optional inline highlights) for the latest grade.
+         */
+        post: operations["chat_strengths_attempt_chat_strengths_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat_voice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Voice
+         * @description Start a voice session for an attempt chat.
+         */
+        post: operations["chat_voice_attempt_chat_voice_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7617,15 +7577,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Chat Draft
          * @description Patch chat draft — composable infra architecture.
          */
-        patch: operations["patch_chat_draft_attempt_draft_patch"];
+        post: operations["patch_chat_draft_attempt_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/attempt/drafts": {
@@ -7648,7 +7608,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/home/get": {
+    "/attempt/home": {
         parameters: {
             query?: never;
             header?: never;
@@ -7661,34 +7621,14 @@ export interface paths {
          * Home Get
          * @description Get simulations available for home (operational).
          */
-        post: operations["home_get_attempt_home_get_post"];
+        post: operations["home_get_attempt_home_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/attempt/home/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Home
-         * @description Get paginated attempt history for home.
-         */
-        post: operations["search_home_attempt_home_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/practice/get": {
+    "/attempt/practice": {
         parameters: {
             query?: never;
             header?: never;
@@ -7701,34 +7641,14 @@ export interface paths {
          * Practice Get
          * @description Get simulations available for practice (operational).
          */
-        post: operations["practice_get_attempt_practice_get_post"];
+        post: operations["practice_get_attempt_practice_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/attempt/practice/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Practice
-         * @description Get paginated attempt history for practice.
-         */
-        post: operations["search_practice_attempt_practice_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/dashboard/get": {
+    "/attempt/dashboard": {
         parameters: {
             query?: never;
             header?: never;
@@ -7738,34 +7658,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Dashboard */
-        post: operations["get_dashboard_attempt_dashboard_get_post"];
+        post: operations["get_dashboard_attempt_dashboard_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/attempt/dashboard/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Dashboard
-         * @description Get dashboard attempt history (paginated).
-         */
-        post: operations["search_dashboard_attempt_dashboard_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/leaderboard/get": {
+    "/attempt/leaderboard": {
         parameters: {
             query?: never;
             header?: never;
@@ -7775,74 +7675,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Leaderboard */
-        post: operations["get_leaderboard_attempt_leaderboard_get_post"];
+        post: operations["get_leaderboard_attempt_leaderboard_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/attempt/leaderboard/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Leaderboard
-         * @description Get leaderboard profile rows (bottom table, paginated).
-         */
-        post: operations["search_leaderboard_attempt_leaderboard_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/record/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Record
-         * @description Get record profile report — dashboard metrics for a single profile.
-         */
-        post: operations["get_record_attempt_record_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/record/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Record
-         * @description Get record attempt history for a single profile (paginated).
-         */
-        post: operations["search_record_attempt_record_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/report/search": {
+    "/attempt/report": {
         parameters: {
             query?: never;
             header?: never;
@@ -7855,14 +7695,34 @@ export interface paths {
          * Get Reports
          * @description Get reports artifact data via composable context resolver.
          */
-        post: operations["get_reports_attempt_report_search_post"];
+        post: operations["get_reports_attempt_report_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/attempt/audio/upload": {
+    "/attempt/audio_download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Audio
+         * @description Download an audio file by audio entry ID.
+         */
+        post: operations["download_audio_attempt_audio_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/audio_upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -7895,27 +7755,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/audio/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Download Audio
-         * @description Download an audio file by audio entry ID.
-         */
-        post: operations["download_audio_attempt_audio_download_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/image/download": {
+    "/attempt/image_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -7935,7 +7775,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/video/download": {
+    "/attempt/video_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -7955,7 +7795,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/text/download": {
+    "/attempt/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -7975,7 +7815,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/file/download": {
+    "/attempt/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -7995,7 +7835,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/file/preview": {
+    "/attempt/file_preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -8015,7 +7855,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/call/download": {
+    "/attempt/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -8162,57 +8002,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/test/trace": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Test Trace */
-        post: operations["test_trace_test_trace_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/run/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Run Test */
-        post: operations["run_test_test_run__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/run/end": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Run Test End */
-        post: operations["run_test_end_test_run_end_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/test/complete": {
         parameters: {
             query?: never;
@@ -8264,6 +8053,26 @@ export interface paths {
          * @description Search tests — composable infra architecture.
          */
         post: operations["search_test_test_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/test/invocations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * List Invocations
+         * @description List test invocations with pagination and filters.
+         */
+        post: operations["list_invocations_test_invocations_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8407,7 +8216,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/test/text/download": {
+    "/test/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Patch Invocation Draft
+         * @description Patch invocation draft — composable infra architecture.
+         */
+        post: operations["patch_invocation_draft_test_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/test/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Invocation Drafts
+         * @description List invocation drafts owned by the current profile.
+         */
+        post: operations["get_invocation_drafts_test_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/test/decrypt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decrypt Invocation Key
+         * @description Decrypt a key scoped to an invocation entry.
+         */
+        post: operations["decrypt_invocation_key_test_decrypt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/test/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -8427,7 +8296,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/test/call/download": {
+    "/test/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -8447,7 +8316,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/test/file/download": {
+    "/test/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -8467,7 +8336,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/test/benchmark/get": {
+    "/test/benchmark": {
         parameters: {
             query?: never;
             header?: never;
@@ -8480,14 +8349,14 @@ export interface paths {
          * Get Benchmark
          * @description Get benchmark artifact data with the canonical shared benchmark operation.
          */
-        post: operations["get_benchmark_test_benchmark_get_post"];
+        post: operations["get_benchmark_test_benchmark_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/test/benchmark/search": {
+    "/test/invocation_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -8496,38 +8365,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Search Benchmark History
-         * @description Search benchmark test history with pagination and filters.
-         */
-        post: operations["search_benchmark_history_test_benchmark_search_post"];
+        /** Complete Invocation */
+        post: operations["complete_invocation_test_invocation_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/test/invocation/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Invocation Get
-         * @description Get hydrated resources for benchmark bundle customization.
-         */
-        post: operations["invocation_get_test_invocation_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test/invocation/create": {
+    "/test/invocation_create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8547,7 +8393,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/test/invocation/complete": {
+    "/test/invocation_get": {
         parameters: {
             query?: never;
             header?: never;
@@ -8556,15 +8402,18 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Complete Invocation */
-        post: operations["complete_invocation_test_invocation_complete_post"];
+        /**
+         * Invocation Get
+         * @description Get hydrated resources for benchmark bundle customization.
+         */
+        post: operations["invocation_get_test_invocation_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/test/invocation/draft": {
+    "/test/invocation_run": {
         parameters: {
             query?: never;
             header?: never;
@@ -8573,38 +8422,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Invocation Draft
-         * @description Patch invocation draft — composable infra architecture.
-         */
-        patch: operations["patch_invocation_draft_test_invocation_draft_patch"];
-        trace?: never;
-    };
-    "/test/invocation/drafts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Invocation Drafts
-         * @description List invocation drafts owned by the current profile.
-         */
-        post: operations["get_invocation_drafts_test_invocation_drafts_post"];
+        /** Run Invocation */
+        post: operations["run_invocation_test_invocation_run_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/test/invocation/decrypt": {
+    "/test/invocation_terminate": {
         parameters: {
             query?: never;
             header?: never;
@@ -8613,11 +8439,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Decrypt Invocation Key
-         * @description Decrypt a key scoped to an invocation entry.
-         */
-        post: operations["decrypt_invocation_key_test_invocation_decrypt_post"];
+        /** Terminate Invocation */
+        post: operations["terminate_invocation_test_invocation_terminate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/test/invocation_trace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test Trace */
+        post: operations["test_trace_test_invocation_trace_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8712,6 +8552,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/system/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Groups
+         * @description Get paginated groups list with cost data (canonical groups list).
+         */
+        post: operations["search_groups_system_groups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/system/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Sessions
+         * @description Get paginated sessions list with activity data (canonical sessions list).
+         */
+        post: operations["search_sessions_system_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/system/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Problem
+         * @description Resolve or unresolve a problem entry.
+         */
+        post: operations["resolve_problem_system_resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/system/problem": {
         parameters: {
             query?: never;
@@ -8772,67 +8672,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/group/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Group
-         * @description Get detailed group information with all runs and messages.
-         */
-        post: operations["get_group_system_group_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/group/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Groups
-         * @description Search groups — composable infra architecture.
-         */
-        post: operations["search_groups_system_group_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/group/name": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Name Group
-         * @description Set or update a group's name.
-         */
-        post: operations["name_group_system_group_name_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/session/get": {
+    "/system/session": {
         parameters: {
             query?: never;
             header?: never;
@@ -8845,14 +8685,14 @@ export interface paths {
          * Get Session
          * @description Get session detail with groups and timeline.
          */
-        post: operations["get_session_system_session_get_post"];
+        post: operations["get_session_system_session_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/system/health/get": {
+    "/system/health": {
         parameters: {
             query?: never;
             header?: never;
@@ -8865,14 +8705,14 @@ export interface paths {
          * Get Health
          * @description Get health artifact data.
          */
-        post: operations["get_health_system_health_get_post"];
+        post: operations["get_health_system_health_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/system/activity/get": {
+    "/system/activity": {
         parameters: {
             query?: never;
             header?: never;
@@ -8882,54 +8722,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Activity */
-        post: operations["get_activity_system_activity_get_post"];
+        post: operations["get_activity_system_activity_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/system/activity/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Activity
-         * @description Get activity session history (bottom table, paginated).
-         */
-        post: operations["search_activity_system_activity_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/activity/resolve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Resolve Problem
-         * @description Resolve or unresolve a problem entry.
-         */
-        post: operations["resolve_problem_system_activity_resolve_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/pricing/get": {
+    "/system/pricing": {
         parameters: {
             query?: never;
             header?: never;
@@ -8942,34 +8742,14 @@ export interface paths {
          * Get Pricing
          * @description Get pricing top chart — daily cost aggregation + filter options.
          */
-        post: operations["get_pricing_system_pricing_get_post"];
+        post: operations["get_pricing_system_pricing_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/system/pricing/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Pricing
-         * @description Get pricing group history (bottom table, paginated).
-         */
-        post: operations["search_pricing_system_pricing_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/system/audio/download": {
+    "/system/audio_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -8989,7 +8769,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/call/download": {
+    "/system/call_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -9009,7 +8789,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/file/download": {
+    "/system/file_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -9029,7 +8809,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/file/preview": {
+    "/system/file_preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -9049,7 +8829,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/image/download": {
+    "/system/image_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -9069,7 +8849,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/text/download": {
+    "/system/text_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -9089,7 +8869,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/system/video/download": {
+    "/system/video_download": {
         parameters: {
             query?: never;
             header?: never;
@@ -9536,30 +9316,6 @@ export interface components {
              * @description Profile ID to focus the summary card
              */
             summary_profile_id?: string | null;
-            /**
-             * History Page
-             * @description Embedded history page number
-             * @default 0
-             */
-            history_page: number;
-            /**
-             * History Page Size
-             * @description Embedded history items per page
-             * @default 50
-             */
-            history_page_size: number;
-            /**
-             * History Sort By
-             * @description Embedded history sort field
-             * @default date
-             */
-            history_sort_by: string;
-            /**
-             * History Sort Order
-             * @description Embedded history sort direction
-             * @default desc
-             */
-            history_sort_order: string;
         };
         /**
          * ActivityResources
@@ -9619,7 +9375,7 @@ export interface components {
             resources?: components["schemas"]["ActivityResources"];
             /** @description Inline analytics facets for SSR */
             analytics?: components["schemas"]["AnalyticsFacets"] | null;
-            /** @description Embedded session history */
+            /** @description Always null on /activity/get — use /system/sessions instead */
             history?: components["schemas"]["ActivityHistoryResponse"] | null;
         };
         /** AgentDepartmentResource */
@@ -21726,47 +21482,6 @@ export interface components {
             row_count: number;
         };
         /**
-         * ExportChatApiRequest
-         * @description Request model for chat export.
-         */
-        ExportChatApiRequest: {
-            /**
-             * Chat Entry Id
-             * Format: uuid
-             */
-            chat_entry_id: string;
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /**
-         * ExportChatApiResponse
-         * @description Response model for chat export.
-         */
-        ExportChatApiResponse: {
-            /**
-             * Content
-             * @description Exported file content
-             */
-            content: string;
-            /**
-             * File Name
-             * @description Name of the exported file
-             */
-            file_name: string;
-            /**
-             * Mime Type
-             * @description MIME type of the exported file
-             */
-            mime_type: string;
-            /**
-             * Row Count
-             * @description Number of rows in the export
-             */
-            row_count: number;
-        };
-        /**
          * ExportCohortApiRequest
          * @description Request model for cohort export.
          */
@@ -27917,153 +27632,6 @@ export interface components {
              */
             mcp: boolean;
         };
-        /**
-         * GetGroupDetailRequest
-         * @description Request for group detail endpoint.
-         */
-        GetGroupDetailRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the group to fetch
-             */
-            group_id: string;
-            /**
-             * Message Limit
-             * @description Maximum number of messages to return
-             */
-            message_limit?: number | null;
-            /**
-             * Message Offset
-             * @description Offset for message pagination
-             */
-            message_offset?: number | null;
-        };
-        /**
-         * GetGroupDetailResponse
-         * @description Response for group detail endpoint.
-         */
-        GetGroupDetailResponse: {
-            /**
-             * Group Exists
-             * @description Whether the group exists
-             * @default false
-             */
-            group_exists: boolean;
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Group Name
-             * @description Name of the group
-             */
-            group_name?: string | null;
-            /**
-             * Total Message Count
-             * @description Total number of messages in the group
-             * @default 0
-             */
-            total_message_count: number;
-            /**
-             * Runs
-             * @description Runs with their messages
-             */
-            runs?: components["schemas"]["GroupDetailRunWithMessages"][];
-            /**
-             * Models
-             * @description Models used in the group
-             */
-            models?: components["schemas"]["GroupDetailResourceItem"][];
-            /**
-             * Agents
-             * @description Agents used in the group
-             */
-            agents?: components["schemas"]["GroupDetailResourceItem"][];
-            /**
-             * Profiles
-             * @description Profiles in the group
-             */
-            profiles?: components["schemas"]["GroupDetailResourceItem"][];
-        };
-        /**
-         * GetGroupListRequest
-         * @description Request for group list/search endpoint.
-         */
-        GetGroupListRequest: {
-            /**
-             * Search
-             * @description Name search (ILIKE)
-             */
-            search?: string | null;
-            /**
-             * Agent Id
-             * @description Filter by agent UUID
-             */
-            agent_id?: string | null;
-            /**
-             * Model Id
-             * @description Filter by model UUID
-             */
-            model_id?: string | null;
-            /**
-             * Date From
-             * @description Start date filter
-             */
-            date_from?: string | null;
-            /**
-             * Date To
-             * @description End date filter
-             */
-            date_to?: string | null;
-            /**
-             * Sort By
-             * @description 'date' | 'cost' | 'tokens' | 'runs'
-             * @default date
-             */
-            sort_by: string;
-            /**
-             * Sort Order
-             * @description Sort order: 'asc' or 'desc'
-             * @default desc
-             */
-            sort_order: string;
-            /**
-             * Page Limit
-             * @description Maximum items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Offset for pagination
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GetGroupListResponse
-         * @description Response for group list endpoint.
-         */
-        GetGroupListResponse: {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Items
-             * @description Group list items
-             */
-            items?: components["schemas"]["GroupListItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching groups
-             * @default 0
-             */
-            total_count: number;
-        };
         /** GetHealthResponse */
         GetHealthResponse: {
             /**
@@ -33180,110 +32748,6 @@ export interface components {
             runs?: components["schemas"]["GroupRun"][] | null;
         };
         /**
-         * GroupListItem
-         * @description Single group in the list response with hydrated metadata.
-         */
-        GroupListItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the group
-             */
-            group_id: string;
-            /**
-             * Session Id
-             * @description UUID of the parent session
-             */
-            session_id?: string | null;
-            /**
-             * Profile Id
-             * @description UUID of the user profile
-             */
-            profile_id?: string | null;
-            /**
-             * Group Name
-             * @description Name of the group
-             */
-            group_name?: string | null;
-            /**
-             * First Run At
-             * @description Timestamp of the first run
-             */
-            first_run_at?: string | null;
-            /**
-             * Last Run At
-             * @description Timestamp of the last run
-             */
-            last_run_at?: string | null;
-            /**
-             * Run Count
-             * @description Number of runs in the group
-             * @default 0
-             */
-            run_count: number;
-            /**
-             * Unique Agents
-             * @description Number of unique agents used
-             * @default 0
-             */
-            unique_agents: number;
-            /**
-             * Unique Models
-             * @description Number of unique models used
-             * @default 0
-             */
-            unique_models: number;
-            /**
-             * Total Input Tokens
-             * @description Total input tokens consumed
-             * @default 0
-             */
-            total_input_tokens: number;
-            /**
-             * Total Output Tokens
-             * @description Total output tokens generated
-             * @default 0
-             */
-            total_output_tokens: number;
-            /**
-             * Total Tokens
-             * @description Total tokens used
-             * @default 0
-             */
-            total_tokens: number;
-            /**
-             * Total Cost
-             * @description Total cost of the group
-             * @default 0
-             */
-            total_cost: string;
-            /**
-             * Agent Ids
-             * @description UUIDs of agents used
-             */
-            agent_ids?: string[] | null;
-            /**
-             * Model Ids
-             * @description UUIDs of models used
-             */
-            model_ids?: string[] | null;
-            /**
-             * Profile Name
-             * @description Display name of the user profile
-             */
-            profile_name?: string | null;
-            /**
-             * Agent Names
-             * @description Names of agents used
-             */
-            agent_names?: string[] | null;
-            /**
-             * Model Names
-             * @description Names of models used
-             */
-            model_names?: string[] | null;
-        };
-        /**
          * GroupMessage
          * @description Message within a run.
          */
@@ -33729,6 +33193,12 @@ export interface components {
         /**
          * GroupSystemApiRequest
          * @description Request body for POST /system/group.
+         *
+         *     Inherits the lean resolve fields (``group_id``, ``snapshot_key``) and
+         *     adds optional detail fields. When ``include_detail=True`` the response
+         *     embeds the full group detail tree (runs + messages + hydrated resources).
+         *     Internal audit-linking calls leave ``include_detail`` at the default
+         *     ``False`` for the cheap lean shape.
          */
         GroupSystemApiRequest: {
             /**
@@ -33741,10 +33211,30 @@ export interface components {
              * @description Snapshot key for SETNX-race convergence on a single group across concurrent reads (e.g. parallel /context + /group + /search fan-out on page load). Echoed back in the response.
              */
             snapshot_key?: string | null;
+            /**
+             * Include Detail
+             * @description When True, embed runs+messages+hydrated resources alongside the lean resolve fields.
+             * @default false
+             */
+            include_detail: boolean;
+            /**
+             * Message Limit
+             * @description When include_detail=True: maximum number of messages per run to return.
+             */
+            message_limit?: number | null;
+            /**
+             * Message Offset
+             * @description When include_detail=True: message pagination offset.
+             */
+            message_offset?: number | null;
         };
         /**
          * GroupSystemApiResponse
          * @description Response body for POST /system/group.
+         *
+         *     Lean fields (``group_id``, ``name``, ``snapshot_key``) are always populated.
+         *     Detail fields below are populated only when the request set
+         *     ``include_detail=True``.
          */
         GroupSystemApiResponse: {
             /**
@@ -33765,9 +33255,39 @@ export interface components {
             snapshot_key?: string | null;
             /**
              * Runs
-             * @description Conversation history — populated when resolving an existing group for fetch
+             * @description (detail) Runs with their messages
              */
-            runs?: components["schemas"]["GroupRun"][] | null;
+            runs?: components["schemas"]["GroupDetailRunWithMessages"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupDetailResourceItem"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupDetailResourceItem"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles in the group
+             */
+            profiles?: components["schemas"]["GroupDetailResourceItem"][] | null;
         };
         /**
          * GroupTestApiRequest
@@ -35267,7 +34787,11 @@ export interface components {
         };
         /**
          * LeaderboardRequest
-         * @description Request for getting leaderboard artifact bundle (top sections).
+         * @description Request for leaderboard bundle (top-25% sections + rows inline).
+         *
+         *     The previous split between /get and /search was collapsed; this single
+         *     endpoint returns the full top-25% data inline. Pagination is intentionally
+         *     not supported — the leaderboard surfaces the canonical top slice only.
          */
         LeaderboardRequest: {
             /**
@@ -35285,6 +34809,11 @@ export interface components {
              * @description Cohort IDs to filter by
              */
             cohort_ids?: string[] | null;
+            /**
+             * Simulation Ids
+             * @description Simulation IDs to filter by
+             */
+            simulation_ids?: string[] | null;
             /**
              * Department Ids
              * @description Department IDs to filter by
@@ -35305,6 +34834,33 @@ export interface components {
              * @description Single cohort ID (deprecated)
              */
             cohort_id?: string | null;
+            /**
+             * Simulation Id
+             * @description Single simulation ID (deprecated)
+             */
+            simulation_id?: string | null;
+            /**
+             * Scenario Ids
+             * @description Scenario IDs to filter by
+             */
+            scenario_ids?: string[] | null;
+            /**
+             * Search
+             * @description Profile name search (ILIKE) for filter dropdowns
+             */
+            search?: string | null;
+            /**
+             * Sort By
+             * @description Sort field name
+             * @default highest_score
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @description Sort direction (asc or desc)
+             * @default desc
+             */
+            sort_order: string;
         };
         /**
          * LeaderboardResources
@@ -35335,9 +34891,11 @@ export interface components {
         };
         /**
          * LeaderboardResponse
-         * @description Response for leaderboard get (top sections only).
+         * @description Response for leaderboard get — top-25% bundle including inline rows.
          *
-         *     Includes inline analytics facets for SSR filter rendering.
+         *     Replaces the previous split between /get (sections only) and /search (rows
+         *     only). The leaderboard is a fixed top slice, not paginated, so one endpoint
+         *     returns both the section data and the row data the table renders.
          */
         LeaderboardResponse: {
             /** @description Computed leaderboard sections */
@@ -35346,6 +34904,27 @@ export interface components {
             resources?: components["schemas"]["LeaderboardResources"];
             /** @description Inline analytics facets for SSR */
             analytics?: components["schemas"]["AnalyticsFacets"] | null;
+            /**
+             * Data
+             * @description Top-25% leaderboard rows
+             */
+            data?: components["schemas"]["LeaderboardDataRow"][];
+            /**
+             * Total Count
+             * @description Total number of profiles matching filters (top 25% slice)
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Simulation Options
+             * @description Simulation filter options
+             */
+            simulation_options?: components["schemas"]["FilterOption"][];
+            /**
+             * Profile Options
+             * @description Profile filter options
+             */
+            profile_options?: components["schemas"]["FilterOption"][];
         };
         /** LeaderboardScenarioResource */
         LeaderboardScenarioResource: {
@@ -35976,112 +35555,6 @@ export interface components {
              */
             department_ids?: string[] | null;
         };
-        /**
-         * ListDashboardRequest
-         * @description Request for dashboard history list endpoint (paginated attempt history).
-         */
-        ListDashboardRequest: {
-            /**
-             * Start Date
-             * @description Filter start date
-             */
-            start_date?: string | null;
-            /**
-             * End Date
-             * @description Filter end date
-             */
-            end_date?: string | null;
-            /**
-             * Cohort Ids
-             * @description Cohort IDs to filter by
-             */
-            cohort_ids?: string[] | null;
-            /**
-             * Department Ids
-             * @description Department IDs to filter by
-             */
-            department_ids?: string[] | null;
-            /**
-             * Role Ids
-             * @description Role resource IDs to filter profiles by
-             */
-            role_ids?: string[] | null;
-            /**
-             * Target Profile Id
-             * @description Target profile ID to scope data
-             */
-            target_profile_id?: string | null;
-            /**
-             * Practice
-             * @description Filter to practice attempts only
-             */
-            practice?: boolean | null;
-            /**
-             * Scenario Ids
-             * @description Scenario IDs to filter by
-             */
-            scenario_ids?: string[] | null;
-            /**
-             * Simulation Ids
-             * @description Simulation IDs to filter by
-             */
-            simulation_ids?: string[] | null;
-            /**
-             * Profile Ids
-             * @description Profile resource IDs to filter by (intersected with visible profiles)
-             */
-            profile_ids?: string[] | null;
-            /**
-             * Infinite Mode
-             * @description Filter by infinite mode status
-             */
-            infinite_mode?: boolean | null;
-            /**
-             * Show Archived
-             * @description Include archived attempts
-             * @default false
-             */
-            show_archived: boolean;
-            /**
-             * Sort By
-             * @description Sort field name
-             * @default date
-             */
-            sort_by: string;
-            /**
-             * Sort Order
-             * @description Sort direction (asc or desc)
-             * @default desc
-             */
-            sort_order: string;
-            /**
-             * Page
-             * @description Pagination page number
-             * @default 0
-             */
-            page: number;
-            /**
-             * Page Size
-             * @description Items per page
-             * @default 20
-             */
-            page_size: number;
-            /**
-             * Simulation Search
-             * @description Search string for simulations
-             */
-            simulation_search?: string | null;
-            /**
-             * Scenario Search
-             * @description Search string for scenarios
-             */
-            scenario_search?: string | null;
-            /**
-             * Profile Search
-             * @description Search string for profiles
-             */
-            profile_search?: string | null;
-        };
         /** ListDepartmentApiDepartment */
         ListDepartmentApiDepartment: {
             /**
@@ -36628,220 +36101,6 @@ export interface components {
             search?: string | null;
         };
         /**
-         * ListHomeRequest
-         * @description Request for home list endpoint — paginated attempt history.
-         */
-        ListHomeRequest: {
-            /**
-             * Sort By
-             * @description Sort field name
-             * @default date
-             */
-            sort_by: string | null;
-            /**
-             * Sort Order
-             * @description Sort direction (asc or desc)
-             * @default desc
-             */
-            sort_order: string | null;
-            /**
-             * Page
-             * @description Pagination page number
-             * @default 0
-             */
-            page: number;
-            /**
-             * Page Size
-             * @description Items per page
-             * @default 20
-             */
-            page_size: number;
-            /**
-             * Simulation Search
-             * @description Search string for simulations
-             */
-            simulation_search?: string | null;
-            /**
-             * Scenario Search
-             * @description Search string for scenarios
-             */
-            scenario_search?: string | null;
-            /**
-             * Scenario Ids
-             * @description Scenario IDs to filter by
-             */
-            scenario_ids?: string[] | null;
-            /**
-             * Infinite Mode
-             * @description Filter by infinite mode status
-             */
-            infinite_mode?: boolean | null;
-        };
-        /**
-         * ListHomeResponse
-         * @description Client-facing API response for home list (paginated history).
-         */
-        ListHomeResponse: {
-            /**
-             * Data
-             * @description List of history items
-             */
-            data?: components["schemas"]["HistoryItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching records
-             * @default 0
-             */
-            total_count: number;
-            /**
-             * Page
-             * @description Current page number
-             * @default 0
-             */
-            page: number;
-            /**
-             * Page Size
-             * @description Items per page
-             * @default 20
-             */
-            page_size: number;
-            /**
-             * Total Pages
-             * @description Total number of pages
-             * @default 0
-             */
-            total_pages: number;
-            /**
-             * Simulation Options
-             * @description Filter options for simulations
-             */
-            simulation_options?: components["schemas"]["FilterOption"][] | null;
-            /**
-             * Scenario Options
-             * @description Filter options for scenarios
-             */
-            scenario_options?: components["schemas"]["FilterOption"][] | null;
-            /**
-             * Profile Options
-             * @description Filter options for profiles
-             */
-            profile_options?: components["schemas"]["FilterOption"][] | null;
-        };
-        /**
-         * ListLeaderboardRequest
-         * @description Request for leaderboard list endpoint (bottom table, paginated).
-         */
-        ListLeaderboardRequest: {
-            /**
-             * Start Date
-             * @description Filter start date
-             */
-            start_date?: string | null;
-            /**
-             * End Date
-             * @description Filter end date
-             */
-            end_date?: string | null;
-            /**
-             * Cohort Ids
-             * @description Cohort IDs to filter by
-             */
-            cohort_ids?: string[] | null;
-            /**
-             * Simulation Ids
-             * @description Simulation IDs to filter by
-             */
-            simulation_ids?: string[] | null;
-            /**
-             * Department Ids
-             * @description Department IDs to filter by
-             */
-            department_ids?: string[] | null;
-            /**
-             * Simulation Filters
-             * @description Simulation filter strings
-             */
-            simulation_filters?: string[] | null;
-            /**
-             * Target Profile Id
-             * @description Target profile ID to scope data
-             */
-            target_profile_id?: string | null;
-            /**
-             * Cohort Id
-             * @description Single cohort ID (deprecated)
-             */
-            cohort_id?: string | null;
-            /**
-             * Simulation Id
-             * @description Single simulation ID (deprecated)
-             */
-            simulation_id?: string | null;
-            /**
-             * Scenario Ids
-             * @description Scenario IDs to filter by
-             */
-            scenario_ids?: string[] | null;
-            /**
-             * Search
-             * @description Search string for profiles
-             */
-            search?: string | null;
-            /**
-             * Sort By
-             * @description Sort field name
-             * @default highest_score
-             */
-            sort_by: string;
-            /**
-             * Sort Order
-             * @description Sort direction (asc or desc)
-             * @default desc
-             */
-            sort_order: string;
-            /**
-             * Page Limit
-             * @description Max items per page
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @description Pagination offset
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * ListLeaderboardResponse
-         * @description Response for leaderboard list (profile rows, paginated).
-         */
-        ListLeaderboardResponse: {
-            /**
-             * Data
-             * @description Leaderboard profile rows
-             */
-            data?: components["schemas"]["LeaderboardDataRow"][];
-            /** @description Resource metadata for hydration */
-            resources?: components["schemas"]["LeaderboardResources"];
-            /**
-             * Total Count
-             * @description Total number of matching records
-             * @default 0
-             */
-            total_count: number;
-            /**
-             * Simulation Options
-             * @description Simulation filter options
-             */
-            simulation_options?: components["schemas"]["FilterOption"][];
-            /**
-             * Profile Options
-             * @description Profile filter options
-             */
-            profile_options?: components["schemas"]["FilterOption"][];
-        };
-        /**
          * ListModelApiModel
          * @description Model type for list endpoint with computed permissions.
          */
@@ -37234,114 +36493,12 @@ export interface components {
             import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /**
-         * ListPracticeRequest
-         * @description Request for practice list endpoint — paginated attempt history.
-         */
-        ListPracticeRequest: {
-            /**
-             * Sort By
-             * @description Sort field name
-             * @default date
-             */
-            sort_by: string | null;
-            /**
-             * Sort Order
-             * @description Sort direction (asc or desc)
-             * @default desc
-             */
-            sort_order: string | null;
-            /**
-             * Page
-             * @description Pagination page number
-             * @default 0
-             */
-            page: number;
-            /**
-             * Page Size
-             * @description Items per page
-             * @default 20
-             */
-            page_size: number;
-            /**
-             * Simulation Search
-             * @description Search string for simulations
-             */
-            simulation_search?: string | null;
-            /**
-             * Scenario Search
-             * @description Search string for scenarios
-             */
-            scenario_search?: string | null;
-            /**
-             * Show Archived
-             * @description Include archived attempts
-             * @default false
-             */
-            show_archived: boolean;
-            /**
-             * Scenario Ids
-             * @description Scenario IDs to filter by
-             */
-            scenario_ids?: string[] | null;
-            /**
-             * Infinite Mode
-             * @description Filter by infinite mode status
-             */
-            infinite_mode?: boolean | null;
-        };
-        /**
-         * ListPracticeResponse
-         * @description Client-facing API response for practice list (paginated history).
-         */
-        ListPracticeResponse: {
-            /**
-             * Data
-             * @description List of history items
-             */
-            data?: components["schemas"]["HistoryItem"][];
-            /**
-             * Total Count
-             * @description Total number of matching records
-             * @default 0
-             */
-            total_count: number;
-            /**
-             * Page
-             * @description Current page number
-             * @default 0
-             */
-            page: number;
-            /**
-             * Page Size
-             * @description Items per page
-             * @default 20
-             */
-            page_size: number;
-            /**
-             * Total Pages
-             * @description Total number of pages
-             * @default 0
-             */
-            total_pages: number;
-            /**
-             * Simulation Options
-             * @description Filter options for simulations
-             */
-            simulation_options?: components["schemas"]["FilterOption"][] | null;
-            /**
-             * Scenario Options
-             * @description Filter options for scenarios
-             */
-            scenario_options?: components["schemas"]["FilterOption"][] | null;
-            /**
-             * Profile Options
-             * @description Filter options for profiles
-             */
-            profile_options?: components["schemas"]["FilterOption"][] | null;
-        };
-        /**
          * ListPricingRequest
-         * @description Request for pricing list endpoint (group history, paginated).
+         * @description Request for /system/groups endpoint (paginated groups with cost data).
+         *
+         *     Canonical paginated groups list. Promoted from /system/pricing/search.
+         *     Filter fields here mirror the previous PricingRequest.history_* set so
+         *     consumers that used to drive the inline history pass them through.
          */
         ListPricingRequest: {
             /**
@@ -37365,6 +36522,36 @@ export interface components {
              */
             date_to?: string | null;
             /**
+             * Department Ids
+             * @description Department IDs to filter by
+             */
+            department_ids?: string[] | null;
+            /**
+             * Model Id
+             * @description Model UUID to filter by (legacy singular)
+             */
+            model_id?: string | null;
+            /**
+             * Model Ids
+             * @description Model UUIDs to filter by (multi, preferred)
+             */
+            model_ids?: string[] | null;
+            /**
+             * Profile Ids
+             * @description Profile UUIDs (human users) to filter by
+             */
+            profile_ids?: string[] | null;
+            /**
+             * Agent Ids
+             * @description Agent UUIDs (LLM agents) to filter by
+             */
+            agent_ids?: string[] | null;
+            /**
+             * Search
+             * @description Group name search (ILIKE)
+             */
+            search?: string | null;
+            /**
              * Page
              * @description Pagination page number
              * @default 0
@@ -37376,6 +36563,12 @@ export interface components {
              * @default 50
              */
             page_size: number;
+            /**
+             * Sort By
+             * @description Sort field (date | total_cost | total_tokens | run_count)
+             * @default date
+             */
+            sort_by: string;
             /**
              * Sort Order
              * @description Sort direction (asc or desc)
@@ -37664,104 +36857,6 @@ export interface components {
              * @description CSV import column schema for the bulk-import dialog
              */
             import_fields?: components["schemas"]["ImportField"][] | null;
-        };
-        /**
-         * ListRecordRequest
-         * @description Request for record history list endpoint (paginated attempt history).
-         */
-        ListRecordRequest: {
-            /**
-             * Target Profile Id
-             * Format: uuid
-             * @description Target profile ID to scope data
-             */
-            target_profile_id: string;
-            /**
-             * Start Date
-             * @description Filter start date
-             */
-            start_date?: string | null;
-            /**
-             * End Date
-             * @description Filter end date
-             */
-            end_date?: string | null;
-            /**
-             * Cohort Ids
-             * @description Cohort IDs to filter by
-             */
-            cohort_ids?: string[] | null;
-            /**
-             * Department Ids
-             * @description Department IDs to filter by
-             */
-            department_ids?: string[] | null;
-            /**
-             * Role Ids
-             * @description Role resource IDs to filter profiles by
-             */
-            role_ids?: string[] | null;
-            /**
-             * Practice
-             * @description Filter to practice attempts only
-             * @default false
-             */
-            practice: boolean;
-            /**
-             * Scenario Ids
-             * @description Scenario IDs to filter by
-             */
-            scenario_ids?: string[] | null;
-            /**
-             * Simulation Ids
-             * @description Simulation IDs to filter by
-             */
-            simulation_ids?: string[] | null;
-            /**
-             * Infinite Mode
-             * @description Filter by infinite mode status
-             */
-            infinite_mode?: boolean | null;
-            /**
-             * Show Archived
-             * @description Include archived attempts
-             * @default false
-             */
-            show_archived: boolean;
-            /**
-             * Sort By
-             * @description Sort field name
-             * @default date
-             */
-            sort_by: string;
-            /**
-             * Sort Order
-             * @description Sort direction (asc or desc)
-             * @default desc
-             */
-            sort_order: string;
-            /**
-             * Page
-             * @description Pagination page number
-             * @default 0
-             */
-            page: number;
-            /**
-             * Page Size
-             * @description Items per page
-             * @default 20
-             */
-            page_size: number;
-            /**
-             * Simulation Search
-             * @description Search string for simulations
-             */
-            simulation_search?: string | null;
-            /**
-             * Scenario Search
-             * @description Search string for scenarios
-             */
-            scenario_search?: string | null;
         };
         /** ListRubricApiResponse */
         ListRubricApiResponse: {
@@ -39418,45 +38513,6 @@ export interface components {
              * @description List of columns in the view
              */
             columns: components["schemas"]["ColumnInfo"][];
-        };
-        /**
-         * NameGroupApiRequest
-         * @description Request model for group name endpoint.
-         */
-        NameGroupApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description UUID of the group to name
-             */
-            group_id: string;
-            /**
-             * Name
-             * @description New name for the group
-             */
-            name: string;
-        };
-        /**
-         * NameGroupApiResponse
-         * @description Response model for group name endpoint.
-         */
-        NameGroupApiResponse: {
-            /**
-             * Success
-             * @description Whether the operation succeeded
-             */
-            success: boolean;
-            /**
-             * Group Name Id
-             * Format: uuid
-             * @description UUID of the created group_names entry
-             */
-            group_name_id: string;
-            /**
-             * Name
-             * @description The name that was set
-             */
-            name: string;
         };
         /**
          * ObjectiveEntry
@@ -43795,55 +42851,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * History Page
-             * @description Embedded history page number
-             * @default 0
-             */
-            history_page: number;
-            /**
-             * History Page Size
-             * @description Embedded history items per page
-             * @default 50
-             */
-            history_page_size: number;
-            /**
-             * History Sort By
-             * @description Embedded history sort field (date | total_cost | total_tokens | run_count)
-             * @default date
-             */
-            history_sort_by: string;
-            /**
-             * History Sort Order
-             * @description Embedded history sort direction
-             * @default desc
-             */
-            history_sort_order: string;
-            /**
-             * History Model Id
-             * @description Model UUID to filter embedded history by (legacy single)
-             */
-            history_model_id?: string | null;
-            /**
-             * History Model Ids
-             * @description Model UUIDs to filter embedded history by (multi). Takes precedence over history_model_id when set.
-             */
-            history_model_ids?: string[] | null;
-            /**
-             * History Profile Ids
-             * @description Profile UUIDs (human users) to filter embedded history by
-             */
-            history_profile_ids?: string[] | null;
-            /**
-             * History Agent Ids
-             * @description Agent UUIDs (LLM agents) to filter embedded history by
-             */
-            history_agent_ids?: string[] | null;
-            /**
-             * History Search
-             * @description Group name search (ILIKE) for embedded history
-             */
-            history_search?: string | null;
         };
         /**
          * PricingResources
@@ -43899,7 +42906,7 @@ export interface components {
             agent_options?: components["schemas"]["FilterOption"][];
             /** @description Inline analytics facets for SSR */
             analytics?: components["schemas"]["AnalyticsFacets"] | null;
-            /** @description Embedded pricing group history */
+            /** @description Always null on /pricing/get — use /system/groups instead */
             history?: components["schemas"]["PricingHistoryResponse"] | null;
         };
         /** PrimaryPersonaPerformance */
@@ -46069,98 +45076,6 @@ export interface components {
             created_at?: string | null;
         };
         /**
-         * RecordRequest
-         * @description Request for record profile report — dashboard scoped to one profile.
-         */
-        RecordRequest: {
-            /**
-             * Target Profile Id
-             * Format: uuid
-             * @description Target profile ID to scope data
-             */
-            target_profile_id: string;
-            /**
-             * Start Date
-             * @description Filter start date
-             */
-            start_date?: string | null;
-            /**
-             * End Date
-             * @description Filter end date
-             */
-            end_date?: string | null;
-            /**
-             * Cohort Ids
-             * @description Cohort IDs to filter by
-             */
-            cohort_ids?: string[] | null;
-            /**
-             * Simulation Ids
-             * @description Simulation IDs to filter by
-             */
-            simulation_ids?: string[] | null;
-            /**
-             * Department Ids
-             * @description Department IDs to filter by
-             */
-            department_ids?: string[] | null;
-            /**
-             * Role Ids
-             * @description Role resource IDs to filter profiles by
-             */
-            role_ids?: string[] | null;
-            /**
-             * Simulation Filters
-             * @description Simulation filter strings
-             */
-            simulation_filters?: string[] | null;
-            /**
-             * Actor Profile Id
-             * @description Acting user profile ID
-             */
-            actor_profile_id?: string | null;
-            /**
-             * Rubric Ids
-             * @description Rubric IDs for section picker
-             */
-            rubric_ids?: string[] | null;
-            /**
-             * Rubric Search
-             * @description Search string for rubrics
-             */
-            rubric_search?: string | null;
-            /**
-             * Simulation Picker Ids
-             * @description Simulation picker IDs
-             */
-            simulation_picker_ids?: string[] | null;
-            /**
-             * Simulation Picker Search
-             * @description Search string for simulations
-             */
-            simulation_picker_search?: string | null;
-            /**
-             * Parameter Ids
-             * @description Parameter IDs for section picker
-             */
-            parameter_ids?: string[] | null;
-            /**
-             * Parameter Search
-             * @description Search string for parameters
-             */
-            parameter_search?: string | null;
-            /**
-             * Scenario Ids
-             * @description Scenario IDs for section picker
-             */
-            scenario_ids?: string[] | null;
-            /**
-             * Scenario Search
-             * @description Search string for scenarios
-             */
-            scenario_search?: string | null;
-        };
-        /**
          * RefreshAgentApiRequest
          * @description Request model for agent refresh endpoint.
          */
@@ -46190,28 +45105,6 @@ export interface components {
             /**
              * Targets
              * @description MV targets to refresh (omit for all). Options: auth_drafts_mv
-             */
-            targets?: string[] | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept or reject. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
-        };
-        /**
-         * RefreshChatApiRequest
-         * @description Request model for chat refresh endpoint.
-         */
-        RefreshChatApiRequest: {
-            /**
-             * Targets
-             * @description MV targets to refresh (omit for all). Options: chat_mv, chat_drafts_mv
              */
             targets?: string[] | null;
             /**
@@ -49184,136 +48077,115 @@ export interface components {
         };
         /**
          * SearchAttemptApiRequest
-         * @description Request model for attempt search endpoint.
+         * @description Request model for canonical attempt search.
+         *
+         *     Filters cover all view contexts (home, practice, dashboard, record):
+         *     - ``practice=False`` → home-style filtering (general attempts only)
+         *     - ``practice=True`` → practice-style filtering
+         *     - ``practice=None`` → no constraint (dashboard default)
+         *     - ``target_profile_id`` → record-style scoping to a single profile
          */
         SearchAttemptApiRequest: {
-            /** Search */
-            search?: string | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Department Ids */
+            /**
+             * Target Profile Id
+             * @description Scope to a single profile (record-style)
+             */
+            target_profile_id?: string | null;
+            /**
+             * Profile Ids
+             * @description Filter to specific profiles (intersected with visible set)
+             */
+            profile_ids?: string[] | null;
+            /**
+             * Cohort Ids
+             * @description Cohort IDs to filter by
+             */
+            cohort_ids?: string[] | null;
+            /**
+             * Department Ids
+             * @description Department IDs to filter by
+             */
             department_ids?: string[] | null;
-            /** Practice */
-            practice?: boolean | null;
-            /** Is Archived */
-            is_archived?: boolean | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-            /** Start Date */
-            start_date?: string | null;
-            /** End Date */
-            end_date?: string | null;
-            /** Simulation Search */
-            simulation_search?: string | null;
-            /** Department Search */
-            department_search?: string | null;
             /**
-             * Page Size
-             * @default 20
+             * Role Ids
+             * @description Role resource IDs to filter profiles by
              */
-            page_size: number;
+            role_ids?: string[] | null;
             /**
-             * Page Offset
-             * @default 0
+             * Simulation Ids
+             * @description Simulation IDs to filter by
              */
-            page_offset: number;
-        };
-        /**
-         * SearchAttemptApiResponse
-         * @description Response for attempt search endpoint.
-         */
-        SearchAttemptApiResponse: {
+            simulation_ids?: string[] | null;
             /**
-             * Actor Name
-             * @description Display name of the current actor
+             * Scenario Ids
+             * @description Scenario IDs to filter by
              */
-            actor_name?: string | null;
-            /**
-             * Attempts
-             * @description Search result attempt items
-             */
-            attempts?: components["schemas"]["SearchAttemptItem"][] | null;
-            /** @description Simulation filter section */
-            simulation_filter?: components["schemas"]["ListFilterSection"] | null;
-            /** @description Department filter section */
-            department_filter?: components["schemas"]["ListFilterSection"] | null;
-            /**
-             * Total Count
-             * @description Total number of matching results
-             */
-            total_count?: number | null;
-        };
-        /**
-         * SearchAttemptItem
-         * @description Single attempt row in search results.
-         */
-        SearchAttemptItem: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             * @description UUID of the attempt
-             */
-            attempt_id: string;
-            /**
-             * Date
-             * @description ISO timestamp of the attempt
-             */
-            date?: string | null;
-            /**
-             * Profile Id
-             * @description UUID of the user profile
-             */
-            profile_id?: string | null;
-            /**
-             * Profile Name
-             * @description Display name of the user profile
-             */
-            profile_name?: string | null;
-            /**
-             * Simulation Id
-             * @description UUID of the simulation
-             */
-            simulation_id?: string | null;
-            /**
-             * Simulation Name
-             * @description Name of the simulation
-             */
-            simulation_name?: string | null;
-            /**
-             * Department Id
-             * @description UUID of the department
-             */
-            department_id?: string | null;
-            /**
-             * Cohort Id
-             * @description UUID of the cohort
-             */
-            cohort_id?: string | null;
+            scenario_ids?: string[] | null;
             /**
              * Practice
-             * @description Whether this is a practice attempt
+             * @description True=practice-only, False=general-only, None=both
              */
             practice?: boolean | null;
             /**
              * Infinite Mode
-             * @description Whether infinite mode is enabled
+             * @description Filter by infinite mode status
              */
             infinite_mode?: boolean | null;
             /**
-             * Num Chats
-             * @description Number of chats in the attempt
+             * Show Archived
+             * @description Include archived attempts
+             * @default false
              */
-            num_chats?: number | null;
+            show_archived: boolean;
             /**
-             * Is Archived
-             * @description Whether the attempt is archived
+             * Start Date
+             * @description Filter start date (ISO)
              */
-            is_archived?: boolean | null;
+            start_date?: string | null;
             /**
-             * Scenario Ids
-             * @description UUIDs of associated scenarios
+             * End Date
+             * @description Filter end date (ISO)
              */
-            scenario_ids?: string[] | null;
+            end_date?: string | null;
+            /**
+             * Simulation Search
+             * @description Substring match on simulation_name
+             */
+            simulation_search?: string | null;
+            /**
+             * Scenario Search
+             * @description Substring match on scenario titles
+             */
+            scenario_search?: string | null;
+            /**
+             * Profile Search
+             * @description Substring match on profile_name
+             */
+            profile_search?: string | null;
+            /**
+             * Sort By
+             * @description Sort field
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @description Sort direction (asc or desc)
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page
+             * @description Page number
+             * @default 0
+             */
+            page: number;
+            /**
+             * Page Size
+             * @description Items per page
+             * @default 20
+             */
+            page_size: number;
         };
         /**
          * SearchAuthApiRequest
@@ -51522,16 +50394,6 @@ export interface components {
              * @description Agents that this system routes to
              */
             agent_ids?: string[];
-            /**
-             * Resolution Strategy
-             * @description Routing strategy, e.g. 'first', 'best', 'all'
-             */
-            resolution_strategy?: string | null;
-            /**
-             * Resolution Threshold
-             * @description Score threshold (0–1) for resolution
-             */
-            resolution_threshold?: number | null;
         };
         /** SettingSystemResource */
         SettingSystemResource: {
@@ -51555,16 +50417,6 @@ export interface components {
              * @description Linked agent identifiers
              */
             agent_ids?: string[];
-            /**
-             * Resolution Strategy
-             * @description Resolution strategy
-             */
-            resolution_strategy?: string | null;
-            /**
-             * Resolution Threshold
-             * @description Resolution threshold
-             */
-            resolution_threshold?: number | null;
             /**
              * Generated
              * @description Whether the system was AI-generated
@@ -52623,7 +51475,7 @@ export interface components {
          *     (agent + model + bundle) that can be re-fired any number of times
          *     into fresh trace executions. The bundle ids carried here come from
          *     the historical run's agent_resource — the picker passes them as
-         *     `RunPanelState` to /test/trace so the new trace records the same
+         *     `RunPanelState` to /test/invocation/trace so the new trace records the same
          *     prompt + tool + instruction set the original run executed against.
          */
         TestConfigItem: {
@@ -61929,7 +60781,7 @@ export interface operations {
             };
         };
     };
-    patch_scenario_draft_scenario_draft_patch: {
+    patch_scenario_draft_scenario_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62257,6 +61109,39 @@ export interface operations {
             };
         };
     };
+    download_image_scenario_image_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImageDownloadScenarioApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     upload_image_scenario_image_upload_post: {
         parameters: {
             query?: {
@@ -62293,7 +61178,7 @@ export interface operations {
             };
         };
     };
-    download_image_scenario_image_download_post: {
+    download_video_scenario_video_download_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62302,7 +61187,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImageDownloadScenarioApiRequest"];
+                "application/json": components["schemas"]["VideoDownloadScenarioApiRequest"];
             };
         };
         responses: {
@@ -62349,39 +61234,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VideoUploadScenarioApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_video_scenario_video_download_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VideoDownloadScenarioApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -62791,7 +61643,7 @@ export interface operations {
             };
         };
     };
-    patch_simulation_draft_simulation_draft_patch: {
+    patch_simulation_draft_simulation_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63383,7 +62235,7 @@ export interface operations {
             };
         };
     };
-    patch_document_draft_document_draft_patch: {
+    patch_document_draft_document_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63744,39 +62596,6 @@ export interface operations {
             };
         };
     };
-    upload_text_document_text_upload_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_text_document_text_upload_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TextUploadDocumentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     download_text_document_text_download_post: {
         parameters: {
             query?: never;
@@ -63810,7 +62629,7 @@ export interface operations {
             };
         };
     };
-    upload_file_document_file_upload_post: {
+    upload_text_document_text_upload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63819,7 +62638,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_file_document_file_upload_post"];
+                "multipart/form-data": components["schemas"]["Body_upload_text_document_text_upload_post"];
             };
         };
         responses: {
@@ -63829,7 +62648,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FileUploadDocumentApiResponse"];
+                    "application/json": components["schemas"]["TextUploadDocumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63896,6 +62715,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_file_document_file_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_file_document_file_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileUploadDocumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64140,7 +62992,7 @@ export interface operations {
             };
         };
     };
-    patch_department_draft_department_draft_patch: {
+    patch_department_draft_department_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64798,7 +63650,7 @@ export interface operations {
             };
         };
     };
-    patch_cohort_draft_cohort_draft_patch: {
+    patch_cohort_draft_cohort_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65489,7 +64341,7 @@ export interface operations {
             };
         };
     };
-    patch_eval_draft_eval_draft_patch: {
+    patch_eval_draft_eval_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66147,7 +64999,7 @@ export interface operations {
             };
         };
     };
-    patch_rubric_draft_rubric_draft_patch: {
+    patch_rubric_draft_rubric_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66772,7 +65624,7 @@ export interface operations {
             };
         };
     };
-    patch_setting_draft_setting_draft_patch: {
+    patch_setting_draft_setting_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67529,7 +66381,7 @@ export interface operations {
             };
         };
     };
-    patch_agent_draft_agent_draft_patch: {
+    patch_agent_draft_agent_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68121,7 +66973,7 @@ export interface operations {
             };
         };
     };
-    patch_model_draft_model_draft_patch: {
+    patch_model_draft_model_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68779,7 +67631,7 @@ export interface operations {
             };
         };
     };
-    patch_provider_draft_provider_draft_patch: {
+    patch_provider_draft_provider_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69503,7 +68355,7 @@ export interface operations {
             };
         };
     };
-    patch_parameter_draft_parameter_draft_patch: {
+    patch_parameter_draft_parameter_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70128,7 +68980,7 @@ export interface operations {
             };
         };
     };
-    patch_field_draft_field_draft_patch: {
+    patch_field_draft_field_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70753,7 +69605,7 @@ export interface operations {
             };
         };
     };
-    patch_profile_draft_profile_draft_patch: {
+    patch_profile_draft_profile_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71477,7 +70329,7 @@ export interface operations {
             };
         };
     };
-    patch_auth_draft_auth_draft_patch: {
+    patch_auth_draft_auth_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72036,7 +70888,7 @@ export interface operations {
             };
         };
     };
-    patch_tool_draft_tool_draft_patch: {
+    patch_tool_draft_tool_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72581,7 +71433,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchAttemptApiResponse"];
+                    "application/json": components["schemas"]["HistoryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72976,7 +71828,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_chat_endpoint_attempt_chat_create_post: {
+    chat_analyses_attempt_chat_analyses_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72985,7 +71837,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptChatApiRequest"];
+                "application/json": components["schemas"]["ChatAnalysesRequest"];
             };
         };
         responses: {
@@ -72995,40 +71847,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptChatApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    chat_message_attempt_chat_message_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChatMessageRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatMessageResponse"];
+                    "application/json": components["schemas"]["ChatAnalysesResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73075,171 +71894,6 @@ export interface operations {
             };
         };
     };
-    chat_grade_attempt_chat_grade_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GradeAttemptApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GradeAttemptApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    chat_response_attempt_chat_response_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptResponsePayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResponseAttemptApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    chat_voice_attempt_chat_voice_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChatVoiceRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AudioStartInternalResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    chat_speak_attempt_chat_speak_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChatSpeakRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatSpeakResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    chat_silence_attempt_chat_silence_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChatSilenceRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AudioStopInternalResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     chat_complete_attempt_chat_complete_post: {
         parameters: {
             query?: never;
@@ -73260,6 +71914,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChatCompleteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_attempt_chat_endpoint_attempt_chat_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAttemptChatApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateAttemptChatApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73306,7 +71993,7 @@ export interface operations {
             };
         };
     };
-    chat_strengths_attempt_chat_strengths_post: {
+    chat_get_attempt_chat_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73315,7 +72002,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ChatStrengthsRequest"];
+                "application/json": components["schemas"]["GetChatRequest"];
             };
         };
         responses: {
@@ -73325,7 +72012,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ChatStrengthsResponse"];
+                    "application/json": components["schemas"]["GetChatResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73339,7 +72026,7 @@ export interface operations {
             };
         };
     };
-    chat_improvements_attempt_chat_improvements_post: {
+    chat_grade_attempt_chat_grade_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73348,7 +72035,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ChatImprovementsRequest"];
+                "application/json": components["schemas"]["GradeAttemptApiRequest"];
             };
         };
         responses: {
@@ -73358,40 +72045,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ChatImprovementsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    chat_analyses_attempt_chat_analyses_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChatAnalysesRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatAnalysesResponse"];
+                    "application/json": components["schemas"]["GradeAttemptApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73438,7 +72092,7 @@ export interface operations {
             };
         };
     };
-    chat_get_attempt_chat_get_post: {
+    chat_improvements_attempt_chat_improvements_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73447,7 +72101,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetChatRequest"];
+                "application/json": components["schemas"]["ChatImprovementsRequest"];
             };
         };
         responses: {
@@ -73457,7 +72111,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetChatResponse"];
+                    "application/json": components["schemas"]["ChatImprovementsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73471,7 +72125,7 @@ export interface operations {
             };
         };
     };
-    chat_refresh_attempt_chat_refresh_post: {
+    chat_message_attempt_chat_message_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73480,7 +72134,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RefreshChatApiRequest"];
+                "application/json": components["schemas"]["ChatMessageRequest"];
             };
         };
         responses: {
@@ -73490,7 +72144,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
+                    "application/json": components["schemas"]["ChatMessageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73504,7 +72158,7 @@ export interface operations {
             };
         };
     };
-    export_chat_attempt_chat_export_post: {
+    chat_response_attempt_chat_response_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73513,7 +72167,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ExportChatApiRequest"];
+                "application/json": components["schemas"]["AttemptResponsePayload"];
             };
         };
         responses: {
@@ -73523,7 +72177,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExportChatApiResponse"];
+                    "application/json": components["schemas"]["ResponseAttemptApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73537,7 +72191,139 @@ export interface operations {
             };
         };
     };
-    patch_chat_draft_attempt_draft_patch: {
+    chat_silence_attempt_chat_silence_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatSilenceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AudioStopInternalResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_speak_attempt_chat_speak_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatSpeakRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatSpeakResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_strengths_attempt_chat_strengths_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatStrengthsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatStrengthsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_voice_attempt_chat_voice_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatVoiceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AudioStartInternalResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_chat_draft_attempt_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73603,7 +72389,7 @@ export interface operations {
             };
         };
     };
-    home_get_attempt_home_get_post: {
+    home_get_attempt_home_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73636,40 +72422,7 @@ export interface operations {
             };
         };
     };
-    search_home_attempt_home_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ListHomeRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListHomeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    practice_get_attempt_practice_get_post: {
+    practice_get_attempt_practice_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73702,40 +72455,7 @@ export interface operations {
             };
         };
     };
-    search_practice_attempt_practice_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ListPracticeRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListPracticeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_dashboard_attempt_dashboard_get_post: {
+    get_dashboard_attempt_dashboard_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73768,40 +72488,7 @@ export interface operations {
             };
         };
     };
-    search_dashboard_attempt_dashboard_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ListDashboardRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HistoryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_leaderboard_attempt_leaderboard_get_post: {
+    get_leaderboard_attempt_leaderboard_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73834,106 +72521,7 @@ export interface operations {
             };
         };
     };
-    search_leaderboard_attempt_leaderboard_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ListLeaderboardRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListLeaderboardResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_record_attempt_record_get_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RecordRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DashboardBundleResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_record_attempt_record_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ListRecordRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HistoryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_reports_attempt_report_search_post: {
+    get_reports_attempt_report_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73953,6 +72541,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_audio_attempt_audio_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioDownloadAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73988,39 +72609,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AudioUploadAttemptApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_audio_attempt_audio_download_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AudioDownloadAttemptApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74417,105 +73005,6 @@ export interface operations {
             };
         };
     };
-    test_trace_test_trace_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TestTracePayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestTraceInternalResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    run_test_test_run__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TestRunPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestRunInternalResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    run_test_end_test_run_end_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TestRunEndPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestRunEndResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     complete_test_test_complete_post: {
         parameters: {
             query?: never;
@@ -74602,6 +73091,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchTestApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_invocations_test_invocations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BenchmarkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BenchmarkHistoryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74848,6 +73370,105 @@ export interface operations {
             };
         };
     };
+    patch_invocation_draft_test_draft_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchInvocationDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchInvocationDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_invocation_drafts_test_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetInvocationDraftsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetInvocationDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decrypt_invocation_key_test_decrypt_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecryptInvocationKeyApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecryptInvocationKeyApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     test_text_download_test_text_download_post: {
         parameters: {
             query?: never;
@@ -74947,7 +73568,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_test_benchmark_get_post: {
+    get_benchmark_test_benchmark_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -74967,105 +73588,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BenchmarkResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_benchmark_history_test_benchmark_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BenchmarkRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BenchmarkHistoryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    invocation_get_test_invocation_get_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetInvocationApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetSuiteResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_invocation_endpoint_test_invocation_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateInvocationApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateInvocationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75112,7 +73634,7 @@ export interface operations {
             };
         };
     };
-    patch_invocation_draft_test_invocation_draft_patch: {
+    create_invocation_endpoint_test_invocation_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -75121,7 +73643,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PatchInvocationDraftApiRequest"];
+                "application/json": components["schemas"]["CreateInvocationApiRequest"];
             };
         };
         responses: {
@@ -75131,7 +73653,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PatchInvocationDraftApiResponse"];
+                    "application/json": components["schemas"]["CreateInvocationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75145,7 +73667,7 @@ export interface operations {
             };
         };
     };
-    get_invocation_drafts_test_invocation_drafts_post: {
+    invocation_get_test_invocation_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -75154,7 +73676,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetInvocationDraftsApiRequest"];
+                "application/json": components["schemas"]["GetInvocationApiRequest"];
             };
         };
         responses: {
@@ -75164,7 +73686,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetInvocationDraftsApiResponse"];
+                    "application/json": components["schemas"]["GetSuiteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75178,7 +73700,7 @@ export interface operations {
             };
         };
     };
-    decrypt_invocation_key_test_invocation_decrypt_post: {
+    run_invocation_test_invocation_run_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -75187,7 +73709,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DecryptInvocationKeyApiRequest"];
+                "application/json": components["schemas"]["TestRunPayload"];
             };
         };
         responses: {
@@ -75197,7 +73719,73 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DecryptInvocationKeyApiResponse"];
+                    "application/json": components["schemas"]["TestRunInternalResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    terminate_invocation_test_invocation_terminate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestRunEndPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestRunEndResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_trace_test_invocation_trace_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestTracePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestTraceInternalResult"];
                 };
             };
             /** @description Validation Error */
@@ -75343,6 +73931,105 @@ export interface operations {
             };
         };
     };
+    search_groups_system_groups_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ListPricingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListPricingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_sessions_system_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ListActivityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListActivityResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_problem_system_resolve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveProblemApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveProblemApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     problem_system_system_problem_post: {
         parameters: {
             query?: never;
@@ -75429,106 +74116,7 @@ export interface operations {
             };
         };
     };
-    get_group_system_group_get_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetGroupDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetGroupDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_groups_system_group_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetGroupListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetGroupListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    name_group_system_group_name_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NameGroupApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NameGroupApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_session_system_session_get_post: {
+    get_session_system_session_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -75561,7 +74149,7 @@ export interface operations {
             };
         };
     };
-    get_health_system_health_get_post: {
+    get_health_system_health_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -75594,7 +74182,7 @@ export interface operations {
             };
         };
     };
-    get_activity_system_activity_get_post: {
+    get_activity_system_activity_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -75627,73 +74215,7 @@ export interface operations {
             };
         };
     };
-    search_activity_system_activity_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ListActivityRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListActivityResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    resolve_problem_system_activity_resolve_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResolveProblemApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResolveProblemApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_pricing_system_pricing_get_post: {
+    get_pricing_system_pricing_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -75713,39 +74235,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PricingResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_pricing_system_pricing_search_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ListPricingRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListPricingResponse"];
                 };
             };
             /** @description Validation Error */

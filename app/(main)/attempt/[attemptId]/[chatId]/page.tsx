@@ -22,16 +22,16 @@ import { cache } from "react";
 type ProblemAttemptIn = InputOf<"/attempt/problem", "post">;
 type ProblemAttemptOut = OutputOf<"/attempt/problem", "post">;
 type GetChatBundleOut = OutputOf<
-  "/attempt/chat/get",
+  "/attempt/chat_get",
   "post"
 >;
 type PatchChatDraftIn = InputOf<
   "/attempt/draft",
-  "patch"
+  "post"
 >;
 type PatchChatDraftOut = OutputOf<
   "/attempt/draft",
-  "patch"
+  "post"
 >;
 type ContextIn = InputOf<"/attempt/context", "post">;
 type ContextOut = OutputOf<"/attempt/context", "post">;
@@ -42,14 +42,14 @@ const getChatBundle = async (
   draftId: string | null,
 ): Promise<GetChatBundleOut> => {
   return api.post(
-    "/attempt/chat/get",
+    "/attempt/chat_get",
     {
       body: {
         chat_entry_id: bundleId,
         attempt_id: attemptId,
         draft_id: draftId,
       },
-    } as InputOf<"/attempt/chat/get", "post">,
+    } as InputOf<"/attempt/chat_get", "post">,
     {
       cache: "no-store",
       headers: {
@@ -70,7 +70,7 @@ async function patchChatDraft(
   input: PatchChatDraftIn,
 ): Promise<PatchChatDraftOut> {
   "use server";
-  return api.patch("/attempt/draft", input);
+  return api.post("/attempt/draft", input);
 }
 
 /** ---- Request-scoped context fetch ----

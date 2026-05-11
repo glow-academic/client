@@ -75,8 +75,8 @@ type CreateDocumentIn = InputOf<"/document/create", "post">;
 type CreateDocumentOut = OutputOf<"/document/create", "post">;
 type UpdateDocumentIn = InputOf<"/document/update", "post">;
 type UpdateDocumentOut = OutputOf<"/document/update", "post">;
-type PatchDocumentDraftIn = InputOf<"/document/draft", "patch">;
-type PatchDocumentDraftOut = OutputOf<"/document/draft", "patch">;
+type PatchDocumentDraftIn = InputOf<"/document/draft", "post">;
+type PatchDocumentDraftOut = OutputOf<"/document/draft", "post">;
 type DocumentData = OutputOf<"/document/get", "post">;
 
 type PendingImageValue = {

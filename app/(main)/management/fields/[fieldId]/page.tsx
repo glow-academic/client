@@ -29,8 +29,8 @@ type GetFieldIn = InputOf<"/field/get", "post">;
 type GetFieldOut = OutputOf<"/field/get", "post">;
 type UpdateFieldIn = InputOf<"/field/update", "post">;
 type UpdateFieldOut = OutputOf<"/field/update", "post">;
-type PatchFieldDraftIn = InputOf<"/field/draft", "patch">;
-type PatchFieldDraftOut = OutputOf<"/field/draft", "patch">;
+type PatchFieldDraftIn = InputOf<"/field/draft", "post">;
+type PatchFieldDraftOut = OutputOf<"/field/draft", "post">;
 type GroupFieldIn = InputOf<"/field/group", "post">;
 type GroupFieldOut = OutputOf<"/field/group", "post">;
 type ProblemFieldIn = InputOf<"/field/problem", "post">;
@@ -72,7 +72,7 @@ async function patchFieldDraft(
   input: PatchFieldDraftIn,
 ): Promise<PatchFieldDraftOut> {
   "use server";
-  return api.patch("/field/draft", input);
+  return api.post("/field/draft", input);
 }
 
 

@@ -42,7 +42,7 @@ export function useTestRoute(): UseTestRouteReturn {
         setError(null);
         setStage("loading");
 
-        const invocation = (await transport.send("/test/invocation/get", {
+        const invocation = (await transport.send("/test/invocation_get", {
           invocation_id: params.invocationId,
         })) as Record<string, unknown>;
 

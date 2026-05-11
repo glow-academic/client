@@ -7,9 +7,8 @@
 "use client";
 
 import type {
+  LeaderboardIn,
   LeaderboardOut,
-  LeaderboardSearchIn,
-  LeaderboardSearchOut,
 } from "@/app/(main)/leaderboard/page";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useProfile } from "@/contexts/profile-context";
@@ -25,7 +24,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AccoladeCard, { AccoladeCardSkeleton } from "./AccoladeCard";
 import LeaderboardTable, { LeaderboardTableSkeleton } from "./LeaderboardTable";
 
@@ -71,44 +70,35 @@ const getInitials = (name: string | null): string => {
 export interface LeaderboardProps {
   cohortId?: string;
   leaderboardData: LeaderboardOut;
-  searchLeaderboardAction?: (
-    input: LeaderboardSearchIn,
-  ) => Promise<LeaderboardSearchOut>;
-  initialSearchInput?: LeaderboardSearchIn;
+  /** Optional server action that refetches /attempt/leaderboard/get with
+   * fresh URL params. When omitted, the component renders the SSR-supplied
+   * `leaderboardData` and does not refetch. */
+  refetchLeaderboardAction?: (input: LeaderboardIn) => Promise<LeaderboardOut>;
   initialColumnVisibility?: Record<string, boolean>;
 }
 
 export default function Leaderboard({
   cohortId,
   leaderboardData,
-  searchLeaderboardAction,
-  initialSearchInput,
+  refetchLeaderboardAction,
   initialColumnVisibility,
 }: LeaderboardProps) {
-  // `initialSearchInput` was the SSR-built body. Now that we rebuild the body
-  // from `useSearchParams()` client-side (so filters refetch reliably) the
-  // prop is unused, but kept for prop-shape compatibility with the page.
-  void initialSearchInput;
   const { profile } = useProfile();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [leaderboardRows, setLeaderboardRows] =
-    useState<LeaderboardSearchOut | null>(null);
-  const [isRowsLoading, setIsRowsLoading] = useState(
-    Boolean(searchLeaderboardAction && initialSearchInput),
-  );
+  // `leaderboardData` is the SSR-rendered bundle. We mirror it into state so
+  // we can refetch client-side when filter URL params change (nuqs's
+  // `shallow:false` updates don't reliably re-fire the SSR pass in this stack,
+  // so the client-side `useSearchParams` hook is the canonical reactive
+  // source). The SSR data is used for first paint; the effect refetches via
+  // `refetchLeaderboardAction` whenever filters change.
+  const [currentData, setCurrentData] = useState<LeaderboardOut>(leaderboardData);
+  const [isRowsLoading, setIsRowsLoading] = useState(false);
   const [isRowsError, setIsRowsError] = useState(false);
 
-  // Build the search body from current URL params client-side. Mirrors what
-  // the SSR page builds in `leaderboardSearchInput`. We rebuild here (instead
-  // of relying on the SSR-passed `initialSearchInput` prop) because nuqs's
-  // `shallow:false` URL updates don't reliably re-fire the SSR pass + new
-  // prop reference in this stack — the client-side `useSearchParams` hook is
-  // the canonical reactive source for URL state. Result: filter changes
-  // refetch immediately without depending on the server component re-render.
-  const currentSearchBody = useMemo(() => {
+  const currentRequestBody = useMemo(() => {
     const startDate = searchParams?.get("startDate");
     const endDate = searchParams?.get("endDate");
     const cohortIdsRaw = searchParams?.get("cohortIds");
@@ -131,31 +121,29 @@ export default function Leaderboard({
       simulation_filters: simulationFilters,
       sort_by: "highest_score",
       sort_order: "desc",
-      page_limit: 50,
-      page_offset: 0,
-    } as LeaderboardSearchIn["body"];
+    } as LeaderboardIn["body"];
   }, [searchParams]);
 
-  // Stable cache key from the body — useEffect dep needs a primitive so that
-  // identity-stable params don't refire on every render.
-  const currentSearchBodyKey = useMemo(
-    () => JSON.stringify(currentSearchBody),
-    [currentSearchBody],
+  const currentRequestKey = useMemo(
+    () => JSON.stringify(currentRequestBody),
+    [currentRequestBody],
   );
 
+  // Track the initial SSR key so we don't double-fetch on mount.
+  const initialRequestKeyRef = useRef<string>(currentRequestKey);
+
   useEffect(() => {
-    if (!searchLeaderboardAction) {
-      setIsRowsLoading(false);
-      return;
-    }
+    if (!refetchLeaderboardAction) return;
+    // Skip on initial mount — SSR already produced this exact bundle.
+    if (currentRequestKey === initialRequestKeyRef.current) return;
 
     let cancelled = false;
     setIsRowsLoading(true);
     setIsRowsError(false);
 
-    searchLeaderboardAction({ body: currentSearchBody } as LeaderboardSearchIn)
+    refetchLeaderboardAction({ body: currentRequestBody } as LeaderboardIn)
       .then((result) => {
-        if (!cancelled) setLeaderboardRows(result);
+        if (!cancelled) setCurrentData(result);
       })
       .catch(() => {
         if (!cancelled) setIsRowsError(true);
@@ -167,15 +155,15 @@ export default function Leaderboard({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- body content is encoded in currentSearchBodyKey
-  }, [searchLeaderboardAction, currentSearchBodyKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- body content is encoded in currentRequestKey
+  }, [refetchLeaderboardAction, currentRequestKey]);
 
-  // Rows come from the canonical leaderboard search server action.
+  // Rows come inline from /get now (the /search endpoint was collapsed in).
   const hydratedRows = useMemo(() => {
-    return leaderboardRows?.data || [];
-  }, [leaderboardRows?.data]);
+    return (currentData as LeaderboardOut & { data?: LeaderboardRow[] })?.data || [];
+  }, [currentData]);
 
-  const leaderboardResources = leaderboardRows?.resources;
+  const leaderboardResources = currentData?.resources;
   const leaderboardSimulations = useMemo(
     () => Object.values(leaderboardResources?.simulations ?? {}),
     [leaderboardResources?.simulations],
@@ -185,8 +173,8 @@ export default function Leaderboard({
     [leaderboardResources?.scenarios],
   );
 
-  // Extract gradient colors from leaderboardData
-  const themeData = leaderboardData as LeaderboardOut & {
+  // Extract gradient colors from currentData (state-tracked bundle)
+  const themeData = currentData as LeaderboardOut & {
     primary_color?: string | null;
     accent_color?: string | null;
   };
@@ -234,7 +222,7 @@ export default function Leaderboard({
   // sees the paginated page, so its recompute can disagree with truth on
   // cohorts larger than the current page size.
   const serverAccolades = useMemo(() => {
-    const winners = leaderboardData?.sections?.accolade_winners;
+    const winners = currentData?.sections?.accolade_winners;
     if (!winners) return null;
     const rowsById = new Map<string, LeaderboardRow>();
     for (const r of hydratedRows) {
@@ -280,7 +268,7 @@ export default function Leaderboard({
       marathonRunner: wrap(winners.marathon_runner, " min"),
       rapidRiser: wrap(winners.rapid_riser, " pts/day"),
     } as const;
-  }, [leaderboardData, hydratedRows]);
+  }, [currentData, hydratedRows]);
 
   // Compute accolade winners from hydrated rows using current_value from server
   const fallbackAccolades = useMemo(() => {
@@ -990,18 +978,18 @@ export default function Leaderboard({
                   return result;
                 }),
             })}
-            {...(leaderboardRows?.profile_options && leaderboardRows.profile_options.length > 0 && {
-              serverProfileOptions: leaderboardRows.profile_options
+            {...(currentData?.profile_options && currentData.profile_options.length > 0 && {
+              serverProfileOptions: currentData.profile_options
                 .filter((o): o is { value: string; label: string } => !!o.value && !!o.label)
                 .map((o) => ({ value: o.value, label: o.label })),
             })}
-            {...(leaderboardRows?.simulation_options && leaderboardRows.simulation_options.length > 0 && {
-              serverSimulationOptions: leaderboardRows.simulation_options
+            {...(currentData?.simulation_options && currentData.simulation_options.length > 0 && {
+              serverSimulationOptions: currentData.simulation_options
                 .filter((o): o is { value: string; label: string } => !!o.value && !!o.label)
                 .map((o) => ({ value: o.value, label: o.label })),
             })}
-            {...(leaderboardRows?.total_count != null && {
-              totalCount: leaderboardRows.total_count,
+            {...(currentData?.total_count != null && {
+              totalCount: currentData.total_count,
             })}
             {...(!shouldDisableNavigation && {
               onViewReport: handleViewReport,

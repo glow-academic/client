@@ -24,10 +24,8 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
-type LeaderboardIn = InputOf<"/attempt/leaderboard/get", "post">;
-type LeaderboardOut = OutputOf<"/attempt/leaderboard/get", "post">;
-type LeaderboardSearchIn = InputOf<"/attempt/leaderboard/search", "post">;
-type LeaderboardSearchOut = OutputOf<"/attempt/leaderboard/search", "post">;
+type LeaderboardIn = InputOf<"/attempt/leaderboard", "post">;
+type LeaderboardOut = OutputOf<"/attempt/leaderboard", "post">;
 type GenerationsIn = InputOf<"/attempt/generations", "post">;
 type GenerationsOut = OutputOf<"/attempt/generations", "post">;
 type GroupLeaderboardIn = InputOf<"/attempt/group", "post">;
@@ -47,7 +45,7 @@ const getLeaderboard = async (
 ): Promise<LeaderboardOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/attempt/leaderboard/get", input, {
+  return api.post("/attempt/leaderboard", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -76,9 +74,12 @@ async function createLeaderboardProblem(input: ProblemLeaderboardIn): Promise<Pr
   return api.post("/attempt/problem", input);
 }
 
-async function searchLeaderboardRows(input: LeaderboardSearchIn): Promise<LeaderboardSearchOut> {
+/** Client-callable refetch — same shape as the SSR `getLeaderboard` above
+ * but as a server action so the client component can re-fire on URL change.
+ * Bypasses the Next.js fetch cache; Redis cache still applies. */
+async function refetchLeaderboard(input: LeaderboardIn): Promise<LeaderboardOut> {
   "use server";
-  return api.post("/attempt/leaderboard/search", input);
+  return api.post("/attempt/leaderboard", input, { cache: "no-store" });
 }
 
 /** ---- GenerationPanel server actions ---- */
@@ -150,22 +151,8 @@ export default async function LeaderboardPage({
     // Read view cookie for column visibility
     const initialColumnVisibility = await readViewCookie("leaderboard");
 
-    const leaderboardSearchInput = {
-      body: {
-        ...(q.startDate && { start_date: q.startDate }),
-        ...(q.endDate && { end_date: q.endDate }),
-        ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
-        ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
-        simulation_filters: simulationFilters,
-        sort_by: "highest_score",
-        sort_order: "desc",
-        page_limit: 50,
-        page_offset: 0,
-      },
-    } as LeaderboardSearchIn;
-
-    // Fetch leaderboard section data and group in parallel. Rows are loaded
-    // through the server action passed to the client component.
+    // Single bundle call — /get now returns sections + rows + filter options
+    // inline (the previous /search endpoint was collapsed in).
     const [leaderboardData, groupResult] = await Promise.all([
       getLeaderboard({
         body: {
@@ -174,6 +161,8 @@ export default async function LeaderboardPage({
           ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
           ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
           simulation_filters: simulationFilters,
+          sort_by: "highest_score",
+          sort_order: "desc",
         },
       }),
       api.post(
@@ -233,8 +222,7 @@ export default async function LeaderboardPage({
         <div className="space-y-6 px-4" data-page="leaderboard-index">
           <Leaderboard
             leaderboardData={leaderboardData}
-            searchLeaderboardAction={searchLeaderboardRows}
-            initialSearchInput={leaderboardSearchInput}
+            refetchLeaderboardAction={refetchLeaderboard}
             {...(initialColumnVisibility && { initialColumnVisibility })}
           />
         </div>
@@ -261,4 +249,4 @@ export default async function LeaderboardPage({
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { LeaderboardIn, LeaderboardOut, LeaderboardSearchIn, LeaderboardSearchOut };
+export type { LeaderboardIn, LeaderboardOut };

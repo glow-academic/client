@@ -30,8 +30,8 @@ type CreateAuthIn = InputOf<"/auth/create", "post">;
 type CreateAuthOut = OutputOf<"/auth/create", "post">;
 type UpdateAuthIn = InputOf<"/auth/update", "post">;
 type UpdateAuthOut = OutputOf<"/auth/update", "post">;
-type PatchAuthDraftIn = InputOf<"/auth/draft", "patch">;
-type PatchAuthDraftOut = OutputOf<"/auth/draft", "patch">;
+type PatchAuthDraftIn = InputOf<"/auth/draft", "post">;
+type PatchAuthDraftOut = OutputOf<"/auth/draft", "post">;
 type GroupAuthIn = InputOf<"/auth/group", "post">;
 type GroupAuthOut = OutputOf<"/auth/group", "post">;
 type GenerationsIn = InputOf<"/auth/generations", "post">;
@@ -66,7 +66,7 @@ async function patchAuthDraft(
   input: PatchAuthDraftIn
 ): Promise<PatchAuthDraftOut> {
   "use server";
-  return api.patch("/auth/draft", input);
+  return api.post("/auth/draft", input);
 }
 
 

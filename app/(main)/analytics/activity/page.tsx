@@ -23,8 +23,10 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
-type ActivityBundleIn = InputOf<"/system/activity/get", "post">;
-type ActivityBundleOut = OutputOf<"/system/activity/get", "post">;
+type ActivityBundleIn = InputOf<"/system/activity", "post">;
+type ActivityBundleOut = OutputOf<"/system/activity", "post">;
+type SessionsIn = InputOf<"/system/sessions", "post">;
+type SessionsOut = OutputOf<"/system/sessions", "post">;
 type ActivityListOut = NonNullable<ActivityBundleOut["history"]>;
 
 export type ActivityOut = {
@@ -57,7 +59,7 @@ const getActivityBundle = async (
 ): Promise<ActivityBundleOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/system/activity/get", input, {
+  return api.post("/system/activity", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -120,8 +122,9 @@ export default async function ActivityPage({
       ? rawParams["summaryProfileId"]
       : undefined;
 
-    // Fetch bundle + embedded session history and group in parallel
-    const [bundleData, groupResult] = await Promise.all([
+    // Fetch in parallel: activity bundle (cards/facets), sessions list
+    // (paginated rows — was bundle.history), and audit-linking group resolve.
+    const [bundleData, sessionsResult, groupResult] = await Promise.all([
       getActivityBundle({
         body: {
           ...(q.startDate && { date_from: q.startDate }),
@@ -131,13 +134,19 @@ export default async function ActivityPage({
           page_limit: 50,
           page_offset: 0,
           ...(summaryProfileId && { summary_profile_id: summaryProfileId }),
-          // Embedded session history params
-          history_page: activityPage,
-          history_page_size: activityPageSize,
-          history_sort_by: "date",
-          history_sort_order: "desc",
         },
       }),
+      api.post("/system/sessions", {
+        body: {
+          ...(q.startDate && { date_from: q.startDate }),
+          ...(q.endDate && { date_to: q.endDate }),
+          ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
+          ...(roleIds.length && { role_ids: roleIds }),
+          page: activityPage,
+          page_size: activityPageSize,
+          sort_order: "desc",
+        },
+      } as SessionsIn) as Promise<SessionsOut>,
       api.post(
         "/system/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as SystemGroupIn,
@@ -147,13 +156,15 @@ export default async function ActivityPage({
     // Extract inline analytics facets from response
     const facets = bundleData.analytics;
 
-    // Extract embedded history or use empty fallback
-    const activityData: ActivityListOut = bundleData.history ?? {
-      items: [],
-      total_count: 0,
-      page: activityPage,
-      page_size: activityPageSize,
-      total_pages: 0,
+    // Reshape /system/sessions result into ActivityListOut for component compat.
+    // (Was previously delivered as bundleData.history; same fields, just sourced
+    // from the dedicated endpoint now.)
+    const activityData: ActivityListOut = {
+      items: sessionsResult?.data ?? [],
+      total_count: sessionsResult?.total_count ?? 0,
+      page: sessionsResult?.page ?? activityPage,
+      page_size: sessionsResult?.page_size ?? activityPageSize,
+      total_pages: sessionsResult?.total_pages ?? 0,
     };
 
     return (

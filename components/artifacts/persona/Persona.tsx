@@ -58,10 +58,10 @@ type CreatePersonaIn = InputOf<"/persona/create", "post">;
 type CreatePersonaOut = OutputOf<"/persona/create", "post">;
 type UpdatePersonaIn = InputOf<"/persona/update", "post">;
 type UpdatePersonaOut = OutputOf<"/persona/update", "post">;
-type PatchPersonaDraftIn = InputOf<"/persona/draft", "patch">;
+type PatchPersonaDraftIn = InputOf<"/persona/draft", "post">;
 type PatchPersonaDraftOut = OutputOf<
   "/persona/draft",
-  "patch"
+  "post"
 >;
 
 type PersonaData = OutputOf<"/persona/get", "post">;

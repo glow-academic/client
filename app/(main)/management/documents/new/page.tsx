@@ -35,8 +35,8 @@ type GetDocumentIn = InputOf<"/document/get", "post">;
 type GetDocumentOut = OutputOf<"/document/get", "post">;
 type CreateDocumentIn = InputOf<"/document/create", "post">;
 type CreateDocumentOut = OutputOf<"/document/create", "post">;
-type PatchDocumentDraftIn = InputOf<"/document/draft", "patch">;
-type PatchDocumentDraftOut = OutputOf<"/document/draft", "patch">;
+type PatchDocumentDraftIn = InputOf<"/document/draft", "post">;
+type PatchDocumentDraftOut = OutputOf<"/document/draft", "post">;
 type GroupDocumentIn = InputOf<"/document/group", "post">;
 type GroupDocumentOut = OutputOf<"/document/group", "post">;
 type GenerationsIn = InputOf<"/document/generations", "post">;
@@ -77,7 +77,7 @@ async function patchDocumentDraft(
   input: PatchDocumentDraftIn
 ): Promise<PatchDocumentDraftOut> {
   "use server";
-  return api.patch("/document/draft", input);
+  return api.post("/document/draft", input);
 }
 
 async function uploadFile(formData: FormData): Promise<UploadResult> {

@@ -22,10 +22,10 @@ import { parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-export type InvocationData = OutputOf<"/test/invocation/get", "post">;
+export type InvocationData = OutputOf<"/test/invocation_get", "post">;
 
-type PatchInvocationDraftIn = InputOf<"/test/invocation/draft", "patch">;
-type PatchInvocationDraftOut = OutputOf<"/test/invocation/draft", "patch">;
+type PatchInvocationDraftIn = InputOf<"/test/draft", "post">;
+type PatchInvocationDraftOut = OutputOf<"/test/draft", "post">;
 
 type InvocationFormState = {
   name_id: string | null;

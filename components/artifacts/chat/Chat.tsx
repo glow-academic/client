@@ -25,7 +25,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type GetChatOut = OutputOf<
-  "/attempt/chat/get",
+  "/attempt/chat_get",
   "post"
 >;
 export type ChatData = GetChatOut & {
@@ -49,11 +49,11 @@ export type ChatData = GetChatOut & {
 };
 type PatchChatDraftIn = InputOf<
   "/attempt/draft",
-  "patch"
+  "post"
 >;
 type PatchChatDraftOut = OutputOf<
   "/attempt/draft",
-  "patch"
+  "post"
 >;
 
 type ChatFormState = {

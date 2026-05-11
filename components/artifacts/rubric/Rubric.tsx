@@ -40,8 +40,8 @@ type CreateRubricIn = InputOf<"/rubric/create", "post">;
 type CreateRubricOut = OutputOf<"/rubric/create", "post">;
 type UpdateRubricIn = InputOf<"/rubric/update", "post">;
 type UpdateRubricOut = OutputOf<"/rubric/update", "post">;
-type PatchRubricDraftIn = InputOf<"/rubric/draft", "patch">;
-type PatchRubricDraftOut = OutputOf<"/rubric/draft", "patch">;
+type PatchRubricDraftIn = InputOf<"/rubric/draft", "post">;
+type PatchRubricDraftOut = OutputOf<"/rubric/draft", "post">;
 type RubricData = OutputOf<"/rubric/get", "post">;
 type RubricResourceType =
   | "names"

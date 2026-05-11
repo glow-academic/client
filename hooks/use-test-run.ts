@@ -125,7 +125,7 @@ export function useTestRun(): UseTestRunReturn {
         };
 
         const traceResp = (await transport.send(
-          "/test/trace",
+          "/test/invocation_trace",
           tracePayload,
         )) as Record<string, unknown>;
         const traceId = traceResp["test_invocation_trace_id"] as string;
@@ -143,7 +143,7 @@ export function useTestRun(): UseTestRunReturn {
 
         // 3. Bind the run to the invocation.
         setStage("binding");
-        const runResp = (await transport.send("/test/run", {
+        const runResp = (await transport.send("/test/invocation_run", {
           test_id: params.testId,
           test_invocation_id: params.testInvocationId,
           test_invocation_trace_id: traceId,

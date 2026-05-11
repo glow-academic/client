@@ -28,8 +28,8 @@ type GetProfileIn = InputOf<"/profile/get", "post">;
 type GetProfileOut = OutputOf<"/profile/get", "post">;
 type UpdateProfileIn = InputOf<"/profile/update", "post">;
 type UpdateProfileOut = OutputOf<"/profile/update", "post">;
-type PatchProfileDraftIn = InputOf<"/profile/draft", "patch">;
-type PatchProfileDraftOut = OutputOf<"/profile/draft", "patch">;
+type PatchProfileDraftIn = InputOf<"/profile/draft", "post">;
+type PatchProfileDraftOut = OutputOf<"/profile/draft", "post">;
 type GroupProfileIn = InputOf<"/profile/group", "post">;
 type GroupProfileOut = OutputOf<"/profile/group", "post">;
 type ProblemProfileIn = InputOf<"/profile/problem", "post">;
@@ -55,7 +55,7 @@ async function patchProfileDraft(
   input: PatchProfileDraftIn
 ): Promise<PatchProfileDraftOut> {
   "use server";
-  return api.patch("/profile/draft", input);
+  return api.post("/profile/draft", input);
 }
 
 

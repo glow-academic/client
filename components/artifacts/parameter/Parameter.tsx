@@ -33,8 +33,8 @@ type CreateParameterIn = InputOf<"/parameter/create", "post">;
 type CreateParameterOut = OutputOf<"/parameter/create", "post">;
 type UpdateParameterIn = InputOf<"/parameter/update", "post">;
 type UpdateParameterOut = OutputOf<"/parameter/update", "post">;
-type PatchParameterDraftIn = InputOf<"/parameter/draft", "patch">;
-type PatchParameterDraftOut = OutputOf<"/parameter/draft", "patch">;
+type PatchParameterDraftIn = InputOf<"/parameter/draft", "post">;
+type PatchParameterDraftOut = OutputOf<"/parameter/draft", "post">;
 
 type ParameterData = OutputOf<"/parameter/get", "post">;
 

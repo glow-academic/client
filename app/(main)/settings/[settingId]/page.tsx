@@ -31,8 +31,8 @@ type CreateSettingIn = InputOf<"/setting/create", "post">;
 type CreateSettingOut = OutputOf<"/setting/create", "post">;
 type UpdateSettingIn = InputOf<"/setting/update", "post">;
 type UpdateSettingOut = OutputOf<"/setting/update", "post">;
-type PatchSettingDraftIn = InputOf<"/setting/draft", "patch">;
-type PatchSettingDraftOut = OutputOf<"/setting/draft", "patch">;
+type PatchSettingDraftIn = InputOf<"/setting/draft", "post">;
+type PatchSettingDraftOut = OutputOf<"/setting/draft", "post">;
 type GroupSettingIn = InputOf<"/setting/group", "post">;
 type GroupSettingOut = OutputOf<"/setting/group", "post">;
 type GenerationsIn = InputOf<"/setting/generations", "post">;
@@ -71,7 +71,7 @@ async function patchSettingDraft(
   input: PatchSettingDraftIn
 ): Promise<PatchSettingDraftOut> {
   "use server";
-  return api.patch("/setting/draft", input);
+  return api.post("/setting/draft", input);
 }
 
 

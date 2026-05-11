@@ -29,8 +29,8 @@ type GetSimulationIn = InputOf<"/simulation/get", "post">;
 type GetSimulationOut = OutputOf<"/simulation/get", "post">;
 type UpdateSimulationIn = InputOf<"/simulation/update", "post">;
 type UpdateSimulationOut = OutputOf<"/simulation/update", "post">;
-type PatchSimulationDraftIn = InputOf<"/simulation/draft", "patch">;
-type PatchSimulationDraftOut = OutputOf<"/simulation/draft", "patch">;
+type PatchSimulationDraftIn = InputOf<"/simulation/draft", "post">;
+type PatchSimulationDraftOut = OutputOf<"/simulation/draft", "post">;
 type GroupSimulationIn = InputOf<"/simulation/group", "post">;
 type GroupSimulationOut = OutputOf<"/simulation/group", "post">;
 type ProblemSimulationIn = InputOf<"/simulation/problem", "post">;
@@ -85,7 +85,7 @@ async function patchSimulationDraft(
   input: PatchSimulationDraftIn
 ): Promise<PatchSimulationDraftOut> {
   "use server";
-  return api.patch("/simulation/draft", input);
+  return api.post("/simulation/draft", input);
 }
 
 

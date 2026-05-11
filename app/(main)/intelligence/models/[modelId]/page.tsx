@@ -31,8 +31,8 @@ type CreateModelIn = InputOf<"/model/create", "post">;
 type CreateModelOut = OutputOf<"/model/create", "post">;
 type UpdateModelIn = InputOf<"/model/update", "post">;
 type UpdateModelOut = OutputOf<"/model/update", "post">;
-type PatchModelDraftIn = InputOf<"/model/draft", "patch">;
-type PatchModelDraftOut = OutputOf<"/model/draft", "patch">;
+type PatchModelDraftIn = InputOf<"/model/draft", "post">;
+type PatchModelDraftOut = OutputOf<"/model/draft", "post">;
 type GroupModelIn = InputOf<"/model/group", "post">;
 type GroupModelOut = OutputOf<"/model/group", "post">;
 type ProblemModelIn = InputOf<"/model/problem", "post">;
@@ -63,7 +63,7 @@ async function patchModelDraft(
   input: PatchModelDraftIn
 ): Promise<PatchModelDraftOut> {
   "use server";
-  return api.patch("/model/draft", input);
+  return api.post("/model/draft", input);
 }
 
 async function createModelProblem(input: ProblemModelIn): Promise<ProblemModelOut> {

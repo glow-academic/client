@@ -314,7 +314,7 @@ export function useAttemptMessages({
       // canonical message_id — swap the optimistic entry's key to it
       // immediately so the refetch merges cleanly (id match) without
       // relying on content-based dedup.
-      const persistResult = await transport.send("/attempt/chat/message", {
+      const persistResult = await transport.send("/attempt/chat_message", {
         chat_id: chatId,
         text: message,
         ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
@@ -365,7 +365,7 @@ export function useAttemptMessages({
 
   const submitResponse = useCallback(
     (chatId: string, questionId: string, optionIds: string[]) => {
-      transport.send("/attempt/chat/response", {
+      transport.send("/attempt/chat_response", {
         chat_id: chatId,
         question_id: questionId,
         option_ids: optionIds,

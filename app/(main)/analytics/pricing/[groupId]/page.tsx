@@ -22,9 +22,12 @@ import { loadPricingGroupSearchParams } from "@/lib/search-params/pricing-group"
 
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
-/** ---- Strong types from OpenAPI ---- */
-type PricingGroupDetailIn = InputOf<"/system/group/get", "post">;
-type PricingGroupDetailOut = OutputOf<"/system/group/get", "post">;
+/** ---- Strong types from OpenAPI ----
+ * Detail comes inline from /system/group with ``include_detail: true`` —
+ * previously a separate /system/group/get endpoint, now merged. The merged
+ * response is a superset of the lean shape, so the same type covers both. */
+type PricingGroupDetailIn = InputOf<"/system/group", "post">;
+type PricingGroupDetailOut = OutputOf<"/system/group", "post">;
 type ContextIn = InputOf<"/system/context", "post">;
 type ContextOut = OutputOf<"/system/context", "post">;
 type SystemGroupIn = InputOf<"/system/group", "post">;
@@ -40,7 +43,7 @@ const getPricingGroupDetail = async (
 ): Promise<PricingGroupDetailOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/system/group/get", input, {
+  return api.post("/system/group", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -156,6 +159,7 @@ export default async function PricingGroupPage({
       getPricingGroupDetail({
         body: {
           group_id: groupId,
+          include_detail: true,
         },
       }),
       getSystemContextById(groupId) as Promise<ContextOut>,

@@ -32,8 +32,8 @@ type CreateFieldIn = InputOf<"/field/create", "post">;
 type CreateFieldOut = OutputOf<"/field/create", "post">;
 type UpdateFieldIn = InputOf<"/field/update", "post">;
 type UpdateFieldOut = OutputOf<"/field/update", "post">;
-type PatchFieldDraftIn = InputOf<"/field/draft", "patch">;
-type PatchFieldDraftOut = OutputOf<"/field/draft", "patch">;
+type PatchFieldDraftIn = InputOf<"/field/draft", "post">;
+type PatchFieldDraftOut = OutputOf<"/field/draft", "post">;
 
 type FieldData = OutputOf<"/field/get", "post">;
 

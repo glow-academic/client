@@ -43,7 +43,7 @@ export function useTestInvocation(): UseTestInvocationReturn {
         setError(null);
         setStage("creating");
 
-        const result = (await transport.send("/test/invocation/create", {
+        const result = (await transport.send("/test/invocation_create", {
           test_id: params.testId,
           title: params.title ?? "",
           use_custom: params.useCustom ?? false,
