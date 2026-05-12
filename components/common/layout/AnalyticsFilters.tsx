@@ -14,9 +14,9 @@ import {
   useAnalyticsParams,
 } from "@/hooks/use-analytics-params";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Download, Loader2, RefreshCw, X } from "lucide-react";
+import { Download, Loader2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { toast } from "sonner";
 import AttemptSelector from "./analytics/AttemptSelector";
@@ -26,6 +26,7 @@ import {
 } from "./analytics/CohortSelector";
 import { DepartmentSelector } from "./analytics/DepartmentSelector";
 import { RoleSelector } from "./analytics/RoleSelector";
+import { RefreshButton } from "./RefreshButton";
 
 /** Inline analytics facets from the artifact endpoint response */
 export interface AnalyticsFacetsData {
@@ -102,7 +103,6 @@ export function AnalyticsFilters({
   const showCohorts = filterFields?.cohorts?.visible ?? false;
   const showDepartments = filterFields?.departments?.visible ?? false;
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
@@ -122,74 +122,13 @@ export function AnalyticsFilters({
     }
   };
 
-  // Stable spinner that respects pending mutation, in-flight queries, and a min duration
-  const [spinning, setSpinning] = useState(false);
-  const [requestStop, setRequestStop] = useState(false);
-  const spinStartRef = useRef<number | null>(null);
-  const iconRef = useRef<
-    (SVGSVGElement & { __fallbackStop?: NodeJS.Timeout | undefined }) | null
-  >(null);
-  const MIN_SPIN_MS = 600; // prevent flicker (tweak to taste)
-  const SETTLE_DELAY_MS = 150; // brief cushion after last fetch
-
-  // Start immediately on click to avoid a 1-frame delay
   const handleRefresh = async () => {
-    if (!spinning) {
-      setSpinning(true);
-      spinStartRef.current = performance.now();
-    }
-
-    setIsRefreshing(true);
     try {
       await refreshAction();
     } catch {
       toast.error("Failed to refresh analytics data");
-    } finally {
-      setIsRefreshing(false);
     }
   };
-
-  // Keep spinning while refreshing, then ensure minimum spin duration
-  useEffect(() => {
-    if (isRefreshing) {
-      if (!spinning) {
-        setSpinning(true);
-        spinStartRef.current = performance.now();
-      }
-      return; // keep spinning
-    }
-
-    // we're "idle" now; enforce minimum spin duration + small settle delay
-    if (spinning) {
-      const startedAt = spinStartRef.current ?? performance.now();
-      const elapsed = performance.now() - startedAt;
-      const waitMs = Math.max(0, MIN_SPIN_MS - elapsed) + SETTLE_DELAY_MS;
-
-      const t = setTimeout(() => {
-        // DEFER stopping to the next animationiteration
-        setRequestStop(true);
-
-        // safety fallback: if no iteration fires (tab hidden, etc.), stop anyway
-        const fallback = setTimeout(() => {
-          setSpinning(false);
-          setRequestStop(false);
-          spinStartRef.current = null;
-        }, 1200); // a bit > one spin period
-
-        // store fallback timer id on the ref so we can clear it when iteration happens
-        if (iconRef.current?.__fallbackStop) {
-          clearTimeout(iconRef.current.__fallbackStop);
-        }
-        if (iconRef.current) {
-          iconRef.current.__fallbackStop = fallback;
-        }
-      }, waitMs);
-
-      return () => clearTimeout(t);
-    }
-
-    return undefined;
-  }, [isRefreshing, spinning]);
 
   // Local UI state to distinguish between "empty (all)" and "specific selections"
   const [attemptSelected, setAttemptSelected] = useState<SimulationFilter[]>(
@@ -333,33 +272,7 @@ export function AnalyticsFilters({
             )}
 
             {/* Refresh Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              title="Refresh analytics data"
-            >
-              <RefreshCw
-                ref={iconRef}
-                aria-hidden
-                onAnimationIteration={() => {
-                  if (requestStop) {
-                    // clear fallback
-                    if (iconRef.current?.__fallbackStop) {
-                      clearTimeout(iconRef.current.__fallbackStop);
-                      iconRef.current.__fallbackStop = undefined;
-                    }
-                    setSpinning(false); // remove animate-spin at a lap boundary
-                    setRequestStop(false);
-                    spinStartRef.current = null;
-                  }
-                }}
-                className={`h-4 w-4 will-change-transform ${
-                  spinning ? "animate-spin" : ""
-                }`}
-              />
-            </Button>
+            <RefreshButton onClick={handleRefresh} />
           </>
         ) : (
           <>
@@ -467,33 +380,7 @@ export function AnalyticsFilters({
             )}
 
             {/* Refresh Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              title="Refresh analytics data"
-            >
-              <RefreshCw
-                ref={iconRef}
-                aria-hidden
-                onAnimationIteration={() => {
-                  if (requestStop) {
-                    // clear fallback
-                    if (iconRef.current?.__fallbackStop) {
-                      clearTimeout(iconRef.current.__fallbackStop);
-                      iconRef.current.__fallbackStop = undefined;
-                    }
-                    setSpinning(false); // remove animate-spin at a lap boundary
-                    setRequestStop(false);
-                    spinStartRef.current = null;
-                  }
-                }}
-                className={`h-4 w-4 will-change-transform ${
-                  spinning ? "animate-spin" : ""
-                }`}
-              />
-            </Button>
+            <RefreshButton onClick={handleRefresh} />
           </>
         )}
       </div>

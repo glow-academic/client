@@ -114,7 +114,7 @@ export function useGenerationDraft({
     };
 
     // Pass groupId via scope so the SSE channel opens
-    // /{artifact}/stream?group_id=<id> rather than auto-resolving server-side.
+    // /{artifact}/watch?group_id=<id> rather than auto-resolving server-side.
     // WS mode ignores scope and the matchesGroup defensive filter still applies.
     const scope = groupId ? { groupId } : undefined;
 

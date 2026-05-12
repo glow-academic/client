@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { file_id } = await params;
-    const endpoint = `${INTERNAL_HTTP_BASE}/document/file/preview`;
+    const endpoint = `${INTERNAL_HTTP_BASE}/document/file_preview`;
 
     const authHeaders = await getAuthHeaders();
     const response = await fetch(endpoint, {

@@ -233,7 +233,7 @@ export default function SimulationPerformance({
             : status === "warning"
               ? "bg-warning"
               : status === "danger"
-                ? "bg-destructive"
+                ? "bg-danger"
                 : "bg-muted-foreground"
         }`}
       />

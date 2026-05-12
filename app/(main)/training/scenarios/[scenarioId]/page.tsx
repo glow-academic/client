@@ -321,7 +321,7 @@ export default async function EditScenarioPage({
             // skips the duplicate client-side /<art>/group refetch
             // on first paint, eliminating the hydration flicker.
             initialGroupHistory: groupResult as Record<string, unknown>,
-            operations: ["draft", "get", "title"],
+            operations: ["draft", "get", "title", "generate"],
             getGroupHistory: getScenarioGroupHistory,
             searchGroups: searchScenarioGroups,
             prompts: context.prompts?.prompts,

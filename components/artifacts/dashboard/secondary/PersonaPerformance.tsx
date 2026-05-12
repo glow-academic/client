@@ -219,7 +219,7 @@ export default function PersonaPerformance({
       : thresholdStatus === "warning"
         ? "bg-warning"
         : thresholdStatus === "danger"
-          ? "bg-destructive"
+          ? "bg-danger"
           : "bg-muted-foreground";
 
   // Filter trend data for each persona based on selected simulations

@@ -10,7 +10,7 @@ export async function GET(
     const { audioId } = await params;
     const authHeaders = await getAuthHeaders();
 
-    const response = await fetch(`${INTERNAL_HTTP_BASE}/system/audio/download`, {
+    const response = await fetch(`${INTERNAL_HTTP_BASE}/system/audio_download`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify({ audio_id: audioId }),

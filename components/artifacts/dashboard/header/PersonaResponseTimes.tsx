@@ -61,7 +61,7 @@ export default function PersonaResponseTimes({
       : status === "warning"
         ? "bg-warning"
         : status === "danger"
-          ? "bg-destructive"
+          ? "bg-danger"
           : "bg-muted-foreground";
 
   // Format response time for display

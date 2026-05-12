@@ -303,7 +303,7 @@ export default async function NewScenarioPage({
             // skips the duplicate client-side /<art>/group refetch
             // on first paint, eliminating the hydration flicker.
             initialGroupHistory: groupResult as Record<string, unknown>,
-            operations: ["draft", "get", "title"],
+            operations: ["draft", "get", "title", "generate"],
             getGroupHistory: getScenarioGroupHistory,
             searchGroups: searchScenarioGroups,
             prompts: context.prompts?.prompts,
@@ -319,6 +319,10 @@ export default async function NewScenarioPage({
           >
             <Scenario
               scenarioDetailDefault={scenarioDetailDefault}
+              groupId={
+                (groupResult as GroupScenarioOut & { group_id?: string })
+                  ?.group_id ?? null
+              }
               createScenarioAction={createScenario}
               patchScenarioDraftAction={patchScenarioDraft}
               uploadBasePath="/scenario"

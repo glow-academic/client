@@ -56,3 +56,15 @@ export function textDownloadUrl(artifact: string, textId: string): string {
 export function callDownloadUrl(artifact: string, callId: string): string {
   return `/api/${downloadBase(artifact)}/call/${callId}`;
 }
+
+/** Convenience: full BFF URL for an image download. Drop directly into
+ *  an ``<img src>`` — the BFF route proxies the bytes and the browser
+ *  caches by URL just like any other image. */
+export function imageDownloadUrl(artifact: string, imageId: string): string {
+  return `/api/${downloadBase(artifact)}/image/${imageId}`;
+}
+
+/** Convenience: full BFF URL for a video download. */
+export function videoDownloadUrl(artifact: string, videoId: string): string {
+  return `/api/${downloadBase(artifact)}/video/${videoId}`;
+}

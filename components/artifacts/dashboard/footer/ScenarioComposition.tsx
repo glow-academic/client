@@ -134,21 +134,18 @@ export default function ScenarioComposition({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  useEffect(() => {
-    if (!selectedScenarioId && validScenarioIds[0]) {
-      setSelectedScenarioId(validScenarioIds[0]);
-    } else if (
-      selectedScenarioId &&
-      !validScenarioIds.includes(selectedScenarioId)
-    ) {
-      setSelectedScenarioId(validScenarioIds[0] || "");
-    }
-  }, [validScenarioIds, selectedScenarioId, setSelectedScenarioId]);
+  const activeScenarioId = useMemo(
+    () =>
+      (validScenarioIds.includes(selectedScenarioId)
+        ? selectedScenarioId
+        : validScenarioIds[0]) ?? "",
+    [validScenarioIds, selectedScenarioId],
+  );
 
   // Get the summary for the selected scenario
   const selectedSummary = useMemo(
-    () => scenarioSummaries.find((s) => s.scenarioId === selectedScenarioId),
-    [scenarioSummaries, selectedScenarioId],
+    () => scenarioSummaries.find((s) => s.scenarioId === activeScenarioId),
+    [scenarioSummaries, activeScenarioId],
   );
 
   // Build parameter lookup maps
@@ -167,7 +164,7 @@ export default function ScenarioComposition({
   // Build high/low parameter rows for the selected scenario
   const { highRows, lowRows } = useMemo(() => {
     const facts = chatParameterFacts.filter(
-      (f) => f.scenarioId === selectedScenarioId,
+      (f) => f.scenarioId === activeScenarioId,
     );
 
     // Assign colors to unique parameter items
@@ -193,7 +190,7 @@ export default function ScenarioComposition({
     };
 
     return { highRows: buildRows("high"), lowRows: buildRows("low") };
-  }, [chatParameterFacts, selectedScenarioId, chartColors, parameterMap, fieldMap]);
+  }, [chatParameterFacts, activeScenarioId, chartColors, parameterMap, fieldMap]);
 
   return (
     <Card className="w-full h-full flex flex-col relative">
@@ -205,7 +202,7 @@ export default function ScenarioComposition({
             : status === "warning"
               ? "bg-warning"
               : status === "danger"
-                ? "bg-destructive"
+                ? "bg-danger"
                 : "bg-muted-foreground"
         }`}
       />
@@ -231,7 +228,7 @@ export default function ScenarioComposition({
           <GenericPicker
             items={scenarioMapping}
             itemIds={validScenarioIds}
-            selectedIds={selectedScenarioId ? [selectedScenarioId] : []}
+            selectedIds={activeScenarioId ? [activeScenarioId] : []}
             onSelect={(ids) => setSelectedScenarioId(ids[0] || "")}
             getId={(s) => (s as unknown as { scenario_id: string }).scenario_id}
             getLabel={(s) => s.name || ""}
@@ -273,7 +270,7 @@ export default function ScenarioComposition({
           </div>
         )}
 
-        {highRows.length === 0 && lowRows.length === 0 && selectedScenarioId && (
+        {highRows.length === 0 && lowRows.length === 0 && activeScenarioId && (
           <div
             className={cn(
               "text-center bg-muted/50 rounded-lg flex-shrink-0",

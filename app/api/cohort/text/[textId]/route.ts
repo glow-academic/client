@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { textId } = await params;
-    const endpoint = `${INTERNAL_HTTP_BASE}/cohort/text/download`;
+    const endpoint = `${INTERNAL_HTTP_BASE}/cohort/text_download`;
     const authHeaders = await getAuthHeaders();
 
     const response = await fetch(endpoint, {

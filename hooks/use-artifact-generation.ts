@@ -34,7 +34,20 @@ export interface GenerationMessage {
   id: string;
   role: "user" | "assistant";
   text: string;
-  type: "text" | "tool";
+  type: "text" | "tool" | "media";
+  /** For ``type: "media"`` — the modality being produced. Drives which
+   *  download helper the renderer reaches for (imageDownloadUrl /
+   *  videoDownloadUrl / etc.) and which icon to show in the skeleton. */
+  modality?: "image" | "video" | "audio";
+  /** Resource-level id (``images_id`` / ``videos_id`` / ``audios_id``)
+   *  carried on ``<art>.generate.{image|video|audio}.complete``.
+   *  ``undefined`` while skeleton is in flight (only ``message_id`` is
+   *  known from the matching ``.start`` event).  */
+  resourceId?: string;
+  /** ``true`` while the skeleton is in flight (after ``.start``, before
+   *  ``.complete``). Renderer reads this to swap ``<img>`` for a
+   *  spinner/gray block. Flips to ``false`` on ``.complete``. */
+  pending?: boolean;
   toolName?: string;
   toolStatus?: "pending" | "success" | "error";
   /** Tool resource (id/name/description/...) when this audited
@@ -410,7 +423,87 @@ export function useArtifactGeneration(
       );
     };
 
-    // Pass groupId via scope so SSE opens /{artifact}/stream?group_id=<id>.
+    // Media lifecycle. Server pre-mints ``message_id`` in
+    // ``execute_media_dispatch`` and includes it on every ``.start`` /
+    // ``.progress`` / ``.complete`` / ``.error`` emit so the FE can
+    // create an optimistic skeleton bubble on ``.start`` and replace
+    // its content in-place on ``.complete`` (no flicker, no reordering).
+    // The resource id (``images_id`` / ``videos_id`` / ``audios_id``)
+    // arrives on ``.complete`` — that's the id the matching download
+    // helper consumes (e.g. ``imageDownloadUrl(art, id)``).
+    const handleMediaStart =
+      (modality: "image" | "video" | "audio") =>
+      (data: Record<string, unknown>) => {
+        const messageId = data.message_id as string | undefined;
+        if (!messageId) return;
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === messageId)) return prev;
+          return [
+            ...prev,
+            {
+              id: messageId,
+              role: "assistant",
+              text: "",
+              type: "media",
+              modality,
+              pending: true,
+              tool: null,
+            },
+          ];
+        });
+      };
+
+    const handleMediaComplete =
+      (modality: "image" | "video" | "audio") =>
+      (data: Record<string, unknown>) => {
+        const messageId = data.message_id as string | undefined;
+        if (!messageId) return;
+        // Resource id keys differ by modality on the wire — pick the
+        // one this complete event carries.
+        const resourceKey =
+          modality === "image"
+            ? "images_id"
+            : modality === "video"
+              ? "videos_id"
+              : "audios_id";
+        const resourceId = data[resourceKey] as string | undefined;
+        setMessages((prev) => {
+          const existing = prev.findIndex((m) => m.id === messageId);
+          const next: GenerationMessage = {
+            id: messageId,
+            role: "assistant",
+            text: "",
+            type: "media",
+            modality,
+            resourceId,
+            pending: false,
+            tool: null,
+          };
+          if (existing >= 0) {
+            const updated = [...prev];
+            updated[existing] = { ...prev[existing]!, ...next };
+            return updated;
+          }
+          // No skeleton existed (we missed ``.start``) — append fresh.
+          return [...prev, next];
+        });
+      };
+
+    const handleMediaError =
+      (modality: "image" | "video" | "audio") =>
+      (data: Record<string, unknown>) => {
+        const messageId = data.message_id as string | undefined;
+        if (!messageId) return;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === messageId
+              ? { ...m, type: "media", modality, pending: false, toolStatus: "error" }
+              : m,
+          ),
+        );
+      };
+
+    // Pass groupId via scope so SSE opens /{artifact}/watch?group_id=<id>.
     const scope = groupId ? { groupId } : undefined;
 
     const unsubs = [
@@ -424,6 +517,19 @@ export function useArtifactGeneration(
       transport.on(`${prefix}.text.complete`, handleTextComplete, scope),
       transport.on(`${prefix}.call.start`, handleCallStart, scope),
       transport.on(`${prefix}.call.complete`, handleCallComplete, scope),
+      // Media lifecycle — skeleton on ``.start``, content swap on
+      // ``.complete``, error state on ``.error``. Symmetric for the
+      // three streamable modalities so chat panels render media live
+      // without waiting for a refresh.
+      transport.on(`${prefix}.image.start`, handleMediaStart("image"), scope),
+      transport.on(`${prefix}.image.complete`, handleMediaComplete("image"), scope),
+      transport.on(`${prefix}.image.error`, handleMediaError("image"), scope),
+      transport.on(`${prefix}.video.start`, handleMediaStart("video"), scope),
+      transport.on(`${prefix}.video.complete`, handleMediaComplete("video"), scope),
+      transport.on(`${prefix}.video.error`, handleMediaError("video"), scope),
+      transport.on(`${prefix}.audio.start`, handleMediaStart("audio"), scope),
+      transport.on(`${prefix}.audio.complete`, handleMediaComplete("audio"), scope),
+      transport.on(`${prefix}.audio.error`, handleMediaError("audio"), scope),
     ];
 
     return () => {

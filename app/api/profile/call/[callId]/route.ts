@@ -10,7 +10,7 @@ export async function GET(
     const { callId } = await params;
     const authHeaders = await getAuthHeaders();
 
-    const response = await fetch(`${INTERNAL_HTTP_BASE}/profile/call/download`, {
+    const response = await fetch(`${INTERNAL_HTTP_BASE}/profile/call_download`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify({ call_id: callId }),

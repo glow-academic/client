@@ -202,7 +202,7 @@ export default function CohortPerformance({
             : thresholdStatus === "warning"
               ? "bg-warning"
               : thresholdStatus === "danger"
-                ? "bg-destructive"
+                ? "bg-danger"
                 : "bg-muted-foreground"
         }`}
       />

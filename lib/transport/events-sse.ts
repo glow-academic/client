@@ -6,7 +6,7 @@
  *   or with a wildcard like `transport.on("persona.*.started", handler, {...})`.
  *   The first `.`-segment ("persona") is the artifact and decides which
  *   EventSource the handler attaches to. The channel lazily opens
- *   `GET /api/stream/{artifact}?group_id={groupId}` — a same-origin BFF
+ *   `GET /api/watch/{artifact}?group_id={groupId}` — a same-origin BFF
  *   route on the Next.js server — if no EventSource exists for that
  *   (artifact, groupId) key, then registers the handler. When the last
  *   handler unsubscribes, the EventSource closes.
@@ -19,7 +19,7 @@
  *   dispatch in JS — this also lets us support wildcard patterns,
  *   which `EventSource.addEventListener` cannot do natively.
  *
- * Auth: handled entirely by the BFF route (`app/api/stream/[artifact]/route.ts`).
+ * Auth: handled entirely by the BFF route (`app/api/watch/[artifact]/route.ts`).
  * It reads the user's Auth.js session server-side and attaches the Bearer
  * token to the upstream request — the JWT never reaches the browser.
  */
@@ -86,7 +86,7 @@ class PerArtifactSseMultiplexer {
   on(event: string, handler: Handler, scope?: EventScope): () => void {
     const artifact = artifactFromEventName(event);
     const groupId = scope?.groupId ?? null;
-    // Upstream stream impls require a ``group_id`` query param and 400
+    // Upstream watch impls require a ``group_id`` query param and 400
     // when it's absent. Subscribers that mount before their page has
     // resolved a groupId would otherwise open a stream the upstream
     // immediately rejects — skip and rely on the caller's effect to
@@ -163,7 +163,7 @@ class PerArtifactSseMultiplexer {
 
     // Same-origin BFF route. The Next.js server attaches the Bearer
     // token to the upstream request out-of-band; no token in the URL.
-    const url = new URL(`/api/stream/${artifact}`, window.location.origin);
+    const url = new URL(`/api/watch/${artifact}`, window.location.origin);
     if (groupId) url.searchParams.set("group_id", groupId);
 
     const source = new EventSource(url.toString());
@@ -180,14 +180,30 @@ class PerArtifactSseMultiplexer {
       },
     };
     entry.onMessage = (ev: MessageEvent) => {
-      let data: Record<string, unknown>;
+      let envelope: Record<string, unknown>;
       try {
-        data = JSON.parse(ev.data) as Record<string, unknown>;
+        envelope = JSON.parse(ev.data) as Record<string, unknown>;
       } catch {
         return;
       }
-      const eventType = data.event_type;
+      const eventType = envelope.event_type;
       if (typeof eventType !== "string") return;
+
+      // Unwrap to match the WS handler shape: handlers expect the
+      // server's original ``sio.emit(event, payload, room=…)`` payload
+      // at the top level with ``event_type`` injected. The SSE path
+      // wraps everything in ``EventEnvelope`` with ``payload`` nested,
+      // so a handler reading ``data.message_id`` / ``data.text`` /
+      // ``data.delta`` would silently miss every field. Flatten here.
+      const rawPayload = envelope.payload;
+      const payload: Record<string, unknown> =
+        rawPayload && typeof rawPayload === "object"
+          ? (rawPayload as Record<string, unknown>)
+          : {};
+      const data: Record<string, unknown> = {
+        ...payload,
+        event_type: eventType,
+      };
 
       const exact = entry.exact.get(eventType);
       if (exact) {

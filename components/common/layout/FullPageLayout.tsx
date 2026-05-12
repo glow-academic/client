@@ -40,10 +40,11 @@ import {
   GenerationPanel,
   type GenerationPanelPrefs,
 } from "@/components/common/ai/GenerationPanel";
-import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
+import { ThemeStyle } from "@/components/theme/ThemeStyle";
 import { ProfileProviderClient } from "@/contexts/profile-context";
 import type { ContextProfile } from "@/contexts/profile-context";
 import { GroupProviderClient } from "@/contexts/group-context";
+import { ThresholdsProvider } from "@/contexts/thresholds-context";
 import { GenerationListenerProvider } from "@/hooks/use-artifact-generation-context";
 import { SIDEBAR_SECTIONS } from "@/lib/sidebar-config";
 
@@ -176,7 +177,11 @@ export function FullPageLayout({
 
   return (
     <>
-      <ThemeHydrator primitives={profileData?.theme ?? null} />
+      <ThemeStyle
+        tokens={profileData?.theme?.tokens ?? null}
+        darkTokens={profileData?.theme?.dark_tokens ?? null}
+      />
+      <ThresholdsProvider value={profileData?.theme?.thresholds ?? null}>
       <ProfileProviderClient
         initial={profileData}
         sessionSnapshot={sessionSnapshot}
@@ -250,6 +255,7 @@ export function FullPageLayout({
           </SidebarProvider>
         </GroupProviderClient>
       </ProfileProviderClient>
+      </ThresholdsProvider>
     </>
   );
 }

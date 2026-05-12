@@ -61,7 +61,7 @@ export default function AverageScore({
       : status === "warning"
         ? "bg-warning"
         : status === "danger"
-          ? "bg-destructive"
+          ? "bg-danger"
           : "bg-muted-foreground";
 
   return (

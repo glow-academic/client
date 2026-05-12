@@ -11,7 +11,7 @@ export interface UseAttemptGenerateConfig {
   /**
    * Group id to scope SSE event subscriptions to. Required for the
    * per-(artifact, group_id) stream model — generation completion events
-   * are routed to `/attempt/stream?group_id=…`. WS mode ignores it.
+   * are routed to `/attempt/watch?group_id=…`. WS mode ignores it.
    * Falls back to the surrounding GroupProviderClient context if omitted.
    */
   groupId?: string | null;

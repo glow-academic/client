@@ -24,11 +24,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Download, Loader2, Plus, RefreshCw } from "lucide-react";
+import { Download, Loader2, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useTransition } from "react";
 import { toast } from "sonner";
+import { RefreshButton } from "./RefreshButton";
 
 export interface ArtifactToolbarActionsProps {
   /** Optional left-most "New X" button. */
@@ -58,7 +59,6 @@ export function ArtifactToolbarActions({
 }: ArtifactToolbarActionsProps) {
   const router = useRouter();
   const [isExporting, startExport] = useTransition();
-  const [isRefreshing, startRefresh] = useTransition();
 
   const handleDownload = useCallback(() => {
     if (!exportAction || !bffDownloadPrefix) return;
@@ -81,18 +81,14 @@ export function ArtifactToolbarActions({
     });
   }, [exportAction, bffDownloadPrefix]);
 
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
     if (!refreshAction) return;
-    startRefresh(async () => {
-      try {
-        await refreshAction();
-        router.refresh();
-      } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : "Refresh failed",
-        );
-      }
-    });
+    try {
+      await refreshAction();
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Refresh failed");
+    }
   }, [refreshAction, router]);
 
   return (
@@ -128,27 +124,7 @@ export function ArtifactToolbarActions({
           </Tooltip>
         </TooltipProvider>
       )}
-      {refreshAction && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                aria-label="Refresh"
-              >
-                <RefreshCw
-                  className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-                />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Refresh</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
+      {refreshAction && <RefreshButton onClick={handleRefresh} />}
     </div>
   );
 }

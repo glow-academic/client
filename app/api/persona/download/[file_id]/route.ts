@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { file_id } = await params;
-    const endpoint = `${INTERNAL_HTTP_BASE}/persona/file/download`;
+    const endpoint = `${INTERNAL_HTTP_BASE}/persona/file_download`;
 
     const authHeaders = await getAuthHeaders();
     const headers: HeadersInit = {

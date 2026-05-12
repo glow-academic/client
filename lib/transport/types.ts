@@ -25,7 +25,7 @@ export type EventHandler = (data: Record<string, unknown>) => void;
 
 /**
  * Optional scope for an event subscription. Only meaningful for SSE — it
- * determines which `/{artifact}/stream?group_id=…` connection to open.
+ * determines which `/{artifact}/watch?group_id=…` connection to open.
  * WS mode ignores it (single multiplexed socket).
  */
 export interface EventScope {

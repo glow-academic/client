@@ -10,7 +10,7 @@ export async function GET(
     const { fileId } = await params;
     const authHeaders = await getAuthHeaders();
 
-    const response = await fetch(`${INTERNAL_HTTP_BASE}/attempt/file/download`, {
+    const response = await fetch(`${INTERNAL_HTTP_BASE}/attempt/file_download`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify({ file_id: fileId }),

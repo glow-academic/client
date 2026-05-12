@@ -39,6 +39,7 @@ import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { useSharedGenerationListener } from "@/hooks/use-artifact-generation-context";
+import { useArtifactEval, type Candidate } from "@/hooks/use-artifact-eval";
 import { useGenerationDraft } from "@/hooks/use-generation-draft";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useTransport } from "@/lib/transport";
@@ -191,6 +192,53 @@ function PersonaComponent({
   // (for message rendering). No double-subscribe.
   const generationListener = useSharedGenerationListener();
   const isGeneratingBool = generationListener.isGenerating;
+
+  // ─── Eval bootstrap (prove-out: "max + random") ────────────────────
+  // Per-agent + aggregate generate events feed candidate slots. The
+  // ``onCandidatesReady`` callback runs once the whole pool is done:
+  //   1. For every rubric-bearing candidate, fire ``/test/grade`` with
+  //      ``full: true`` — server resolves the rubric and sets
+  //      score = total_points. No client-side knowledge of the
+  //      rubric's ceiling required.
+  //   2. Pick one candidate at random and promote it via the canonical
+  //      idempotency_key + accept=true path. Reject the rest with
+  //      accept=false.
+  // The whole thing is policy plugged into ``onCandidatesReady`` — swap
+  // it later for AI-grade-then-pick, manual review, voting, etc.
+  useArtifactEval({
+    artifact: "persona",
+    onCandidatesReady: async (candidates: Candidate[], { grade, promote, reject }) => {
+      if (candidates.length === 0) return;
+      try {
+        // 1. Grade everyone as full marks (server fills in max).
+        await Promise.all(
+          candidates
+            .filter((c) => c.invocation_id)
+            .map((c) => grade(c, { full: true })),
+        );
+        // 2. Random winner — uniform pick across the pool.
+        const winnerIdx = Math.floor(Math.random() * candidates.length);
+        const winner = candidates[winnerIdx];
+        if (!winner) return;
+        toast.success(
+          `Promoting candidate from agent ${winner.agent_id.slice(0, 8)}`,
+        );
+        // 3. Promote winner, reject losers — both pathways ack the
+        //    soft writes via /<artifact>/create with idempotency_key.
+        await promote(winner);
+        await Promise.all(
+          candidates
+            .filter((c) => c.agent_id !== winner.agent_id)
+            .map((c) => reject(c)),
+        );
+      } catch (err) {
+        console.error("Eval bootstrap failed:", err);
+        toast.error(
+          err instanceof Error ? err.message : "Eval workflow failed",
+        );
+      }
+    },
+  });
 
   // Right-panel sidebar handle — Persona is mounted inside the inner
   // (right-side) SidebarProvider via FullPageLayout, so useSidebar() returns

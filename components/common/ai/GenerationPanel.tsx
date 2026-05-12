@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { AlertCircle, Check, CheckCircle2, ChevronDown, ChevronsUpDown, FileText, Image, Loader2, Mic, Search, Send, Settings2, SquarePen, Video, Wrench, X, XCircle } from "lucide-react";
+import { AlertCircle, Check, CheckCircle2, ChevronDown, ChevronsUpDown, FileText, Loader2, Mic, Search, Send, Settings2, SquarePen, Wrench, X, XCircle } from "lucide-react";
 import { ackOperation } from "@/lib/api/ack";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -31,7 +31,12 @@ import {
 import { useTransport } from "@/lib/transport";
 import type { GenerationMessage as GenerateMessage } from "@/hooks/use-artifact-generation";
 import { useSharedGenerationListener } from "@/hooks/use-artifact-generation-context";
-import { callDownloadUrl, textDownloadUrl } from "@/lib/api/download-routes";
+import {
+  callDownloadUrl,
+  imageDownloadUrl,
+  textDownloadUrl,
+  videoDownloadUrl,
+} from "@/lib/api/download-routes";
 import { useQueryState, parseAsString } from "nuqs";
 
 // ---------------------------------------------------------------------------
@@ -160,13 +165,23 @@ function formatRelativeTime(dateStr: string | null | undefined): string {
   return date.toLocaleDateString();
 }
 
-/** Flatten runs → messages from the /group/get response */
+/** Flatten runs → messages from the /group/get response.
+ *
+ * After flattening, sort globally by ``created_at``. The server returns
+ * messages grouped by run, then ordered within each run — which puts a
+ * nested run's messages AFTER its parent's final text, even though the
+ * nested run's timestamps fall BETWEEN the parent's tool-call dispatch
+ * and that final text. A pure time sort restores chronological order.
+ */
 function flattenMessages(res: GroupMessagesOut | Record<string, unknown>): HistoricalMessage[] {
-  const flat: HistoricalMessage[] = [];
+  const flat: Array<HistoricalMessage & { _ts: number }> = [];
   for (const runWithMessages of (res as Record<string, unknown>).runs as Array<Record<string, unknown>> ?? []) {
     const messages = runWithMessages.messages as Array<Record<string, unknown>> ?? [];
     for (const msg of messages) {
+      const tsRaw = msg.created_at as string | undefined;
+      const ts = tsRaw ? new Date(tsRaw).getTime() : 0;
       flat.push({
+        _ts: ts,
         id: msg.id ? String(msg.id) : crypto.randomUUID(),
         role: (msg.role as string) ?? "assistant",
         textIds: ((msg.text_ids as string[]) ?? []).map(String),
@@ -189,7 +204,11 @@ function flattenMessages(res: GroupMessagesOut | Record<string, unknown>): Histo
       });
     }
   }
-  return flat;
+  // Global chronological sort. Stable: messages without a timestamp
+  // (legacy rows) keep their original relative order via the stable
+  // sort guarantee in modern V8.
+  flat.sort((a, b) => a._ts - b._ts);
+  return flat.map(({ _ts: _, ...rest }) => rest);
 }
 
 /**
@@ -801,6 +820,12 @@ export function GenerationPanel({
     toolName: m.toolName,
     toolStatus: m.toolStatus === "pending" ? undefined : m.toolStatus,
     tool: m.tool,
+    // Media-bubble fields: forwarded so the renderer can swap a
+    // placeholder for the rendered ``<img>`` / ``<video>`` based on
+    // ``pending`` + ``resourceId``. ``undefined`` for non-media bubbles.
+    modality: m.modality,
+    resourceId: m.resourceId,
+    pending: m.pending,
   } as GenerateMessage));
   const isGenerating = listener.isGenerating;
   const clearMessages = listener.clearMessages;
@@ -1173,6 +1198,18 @@ export function GenerationPanel({
 
     const parts: React.ReactNode[] = [];
     const hasToolCalls = msg.calls.length > 0;
+    // Each modality is its own renderable primary content. The text body
+    // on the same message is a fallback caption (mirrors the
+    // ``Generated image resource: image-…`` announcement the server
+    // writes alongside the image upload, or the rendered tool-call
+    // arguments alongside a call). When the primary modality renders,
+    // suppress the text — same principle the call path already uses
+    // via ``hasToolCalls``.
+    const hasPrimaryMedia =
+      msg.imageIds.length > 0 ||
+      msg.videoIds.length > 0 ||
+      msg.audioIds.length > 0 ||
+      msg.fileIds.length > 0;
 
     // Tier selection is tool-presence-based:
     //   - call.tool present → ToolCallBubble. A tool is connected to
@@ -1214,10 +1251,13 @@ export function GenerationPanel({
       }
     }
 
-    // Text uploads — only render standalone text (skip if message has tool calls,
-    // since those text_ids are just rendered tool output, not assistant text).
+    // Text uploads — only render standalone text. Skipped when:
+    //   * the message has tool calls (text_ids are rendered tool output)
+    //   * the message has primary media (image/video/audio/file) — the
+    //     text is the fallback caption that only matters when the
+    //     modality can't render. Mirrors the call path's hasToolCalls.
     // Each ``<LazyText>`` fetches its body when scrolled into view.
-    if (!hasToolCalls) for (const textId of msg.textIds) {
+    if (!hasToolCalls && !hasPrimaryMedia) for (const textId of msg.textIds) {
       const alignClass = msg.role === "user" ? "justify-end" : "justify-start";
       const bubbleClass = `max-w-[85%] rounded-lg px-3 py-2 text-sm ${
         msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-accent border"
@@ -1235,16 +1275,26 @@ export function GenerationPanel({
       );
     }
 
-    // Image uploads
+    // Image uploads — render each one inline via the per-artifact BFF
+    // route. Plain ``<img>`` (not ``next/image``) because the bubble is
+    // responsive width and we don't know intrinsic dimensions; matches
+    // ``components/artifacts/group/Group.tsx`` for consistency.
     if (msg.imageIds.length > 0) {
       parts.push(
-        <div key={`img-${msg.id}`} className={`flex ${align}`}>
-          <div className="max-w-[85%] flex items-center gap-2 rounded-lg border bg-accent px-3 py-2">
-            <Image className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">
-              {msg.imageIds.length} image{msg.imageIds.length > 1 ? "s" : ""}
-            </span>
-          </div>
+        <div
+          key={`img-${msg.id}`}
+          className={`flex ${align} flex-col gap-2`}
+        >
+          {msg.imageIds.map((imageId) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={imageId}
+              src={imageDownloadUrl(artifactType, imageId)}
+              alt="Generated image"
+              className="max-w-[85%] rounded-md border"
+              loading="lazy"
+            />
+          ))}
         </div>,
       );
     }
@@ -1263,16 +1313,22 @@ export function GenerationPanel({
       );
     }
 
-    // Video uploads
+    // Video uploads — inline ``<video>`` via the per-artifact BFF route.
     if (msg.videoIds.length > 0) {
       parts.push(
-        <div key={`video-${msg.id}`} className={`flex ${align}`}>
-          <div className="max-w-[85%] flex items-center gap-2 rounded-lg border bg-accent px-3 py-2">
-            <Video className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">
-              {msg.videoIds.length} video{msg.videoIds.length > 1 ? "s" : ""}
-            </span>
-          </div>
+        <div
+          key={`video-${msg.id}`}
+          className={`flex ${align} flex-col gap-2`}
+        >
+          {msg.videoIds.map((videoId) => (
+            <video
+              key={videoId}
+              src={videoDownloadUrl(artifactType, videoId)}
+              controls
+              className="max-w-[85%] rounded-md border"
+              preload="metadata"
+            />
+          ))}
         </div>,
       );
     }
@@ -1352,6 +1408,71 @@ export function GenerationPanel({
           role={msg.role}
           align={align}
         />
+      );
+    }
+    if (msg.type === "media") {
+      // ``pending`` ⇒ skeleton (gray block + spinner). Once
+      // ``.complete`` lands, ``pending`` flips false and ``resourceId``
+      // is set — render the actual ``<img>`` / ``<video>`` via the
+      // per-artifact BFF download route. ``toolStatus === "error"``
+      // means ``.error`` fired before ``.complete`` — show a failed
+      // state instead.
+      const align = msg.role === "user" ? "justify-end" : "justify-start";
+      const failed = msg.toolStatus === "error";
+      if (failed) {
+        return (
+          <div key={`live-${i}`} className={`flex ${align}`}>
+            <div className="max-w-[85%] rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              {msg.modality ?? "Media"} generation failed
+            </div>
+          </div>
+        );
+      }
+      if (msg.pending || !msg.resourceId) {
+        return (
+          <div key={`live-${i}`} className={`flex ${align}`}>
+            <div className="max-w-[85%] flex items-center gap-2 rounded-md border bg-accent/40 px-3 py-6 min-w-[240px]">
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                Generating {msg.modality ?? "media"}…
+              </span>
+            </div>
+          </div>
+        );
+      }
+      if (msg.modality === "image") {
+        return (
+          <div key={`live-${i}`} className={`flex ${align} flex-col gap-2`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageDownloadUrl(artifactType, msg.resourceId)}
+              alt="Generated image"
+              className="max-w-[85%] rounded-md border"
+              loading="lazy"
+            />
+          </div>
+        );
+      }
+      if (msg.modality === "video") {
+        return (
+          <div key={`live-${i}`} className={`flex ${align} flex-col gap-2`}>
+            <video
+              src={videoDownloadUrl(artifactType, msg.resourceId)}
+              controls
+              className="max-w-[85%] rounded-md border"
+              preload="metadata"
+            />
+          </div>
+        );
+      }
+      // audio / other — fallback placeholder until a dedicated render
+      // helper exists.
+      return (
+        <div key={`live-${i}`} className={`flex ${align}`}>
+          <div className="max-w-[85%] flex items-center gap-2 rounded-md border bg-accent/40 px-3 py-2 text-xs text-muted-foreground">
+            {msg.modality} ready: {msg.resourceId}
+          </div>
+        </div>
       );
     }
     return (

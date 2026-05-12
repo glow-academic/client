@@ -1,5 +1,5 @@
 /**
- * BFF stream endpoint — same-origin SSE proxy.
+ * BFF watch endpoint — same-origin SSE proxy.
  *
  * The browser's ``EventSource`` API cannot set request headers, so the
  * only ways to authenticate are (a) put the token in the URL query
@@ -13,13 +13,16 @@
  * The JWT never leaves the Next.js process.
  *
  * Usage:
- *   new EventSource("/api/stream/attempt?group_id=...")
- *   new EventSource("/api/stream/persona")
+ *   new EventSource("/api/watch/attempt?group_id=...")
+ *   new EventSource("/api/watch/persona")
+ *   new EventSource("/api/watch/scenario?group_id=...&run_id=...")
  *
- * Path shape: ``/api/stream/{artifact}``. The ``/stream`` suffix on
- * the upstream (``:8000/{artifact}/stream``) is implicit — callers
- * already know they're opening a stream from the route name, so we
- * don't make them repeat it.
+ * Path shape: ``/api/watch/{artifact}``. The ``/watch`` suffix on
+ * the upstream (``:8000/{artifact}/watch``) is implicit — callers
+ * already know they're opening a watch stream from the route name,
+ * so we don't make them repeat it. The optional ``run_id`` query
+ * param filters events to a single run (matches the LLM-tool sibling
+ * ``X_Watch`` which dispatches to the one-shot ``watch_<art>_impl``).
  */
 
 import type { NextRequest } from "next/server";
@@ -55,7 +58,7 @@ export async function GET(
     );
   }
 
-  const upstreamUrl = `${INTERNAL_HTTP_BASE}/${artifact}/stream${req.nextUrl.search}`;
+  const upstreamUrl = `${INTERNAL_HTTP_BASE}/${artifact}/watch${req.nextUrl.search}`;
 
   const session = await auth();
   if (!session?.id_token) {

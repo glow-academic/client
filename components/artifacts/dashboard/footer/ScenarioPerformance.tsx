@@ -484,7 +484,7 @@ export default function ScenarioPerformance({
             : thresholdStatus === "warning"
               ? "bg-warning"
               : thresholdStatus === "danger"
-                ? "bg-destructive"
+                ? "bg-danger"
                 : "bg-muted-foreground"
         }`}
       />

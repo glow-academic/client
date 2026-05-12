@@ -17,7 +17,7 @@ export async function GET(
     };
     if (rangeHeader) forwardHeaders["Range"] = rangeHeader;
 
-    const response = await fetch(`${INTERNAL_HTTP_BASE}/system/video/download`, {
+    const response = await fetch(`${INTERNAL_HTTP_BASE}/system/video_download`, {
       method: "POST",
       headers: forwardHeaders,
       body: JSON.stringify({ video_id: videoId }),

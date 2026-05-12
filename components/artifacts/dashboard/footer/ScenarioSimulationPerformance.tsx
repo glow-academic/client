@@ -192,23 +192,20 @@ export default function ScenarioSimulationPerformance({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  useEffect(() => {
-    if (!selectedScenarioId && validScenarioIds[0]) {
-      setSelectedScenarioId(validScenarioIds[0]);
-    } else if (
-      selectedScenarioId &&
-      !validScenarioIds.includes(selectedScenarioId)
-    ) {
-      setSelectedScenarioId(validScenarioIds[0] || "");
-    }
-  }, [validScenarioIds, selectedScenarioId, setSelectedScenarioId]);
+  const activeScenarioId = useMemo(
+    () =>
+      (validScenarioIds.includes(selectedScenarioId)
+        ? selectedScenarioId
+        : validScenarioIds[0]) ?? "",
+    [validScenarioIds, selectedScenarioId],
+  );
 
   const data = useMemo(
     () =>
       simulationFacts
-        .filter((f) => f.scenarioId === selectedScenarioId)
+        .filter((f) => f.scenarioId === activeScenarioId)
         .sort((a, b) => a.simulationName.localeCompare(b.simulationName)),
-    [simulationFacts, selectedScenarioId],
+    [simulationFacts, activeScenarioId],
   );
 
   const dataByName = useMemo(
@@ -225,7 +222,7 @@ export default function ScenarioSimulationPerformance({
             : status === "warning"
               ? "bg-warning"
               : status === "danger"
-                ? "bg-destructive"
+                ? "bg-danger"
                 : "bg-muted-foreground"
         }`}
       />
@@ -249,7 +246,7 @@ export default function ScenarioSimulationPerformance({
           <GenericPicker
             items={scenarioMapping}
             itemIds={validScenarioIds}
-            selectedIds={selectedScenarioId ? [selectedScenarioId] : []}
+            selectedIds={activeScenarioId ? [activeScenarioId] : []}
             onSelect={(ids) => setSelectedScenarioId(ids[0] || "")}
             getId={(s) => (s as unknown as { scenario_id: string }).scenario_id}
             getLabel={(s) => s.name || ""}

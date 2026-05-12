@@ -61,7 +61,7 @@ export default function MessagesPerSession({
       : status === "warning"
         ? "bg-warning"
         : status === "danger"
-          ? "bg-destructive"
+          ? "bg-danger"
           : "bg-muted-foreground";
 
   // Render

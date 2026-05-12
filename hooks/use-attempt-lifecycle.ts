@@ -19,7 +19,7 @@ interface UseAttemptLifecycleConfig {
   /**
    * Group id this attempt is scoped to. Used for SSE subscription routing —
    * the per-(artifact, group_id) stream model needs this to know which
-   * `/attempt/stream?group_id=…` to open. WS mode ignores it.
+   * `/attempt/watch?group_id=…` to open. WS mode ignores it.
    * Falls back to the surrounding GroupProviderClient context if omitted.
    */
   groupId?: string | null;

@@ -99,14 +99,23 @@ export function Images({
   onImageUpload,
   imageInputRef,
   isUploadingImage = false,
-  uploadBasePath: _uploadBasePath,
+  uploadBasePath,
   uploadFileAction,
   onImageUploadValue,
 }: ImagesProps) {
   const ids = useMemo(() => image_ids ?? [], [image_ids]);
   const show = show_images ?? false;
   const allImages = useMemo(() => images ?? [], [images]);
-  const downloadBaseUrl = "/api/system/image";
+  // Artifact-scoped download. Each artifact owns its own
+  // ``/api/{artifact}/image/[imageId]`` BFF route that proxies to
+  // ``{artifact}/image_download``; falling back to ``/api/system/image``
+  // (the generic /system/image_download proxy) routes through the
+  // group-detail tree which has known schema-drift issues for image-
+  // resource fetches. Default keeps backwards compat with callers that
+  // don't yet pass ``uploadBasePath``.
+  const downloadBaseUrl = uploadBasePath
+    ? `/api${uploadBasePath}/image`
+    : "/api/system/image";
 
   // Internal state for selected images (for display)
   const [selectedImages, setSelectedImages] = useState<

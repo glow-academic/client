@@ -120,7 +120,7 @@ export function useGenerationEvents<T = Record<string, unknown>>(
     const unsubs: Array<() => void> = [];
 
     // Scope passed to transport.on doubles as: (a) routing hint for SSE
-    // (which /{artifact}/stream?group_id=… connection to open), and (b)
+    // (which /{artifact}/watch?group_id=… connection to open), and (b)
     // server-side filter knowledge. Client-side scopeMatches() is a defensive
     // re-check for cases where multiple groups share an EventSource.
     const onScope = scope?.groupId ? { groupId: scope.groupId } : undefined;

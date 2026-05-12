@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/persona/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Persona
+         * @description Rename a persona's group (writes group_names_entry).
+         */
+        post: operations["title_persona_persona_title_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/persona/get": {
         parameters: {
             query?: never;
@@ -327,15 +347,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/persona/stream": {
+    "/persona/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Persona Stream */
-        get: operations["persona_stream_persona_stream_get"];
+        /** Persona Watch */
+        get: operations["persona_watch_persona_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -398,6 +418,26 @@ export interface paths {
          * @description Download a file by file resource ID.
          */
         post: operations["download_file_persona_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scenario/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Scenario
+         * @description Rename a scenario's group (writes group_names_entry).
+         */
+        post: operations["title_scenario_scenario_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -727,15 +767,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scenario/stream": {
+    "/scenario/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Scenario Stream */
-        get: operations["scenario_stream_scenario_stream_get"];
+        /** Scenario Watch */
+        get: operations["scenario_watch_scenario_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -898,6 +938,26 @@ export interface paths {
          * @description Download a call file by call resource ID.
          */
         post: operations["download_call_scenario_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/simulation/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Simulation
+         * @description Rename a simulation's group (writes group_names_entry).
+         */
+        post: operations["title_simulation_simulation_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1227,15 +1287,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/simulation/stream": {
+    "/simulation/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Simulation Stream */
-        get: operations["simulation_stream_simulation_stream_get"];
+        /** Simulation Watch */
+        get: operations["simulation_watch_simulation_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1298,6 +1358,26 @@ export interface paths {
          * @description Download a call file by call resource ID.
          */
         post: operations["download_call_simulation_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/document/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Document
+         * @description Rename a document's group (writes group_names_entry).
+         */
+        post: operations["title_document_document_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1627,15 +1707,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/document/stream": {
+    "/document/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Document Stream */
-        get: operations["document_stream_document_stream_get"];
+        /** Document Watch */
+        get: operations["document_watch_document_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1758,6 +1838,26 @@ export interface paths {
          * @description Download a call file by call resource ID.
          */
         post: operations["download_call_document_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/department/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Department
+         * @description Rename a department's group (writes group_names_entry).
+         */
+        post: operations["title_department_department_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2087,15 +2187,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/department/stream": {
+    "/department/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Department Stream */
-        get: operations["department_stream_department_stream_get"];
+        /** Department Watch */
+        get: operations["department_watch_department_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2158,6 +2258,26 @@ export interface paths {
          * @description Download a call file by call resource ID.
          */
         post: operations["download_call_department_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cohort/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Cohort
+         * @description Rename a cohort's group (writes group_names_entry).
+         */
+        post: operations["title_cohort_cohort_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2487,15 +2607,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/cohort/stream": {
+    "/cohort/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Cohort Stream */
-        get: operations["cohort_stream_cohort_stream_get"];
+        /** Cohort Watch */
+        get: operations["cohort_watch_cohort_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2558,6 +2678,26 @@ export interface paths {
          * @description Download a call file by call resource ID.
          */
         post: operations["download_call_cohort_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/eval/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Eval
+         * @description Rename a eval's group (writes group_names_entry).
+         */
+        post: operations["title_eval_eval_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2887,15 +3027,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/eval/stream": {
+    "/eval/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Eval Stream */
-        get: operations["eval_stream_eval_stream_get"];
+        /** Eval Watch */
+        get: operations["eval_watch_eval_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2958,6 +3098,26 @@ export interface paths {
          * @description Download a call file by call resource ID.
          */
         post: operations["download_call_eval_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rubric/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Rubric
+         * @description Rename a rubric's group (writes group_names_entry).
+         */
+        post: operations["title_rubric_rubric_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3287,15 +3447,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/rubric/stream": {
+    "/rubric/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Rubric Stream */
-        get: operations["rubric_stream_rubric_stream_get"];
+        /** Rubric Watch */
+        get: operations["rubric_watch_rubric_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3358,6 +3518,26 @@ export interface paths {
          * @description Download a call file by call resource ID.
          */
         post: operations["download_call_rubric_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/setting/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Setting
+         * @description Rename a setting's group (writes group_names_entry).
+         */
+        post: operations["title_setting_setting_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3707,15 +3887,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/setting/stream": {
+    "/setting/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Setting Stream */
-        get: operations["setting_stream_setting_stream_get"];
+        /** Setting Watch */
+        get: operations["setting_watch_setting_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3778,6 +3958,26 @@ export interface paths {
          * @description Download a call file by call resource ID.
          */
         post: operations["download_call_setting_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agent/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Agent
+         * @description Rename a agent's group (writes group_names_entry).
+         */
+        post: operations["title_agent_agent_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4107,15 +4307,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/agent/stream": {
+    "/agent/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Agent Stream */
-        get: operations["agent_stream_agent_stream_get"];
+        /** Agent Watch */
+        get: operations["agent_watch_agent_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4178,6 +4378,26 @@ export interface paths {
          * @description Download a call file by call resource ID.
          */
         post: operations["download_call_agent_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/model/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Model
+         * @description Rename a model's group (writes group_names_entry).
+         */
+        post: operations["title_model_model_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4507,15 +4727,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/model/stream": {
+    "/model/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Model Stream */
-        get: operations["model_stream_model_stream_get"];
+        /** Model Watch */
+        get: operations["model_watch_model_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4578,6 +4798,26 @@ export interface paths {
          * @description Download a call file by call resource ID.
          */
         post: operations["download_call_model_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/provider/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Provider
+         * @description Rename a provider's group (writes group_names_entry).
+         */
+        post: operations["title_provider_provider_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4927,15 +5167,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/provider/stream": {
+    "/provider/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Provider Stream */
-        get: operations["provider_stream_provider_stream_get"];
+        /** Provider Watch */
+        get: operations["provider_watch_provider_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4998,6 +5238,26 @@ export interface paths {
          * @description Download a call file by call resource ID.
          */
         post: operations["download_call_provider_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/parameter/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Parameter
+         * @description Rename a parameter's group (writes group_names_entry).
+         */
+        post: operations["title_parameter_parameter_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5327,15 +5587,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/parameter/stream": {
+    "/parameter/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Parameter Stream */
-        get: operations["parameter_stream_parameter_stream_get"];
+        /** Parameter Watch */
+        get: operations["parameter_watch_parameter_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5398,6 +5658,26 @@ export interface paths {
          * @description Download a call file by call resource ID.
          */
         post: operations["download_call_parameter_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/field/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Field
+         * @description Rename a field's group (writes group_names_entry).
+         */
+        post: operations["title_field_field_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5727,15 +6007,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/field/stream": {
+    "/field/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Field Stream */
-        get: operations["field_stream_field_stream_get"];
+        /** Field Watch */
+        get: operations["field_watch_field_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5804,6 +6084,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/profile/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Profile
+         * @description Rename a profile's group (writes group_names_entry).
+         */
+        post: operations["title_profile_profile_title_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/profile/get": {
         parameters: {
             query?: never;
@@ -5858,6 +6158,26 @@ export interface paths {
          * @description Create profiles using composable infra architecture.
          */
         post: operations["create_profile_profile_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profile/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parse Profile Csv
+         * @description Parse a CSV file and return mapped items for preview.
+         */
+        post: operations["parse_profile_csv_profile_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6084,15 +6404,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/profile/stream": {
+    "/profile/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Profile Stream */
-        get: operations["profile_stream_profile_stream_get"];
+        /** Profile Watch */
+        get: operations["profile_watch_profile_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6204,6 +6524,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/profile/file_download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_profile_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Auth
+         * @description Rename a auth's group (writes group_names_entry).
+         */
+        post: operations["title_auth_auth_title_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/context": {
         parameters: {
             query?: never;
@@ -6281,6 +6641,26 @@ export interface paths {
          * @description Create auths using composable infra architecture.
          */
         post: operations["create_auth_auth_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parse Auth Csv
+         * @description Parse a CSV file and return mapped items for preview.
+         */
+        post: operations["parse_auth_csv_auth_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6507,15 +6887,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/stream": {
+    "/auth/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Auth Stream */
-        get: operations["auth_stream_auth_stream_get"];
+        /** Auth Watch */
+        get: operations["auth_watch_auth_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6558,6 +6938,46 @@ export interface paths {
          * @description Download a call file by call resource ID.
          */
         post: operations["download_call_auth_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/file_download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_auth_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tool/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Tool
+         * @description Rename a tool's group (writes group_names_entry).
+         */
+        post: operations["title_tool_tool_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6907,15 +7327,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tool/stream": {
+    "/tool/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Tool Stream */
-        get: operations["tool_stream_tool_stream_get"];
+        /** Tool Watch */
+        get: operations["tool_watch_tool_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6978,6 +7398,26 @@ export interface paths {
          * @description Download a call file by call resource ID.
          */
         post: operations["download_call_tool_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Attempt
+         * @description Rename a attempt's group (writes group_names_entry).
+         */
+        post: operations["title_attempt_attempt_title_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7240,10 +7680,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Attempt Stop
-         * @description Cancel an active generation by group_id.
-         */
+        /** Attempt Stop */
         post: operations["attempt_stop_attempt_stop_post"];
         delete?: never;
         options?: never;
@@ -7251,15 +7688,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/stream": {
+    "/attempt/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Attempt Stream */
-        get: operations["attempt_stream_attempt_stream_get"];
+        /** Attempt Watch */
+        get: operations["attempt_watch_attempt_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7875,6 +8312,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/test/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title Test
+         * @description Rename a test's group (writes group_names_entry).
+         */
+        post: operations["title_test_test_title_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/test/get": {
         parameters: {
             query?: never;
@@ -8179,15 +8636,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/test/stream": {
+    "/test/watch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Test Stream */
-        get: operations["test_stream_test_stream_get"];
+        /** Test Watch */
+        get: operations["test_watch_test_watch_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -8464,6 +8921,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/system/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Title System
+         * @description Rename a system's group (writes group_names_entry).
+         */
+        post: operations["title_system_system_title_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/system/context": {
         parameters: {
             query?: never;
@@ -8646,6 +9123,23 @@ export interface paths {
          * @description Refresh system-scope caches (Phase A: invalidate tags only).
          */
         post: operations["system_refresh_system_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/system/watch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** System Watch */
+        get: operations["system_watch_system_watch_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -10350,6 +10844,8 @@ export interface components {
              * @default true
              */
             accept: boolean;
+            /** Wait For Complete */
+            wait_for_complete?: boolean | null;
         };
         /**
          * ArtifactGenerateResponse
@@ -10362,6 +10858,12 @@ export interface components {
             run_id?: string | null;
             /** Idempotency Key */
             idempotency_key?: string | null;
+            eval?: components["schemas"]["EvalSetup"] | null;
+            /**
+             * Produced Media
+             * @default []
+             */
+            produced_media: components["schemas"]["ProducedMedia"][];
         };
         /**
          * ArtifactSessionGroup
@@ -11497,6 +11999,14 @@ export interface components {
              */
             file: string;
         };
+        /** Body_parse_auth_csv_auth_csv_post */
+        Body_parse_auth_csv_auth_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
         /** Body_parse_cohort_csv_cohort_csv_post */
         Body_parse_cohort_csv_cohort_csv_post: {
             /**
@@ -11555,6 +12065,14 @@ export interface components {
         };
         /** Body_parse_persona_csv_persona_csv_post */
         Body_parse_persona_csv_persona_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_profile_csv_profile_csv_post */
+        Body_parse_profile_csv_profile_csv_post: {
             /**
              * File
              * Format: binary
@@ -14771,10 +15289,16 @@ export interface components {
             run_id?: string | null;
             /**
              * Score
-             * @description Overall score
+             * @description Overall score (ignored when full=True)
              * @default 0
              */
             score: number;
+            /**
+             * Full
+             * @description When true, server resolves the rubric and assigns score=total_points (max marks). Callers don't need to know the rubric ceiling ahead of time. Overrides any caller-supplied score.
+             * @default false
+             */
+            full: boolean;
         };
         /**
          * CreateInvocationApiRequest
@@ -21330,6 +21854,23 @@ export interface components {
             description?: string | null;
         };
         /**
+         * EvalSetup
+         * @description Run-level eval scaffold — first-class on the generate response.
+         *
+         *     Audit's ``**output`` spread carries this onto
+         *     ``<artifact>.generate.completed``. Null when no rubric-bearing
+         *     agent participated.
+         */
+        EvalSetup: {
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
+            /** Invocations */
+            invocations: components["schemas"]["InvocationSlot"][];
+        };
+        /**
          * ExportAgentApiRequest
          * @description Request model for export agent endpoint.
          */
@@ -22504,6 +23045,18 @@ export interface components {
             file_id: string;
         };
         /**
+         * FileDownloadAuthApiRequest
+         * @description Request model for auth file download endpoint.
+         */
+        FileDownloadAuthApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
          * FileDownloadCohortApiRequest
          * @description Request model for cohort file download endpoint.
          */
@@ -22604,6 +23157,18 @@ export interface components {
          * @description Request model for persona file download endpoint.
          */
         FileDownloadPersonaApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadProfileApiRequest
+         * @description Request model for profile file download endpoint.
+         */
+        FileDownloadProfileApiRequest: {
             /**
              * File Id
              * Format: uuid
@@ -34496,6 +35061,30 @@ export interface components {
              */
             call_ids?: string[] | null;
         };
+        /**
+         * InvocationSlot
+         * @description One agent's slot in a multi-agent generation pool.
+         *
+         *     Populated by ``setup_generation_test`` when an agent carries a
+         *     rubric. The client uses these IDs to drive the eval workflow:
+         *     review the candidate's output, optionally fire a grader against
+         *     its ``invocation_id``, and promote/reject by call_id via the
+         *     existing ``idempotency_key + accept`` pattern.
+         */
+        InvocationSlot: {
+            /**
+             * Invocation Id
+             * Format: uuid
+             */
+            invocation_id: string;
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /** Rubric Id */
+            rubric_id?: string | null;
+        };
         /** InvocationTemperatureLevelResource */
         InvocationTemperatureLevelResource: {
             /**
@@ -38934,6 +39523,23 @@ export interface components {
             row_count: number;
         };
         /**
+         * ParseAuthCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseAuthCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateAuthItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
          * ParseCohortCsvApiResponse
          * @description Response for CSV parse — mapped items ready for review.
          */
@@ -39077,6 +39683,23 @@ export interface components {
              * Row Count
              * @description Number of data rows parsed
              */
+            row_count: number;
+        };
+        /**
+         * ParseProfileCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseProfileCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateProfileItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
             row_count: number;
         };
         /**
@@ -44076,6 +44699,37 @@ export interface components {
             idempotency_key?: string | null;
         };
         /**
+         * ProducedMedia
+         * @description One asset produced by a generation run.
+         *
+         *     ``resource_id`` is the canonical id the per-artifact download tools
+         *     accept (e.g. ``Scenario_Image_Download(image_id=resource_id)`` for
+         *     ``modality="image"``). It maps to ``images_resource.id`` /
+         *     ``videos_resource.id`` / ``audios_resource.id`` depending on the
+         *     modality.
+         */
+        ProducedMedia: {
+            /**
+             * Modality
+             * @enum {string}
+             */
+            modality: "image" | "video" | "audio";
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Mime Type */
+            mime_type?: string | null;
+            /** File Size */
+            file_size?: number | null;
+        };
+        /**
          * ProfileDepartmentResource
          * @description Department resource for profile.
          */
@@ -44584,8 +45238,8 @@ export interface components {
              * @description Profile UUID (SocketProvider, ProfileProvider)
              */
             id: string;
-            /** @description Theme primitives (ThemeHydrator) */
-            theme?: components["schemas"]["ThemePrimitives"] | null;
+            /** @description Resolved theme: hex primitives + derived oklch tokens + score thresholds */
+            theme?: components["schemas"]["ThemeBundle"] | null;
             /**
              * Session Id
              * @description Current session UUID
@@ -52291,73 +52945,471 @@ export interface components {
             upload_id: string;
         };
         /**
-         * ThemePrimitives
-         * @description Raw theme color primitives (hex values) from settings.
+         * ThemeBundle
+         * @description Full theme payload for a page bootstrap.
          *
-         *     General-purpose — not CSS-specific. Clients derive their own
-         *     presentation tokens (oklch, CSS variables, etc.) from these.
+         *     Riding along on every ``/{artifact}/context`` response via
+         *     ``ProfileSummary.theme``. Layers:
+         *       - ``primitives`` / ``dark_primitives`` — hex inputs the settings
+         *         editor reads/writes (light + dark palettes).
+         *       - ``tokens`` / ``dark_tokens`` — oklch tokens the client paints with.
+         *         ``ThemeStyle`` emits two ``<style>`` blocks: one scoped to
+         *         ``:root:not(.dark)`` (light) and one to ``:root.dark`` (dark).
+         *       - ``thresholds`` — numeric score thresholds for analytics components.
+         *     Empty-in → empty-out per token: missing values fall through to the
+         *     matching ``globals.css`` default.
+         */
+        ThemeBundle: {
+            /** @description Hex inputs from the setting (light palette, for the theme editor) */
+            primitives?: components["schemas"]["ThemePrimitives"] | null;
+            /** @description Derived oklch tokens for light mode (SSR CSS-var injection) */
+            tokens?: components["schemas"]["ThemeTokens"] | null;
+            /** @description Hex inputs from the setting (dark palette, for the theme editor) */
+            dark_primitives?: components["schemas"]["ThemePrimitives"] | null;
+            /** @description Derived oklch tokens for dark mode (SSR CSS-var injection) */
+            dark_tokens?: components["schemas"]["ThemeTokens"] | null;
+            /** @description Score thresholds resolved from the setting */
+            thresholds?: components["schemas"]["Thresholds"] | null;
+        };
+        /**
+         * ThemePrimitives
+         * @description 40 optional fields. The 17 essentials drive the rest; the other 23
+         *     are overrides for fine-tuning when derivation isn't what you want.
+         *
+         *     Empty primitive → empty token → client falls back to globals.css.
          */
         ThemePrimitives: {
             /**
-             * Primary
-             * @description Primary color hex value
+             * Background
+             * @default
              */
-            primary?: string | null;
+            background: string;
+            /**
+             * Primary
+             * @default
+             */
+            primary: string;
             /**
              * Accent
-             * @description Accent color hex value
+             * @default
              */
-            accent?: string | null;
+            accent: string;
             /**
-             * Background
-             * @description Background color hex value
+             * Card
+             * @default
              */
-            background?: string | null;
+            card: string;
             /**
-             * Surface
-             * @description Surface color hex value
+             * Sidebar
+             * @default
              */
-            surface?: string | null;
+            sidebar: string;
+            /**
+             * Muted Foreground
+             * @default
+             */
+            muted_foreground: string;
+            /**
+             * Ring
+             * @default
+             */
+            ring: string;
+            /**
+             * Border
+             * @default
+             */
+            border: string;
+            /**
+             * Destructive
+             * @default
+             */
+            destructive: string;
             /**
              * Success
-             * @description Success state color hex value
+             * @default
              */
-            success?: string | null;
+            success: string;
             /**
              * Warning
-             * @description Warning state color hex value
+             * @default
              */
-            warning?: string | null;
+            warning: string;
             /**
-             * Error
-             * @description Error state color hex value
+             * Info
+             * @default
              */
-            error?: string | null;
+            info: string;
             /**
              * Chart1
-             * @description Chart color 1 hex value
+             * @default
              */
-            chart1?: string | null;
+            chart1: string;
             /**
              * Chart2
-             * @description Chart color 2 hex value
+             * @default
              */
-            chart2?: string | null;
+            chart2: string;
             /**
              * Chart3
-             * @description Chart color 3 hex value
+             * @default
              */
-            chart3?: string | null;
+            chart3: string;
             /**
              * Chart4
-             * @description Chart color 4 hex value
+             * @default
              */
-            chart4?: string | null;
+            chart4: string;
             /**
              * Chart5
-             * @description Chart color 5 hex value
+             * @default
              */
-            chart5?: string | null;
+            chart5: string;
+            /**
+             * Foreground
+             * @default
+             */
+            foreground: string;
+            /**
+             * Card Foreground
+             * @default
+             */
+            card_foreground: string;
+            /**
+             * Popover
+             * @default
+             */
+            popover: string;
+            /**
+             * Popover Foreground
+             * @default
+             */
+            popover_foreground: string;
+            /**
+             * Primary Foreground
+             * @default
+             */
+            primary_foreground: string;
+            /**
+             * Secondary
+             * @default
+             */
+            secondary: string;
+            /**
+             * Secondary Foreground
+             * @default
+             */
+            secondary_foreground: string;
+            /**
+             * Muted
+             * @default
+             */
+            muted: string;
+            /**
+             * Accent Foreground
+             * @default
+             */
+            accent_foreground: string;
+            /**
+             * Destructive Foreground
+             * @default
+             */
+            destructive_foreground: string;
+            /**
+             * Danger
+             * @default
+             */
+            danger: string;
+            /**
+             * Danger Foreground
+             * @default
+             */
+            danger_foreground: string;
+            /**
+             * Input
+             * @default
+             */
+            input: string;
+            /**
+             * Success Foreground
+             * @default
+             */
+            success_foreground: string;
+            /**
+             * Warning Foreground
+             * @default
+             */
+            warning_foreground: string;
+            /**
+             * Info Foreground
+             * @default
+             */
+            info_foreground: string;
+            /**
+             * Sidebar Foreground
+             * @default
+             */
+            sidebar_foreground: string;
+            /**
+             * Sidebar Primary
+             * @default
+             */
+            sidebar_primary: string;
+            /**
+             * Sidebar Primary Foreground
+             * @default
+             */
+            sidebar_primary_foreground: string;
+            /**
+             * Sidebar Accent
+             * @default
+             */
+            sidebar_accent: string;
+            /**
+             * Sidebar Accent Foreground
+             * @default
+             */
+            sidebar_accent_foreground: string;
+            /**
+             * Sidebar Border
+             * @default
+             */
+            sidebar_border: string;
+            /**
+             * Sidebar Ring
+             * @default
+             */
+            sidebar_ring: string;
+        };
+        /**
+         * ThemeTokens
+         * @description 40 fully-resolved CSS variable values (snake_case 1:1 with vars).
+         */
+        ThemeTokens: {
+            /**
+             * Background
+             * @default
+             */
+            background: string;
+            /**
+             * Foreground
+             * @default
+             */
+            foreground: string;
+            /**
+             * Card
+             * @default
+             */
+            card: string;
+            /**
+             * Card Foreground
+             * @default
+             */
+            card_foreground: string;
+            /**
+             * Popover
+             * @default
+             */
+            popover: string;
+            /**
+             * Popover Foreground
+             * @default
+             */
+            popover_foreground: string;
+            /**
+             * Primary
+             * @default
+             */
+            primary: string;
+            /**
+             * Primary Foreground
+             * @default
+             */
+            primary_foreground: string;
+            /**
+             * Secondary
+             * @default
+             */
+            secondary: string;
+            /**
+             * Secondary Foreground
+             * @default
+             */
+            secondary_foreground: string;
+            /**
+             * Muted
+             * @default
+             */
+            muted: string;
+            /**
+             * Muted Foreground
+             * @default
+             */
+            muted_foreground: string;
+            /**
+             * Accent
+             * @default
+             */
+            accent: string;
+            /**
+             * Accent Foreground
+             * @default
+             */
+            accent_foreground: string;
+            /**
+             * Destructive
+             * @default
+             */
+            destructive: string;
+            /**
+             * Destructive Foreground
+             * @default
+             */
+            destructive_foreground: string;
+            /**
+             * Danger
+             * @default
+             */
+            danger: string;
+            /**
+             * Danger Foreground
+             * @default
+             */
+            danger_foreground: string;
+            /**
+             * Border
+             * @default
+             */
+            border: string;
+            /**
+             * Input
+             * @default
+             */
+            input: string;
+            /**
+             * Ring
+             * @default
+             */
+            ring: string;
+            /**
+             * Success
+             * @default
+             */
+            success: string;
+            /**
+             * Success Foreground
+             * @default
+             */
+            success_foreground: string;
+            /**
+             * Warning
+             * @default
+             */
+            warning: string;
+            /**
+             * Warning Foreground
+             * @default
+             */
+            warning_foreground: string;
+            /**
+             * Info
+             * @default
+             */
+            info: string;
+            /**
+             * Info Foreground
+             * @default
+             */
+            info_foreground: string;
+            /**
+             * Chart1
+             * @default
+             */
+            chart1: string;
+            /**
+             * Chart2
+             * @default
+             */
+            chart2: string;
+            /**
+             * Chart3
+             * @default
+             */
+            chart3: string;
+            /**
+             * Chart4
+             * @default
+             */
+            chart4: string;
+            /**
+             * Chart5
+             * @default
+             */
+            chart5: string;
+            /**
+             * Sidebar
+             * @default
+             */
+            sidebar: string;
+            /**
+             * Sidebar Foreground
+             * @default
+             */
+            sidebar_foreground: string;
+            /**
+             * Sidebar Primary
+             * @default
+             */
+            sidebar_primary: string;
+            /**
+             * Sidebar Primary Foreground
+             * @default
+             */
+            sidebar_primary_foreground: string;
+            /**
+             * Sidebar Accent
+             * @default
+             */
+            sidebar_accent: string;
+            /**
+             * Sidebar Accent Foreground
+             * @default
+             */
+            sidebar_accent_foreground: string;
+            /**
+             * Sidebar Border
+             * @default
+             */
+            sidebar_border: string;
+            /**
+             * Sidebar Ring
+             * @default
+             */
+            sidebar_ring: string;
+        };
+        /**
+         * Thresholds
+         * @description Numeric score thresholds resolved from the active setting.
+         *
+         *     Server pre-buckets dashboard metrics into ``success | warning | danger |
+         *     neutral`` already, so most components don't need these values. Surface
+         *     them for chart reference lines, tooltips, and any client-side bucketing.
+         */
+        Thresholds: {
+            /**
+             * Success
+             * @description Score >= this counts as success
+             */
+            success: number;
+            /**
+             * Warning
+             * @description Score >= this counts as warning
+             */
+            warning: number;
+            /**
+             * Danger
+             * @description Score < success threshold but >= this counts as danger; below is neutral/no-data
+             */
+            danger: number;
         };
         /**
          * TimerData
@@ -52389,6 +53441,1126 @@ export interface components {
              * @description Whether the timer can go negative
              */
             negative?: boolean | null;
+        };
+        /**
+         * TitleAgentApiRequest
+         * @description Request body for POST /agent/title.
+         */
+        TitleAgentApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleAgentApiResponse
+         * @description Response body for POST /agent/title.
+         */
+        TitleAgentApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleAttemptApiRequest
+         * @description Request body for POST /attempt/title.
+         */
+        TitleAttemptApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleAttemptApiResponse
+         * @description Response body for POST /attempt/title.
+         */
+        TitleAttemptApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleAuthApiRequest
+         * @description Request body for POST /auth/title.
+         */
+        TitleAuthApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleAuthApiResponse
+         * @description Response body for POST /auth/title.
+         */
+        TitleAuthApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleCohortApiRequest
+         * @description Request body for POST /cohort/title.
+         */
+        TitleCohortApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleCohortApiResponse
+         * @description Response body for POST /cohort/title.
+         */
+        TitleCohortApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleDepartmentApiRequest
+         * @description Request body for POST /department/title.
+         */
+        TitleDepartmentApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleDepartmentApiResponse
+         * @description Response body for POST /department/title.
+         */
+        TitleDepartmentApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleDocumentApiRequest
+         * @description Request body for POST /document/title.
+         */
+        TitleDocumentApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleDocumentApiResponse
+         * @description Response body for POST /document/title.
+         */
+        TitleDocumentApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleEvalApiRequest
+         * @description Request body for POST /eval/title.
+         */
+        TitleEvalApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleEvalApiResponse
+         * @description Response body for POST /eval/title.
+         */
+        TitleEvalApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleFieldApiRequest
+         * @description Request body for POST /field/title.
+         */
+        TitleFieldApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleFieldApiResponse
+         * @description Response body for POST /field/title.
+         */
+        TitleFieldApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleModelApiRequest
+         * @description Request body for POST /model/title.
+         */
+        TitleModelApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleModelApiResponse
+         * @description Response body for POST /model/title.
+         */
+        TitleModelApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleParameterApiRequest
+         * @description Request body for POST /parameter/title.
+         */
+        TitleParameterApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleParameterApiResponse
+         * @description Response body for POST /parameter/title.
+         */
+        TitleParameterApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitlePersonaApiRequest
+         * @description Request body for POST /persona/title.
+         */
+        TitlePersonaApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitlePersonaApiResponse
+         * @description Response body for POST /persona/title.
+         */
+        TitlePersonaApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleProfileApiRequest
+         * @description Request body for POST /profile/title.
+         */
+        TitleProfileApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleProfileApiResponse
+         * @description Response body for POST /profile/title.
+         */
+        TitleProfileApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleProviderApiRequest
+         * @description Request body for POST /provider/title.
+         */
+        TitleProviderApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleProviderApiResponse
+         * @description Response body for POST /provider/title.
+         */
+        TitleProviderApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleRubricApiRequest
+         * @description Request body for POST /rubric/title.
+         */
+        TitleRubricApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleRubricApiResponse
+         * @description Response body for POST /rubric/title.
+         */
+        TitleRubricApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleScenarioApiRequest
+         * @description Request body for POST /scenario/title.
+         */
+        TitleScenarioApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleScenarioApiResponse
+         * @description Response body for POST /scenario/title.
+         */
+        TitleScenarioApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleSettingApiRequest
+         * @description Request body for POST /setting/title.
+         */
+        TitleSettingApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleSettingApiResponse
+         * @description Response body for POST /setting/title.
+         */
+        TitleSettingApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleSimulationApiRequest
+         * @description Request body for POST /simulation/title.
+         */
+        TitleSimulationApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleSimulationApiResponse
+         * @description Response body for POST /simulation/title.
+         */
+        TitleSimulationApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleSystemApiRequest
+         * @description Request body for POST /system/title.
+         */
+        TitleSystemApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleSystemApiResponse
+         * @description Response body for POST /system/title.
+         */
+        TitleSystemApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleTestApiRequest
+         * @description Request body for POST /test/title.
+         */
+        TitleTestApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleTestApiResponse
+         * @description Response body for POST /test/title.
+         */
+        TitleTestApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * TitleToolApiRequest
+         * @description Request body for POST /tool/title.
+         */
+        TitleToolApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Group to rename
+             */
+            group_id: string;
+            /**
+             * Title
+             * @description New title (display name) for the group
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant rename
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * TitleToolApiResponse
+         * @description Response body for POST /tool/title.
+         */
+        TitleToolApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description The group that was renamed
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the new group_names_entry row
+             */
+            group_name_id: string;
+            /**
+             * Title
+             * @description The title that was set
+             */
+            title: string;
+            /**
+             * Idempotency Key
+             * @description Operation key echoed back
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ToolArgDraftValue
@@ -59905,6 +62077,39 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    title_persona_persona_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitlePersonaApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitlePersonaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_persona_persona_get_post: {
         parameters: {
             query?: never;
@@ -60420,10 +62625,12 @@ export interface operations {
             };
         };
     };
-    persona_stream_persona_stream_get: {
+    persona_watch_persona_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every persona event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -60537,6 +62744,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_scenario_scenario_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleScenarioApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleScenarioApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61078,10 +63318,12 @@ export interface operations {
             };
         };
     };
-    scenario_stream_scenario_stream_get: {
+    scenario_watch_scenario_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed — useful for per-run live feeds. Omit to receive every scenario event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -61366,6 +63608,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_simulation_simulation_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleSimulationApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleSimulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61907,10 +64182,12 @@ export interface operations {
             };
         };
     };
-    simulation_stream_simulation_stream_get: {
+    simulation_watch_simulation_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every simulation event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -62024,6 +64301,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_document_document_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleDocumentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleDocumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62565,10 +64875,12 @@ export interface operations {
             };
         };
     };
-    document_stream_document_stream_get: {
+    document_watch_document_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every document event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -62781,6 +65093,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_department_department_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleDepartmentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleDepartmentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63322,10 +65667,12 @@ export interface operations {
             };
         };
     };
-    department_stream_department_stream_get: {
+    department_watch_department_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every department event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -63439,6 +65786,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_cohort_cohort_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleCohortApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleCohortApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63980,10 +66360,12 @@ export interface operations {
             };
         };
     };
-    cohort_stream_cohort_stream_get: {
+    cohort_watch_cohort_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every cohort event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -64097,6 +66479,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_eval_eval_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleEvalApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleEvalApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64638,10 +67053,12 @@ export interface operations {
             };
         };
     };
-    eval_stream_eval_stream_get: {
+    eval_watch_eval_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every eval event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -64755,6 +67172,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_rubric_rubric_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleRubricApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleRubricApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -65296,10 +67746,12 @@ export interface operations {
             };
         };
     };
-    rubric_stream_rubric_stream_get: {
+    rubric_watch_rubric_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every rubric event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -65413,6 +67865,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_setting_setting_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleSettingApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleSettingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -65987,10 +68472,12 @@ export interface operations {
             };
         };
     };
-    setting_stream_setting_stream_get: {
+    setting_watch_setting_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every setting event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -66104,6 +68591,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_agent_agent_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleAgentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleAgentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66645,10 +69165,12 @@ export interface operations {
             };
         };
     };
-    agent_stream_agent_stream_get: {
+    agent_watch_agent_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every agent event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -66762,6 +69284,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_model_model_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleModelApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleModelApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67303,10 +69858,12 @@ export interface operations {
             };
         };
     };
-    model_stream_model_stream_get: {
+    model_watch_model_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every model event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -67420,6 +69977,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_provider_provider_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleProviderApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleProviderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67994,10 +70584,12 @@ export interface operations {
             };
         };
     };
-    provider_stream_provider_stream_get: {
+    provider_watch_provider_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every provider event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -68111,6 +70703,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_parameter_parameter_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleParameterApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleParameterApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68652,10 +71277,12 @@ export interface operations {
             };
         };
     };
-    parameter_stream_parameter_stream_get: {
+    parameter_watch_parameter_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every parameter event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -68769,6 +71396,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_field_field_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleFieldApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleFieldApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69310,10 +71970,12 @@ export interface operations {
             };
         };
     };
-    field_stream_field_stream_get: {
+    field_watch_field_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every field event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -69440,6 +72102,39 @@ export interface operations {
             };
         };
     };
+    title_profile_profile_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleProfileApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleProfileApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_profile_profile_get_post: {
         parameters: {
             query?: never;
@@ -69526,6 +72221,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateProfileApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parse_profile_csv_profile_csv_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_parse_profile_csv_profile_csv_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParseProfileCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69902,10 +72630,12 @@ export interface operations {
             };
         };
     };
-    profile_stream_profile_stream_get: {
+    profile_watch_profile_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every profile event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -70098,6 +72828,72 @@ export interface operations {
             };
         };
     };
+    download_file_profile_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadProfileApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_auth_auth_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleAuthApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleAuthApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_auth_context_auth_context_post: {
         parameters: {
             query?: never;
@@ -70217,6 +73013,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateAuthApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parse_auth_csv_auth_csv_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_parse_auth_csv_auth_csv_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParseAuthCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70593,10 +73422,12 @@ export interface operations {
             };
         };
     };
-    auth_stream_auth_stream_get: {
+    auth_watch_auth_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every auth event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -70677,6 +73508,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_file_auth_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadAuthApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_tool_tool_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleToolApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleToolApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71251,10 +74148,12 @@ export interface operations {
             };
         };
     };
-    tool_stream_tool_stream_get: {
+    tool_watch_tool_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every tool event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -71368,6 +74267,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    title_attempt_attempt_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleAttemptApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71797,10 +74729,12 @@ export interface operations {
             };
         };
     };
-    attempt_stream_attempt_stream_get: {
+    attempt_watch_attempt_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every attempt event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -72820,6 +75754,39 @@ export interface operations {
             };
         };
     };
+    title_test_test_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleTestApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleTestApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_test_artifact_test_get_post: {
         parameters: {
             query?: never;
@@ -73306,10 +76273,12 @@ export interface operations {
             };
         };
     };
-    test_stream_test_stream_get: {
+    test_watch_test_watch_get: {
         parameters: {
             query?: {
                 group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every test event in the group (the FE default). */
+                run_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -73799,6 +76768,39 @@ export interface operations {
             };
         };
     };
+    title_system_system_title_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TitleSystemApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleSystemApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_system_context_system_context_post: {
         parameters: {
             query?: never;
@@ -74079,6 +77081,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+        };
+    };
+    system_watch_system_watch_get: {
+        parameters: {
+            query?: {
+                group_id?: string | null;
+                /** @description Optional run filter. If provided, only events whose envelope run_id matches are streamed. Omit to receive every system event in the group (the FE default). */
+                run_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

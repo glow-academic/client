@@ -50,7 +50,7 @@ interface UseTestLifecycleConfig {
   testId?: string | null;
   /**
    * Group id this test is scoped to. Used for SSE subscription routing —
-   * `/test/stream?group_id=…`. Falls back to GroupProviderClient context.
+   * `/test/watch?group_id=…`. Falls back to GroupProviderClient context.
    */
   groupId?: string | null;
   onStarted?: (data: TestStartedEvent) => void;

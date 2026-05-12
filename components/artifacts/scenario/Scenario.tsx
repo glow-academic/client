@@ -42,6 +42,7 @@ import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useScenarioAi } from "@/hooks/use-scenario-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
+import { useGenerationDraft } from "@/hooks/use-generation-draft";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   checkHasResourceIds,
@@ -113,6 +114,11 @@ type ScenarioFormState = {
 
 export interface ScenarioProps {
   scenarioId?: string;
+  // Resolved group_id for this scenario session — drives the AI draft
+  // event subscription (``scenario.draft.completed``) so the URL's
+  // draftId stays in sync with whatever the LLM just saved. Mirrors
+  // Persona.tsx's prop of the same name.
+  groupId?: string | null;
   // Server-provided data (for server-side rendering)
   scenarioDetailDefault?: GetScenarioOut; // For new mode
   scenarioDetail?: GetScenarioOut; // For edit mode
@@ -216,7 +222,18 @@ function ScenarioComponent({
   patchScenarioDraftAction,
   uploadBasePath,
   uploadFileAction,
+  groupId: groupIdProp,
 }: ScenarioProps) {
+  // Fall back to the resolved group_id on the SSR payload when the
+  // parent page didn't pass one explicitly. New-page invocations
+  // resolve a fresh group server-side before rendering; either source
+  // gives ``useGenerationDraft`` the room it needs to subscribe.
+  const groupId =
+    groupIdProp ??
+    ((serverScenarioDetail ?? serverScenarioDetailDefault) as
+      | { group_id?: string | null }
+      | undefined)?.group_id ??
+    null;
   const router = useRouter();
   const isEditMode = !!scenarioId;
   const { profile } = useProfile();
@@ -833,6 +850,24 @@ function ScenarioComponent({
     hasResourceIds,
     flushRegistryRef: emptyFlushRef,
     formStateRef,
+  });
+
+  // --- AI Draft Sync (generic: update draftId when AI saves) ---
+  // The URL update already triggers a Next.js RSC re-fetch via
+  // ``GenericForm``'s ``shallow: false`` default, so an explicit
+  // ``router.refresh()`` here would just produce a second SSR cycle.
+  // Mirror of Persona.tsx's wiring — without this, ``scenario.draft.completed``
+  // fires on every LLM ``Scenario_Draft`` call but the URL keeps the old
+  // draftId and the page never switches to the AI-saved draft.
+  useGenerationDraft({
+    artifactType: "scenario",
+    groupId,
+    onDraftCompleted: (draftId) => {
+      setUrlFormDataRef.current?.({ draftId });
+    },
+    onDraftFailed: (message) => {
+      toast.error("AI draft failed", { description: message });
+    },
   });
 
   // Update form state when server data changes.

@@ -61,7 +61,7 @@ export default function TimeSpent({
       : status === "warning"
         ? "bg-warning"
         : status === "danger"
-          ? "bg-destructive"
+          ? "bg-danger"
           : "bg-muted-foreground";
 
   // Format time for display
