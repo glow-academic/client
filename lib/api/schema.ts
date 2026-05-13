@@ -33047,6 +33047,11 @@ export interface components {
              */
             role?: string | null;
             /**
+             * Created At
+             * @description Timestamp the message row was inserted
+             */
+            created_at?: string | null;
+            /**
              * Text Ids
              * @description Text resource UUIDs
              */

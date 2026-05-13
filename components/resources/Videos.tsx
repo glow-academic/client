@@ -91,18 +91,29 @@ export function Videos({
   const show = show_videos ?? false;
   const allVideos = useMemo(() => videos ?? [], [videos]);
 
-  // Internal state for selected video (single select for videos)
-  // API returns video_id, not id
+  // Internal state for selected video (single select for videos).
+  // API returns video_id, not id. ``length_seconds`` is optional — the
+  // ``/scenario/get`` response doesn't currently populate it, so
+  // requiring it here would leave ``selectedVideo`` permanently null
+  // after a pick → render falls through to the empty/upload state and
+  // the user sees "nothing happens" after selecting a video.
   const [selectedVideo, setSelectedVideo] = useState<{
     id: string;
     name: string;
-    length_seconds: number;
+    length_seconds?: number;
   } | null>(() => {
     if (ids.length > 0 && allVideos.length > 0) {
       const video = allVideos.find((v) => v.video_id === ids[0]);
       const videoId = video?.video_id;
-      if (video && videoId && video.name && video.length_seconds !== null && video.length_seconds !== undefined) {
-        return { id: videoId, name: video.name, length_seconds: video.length_seconds };
+      if (video && videoId && video.name) {
+        return {
+          id: videoId,
+          name: video.name,
+          length_seconds:
+            video.length_seconds === null || video.length_seconds === undefined
+              ? undefined
+              : video.length_seconds,
+        };
       }
     }
     return null;
@@ -113,8 +124,15 @@ export function Videos({
     if (ids.length > 0 && allVideos.length > 0) {
       const video = allVideos.find((v) => v.video_id === ids[0]);
       const videoId = video?.video_id;
-      if (video && videoId && video.name && video.length_seconds !== null && video.length_seconds !== undefined) {
-        setSelectedVideo({ id: videoId, name: video.name, length_seconds: video.length_seconds });
+      if (video && videoId && video.name) {
+        setSelectedVideo({
+          id: videoId,
+          name: video.name,
+          length_seconds:
+            video.length_seconds === null || video.length_seconds === undefined
+              ? undefined
+              : video.length_seconds,
+        });
       }
     } else if (ids.length === 0) {
       setSelectedVideo(null);
@@ -138,16 +156,26 @@ export function Videos({
   >(new Map());
 
   // Build video mapping for GenericPicker (matching ContentSection pattern)
-  // API returns video_id, not id
+  // API returns video_id, not id. ``length_seconds`` was previously
+  // required to add a row to the mapping — that hid every video the
+  // ``/scenario/get`` response doesn't populate ``length_seconds`` for
+  // (today: all of them, including LLM-generated ones). The picker
+  // doesn't really need duration to function, and the label renderer
+  // below already handles missing/zero length_seconds. So map every
+  // video with an id + name, and let the label show duration only
+  // when we actually have it.
   const videoMapping = useMemo(() => {
     const mapping: Record<string, VideoItem> = {};
     allVideos.forEach((v) => {
       const videoId = v.video_id;
-      if (videoId && v.name && v.length_seconds !== null && v.length_seconds !== undefined) {
+      if (videoId && v.name) {
         mapping[videoId] = {
           id: videoId,
           name: v.name,
-          length_seconds: v.length_seconds,
+          length_seconds:
+            v.length_seconds === null || v.length_seconds === undefined
+              ? undefined
+              : v.length_seconds,
         };
       }
     });
@@ -467,7 +495,11 @@ export function Videos({
             {selectedVideo ? (
               selectedVideo.id ? (
                 <video
-                  src={`/api/system/video/${selectedVideo.id}`}
+                  src={
+                    uploadBasePath
+                      ? `/api${uploadBasePath}/video/${selectedVideo.id}`
+                      : `/api/system/video/${selectedVideo.id}`
+                  }
                   controls
                   className="w-full h-full object-contain"
                 />
