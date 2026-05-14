@@ -671,7 +671,7 @@ export function AttemptChat({
   }, []);
 
   const handleSendMessage = useCallback(
-    async (message: string, _isRetry?: boolean) => {
+    async (message: string, audiosId?: string, _isRetry?: boolean) => {
       if (!message.trim() || !currentChat || isSendingMessage) return;
 
       try {
@@ -691,13 +691,26 @@ export function AttemptChat({
           setForkAtMessageId(null);
         }
 
+        // Merge the optional ride-along audios_id (from a mic-input
+        // transcription) into the opts bag. ``sendMessage`` forwards
+        // it onto ``/attempt/chat_message`` so the server links the
+        // ``audios_resource`` to the persisted user-message row via
+        // ``attempt_audio_entry``.
+        const sendOpts =
+          autoLinkParent === undefined && audiosId === undefined
+            ? undefined
+            : {
+                ...(autoLinkParent === undefined ? {} : { autoLinkParent }),
+                ...(audiosId ? { audiosId } : {}),
+              };
+
         sendMessage(
           currentChat.id,
           attempt_id,
           message,
           parentMessageId,
           attemptData?.attempt?.user_persona_id ?? undefined,
-          autoLinkParent === undefined ? undefined : { autoLinkParent },
+          sendOpts,
         );
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
@@ -1129,6 +1142,12 @@ export function AttemptChat({
         is_sending_message: isSendingMessage,
         is_stopping_message: isStoppingMessage,
         on_height_change: setInputPanelHeight,
+        // STT (one-shot mic transcribe) plumbing — distinct from the
+        // realtime voice path below. ``attempt_id`` + ``group_id``
+        // are forwarded to ``/attempt/generate`` on the transcribe
+        // call so the STT run is scoped to this attempt's group.
+        attempt_id,
+        group_id: attemptData?.group_id ?? null,
         // Voice input props
         on_voice_start: handleVoiceStart,
         on_voice_stop: handleVoiceStop,
@@ -1154,6 +1173,7 @@ export function AttemptChat({
     handleVoiceStop,
     handlePcm16Data,
     handleMicMute,
+    attempt_id,
   ]);
 
   // ---------------------------------------------------------------------------

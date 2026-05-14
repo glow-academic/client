@@ -942,6 +942,32 @@ export function MessagesView({
                             </div>
                           );
                         })}
+                      {/* Audio attachment, when this message was
+                          transcribed from a mic recording (or had
+                          assistant audio attached post-hoc via the
+                          realtime path). The id surfaces on
+                          ``attempt_message_mv.audios_id`` via a LATERAL
+                          join on ``attempt_audio_entry``. Renders below
+                          the text content of the message, aligned with
+                          the bubble side. */}
+                      {(() => {
+                        const audiosId =
+                          (message as unknown as { audios_id?: string | null })
+                            .audios_id ?? null;
+                        if (!audiosId) return null;
+                        return (
+                          <div
+                            className={`flex ${isQuery ? "justify-end" : "justify-start"} max-w-[95%] md:max-w-[80%] ${isQuery ? "ml-auto" : "mr-auto"}`}
+                          >
+                            <audio
+                              src={`/api/attempt/audio/${audiosId}`}
+                              controls
+                              preload="none"
+                              className="w-full max-w-xs h-10"
+                            />
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })

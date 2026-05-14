@@ -302,11 +302,30 @@ export function RunsDataTable({
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Created" />
         ),
-        cell: ({ row }) => (
-          <div className="text-sm">
-            {format(new Date(row.getValue("createdAt")), "yyyy-MM-dd HH:mm")}
-          </div>
-        ),
+        cell: ({ row }) => {
+          // Group rows surface ``groupName`` (e.g. "Persona Drafts —
+          // Confused Student"); model-run rows don't. Show the name
+          // above the timestamp when present so users can identify the
+          // session at a glance without opening the detail panel.
+          const groupName = row.original.groupName;
+          return (
+            <div className="text-sm flex flex-col">
+              {groupName && (
+                <span
+                  className="font-medium truncate max-w-[160px]"
+                  title={groupName}
+                >
+                  {groupName}
+                </span>
+              )}
+              <span
+                className={groupName ? "text-xs text-muted-foreground" : ""}
+              >
+                {format(new Date(row.getValue("createdAt")), "yyyy-MM-dd HH:mm")}
+              </span>
+            </div>
+          );
+        },
         enableSorting: true,
       },
       {

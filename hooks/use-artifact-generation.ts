@@ -34,7 +34,11 @@ export interface GenerationMessage {
   id: string;
   role: "user" | "assistant";
   text: string;
-  type: "text" | "tool" | "media";
+  type: "text" | "tool" | "media" | "reasoning";
+  /** Reasoning timing — first delta timestamp + completion timestamp.
+   *  Drives the "Thought for Xs" label. Only set when ``type === "reasoning"``. */
+  reasoningStartedAt?: number;
+  reasoningCompletedAt?: number;
   /** For ``type: "media"`` — the modality being produced. Drives which
    *  download helper the renderer reaches for (imageDownloadUrl /
    *  videoDownloadUrl / etc.) and which icon to show in the skeleton. */
@@ -114,6 +118,38 @@ export function useArtifactGeneration(
   groupIdRef.current = groupId;
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Identity of the single reasoning bubble for the current generate
+  // turn. The agentic loop streams reasoning_delta across multiple LLM
+  // iterations (one round per tool-call batch); each iteration ends
+  // with finish_reason=tool_calls, not stop, so reasoning.complete only
+  // fires at the very last iteration. Without an explicit per-turn
+  // anchor, deltas arriving after a tool call would open a *new* bubble
+  // (the previous "last" message is a tool). Result: N iterations = N
+  // bubbles, none of which auto-collapse. The ref lets every delta in a
+  // turn land in one bubble; we reset it on generate.started so the
+  // next turn starts fresh.
+  const currentReasoningIdRef = useRef<string | null>(null);
+
+  // Helper: stamp completion on the active reasoning bubble (if any)
+  // and clear the ref. Called when ANY signal indicates "thinking is
+  // done for this turn" — text starts arriving, the run completes, or
+  // reasoning.complete fires explicitly. Idempotent.
+  const closeActiveReasoning = useCallback((finalText?: string) => {
+    const id = currentReasoningIdRef.current;
+    if (!id) return;
+    currentReasoningIdRef.current = null;
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === id && m.type === "reasoning"
+          ? {
+              ...m,
+              text: finalText && finalText.length > 0 ? finalText : m.text,
+              reasoningCompletedAt: Date.now(),
+            }
+          : m,
+      ),
+    );
+  }, []);
 
   const clearTimer = useCallback(() => {
     if (timeoutRef.current) {
@@ -163,6 +199,7 @@ export function useArtifactGeneration(
   const clearMessages = useCallback(() => {
     setMessages([]);
     clearTimer();
+    currentReasoningIdRef.current = null;
     setIsGeneratingState(false);
     setStage("idle");
     setErrorState(null);
@@ -180,6 +217,10 @@ export function useArtifactGeneration(
       setStage("generating");
       setErrorState(null);
       clearTimer();
+      // Fresh turn — reset the reasoning bubble anchor so the next
+      // reasoning_delta opens a new bubble instead of appending to
+      // last turn's.
+      currentReasoningIdRef.current = null;
       timeoutRef.current = setTimeout(() => {
         setIsGeneratingState(false);
         setStage("error");
@@ -192,11 +233,18 @@ export function useArtifactGeneration(
       clearTimer();
       setIsGeneratingState(false);
       setStage("idle");
+      // Belt-and-suspenders: if reasoning.complete didn't fire (e.g.
+      // the model produced no separate reasoning channel and went
+      // straight to text), the bubble is already closed by
+      // closeActiveReasoning in handleTextProgress. If it did fire but
+      // somehow the ref still points at a bubble, close it now.
+      closeActiveReasoning();
     };
 
     const handleGenerateFailed = (data: Record<string, unknown>) => {
       clearTimer();
       setIsGeneratingState(false);
+      closeActiveReasoning();
       const message = (data.message as string) || "Generation failed";
       setStage("error");
       setErrorState(message);
@@ -338,6 +386,13 @@ export function useArtifactGeneration(
     const handleTextProgress = (data: Record<string, unknown>) => {
       const delta = data.delta as string;
       if (!delta) return;
+      // Reasoning channel often doesn't emit its own ``.complete`` on
+      // models that interleave reasoning + text within one iteration
+      // (or when reasoning ends because text simply started). The first
+      // text delta is an unambiguous "thinking phase ended" signal —
+      // close the active reasoning bubble here so it stamps a real
+      // ``reasoningCompletedAt`` and auto-collapses in the UI.
+      closeActiveReasoning();
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last && last.type === "text" && last.role === "assistant") {
@@ -376,6 +431,56 @@ export function useArtifactGeneration(
           { id: crypto.randomUUID(), role: "assistant", text, type: "text", tool: null },
         ];
       });
+    };
+
+    // Reasoning channel — model's chain-of-thought trace streamed
+    // separately from the final answer. Renders as a borderless
+    // accordion above the answer bubble. We coalesce deltas onto the
+    // trailing reasoning bubble *only* if no text bubble has been
+    // opened since (a fresh answer ⇒ fresh reasoning row for the next
+    // turn). On ``.complete`` we stamp the end time so the panel can
+    // show "Thought for Xs".
+    const handleReasoningProgress = (data: Record<string, unknown>) => {
+      const delta = data["delta"] as string;
+      if (!delta) return;
+      const existingId = currentReasoningIdRef.current;
+      if (existingId) {
+        // Append to the bubble we opened earlier this turn — even if a
+        // tool-call bubble (or a stray text-complete echo) has landed
+        // between deltas. Keeps the visual model in sync with the DB,
+        // which persists exactly one accumulated reasoning row per run.
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === existingId && m.type === "reasoning"
+              ? { ...m, text: m.text + delta }
+              : m,
+          ),
+        );
+        return;
+      }
+      // First reasoning delta of this turn — open a new bubble and
+      // anchor the ref on its id so all subsequent deltas land here.
+      const id = crypto.randomUUID();
+      currentReasoningIdRef.current = id;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id,
+          role: "assistant",
+          text: delta,
+          type: "reasoning",
+          tool: null,
+          reasoningStartedAt: Date.now(),
+        },
+      ]);
+    };
+
+    const handleReasoningComplete = (data: Record<string, unknown>) => {
+      // Server-signalled end of the reasoning channel — stamp the
+      // bubble closed and clear the ref. Helper handles the
+      // "no bubble currently active" case (no-op).
+      const finalText = (data["text"] as string) || "";
+      closeActiveReasoning(finalText);
     };
 
     // Pipeline-driven tool-call lifecycle. Server emits ``call_id`` (the
@@ -515,6 +620,8 @@ export function useArtifactGeneration(
       // Generate-internal sub-events stay exact.
       transport.on(`${prefix}.text.progress`, handleTextProgress, scope),
       transport.on(`${prefix}.text.complete`, handleTextComplete, scope),
+      transport.on(`${prefix}.reasoning.progress`, handleReasoningProgress, scope),
+      transport.on(`${prefix}.reasoning.complete`, handleReasoningComplete, scope),
       transport.on(`${prefix}.call.start`, handleCallStart, scope),
       transport.on(`${prefix}.call.complete`, handleCallComplete, scope),
       // Media lifecycle — skeleton on ``.start``, content swap on

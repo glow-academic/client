@@ -53,6 +53,15 @@ export function PricingRunsClient({
           agentNames: group.agent_names ?? [],
         };
 
+        // Profile column expects a single ``profileName`` string today;
+        // join the server's per-profile list with a comma so the rare
+        // multi-profile group still surfaces all authors.
+        const profileNames = (group as { profile_names?: string[] | null })
+          .profile_names;
+        if (profileNames && profileNames.length > 0) {
+          row.profileName = profileNames.join(", ");
+        }
+
         // Add optional properties only when defined
         if (group.group_name) row.groupName = group.group_name;
 

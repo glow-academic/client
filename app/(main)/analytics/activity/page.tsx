@@ -113,7 +113,7 @@ export default async function ActivityPage({
 
     // Activity-specific params with defaults
     const activityPage = q.activityPage ?? 0;
-    const activityPageSize = q.activityPageSize ?? 50;
+    const activityPageSize = q.activityPageSize ?? 10;
     const roleIds = q.role_ids ?? q.roles ?? [];
 
     // Profile summary filter from search params

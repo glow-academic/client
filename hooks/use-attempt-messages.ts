@@ -280,7 +280,7 @@ export function useAttemptMessages({
       message: string,
       parentMessageId?: string,
       personaId?: string,
-      opts?: { autoLinkParent?: boolean },
+      opts?: { autoLinkParent?: boolean; audiosId?: string },
     ) => {
       setIsSending(true);
 
@@ -322,6 +322,11 @@ export function useAttemptMessages({
         // Only send the flag when we're explicitly opting out of the
         // default — keeps the payload minimal for normal sends.
         ...(opts?.autoLinkParent === false ? { auto_link_parent: false } : {}),
+        // Ride-along audio attachment. When the user message came from
+        // an unedited mic transcription, the server atomically writes
+        // ``attempt_audio_entry`` linking message → audios_resource so
+        // the chat MV surfaces ``audios_id`` for bubble playback.
+        ...(opts?.audiosId ? { audios_id: opts.audiosId } : {}),
       });
       const realMessageId = persistResult?.["message_id"] as string | undefined;
       if (realMessageId && realMessageId !== optimisticUserId) {
@@ -339,8 +344,18 @@ export function useAttemptMessages({
       // `chat_hints` is added when hints are enabled for this chat —
       // matches the scenario author's opt-in and prevents wasted
       // token spend when the feature is off.
+      //
+      // ``generate`` op is conditionally added when the user's message
+      // rides with an ``audios_id`` (voice-input chat send): the agent's
+      // least-privilege tool surface then includes
+      // ``Attempt_Audio_Generate``, so the assistant can synthesize a
+      // matching voice clip for its reply. Plain text sends skip this
+      // to keep the surface minimal — and the STT round-trip in
+      // ``use-attempt-transcribe.ts`` doesn't set ``operations`` at
+      // all, so it stays on the canonical STT executor path.
       const operations = ["chat_message", "get"];
       if (hintsEnabled !== false) operations.push("chat_hints");
+      if (opts?.audiosId) operations.push("generate");
 
       const generateResult = await transport.send("/attempt/generate", {
         instructions: ["Respond to the user's latest message in character."],

@@ -109,7 +109,7 @@ export default function Activity({ activityData, isLoading = false }: ActivityPr
         } else {
           if (key === "activityPage" && value === "0") {
             params.delete(key);
-          } else if (key === "activityPageSize" && value === "50") {
+          } else if (key === "activityPageSize" && value === "10") {
             params.delete(key);
           } else {
             params.set(key, value);
@@ -239,18 +239,6 @@ export default function Activity({ activityData, isLoading = false }: ActivityPr
           return <Badge variant="destructive">{count}</Badge>;
         }
         return <div className="text-sm tabular-nums text-muted-foreground">0</div>;
-      },
-    },
-    {
-      accessorKey: "active",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-      cell: ({ row }) => {
-        const active = row.getValue("active") as boolean;
-        return (
-          <Badge variant={active ? "default" : "secondary"}>
-            {active ? "Active" : "Inactive"}
-          </Badge>
-        );
       },
     },
   ], []);

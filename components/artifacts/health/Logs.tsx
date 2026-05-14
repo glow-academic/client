@@ -9,7 +9,6 @@
 import { useMemo } from "react";
 import AuthenticationKPI from "./kpis/AuthenticationKPI";
 import DatabaseKPI from "./kpis/DatabaseKPI";
-import DocumentKPI from "./kpis/DocumentKPI";
 import RedisKPI from "./kpis/RedisKPI";
 import WebSocketKPI from "./kpis/WebSocketKPI";
 
@@ -31,39 +30,125 @@ export interface LogsProps {
   bundleData: HealthBundleOut;
 }
 
+/** KPI shape consumed by the per-service cards. Derived client-side
+ *  from ``views.service_hourly`` — the BE returns per-(service, hour)
+ *  rows; we bucket by service, use the latest row as the headline,
+ *  and the rest as the sparkline trend. */
+type ServiceKPI = {
+  ok: boolean;
+  latency_ms: number;
+  error: string;
+  trend: { date: string; value: number; latency: number; count: number }[];
+};
+
+/** KPI slots → the lowercase ``service`` string the BE writes for
+ *  that slot. The render block keys cards on the FE-facing slot name
+ *  (``authentication``, etc.); the BE-facing name is what we match
+ *  against ``service_hourly[i].service``.
+ *
+ *  The BE health watchdog (``infra/health/checks.py:run_service_checks``)
+ *  emits exactly: ``database``, ``websocket``, ``redis``, ``keycloak``.
+ *  ``keycloak`` is the auth provider — surfaced under the
+ *  ``authentication`` slot for human-readable card labelling. */
+const KPI_SLOT_TO_SERVICE: Record<
+  "websocket" | "redis" | "database" | "authentication",
+  string
+> = {
+  websocket: "websocket",
+  redis: "redis",
+  database: "database",
+  authentication: "keycloak",
+};
+
 export default function Logs({ bundleData: serverBundleData }: LogsProps) {
-  // Extract data from bundle
-  const healthKPIs = useMemo(
-    () => serverBundleData?.health_kpis,
+  // Extract the two raw views from the bundle. The BE returns hourly
+  // per-service health entries + hourly metrics aggregates; the FE
+  // does the presentation-shape derivation below so the BE response
+  // stays a thin projection of the underlying MVs.
+  const serviceHourly = useMemo(
+    () => serverBundleData?.views?.service_hourly ?? [],
     [serverBundleData],
   );
-  const metrics = useMemo(() => {
-    const m = serverBundleData?.metrics;
-    return Array.isArray(m) ? m : [];
-  }, [serverBundleData]);
+  const metricsHourly = useMemo(
+    () => serverBundleData?.views?.metrics_hourly ?? [],
+    [serverBundleData],
+  );
 
   // Get chart colors from design system
   const chartColors = useChartColors();
 
-  // Prepare metrics chart data
-  const metricsChartData = useMemo(() => {
-    if (!metrics || !Array.isArray(metrics)) {
-      return [];
+  /**
+   * Derive the 5 KPI cards from ``service_hourly`` rows.
+   *
+   * For each known service:
+   *   - Filter rows by ``service`` (lowercase).
+   *   - Sort by ``date_hour`` DESC.
+   *   - Latest row becomes the headline (``ok``, ``latency_ms``, ``error``).
+   *   - Older rows become the sparkline trend (oldest → newest).
+   *
+   * Services with no rows are absent from the map — the JSX block
+   * below renders each card only when its key exists.
+   */
+  const healthKPIs = useMemo(() => {
+    const result: Partial<
+      Record<keyof typeof KPI_SLOT_TO_SERVICE, ServiceKPI>
+    > = {};
+    for (const slot of Object.keys(KPI_SLOT_TO_SERVICE) as Array<
+      keyof typeof KPI_SLOT_TO_SERVICE
+    >) {
+      const beService = KPI_SLOT_TO_SERVICE[slot];
+      const rows = serviceHourly
+        .filter((r) => (r.service ?? "").toLowerCase() === beService)
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(b.date_hour ?? 0).getTime() -
+            new Date(a.date_hour ?? 0).getTime(),
+        );
+      const latest = rows[0];
+      if (!latest) continue;
+      result[slot] = {
+        ok: latest.latest_ok ?? false,
+        latency_ms: latest.avg_latency_ms ?? 0,
+        error: latest.latest_error ?? "",
+        trend: rows
+          .slice(1)
+          .reverse()
+          .map((r) => ({
+            date: typeof r.date_hour === "string" ? r.date_hour : "",
+            value: r.uptime_percent ?? 0,
+            latency: r.avg_latency_ms ?? 0,
+            count: r.check_count ?? 0,
+          })),
+      };
     }
-    return metrics.map((m) => ({
-      date: m.date ?? "",
-      cpu: m.cpu_percent ?? 0,
-      latency: m.latency_ms ?? 0,
-      memory: (m.memory_bytes ?? 0) / 1024 / 1024, // Convert to MB
-      requests: m.requests_total ?? 0,
-      errors: m.errors_total ?? 0,
-    }));
-  }, [metrics]);
+    return result;
+  }, [serviceHourly]);
+
+  /**
+   * Map hourly metrics rows to chart points. The BE aggregates over
+   * the hour bucket — we use ``avg_*`` for the smooth lines and the
+   * ``max_*`` totals for request/error counters (a count's "average"
+   * doesn't make sense; the hourly peak is the meaningful figure).
+   * Memory is converted bytes → MB to match the chart's Y-axis label.
+   */
+  const metricsChartData = useMemo(
+    () =>
+      metricsHourly.map((m) => ({
+        date: typeof m.date_hour === "string" ? m.date_hour : "",
+        cpu: m.avg_cpu_percent ?? 0,
+        latency: m.avg_latency_ms ?? 0,
+        memory: (m.avg_memory_bytes ?? 0) / 1024 / 1024,
+        requests: m.max_requests_total ?? 0,
+        errors: m.max_errors_total ?? 0,
+      })),
+    [metricsHourly],
+  );
 
   return (
     <div className="flex flex-col gap-6 h-[calc(100vh-7rem)]" data-page="logs-dashboard">
       {/* Top Section - 5 KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {healthKPIs && (
           <>
             {healthKPIs.websocket && (
@@ -85,19 +170,6 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
                 latency_ms={healthKPIs.redis.latency_ms ?? 0}
                 error={healthKPIs.redis.error ?? ""}
                 trend={(healthKPIs.redis.trend || []).map((t) => ({
-                  date: t.date ?? "",
-                  value: t.value ?? 0,
-                  latency: t.latency ?? 0,
-                  count: t.count ?? 0,
-                }))}
-              />
-            )}
-            {healthKPIs.document && (
-              <DocumentKPI
-                ok={healthKPIs.document.ok ?? false}
-                latency_ms={healthKPIs.document.latency_ms ?? 0}
-                error={healthKPIs.document.error ?? ""}
-                trend={(healthKPIs.document.trend || []).map((t) => ({
                   date: t.date ?? "",
                   value: t.value ?? 0,
                   latency: t.latency ?? 0,

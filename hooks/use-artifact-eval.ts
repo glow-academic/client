@@ -172,6 +172,13 @@ export function useArtifactEval(
   onCandidateRef.current = onCandidate;
   onCandidatesReadyRef.current = onCandidatesReady;
 
+  // Mirror of ``candidates`` for read access inside event handlers.
+  // Lets us compute the final list without reading from a setState
+  // updater (which React Strict Mode double-invokes, causing
+  // duplicate side effects — see the offDone handler below).
+  const candidatesRef = useRef(candidates);
+  candidatesRef.current = candidates;
+
   // ── Helpers ────────────────────────────────────────────────────
   const grade = useCallback(
     async (c: Candidate, args: GradeArgs = {}): Promise<unknown> => {
@@ -256,30 +263,46 @@ export function useArtifactEval(
         const eventRunId = asString(ev["run_id"]);
         if (scopedRunId && eventRunId !== scopedRunId) return;
 
-        setCandidates((prev) => {
-          const byAgent = new Map(prev.map((c) => [c.agent_id, c]));
-          const finalList = candidatesFromCompletedEvent(ev, byAgent);
-          // Fire the aggregate callback once we have the canonical list.
-          // Use the just-computed list rather than ``prev`` so callers
-          // see invocation_ids the aggregate event filled in.
-          void (async () => {
-            try {
-              await onCandidatesReadyRef.current?.(finalList, helpers);
-            } catch (err) {
-              console.error(
-                "useArtifactEval.onCandidatesReady handler threw:",
-                err,
-              );
-            }
-          })();
-          return finalList;
-        });
+        // Compute the canonical candidate list outside the setter so
+        // the side effect (onCandidatesReady) doesn't fire from inside
+        // a React state-updater. React Strict Mode (dev) double-invokes
+        // updater fns for purity testing — when the side effect was
+        // inline, ``promote(winner)`` ran twice, each spawning a
+        // duplicate ``persona.create`` socket emit. Both racing emits
+        // 404'd on the second lookup because the first had already
+        // flipped the soft_call ledger to ``accepted``.
+        const finalList = (() => {
+          const byAgent = new Map(candidatesRef.current.map((c) => [c.agent_id, c]));
+          return candidatesFromCompletedEvent(ev, byAgent);
+        })();
+        setCandidates(finalList);
         setAllReady(true);
 
         const evalBlock = (ev["eval"] ?? null) as
           | { test_id?: string }
           | null;
-        if (evalBlock?.test_id) setTestId(evalBlock.test_id);
+        const evalTestId = evalBlock?.test_id ?? null;
+        if (evalTestId) setTestId(evalTestId);
+
+        // No eval rubric was attached to this generation — there are
+        // no candidates to grade / promote / reject, so don't invoke
+        // the policy callback. Avoids spurious ``/<artifact>/create``
+        // ack calls for runs the model produced with no soft writes
+        // (titles, info lookups, etc.). The check is conservative: we
+        // skip when neither the aggregate event nor any candidate
+        // carries an eval id.
+        const hasEval = !!evalTestId
+          || finalList.some((c) => !!c.invocation_id);
+        if (!hasEval) return;
+
+        try {
+          await onCandidatesReadyRef.current?.(finalList, helpers);
+        } catch (err) {
+          console.error(
+            "useArtifactEval.onCandidatesReady handler threw:",
+            err,
+          );
+        }
       },
     );
 

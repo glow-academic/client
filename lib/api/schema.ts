@@ -13073,6 +13073,8 @@ export interface components {
              * @default true
              */
             auto_link_parent: boolean;
+            /** Audios Id */
+            audios_id?: string | null;
         };
         /** ChatMessageResponse */
         ChatMessageResponse: {
@@ -32803,6 +32805,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupAttemptApiRequest
@@ -32846,6 +32878,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupAuthApiRequest
@@ -32889,6 +32951,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupCall
@@ -32959,6 +33051,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupDepartmentApiRequest
@@ -33002,191 +33124,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
-        };
-        /**
-         * GroupDetailCallItem
-         * @description A tool/function call made during the run.
-         */
-        GroupDetailCallItem: {
             /**
-             * Id
-             * Format: uuid
-             * @description UUID of the call
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
              */
-            id: string;
+            group_exists?: boolean | null;
             /**
-             * Template Name
-             * @description Name of the call template
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
              */
-            template_name?: string | null;
+            actor_name?: string | null;
             /**
-             * File Path
-             * @description File path associated with the call
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
              */
-            file_path?: string | null;
+            total_message_count?: number | null;
             /**
-             * Created At
-             * Format: date-time
-             * @description Timestamp when the call was made
+             * Models
+             * @description (detail) Models used in the group
              */
-            created_at: string;
-        };
-        /**
-         * GroupDetailMessageItem
-         * @description A message with resource IDs by media type.
-         */
-        GroupDetailMessageItem: {
+            models?: components["schemas"]["GroupResource"][] | null;
             /**
-             * Id
-             * @description UUID of the message
+             * Agents
+             * @description (detail) Agents used in the group
              */
-            id?: string | null;
+            agents?: components["schemas"]["GroupResource"][] | null;
             /**
-             * Role
-             * @description Role of the message sender
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
              */
-            role?: string | null;
-            /**
-             * Created At
-             * @description Timestamp the message row was inserted
-             */
-            created_at?: string | null;
-            /**
-             * Text Ids
-             * @description Text resource UUIDs
-             */
-            text_ids?: string[];
-            /**
-             * Audio Ids
-             * @description Audio resource UUIDs
-             */
-            audio_ids?: string[];
-            /**
-             * Image Ids
-             * @description Image resource UUIDs
-             */
-            image_ids?: string[];
-            /**
-             * Video Ids
-             * @description Video resource UUIDs
-             */
-            video_ids?: string[];
-            /**
-             * File Ids
-             * @description File resource UUIDs
-             */
-            file_ids?: string[];
-            /**
-             * Call Ids
-             * @description Call resource UUIDs
-             */
-            call_ids?: string[];
-            /**
-             * Calls
-             * @description Tool calls in this message
-             */
-            calls?: components["schemas"]["GroupDetailCallItem"][];
-        };
-        /**
-         * GroupDetailResourceItem
-         * @description A named resource (model, agent, or profile).
-         */
-        GroupDetailResourceItem: {
-            /**
-             * Model Id
-             * @description UUID of the model
-             */
-            model_id?: string | null;
-            /**
-             * Agent Id
-             * @description UUID of the agent
-             */
-            agent_id?: string | null;
-            /**
-             * Profile Id
-             * @description UUID of the profile
-             */
-            profile_id?: string | null;
-            /**
-             * Name
-             * @description Display name of the resource
-             */
-            name?: string | null;
-        };
-        /**
-         * GroupDetailRunItem
-         * @description Run metadata for the detail response.
-         */
-        GroupDetailRunItem: {
-            /**
-             * Id
-             * Format: uuid
-             * @description UUID of the run
-             */
-            id: string;
-            /**
-             * Created At
-             * Format: date-time
-             * @description Timestamp when the run was created
-             */
-            created_at: string;
-            /**
-             * Input Tokens
-             * @description Number of input tokens consumed
-             * @default 0
-             */
-            input_tokens: number;
-            /**
-             * Output Tokens
-             * @description Number of output tokens generated
-             * @default 0
-             */
-            output_tokens: number;
-            /**
-             * Cached Input Tokens
-             * @description Number of cached input tokens
-             * @default 0
-             */
-            cached_input_tokens: number;
-            /**
-             * Cost
-             * @description Cost of the run
-             * @default 0
-             */
-            cost: number;
-            /**
-             * Model Id
-             * @description UUID of the model used
-             */
-            model_id?: string | null;
-            /**
-             * Agent Id
-             * @description UUID of the agent used
-             */
-            agent_id?: string | null;
-            /**
-             * Profile Id
-             * @description UUID of the user profile
-             */
-            profile_id?: string | null;
-        };
-        /**
-         * GroupDetailRunWithMessages
-         * @description A run with its messages and context boundary.
-         */
-        GroupDetailRunWithMessages: {
-            /** @description Run metadata */
-            run: components["schemas"]["GroupDetailRunItem"];
-            /**
-             * Messages
-             * @description Messages in this run
-             */
-            messages?: components["schemas"]["GroupDetailMessageItem"][];
-            /**
-             * Previous Context Start Index
-             * @description Index where previous context starts
-             */
-            previous_context_start_index?: number | null;
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupDocumentApiRequest
@@ -33230,6 +33197,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupEvalApiRequest
@@ -33273,6 +33270,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupFieldApiRequest
@@ -33316,6 +33343,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupMessage
@@ -33345,6 +33402,12 @@ export interface components {
             call_ids?: string[];
             /** Calls */
             calls?: components["schemas"]["GroupCall"][];
+            /**
+             * Reasoning
+             * @description True when this row is a chain-of-thought trace persisted alongside the assistant answer (rendered as a collapsed accordion).
+             * @default false
+             */
+            reasoning: boolean;
             /**
              * In Context
              * @description Whether this message is included in the LLM context for the next generation. Mirrors the dedup pass that builds chat history (see in_context_reason).
@@ -33400,6 +33463,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupParameterApiRequest
@@ -33443,6 +33536,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupPersonaApiRequest
@@ -33486,6 +33609,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupProfileApiRequest
@@ -33529,6 +33682,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupProviderApiRequest
@@ -33572,6 +33755,52 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
+        };
+        /**
+         * GroupResource
+         * @description Lightweight `{id, name}` for cross-referencing run-level ids
+         *     (``model_id`` / ``agent_id`` / ``profile_id``) against human-readable
+         *     names on the analytics panel. Names come from the canonical
+         *     ``get_models`` / ``get_agents`` / ``get_profiles`` black boxes.
+         */
+        GroupResource: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name?: string | null;
         };
         /**
          * GroupRubricApiRequest
@@ -33615,10 +33844,47 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupRun
          * @description Run within a group, with its messages.
+         *
+         *     Carries token / cost / model / agent / profile attribution so the
+         *     analytics view can render per-run cost + actor info without a
+         *     parallel detail shape. ``profile_id`` is the authoring profile
+         *     (human user), ``agent_id`` is the LLM-side actor, ``model_id`` is
+         *     the model used by that agent. All optional — runs predating these
+         *     columns or with unresolved attributions surface ``None``.
          */
         GroupRun: {
             /**
@@ -33628,6 +33894,37 @@ export interface components {
             id: string;
             /** Created At */
             created_at?: string | null;
+            /**
+             * Input Tokens
+             * @default 0
+             */
+            input_tokens: number;
+            /**
+             * Output Tokens
+             * @default 0
+             */
+            output_tokens: number;
+            /**
+             * Cached Input Tokens
+             * @default 0
+             */
+            cached_input_tokens: number;
+            /**
+             * Cost
+             * @default 0
+             */
+            cost: number;
+            /** Model Id */
+            model_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /**
+             * Previous Context Start Index
+             * @description Index in ``messages`` where the current run's own messages begin; earlier rows are previous-context replay. ``None`` when the run has no previous context attached.
+             */
+            previous_context_start_index?: number | null;
             /** Messages */
             messages?: components["schemas"]["GroupMessage"][];
         };
@@ -33673,6 +33970,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupSettingApiRequest
@@ -33716,6 +34043,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupSimulationApiRequest
@@ -33759,6 +34116,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupSystemApiRequest
@@ -33802,9 +34189,11 @@ export interface components {
          * GroupSystemApiResponse
          * @description Response body for POST /system/group.
          *
-         *     Lean fields (``group_id``, ``name``, ``snapshot_key``) are always populated.
-         *     Detail fields below are populated only when the request set
-         *     ``include_detail=True``.
+         *     All fields come straight from the parent ``GroupResolveResponse`` —
+         *     the lean ``{group_id, name, snapshot_key, runs}`` plus the optional
+         *     detail set (``group_exists``, ``actor_name``, ``total_message_count``,
+         *     ``models``, ``agents``, ``profiles``) that ``resolve_group_impl``
+         *     populates when called with ``include_resources=True``.
          */
         GroupSystemApiResponse: {
             /**
@@ -33825,17 +34214,17 @@ export interface components {
             snapshot_key?: string | null;
             /**
              * Runs
-             * @description (detail) Runs with their messages
+             * @description Conversation history — populated when resolving an existing group for fetch
              */
-            runs?: components["schemas"]["GroupDetailRunWithMessages"][] | null;
+            runs?: components["schemas"]["GroupRun"][] | null;
             /**
              * Group Exists
-             * @description (detail) Whether the group exists in storage
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
              */
             group_exists?: boolean | null;
             /**
              * Actor Name
-             * @description (detail) Display name of the current actor
+             * @description (detail) Display name of the current actor (caller profile)
              */
             actor_name?: string | null;
             /**
@@ -33847,17 +34236,17 @@ export interface components {
              * Models
              * @description (detail) Models used in the group
              */
-            models?: components["schemas"]["GroupDetailResourceItem"][] | null;
+            models?: components["schemas"]["GroupResource"][] | null;
             /**
              * Agents
              * @description (detail) Agents used in the group
              */
-            agents?: components["schemas"]["GroupDetailResourceItem"][] | null;
+            agents?: components["schemas"]["GroupResource"][] | null;
             /**
              * Profiles
-             * @description (detail) Profiles in the group
+             * @description (detail) Profiles that authored runs in this group
              */
-            profiles?: components["schemas"]["GroupDetailResourceItem"][] | null;
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupTestApiRequest
@@ -33901,6 +34290,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /**
          * GroupToolApiRequest
@@ -33944,6 +34363,36 @@ export interface components {
              * @description Conversation history — populated when resolving an existing group for fetch
              */
             runs?: components["schemas"]["GroupRun"][] | null;
+            /**
+             * Group Exists
+             * @description (detail) Whether the group exists in storage — populated when ``include_resources=True``
+             */
+            group_exists?: boolean | null;
+            /**
+             * Actor Name
+             * @description (detail) Display name of the current actor (caller profile)
+             */
+            actor_name?: string | null;
+            /**
+             * Total Message Count
+             * @description (detail) Total number of messages in the group
+             */
+            total_message_count?: number | null;
+            /**
+             * Models
+             * @description (detail) Models used in the group
+             */
+            models?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Agents
+             * @description (detail) Agents used in the group
+             */
+            agents?: components["schemas"]["GroupResource"][] | null;
+            /**
+             * Profiles
+             * @description (detail) Profiles that authored runs in this group
+             */
+            profiles?: components["schemas"]["GroupResource"][] | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -38497,6 +38946,11 @@ export interface components {
              * @description Total number of sibling messages
              */
             sibling_count?: number | null;
+            /**
+             * Audios Id
+             * @description UUID of the attached audios_resource, if any
+             */
+            audios_id?: string | null;
         };
         /**
          * MessageFeedbackEntry
@@ -43401,6 +43855,11 @@ export interface components {
              * @description Associated model names
              */
             model_names?: string[] | null;
+            /**
+             * Profile Names
+             * @description Display names of the profiles (human users) who triggered runs in this group
+             */
+            profile_names?: string[] | null;
         };
         /**
          * PricingHistoryResponse
@@ -49055,6 +49514,12 @@ export interface components {
              * @description UUIDs of call resources
              */
             call_ids: string[];
+            /**
+             * Reasoning
+             * @description Chain-of-thought trace row
+             * @default false
+             */
+            reasoning: boolean;
         };
         /**
          * SearchModelApiRequest

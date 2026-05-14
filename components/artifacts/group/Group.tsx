@@ -20,6 +20,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  ToolCallBubble,
+  EventPill,
+  bubbleLabel,
+} from "@/components/common/ai/GenerationPanel";
+import { callDownloadUrl } from "@/lib/api/download-routes";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -33,9 +39,8 @@ import {
   MessageSquare,
   Settings,
   User,
-  Wrench,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface GroupProps {
   groupDetail: PricingGroupDetailOut;
@@ -89,12 +94,30 @@ const formatCost = (cost: number): string => {
   return `$${cost.toFixed(6)}`;
 };
 
-/** Artifact-scoped download base URL for group content. */
-const GROUP_DOWNLOAD_BASE = "/api/group/download";
+/**
+ * Per-media-type BFF URLs.
+ *
+ * The previous ``/api/group/download/{id}`` proxy was a single
+ * unified endpoint that no longer exists — the canonical surface is
+ * artifact-scoped (``system`` as the catch-all) with one route per
+ * media type, each proxying to its matching ``/system/*_download``
+ * impl. ``id`` here is an entry id (text_id, image_id, etc.) as
+ * surfaced by the chat MV's resource-id lists, not an upload id.
+ */
+const SYSTEM_TEXT_URL = (id: string) => `/api/system/text/${id}`;
+const SYSTEM_IMAGE_URL = (id: string) => `/api/system/image/${id}`;
+const SYSTEM_AUDIO_URL = (id: string) => `/api/system/audio/${id}`;
+const SYSTEM_VIDEO_URL = (id: string) => `/api/system/video/${id}`;
+const SYSTEM_FILE_URL = (id: string) => `/api/system/file/${id}`;
+// NOTE: ``SYSTEM_CALL_URL`` intentionally absent. ``message.call_ids``
+// is a join side-effect of ``messages_mv`` aggregating from
+// ``call_uploads_entry``; the bubble surface treats tool-call records
+// (``msg.calls`` → ToolCallBubble) as authoritative and ignores the
+// call-audio recordings exactly like GenerationPanel does.
 
-/** Fetch text content for a single upload ID via the group download proxy. */
-async function fetchGroupTextContent(uploadId: string): Promise<string> {
-  const res = await fetch(`${GROUP_DOWNLOAD_BASE}/${uploadId}`);
+/** Fetch text content for a single text entry id via the system text proxy. */
+async function fetchGroupTextContent(textId: string): Promise<string> {
+  const res = await fetch(SYSTEM_TEXT_URL(textId));
   if (!res.ok) return "";
   return res.text();
 }
@@ -135,10 +158,26 @@ function useGroupTextContents(messages: GroupMessageItem[]) {
   return contentMap;
 }
 
-/** Render the content of a single message from its upload IDs. */
+/** Render the content of a single message from its upload IDs.
+ *
+ * Text-suppression rule mirrors GenerationPanel's canonical behavior:
+ *   ``!hasToolCalls && !hasPrimaryMedia → render text``.
+ * Text on a message that also has media/calls is the server-written
+ * fallback caption (e.g. "Generated image resource: image-…", or the
+ * rendered tool-call args) and is redundant when the native object
+ * renders alongside it.
+ *
+ * ``call_ids`` are intentionally NOT rendered here — they're a
+ * join side-effect of ``messages_mv`` aggregating from
+ * ``call_uploads_entry`` and not a real chat surface. Tool calls are
+ * handled by the parent via ``msg.calls`` + ``ToolCallBubble`` /
+ * ``EventPill``; call recordings (if/when needed) would surface via a
+ * dedicated affordance, not stacked into the bubble.
+ */
 function MessageContent({
   msg,
   textContents,
+  hasToolCalls,
 }: {
   msg: {
     id: string | null;
@@ -147,9 +186,9 @@ function MessageContent({
     audio_ids?: string[];
     video_ids?: string[];
     file_ids?: string[];
-    call_ids?: string[];
   };
   textContents: Record<string, string[]>;
+  hasToolCalls: boolean;
 }) {
   const texts = msg.id ? textContents[msg.id] : undefined;
   const textContent = texts?.join("\n") ?? "";
@@ -160,9 +199,14 @@ function MessageContent({
   const hasAudio = (msg.audio_ids?.length ?? 0) > 0;
   const hasVideo = (msg.video_ids?.length ?? 0) > 0;
   const hasFiles = (msg.file_ids?.length ?? 0) > 0;
-  const hasCalls = (msg.call_ids?.length ?? 0) > 0;
+  const hasPrimaryMedia = hasImages || hasAudio || hasVideo || hasFiles;
+  const shouldRenderText = !hasToolCalls && !hasPrimaryMedia;
   const hasAnyContent =
-    isLoadingText || textContent || hasImages || hasAudio || hasVideo || hasFiles || hasCalls;
+    (shouldRenderText && (isLoadingText || textContent)) ||
+    hasImages ||
+    hasAudio ||
+    hasVideo ||
+    hasFiles;
 
   if (!hasAnyContent) {
     return <p className="text-sm text-muted-foreground italic">No content</p>;
@@ -170,19 +214,20 @@ function MessageContent({
 
   return (
     <div className="space-y-2">
-      {/* Text content */}
-      {isLoadingText ? (
+      {/* Text content — suppressed when tool calls or primary media
+          are present (caption-fallback rule, matches GenerationPanel). */}
+      {shouldRenderText && isLoadingText ? (
         <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-      ) : textContent ? (
+      ) : shouldRenderText && textContent ? (
         <Markdown>{textContent}</Markdown>
       ) : null}
 
       {/* Images */}
       {hasImages &&
-        msg.image_ids!.map((uploadId) => (
+        msg.image_ids!.map((imageId) => (
           <img
-            key={uploadId}
-            src={`${GROUP_DOWNLOAD_BASE}/${uploadId}`}
+            key={imageId}
+            src={SYSTEM_IMAGE_URL(imageId)}
             alt="Message image"
             className="max-w-full rounded-md"
             loading="lazy"
@@ -191,40 +236,36 @@ function MessageContent({
 
       {/* Audio */}
       {hasAudio &&
-        msg.audio_ids!.map((uploadId) => (
+        msg.audio_ids!.map((audioId) => (
           <audio
-            key={uploadId}
+            key={audioId}
             controls
             preload="metadata"
             className="w-full"
           >
-            <source
-              src={`${GROUP_DOWNLOAD_BASE}/${uploadId}`}
-            />
+            <source src={SYSTEM_AUDIO_URL(audioId)} />
           </audio>
         ))}
 
       {/* Video */}
       {hasVideo &&
-        msg.video_ids!.map((uploadId) => (
+        msg.video_ids!.map((videoId) => (
           <video
-            key={uploadId}
+            key={videoId}
             controls
             preload="metadata"
             className="max-w-full rounded-md"
           >
-            <source
-              src={`${GROUP_DOWNLOAD_BASE}/${uploadId}`}
-            />
+            <source src={SYSTEM_VIDEO_URL(videoId)} />
           </video>
         ))}
 
       {/* Files */}
       {hasFiles &&
-        msg.file_ids!.map((uploadId) => (
+        msg.file_ids!.map((fileId) => (
           <a
-            key={uploadId}
-            href={`${GROUP_DOWNLOAD_BASE}/${uploadId}`}
+            key={fileId}
+            href={SYSTEM_FILE_URL(fileId)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm underline"
@@ -232,21 +273,6 @@ function MessageContent({
             <File className="h-3 w-3" />
             Download file
           </a>
-        ))}
-
-      {/* Call recordings */}
-      {hasCalls &&
-        msg.call_ids!.map((uploadId) => (
-          <audio
-            key={uploadId}
-            controls
-            preload="metadata"
-            className="w-full"
-          >
-            <source
-              src={`${GROUP_DOWNLOAD_BASE}/${uploadId}`}
-            />
-          </audio>
         ))}
     </div>
   );
@@ -259,6 +285,50 @@ export default function Group({ groupDetail }: GroupProps) {
   const [showPreviousContext, setShowPreviousContext] = useState(true);
   const [showToolCalls, setShowToolCalls] = useState(true);
 
+  // Expanded tool call — at most one receipt body in memory at a time.
+  // Mirrors the state machinery in GenerationPanel so ``ToolCallBubble``
+  // gets the same expand/collapse + lazy-fetch behavior here.
+  // ``artifactType`` is fixed to ``"system"`` because the Group panel
+  // is rooted at the system catch-all surface.
+  const [expandedCall, setExpandedCall] = useState<{
+    id: string;
+    data: Record<string, unknown> | null;
+    error: string | null;
+  } | null>(null);
+
+  const toggleCall = useCallback(async (callId: string) => {
+    let shouldFetch = true;
+    setExpandedCall((curr) => {
+      if (curr?.id === callId) {
+        shouldFetch = false;
+        return null;
+      }
+      return { id: callId, data: null, error: null };
+    });
+    if (!shouldFetch) return;
+    try {
+      const r = await fetch(callDownloadUrl("system", callId));
+      if (!r.ok) {
+        setExpandedCall((curr) =>
+          curr?.id === callId
+            ? { id: callId, data: null, error: `Fetch failed (${r.status})` }
+            : curr,
+        );
+        return;
+      }
+      const data = (await r.json()) as Record<string, unknown>;
+      setExpandedCall((curr) =>
+        curr?.id === callId ? { id: callId, data, error: null } : curr,
+      );
+    } catch (e) {
+      setExpandedCall((curr) =>
+        curr?.id === callId
+          ? { id: callId, data: null, error: e instanceof Error ? e.message : "Failed" }
+          : curr,
+      );
+    }
+  }, []);
+
   // This component only handles group responses (has 'runs' property)
   // Type assertion is safe here since this component is specifically for groups
   const isGroupResponse = "runs" in groupDetail;
@@ -267,12 +337,21 @@ export default function Group({ groupDetail }: GroupProps) {
   type GroupResponseType = PricingGroupDetailOut & { runs: unknown[]; models?: unknown[]; agents?: unknown[]; profiles?: unknown[] };
   const groupResponse = isGroupResponse ? (groupDetail as GroupResponseType) : null;
   
-  // Type for tool calls
+  // Type for tool calls. Mirrors the server's ``GroupCall`` resolve
+  // shape — see ``app/infra/group/resolve.py`` — so the FE can run
+  // the same two-tier render that GenerationPanel uses:
+  //   * ``tool === null`` → audit event without a registered tool →
+  //     ``EventPill``
+  //   * ``tool`` set → real tool call → ``ToolCallBubble`` with
+  //     ledger-status awareness for soft writes.
   type CallItem = {
     id: string;
     template_name: string | null;
-    arguments: string | null;
-    created_at: string;
+    tool: Record<string, unknown> | null;
+    ledger_status?: "pending" | "accepted" | "rejected" | null;
+    ledger_operation?: string | null;
+    ledger_artifact?: string | null;
+    ledger_artifact_id?: string | null;
   };
 
   // Message type matching server GroupDetailMessageItem (upload IDs by modality)
@@ -288,23 +367,47 @@ export default function Group({ groupDetail }: GroupProps) {
     calls?: CallItem[];
   };
 
+  // Flat GroupRun shape (server's resolve_group_impl canonical form):
+  // run metadata + messages live side-by-side on the same object — no
+  // nested ``.run`` wrapper. ``previous_context_start_index`` sits at
+  // the same level as ``messages``.
+  type RunItem = {
+    id: string;
+    created_at: string;
+    input_tokens: number;
+    output_tokens: number;
+    cached_input_tokens: number;
+    cost: number;
+    model_id: string | null;
+    agent_id: string | null;
+    profile_id: string | null;
+    previous_context_start_index: number | null;
+    messages: MessageItem[];
+  };
+
   const runs = useMemo(() => {
     if (!groupResponse) return [];
-    return (groupResponse.runs ?? []) as Array<{ run: { created_at: string; model_id: string | null; agent_id: string | null; profile_id: string | null; cost: number | null; input_tokens: number | null; [key: string]: unknown }; messages: MessageItem[]; previous_context_start_index: number | null }>;
+    return (groupResponse.runs ?? []) as RunItem[];
   }, [groupResponse]);
-  
-  // Use arrays directly (no mapping construction)
+
+  // ``GroupResource`` is a flat ``{id, name}`` pair across all three
+  // surfaces — model/agent/profile. The detail tree references the
+  // role-specific id (``model_id`` / ``agent_id`` / ``profile_id``)
+  // on each run, and these arrays let us resolve any of them to a
+  // human-readable name.
+  type ResourceItem = { id: string; name: string | null };
+
   const models = useMemo(() => {
     if (!groupResponse) return [];
-    return (groupResponse.models || []) as Array<{ model_id: string | null; name: string | null; [key: string]: unknown }>;
+    return (groupResponse.models || []) as ResourceItem[];
   }, [groupResponse]);
   const agents = useMemo(() => {
     if (!groupResponse) return [];
-    return (groupResponse.agents || []) as Array<{ agent_id: string | null; name: string | null; [key: string]: unknown }>;
+    return (groupResponse.agents || []) as ResourceItem[];
   }, [groupResponse]);
   const profiles = useMemo(() => {
     if (!groupResponse) return [];
-    return (groupResponse.profiles || []) as Array<{ profile_id: string | null; name: string | null; [key: string]: unknown }>;
+    return (groupResponse.profiles || []) as ResourceItem[];
   }, [groupResponse]);
 
   // Sort runs chronologically
@@ -314,8 +417,8 @@ export default function Group({ groupDetail }: GroupProps) {
     }
     return [...runs].sort(
       (a, b) =>
-        new Date(a.run.created_at).getTime() -
-        new Date(b.run.created_at).getTime()
+        new Date(a.created_at).getTime() -
+        new Date(b.created_at).getTime()
     );
   }, [runs, groupResponse]);
 
@@ -357,11 +460,25 @@ export default function Group({ groupDetail }: GroupProps) {
     });
   }, [currentRun, showSystemPrompt, showDeveloperPrompt, showPreviousContext]);
 
-  // Fetch text content for all messages with text_ids
-  const allMessages = useMemo(() => {
-    return sortedRuns.flatMap((r) => r.messages);
-  }, [sortedRuns]);
-  const textContents = useGroupTextContents(allMessages);
+  // Lazy text fetch: only request text for the messages that belong
+  // to the run the user is currently viewing, not every message in
+  // every run. The previous shape fired one ``/api/system/text/{id}``
+  // request per text_id per message across all runs on mount — for
+  // an 8-run group with chat-history this was hundreds of round-trips
+  // (and as many 500s when any single fetch errored). Browser-managed
+  // media tags (``<img>``/``<audio>``/``<video>``) already lazy-load
+  // via render gating; text was the one explicit fetch path.
+  //
+  // We pass the unfiltered current-run messages (not
+  // ``filteredMessages``) so toggling system/developer doesn't
+  // dirty-fetch the same texts again. The hook's internal
+  // ``fetchedRef`` deduplicates across run navigation, so revisiting
+  // a previously-viewed run is free.
+  const currentRunMessages = useMemo(
+    () => (currentRun ? currentRun.messages : []),
+    [currentRun],
+  );
+  const textContents = useGroupTextContents(currentRunMessages);
 
   if (!isGroupResponse) {
     return null; // This component only handles group responses
@@ -371,20 +488,21 @@ export default function Group({ groupDetail }: GroupProps) {
     return null;
   }
 
-  const { run } = currentRun;
-  // Messages are already ordered by message_tree from server, no need to sort
-
+  // Messages are already ordered by message_tree from server, no need to sort.
+  // ``GroupResource`` exposes ``{id, name}`` — match against the
+  // role-specific id (``model_id`` / ``agent_id`` / ``profile_id``)
+  // on the run.
   const modelName =
-    run["model_id"]
-      ? (models.find((m) => m["model_id"] === run["model_id"])?.["name"] ?? run["model_id"])
+    currentRun.model_id
+      ? (models.find((m) => m.id === currentRun.model_id)?.name ?? currentRun.model_id)
       : "Unknown";
   const agentName =
-    run["agent_id"]
-      ? (agents.find((a) => a["agent_id"] === run["agent_id"])?.["name"] ?? run["agent_id"])
+    currentRun.agent_id
+      ? (agents.find((a) => a.id === currentRun.agent_id)?.name ?? currentRun.agent_id)
       : "Unknown";
   const profileName =
-    run["profile_id"]
-      ? (profiles.find((p) => p["profile_id"] === run["profile_id"])?.["name"] ?? run["profile_id"])
+    currentRun.profile_id
+      ? (profiles.find((p) => p.id === currentRun.profile_id)?.name ?? currentRun.profile_id)
       : "Unknown";
 
   return (
@@ -458,25 +576,25 @@ export default function Group({ groupDetail }: GroupProps) {
             <div>
               <div className="text-sm text-muted-foreground">Cost</div>
               <div className="text-lg font-semibold">
-                {formatCost((run["cost"] as number) ?? 0)}
+                {formatCost(currentRun.cost ?? 0)}
               </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Input Tokens</div>
               <div className="text-lg font-semibold">
-                {formatNumber((run["input_tokens"] as number) ?? 0)}
+                {formatNumber(currentRun.input_tokens ?? 0)}
               </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Output Tokens</div>
               <div className="text-lg font-semibold">
-                {formatNumber((run["output_tokens"] as number) ?? 0)}
+                {formatNumber(currentRun.output_tokens ?? 0)}
               </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Cached Tokens</div>
               <div className="text-lg font-semibold">
-                {formatNumber((run["cached_input_tokens"] as number) ?? 0)}
+                {formatNumber(currentRun.cached_input_tokens ?? 0)}
               </div>
             </div>
           </div>
@@ -496,7 +614,7 @@ export default function Group({ groupDetail }: GroupProps) {
             </div>
             <div>
               <span className="text-muted-foreground">Created: </span>
-              <span className="font-medium">{formatDate(run.created_at)}</span>
+              <span className="font-medium">{formatDate(currentRun.created_at)}</span>
             </div>
           </div>
         </div>
@@ -530,6 +648,104 @@ export default function Group({ groupDetail }: GroupProps) {
 
                   // Get calls attached to this message
                   const messageCalls = (msg.calls || []) as CallItem[];
+                  const renderCalls = showToolCalls && messageCalls.length > 0;
+
+                  // "Own content" = anything the message itself
+                  // carries beyond tool-call envelopes. Text on a
+                  // tool-call-only assistant message is the
+                  // server-written caption fallback (rendered as
+                  // "No content" once the suppression rule fires) —
+                  // here we treat it as absent so the tool call can
+                  // step into the bubble's slot instead of sitting
+                  // above a placeholder. Matches the rule used by
+                  // ``MessageContent`` to decide what to render.
+                  const hasOwnText =
+                    !renderCalls &&
+                    ((msg.id && (textContents[msg.id]?.join("") ?? "")) ||
+                      (msg.text_ids?.length ?? 0) > 0);
+                  const hasPrimaryMedia =
+                    (msg.image_ids?.length ?? 0) > 0 ||
+                    (msg.audio_ids?.length ?? 0) > 0 ||
+                    (msg.video_ids?.length ?? 0) > 0 ||
+                    (msg.file_ids?.length ?? 0) > 0;
+                  const hasOwnContent = Boolean(hasOwnText) || hasPrimaryMedia;
+
+                  // Layout decision tree:
+                  //   * calls + no own content → tool calls take
+                  //     the message-row slot at ``size="lg"``
+                  //     (bulkier rhythm matching the analytics
+                  //     panel's message bubble). No "No content"
+                  //     placeholder.
+                  //   * calls + own content → calls stay above as
+                  //     auxiliary markers at the default ``sm``
+                  //     density; the message bubble renders its
+                  //     content below.
+                  //   * no calls → just the message bubble as
+                  //     today.
+                  // ``bubbleLabel`` walks ``tool.name → templateName
+                  // → "tool_call"`` so the label prefers the
+                  // registered tool's display name.
+                  const align = isUser ? "justify-end" : "justify-start";
+                  const callsAsRow = renderCalls && !hasOwnContent;
+
+                  const renderCallList = (size: "sm" | "lg") =>
+                    messageCalls.map((call) => {
+                      if (call.tool == null) {
+                        return (
+                          <EventPill
+                            key={call.id}
+                            name={bubbleLabel(call.tool, call.template_name)}
+                            status="success"
+                            align={align}
+                            size={size}
+                          />
+                        );
+                      }
+                      return (
+                        <ToolCallBubble
+                          key={call.id}
+                          callId={call.id}
+                          templateName={call.template_name}
+                          tool={call.tool}
+                          role={isUser ? "user" : "assistant"}
+                          align={align}
+                          expanded={expandedCall}
+                          onToggle={(id) => void toggleCall(id)}
+                          ledgerStatus={call.ledger_status ?? null}
+                          ledgerArtifact={call.ledger_artifact ?? null}
+                          ledgerOperation={call.ledger_operation ?? null}
+                          size={size}
+                        />
+                      );
+                    });
+
+                  const Avatar = isUser ? (
+                    <div className="flex-shrink-0">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+                            <User className="h-4 w-4 text-primary-foreground" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{roleLabel}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  ) : (
+                    <div className="flex-shrink-0">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center">
+                            <RoleIcon className="h-4 w-4" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{roleLabel}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  );
 
                   return (
                     <div key={msg.id || `msg-${originalIndex}`}>
@@ -545,79 +761,9 @@ export default function Group({ groupDetail }: GroupProps) {
                           </div>
                         </div>
                       )}
-                      {/* Tool calls attached to this message */}
-                      {showToolCalls && messageCalls.length > 0 && (
+                      {renderCalls && !callsAsRow && (
                         <div className="space-y-2 mb-3">
-                          {messageCalls.map((call) => (
-                            <div
-                              key={call.id}
-                              className={cn(
-                                "flex gap-2",
-                                isUser ? "justify-end" : "justify-start"
-                              )}
-                            >
-                              {!isUser && (
-                                <div className="flex-shrink-0">
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="w-6 h-6 rounded bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                                        <Wrench className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Tool Call</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </div>
-                              )}
-                              <details className="group max-w-[60%]">
-                                <summary className={cn(
-                                  "cursor-pointer rounded-lg px-3 py-1.5 text-xs font-mono font-medium",
-                                  "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800",
-                                  "text-amber-700 dark:text-amber-300",
-                                  "hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors",
-                                  "list-none flex items-center gap-1.5"
-                                )}>
-                                  <Wrench className="h-3 w-3 inline-block" />
-                                  {call.template_name || "tool_call"}
-                                  <span className="text-amber-500 dark:text-amber-500 ml-1 group-open:rotate-90 transition-transform">
-                                    ▶
-                                  </span>
-                                </summary>
-                                {call.arguments && (
-                                  <pre className="mt-1 text-xs bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 overflow-x-auto whitespace-pre-wrap break-words">
-                                    <code className="text-amber-800 dark:text-amber-200">
-                                      {(() => {
-                                        try {
-                                          return JSON.stringify(
-                                            JSON.parse(call.arguments),
-                                            null,
-                                            2
-                                          );
-                                        } catch {
-                                          return call.arguments;
-                                        }
-                                      })()}
-                                    </code>
-                                  </pre>
-                                )}
-                              </details>
-                              {isUser && (
-                                <div className="flex-shrink-0">
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="w-6 h-6 rounded bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                                        <Wrench className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Tool Call</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                          {renderCallList("sm")}
                         </div>
                       )}
                       <div
@@ -626,51 +772,35 @@ export default function Group({ groupDetail }: GroupProps) {
                           isUser ? "justify-end" : "justify-start"
                         )}
                       >
-                        {!isUser && (
-                          <div className="flex-shrink-0">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center">
-                                  <RoleIcon className="h-4 w-4" />
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{roleLabel}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                        )}
+                        {!isUser && Avatar}
                         <div
                           className={cn(
-                            "flex flex-col gap-1 max-w-[80%]",
+                            "flex flex-col gap-2 max-w-[80%] flex-1",
                             isUser ? "items-end" : "items-start"
                           )}
                         >
-                          <div
-                            className={cn(
-                              "rounded-lg p-3",
-                              isUser
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
-                            )}
-                          >
-                            <MessageContent msg={msg} textContents={textContents} />
-                          </div>
+                          {callsAsRow ? (
+                            <div className="w-full space-y-2">
+                              {renderCallList("lg")}
+                            </div>
+                          ) : (
+                            <div
+                              className={cn(
+                                "rounded-lg p-3",
+                                isUser
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted"
+                              )}
+                            >
+                              <MessageContent
+                                msg={msg}
+                                textContents={textContents}
+                                hasToolCalls={renderCalls}
+                              />
+                            </div>
+                          )}
                         </div>
-                        {isUser && (
-                          <div className="flex-shrink-0">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-                                  <User className="h-4 w-4 text-primary-foreground" />
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{roleLabel}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                        )}
+                        {isUser && Avatar}
                       </div>
                     </div>
                   );

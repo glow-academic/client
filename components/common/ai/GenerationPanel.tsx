@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { AlertCircle, Check, CheckCircle2, ChevronDown, ChevronsUpDown, FileText, Loader2, Mic, Search, Send, Settings2, SquarePen, Wrench, X, XCircle } from "lucide-react";
+import { AlertCircle, Brain, Check, CheckCircle2, ChevronDown, ChevronRight, ChevronsUpDown, FileText, Loader2, Mic, Search, Send, Settings2, SquarePen, Wrench, X, XCircle } from "lucide-react";
 import { ackOperation } from "@/lib/api/ack";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -81,6 +81,17 @@ interface HistoricalMessage {
    *  ``inContextReason`` explains why. */
   inContext: boolean;
   inContextReason: string;
+  /** When true, this row is a chain-of-thought trace persisted alongside
+   *  the assistant answer. Renders as a borderless collapsed accordion
+   *  ("Thought for Xs") instead of the standard text bubble.
+   *  See ``messages_entry.reasoning`` (api). */
+  reasoning: boolean;
+  /** Millisecond epoch of ``messages_entry.created_at``. The server
+   *  back-dates reasoning rows to the first reasoning delta, so
+   *  ``(nextAssistantRow.createdAt − reasoningRow.createdAt)`` gives a
+   *  real "Thought for Xs" duration on historical replay. ``0`` for
+   *  legacy rows with no timestamp. */
+  createdAt: number;
 }
 
 /** Server action shape — pages define `"use server"` async fns and pass
@@ -182,6 +193,7 @@ function flattenMessages(res: GroupMessagesOut | Record<string, unknown>): Histo
       const ts = tsRaw ? new Date(tsRaw).getTime() : 0;
       flat.push({
         _ts: ts,
+        createdAt: ts,
         id: msg.id ? String(msg.id) : crypto.randomUUID(),
         role: (msg.role as string) ?? "assistant",
         textIds: ((msg.text_ids as string[]) ?? []).map(String),
@@ -201,6 +213,7 @@ function flattenMessages(res: GroupMessagesOut | Record<string, unknown>): Histo
         })),
         inContext: msg.in_context !== false,
         inContextReason: (msg.in_context_reason as string) ?? "kept",
+        reasoning: msg["reasoning"] === true,
       });
     }
   }
@@ -282,6 +295,159 @@ function LazyText({
           <div className="flex items-center gap-1.5 text-xs opacity-70">
             <FileText className="h-3 w-3" />
             <span>Loading...</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Lazy reasoning-trace wrapper — fetches the per-artifact text on
+ *  viewport intersection (same pattern as ``LazyText``) and feeds it
+ *  into a collapsed ``ReasoningTrace``. Duration label is computed
+ *  from the gap between this row's ``created_at`` (server back-dated
+ *  to the first reasoning delta) and the next assistant row's
+ *  ``created_at`` (the answer). Falls back to a word-count label when
+ *  duration isn't derivable — older rows pre-dating the back-date
+ *  patch land at the same instant as their answer row. */
+function LazyReasoning({
+  textId,
+  artifactType,
+  cached,
+  onLoaded,
+  durationMs,
+}: {
+  textId: string;
+  artifactType: string;
+  cached: string | undefined;
+  onLoaded: (id: string, text: string) => void;
+  durationMs: number | null;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (cached !== undefined) return;
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+
+    let cancelled = false;
+    let fired = false;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (fired) return;
+        if (!entries.some((e) => e.isIntersecting)) return;
+        fired = true;
+        observer.disconnect();
+        void (async () => {
+          try {
+            const r = await fetch(textDownloadUrl(artifactType, textId));
+            const text = r.ok ? await r.text() : "";
+            if (!cancelled) onLoaded(textId, text);
+          } catch {
+            if (!cancelled) onLoaded(textId, "");
+          }
+        })();
+      },
+      { rootMargin: "400px" },
+    );
+    observer.observe(el);
+
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
+  }, [textId, artifactType, cached, onLoaded]);
+
+  const text = cached ?? "";
+  const wordCount = text
+    ? text.trim().split(/\s+/).filter(Boolean).length
+    : 0;
+  // Prefer a real duration when the server gave us one; fall back to
+  // word count for legacy rows persisted before reasoning_started_at
+  // back-dating shipped (those land at the same instant as the answer
+  // row, so the gap is ~0 — distinguishable from a genuine sub-second
+  // thought by the >=1000ms threshold).
+  let label: string;
+  if (durationMs !== null && durationMs >= 1000) {
+    const sec = Math.round(durationMs / 1000);
+    label = `Thought for ${sec}s`;
+  } else if (cached === undefined) {
+    label = "Reasoning";
+  } else if (wordCount > 0) {
+    label = `Thought · ${wordCount} word${wordCount === 1 ? "" : "s"}`;
+  } else {
+    label = "Reasoning";
+  }
+
+  return (
+    <div ref={ref}>
+      <ReasoningTrace
+        text={text}
+        label={label}
+        pulsing={false}
+        defaultOpen={false}
+      />
+    </div>
+  );
+}
+
+/** Borderless reasoning-trace accordion. Renders the model's
+ *  chain-of-thought as raw indented muted text — explicitly *not* a
+ *  bubble, since reasoning is loose intermediate output rather than
+ *  structured turn content. Header is a single chevron + label row;
+ *  body (when expanded) is the raw text in a slim left-bordered column
+ *  (the only visual chrome — a thin guide rule, not a bubble border).
+ *
+ *  ``label`` is computed by the caller:
+ *    - Live, in-flight: "Thinking…" (with a pulsing brain icon)
+ *    - Live, settled:   "Thought for Xs" (real elapsed time)
+ *    - Historical:      "Thought · N words" (derived from text length;
+ *                       we don't persist duration on the row, and the
+ *                       row's created_at lands at run-complete time so
+ *                       it can't be back-derived)
+ *
+ *  ``defaultOpen`` lets the panel push live traces open while keeping
+ *  historical ones collapsed by default. */
+function ReasoningTrace({
+  text,
+  label,
+  pulsing,
+  defaultOpen,
+}: {
+  text: string;
+  label: string;
+  pulsing: boolean;
+  defaultOpen: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  // When the parent flips ``defaultOpen`` (e.g. live trace transitions
+  // from in-flight → settled and we auto-collapse), follow along.
+  useEffect(() => {
+    setOpen(defaultOpen);
+  }, [defaultOpen]);
+
+  return (
+    <div className="flex justify-start">
+      <div className="max-w-[90%] w-full">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {open ? (
+            <ChevronDown className="h-3 w-3" />
+          ) : (
+            <ChevronRight className="h-3 w-3" />
+          )}
+          <Brain
+            className={`h-3 w-3 ${pulsing ? "animate-pulse" : ""}`}
+          />
+          <span className="italic">{label}</span>
+        </button>
+        {open && text && (
+          <div className="mt-1 ml-1.5 pl-3 border-l border-muted-foreground/20 text-xs text-muted-foreground/80 whitespace-pre-wrap font-mono leading-relaxed">
+            {text}
           </div>
         )}
       </div>
@@ -459,7 +625,7 @@ function CallReceiptBody({
  * they render the static {@link ToolCallStatusBubble} instead, since
  * there is no completed call_id to expand yet.
  */
-function ToolCallBubble({
+export function ToolCallBubble({
   callId,
   templateName,
   tool,
@@ -470,6 +636,7 @@ function ToolCallBubble({
   ledgerStatus = null,
   ledgerArtifact = null,
   ledgerOperation = null,
+  size = "sm",
 }: {
   callId: string;
   templateName: string | null;
@@ -480,12 +647,19 @@ function ToolCallBubble({
   align: string;
   expanded: { id: string; data: Record<string, unknown> | null; error: string | null } | null;
   onToggle: (id: string) => void;
-  /** Ledger snapshot from server. Null fields = non-soft call → no
-   *  ack controls. */
+  /** Ledger snapshot from server. Null fields = non-soft call →
+   *  no ack controls. */
   ledgerStatus?: "pending" | "accepted" | "rejected" | null;
   ledgerArtifact?: string | null;
   ledgerOperation?: string | null;
+  /** Visual density. ``sm`` (default) matches the sidebar chat
+   *  rhythm (compact pill). ``lg`` matches the analytics group
+   *  panel rhythm — same shape and weight as the message bubble
+   *  (rounded-lg, text-sm, larger icons) so the tool call can sit
+   *  in the message-row slot without looking like a footnote. */
+  size?: "sm" | "lg";
 }) {
+  const isLg = size === "lg";
   const isOpen = expanded?.id === callId;
   const label = bubbleLabel(tool, templateName);
   const description =
@@ -530,12 +704,23 @@ function ToolCallBubble({
   // Status icon shown in the collapsed header. For ``pending`` we
   // render inline Accept/Reject icon-buttons instead so the user can
   // act without expanding.
+  // Size-derived class tokens. ``sm`` keeps the original sidebar
+  // pill geometry verbatim; ``lg`` matches the analytics group
+  // panel's message-bubble weight.
+  const iconSizeClass = isLg ? "h-4 w-4" : "h-3 w-3";
+  const headerClass = isLg
+    ? "flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm transition-colors text-left cursor-pointer"
+    : "flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors text-left cursor-pointer";
+  const ackBtnSize = isLg ? "h-6 w-6" : "h-5 w-5";
+  const ackIconSize = isLg ? "h-3.5 w-3.5" : "h-3 w-3";
+  const maxWidthClass = isLg ? "max-w-full" : "max-w-[85%]";
+
   const statusIcon =
     state === "rejected" ? (
-      <XCircle className="h-3 w-3 shrink-0 text-destructive" />
+      <XCircle className={`${iconSizeClass} shrink-0 text-destructive`} />
     ) : (
       <CheckCircle2
-        className={`h-3 w-3 shrink-0 ${state === "accepted" ? "text-green-500" : "text-green-500"}`}
+        className={`${iconSizeClass} shrink-0 ${state === "accepted" ? "text-green-500" : "text-green-500"}`}
       />
     );
   // Outer is `flex` (row) — `justify-end` / `justify-start` controls
@@ -548,7 +733,7 @@ function ToolCallBubble({
   // bubble. Other states show a status icon (green check / red X).
   return (
     <div className={`flex ${align}`}>
-      <div className="flex flex-col gap-1 max-w-[85%]">
+      <div className={`flex flex-col gap-1 ${maxWidthClass}`}>
         <div
           role="button"
           tabIndex={0}
@@ -561,9 +746,9 @@ function ToolCallBubble({
           }}
           aria-expanded={isOpen}
           title={description || undefined}
-          className={`flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors text-left cursor-pointer ${toolBubbleClasses(role)}`}
+          className={`${headerClass} ${toolBubbleClasses(role)}`}
         >
-          <Wrench className="h-3 w-3 shrink-0" />
+          <Wrench className={`${iconSizeClass} shrink-0`} />
           <span className="flex-1 truncate">{label}</span>
           {state === "pending" && route ? (
             <>
@@ -576,9 +761,9 @@ function ToolCallBubble({
                 disabled={acking}
                 title="Accept"
                 aria-label="Accept pending operation"
-                className="inline-flex items-center justify-center h-5 w-5 rounded bg-green-500/15 text-green-600 hover:bg-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className={`inline-flex items-center justify-center ${ackBtnSize} rounded bg-green-500/15 text-green-600 hover:bg-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
               >
-                {acking ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                {acking ? <Loader2 className={`${ackIconSize} animate-spin`} /> : <Check className={ackIconSize} />}
               </button>
               <button
                 type="button"
@@ -589,16 +774,16 @@ function ToolCallBubble({
                 disabled={acking}
                 title="Reject"
                 aria-label="Reject pending operation"
-                className="inline-flex items-center justify-center h-5 w-5 rounded text-muted-foreground hover:text-foreground hover:bg-foreground/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className={`inline-flex items-center justify-center ${ackBtnSize} rounded text-muted-foreground hover:text-foreground hover:bg-foreground/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
               >
-                <X className="h-3 w-3" />
+                <X className={ackIconSize} />
               </button>
             </>
           ) : (
             statusIcon
           )}
           <ChevronDown
-            className={`h-3 w-3 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+            className={`${iconSizeClass} shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
           />
         </div>
         {ackError && (
@@ -667,24 +852,36 @@ function ToolCallStatusBubble({
  *  Status reflects the audit lifecycle: pending (spinner), success
  *  (subtle dot), error (red x).
  */
-function EventPill({
+export function EventPill({
   name,
   status,
   align,
+  size = "sm",
 }: {
   name: string;
   status: "pending" | "success" | "error";
   align: string;
+  /** Visual density. ``sm`` (default) keeps the sidebar footnote
+   *  rhythm. ``lg`` matches the analytics group panel — same width
+   *  + text weight as the bulkier ToolCallBubble so an audit-only
+   *  event can sit in the message-row slot without shrinking. */
+  size?: "sm" | "lg";
 }) {
+  const isLg = size === "lg";
+  const wrapperClass = isLg
+    ? "max-w-full flex items-center gap-2.5 rounded-lg border border-dashed px-3 py-2.5 text-sm text-muted-foreground"
+    : "max-w-[85%] flex items-center gap-1.5 px-2 py-0.5 text-[11px] text-muted-foreground/80";
+  const spinnerSize = isLg ? "h-3.5 w-3.5" : "h-2.5 w-2.5";
+  const dotSize = isLg ? "h-2 w-2" : "h-1.5 w-1.5";
   return (
     <div className={`flex ${align}`}>
-      <div className="max-w-[85%] flex items-center gap-1.5 px-2 py-0.5 text-[11px] text-muted-foreground/80">
+      <div className={wrapperClass}>
         {status === "pending" ? (
-          <Loader2 className="h-2.5 w-2.5 shrink-0 animate-spin" />
+          <Loader2 className={`${spinnerSize} shrink-0 animate-spin`} />
         ) : status === "error" ? (
-          <XCircle className="h-2.5 w-2.5 shrink-0 text-destructive" />
+          <XCircle className={`${spinnerSize} shrink-0 text-destructive`} />
         ) : (
-          <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
+          <span className={`inline-block ${dotSize} shrink-0 rounded-full bg-muted-foreground/40`} />
         )}
         <span className="flex-1 truncate">{name}</span>
       </div>
@@ -695,7 +892,7 @@ function EventPill({
 /** Pick the visible label for a tool-call bubble. Prefer the registered
  *  tool's ``name`` (recognizable for tools the user configured), fall
  *  back to the title-cased operation when no tool envelope is set. */
-function bubbleLabel(
+export function bubbleLabel(
   tool: Record<string, unknown> | null | undefined,
   fallback: string | null,
 ): string {
@@ -1192,9 +1389,41 @@ export function GenerationPanel({
 
   // ---- Renderers ----
 
-  const renderHistoricalMessage = (msg: HistoricalMessage, i: number) => {
+  const renderHistoricalMessage = (
+    msg: HistoricalMessage,
+    i: number,
+    next: HistoricalMessage | undefined,
+  ) => {
     // Skip system/developer messages — they're prompt context, not conversation
     if (msg.role === "system" || msg.role === "developer") return null;
+
+    // Reasoning rows render as a borderless trace, never as a bubble.
+    // They only carry text_ids (no calls / media). One trace per text_id
+    // is correct: ``persist_run_message`` writes a single text upload
+    // per reasoning row in run_complete_impl. Duration is the gap
+    // between this row and the next non-reasoning row (the answer the
+    // model produced after thinking). ``null`` when the next row is
+    // missing or also a reasoning row (shouldn't happen, but guard).
+    if (msg.reasoning) {
+      const durationMs =
+        next && !next.reasoning && next.createdAt > 0 && msg.createdAt > 0
+          ? next.createdAt - msg.createdAt
+          : null;
+      return (
+        <React.Fragment key={`hist-${i}`}>
+          {msg.textIds.map((textId) => (
+            <LazyReasoning
+              key={`reason-${textId}`}
+              textId={textId}
+              artifactType={artifactType}
+              cached={textContent[textId]}
+              onLoaded={onTextLoaded}
+              durationMs={durationMs}
+            />
+          ))}
+        </React.Fragment>
+      );
+    }
 
     const parts: React.ReactNode[] = [];
     const hasToolCalls = msg.calls.length > 0;
@@ -1356,6 +1585,30 @@ export function GenerationPanel({
   };
 
   const renderLiveMessage = (msg: GenerateMessage, i: number) => {
+    if (msg.type === "reasoning") {
+      // Live trace: open by default while streaming, auto-collapse once
+      // the model emits ``.complete`` (we stamp ``reasoningCompletedAt``
+      // there). Label switches from "Thinking…" → "Thought for Xs" at
+      // the same boundary, using the real elapsed time from the first
+      // delta. Pulsing brain icon mirrors the open/in-flight state.
+      const started = msg.reasoningStartedAt ?? Date.now();
+      const completed = msg.reasoningCompletedAt;
+      const inFlight = completed === undefined;
+      const elapsedSec = Math.max(
+        1,
+        Math.round(((completed ?? Date.now()) - started) / 1000),
+      );
+      const label = inFlight ? "Thinking…" : `Thought for ${elapsedSec}s`;
+      return (
+        <ReasoningTrace
+          key={`live-${i}`}
+          text={msg.text}
+          label={label}
+          pulsing={inFlight}
+          defaultOpen={inFlight}
+        />
+      );
+    }
     if (msg.type === "tool") {
       const align = msg.role === "user" ? "justify-end" : "justify-start";
 
@@ -1576,7 +1829,9 @@ export function GenerationPanel({
             </div>
           ) : hasMessages ? (
             <div className="flex flex-1 flex-col gap-2 overflow-y-auto pl-3 pr-3 py-3">
-              {filteredHistoricalMessages.map((msg, i) => renderHistoricalMessage(msg, i))}
+              {filteredHistoricalMessages.map((msg, i) =>
+                renderHistoricalMessage(msg, i, filteredHistoricalMessages[i + 1]),
+              )}
               {filteredLiveMessages.map((msg, i) => renderLiveMessage(msg, i))}
               {isGenerating && (
                 <div className="flex justify-start">

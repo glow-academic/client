@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
 import { VoiceWaveform } from "./VoiceWaveform";
 import { useAudioWorklet } from "@/hooks/use-audio-worklet";
+import { useAttemptTranscribe } from "@/hooks/use-attempt-transcribe";
 
 const MAX_INPUT_CHARS = 5000;
 
@@ -48,11 +49,20 @@ export interface HybridInputProps {
 
   // Text input props
   copy_paste_allowed: boolean;
-  on_send_message: (message: string) => void;
+  /** Send a message; ``audios_id`` rides along when the body matches
+   *  an unedited mic transcription so the user-message row persists
+   *  the audio attachment for chat-bubble playback. */
+  on_send_message: (message: string, audios_id?: string) => void;
   on_stop_message: () => void;
   is_sending_message: boolean;
   is_stopping_message: boolean;
   on_height_change?: (height: number) => void;
+
+  // STT / mic-input props (one-shot transcribe path, distinct from the
+  // realtime voice-mode path below). Optional — when omitted, the mic
+  // button stays disabled.
+  attempt_id?: string | null;
+  group_id?: string | null;
 
   // Voice input props
   on_voice_start: () => Promise<void>;
@@ -85,6 +95,8 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
       is_sending_message,
       is_stopping_message,
       on_height_change,
+      attempt_id = null,
+      group_id = null,
       on_voice_start,
       on_voice_stop,
       on_mic_mute,
@@ -105,6 +117,33 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
     const [isStartingVoice, setIsStartingVoice] = useState(false);
     const [isStoppingVoice, setIsStoppingVoice] = useState(false);
     const [isMicMuted, setIsMicMuted] = useState(false);
+
+    // -- Mic / STT state machine ----------------------------------------------
+    // One-shot transcribe path that coexists with the realtime voice
+    // mode above. ``idle`` ⇄ ``recording`` ⇄ ``transcribing`` ⇄ ``idle``
+    // (with text + optional ``audioBackingId``). ``audioBackingId`` is
+    // dropped the moment the user diverges from the transcribed text.
+    type MicState = "idle" | "recording" | "transcribing";
+    const [micState, setMicState] = useState<MicState>("idle");
+    const [recordingSeconds, setRecordingSeconds] = useState(0);
+    const [transcribedText, setTranscribedText] = useState<string | null>(null);
+    const [audioBackingId, setAudioBackingId] = useState<string | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const mediaStreamRef = useRef<MediaStream | null>(null);
+    // Mirror the stream into state so the ``VoiceWaveform`` re-renders
+    // when capture starts / stops. The ref is the authoritative handle
+    // (cleanup, recorder access); the state is purely for the React
+    // tree to react to changes.
+    const [sttMediaStream, setSttMediaStream] = useState<MediaStream | null>(null);
+    const recordedChunksRef = useRef<Blob[]>([]);
+    const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const recordingStartedAtRef = useRef<number | null>(null);
+
+    const { transcribe } = useAttemptTranscribe({
+      chatId: current_chat?.id ?? null,
+      attemptId: attempt_id,
+      groupId: group_id,
+    });
 
     // AudioWorklet hook
     const {
@@ -202,15 +241,165 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
         if (!messageToSend || !current_chat || !is_connected) return;
         if (is_sending_message) return;
 
-        on_send_message(messageToSend);
+        // Ride-along audios_id when the body matches the transcribed
+        // text verbatim — the dirty-tracking effect (below) clears
+        // ``audioBackingId`` on any edit, so this is just the final
+        // gate.
+        const rideAlong =
+          audioBackingId && transcribedText === newMessage
+            ? audioBackingId
+            : undefined;
+        on_send_message(messageToSend, rideAlong);
         setNewMessage("");
+        setTranscribedText(null);
+        setAudioBackingId(null);
       },
-      [newMessage, current_chat, is_connected, is_sending_message, on_send_message]
+      [newMessage, current_chat, is_connected, is_sending_message, on_send_message, audioBackingId, transcribedText]
     );
 
     const handleStopMessage = useCallback(() => {
       on_stop_message();
     }, [on_stop_message]);
+
+    // --- STT (one-shot mic transcribe) handlers ----------------------------
+    // Dirty-tracking: drop ``audioBackingId`` the moment the user
+    // diverges from the transcribed text. Strict equality is the
+    // simplest reliable signal — typed text = no audio rides along.
+    useEffect(() => {
+      if (audioBackingId === null) return;
+      if (transcribedText !== null && newMessage !== transcribedText) {
+        setAudioBackingId(null);
+        setTranscribedText(null);
+      }
+    }, [newMessage, transcribedText, audioBackingId]);
+
+    const stopRecordingTimer = useCallback(() => {
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    }, []);
+
+    const cleanupSttMediaStream = useCallback(() => {
+      if (mediaStreamRef.current) {
+        for (const track of mediaStreamRef.current.getTracks()) track.stop();
+        mediaStreamRef.current = null;
+      }
+      mediaRecorderRef.current = null;
+      recordedChunksRef.current = [];
+      setSttMediaStream(null);
+    }, []);
+
+    useEffect(() => {
+      return () => {
+        stopRecordingTimer();
+        cleanupSttMediaStream();
+      };
+    }, [stopRecordingTimer, cleanupSttMediaStream]);
+
+    const handleStartRecording = useCallback(async () => {
+      if (!current_chat?.id) {
+        toast.error("No active chat — cannot record");
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaStreamRef.current = stream;
+        setSttMediaStream(stream);
+        const recorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = recorder;
+        recordedChunksRef.current = [];
+        recorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) recordedChunksRef.current.push(e.data);
+        };
+        recorder.start();
+        recordingStartedAtRef.current = Date.now();
+        setRecordingSeconds(0);
+        recordingTimerRef.current = setInterval(() => {
+          const startedAt = recordingStartedAtRef.current;
+          if (startedAt === null) return;
+          setRecordingSeconds(Math.floor((Date.now() - startedAt) / 1000));
+        }, 250);
+        setMicState("recording");
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Microphone access denied";
+        toast.error(msg);
+        cleanupSttMediaStream();
+      }
+    }, [current_chat?.id, cleanupSttMediaStream]);
+
+    const handleStopRecording = useCallback(async () => {
+      const recorder = mediaRecorderRef.current;
+      if (!recorder) {
+        setMicState("idle");
+        stopRecordingTimer();
+        cleanupSttMediaStream();
+        return;
+      }
+      const finalBlob = await new Promise<Blob | null>((resolve) => {
+        recorder.onstop = () => {
+          if (recordedChunksRef.current.length === 0) {
+            resolve(null);
+            return;
+          }
+          resolve(
+            new Blob(recordedChunksRef.current, {
+              type: recorder.mimeType || "audio/webm",
+            }),
+          );
+        };
+        try {
+          recorder.stop();
+        } catch {
+          resolve(null);
+        }
+      });
+      stopRecordingTimer();
+      // NOTE: stream cleanup happens in the ``finally`` below — kept
+      // alive across the transcribe phase so the live waveform
+      // continues to render until we have a result. The recorder is
+      // already stopped above, but the underlying ``MediaStream`` is
+      // independent and will keep producing analyser frames.
+
+      if (!finalBlob || finalBlob.size === 0) {
+        toast.error("Recording produced no audio");
+        cleanupSttMediaStream();
+        setMicState("idle");
+        return;
+      }
+      // Timer stays visible (frozen at recording duration) through the
+      // transcribe phase — per design, "left side stays timer during
+      // upload + transcribe". Right-side button switches to spinner.
+      setMicState("transcribing");
+      try {
+        const { text, audios_id } = await transcribe(finalBlob);
+        if (!text) {
+          toast.error("Transcription returned no text");
+          setMicState("idle");
+          return;
+        }
+        setNewMessage(text);
+        setTranscribedText(text);
+        setAudioBackingId(audios_id);
+        setMicState("idle");
+        requestAnimationFrame(() => textareaRef.current?.focus());
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Transcription failed";
+        toast.error(msg);
+        setMicState("idle");
+      } finally {
+        // Release the mic once we have (or have failed to get) the
+        // transcript — keeps the waveform live the whole time without
+        // leaking the device after we're done.
+        cleanupSttMediaStream();
+      }
+    }, [transcribe, stopRecordingTimer, cleanupSttMediaStream]);
+
+    const formatRecordingTime = (totalSeconds: number): string => {
+      const m = Math.floor(totalSeconds / 60);
+      const s = totalSeconds % 60;
+      return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    };
 
     // --- Effects ---
 
@@ -322,8 +511,12 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
           className="px-2 pb-1.5 pt-0 flex flex-col min-h-0 md:h-full md:border-t md:justify-end"
         >
           <div className="w-full flex items-end gap-2 shrink-0">
-            {/* Voice toggle button - LEFT side, show when audio enabled and voice mode OFF */}
-            {audio_enabled && !is_voice_mode_enabled && (
+            {/* Voice toggle button - LEFT side. Hidden during STT
+                recording / transcribing — the STT timer (below) takes
+                its slot so the left edge stays one button wide. */}
+            {audio_enabled &&
+              !is_voice_mode_enabled &&
+              micState === "idle" && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -386,6 +579,28 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
               </Tooltip>
             )}
 
+            {/* LEFT-side STT recording timer. Occupies the same
+                40×40 slot the voice-toggle would, so the layout never
+                shifts when the user switches between idle and
+                recording. Frozen at recording duration once we cross
+                into ``transcribing`` — a marker that the input is
+                carrying audio. Compact tabular-nums fit MM:SS in the
+                square; for >99 minutes we'd grow, but recordings are
+                short by design. */}
+            {(micState === "recording" || micState === "transcribing") && (
+              <motion.div
+                layout
+                key="stt-rec-timer"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="min-h-[40px] h-[40px] w-[40px] rounded-md border border-destructive/40 bg-destructive/10 text-destructive flex items-center justify-center font-mono text-[10px] leading-none tabular-nums shrink-0"
+                data-testid="attempt-stt-timer"
+              >
+                {formatRecordingTime(recordingSeconds)}
+              </motion.div>
+            )}
+
             {/* CENTER - Waveform OR Textarea */}
             <div className="flex-1 relative min-h-[40px] max-h-32 flex items-center">
               {is_voice_mode_enabled && !is_mic_muted ? (
@@ -393,6 +608,28 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
                 <div className="w-full h-[40px] rounded-md border border-input bg-background px-3 py-2 flex items-center justify-center ring-offset-background overflow-hidden">
                   <VoiceWaveform
                     media_stream={user_media_stream}
+                    className="w-full h-full"
+                  />
+                </div>
+              ) : micState === "recording" || micState === "transcribing" ? (
+                // STT one-shot recording/transcribing — same waveform
+                // component the realtime path uses.
+                //
+                // During ``recording`` we pass the live mic stream so
+                // ``VoiceWaveform`` analyses real audio. During
+                // ``transcribing`` we deliberately pass ``null`` —
+                // the recorder is stopped, the user isn't speaking,
+                // and the analyser-backed render would draw flat 2px
+                // silence bars that look indistinguishable from "no
+                // waveform." Passing ``null`` flips ``VoiceWaveform``
+                // into its synthetic-pulse branch (a center-weighted
+                // sine animation), which reads as "still processing"
+                // rather than "frozen / dead."
+                <div className="w-full h-[40px] rounded-md border border-input bg-background px-3 py-2 flex items-center justify-center ring-offset-background overflow-hidden">
+                  <VoiceWaveform
+                    media_stream={
+                      micState === "recording" ? sttMediaStream : null
+                    }
                     className="w-full h-full"
                   />
                 </div>
@@ -542,14 +779,115 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
                     </TooltipContent>
                   </Tooltip>
                 </motion.div>
+              ) : micState === "recording" && !is_voice_mode_enabled ? (
+                /* STT recording — stop button ends the recording and
+                   kicks off upload + transcribe. Coexists with voice
+                   mode (which uses ``handleVoiceStop``); never both. */
+                <motion.div
+                  layout
+                  key="stt-stop-btn"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                >
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        className="min-h-[40px] h-[40px] px-3"
+                        variant="destructive"
+                        onClick={handleStopRecording}
+                        data-testid="attempt-stt-stop"
+                      >
+                        <Square className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Stop recording</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </motion.div>
+              ) : micState === "transcribing" && !is_voice_mode_enabled ? (
+                <motion.div
+                  layout
+                  key="stt-transcribe-spinner"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                >
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        className="min-h-[40px] h-[40px] px-3"
+                        variant="default"
+                        disabled
+                        data-testid="attempt-stt-transcribing"
+                      >
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Transcribing…</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </motion.div>
+              ) : text_enabled &&
+                !showDisabledTextForVoice &&
+                !hasTextMessage &&
+                !is_voice_mode_enabled ? (
+                /* Empty text input + not in realtime voice mode →
+                   STT mic button. Replaces the previously-disabled
+                   send. Pressing kicks off MediaRecorder → upload →
+                   transcribe via the canonical generate route. */
+                <motion.div
+                  layout
+                  key="stt-mic-btn"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                >
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        className="min-h-[40px] h-[40px] px-3"
+                        variant="default"
+                        disabled={disabled || !is_connected || !current_chat?.id}
+                        onClick={handleStartRecording}
+                        data-testid="attempt-stt-mic-button"
+                      >
+                        <Mic className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {!is_connected
+                          ? "Initializing (0/1)"
+                          : !current_chat?.id
+                            ? "No active chat"
+                            : "Record audio"}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </motion.div>
               ) : text_enabled && !showDisabledTextForVoice ? (
-                /* Send button when text is enabled */
+                // Send button when text is enabled. When the body is
+                // still backed by an unedited mic transcription, a
+                // small dot in the top-right indicates the audio will
+                // ride along on send. Hovering reveals an X-overlay
+                // that lets the user detach it (keeps the text,
+                // drops ``audioBackingId``). Pattern mirrors the
+                // "Suggested" dot in Departments.tsx but with a
+                // removable affordance — same scale, subtle, but
+                // clear it's interactive.
                 <motion.div
                   layout
                   key="send-btn"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.5 }}
+                  className="relative group"
                 >
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -570,6 +908,29 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
                       </TooltipContent>
                     )}
                   </Tooltip>
+                  {audioBackingId && transcribedText === newMessage && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label="Detach audio attachment"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setAudioBackingId(null);
+                            setTranscribedText(null);
+                          }}
+                          className="absolute -top-1 -right-1 z-10 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-background flex items-center justify-center transition-all hover:h-4 hover:w-4 hover:bg-destructive cursor-pointer group/audio-dot"
+                          data-testid="attempt-audio-attached-dot"
+                        >
+                          <X className="h-2 w-2 text-background opacity-0 group-hover/audio-dot:opacity-100 transition-opacity" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p>Audio attached — click to detach</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                 </motion.div>
               ) : null}
             </div>
