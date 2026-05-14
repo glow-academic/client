@@ -140,6 +140,20 @@ export function MessagesView({
   const prevChatIdRef = useRef<string | null>(null);
   const targetChatId = chat_id || current_chat?.id;
 
+  // --- Voice-mode auto-play -------------------------------------------
+  // A voice-mode assistant turn lands with an ``audios_id`` (TTS asset
+  // linked via ``attempt_audio_entry``). We auto-play the latest such
+  // message when it arrives live — but never replay history. On the
+  // first effect run every already-present ``audios_id`` is marked
+  // played, so only audio that appears AFTER mount triggers playback;
+  // re-renders stay idempotent via the played-set. If the browser
+  // blocks autoplay (no media engagement, or the WS message arrived
+  // outside the send-gesture window), ``.play()`` rejects silently and
+  // the visible ``<audio controls>`` stays for a manual click.
+  const audioElsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const playedAudioRef = useRef<Set<string>>(new Set());
+  const didInitAudioRef = useRef(false);
+
   // Branch selection state: parentId -> selected child message id
   const [branchSelections, setBranchSelections] = useState<Map<string, string>>(new Map());
 
@@ -414,6 +428,27 @@ export function MessagesView({
 
     return visible;
   }, [sortedMessages, hasBranching, childrenByParent, branchSelections, fork_at_message_id]);
+
+  // Auto-play the latest assistant audio when it arrives live (see the
+  // ref declarations above for the full rationale).
+  useEffect(() => {
+    const audioIds: string[] = [];
+    for (const m of visibleMessages) {
+      const aid = (m as unknown as { audios_id?: string | null }).audios_id;
+      if (m.type !== "query" && aid) audioIds.push(aid);
+    }
+    if (!didInitAudioRef.current) {
+      didInitAudioRef.current = true;
+      audioIds.forEach((id) => playedAudioRef.current.add(id));
+      return;
+    }
+    const latest = audioIds[audioIds.length - 1];
+    if (!latest || playedAudioRef.current.has(latest)) return;
+    playedAudioRef.current.add(latest);
+    void audioElsRef.current.get(latest)?.play().catch(() => {
+      // Autoplay blocked — the <audio controls> stays for a manual click.
+    });
+  }, [visibleMessages]);
 
   // Helper: get sibling navigation info for a message
   const getSiblingInfo = (message: MessageData) => {
@@ -960,6 +995,10 @@ export function MessagesView({
                             className={`flex ${isQuery ? "justify-end" : "justify-start"} max-w-[95%] md:max-w-[80%] ${isQuery ? "ml-auto" : "mr-auto"}`}
                           >
                             <audio
+                              ref={(el) => {
+                                if (el) audioElsRef.current.set(audiosId, el);
+                                else audioElsRef.current.delete(audiosId);
+                              }}
                               src={`/api/attempt/audio/${audiosId}`}
                               controls
                               preload="none"
