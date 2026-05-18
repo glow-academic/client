@@ -7,7 +7,7 @@
 
 set -e
 
-REPO="learnloopllc/glow-api"
+REPO="glow-academic/api"
 API_DIR="api"
 
 mkdir -p "$API_DIR"

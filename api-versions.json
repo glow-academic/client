@@ -1,6 +1,9 @@
 {
-  "glow-api": {
-    "version": "2.15.36",
-    "synced_at": "2026-05-13T18:55:39Z"
+  "_comment": "Cross-repo compatibility manifest. Each release of this client repo embeds these constraints into the published compat.json asset so the CLI can refuse incompatible combinations before deploy.",
+  "api": {
+    "min_version": "1.0.0"
+  },
+  "cli": {
+    "min_version": "1.0.0"
   }
 }

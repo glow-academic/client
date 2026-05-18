@@ -127,7 +127,7 @@ server {
         proxy_http_version 1.1;
     }
 
-    # Keycloak auth proxy — needed for Login with LearnLoop (airgapped API).
+    # Keycloak auth proxy — needed for OIDC login in airgapped topology.
     # Routes through API's nginx which handles blue/green Keycloak routing.
     # GLOW_NGINX is the API's nginx alias on the shared deployment network.
     location ^~ /auth/ {
