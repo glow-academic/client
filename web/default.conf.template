@@ -1,0 +1,175 @@
+resolver 127.0.0.11 valid=10s ipv6=off;
+
+map "${ACTIVE_ENV}" $app_backend {
+    "green"   app-green:3000;
+    default   app-blue:3000;
+}
+
+# Preserve upstream proto (Traefik sets X-Forwarded-Proto: https).
+# If no upstream header, fall back to this hop's $scheme.
+map $http_x_forwarded_proto $forwarded_proto {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}
+
+server {
+    listen 80;
+    server_name _;
+
+    # MCP proxy — forwards to Glow server's MCP endpoint.
+    # Works for airgapped deployments where only the client is public.
+    # MCP_BACKEND is set by docker-compose (defaults to server nginx).
+    location = /mcp {
+        set $mcp_backend "${MCP_BACKEND}";
+        proxy_pass         http://$mcp_backend/mcp/;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $forwarded_proto;
+
+        # SSE support for MCP streaming
+        proxy_buffering    off;
+        proxy_cache        off;
+        proxy_read_timeout 3600;
+        proxy_send_timeout 3600;
+    }
+
+    # MCP sub-paths (/.well-known, /mcp/sse, etc.)
+    location ^~ /mcp/ {
+        set $mcp_backend "${MCP_BACKEND}";
+        proxy_pass         http://$mcp_backend;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $forwarded_proto;
+
+        proxy_buffering    off;
+        proxy_cache        off;
+        proxy_read_timeout 3600;
+        proxy_send_timeout 3600;
+    }
+
+    # MCP OAuth discovery (must be at root per RFC 8414)
+    location = /.well-known/oauth-authorization-server {
+        set $mcp_backend "${MCP_BACKEND}";
+        proxy_pass http://$mcp_backend;
+        proxy_set_header Host $host;
+    }
+
+    location = /.well-known/oauth-protected-resource {
+        set $mcp_backend "${MCP_BACKEND}";
+        proxy_pass http://$mcp_backend;
+        proxy_set_header Host $host;
+    }
+
+    # OIDC proxy — forward auth endpoints to Glow API (airgapped).
+    # The API is the OIDC provider; the client needs these for login.
+    location = /.well-known/openid-configuration {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass http://$api_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    }
+
+    location = /authorize {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass http://$api_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    }
+
+    location = /token {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass http://$api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    }
+
+    location = /userinfo {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass http://$api_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    }
+
+    location = /jwks {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass http://$api_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    }
+
+    location = /logout {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass http://$api_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    }
+
+    # OIDC callback — Keycloak redirects here after authentication
+    location = /oidc-callback {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass http://$api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    }
+
+    # Auto-signin route — must be BEFORE /auth/ to avoid Keycloak proxy match
+    location = /auth/signin {
+        set $backend $app_backend;
+        proxy_pass http://$backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_http_version 1.1;
+    }
+
+    # Keycloak auth proxy — needed for OIDC login in airgapped topology.
+    # Routes through API's nginx which handles blue/green Keycloak routing.
+    # GLOW_NGINX is the API's nginx alias on the shared deployment network.
+    location ^~ /auth/ {
+        set $kc_backend "${GLOW_NGINX}";
+        proxy_pass         http://$kc_backend;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto https;
+        proxy_set_header   X-Forwarded-Host  $host;
+        proxy_redirect     off;
+        # Keycloak responses can have large headers (cookies, tokens)
+        proxy_buffer_size        128k;
+        proxy_buffers            4 256k;
+        proxy_busy_buffers_size  256k;
+    }
+
+    # WebSocket proxy — Socket.IO for real-time features (airgapped API)
+    location ^~ /socket.io/ {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass         http://$api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade           $http_upgrade;
+        proxy_set_header   Connection        "upgrade";
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $forwarded_proto;
+        proxy_buffering    off;
+    }
+
+    # Client app — everything else
+    location / {
+        set $backend $app_backend;
+        proxy_pass http://$backend;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade    $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}

@@ -1,0 +1,163 @@
+name: Pipeline
+
+on:
+  push:
+    branches: [main, beta]
+  pull_request:
+    branches: [main, beta]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # ── Stage 1: Test ───────────────────────────────────────────
+  test:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install
+
+      - name: Build
+        env:
+          NEXT_PUBLIC_API_URL: https://example.com
+        run: bun run build
+
+  # ── Stage 2: Release ────────────────────────────────────────
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    if: |
+      always() &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      github.event_name != 'pull_request'
+    outputs:
+      released: ${{ steps.check.outputs.released }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          BRANCH="${{ github.ref_name }}"
+          if [ "$BRANCH" = "beta" ]; then
+            TAG="v${VERSION}-beta"
+          else
+            TAG="v${VERSION}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Validate version
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
+            echo "::error::version must be semver (got '$VERSION')"
+            exit 1
+          fi
+
+      - name: Check if release exists
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          if gh release view "$TAG" &>/dev/null; then
+            echo "Release $TAG already exists — skipping build"
+            echo "released=false" >> $GITHUB_OUTPUT
+          else
+            echo "Release $TAG not found — will build"
+            echo "released=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create tag (idempotent)
+        if: steps.check.outputs.released == 'true'
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          if git ls-remote --tags origin "refs/tags/$TAG" | grep -q .; then
+            echo "Tag $TAG already exists — skipping"
+          else
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi
+
+      - uses: docker/login-action@v4
+        if: steps.check.outputs.released == 'true'
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push client
+        if: steps.check.outputs.released == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.tag }}
+          tags: |
+            ${{ env.REGISTRY }}/glow-academic/client:${{ steps.version.outputs.tag }}
+            ${{ env.REGISTRY }}/glow-academic/client:${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/glow-academic/client
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate compat.json
+        if: steps.check.outputs.released == 'true'
+        # Published alongside every release and consumed by the CLI to
+        # refuse incompatible combinations before a deploy.
+        # Shape: {component, version, requires: {<sibling>: {min_version}}}.
+        # Source of truth for the `requires` map is api-versions.json in
+        # this repo's root — edit there to bump the floor.
+        run: |
+          python3 -c "
+          import json, os
+          compat = {
+              'component': 'client',
+              'version': '${{ steps.version.outputs.version }}',
+              'requires': {},
+          }
+          if os.path.exists('api-versions.json'):
+              with open('api-versions.json') as f:
+                  pins = json.load(f)
+              for sibling, entry in pins.items():
+                  if sibling.startswith('_'):
+                      continue
+                  if isinstance(entry, dict) and 'min_version' in entry:
+                      compat['requires'][sibling] = {'min_version': entry['min_version']}
+          with open('compat.json', 'w') as f:
+              json.dump(compat, f, indent=2)
+          print('compat.json:', json.dumps(compat, indent=2))
+          "
+
+      - name: Create release
+        if: steps.check.outputs.released == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          PRERELEASE=""
+          if [ "${{ github.ref_name }}" = "beta" ]; then
+            PRERELEASE="--prerelease"
+          fi
+          gh release create "$TAG" compat.json \
+            --title "$TAG" \
+            --generate-notes $PRERELEASE
+          echo "Created release $TAG"

@@ -1,0 +1,283 @@
+/**
+ * Fields.tsx
+ * Resource component for field selection
+ * Uses SelectableGrid for field selection with search/filter support
+ * Manages field_ids array and reports to parent
+ */
+
+"use client";
+
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { Check, X } from "lucide-react";
+import { useCallback, useMemo } from "react";
+
+export interface FieldResourceItem {
+  field_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  conditional_parameter_ids?: string[] | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
+}
+
+export interface FieldItem {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface FieldsProps {
+  field_ids?: string[]; // Current field resource IDs (standardized prop name)
+  field_resources?: FieldResourceItem[]; // Selected field resources (each includes generated field)
+  show_fields?: boolean; // Whether to show this resource picker
+  fields?: FieldResourceItem[]; // All available fields from API (each includes generated and suggested fields)
+  parameterIdFilter?: string | null; // Only show fields with this parameter_id
+  disabled?: boolean; // Based on can_edit flag
+  onChange: (ids: string[]) => void; // Update field_ids in form state
+  label?: string;
+  id?: string;
+  required?: boolean;
+  placeholder?: string;
+  description?: string;
+  searchTerm?: string; // Search term for filtering fields
+  showSelectedFilter?: boolean; // Whether to show only selected fields
+  // Legacy props for backward compatibility
+  fieldIds?: string[];
+}
+
+export function Fields({
+  field_ids,
+  field_resources: _field_resources,
+  show_fields = false,
+  fields,
+  parameterIdFilter,
+  disabled = false,
+  onChange,
+  label = "Fields",
+  id = "fields",
+  required = false,
+  placeholder: _placeholder = "Select fields...",
+  description,
+  searchTerm = "",
+  showSelectedFilter = false,
+  // Legacy props for backward compatibility
+  fieldIds,
+}: FieldsProps) {
+  // Use standardized props with fallback to legacy props
+  const ids = useMemo(() => field_ids ?? fieldIds ?? [], [field_ids, fieldIds]);
+  const show = show_fields ?? false;
+  const allFieldsMemo = useMemo(() => fields ?? [], [fields]);
+
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return allFieldsMemo.filter((f) => f.pending && f.field_id);
+  }, [allFieldsMemo]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((f) => f.field_id).filter(Boolean) as string[]),
+    [pendingItems]
+  );
+
+  // Convert fields array to FieldItem format for SelectableGrid
+  const fieldItems = useMemo(() => {
+    return allFieldsMemo
+      .filter((f) => f.field_id && f.name) // Filter out nulls
+      .filter((f) => {
+        // Apply parameter_id filter if provided
+        if (parameterIdFilter) {
+          return f.conditional_parameter_ids?.includes(parameterIdFilter) ?? false;
+        }
+        return true;
+      })
+      .map((f) => ({
+        id: f.field_id!,
+        name: f.name!,
+        ...(f.description && { description: f.description }),
+      }));
+  }, [allFieldsMemo, parameterIdFilter]);
+
+  // Filter fields based on search term
+  const filteredFields = useMemo(() => {
+    let filtered = fieldItems;
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter((field) => {
+        const searchText =
+          `${field.name} ${field.description || ""}`.toLowerCase();
+        return searchText.includes(searchLower);
+      });
+    }
+
+    // Apply show selected filter
+    if (showSelectedFilter) {
+      filtered = filtered.filter((field) => ids.includes(field.id));
+    }
+
+    return filtered;
+  }, [fieldItems, searchTerm, showSelectedFilter, ids]);
+
+  // Check if a field is suggested (derived from item.suggested field)
+  const isSuggested = useCallback(
+    (fieldId: string) => {
+      const field = allFieldsMemo.find((f) => f.field_id === fieldId);
+      return field?.suggested === true;
+    },
+    [allFieldsMemo]
+  );
+
+  const handleSelect = useCallback(
+    (fieldId: string) => {
+      const isSelected = ids.includes(fieldId);
+      const newIds = isSelected
+        ? ids.filter((id) => id !== fieldId)
+        : [...ids, fieldId];
+
+      // Update parent state
+      onChange(newIds);
+    },
+    [ids, onChange]
+  );
+
+  // Accept pending — keep pending fields in selection (no-op, already included)
+  const handleAccept = useCallback(() => {
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+  }, []);
+
+  // Reject pending — remove pending fields from selection
+  const handleReject = useCallback(() => {
+    const newIds = ids.filter((id) => !pendingIds.has(id));
+    onChange(newIds);
+  }, [ids, pendingIds, onChange]);
+
+  // Don't render if show_fields is false (AFTER all hooks)
+  if (!show) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-2 min-w-0 w-full">
+      {label && (
+        <div className="flex items-center gap-2">
+          <Label htmlFor={id} className="flex items-center gap-1">
+            {label}
+            {required && <span className="text-destructive">*</span>}
+            {description && (
+              <span className="text-xs text-muted-foreground ml-2">
+                {description}
+              </span>
+            )}
+          </Label>
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
+      )}
+      <SelectableGrid<FieldItem>
+        items={filteredFields}
+        selectedId={null}
+        selectedIds={ids}
+        onSelect={handleSelect}
+        getId={(item) => item.id}
+        renderItem={(item, isSelected) => {
+          const isPending = pendingIds.has(item.id);
+
+          return (
+            <div
+              className={cn(
+                "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && !isPending && "ring-2 ring-primary bg-accent",
+                isPending && "ring-2 ring-success bg-success/10",
+              )}
+            >
+              {/* Check icon - top right */}
+              {isSelected && !isPending && (
+                <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3 w-3 text-primary-foreground" />
+                </div>
+              )}
+
+              {/* Pending badge - top right */}
+              {isPending && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </div>
+              )}
+
+              {/* Suggested dot indicator - top right */}
+              {isSuggested(item.id) && !isSelected && !isPending && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Suggested</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <h3 className="font-medium text-sm leading-tight truncate pr-16">{item.name}</h3>
+                {item.description && (
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    {item.description}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        }}
+        emptyMessage="No fields found."
+        disabled={disabled}
+        horizontal
+      />
+    </div>
+  );
+}

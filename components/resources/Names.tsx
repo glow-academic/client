@@ -1,0 +1,345 @@
+/**
+ * Names.tsx
+ * Resource component for name input fields
+ * Header-style input with accept/reject for pending changes
+ * Pure UI component that reports value changes upward via onNameChange
+ */
+
+"use client";
+
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Check, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+export interface NameResourceItem {
+  id?: string | null;
+  name?: string | null;
+  generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
+}
+
+export interface NamesProps {
+  name_id?: string | null; // Current name_id (standardized prop name)
+  name_resource?: NameResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
+  show_name?: boolean; // Whether to show this resource picker
+  names?: NameResourceItem[]; // Array of name suggestion objects (for autocomplete)
+  disabled?: boolean; // Based on can_edit flag
+  onNameIdChange: (nameId: string | null) => void; // Update name_id in parent form state
+  placeholder?: string;
+  required?: boolean;
+  id?: string;
+  "data-testid"?: string;
+  defaultName?: string; // Default name value (for header style - reverts to this on blur if empty)
+  hideDescription?: boolean; // Hide the "Click to edit" description text (useful when parent provides description)
+  onNameChange?: (name: string) => void; // Report value changes upward
+  /** When false, skip automatic resource creation (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Per-field pending lifecycle. Called when the user clicks Accept on
+   *  the pending diff. Parent should remove ``pendingId`` from
+   *  ``pending_ids`` (so the connection is promoted to active=true) and
+   *  set ``name_id`` to ``pendingId``. */
+  onAcceptPending?: (pendingId: string) => void;
+  /** Called when the user clicks Reject. Parent should remove
+   *  ``pendingId`` from ``pending_ids`` AND set ``name_id`` to null. */
+  onRejectPending?: (pendingId: string) => void;
+}
+
+export function Names({
+  _name_id,
+  name_resource,
+  show_name = true,
+  names,
+  disabled = false,
+  onNameIdChange,
+  placeholder = "Enter name",
+  required = false,
+  id = "name",
+  "data-testid": dataTestId,
+  defaultName,
+  hideDescription = false,
+  onNameChange,
+  isAutosaveEnabled = true,
+  onAcceptPending,
+  onRejectPending,
+}: NamesProps) {
+  const resource = name_resource ?? null;
+  const show = show_name ?? true;
+  const namesArray = useMemo(() => names ?? [], [names]);
+
+  // Pending state: current resource has pending=true (soft draft, awaiting acceptance)
+  const isPending = resource?.pending === true;
+  const showDiff = isPending;
+
+  // Handle nullable resource properties
+  const resourceName = resource?.name ?? null;
+  const initialValue = resourceName || defaultName || "";
+  const [internalValue, setInternalValue] = useState(initialValue);
+
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedValueRef = useRef<string>(initialValue);
+  const isInitialMountRef = useRef(true);
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Dirty flag: once the user interacts, stop syncing from server data so we don't
+  // clobber their input (same pattern as Descriptions.tsx).
+  const isDirtyRef = useRef(false);
+
+  // Convert suggested names to name strings for autocomplete
+  const suggestionNames = useMemo(() => {
+    if (namesArray.length > 0) {
+      return namesArray
+        .filter((n) => n.suggested && n.name && n.name.trim() !== "")
+        .map((n) => n.name!);
+    }
+    return [];
+  }, [namesArray]);
+
+  // Ghost autocomplete: find first prefix match and compute the untyped suffix
+  const ghostMatch = useMemo(() => {
+    const trimmed = internalValue.trim();
+    if (!trimmed) return null;
+    const valueLower = trimmed.toLowerCase();
+    return suggestionNames.find((s) => {
+      const sLower = s.toLowerCase();
+      return sLower.startsWith(valueLower) && sLower !== valueLower;
+    }) ?? null;
+  }, [suggestionNames, internalValue]);
+
+  const ghostSuffix = ghostMatch ? ghostMatch.slice(internalValue.length) : "";
+
+  // Update internal value when name_resource changes. Skip while the user is
+  // actively editing (isDirtyRef=true) so we don't clobber their input.
+  useEffect(() => {
+    if (isDirtyRef.current) return;
+    if (resourceName) {
+      if (internalValue !== resourceName) {
+        setInternalValue(resourceName);
+      }
+      lastSavedValueRef.current = resourceName;
+    } else if (defaultName && !resourceName) {
+      if (internalValue !== defaultName) {
+        setInternalValue(defaultName);
+      }
+      lastSavedValueRef.current = defaultName;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resourceName, defaultName]);
+
+  // Track and report pending changes (for manual save mode only)
+  useEffect(() => {
+    // Only report pending changes when autosave is disabled
+    // When autosave is enabled, Persona.tsx handles the "saving" state directly
+    if (isAutosaveEnabled) {
+      return;
+    }
+
+    // Skip on initial mount
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+
+    const hasPendingChanges = internalValue !== lastSavedValueRef.current;
+    if (hasPendingChanges) {
+      // Notify save context that there are unsaved changes
+      window.dispatchEvent(
+        new CustomEvent("unsaved-changes", { detail: { hasChanges: true } })
+      );
+    }
+  }, [internalValue, isAutosaveEnabled]);
+
+  const handleChange = useCallback((newValue: string) => {
+    setInternalValue(newValue);
+    isDirtyRef.current = newValue !== lastSavedValueRef.current;
+    onNameChange?.(newValue);
+  }, [onNameChange]);
+
+  const handleFocus = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      // If value equals defaultName, select all text on focus
+      if (defaultName && e.target.value === defaultName) {
+        e.target.select();
+      }
+    },
+    [defaultName]
+  );
+
+  const handleBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      // If empty on blur and defaultName exists, revert to defaultName
+      if (defaultName && (!e.target.value || e.target.value.trim() === "")) {
+        setInternalValue(defaultName);
+        lastSavedValueRef.current = defaultName;
+      }
+    },
+    [defaultName]
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Tab" && ghostSuffix && ghostMatch) {
+        e.preventDefault();
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        setInternalValue(ghostMatch);
+        lastSavedValueRef.current = ghostMatch;
+        isDirtyRef.current = false;
+
+        const matchedName = namesArray.find(
+          (n) => n.name?.toLowerCase() === ghostMatch.toLowerCase()
+        );
+        if (matchedName?.id) {
+          onNameIdChange(matchedName.id);
+        }
+      }
+    },
+    [ghostSuffix, ghostMatch, namesArray, onNameIdChange]
+  );
+
+  // Accept pending — confirm the pending resource as the active selection.
+  // Use the parent's accept hook when available so it can remove
+  // ``resource.id`` from ``pending_ids`` (the pending lifecycle bookkeeping)
+  // alongside the id swap. Falls back to the plain id-change path for
+  // legacy callers that don't supply the hook.
+  const handleAccept = useCallback(() => {
+    if (!resource?.id) return;
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    const text = resource.name || "";
+    setInternalValue(text);
+    lastSavedValueRef.current = text;
+    isDirtyRef.current = false;
+    if (onAcceptPending) {
+      onAcceptPending(resource.id);
+    } else {
+      onNameIdChange(resource.id);
+    }
+  }, [resource, onAcceptPending, onNameIdChange]);
+
+  // Reject pending — drop the pending resource from form state. Same
+  // hook-vs-fallback structure as Accept above.
+  const handleReject = useCallback(() => {
+    const pendingId = resource?.id;
+    if (onRejectPending && pendingId) {
+      onRejectPending(pendingId);
+    } else {
+      onNameIdChange(null);
+    }
+  }, [resource, onRejectPending, onNameIdChange]);
+
+  // Don't render if show_name is false (AFTER all hooks)
+  if (!show) {
+    return null;
+  }
+
+  // Get the display value for sizing
+  // When input has value, measure that; otherwise measure defaultName, then
+  // placeholder, so the grid column never collapses to ~1ch and visibly clips
+  // the placeholder text (e.g. "Enter name" → "Er").
+  const displayValue =
+    internalValue || defaultName || placeholder || "Enter name";
+
+  // Pending name for diff display
+  const pendingName = resource?.name || "";
+
+  return (
+    <div className="flex-1 items-end">
+      <div className="flex items-end gap-1">
+        {showDiff ? (
+          // Diff view: show current name with strikethrough and AI suggestion
+          <div className="flex items-baseline gap-2 px-2 py-0.5">
+            <span className="text-2xl font-semibold text-destructive line-through opacity-70">
+              {internalValue || defaultName || "Untitled"}
+            </span>
+            <span className="text-2xl font-semibold text-success">
+              {pendingName}
+            </span>
+          </div>
+        ) : (
+          <div className="relative inline-grid grid-cols-[max-content] items-center">
+            <span
+              aria-hidden="true"
+              className="col-start-1 row-start-1 invisible whitespace-pre text-2xl font-semibold px-2 py-0.5"
+            >
+              {(internalValue || "") + ghostSuffix || displayValue || "\u00A0"}
+            </span>
+            <input
+              ref={inputRef}
+              type="text"
+              id={id}
+              data-testid={dataTestId}
+              value={internalValue || ""}
+              onChange={(e) => handleChange(e.target.value)}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder || defaultName || "Enter name"}
+              required={required}
+              disabled={disabled}
+              size={1}
+              className="col-start-1 row-start-1 w-full min-w-0 text-2xl font-semibold border-none outline-none bg-transparent px-2 py-0.5 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+            />
+            {ghostSuffix && !disabled && (
+              <span
+                aria-hidden="true"
+                className="col-start-1 row-start-1 pointer-events-none whitespace-pre text-2xl font-semibold px-2 py-0.5"
+              >
+                <span className="invisible">{internalValue}</span>
+                <span className="text-muted-foreground/40">{ghostSuffix}</span>
+              </span>
+            )}
+          </div>
+        )}
+        {showDiff && (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-success hover:text-success"
+                    onClick={handleAccept}
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Accept</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
+        )}
+      </div>
+      {!hideDescription && (
+        <p className="text-xs text-muted-foreground mt-1 px-2">
+          {internalValue === defaultName || !internalValue
+            ? "Click to edit"
+            : "Click to edit"}
+        </p>
+      )}
+    </div>
+  );
+}

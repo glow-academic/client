@@ -1,0 +1,371 @@
+/**
+ * app/(main)/intelligence/providers/[providerId]/page.tsx
+ * Provider edit page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
+ * @AshokSaravanan222 & @siladiea
+ * 06/08/2025
+ */
+
+import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
+import Provider from "@/components/artifacts/provider/Provider";
+import { DraftProviderClient } from "@/contexts/draft-context";
+
+import { api } from "@/lib/api/client";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
+
+import { buildSnapshot } from "@/lib/auth";
+
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
+/** ---- Strong types from OpenAPI ---- */
+type GetProviderIn = InputOf<"/provider/get", "post">;
+type GetProviderOut = OutputOf<"/provider/get", "post">;
+type CreateProviderIn = InputOf<"/provider/create", "post">;
+type CreateProviderOut = OutputOf<"/provider/create", "post">;
+type UpdateProviderIn = InputOf<"/provider/update", "post">;
+type UpdateProviderOut = OutputOf<"/provider/update", "post">;
+type PatchProviderDraftIn = InputOf<"/provider/draft", "post">;
+type PatchProviderDraftOut = OutputOf<"/provider/draft", "post">;
+type GroupProviderIn = InputOf<"/provider/group", "post">;
+type GroupProviderOut = OutputOf<"/provider/group", "post">;
+type ProblemProviderIn = InputOf<"/provider/problem", "post">;
+type ProblemProviderOut = OutputOf<"/provider/problem", "post">;
+type ContextIn = InputOf<"/provider/context", "post">;
+type ContextOut = OutputOf<"/provider/context", "post">;
+type DecryptProviderIn = InputOf<"/provider/decrypt", "post">;
+type DecryptProviderOut = OutputOf<"/provider/decrypt", "post">;
+
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
+ */
+const getProvider = async (
+  input: GetProviderIn
+): Promise<GetProviderOut> => {
+  return api.post("/provider/get", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+    signal: AbortSignal.timeout(30000), // 30 second timeout
+  });
+};
+
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+async function createProvider(
+  input: CreateProviderIn
+): Promise<CreateProviderOut> {
+  "use server";
+  return api.post("/provider/create", input);
+}
+
+async function updateProvider(
+  input: UpdateProviderIn
+): Promise<UpdateProviderOut> {
+  "use server";
+  return api.post("/provider/update", input);
+}
+
+async function patchProviderDraft(
+  input: PatchProviderDraftIn
+): Promise<PatchProviderDraftOut> {
+  "use server";
+  return api.post("/provider/draft", input);
+}
+
+
+async function getProviderGroupHistory(groupId: string): Promise<GroupProviderOut> {
+  "use server";
+  return api.post("/provider/group", { body: { group_id: groupId } } as GroupProviderIn);
+}
+
+type GenerationsIn = InputOf<"/provider/generations", "post">;
+type GenerationsOut = OutputOf<"/provider/generations", "post">;
+
+async function searchProviderGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/provider/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createProviderProblem(input: ProblemProviderIn): Promise<ProblemProviderOut> {
+  "use server";
+  return api.post("/provider/problem", input);
+}
+
+/** Per-item export — scopes to a single ``provider_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportProviderById(providerId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/provider/export", {
+    body: { provider_id: providerId },
+  } as unknown as InputOf<"/provider/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshProvider(): Promise<unknown> {
+  "use server";
+  return api.post("/provider/refresh", {
+    body: {},
+  } as unknown as InputOf<"/provider/refresh", "post">);
+}
+
+async function decryptProvider(input: DecryptProviderIn): Promise<DecryptProviderOut> {
+  "use server";
+  return api.post("/provider/decrypt", input);
+}
+
+/** ---- GenerationPanel server actions ---- */
+async function getProviderGroup(input: GroupProviderIn): Promise<GroupProviderOut> {
+  "use server";
+  return api.post("/provider/group", input);
+}
+
+async function searchProviderGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/provider/generations", input);
+}
+
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getProviderContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/provider/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
+
+/** ---- Page metadata ---- */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ providerId: string }>;
+}): Promise<Metadata> {
+  try {
+    const { providerId } = await params;
+    const context = await getProviderContextById(providerId);
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Providers" };
+  }
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
+
+/** ---- Server renders client with typed data (read-only, mutations in child components) ---- */
+export default async function EditProviderPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ providerId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const { providerId } = await params;
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Parse search params using nuqs
+  const paramsObj = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(paramsObj).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Inline server-side parsers for provider search params
+  const providerSearchParams = {
+    draftId: parseAsString,
+    descriptionSearch: parseAsString,
+    valueSearch: parseAsString,
+    endpointSearch: parseAsString,
+    keySearch: parseAsString,
+    departmentShowSelected: parseAsBoolean,
+    valueShowSelected: parseAsBoolean,
+    endpointShowSelected: parseAsBoolean,
+    keyShowSelected: parseAsBoolean,
+    groupId: parseAsString,
+    groupSearch: parseAsString,
+  };
+  const loadProviderSearchParams = createLoader(providerSearchParams);
+  const q = loadProviderSearchParams(searchParamsObj);
+
+  // Fetch data for edit mode (always fresh - source of truth) with draft_id
+  try {
+    const input = {
+      body: {
+        id: providerId,
+        draft_id: q.draftId ?? null,
+        descriptions: q.descriptionSearch
+          ? { search: q.descriptionSearch ?? undefined }
+          : undefined,
+        departments: q.departmentShowSelected
+          ? { selected: q.departmentShowSelected ?? undefined }
+          : undefined,
+        values: q.valueSearch || q.valueShowSelected
+          ? {
+              search: q.valueSearch ?? undefined,
+              selected: q.valueShowSelected ?? undefined,
+            }
+          : undefined,
+        endpoints: q.endpointSearch || q.endpointShowSelected
+          ? {
+              search: q.endpointSearch ?? undefined,
+              selected: q.endpointShowSelected ?? undefined,
+            }
+          : undefined,
+        keys: q.keySearch || q.keyShowSelected
+          ? {
+              search: q.keySearch ?? undefined,
+              selected: q.keyShowSelected ?? undefined,
+            }
+          : undefined,
+      },
+    } as GetProviderIn;
+    const [providerDetail, context, draftsResult, groupResult] = await Promise.all([
+      getProvider(input).catch(() => null),
+      getProviderContextById(providerId) as Promise<ContextOut>,
+      api.post("/provider/drafts", { body: {} } as any),
+      api.post(
+        "/provider/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupProviderIn,
+      ),
+    ]);
+
+    if (!providerDetail) {
+      throw new Error("Provider not found");
+    }
+
+    const snapshot = buildSnapshot(session, context.profile);
+    const entityName = context.page_metadata?.detail.title ?? "Provider";
+
+    return (
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
+        <FullPageLayout
+          {...({
+            profileData: context.profile,
+            sessionSnapshot: snapshot,
+            initialSidebarOpen,
+            initialPanelOpen,
+            sidebarProps: {
+              activeSection: "provider",
+              createFeedback: createProviderProblem,
+            },
+            breadcrumbs: [
+              { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+              { title: "Providers", section: "providers", url: "/intelligence/providers" },
+              { title: entityName },
+            ],
+            toolbar: (
+              <ArtifactToolbarActions
+                leftSlot={<SaveToolbar />}
+                exportAction={exportProviderById.bind(null, providerId)}
+                refreshAction={refreshProvider}
+                bffDownloadPrefix="/api/provider/download"
+              />
+            ),
+            panelProps: {
+              artifactType: "provider",
+              initialPanelPrefs: await readGenerationPanelPrefs(),
+              groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
+              groupName:
+                (groupResult as GroupProviderOut & { name?: string | null })?.name ?? null,
+              operations: ["draft", "get", "title"],
+              getGroupHistory: getProviderGroupHistory,
+              searchGroups: searchProviderGroups,
+              prompts: context.prompts?.prompts,
+              getGroupAction: getProviderGroup as PanelProps["getGroupAction"],
+              searchGenerationsAction:
+                searchProviderGenerations as PanelProps["searchGenerationsAction"],
+            },
+          } as any)}
+        >
+          <div
+            className="space-y-6 px-4"
+            data-page="provider-edit"
+            data-provider-id={providerId}
+          >
+            <Provider
+              providerId={providerId}
+              providerData={providerDetail}
+              createProviderAction={createProvider}
+              updateProviderAction={updateProvider}
+              patchProviderDraftAction={patchProviderDraft}
+              decryptProviderKeyAction={decryptProvider}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error
+    ) {
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/intelligence/providers/${providerId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="provider"
+            redirectPath="/intelligence/providers"
+          />
+        );
+      }
+    }
+    // Re-throw other errors
+    throw error;
+  }
+}
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type {
+  GetProviderIn,
+  GetProviderOut,
+  PatchProviderDraftIn,
+  PatchProviderDraftOut,
+  CreateProviderIn,
+  CreateProviderOut,
+  UpdateProviderIn,
+  UpdateProviderOut,
+};

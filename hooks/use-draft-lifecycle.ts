@@ -1,0 +1,323 @@
+import {
+  type MutableRefObject,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { toast } from "sonner";
+
+interface PatchResult {
+  draft_id?: string | null;
+}
+
+/**
+ * Manages the complete draft autosave lifecycle:
+ * - draftId tracking from GenericForm URL state
+ * - Deduplication via draftPatchKey
+ * - Debounced autosave effect (1s)
+ * - beforeunload warning for unsaved changes
+ * - unsaved-changes event emission
+ * - flushAllAndSave for manual save via Save toolbar
+ * - trigger-save listener from layout
+ */
+export function useDraftLifecycle(config: {
+  /** JSON.stringify of form state (WITHOUT draftId) — changes trigger autosave */
+  formStateKey: string;
+  /** Ref to the server action for patching drafts */
+  patchActionRef: MutableRefObject<
+    ((payload: Record<string, unknown>) => Promise<PatchResult>) | undefined
+  >;
+  isAutosaveEnabled: boolean;
+  /** Build the patch payload. Append-only callers send full state and ignore args; legacy callers use draftId/flushResults. */
+  buildPatchPayload: (
+    draftId: string | null,
+    flushResults?: Record<string, unknown>
+  ) => Record<string, unknown>;
+  setSelectedDraftId: (id: string | null) => void;
+  /** Whether the form has any resource IDs at all (gate for patching) */
+  hasResourceIds: boolean;
+  flushRegistryRef: MutableRefObject<
+    Map<string, () => Promise<Record<string, unknown> | void>>
+  >;
+  formStateRef: MutableRefObject<Record<string, unknown>>;
+  /** @deprecated No longer needed for append-only drafts. Kept for backward compat during migration. */
+  onPatchSuccess?: () => void;
+}) {
+  const {
+    formStateKey,
+    patchActionRef,
+    isAutosaveEnabled,
+    buildPatchPayload,
+    setSelectedDraftId,
+    hasResourceIds,
+    flushRegistryRef,
+    formStateRef,
+    onPatchSuccess,
+  } = config;
+
+  // --- draftId from GenericForm URL state ---
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const setUrlFormDataRef = useRef<
+    | null
+    | ((
+        updates: Record<string, unknown>,
+        options?: { shallow?: boolean; history?: "push" | "replace"; scroll?: boolean },
+      ) => void)
+  >(null);
+  const formDataRef = useRef<Record<string, unknown>>({});
+
+  // Track last synced draftId to prevent redundant profile context updates
+  const lastSyncedDraftIdRef = useRef<string | null>(null);
+
+  // Server sync flag: when true, the next draftPatchKey change resets baseline instead of saving
+  const serverSyncPendingRef = useRef(false);
+
+  const onFormDataChange = useCallback(
+    (fd: Record<string, unknown>) => {
+      formDataRef.current = fd;
+      const nextDraftId = (fd["draftId"] as string | undefined) ?? null;
+      setDraftId((prev) => {
+        return prev === nextDraftId ? prev : nextDraftId;
+      });
+
+      if (nextDraftId !== lastSyncedDraftIdRef.current) {
+        lastSyncedDraftIdRef.current = nextDraftId;
+        setSelectedDraftId(nextDraftId);
+      }
+    },
+    [setSelectedDraftId]
+  );
+
+  // --- dedup key ---
+  // formStateKey alone drives dedup — draftId is excluded because append-only saves
+  // produce a new draftId on every save, which would trigger an infinite loop.
+  // If formState hasn't changed, there's nothing to save regardless of draftId.
+  const draftPatchKey = formStateKey;
+
+  // Initialize to current formStateKey so the dedup check skips the initial state
+  // without needing a separate isFirstPatchRef flag
+  const lastPatchedKeyRef = useRef<string | null>(formStateKey);
+  const hasPendingChangesRef = useRef(false);
+
+  // --- Debounced autosave effect ---
+  useEffect(() => {
+    // If a prior render dispatched "saving" and scheduled a timer, the effect
+    // cleanup above cleared it. Any early-return path below must clear the
+    // indicator, otherwise it stays stuck forever (e.g. hasResourceIds flips
+    // back to false after a server-sync absorb, or serverSyncPending consumes).
+    const clearPendingSaveIndicator = () => {
+      if (hasPendingChangesRef.current) {
+        hasPendingChangesRef.current = false;
+        window.dispatchEvent(
+          new CustomEvent("save-status-change", {
+            detail: { status: "idle" },
+          }),
+        );
+        window.dispatchEvent(
+          new CustomEvent("unsaved-changes", {
+            detail: { hasChanges: false },
+          }),
+        );
+      }
+    };
+
+    if (!hasResourceIds || !patchActionRef.current) {
+      clearPendingSaveIndicator();
+      return;
+    }
+
+    if (serverSyncPendingRef.current) {
+      serverSyncPendingRef.current = false;
+      lastPatchedKeyRef.current = draftPatchKey;
+      clearPendingSaveIndicator();
+      return;
+    }
+
+    if (lastPatchedKeyRef.current === draftPatchKey) {
+      clearPendingSaveIndicator();
+      return;
+    }
+
+    hasPendingChangesRef.current = true;
+
+    if (!isAutosaveEnabled) {
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent("save-status-change", { detail: { status: "saving" } })
+    );
+
+    const timer = setTimeout(async () => {
+      try {
+        if (!patchActionRef.current) return;
+
+        const payload = buildPatchPayload(draftId);
+        const result = await patchActionRef.current(payload);
+
+        lastPatchedKeyRef.current = draftPatchKey;
+
+        if (!draftId && result.draft_id) {
+          toast.success("Draft created", {
+            description: "Your changes are being auto-saved",
+          });
+          setUrlFormDataRef.current?.({ draftId: result.draft_id });
+        } else if (result.draft_id && result.draft_id !== draftId) {
+          setUrlFormDataRef.current?.({ draftId: result.draft_id });
+        }
+
+        hasPendingChangesRef.current = false;
+        onPatchSuccess?.();
+
+        window.dispatchEvent(
+          new CustomEvent("save-status-change", {
+            detail: { status: "idle" },
+          })
+        );
+        window.dispatchEvent(
+          new CustomEvent("unsaved-changes", {
+            detail: { hasChanges: false },
+          })
+        );
+      } catch {
+        toast.error("Failed to save draft", {
+          description:
+            "Your changes may not have been saved. Please try again.",
+        });
+        window.dispatchEvent(
+          new CustomEvent("save-status-change", {
+            detail: { status: "error" },
+          })
+        );
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftPatchKey, isAutosaveEnabled]);
+
+  // --- beforeunload warning ---
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasPendingChangesRef.current) {
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes.";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () =>
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
+  // --- unsaved-changes event ---
+  useEffect(() => {
+    if (serverSyncPendingRef.current) {
+      window.dispatchEvent(
+        new CustomEvent("unsaved-changes", { detail: { hasChanges: false } })
+      );
+      return;
+    }
+    const hasChanges =
+      lastPatchedKeyRef.current !== null &&
+      lastPatchedKeyRef.current !== draftPatchKey;
+    window.dispatchEvent(
+      new CustomEvent("unsaved-changes", { detail: { hasChanges } })
+    );
+  }, [draftPatchKey]);
+
+  // --- flushAllAndSave (manual save) ---
+  const flushAllAndSave = useCallback(
+    async (): Promise<string | null> => {
+      const startTime = Date.now();
+      const MIN_SAVING_DURATION = 1000;
+
+      window.dispatchEvent(
+        new CustomEvent("save-status-change", {
+          detail: { status: "saving" },
+        })
+      );
+
+      let resolvedDraftId: string | null = draftId || null;
+
+      try {
+        // 1. Flush all creatable resources
+        const flushPromises = Array.from(
+          flushRegistryRef.current.values()
+        ).map((flush) => flush());
+        const flushResults = await Promise.all(flushPromises);
+
+        const mergedFlushResults = flushResults.reduce<
+          Record<string, unknown>
+        >((acc, result) => (result ? { ...acc, ...result } : acc), {});
+
+        // 2. Patch draft
+        let isNewDraft = false;
+        if (patchActionRef.current) {
+          const payload = buildPatchPayload(draftId, mergedFlushResults);
+          const result = await patchActionRef.current(payload);
+
+          lastPatchedKeyRef.current = draftPatchKey;
+
+          if (!draftId && result.draft_id) {
+            setUrlFormDataRef.current?.({ draftId: result.draft_id });
+            isNewDraft = true;
+          }
+          resolvedDraftId = result.draft_id || draftId || null;
+        }
+
+        // 3. Ensure minimum display duration
+        const elapsed = Date.now() - startTime;
+        if (elapsed < MIN_SAVING_DURATION) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, MIN_SAVING_DURATION - elapsed)
+          );
+        }
+
+        window.dispatchEvent(
+          new CustomEvent("save-status-change", {
+            detail: { status: "idle" },
+          })
+        );
+        window.dispatchEvent(
+          new CustomEvent("unsaved-changes", {
+            detail: { hasChanges: false },
+          })
+        );
+
+        hasPendingChangesRef.current = false;
+        onPatchSuccess?.();
+        toast.success(isNewDraft ? "Draft created" : "Draft saved");
+        return resolvedDraftId;
+      } catch {
+        window.dispatchEvent(
+          new CustomEvent("save-status-change", {
+            detail: { status: "error" },
+          })
+        );
+        toast.error("Failed to save draft");
+        return resolvedDraftId;
+      }
+    },
+    [draftId, draftPatchKey, buildPatchPayload, flushRegistryRef, patchActionRef]
+  );
+
+  // --- trigger-save listener ---
+  useEffect(() => {
+    const handleTriggerSave = () => {
+      flushAllAndSave();
+    };
+    window.addEventListener("trigger-save", handleTriggerSave);
+    return () =>
+      window.removeEventListener("trigger-save", handleTriggerSave);
+  }, [flushAllAndSave]);
+
+  return {
+    draftId,
+    setUrlFormDataRef,
+    onFormDataChange,
+    flushAllAndSave,
+    serverSyncPendingRef,
+    formDataRef,
+  };
+}

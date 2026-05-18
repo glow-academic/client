@@ -1,0 +1,1039 @@
+/**
+ * Roles.tsx
+ * Resource component for role selection
+ * Uses SelectableGrid for grid card layout (like Cohorts.tsx)
+ */
+
+"use client";
+
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
+import {
+  PROFILE_ROLES,
+  generateGradientFromHex,
+} from "@/components/common/forms/profile-roles";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { ROLE_ICON_MAP, ROLE_ICON_NAMES } from "@/utils/role-icons";
+import { Check, Pencil, Plus, User, X } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+
+export interface RolesResourceItem {
+  id?: string | null;
+  role?: string | null;
+  name?: string | null;
+  description?: string | null;
+  icon_value?: string | null;
+  color_hex?: string | null;
+  selected?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
+  generated?: boolean | null;
+}
+
+export interface RolesProps {
+  role?: string | null;
+  role_options?: string[];
+  roles?: RolesResourceItem[];
+  show_roles?: boolean;
+  disabled?: boolean;
+  editable?: boolean;
+  multiSelect?: boolean;
+  role_ids?: string[];
+  onRoleChange: (roleId: string) => void;
+  onRolesChange?: (ids: string[]) => void;
+  label?: string;
+  id?: string;
+  required?: boolean;
+  searchTerm?: string;
+  showSelectedFilter?: boolean;
+  emptyMessage?: string;
+  onRoleResourceChange?: (
+    roleId: string,
+    updates: {
+      name: string;
+      description: string;
+      icon_value: string;
+      color_hex: string;
+    }
+  ) => void;
+  /** Permission catalog for the inline-create editor. */
+  permissions?: PermissionCatalogItem[];
+  /** Request-limit catalog (advisory; users can also type custom intervals). */
+  request_limits_catalog?: RequestLimitCatalogItem[];
+  /**
+   * Called when the user finishes creating a new role inline. Shape matches
+   * `ProfileRoleDraftValue` on the server. The parent should stash this on
+   * formState (e.g. role_draft) and ship it with the next save/draft patch.
+   */
+  onCreateRoleDraft?: (draft: {
+    name: string;
+    description: string;
+    icon_value: string;
+    color_hex: string;
+    level: number;
+    permission_ids: string[];
+    request_limits: RoleRequestLimitDraft[];
+  }) => void;
+}
+
+type RoleItem = {
+  id: string;
+  name: string;
+  description: string;
+  iconValue: string;
+  icon: typeof User;
+  color: string;
+};
+
+export type RoleRequestLimitDraft = {
+  /** null = inline-create on save; otherwise re-link existing limit. */
+  id: string | null;
+  limit: number;
+  /** Postgres interval string — '1 day', '30 minutes', '2 hours', etc. */
+  interval: string;
+};
+
+export type RoleDraft = {
+  name: string;
+  description: string;
+  iconValue: string;
+  color: string;
+  level: number;
+  permission_ids: string[];
+  request_limits: RoleRequestLimitDraft[];
+};
+
+export interface PermissionCatalogItem {
+  id: string;
+  artifact: string;
+  operation: string;
+  name?: string | null;
+  description?: string | null;
+}
+
+export interface RequestLimitCatalogItem {
+  id: string;
+  limit: number;
+  interval: string;
+}
+
+type IconOption = {
+  id: RoleIconKey;
+  label: string;
+};
+
+type RoleIconKey = keyof typeof ROLE_ICON_MAP;
+
+const formatIconLabel = (iconName: string) =>
+  iconName.replace(/([A-Z])/g, " $1").trim();
+
+const ICON_OPTIONS: IconOption[] = ROLE_ICON_NAMES.map((iconName) => ({
+  id: iconName as RoleIconKey,
+  label: formatIconLabel(iconName),
+}));
+
+const normalizeHex = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+};
+
+const getIconKeyFromComponent = (icon: RoleItem["icon"]) => {
+  const entry = Object.entries(ROLE_ICON_MAP).find(
+    ([, IconComponent]) => IconComponent === icon
+  );
+  return entry?.[0] ?? "User";
+};
+
+const getRoleIconKey = (value?: string | null): RoleIconKey => {
+  if (value && value in ROLE_ICON_MAP) {
+    return value as RoleIconKey;
+  }
+  return "User";
+};
+
+const getRoleIconComponent = (value?: string | null) =>
+  ROLE_ICON_MAP[getRoleIconKey(value)] ?? ROLE_ICON_MAP.User;
+
+function RoleEditor({
+  draft,
+  onChange,
+  iconOptions,
+  colorSwatches,
+  disabled,
+  permissions,
+}: {
+  draft: RoleDraft;
+  onChange: (next: RoleDraft) => void;
+  iconOptions: IconOption[];
+  colorSwatches: string[];
+  disabled?: boolean;
+  permissions?: PermissionCatalogItem[];
+}) {
+  const currentIcon = draft.iconValue || "User";
+
+  const permissionsByArtifact = useMemo(() => {
+    const map = new Map<string, PermissionCatalogItem[]>();
+    for (const p of permissions ?? []) {
+      if (!p.artifact || !p.id) continue;
+      const list = map.get(p.artifact) ?? [];
+      list.push(p);
+      map.set(p.artifact, list);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => (a.operation ?? "").localeCompare(b.operation ?? ""));
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [permissions]);
+
+  const selectedPermissionIds = useMemo(
+    () => new Set(draft.permission_ids ?? []),
+    [draft.permission_ids],
+  );
+
+  const togglePermission = useCallback(
+    (permId: string) => {
+      const next = new Set(selectedPermissionIds);
+      if (next.has(permId)) next.delete(permId);
+      else next.add(permId);
+      onChange({ ...draft, permission_ids: Array.from(next) });
+    },
+    [draft, onChange, selectedPermissionIds],
+  );
+
+  const toggleArtifact = useCallback(
+    (artifact: string) => {
+      const list = permissionsByArtifact.find(([a]) => a === artifact)?.[1] ?? [];
+      const ids = list.map((p) => p.id);
+      const allOn = ids.every((id) => selectedPermissionIds.has(id));
+      const next = new Set(selectedPermissionIds);
+      if (allOn) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      onChange({ ...draft, permission_ids: Array.from(next) });
+    },
+    [draft, onChange, permissionsByArtifact, selectedPermissionIds],
+  );
+
+  const updateRequestLimit = useCallback(
+    (index: number, patch: Partial<RoleRequestLimitDraft>) => {
+      const next = (draft.request_limits ?? []).map((rl, i) =>
+        i === index ? { ...rl, ...patch } : rl,
+      );
+      onChange({ ...draft, request_limits: next });
+    },
+    [draft, onChange],
+  );
+
+  const addRequestLimit = useCallback(() => {
+    onChange({
+      ...draft,
+      request_limits: [
+        ...(draft.request_limits ?? []),
+        { id: null, limit: 100, interval: "1 day" },
+      ],
+    });
+  }, [draft, onChange]);
+
+  const removeRequestLimit = useCallback(
+    (index: number) => {
+      const next = (draft.request_limits ?? []).filter((_, i) => i !== index);
+      onChange({ ...draft, request_limits: next });
+    },
+    [draft, onChange],
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-2">
+        <Input
+          value={draft.name}
+          onChange={(event) =>
+            onChange({ ...draft, name: event.target.value })
+          }
+          placeholder="Role name"
+          className="h-8"
+          disabled={disabled}
+        />
+        <Textarea
+          value={draft.description}
+          onChange={(event) =>
+            onChange({ ...draft, description: event.target.value })
+          }
+          placeholder="Role description"
+          className="min-h-[60px] text-sm"
+          disabled={disabled}
+        />
+      </div>
+      <div className="grid gap-2">
+        <div className="flex items-center gap-2">
+          <GenericPicker<IconOption>
+            items={iconOptions}
+            selectedIds={currentIcon ? [currentIcon] : []}
+            onSelect={(ids) => {
+              const nextIcon = ids[0] ?? "User";
+              onChange({ ...draft, iconValue: nextIcon });
+            }}
+            getId={(item) => item.id}
+            getLabel={(item) => item.label}
+            renderItem={(item) => {
+              const IconComponent =
+                ROLE_ICON_MAP[item.id] ?? ROLE_ICON_MAP.User;
+              return (
+                <div className="flex items-center gap-2">
+                  <IconComponent className="h-4 w-4 text-muted-foreground" />
+                  <span>{item.label}</span>
+                </div>
+              );
+            }}
+            placeholder="Icon"
+            searchPlaceholder="Search icons..."
+            showLabel={false}
+            compact={true}
+            buttonClassName="h-8"
+            disabled={!!disabled}
+          />
+          <div className="flex items-center gap-2">
+            <div
+              className="h-7 w-7 rounded-md border"
+              style={{
+                background:
+                  normalizeHex(draft.color) || "var(--muted-foreground)",
+              }}
+            />
+            <Input
+              value={draft.color}
+              onChange={(event) =>
+                onChange({ ...draft, color: event.target.value })
+              }
+              placeholder="#64748b"
+              className="h-8 w-[120px]"
+              disabled={disabled}
+            />
+          </div>
+        </div>
+        {colorSwatches.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {colorSwatches.map((hex) => (
+              <button
+                key={hex}
+                type="button"
+                className={cn(
+                  "h-5 w-5 rounded-full border",
+                  normalizeHex(draft.color).toLowerCase() ===
+                    normalizeHex(hex).toLowerCase() && "ring-2 ring-primary"
+                )}
+                style={{ background: hex }}
+                onClick={() => onChange({ ...draft, color: hex })}
+                disabled={disabled}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-1.5 pt-1 border-t">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+          Level
+        </Label>
+        <Input
+          type="number"
+          value={draft.level}
+          min={0}
+          max={99}
+          onChange={(event) => {
+            const next = Number.parseInt(event.target.value, 10);
+            onChange({
+              ...draft,
+              level: Number.isFinite(next) ? next : 99,
+            });
+          }}
+          className="h-8 w-24"
+          disabled={disabled}
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Lower number = more privileged (0 = Super Administrator).
+        </p>
+      </div>
+
+      <div className="space-y-2 pt-1 border-t">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Permissions ({selectedPermissionIds.size})
+          </Label>
+        </div>
+        {permissionsByArtifact.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            No permission catalog available.
+          </p>
+        ) : (
+          <div className="max-h-[280px] overflow-y-auto space-y-1 pr-1">
+            {permissionsByArtifact.map(([artifact, perms]) => {
+              const allOn = perms.every((p) =>
+                selectedPermissionIds.has(p.id),
+              );
+              const someOn = perms.some((p) =>
+                selectedPermissionIds.has(p.id),
+              );
+              return (
+                <details
+                  key={artifact}
+                  className="rounded border bg-muted/20 px-2 py-1"
+                >
+                  <summary className="flex items-center justify-between cursor-pointer text-xs">
+                    <span className="font-medium">
+                      {artifact}{" "}
+                      <span className="text-muted-foreground">
+                        ({perms.filter((p) => selectedPermissionIds.has(p.id)).length}/{perms.length})
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      className={cn(
+                        "text-[11px] underline",
+                        allOn ? "text-destructive" : "text-primary",
+                      )}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleArtifact(artifact);
+                      }}
+                      disabled={disabled}
+                    >
+                      {allOn ? "clear all" : someOn ? "select all" : "select all"}
+                    </button>
+                  </summary>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-1 pt-2">
+                    {perms.map((p) => (
+                      <label
+                        key={p.id}
+                        className="flex items-center gap-1.5 text-xs cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedPermissionIds.has(p.id)}
+                          onChange={() => togglePermission(p.id)}
+                          disabled={disabled}
+                        />
+                        <span className="truncate">{p.operation}</span>
+                      </label>
+                    ))}
+                  </div>
+                </details>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-2 pt-1 border-t">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Request Limits
+          </Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7"
+            disabled={disabled}
+            onClick={addRequestLimit}
+          >
+            <Plus className="h-3 w-3 mr-1" /> Add limit
+          </Button>
+        </div>
+        {(draft.request_limits ?? []).length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            No request limits. New role will have no rate limiting.
+          </p>
+        ) : (
+          <div className="space-y-1.5">
+            {(draft.request_limits ?? []).map((rl, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={1}
+                  value={rl.limit}
+                  onChange={(e) => {
+                    const next = Number.parseInt(e.target.value, 10);
+                    updateRequestLimit(idx, {
+                      limit: Number.isFinite(next) ? next : 1,
+                    });
+                  }}
+                  className="h-8 w-24"
+                  disabled={disabled}
+                />
+                <span className="text-xs text-muted-foreground">per</span>
+                <Input
+                  value={rl.interval}
+                  onChange={(e) =>
+                    updateRequestLimit(idx, { interval: e.target.value })
+                  }
+                  placeholder="1 day"
+                  className="h-8 flex-1"
+                  disabled={disabled}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive"
+                  onClick={() => removeRequestLimit(idx)}
+                  disabled={disabled}
+                  title="Remove"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+            <p className="text-[11px] text-muted-foreground">
+              Interval accepts Postgres durations: <code>1 day</code>,{" "}
+              <code>30 minutes</code>, <code>2 hours</code>, <code>1 week</code>,
+              etc.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function Roles({
+  role,
+  role_options,
+  roles,
+  show_roles = true,
+  disabled = false,
+  editable = true,
+  multiSelect = false,
+  role_ids,
+  onRoleChange,
+  onRolesChange,
+  label = "Role",
+  id = "role",
+  required = true,
+  searchTerm = "",
+  showSelectedFilter = false,
+  emptyMessage = "No roles found. Try adjusting your search.",
+  onRoleResourceChange,
+  permissions,
+  request_limits_catalog: _request_limits_catalog,
+  onCreateRoleDraft,
+}: RolesProps) {
+  // Pending state: items with pending=true from soft draft connections
+  const pendingItems = useMemo(() => {
+    return (roles ?? []).filter((r) => r.pending && (r.id ?? r.role));
+  }, [roles]);
+  const showDiff = pendingItems.length > 0;
+  const pendingIds = useMemo(
+    () =>
+      new Set(
+        pendingItems
+          .map((r) => (r.id ?? r.role) as string)
+          .filter(Boolean)
+      ),
+    [pendingItems]
+  );
+
+  const [roleOverrides, setRoleOverrides] = useState<
+    Record<string, RoleDraft>
+  >({});
+  const [localRoles, setLocalRoles] = useState<RoleItem[]>([]);
+  const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
+  const [editingDraft, setEditingDraft] = useState<RoleDraft | null>(null);
+  const [isAddingCustomRole, setIsAddingCustomRole] = useState(false);
+  const [newCustomDraft, setNewCustomDraft] = useState<RoleDraft>({
+    name: "",
+    description: "",
+    iconValue: "User",
+    color: "#64748b",
+    level: 99,
+    permission_ids: [],
+    request_limits: [],
+  });
+
+  const baseRoles = useMemo(() => {
+    const roleResources =
+      roles
+        ?.filter((r) => r.role || r.id)
+        .map((r) => {
+          const iconKey = getRoleIconKey(r.icon_value);
+          const IconComponent = getRoleIconComponent(iconKey);
+
+          return {
+            id: (r.id ?? r.role ?? r.name) as string,
+            name: r.name ?? r.role ?? "Role",
+            description: r.description ?? "",
+            iconValue: iconKey,
+            icon: IconComponent,
+            color: r.color_hex ?? "#64748b",
+          } as RoleItem;
+        }) ?? [];
+
+    if (roleResources.length > 0) {
+      return roleResources;
+    }
+
+    return PROFILE_ROLES.map((r) => ({
+      id: r.id,
+      name: r.name,
+      description: r.description ?? "",
+      iconValue: getIconKeyFromComponent(r.icon),
+      icon: r.icon,
+      color: r.color,
+    }));
+  }, [roles, multiSelect]);
+
+  const availableRoles = useMemo(() => {
+    const roleSet = new Set<string>();
+    const merged: RoleItem[] = [];
+    const allowAll = !role_options || role_options.length === 0;
+    const allowRole = (roleId: string) =>
+      allowAll || role_options?.includes(roleId);
+    const addRole = (item: RoleItem) => {
+      if (!allowRole(item.id)) return;
+      if (roleSet.has(item.id)) return;
+      roleSet.add(item.id);
+      merged.push(item);
+    };
+
+    baseRoles.forEach(addRole);
+    localRoles.forEach(addRole);
+
+    return merged.map((item) => {
+      const override = roleOverrides[item.id];
+      if (!override) return item;
+      const iconKey = getRoleIconKey(override.iconValue || item.iconValue);
+      const IconComponent = getRoleIconComponent(iconKey);
+      return {
+        ...item,
+        name: override.name || item.name,
+        description: override.description || item.description,
+        iconValue: iconKey,
+        icon: IconComponent,
+        color: normalizeHex(override.color) || item.color,
+      };
+    });
+  }, [baseRoles, localRoles, role_options, roleOverrides]);
+
+  const colorSwatches = useMemo(() => {
+    const colors = new Set<string>();
+    PROFILE_ROLES.forEach((r) => colors.add(r.color));
+    baseRoles.forEach((r) => colors.add(r.color));
+    localRoles.forEach((r) => colors.add(r.color));
+    return Array.from(colors);
+  }, [baseRoles, localRoles]);
+
+  const canAddCustomRole = useMemo(() => {
+    if (disabled) return false;
+    if (role_options && role_options.length > 0) {
+      return role_options.includes("custom");
+    }
+    return true;
+  }, [disabled, role_options]);
+
+  const hasCustomRole = useMemo(
+    () => availableRoles.some((r) => r.id === "custom"),
+    [availableRoles]
+  );
+
+  const defaultCustomRole = useMemo<RoleDraft>(() => {
+    const baseCustom = PROFILE_ROLES.find((r) => r.id === "custom");
+    if (!baseCustom) {
+      return {
+        name: "Custom",
+        description: "Custom role",
+        iconValue: "User",
+        color: "#64748b",
+        level: 99,
+        permission_ids: [],
+        request_limits: [],
+      };
+    }
+    return {
+      name: baseCustom.name,
+      description: baseCustom.description ?? "",
+      iconValue: getIconKeyFromComponent(baseCustom.icon),
+      color: baseCustom.color,
+      level: 99,
+      permission_ids: [],
+      request_limits: [],
+    };
+  }, []);
+
+  const filteredRoles = useMemo(() => {
+    let roles = availableRoles;
+    const trimmedSearch = searchTerm.trim().toLowerCase();
+
+    if (trimmedSearch) {
+      roles = roles.filter(
+        (r) =>
+          r.name.toLowerCase().includes(trimmedSearch) ||
+          r.description.toLowerCase().includes(trimmedSearch) ||
+          r.id.toLowerCase().includes(trimmedSearch)
+      );
+    }
+
+    if (showSelectedFilter && role) {
+      roles = roles.filter((r) => r.id === role);
+    }
+
+    return [...roles];
+  }, [availableRoles, searchTerm, showSelectedFilter, role]);
+
+  // Accept pending — pending items are already in selection, no-op
+  const handleAccept = useCallback(() => {
+    // Pending items are already in ids (selected=true), just confirm
+    // The next draft save will persist them as active
+  }, []);
+
+  // Reject pending — remove pending roles from selection
+  const handleReject = useCallback(() => {
+    if (!multiSelect || !onRolesChange) return;
+    const currentIds = role_ids ?? [];
+    const newIds = currentIds.filter((id) => !pendingIds.has(id));
+    onRolesChange(newIds);
+  }, [role_ids, pendingIds, onRolesChange, multiSelect]);
+
+  if (!show_roles) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-2">
+      {label && (
+        <div className="flex items-center gap-2">
+          <Label htmlFor={id} className="flex items-center gap-1">
+            {label}
+            {required && <span className="text-destructive">*</span>}
+          </Label>
+          {showDiff && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-success hover:text-success"
+                      onClick={handleAccept}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Accept</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={handleReject}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reject</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+        </div>
+      )}
+      <SelectableGrid
+        horizontal
+        items={filteredRoles}
+        selectedId={multiSelect ? null : (role ?? null)}
+        {...(multiSelect ? { selectedIds: role_ids ?? [] } : {})}
+        onSelect={(roleId) => {
+          if (multiSelect && onRolesChange) {
+            const currentIds = role_ids ?? [];
+            if (currentIds.includes(roleId)) {
+              onRolesChange(currentIds.filter((id) => id !== roleId));
+            } else {
+              onRolesChange([...currentIds, roleId]);
+            }
+          } else {
+            onRoleChange(roleId);
+          }
+        }}
+        getId={(item) => item.id}
+        renderItem={(item, isSelected) => {
+          const IconComponent = item.icon;
+          const gradientStyle = generateGradientFromHex(item.color);
+          const isEditing = editingRoleId === item.id;
+          const isPending = pendingIds.has(item.id);
+          const sourceRole = roles?.find((roleItem) => (roleItem.id ?? roleItem.role ?? roleItem.name) === item.id);
+          const isSuggested = sourceRole?.suggested === true;
+
+          return (
+            <div
+              className={cn(
+                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && !isPending && "ring-2 ring-primary bg-accent",
+                isPending && "ring-2 ring-success bg-success/10",
+              )}
+            >
+              {!disabled && editable && (
+                <Popover
+                  open={isEditing}
+                  onOpenChange={(open) => {
+                    if (!open) {
+                      setEditingRoleId(null);
+                      setEditingDraft(null);
+                    }
+                  }}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 left-2 h-7 w-7"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setEditingRoleId(item.id);
+                        setEditingDraft({
+                          name: item.name,
+                          description: item.description,
+                          iconValue: item.iconValue,
+                          color: item.color,
+                          level: 99,
+                          permission_ids: [],
+                          request_limits: [],
+                        });
+                      }}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    className="w-[320px]"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {editingDraft && (
+                      <div className="space-y-3">
+                        <RoleEditor
+                          draft={editingDraft}
+                          onChange={setEditingDraft}
+                          iconOptions={ICON_OPTIONS}
+                          colorSwatches={colorSwatches}
+                          disabled={disabled}
+                          {...(permissions ? { permissions } : {})}
+                        />
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setEditingRoleId(null);
+                              setEditingDraft(null);
+                            }}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              if (!editingDraft || !editingRoleId) return;
+                              const normalized = {
+                                name: editingDraft.name.trim() || item.name,
+                                description:
+                                  editingDraft.description.trim() ||
+                                  item.description,
+                                iconValue:
+                                  editingDraft.iconValue || item.iconValue,
+                                color:
+                                  normalizeHex(editingDraft.color) ||
+                                  item.color,
+                                level: editingDraft.level,
+                                permission_ids: editingDraft.permission_ids,
+                                request_limits: editingDraft.request_limits,
+                              };
+                              setRoleOverrides((prev) => ({
+                                ...prev,
+                                [editingRoleId]: normalized,
+                              }));
+                              onRoleResourceChange?.(editingRoleId, {
+                                name: normalized.name,
+                                description: normalized.description,
+                                icon_value: normalized.iconValue,
+                                color_hex: normalized.color,
+                              });
+                              setEditingRoleId(null);
+                              setEditingDraft(null);
+                            }}
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              )}
+              {isSelected && !isPending && (
+                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                </div>
+              )}
+              {isPending && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </div>
+              )}
+              {isSuggested && !isSelected && !isPending && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Suggested</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              <div className="flex items-start gap-3">
+                <div
+                  className="p-2 rounded-lg shadow-sm flex-shrink-0"
+                  style={{ background: gradientStyle }}
+                >
+                  <IconComponent className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-sm leading-tight">
+                    {item.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    {item.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        }}
+        emptyMessage={emptyMessage}
+        disabled={disabled}
+      />
+      {!disabled && editable && canAddCustomRole && !hasCustomRole && (
+        <div className="rounded-xl border border-dashed bg-muted/20 px-4 py-3">
+          {isAddingCustomRole ? (
+            <div className="space-y-3">
+              <RoleEditor
+                draft={newCustomDraft}
+                onChange={setNewCustomDraft}
+                iconOptions={ICON_OPTIONS}
+                colorSwatches={colorSwatches}
+                disabled={disabled}
+                {...(permissions ? { permissions } : {})}
+              />
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIsAddingCustomRole(false);
+                    setNewCustomDraft(defaultCustomRole);
+                  }}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    const normalized: RoleDraft = {
+                      name: newCustomDraft.name.trim() || "Custom",
+                      description: newCustomDraft.description.trim(),
+                      iconValue: newCustomDraft.iconValue || "User",
+                      color:
+                        normalizeHex(newCustomDraft.color) || "#64748b",
+                      level: newCustomDraft.level,
+                      permission_ids: newCustomDraft.permission_ids,
+                      request_limits: newCustomDraft.request_limits,
+                    };
+                    setLocalRoles((prev) => [
+                      ...prev,
+                      {
+                        id: "custom",
+                        name: normalized.name,
+                        description: normalized.description,
+                        iconValue: normalized.iconValue,
+                        icon: getRoleIconComponent(normalized.iconValue),
+                        color: normalized.color,
+                      },
+                    ]);
+                    setRoleOverrides((prev) => ({
+                      ...prev,
+                      custom: normalized,
+                    }));
+                    onRoleResourceChange?.("custom", {
+                      name: normalized.name,
+                      description: normalized.description,
+                      icon_value: normalized.iconValue,
+                      color_hex: normalized.color,
+                    });
+                    // New: ship the full creatable shape (level + permissions
+                    // + request_limits) up to the parent so it can flow into
+                    // the role_draft value-array on the next save.
+                    onCreateRoleDraft?.({
+                      name: normalized.name,
+                      description: normalized.description,
+                      icon_value: normalized.iconValue,
+                      color_hex: normalized.color,
+                      level: newCustomDraft.level,
+                      permission_ids: newCustomDraft.permission_ids,
+                      request_limits: newCustomDraft.request_limits,
+                    });
+                    onRoleChange("custom");
+                    setIsAddingCustomRole(false);
+                    setNewCustomDraft(defaultCustomRole);
+                  }}
+                >
+                  Add role
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setIsAddingCustomRole(true);
+                setNewCustomDraft(defaultCustomRole);
+              }}
+              className="flex w-full items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <Plus className="h-4 w-4" />
+              Add custom role
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,350 @@
+/**
+ * app/(main)/system/rubrics/[rubricId]/page.tsx
+ * Rubric edit page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
+ * @AshokSaravanan222 & @siladiea
+ * 06/09/2025
+ */
+
+import { getSession } from "@/auth";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
+import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
+import Rubric from "@/components/artifacts/rubric/Rubric";
+import { DraftProviderClient } from "@/contexts/draft-context";
+
+import { api } from "@/lib/api/client";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
+
+import { buildSnapshot } from "@/lib/auth";
+
+import { cache } from "react";
+import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
+/** ---- Strong types from OpenAPI ---- */
+type GetRubricIn = InputOf<"/rubric/get", "post">;
+type GetRubricOut = OutputOf<"/rubric/get", "post">;
+type CreateRubricIn = InputOf<"/rubric/create", "post">;
+type CreateRubricOut = OutputOf<"/rubric/create", "post">;
+type UpdateRubricIn = InputOf<"/rubric/update", "post">;
+type UpdateRubricOut = OutputOf<"/rubric/update", "post">;
+type PatchRubricDraftIn = InputOf<"/rubric/draft", "post">;
+type PatchRubricDraftOut = OutputOf<"/rubric/draft", "post">;
+type GroupRubricIn = InputOf<"/rubric/group", "post">;
+type GroupRubricOut = OutputOf<"/rubric/group", "post">;
+type GenerationsIn = InputOf<"/rubric/generations", "post">;
+type GenerationsOut = OutputOf<"/rubric/generations", "post">;
+type ProblemRubricIn = InputOf<"/rubric/problem", "post">;
+type ProblemRubricOut = OutputOf<"/rubric/problem", "post">;
+type ContextIn = InputOf<"/rubric/context", "post">;
+type ContextOut = OutputOf<"/rubric/context", "post">;
+
+/** ---- Direct fetch (no caching - source of truth) ---- */
+const getRubric = async (
+  rubricId: string | null,
+  draftId: string | null,
+  descriptionSearch: string | null,
+  standardGroupSearch: string | null,
+  pointsSearch: string | null,
+  pointsShowSelected: boolean | null,
+  standardGroupShowSelected: boolean | null,
+): Promise<GetRubricOut> => {
+  return api.post(
+    "/rubric/get",
+    ({
+      body: {
+        id: rubricId,
+        draft_id: draftId || null,
+        descriptions:
+          descriptionSearch
+            ? { search: descriptionSearch || undefined }
+            : undefined,
+        points:
+          pointsSearch || pointsShowSelected
+            ? {
+                search: pointsSearch || undefined,
+                selected: pointsShowSelected || undefined,
+              }
+            : undefined,
+        standard_groups:
+          standardGroupSearch || standardGroupShowSelected
+            ? {
+                search: standardGroupSearch || undefined,
+                selected: standardGroupShowSelected || undefined,
+              }
+            : undefined,
+      },
+    } as GetRubricIn),
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
+  );
+};
+
+/** ---- Strongly-typed server actions ---- */
+async function createRubric(input: CreateRubricIn): Promise<CreateRubricOut> {
+  "use server";
+  return api.post("/rubric/create", input);
+}
+
+async function updateRubric(input: UpdateRubricIn): Promise<UpdateRubricOut> {
+  "use server";
+  return api.post("/rubric/update", input);
+}
+
+async function patchRubricDraft(
+  input: PatchRubricDraftIn
+): Promise<PatchRubricDraftOut> {
+  "use server";
+  return api.post("/rubric/draft", input);
+}
+
+
+async function getRubricGroupHistory(groupId: string): Promise<GroupRubricOut> {
+  "use server";
+  return api.post("/rubric/group", { body: { group_id: groupId } } as GroupRubricIn);
+}
+
+async function searchRubricGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/rubric/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createRubricProblem(input: ProblemRubricIn): Promise<ProblemRubricOut> {
+  "use server";
+  return api.post("/rubric/problem", input);
+}
+
+/** Per-item export — scopes to a single ``rubric_id`` so the AI
+ *  consumer downstream only sees the row the user is editing. */
+async function exportRubricById(rubricId: string): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/rubric/export", {
+    body: { rubric_id: rubricId },
+  } as unknown as InputOf<"/rubric/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshRubric(): Promise<unknown> {
+  "use server";
+  return api.post("/rubric/refresh", {
+    body: {},
+  } as unknown as InputOf<"/rubric/refresh", "post">);
+}
+
+/** ---- GenerationPanel server actions ---- */
+async function getRubricGroup(input: GroupRubricIn): Promise<GroupRubricOut> {
+  "use server";
+  return api.post("/rubric/group", input);
+}
+
+async function searchRubricGenerations(input: GenerationsIn): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/rubric/generations", input);
+}
+
+
+/** ---- Request-scoped context fetch ----
+ * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
+ * component share one network call per request. Server-only; not a
+ * cross-request cache. */
+const getRubricContextById = cache(
+  async (id: string): Promise<ContextOut> =>
+    api.post("/rubric/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+);
+
+/** ---- Page metadata ---- */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ rubricId: string }>;
+}): Promise<Metadata> {
+  try {
+    const { rubricId } = await params;
+    const context = await getRubricContextById(rubricId);
+    return {
+      title: context.page_metadata?.detail.title,
+      description: context.page_metadata?.detail.description,
+    };
+  } catch {
+    return { title: "Rubrics" };
+  }
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
+
+export default async function EditRubricPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ rubricId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const { rubricId } = await params;
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Parse search params using nuqs
+  const paramsObj = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(paramsObj).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Inline server-side parsers for rubric search params
+  const rubricSearchParams = {
+    draftId: parseAsString,
+    descriptionSearch: parseAsString,
+    standardGroupSearch: parseAsString,
+    pointsSearch: parseAsString,
+    pointsShowSelected: parseAsBoolean,
+    standardGroupShowSelected: parseAsBoolean,
+    groupId: parseAsString,
+    groupSearch: parseAsString,
+  };
+  const loadRubricSearchParams = createLoader(rubricSearchParams);
+  const q = loadRubricSearchParams(searchParamsObj);
+
+  try {
+    const [rubricData, context, draftsResult, groupResult] = await Promise.all([
+      getRubric(
+        rubricId,
+        q.draftId ?? null,
+        q.descriptionSearch ?? null,
+        q.standardGroupSearch ?? null,
+        q.pointsSearch ?? null,
+        q.pointsShowSelected ?? null,
+        q.standardGroupShowSelected ?? null,
+      ),
+      getRubricContextById(rubricId) as Promise<ContextOut>,
+      api.post("/rubric/drafts", {} as InputOf<"/rubric/drafts", "post">),
+      api.post(
+        "/rubric/group",
+        { body: q.groupId ? { group_id: q.groupId } : {} } as GroupRubricIn,
+      ),
+    ]);
+    const snapshot = buildSnapshot(session, context.profile);
+
+    const entityName = context.page_metadata?.detail.title ?? "Rubric";
+
+    return (
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
+        <FullPageLayout
+          {...({
+            profileData: context.profile,
+            sessionSnapshot: snapshot,
+            initialSidebarOpen,
+            initialPanelOpen,
+            sidebarProps: {
+              activeSection: "rubric",
+              createFeedback: createRubricProblem as unknown as (
+                input: Record<string, unknown>,
+              ) => Promise<Record<string, unknown>>,
+            },
+            breadcrumbs: [
+              { title: "System", section: "system", url: "/system" },
+              { title: "Rubrics", section: "rubrics", url: "/system/rubrics" },
+              { title: entityName },
+            ],
+            toolbar: (
+              <ArtifactToolbarActions
+                leftSlot={<SaveToolbar />}
+                exportAction={exportRubricById.bind(null, rubricId)}
+                refreshAction={refreshRubric}
+                bffDownloadPrefix="/api/rubric/download"
+              />
+            ),
+            panelProps: {
+              artifactType: "rubric",
+              initialPanelPrefs: await readGenerationPanelPrefs(),
+              groupId:
+                (groupResult as GroupRubricOut & { group_id?: string | null })
+                  ?.group_id ?? "",
+              groupName:
+                (groupResult as GroupRubricOut & { name?: string | null })?.name ?? null,
+              operations: ["draft", "get", "title"],
+              getGroupHistory: getRubricGroupHistory,
+              searchGroups: searchRubricGroups,
+              ...(context.prompts?.prompts
+                ? { prompts: context.prompts.prompts }
+                : {}),
+              getGroupAction: getRubricGroup as PanelProps["getGroupAction"],
+              searchGenerationsAction:
+                searchRubricGenerations as PanelProps["searchGenerationsAction"],
+            },
+          } as any)}
+        >
+          <div
+            className="space-y-6 px-4"
+            data-page="rubric-edit"
+            data-rubric-id={rubricId}
+          >
+            <Rubric
+              rubricId={rubricId}
+              rubricData={rubricData}
+              createRubricAction={createRubric}
+              updateRubricAction={updateRubric}
+              patchRubricDraftAction={patchRubricDraft}
+            />
+          </div>
+        </FullPageLayout>
+      </DraftProviderClient>
+    );
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error
+    ) {
+      // 401 → not logged in. 403 → resource belongs to a department the
+      // user isn't in. Don't conflate.
+      if (error.status === 401) {
+        return (
+          <UnifiedAccessDenied
+            reason="not-logged-in"
+            pathname={`/system/rubrics/${rubricId}`}
+          />
+        );
+      }
+      if (error.status === 403) {
+        return (
+          <UnifiedAccessDenied
+            reason="department"
+            resourceType="rubric"
+            redirectPath="/system/rubrics"
+          />
+        );
+      }
+    }
+    throw error;
+  }
+}
