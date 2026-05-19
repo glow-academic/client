@@ -536,7 +536,11 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
   }, [steps, contentSections]);
 
   return (
-    <form onSubmit={handleSubmit} className={cn("space-y-8", className)}>
+    <form
+      onSubmit={handleSubmit}
+      className={cn("space-y-8", className)}
+      data-testid="artifact-form"
+    >
       {orderedSteps.map((item, _idx) => {
         if (item.type === "content") {
           return (
@@ -576,7 +580,7 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
           : undefined;
 
         return (
-          <React.Fragment key={step.id}>
+          <div key={step.id} data-testid={`artifact-form-step-${step.id}`}>
             {renderStep({
               stepId: step.id,
               stepTitle: step.title,
@@ -591,7 +595,7 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
                 ? { onReset: () => handleReset(step.id) }
                 : {}),
             })}
-          </React.Fragment>
+          </div>
         );
       })}
 
@@ -602,6 +606,7 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
             <Button
               type="button"
               variant="outline"
+              data-testid="artifact-form-back"
               onClick={() => {
                 if (router) {
                   router.push(submitButton.backUrl!);
@@ -617,6 +622,7 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
             onClick={handleSubmit}
             disabled={isSubmitting || submitButton.disabled || _isReadonly}
             className="min-w-[120px]"
+            data-testid="artifact-form-submit"
           >
             {isSubmitting ? (
               <>

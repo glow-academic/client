@@ -213,12 +213,17 @@ export function SaveToolbar() {
   // on the right that reads as a menu — light border, no icon, just the
   // current draft name and a chevron.
   return (
-    <div className="flex items-center gap-2 pr-0">
+    <div className="flex items-center gap-2 pr-0" data-testid="draft-toolbar">
       {/* Create-new is only meaningful when there's an active draft.
           On a fresh ``/new`` (no ``draftId``) we're already drafting,
           so the button collapses out of the toolbar. */}
       {activeDraftId && (
-        <Button variant="default" size="sm" onClick={handleCreateNew}>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={handleCreateNew}
+          data-testid="draft-new-button"
+        >
           <Plus className="h-4 w-4" />
           New draft
         </Button>
@@ -229,6 +234,7 @@ export function SaveToolbar() {
             variant="outline"
             size="sm"
             aria-label="Drafts picker"
+            data-testid="draft-picker-trigger"
           >
             <span className="max-w-[200px] truncate">{triggerLabel}</span>
             <ChevronsUpDown className="h-3.5 w-3.5 shrink-0" />
@@ -247,6 +253,7 @@ export function SaveToolbar() {
                 onChange={(e) => setDraftSearch(e.target.value)}
                 placeholder="Search drafts…"
                 className="h-8 pl-7 text-sm"
+                data-testid="draft-search"
                 // Stop typing keystrokes from bubbling up to the
                 // dropdown's keyboard navigation handler (which would
                 // otherwise interpret letters as menu shortcuts).
@@ -271,6 +278,7 @@ export function SaveToolbar() {
                   key={draft.id}
                   onClick={() => handleDraftSwitch(draft.id!)}
                   className={selectedDraftId === draft.id ? "bg-accent" : ""}
+                  data-testid={`draft-menu-item-${draft.id}`}
                 >
                   <div className="flex flex-col gap-1 flex-1 min-w-0">
                     <span className="font-medium truncate">
@@ -298,6 +306,7 @@ export function SaveToolbar() {
                 <Switch
                   checked={isAutosaveEnabled}
                   onCheckedChange={setAutosaveEnabled}
+                  data-testid="draft-autosave-toggle"
                 />
               </DropdownMenuLabel>
             </>

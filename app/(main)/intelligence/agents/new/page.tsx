@@ -195,7 +195,7 @@ export default async function NewAgentPage({
 
     const [agentDetailDefault, draftsResult, groupResult] = await Promise.all([
       getAgent(input),
-      api.post("/agent/drafts", {} as any),
+      api.post("/agent/drafts", { body: {} } as any),
       api.post("/agent/group", { body: {} } as GroupAgentIn),
     ]);
 

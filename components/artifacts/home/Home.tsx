@@ -215,7 +215,7 @@ export default function Home({ homeData }: HomeProps) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-testid="home-overview">
       {/* Header with title */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">

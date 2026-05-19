@@ -246,7 +246,7 @@ export default async function EditRubricPage({
         q.standardGroupShowSelected ?? null,
       ),
       getRubricContextById(rubricId) as Promise<ContextOut>,
-      api.post("/rubric/drafts", {} as InputOf<"/rubric/drafts", "post">),
+      api.post("/rubric/drafts", { body: {} } as InputOf<"/rubric/drafts", "post">),
       api.post(
         "/rubric/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupRubricIn,

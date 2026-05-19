@@ -197,7 +197,7 @@ export default async function AuthCreatePage({
     } as GetAuthIn;
     const [authData, draftsResult, groupResult] = await Promise.all([
       getAuthDefault(input),
-      api.post("/auth/drafts", {} as never),
+      api.post("/auth/drafts", { body: {} } as never),
       api.post(
         "/auth/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupAuthIn,

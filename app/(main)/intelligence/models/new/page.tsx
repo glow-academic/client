@@ -189,7 +189,7 @@ export default async function NewModelPage({
     } as unknown as GetModelIn;
     const [modelDetailDefault, draftsResult, groupResult] = await Promise.all([
       getModelDetailDefault(input),
-      api.post("/model/drafts", {} as any),
+      api.post("/model/drafts", { body: {} } as any),
       api.post("/model/group", { body: {} } as GroupModelIn),
     ]);
 

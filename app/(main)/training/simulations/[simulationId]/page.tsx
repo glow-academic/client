@@ -235,7 +235,7 @@ export default async function EditSimulationPage({
     const [simulationData, context, draftsResult, groupResult] = await Promise.all([
       getSimulation(input),
       getSimulationContextById(simulationId) as Promise<ContextOut>,
-      api.post("/simulation/drafts", {} as never),
+      api.post("/simulation/drafts", { body: {} } as never),
       api.post(
         "/simulation/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupSimulationIn,

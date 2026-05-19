@@ -218,7 +218,7 @@ export default async function NewRubricPage({
         q.pointsShowSelected ?? null,
         q.standardGroupShowSelected ?? null,
       ),
-      api.post("/rubric/drafts", {} as InputOf<"/rubric/drafts", "post">),
+      api.post("/rubric/drafts", { body: {} } as InputOf<"/rubric/drafts", "post">),
       api.post(
         "/rubric/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupRubricIn,
