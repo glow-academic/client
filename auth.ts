@@ -11,6 +11,13 @@ import { cache } from "react";
 const appPrefix = process.env["APP_PREFIX"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
 const issuer = process.env["AUTH_ISSUER"] || "http://localhost:8000";
+// Container-reachable URL for OIDC endpoints the *Next.js server* calls
+// directly (token, userinfo, jwks). Defaults to `issuer` — in production
+// with real DNS those are the same. In a single-host local deploy the
+// container can't reach a `localhost:<port>` issuer, so the CLI sets this
+// to the api's shared-net alias (e.g. http://glow-X-api-nginx:80). The
+// iss claim on the token still equals `issuer` (browser-visible URL).
+const issuerInternal = process.env["AUTH_ISSUER_INTERNAL"] || issuer;
 const clientId = process.env["AUTH_CLIENT_ID"] || "glow-client";
 const clientSecret = process.env["AUTH_CLIENT_SECRET"] || secret;
 
@@ -28,6 +35,14 @@ export const {
       name: "Glow",
       type: "oidc",
       issuer,
+      // Explicitly pin each endpoint so NextAuth skips `.well-known` discovery
+      // (which would otherwise have to be fetched from the container against
+      // a possibly-unreachable public issuer URL). Browser-facing endpoints
+      // use the public issuer; backend-facing ones use the internal URL.
+      authorization: { url: `${issuer}/authorize` },
+      token: { url: `${issuerInternal}/token` },
+      userinfo: { url: `${issuerInternal}/userinfo` },
+      jwks_endpoint: `${issuerInternal}/jwks`,
       clientId,
       clientSecret,
       allowDangerousEmailAccountLinking: true,
