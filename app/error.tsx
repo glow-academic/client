@@ -3,21 +3,24 @@ import { createFeedback } from "@/lib/actions/feedback";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Button } from "@/components/ui/button";
 import { ProfileContext } from "@/contexts/profile-context";
-import { Bug } from "lucide-react";
+import { Bug, Copy, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 
 export default function Error({
   error,
   reset: _reset,
 }: {
-  error: Error;
+  // Next.js attaches a stable `digest` to Server Component errors so the
+  // production-stripped message still has a server-log correlation key.
+  error: Error & { digest?: string };
   reset: () => void;
 }) {
   const router = useRouter();
   // Use useContext directly instead of useProfile() to avoid throwing and masking real errors
   const profileContext = useContext(ProfileContext);
   const profile = profileContext?.profile ?? null;
+  const [copied, setCopied] = useState(false);
 
   const handleBackToGlow = () => {
     // Navigate based on effective role if available, otherwise default to home
@@ -29,6 +32,33 @@ export default function Error({
       router.push("/analytics");
     } else {
       router.push("/home");
+    }
+  };
+
+  // Build a single diagnostic blob — everything an engineer needs to
+  // reproduce the bug from the user's report, in one paste.
+  const url = typeof window !== "undefined" ? window.location.href : "Unknown";
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "Unknown";
+  const ts = new Date().toISOString();
+  const diagnostic = [
+    `Timestamp: ${ts}`,
+    `URL:       ${url}`,
+    `Digest:    ${error.digest ?? "(none)"}`,
+    `Message:   ${error.message || "(production-stripped)"}`,
+    `User:      ${profile?.id ?? "(unauthenticated)"}`,
+    `Agent:     ${ua}`,
+    error.stack ? `\nStack:\n${error.stack}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const copyDiagnostic = async () => {
+    try {
+      await navigator.clipboard.writeText(diagnostic);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard unavailable (insecure context). Fall through silently.
     }
   };
 
@@ -44,28 +74,49 @@ export default function Error({
             <h3 className="text-xl font-semibold text-foreground">
               An error occurred
             </h3>
-            <p className="text-muted-foreground text-sm break-words">
-              {error.message}
-            </p>
-            {error.stack && (
-              <details className="mt-4 text-left">
-                <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
-                  Stack Trace
-                </summary>
-                <pre className="mt-2 text-xs text-muted-foreground overflow-auto max-h-48 p-2 bg-muted rounded">
-                  {error.stack}
-                </pre>
-              </details>
+            {/* In production Next.js strips the real message — only the
+                digest survives. Show it prominently so a paste here +
+                a server-log grep can match. */}
+            {error.digest && (
+              <p className="text-xs font-mono text-muted-foreground">
+                Reference: <span className="select-all">{error.digest}</span>
+              </p>
             )}
+            {error.message && (
+              <p className="text-muted-foreground text-sm break-words">
+                {error.message}
+              </p>
+            )}
+            <details className="mt-4 text-left">
+              <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                Diagnostic detail
+              </summary>
+              <pre className="mt-2 text-xs text-muted-foreground overflow-auto max-h-64 p-2 bg-muted rounded whitespace-pre-wrap">
+                {diagnostic}
+              </pre>
+            </details>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-2">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={copyDiagnostic}
+            type="button"
+          >
+            {copied ? (
+              <Check className="h-4 w-4 mr-2" />
+            ) : (
+              <Copy className="h-4 w-4 mr-2" />
+            )}
+            {copied ? "Copied" : "Copy diagnostic"}
+          </Button>
           <ReportProblem
             createFeedback={createFeedback}
             initialType="bug"
-            initialMessage={`Error occurred on page: ${error.message}\n\nError Stack: ${error.stack || "No stack trace available"}\n\nPage URL: ${typeof window !== "undefined" ? window.location.href : "Unknown"}`}
+            initialMessage={diagnostic}
           >
             <Button variant="outline" className="w-full">
               <Bug className="h-4 w-4 mr-2" />
