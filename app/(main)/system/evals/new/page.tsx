@@ -208,7 +208,7 @@ export default async function NewEvalPage({
     } as unknown as GetEvalIn;
     const [evalDetailDefault, draftsResult, groupResult] = await Promise.all([
       getEvalDefault(input),
-      api.post("/eval/drafts", { body: {} } as never),
+      api.post("/eval/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/eval/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupEvalIn,

@@ -183,7 +183,7 @@ export default async function AuthEditPage({
     const [authData, context, draftsResult, groupResult] = await Promise.all([
       getAuth(input),
       getAuthContextById(authId) as Promise<ContextOut>,
-      api.post("/auth/drafts", { body: {} } as never),
+      api.post("/auth/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/auth/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupAuthIn,

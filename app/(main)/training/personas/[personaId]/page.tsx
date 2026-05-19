@@ -222,7 +222,7 @@ export default async function PersonaEditPage({
     const [personaDetail, context, draftsResult, groupResult] = await Promise.all([
       getPersona(input),
       getPersonaContextById(personaId) as Promise<ContextOut>,
-      api.post("/persona/drafts", { body: {} } as unknown as InputOf<"/persona/drafts", "post">),
+      api.post("/persona/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/persona/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupPersonaIn,

@@ -254,7 +254,7 @@ export default async function ToolDetailPage({
     const [toolDetail, context, draftsResult, groupResult] = await Promise.all([
       getTool(input),
       getToolContextById(toolId) as Promise<ContextOut>,
-      api.post("/tool/drafts", { body: {} } as any),
+      api.post("/tool/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/tool/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupToolIn,

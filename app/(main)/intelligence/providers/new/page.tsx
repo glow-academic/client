@@ -237,7 +237,7 @@ export default async function NewProviderPage({
     } as GetProviderIn;
     const [providerDetailDefault, draftsResult, groupResult] = await Promise.all([
       getProviderDefault(input),
-      api.post("/provider/drafts", { body: {} } as any),
+      api.post("/provider/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/provider/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupProviderIn,

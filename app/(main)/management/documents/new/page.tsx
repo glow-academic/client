@@ -181,7 +181,7 @@ const buildSectionFilter = (
  * cross-request cache. */
 const getDocumentContext = cache(
   async (): Promise<ContextOut> =>
-    api.post("/document/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+    api.post("/document/context", { body: { page_limit: 50, page_offset: 0 } }) as Promise<ContextOut>,
 );
 
 /** ---- Page metadata ---- */
@@ -266,7 +266,7 @@ export default async function NewDocumentPage({
 
     const [documentDetailDefault, draftsResult, groupResult] = await Promise.all([
       getDocumentDefault(input),
-      api.post("/document/drafts", { body: {} } as DocumentDraftsIn),
+      api.post("/document/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/document/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupDocumentIn,

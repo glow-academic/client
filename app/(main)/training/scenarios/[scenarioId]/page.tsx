@@ -275,7 +275,7 @@ export default async function EditScenarioPage({
     const [scenarioDetail, context, draftsResult, groupResult] = await Promise.all([
       getScenario(input),
       getScenarioContextById(scenarioId) as Promise<ContextOut>,
-      api.post("/scenario/drafts", { body: {} } as any),
+      api.post("/scenario/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/scenario/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupScenarioIn,
