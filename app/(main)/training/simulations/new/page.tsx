@@ -222,7 +222,7 @@ export default async function NewSimulationPage({
     const context = await getSimulationContext();
     const snapshot = buildSnapshot(session, context.profile);
 
-    const draftsResult = await api.post("/simulation/drafts", { body: {} } as never);
+    const draftsResult = await api.post("/simulation/drafts", { body: { page_limit: 50, page_offset: 0 } });
     const simulationDataDefault = await getSimulationDefault(input);
 
     const groupResult = await api.post(

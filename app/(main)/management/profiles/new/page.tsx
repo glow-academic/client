@@ -188,7 +188,7 @@ export default async function NewProfilePage({
 
     const [profileDetailDefault, draftsResult, groupResult] = await Promise.all([
       getProfileDefault(input),
-      api.post("/profile/drafts", { body: {} } as any),
+      api.post("/profile/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post("/profile/group", { body: {} } as GroupProfileIn),
     ]);
 

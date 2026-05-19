@@ -142,7 +142,7 @@ async function searchRubricGenerations(input: GenerationsIn): Promise<Generation
  * cross-request cache. */
 const getRubricContext = cache(
   async (): Promise<ContextOut> =>
-    api.post("/rubric/context", { body: {} } as ContextIn) as Promise<ContextOut>,
+    api.post("/rubric/context", { body: { page_limit: 50, page_offset: 0 } }) as Promise<ContextOut>,
 );
 
 /** ---- Page metadata ---- */
@@ -218,7 +218,7 @@ export default async function NewRubricPage({
         q.pointsShowSelected ?? null,
         q.standardGroupShowSelected ?? null,
       ),
-      api.post("/rubric/drafts", { body: {} } as InputOf<"/rubric/drafts", "post">),
+      api.post("/rubric/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/rubric/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupRubricIn,

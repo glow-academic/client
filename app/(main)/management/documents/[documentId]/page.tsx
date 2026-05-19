@@ -277,7 +277,7 @@ export default async function DocumentEditPage({
     const [documentDetail, context, draftsResult, groupResult] = await Promise.all([
       getDocumentDefault({ body } as GetDocumentIn),
       getDocumentContextById(documentId) as Promise<ContextOut>,
-      api.post("/document/drafts", { body: {} } as DocumentDraftsIn),
+      api.post("/document/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/document/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupDocumentIn,

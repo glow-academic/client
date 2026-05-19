@@ -261,7 +261,7 @@ export default async function NewScenarioPage({
         } : undefined,
       } as GetScenarioIn["body"],
     }),
-      api.post("/scenario/drafts", { body: {} } as any),
+      api.post("/scenario/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/scenario/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupScenarioIn,

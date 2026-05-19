@@ -223,7 +223,7 @@ export default async function NewFieldPage({
     } as GetFieldIn;
     const [fieldData, draftsResult, groupResult] = await Promise.all([
       getFieldDefault(input),
-      api.post("/field/drafts", { body: {} } as any),
+      api.post("/field/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post("/field/group", { body: {} } as GroupFieldIn),
     ]);
 

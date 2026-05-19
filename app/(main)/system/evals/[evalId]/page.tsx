@@ -215,7 +215,7 @@ export default async function EvalDetailPage({
     const [evalDetail, context, draftsResult, groupResult] = await Promise.all([
       getEvalDetail(input),
       getEvalContextById(evalId) as Promise<ContextOut>,
-      api.post("/eval/drafts", { body: {} } as never),
+      api.post("/eval/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/eval/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupEvalIn,

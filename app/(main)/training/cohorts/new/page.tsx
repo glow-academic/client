@@ -219,7 +219,7 @@ export default async function NewCohortPage({
 
     const [cohortData, draftsResult, groupResult] = await Promise.all([
       getCohortDefault(input),
-      api.post("/cohort/drafts", { body: {} } as any),
+      api.post("/cohort/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post("/cohort/group", { body: {} } as GroupCohortIn),
     ]);
 

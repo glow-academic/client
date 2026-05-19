@@ -188,7 +188,7 @@ export default async function NewDepartmentPage({
     } as unknown as GetDepartmentIn;
     const [departmentDetailDefault, draftsResult, groupResult] = await Promise.all([
       getDepartmentDefault(input),
-      api.post("/department/drafts", { body: {} } as never),
+      api.post("/department/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/department/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupDepartmentIn,

@@ -208,7 +208,7 @@ export default async function ParameterEditPage({
     const [parameterDetail, context, draftsResult, groupResult] = await Promise.all([
       getParameter(input),
       getParameterContextById(parameterId) as Promise<ContextOut>,
-      api.post("/parameter/drafts", { body: {} } as any),
+      api.post("/parameter/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post("/parameter/group", { body: {} } as GroupParameterIn),
     ]);
 

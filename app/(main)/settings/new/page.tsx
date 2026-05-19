@@ -203,7 +203,7 @@ export default async function NewSettingPage({
     } as unknown as GetSettingIn;
     const [settingDetailDefault, draftsResult, groupResult] = await Promise.all([
       getSettingDefault(input),
-      api.post("/setting/drafts", { body: {} } as any),
+      api.post("/setting/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/setting/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupSettingIn,
