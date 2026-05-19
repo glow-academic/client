@@ -1,6 +1,6 @@
 {
   "name": "glow",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "engines": {
@@ -16,13 +16,15 @@
     "lint": "next lint --dir app --dir components --dir utils --dir hooks --dir lib --dir contexts",
     "lint:fix": "next lint --fix --dir app --dir components --dir utils --dir hooks --dir lib --dir contexts",
     "format": "prettier --write .",
-    "sync:types": "curl -sf ${API_URL:-http://localhost:8000}/openapi.json -o /tmp/glow-openapi.json && openapi-typescript /tmp/glow-openapi.json -o lib/api/schema.ts && rm -f /tmp/glow-openapi.json"
+    "sync:types": "curl -sf ${API_URL:-http://localhost:8000}/openapi.json -o /tmp/glow-openapi.json && openapi-typescript /tmp/glow-openapi.json -o lib/api/schema.ts && rm -f /tmp/glow-openapi.json",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "demo:record": "PLAYWRIGHT_DEMO=1 playwright test e2e/demos"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.9.1",
     "@auth/pg-adapter": "^1.9.1",
     "@monaco-editor/react": "^4.7.0",
-
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-avatar": "^1.1.9",
@@ -87,6 +89,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "1.60.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.15.4",
