@@ -221,7 +221,7 @@ export default async function SettingEditPage({
     const [settingDetail, context, draftsResult, groupResult] = await Promise.all([
       getSetting(input),
       getSettingContextById(settingId) as Promise<ContextOut>,
-      api.post("/setting/drafts", {} as any),
+      api.post("/setting/drafts", { body: {} } as any),
       api.post(
         "/setting/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupSettingIn,

@@ -288,7 +288,10 @@ export default function Activity({ activityData, isLoading = false }: ActivityPr
   return (
     <div className="space-y-6" data-testid="activity-container">
       {/* Header Metrics */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+      <div
+        className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
+        data-testid="activity-metrics"
+      >
         <SessionsMetric sessionsCount={bundleData?.sessions_count ?? 0} />
         <ActiveProfilesMetric activeProfilesCount={bundleData?.active_profiles_count ?? 0} />
         <LoginsMetric loginsCount={bundleData?.logins_count ?? 0} />
@@ -297,13 +300,13 @@ export default function Activity({ activityData, isLoading = false }: ActivityPr
 
       {/* Main Content: Profile Summary (2/3) + Problems List (1/3) */}
       <div className="flex gap-4 min-h-[300px] max-h-[400px]">
-        <div className="flex-[2]">
+        <div className="flex-[2]" data-testid="activity-profile-summary">
           <ProfileSummaryCard
             items={profileSummary}
             {...(summaryProfileId && { selectedProfileId: summaryProfileId })}
           />
         </div>
-        <div className="flex-1">
+        <div className="flex-1" data-testid="activity-problems">
           <Card className="h-full flex flex-col">
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -360,12 +363,13 @@ export default function Activity({ activityData, isLoading = false }: ActivityPr
             onChange={(e) => handleSearchChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") commitSearch(searchTerm); }}
             className="max-w-sm"
+            data-testid="activity-search"
           />
           {profileIdColumn && profileOptions.length > 0 && (
             <DataTableFacetedFilter column={profileIdColumn} title="Profile" options={profileOptions} />
           )}
         </div>
-        <div className="rounded-md border">
+        <div className="rounded-md border" data-testid="activity-sessions-table">
           <Table>
             <TableHeader>
               {sessionsTable.getHeaderGroups().map((headerGroup) => (
@@ -388,6 +392,7 @@ export default function Activity({ activityData, isLoading = false }: ActivityPr
                     data-state={row.getIsSelected() && "selected"}
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => router.push(`/analytics/activity/${row.original.session_id}`)}
+                    data-testid={`activity-session-row-${row.original.session_id}`}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>

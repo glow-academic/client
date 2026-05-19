@@ -1,4 +1,4 @@
-.PHONY: dev build start lint typecheck format setup clean help sync-types
+.PHONY: dev build start lint typecheck format setup clean help sync-types test-e2e test-e2e-ui demo-record
 .PHONY: docker-build docker-run up down logs
 .PHONY: detect-env deploy-target switch-traffic monitor
 
@@ -30,6 +30,19 @@ lint-fix: ## Fix ESLint issues
 
 typecheck: ## TypeScript type check
 	bun run typecheck
+
+test-e2e: ## Run Playwright E2E tests
+	bun run test:e2e
+
+test-e2e-ui: ## Open Playwright UI mode
+	bun run test:e2e:ui
+
+demo-record: ## Record Playwright demo specs (TOPIC=practice-overview optional)
+	@if [ -n "$(TOPIC)" ]; then \
+		PLAYWRIGHT_DEMO=1 bun x playwright test e2e/demos/$(TOPIC).spec.ts; \
+	else \
+		bun run demo:record; \
+	fi
 
 format: ## Format code with Prettier
 	bun run format
@@ -74,7 +87,7 @@ sync-types: ## Fetch OpenAPI schema from server and regenerate TypeScript types
 
 # ── Cleanup ────────────────────────────────────────────────
 clean: ## Remove build artifacts
-	rm -rf .next node_modules
+	rm -rf .next node_modules test-results playwright-report demo-output
 
 # ── Help ───────────────────────────────────────────────────
 help: ## Show this help

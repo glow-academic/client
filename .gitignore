@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+/test-results
+/playwright-report
+/demo-output
 
 # next.js
 /.next/
@@ -53,3 +56,6 @@ cypress/screenshots
 .claude/worktrees/
 .claude/plans/
 .claude/
+
+# Playwright auth state — forged session cookies for demo recording
+e2e/.auth/

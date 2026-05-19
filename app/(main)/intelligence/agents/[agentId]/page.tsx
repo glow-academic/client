@@ -221,7 +221,7 @@ export default async function AgentEditPage({
     const [agentDetail, context, draftsResult, groupResult] = await Promise.all([
       getAgent(input),
       getAgentContextById(agentId) as Promise<ContextOut>,
-      api.post("/agent/drafts", {} as any),
+      api.post("/agent/drafts", { body: {} } as any),
       api.post(
         "/agent/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupAgentIn,

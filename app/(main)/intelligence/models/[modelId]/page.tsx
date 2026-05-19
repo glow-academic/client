@@ -194,7 +194,7 @@ export default async function ModelEditPage({
     const [model, context, draftsResult, groupResult] = await Promise.all([
       getModel(input),
       getModelContextById(modelId) as Promise<ContextOut>,
-      api.post("/model/drafts", {} as any),
+      api.post("/model/drafts", { body: {} } as any),
       api.post("/model/group", { body: {} } as GroupModelIn),
     ]);
 

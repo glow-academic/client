@@ -254,8 +254,7 @@ export default async function NewDocumentPage({
     const filesFilter = buildSectionFilter({ search: q.uploadSearch });
 
     const body = {
-      id: null,
-      draft_id: q.draftId ?? null,
+      ...(q.draftId ? { draft_id: q.draftId } : {}),
       ...(descriptionsFilter ? { descriptions: descriptionsFilter } : {}),
       ...(parameterFieldsFilter
         ? { parameter_fields: parameterFieldsFilter }
@@ -267,7 +266,7 @@ export default async function NewDocumentPage({
 
     const [documentDetailDefault, draftsResult, groupResult] = await Promise.all([
       getDocumentDefault(input),
-      api.post("/document/drafts", {} as DocumentDraftsIn),
+      api.post("/document/drafts", { body: {} } as DocumentDraftsIn),
       api.post(
         "/document/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupDocumentIn,

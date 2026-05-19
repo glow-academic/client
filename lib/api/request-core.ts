@@ -94,6 +94,8 @@ export async function doRequest<T>(
           // FastAPI returns {"detail": "..."} for errors
           if ("detail" in errorData && typeof errorData.detail === "string") {
             errorMessage = `${res.status} ${errorData.detail}`;
+          } else if ("detail" in errorData && Array.isArray(errorData.detail)) {
+            errorMessage = `${res.status} ${JSON.stringify(errorData.detail)}`;
           } else if (
             "message" in errorData &&
             typeof errorData.message === "string"

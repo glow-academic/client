@@ -132,7 +132,7 @@ export default function Dashboard({
   );
 
   return (
-    <div className="space-y-6" data-page="dashboard-index">
+    <div className="space-y-6" data-page="dashboard-index" data-testid="dashboard-overview">
       {/* Header - full width */}
       <DashboardHeader data={data} />
 

@@ -39,13 +39,17 @@ export function PageHeader({ breadcrumbs, toolbar, onToggleLeftSidebar, hasPanel
   const { toggleSidebar: toggleRightPanel } = useSidebar();
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+    <header
+      className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12"
+      data-testid="page-header"
+    >
       <div className="flex items-center gap-2 px-4 flex-1 min-w-0">
         <Button
           variant="ghost"
           size="icon"
           className="size-7 -ml-1 shrink-0"
           onClick={onToggleLeftSidebar}
+          data-testid="toggle-left-sidebar"
         >
           <PanelLeftIcon />
           <span className="sr-only">Toggle navigation</span>
@@ -63,6 +67,7 @@ export function PageHeader({ breadcrumbs, toolbar, onToggleLeftSidebar, hasPanel
             size="icon"
             className="size-7"
             onClick={toggleRightPanel}
+            data-testid="toggle-right-panel"
           >
             <PanelRightIcon />
             <span className="sr-only">Toggle AI Panel</span>
