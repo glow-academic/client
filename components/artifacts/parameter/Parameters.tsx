@@ -22,7 +22,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
@@ -918,14 +918,14 @@ export default function Parameters({
                   title={`Edit ${parameter.name}`}
                   className="h-9 px-3"
                 >
-                  <Link
+                  <HoverPrefetchLink
                     href={`/management/parameters/${parameter.parameter_id}`}
-                    prefetch={false}
+                    delay={150}
                     aria-label={`Edit ${parameter.name}`}
                   >
                     <Edit className="h-4 w-4 md:mr-0 mr-2" />
                     <span className="md:hidden">Edit</span>
-                  </Link>
+                  </HoverPrefetchLink>
                 </Button>
               ) : (
                 <Button
@@ -936,14 +936,14 @@ export default function Parameters({
                   title={`View ${parameter.name}`}
                   className="h-9 px-3"
                 >
-                  <Link
+                  <HoverPrefetchLink
                     href={`/management/parameters/${parameter.parameter_id}`}
-                    prefetch={false}
+                    delay={150}
                     aria-label={`View ${parameter.name}`}
                   >
                     <Eye className="h-4 w-4 md:mr-0 mr-2" />
                     <span className="md:hidden">View</span>
-                  </Link>
+                  </HoverPrefetchLink>
                 </Button>
               ))}
               {!isGhost && parameter.can_duplicate && (

@@ -25,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { X } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 
 type DebugInfoItem = {
   id: string;
@@ -428,9 +428,9 @@ export function RunsDataTable({
           const groupId = row.original.groupId;
           return (
             <Button asChild variant="outline" size="sm">
-              <Link href={`/analytics/pricing/${groupId}`} prefetch={false}>
+              <HoverPrefetchLink href={`/analytics/pricing/${groupId}`} delay={150}>
                 View
-              </Link>
+              </HoverPrefetchLink>
             </Button>
           );
         },

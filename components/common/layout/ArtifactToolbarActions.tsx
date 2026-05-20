@@ -25,7 +25,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Download, Loader2, Plus } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { useRouter } from "next/navigation";
 import { useCallback, useTransition } from "react";
 import { toast } from "sonner";
@@ -95,10 +95,10 @@ export function ArtifactToolbarActions({
     <div className="flex items-center gap-2">
       {leftSlot ?? (newButton ? (
         <Button asChild size="sm">
-          <Link href={newButton.href}>
+          <HoverPrefetchLink href={newButton.href}>
             <Plus className="h-4 w-4" />
             {newButton.label}
-          </Link>
+          </HoverPrefetchLink>
         </Button>
       ) : null)}
       {exportAction && bffDownloadPrefix && (

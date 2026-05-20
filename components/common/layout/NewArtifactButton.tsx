@@ -1,8 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { Plus } from "lucide-react";
-import Link from "next/link";
 
 interface NewArtifactButtonProps {
   label: string;
@@ -12,10 +12,10 @@ interface NewArtifactButtonProps {
 export function NewArtifactButton({ label, href }: NewArtifactButtonProps) {
   return (
     <Button asChild size="sm">
-      <Link href={href}>
+      <HoverPrefetchLink href={href}>
         <Plus className="h-4 w-4" />
         {label}
-      </Link>
+      </HoverPrefetchLink>
     </Button>
   );
 }

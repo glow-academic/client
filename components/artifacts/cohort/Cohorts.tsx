@@ -7,7 +7,7 @@
  */
 "use client";
 import { AlertCircle, Check, CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Play, Search, Sparkles, Trash2, Users, X } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -1059,15 +1059,15 @@ export default function Cohorts({
                     size="sm"
                     data-testid={`edit-${cohort.cohort_id}`}
                   >
-                    <Link
+                    <HoverPrefetchLink
                       href={`/training/cohorts/${cohort.cohort_id}`}
-                      prefetch={false}
+                      delay={150}
                       {...(cohort.name
                         ? { "aria-label": `Edit ${cohort.name}` }
                         : {})}
                     >
                       <Edit className="h-4 w-4" />
-                    </Link>
+                    </HoverPrefetchLink>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Edit</TooltipContent>
@@ -1081,15 +1081,15 @@ export default function Cohorts({
                     size="sm"
                     data-testid={`view-${cohort.cohort_id}`}
                   >
-                    <Link
+                    <HoverPrefetchLink
                       href={`/training/cohorts/${cohort.cohort_id}`}
-                      prefetch={false}
+                      delay={150}
                       {...(cohort.name
                         ? { "aria-label": `View ${cohort.name}` }
                         : {})}
                     >
                       <Eye className="h-4 w-4" />
-                    </Link>
+                    </HoverPrefetchLink>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>View</TooltipContent>

@@ -22,7 +22,7 @@ import { useTransport } from "@/lib/transport/context";
 import { useTestLifecycle } from "@/hooks/use-test-lifecycle";
 import type { OutputOf } from "@/lib/api/types";
 import { AlertCircle, CheckCircle2, Clock, Play, Square, Settings } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -289,13 +289,13 @@ export default function Test({
                             variant="ghost"
                             size="sm"
                           >
-                            <Link
+                            <HoverPrefetchLink
                               href={`/invocation/${(run as RunItem & { benchmark_bundle_entry_id: string }).benchmark_bundle_entry_id}?testId=${attemptId}`}
-                              prefetch={false}
+                              delay={150}
                             >
                               <Settings className="h-3 w-3 mr-1" />
                               Customize
-                            </Link>
+                            </HoverPrefetchLink>
                           </Button>
                         )}
                       </div>

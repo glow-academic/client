@@ -5,7 +5,7 @@
  */
 "use client";
 import { AlertCircle, Check, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Settings as SettingsIcon, Trash2, X } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
@@ -836,14 +836,14 @@ export default function Settings({
                     title={`Edit setting ${setting?.name || "Unnamed"}`}
                     className="h-9 px-3"
                   >
-                    <Link
+                    <HoverPrefetchLink
                       href={`/settings/${settingsId}`}
-                      prefetch={false}
+                      delay={150}
                       aria-label={`Edit setting ${setting?.name || "Unnamed"}`}
                     >
                       <Edit className="h-4 w-4 md:mr-0 mr-2" />
                       <span className="md:hidden">Edit</span>
-                    </Link>
+                    </HoverPrefetchLink>
                   </Button>
                   <Button
                     asChild
@@ -853,14 +853,14 @@ export default function Settings({
                     title={`View setting ${setting?.name || "Unnamed"}`}
                     className="h-9 px-3"
                   >
-                    <Link
+                    <HoverPrefetchLink
                       href={`/settings/${settingsId}`}
-                      prefetch={false}
+                      delay={150}
                       aria-label={`View setting ${setting?.name || "Unnamed"}`}
                     >
                       <Eye className="h-4 w-4 md:mr-0 mr-2" />
                       <span className="md:hidden">View</span>
-                    </Link>
+                    </HoverPrefetchLink>
                   </Button>
                 </>
               )}

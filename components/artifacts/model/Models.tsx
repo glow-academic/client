@@ -8,7 +8,7 @@
  */
 "use client";
 import { AlertCircle, Check, Copy, Cpu, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, X } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -1136,14 +1136,14 @@ export default function Models({
           title={`View model ${model.name || "Unknown Model"}`}
           className="h-9 px-3"
         >
-          <Link
+          <HoverPrefetchLink
             href={`/intelligence/models/${model.model_id}`}
-            prefetch={false}
+            delay={150}
             aria-label={`View model ${model.name || "Unknown Model"}`}
           >
             <Eye className="h-4 w-4 md:mr-0 mr-2" />
             <span className="md:hidden">View</span>
-          </Link>
+          </HoverPrefetchLink>
         </Button>
         {model.can_edit && (
           <Button
@@ -1154,14 +1154,14 @@ export default function Models({
             title={`Edit model ${model.name || "Unknown Model"}`}
             className="h-9 px-3"
           >
-            <Link
+            <HoverPrefetchLink
               href={`/intelligence/models/${model.model_id}`}
-              prefetch={false}
+              delay={150}
               aria-label={`Edit model ${model.name || "Unknown Model"}`}
             >
               <Edit className="h-4 w-4 md:mr-0 mr-2" />
               <span className="md:hidden">Edit</span>
-            </Link>
+            </HoverPrefetchLink>
           </Button>
         )}
         <Button

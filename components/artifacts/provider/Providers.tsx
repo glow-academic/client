@@ -4,7 +4,7 @@
  */
 "use client";
 import { AlertCircle, Check, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, X } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -982,13 +982,13 @@ export default function Providers({
                     data-testid={`btn-view-provider-${providerId}`}
                     title="View"
                   >
-                    <Link
+                    <HoverPrefetchLink
                       href={`/intelligence/providers/${providerId}`}
-                      prefetch={false}
+                      delay={150}
                       aria-label={providerName ? `View ${providerName}` : undefined}
                     >
                       <Eye className="h-4 w-4" />
-                    </Link>
+                    </HoverPrefetchLink>
                   </Button>
                   {provider.can_edit && (
                     <Button
@@ -997,13 +997,13 @@ export default function Providers({
                       size="icon"
                       data-testid={`btn-edit-provider-${providerId}`}
                     >
-                      <Link
+                      <HoverPrefetchLink
                         href={`/intelligence/providers/${providerId}`}
-                        prefetch={false}
+                        delay={150}
                         aria-label={providerName ? `Edit ${providerName}` : undefined}
                       >
                         <Edit className="h-4 w-4" />
-                      </Link>
+                      </HoverPrefetchLink>
                     </Button>
                   )}
                   {provider.can_delete && (

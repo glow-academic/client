@@ -6,7 +6,7 @@
  */
 "use client";
 import { AlertCircle, Check, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, Users, X } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
@@ -884,14 +884,14 @@ export default function Departments({
                 title={`Edit department ${department.name || "Unknown"}`}
                 className="h-9 px-3"
               >
-                <Link
+                <HoverPrefetchLink
                   href={`/system/departments/${department.department_id}`}
-                  prefetch={false}
+                  delay={150}
                   aria-label={`Edit department ${department.name || "Unknown"}`}
                 >
                   <Edit className="h-4 w-4 md:mr-0 mr-2" />
                   <span className="md:hidden">Edit</span>
-                </Link>
+                </HoverPrefetchLink>
               </Button>
             ) : department.department_id ? (
               <Button
@@ -902,14 +902,14 @@ export default function Departments({
                 title={`View department ${department.name || "Unknown"}`}
                 className="h-9 px-3"
               >
-                <Link
+                <HoverPrefetchLink
                   href={`/system/departments/${department.department_id}`}
-                  prefetch={false}
+                  delay={150}
                   aria-label={`View department ${department.name || "Unknown"}`}
                 >
                   <Eye className="h-4 w-4 md:mr-0 mr-2" />
                   <span className="md:hidden">View</span>
-                </Link>
+                </HoverPrefetchLink>
               </Button>
             ) : null)}
             {!isGhost && department.can_duplicate && department.department_id && (

@@ -6,7 +6,7 @@
  */
 "use client";
 import { AlertCircle, Brain, Check, CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Sparkles, Trash2, Users, X } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -1385,14 +1385,14 @@ export default function Personas({
                       data-action-button
                       className="h-9 px-3"
                     >
-                      <Link
+                      <HoverPrefetchLink
                         href={`/training/personas/${persona.persona_id}`}
-                        prefetch={false}
+                        delay={150}
                         aria-label={`Edit persona ${persona.name || "Unnamed"}`}
                       >
                         <Edit className="h-4 w-4 md:mr-0 mr-2" />
                         <span className="md:hidden">Edit</span>
-                      </Link>
+                      </HoverPrefetchLink>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Edit</TooltipContent>
@@ -1408,14 +1408,14 @@ export default function Personas({
                       data-action-button
                       className="h-9 px-3"
                     >
-                      <Link
+                      <HoverPrefetchLink
                         href={`/training/personas/${persona.persona_id}`}
-                        prefetch={false}
+                        delay={150}
                         aria-label={`View persona ${persona.name || "Unnamed"}`}
                       >
                         <Eye className="h-4 w-4 md:mr-0 mr-2" />
                         <span className="md:hidden">View</span>
-                      </Link>
+                      </HoverPrefetchLink>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>View</TooltipContent>

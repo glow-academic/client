@@ -114,7 +114,7 @@ import {
   UserX,
   X,
 } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 
 // Import types from page (all types are already exported from the page)
 import type {
@@ -1351,12 +1351,12 @@ export default function Profiles({
                     className="h-7 w-7 p-0"
                     data-testid="btn-edit-profile"
                   >
-                    <Link
+                    <HoverPrefetchLink
                       href={`/management/profiles/${profile.profile_id}`}
-                      prefetch={false}
+                      delay={150}
                     >
                       <Edit className="h-3 w-3" />
-                    </Link>
+                    </HoverPrefetchLink>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
