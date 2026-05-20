@@ -432,6 +432,7 @@ export function UnifiedSidebar({
                         url: item.url,
                         section: item.section!,
                       })}
+                      prefetch={false}
                       onClick={(e) =>
                         handleItemClick(e, {
                           title: item.title,
@@ -480,6 +481,7 @@ export function UnifiedSidebar({
                             >
                               <Link
                                 href={getItemHref(subItem)}
+                                prefetch={false}
                                 onClick={(e) => handleItemClick(e, subItem)}
                               >
                                 {subItem.title}

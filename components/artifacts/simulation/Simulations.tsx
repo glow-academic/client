@@ -7,6 +7,7 @@
  */
 "use client";
 import { AlertCircle, Check, CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Search, Sparkles, Trash2, Users, X } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -903,9 +904,6 @@ export function Simulations({
     setShowDeleteDialog(true);
   };
 
-  const handleEdit = (id: string) => {
-    router.push(`/training/simulations/${id}`);
-  };
 
   const handleDuplicate = async (
     simulationId: string,
@@ -1091,22 +1089,24 @@ export function Simulations({
                 {ghost.error}
               </span>
             )}
-            {!isGhost && (<>{simulation.can_edit ? (
+            {!isGhost && simulation.simulation_id && (<>{simulation.can_edit ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    asChild
                     variant="outline"
                     size="sm"
                     data-testid="btn-edit-simulation"
-                    onClick={() =>
-                      simulation.simulation_id &&
-                      handleEdit(simulation.simulation_id)
-                    }
-                    aria-label={`Edit ${simulation.name || "Simulation"}`}
                     className="h-9 px-3"
                   >
-                    <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                    <span className="md:hidden">Edit</span>
+                    <Link
+                      href={`/training/simulations/${simulation.simulation_id}`}
+                      prefetch={false}
+                      aria-label={`Edit ${simulation.name || "Simulation"}`}
+                    >
+                      <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                      <span className="md:hidden">Edit</span>
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Edit</TooltipContent>
@@ -1115,18 +1115,20 @@ export function Simulations({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    asChild
                     variant="outline"
                     size="sm"
                     data-testid="btn-view-simulation"
-                    onClick={() =>
-                      simulation.simulation_id &&
-                      handleEdit(simulation.simulation_id)
-                    }
-                    aria-label={`View ${simulation.name}`}
                     className="h-9 px-3"
                   >
-                    <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                    <span className="md:hidden">View</span>
+                    <Link
+                      href={`/training/simulations/${simulation.simulation_id}`}
+                      prefetch={false}
+                      aria-label={`View ${simulation.name}`}
+                    >
+                      <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                      <span className="md:hidden">View</span>
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>View</TooltipContent>

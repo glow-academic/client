@@ -23,6 +23,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -927,13 +928,6 @@ export function Scenarios({
     setShowDeleteDialog(true);
   };
 
-  const handleEdit = (id: string) => {
-    router.push(`/training/scenarios/${id}`);
-  };
-
-  const handleView = (id: string) => {
-    router.push(`/training/scenarios/${id}`);
-  };
 
   const toggleGroupCollapse = (parentId: string) => {
     setCollapsedGroups((prev) => {
@@ -1208,23 +1202,25 @@ export function Scenarios({
                   {ghost.error}
                 </span>
               )}
-              {!isGhost && (scenario.generated ? (
+              {!isGhost && scenario.scenario_id && (scenario.generated ? (
                 // For generated scenarios: only show preview and duplicate
                 <>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        asChild
                         variant="outline"
                         size="sm"
                         data-testid="btn-view-scenario"
-                        onClick={() =>
-                          scenario.scenario_id &&
-                          handleView(scenario.scenario_id)
-                        }
                         className="h-9 px-3"
                       >
-                        <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                        <span className="md:hidden">View</span>
+                        <Link
+                          href={`/training/scenarios/${scenario.scenario_id}`}
+                          prefetch={false}
+                        >
+                          <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                          <span className="md:hidden">View</span>
+                        </Link>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>View</TooltipContent>
@@ -1272,17 +1268,19 @@ export function Scenarios({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
+                          asChild
                           variant="outline"
                           size="sm"
                           data-testid="btn-edit-scenario"
-                          onClick={() =>
-                            scenario.scenario_id &&
-                            handleEdit(scenario.scenario_id)
-                          }
                           className="h-9 px-3"
                         >
-                          <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                          <span className="md:hidden">Edit</span>
+                          <Link
+                            href={`/training/scenarios/${scenario.scenario_id}`}
+                            prefetch={false}
+                          >
+                            <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                            <span className="md:hidden">Edit</span>
+                          </Link>
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>Edit</TooltipContent>
@@ -1291,17 +1289,19 @@ export function Scenarios({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
+                          asChild
                           variant="outline"
                           size="sm"
                           data-testid="btn-view-scenario"
-                          onClick={() =>
-                            scenario.scenario_id &&
-                            handleView(scenario.scenario_id)
-                          }
                           className="h-9 px-3"
                         >
-                          <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                          <span className="md:hidden">View</span>
+                          <Link
+                            href={`/training/scenarios/${scenario.scenario_id}`}
+                            prefetch={false}
+                          >
+                            <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                            <span className="md:hidden">View</span>
+                          </Link>
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>View</TooltipContent>

@@ -6,6 +6,7 @@
  */
 "use client";
 import { AlertCircle, Brain, Check, CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Sparkles, Trash2, Users, X } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -1182,14 +1183,6 @@ export default function Personas({
     setShowDeleteDialog(true);
   };
 
-  const handleEdit = (id: string) => {
-    router.push(`/training/personas/${id}`);
-  };
-
-  const handleView = (id: string) => {
-    router.push(`/training/personas/${id}`);
-  };
-
   const renderPersonaCard = (
     persona: (typeof personas)[0],
     ghost?: Ghost<(typeof personas)[0]>,
@@ -1381,24 +1374,25 @@ export default function Personas({
                   {ghost.error}
                 </span>
               )}
-              {!isGhost && (<>{persona.can_edit ? (
+              {!isGhost && persona.persona_id && (<>{persona.can_edit ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
+                      asChild
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        if (persona.persona_id) {
-                          handleEdit(persona.persona_id);
-                        }
-                      }}
-                      aria-label={`Edit persona ${persona.name || "Unnamed"}`}
                       data-testid="btn-edit-persona"
                       data-action-button
                       className="h-9 px-3"
                     >
-                      <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                      <span className="md:hidden">Edit</span>
+                      <Link
+                        href={`/training/personas/${persona.persona_id}`}
+                        prefetch={false}
+                        aria-label={`Edit persona ${persona.name || "Unnamed"}`}
+                      >
+                        <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                        <span className="md:hidden">Edit</span>
+                      </Link>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Edit</TooltipContent>
@@ -1407,20 +1401,21 @@ export default function Personas({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
+                      asChild
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        if (persona.persona_id) {
-                          handleView(persona.persona_id);
-                        }
-                      }}
-                      aria-label={`View persona ${persona.name || "Unnamed"}`}
                       data-testid="btn-view-persona"
                       data-action-button
                       className="h-9 px-3"
                     >
-                      <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                      <span className="md:hidden">View</span>
+                      <Link
+                        href={`/training/personas/${persona.persona_id}`}
+                        prefetch={false}
+                        aria-label={`View persona ${persona.name || "Unnamed"}`}
+                      >
+                        <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                        <span className="md:hidden">View</span>
+                      </Link>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>View</TooltipContent>

@@ -7,6 +7,7 @@
  */
 "use client";
 import { AlertCircle, Check, CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Play, Search, Sparkles, Trash2, Users, X } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -897,14 +898,6 @@ export default function Cohorts({
     setShowDeleteDialog(true);
   };
 
-  const handleEdit = (id: string) => {
-    router.push(`/training/cohorts/${id}`);
-  };
-
-  const handleView = (id: string) => {
-    router.push(`/training/cohorts/${id}`);
-  };
-
   const renderCohortCard = (
     cohort: (typeof cohorts)[number],
     ghost?: Ghost<(typeof cohorts)[number]>,
@@ -1057,21 +1050,24 @@ export default function Cohorts({
                 {ghost.error}
               </span>
             )}
-            {!isGhost && (<>{cohort.can_edit ? (
+            {!isGhost && cohort.cohort_id && (<>{cohort.can_edit ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    asChild
                     variant="outline"
                     size="sm"
                     data-testid={`edit-${cohort.cohort_id}`}
-                    onClick={() =>
-                      cohort.cohort_id && handleEdit(cohort.cohort_id)
-                    }
-                    {...(cohort.name
-                      ? { "aria-label": `Edit ${cohort.name}` }
-                      : {})}
                   >
-                    <Edit className="h-4 w-4" />
+                    <Link
+                      href={`/training/cohorts/${cohort.cohort_id}`}
+                      prefetch={false}
+                      {...(cohort.name
+                        ? { "aria-label": `Edit ${cohort.name}` }
+                        : {})}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Edit</TooltipContent>
@@ -1080,17 +1076,20 @@ export default function Cohorts({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    asChild
                     variant="outline"
                     size="sm"
                     data-testid={`view-${cohort.cohort_id}`}
-                    onClick={() =>
-                      cohort.cohort_id && handleView(cohort.cohort_id)
-                    }
-                    {...(cohort.name
-                      ? { "aria-label": `View ${cohort.name}` }
-                      : {})}
                   >
-                    <Eye className="h-4 w-4" />
+                    <Link
+                      href={`/training/cohorts/${cohort.cohort_id}`}
+                      prefetch={false}
+                      {...(cohort.name
+                        ? { "aria-label": `View ${cohort.name}` }
+                        : {})}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>View</TooltipContent>
