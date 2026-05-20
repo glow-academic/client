@@ -930,9 +930,31 @@ export function GenerationPanel({
   //                      (auto-fired Context/Search/Group on page load,
   //                      etc.). Default off keeps the panel focused on
   //                      assistant-driven work.
+  // Panel prefs are client-only state: SSR-injected `initialPanelPrefs` would
+  // get baked into prefetched RSC payloads in the Router Cache, so a toggle
+  // on one artifact would show stale values on a prefetched sibling artifact
+  // until the cache TTL expired. Instead, mount with defaults (or the
+  // SSR-provided fallback for backward compat) and re-read from
+  // ``document.cookie`` on mount so the live value wins.
   const [safeMode, setSafeModeState] = useState<boolean>(initialPanelPrefs.safeMode);
   const [showFullContext, setShowFullContextState] = useState<boolean>(initialPanelPrefs.showFullContext);
   const [showUserTools, setShowUserToolsState] = useState<boolean>(initialPanelPrefs.showUserTools);
+
+  // Client-side cookie sync: after hydration, document.cookie is the truth.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const readCookie = (name: string): boolean | null => {
+      const m = document.cookie.match(new RegExp("(?:^|; )" + name.replace(/\./g, "\\.") + "=([^;]*)"));
+      if (!m) return null;
+      return m[1] === "1";
+    };
+    const sm = readCookie("glow.gp.safeMode");
+    const sfc = readCookie("glow.gp.showFullContext");
+    const sut = readCookie("glow.gp.showUserTools");
+    if (sm !== null) setSafeModeState(sm);
+    if (sfc !== null) setShowFullContextState(sfc);
+    if (sut !== null) setShowUserToolsState(sut);
+  }, []);
 
   const writeCookie = useCallback((name: string, value: boolean) => {
     if (typeof document === "undefined") return;

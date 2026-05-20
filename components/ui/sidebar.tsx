@@ -4,6 +4,7 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, VariantProps } from "class-variance-authority";
 import { PanelLeftIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -78,6 +79,7 @@ function SidebarProvider({
   const internalIsMobile = useIsMobile();
   const isMobile = isMobileProp ?? internalIsMobile;
   const [openMobile, setOpenMobile] = React.useState(false);
+  const router = useRouter();
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
@@ -95,8 +97,13 @@ function SidebarProvider({
       // This sets the cookie to keep the sidebar state.
       const effectiveCookieName = cookieName || SIDEBAR_COOKIE_NAME;
       document.cookie = `${effectiveCookieName}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}; SameSite=Lax`;
+
+      // Invalidate the current route's RSC so prefetched/cached siblings
+      // don't serve stale layout state. Without this, hover-prefetched
+      // pages would render with the pre-toggle cookie value.
+      router.refresh();
     },
-    [setOpenProp, open],
+    [setOpenProp, open, cookieName, router],
   );
 
   // Helper to toggle the sidebar.
