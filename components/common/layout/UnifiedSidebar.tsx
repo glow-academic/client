@@ -433,6 +433,12 @@ export function UnifiedSidebar({
                         section: item.section!,
                       })}
                       prefetch={false}
+                      onPointerEnter={(e) =>
+                        router.prefetch(e.currentTarget.getAttribute("href")!)
+                      }
+                      onFocus={(e) =>
+                        router.prefetch(e.currentTarget.getAttribute("href")!)
+                      }
                       onClick={(e) =>
                         handleItemClick(e, {
                           title: item.title,
@@ -482,6 +488,16 @@ export function UnifiedSidebar({
                               <Link
                                 href={getItemHref(subItem)}
                                 prefetch={false}
+                                onPointerEnter={(e) =>
+                                  router.prefetch(
+                                    e.currentTarget.getAttribute("href")!,
+                                  )
+                                }
+                                onFocus={(e) =>
+                                  router.prefetch(
+                                    e.currentTarget.getAttribute("href")!,
+                                  )
+                                }
                                 onClick={(e) => handleItemClick(e, subItem)}
                               >
                                 {subItem.title}
