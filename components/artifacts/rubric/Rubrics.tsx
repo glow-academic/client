@@ -8,6 +8,7 @@
  */
 "use client";
 import { AlertCircle, Check, Copy, Edit, Eye, FileCheck, FileSpreadsheet, Loader2, Pencil, Star, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -770,10 +771,6 @@ export default function Rubrics({
     setShowDeleteDialog(true);
   };
 
-  const handleEdit = (id: string) => {
-    router.push(`/system/rubrics/${id}`);
-  };
-
   const handleBulkDelete = async () => {
     // Either explicit-mode (deletable rows on current page) OR
     // all-matching mode (server resolves rows via filter). Both
@@ -1096,31 +1093,37 @@ export default function Rubrics({
                   {ghost.error}
                 </span>
               )}
-              {!isGhost && (
+              {!isGhost && rubric.rubric_id && (
                 <>
                   {rubric.can_edit ? (
                     <Button
+                      asChild
                       variant="outline"
-                      onClick={() => {
-                        if (rubric.rubric_id) handleEdit(rubric.rubric_id);
-                      }}
                       data-testid="btn-edit-rubric"
-                      aria-label="Edit rubric"
                     >
-                      <Edit className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
-                      <span className="md:hidden">Edit</span>
+                      <Link
+                        href={`/system/rubrics/${rubric.rubric_id}`}
+                        prefetch={false}
+                        aria-label="Edit rubric"
+                      >
+                        <Edit className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
+                        <span className="md:hidden">Edit</span>
+                      </Link>
                     </Button>
                   ) : (
                     <Button
+                      asChild
                       variant="outline"
-                      onClick={() => {
-                        if (rubric.rubric_id) handleEdit(rubric.rubric_id);
-                      }}
-                      aria-label={`View ${rubric.name}`}
                       data-testid="btn-view-rubric"
                     >
-                      <Eye className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
-                      <span className="md:hidden">View</span>
+                      <Link
+                        href={`/system/rubrics/${rubric.rubric_id}`}
+                        prefetch={false}
+                        aria-label={`View ${rubric.name}`}
+                      >
+                        <Eye className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
+                        <span className="md:hidden">View</span>
+                      </Link>
                     </Button>
                   )}
                   {rubric.can_duplicate && (

@@ -4,7 +4,7 @@ import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Button } from "@/components/ui/button";
 import { ProfileContext } from "@/contexts/profile-context";
 import { Bug, Copy, Check } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useContext, useState } from "react";
 
 export default function Error({
@@ -16,24 +16,15 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const router = useRouter();
   // Use useContext directly instead of useProfile() to avoid throwing and masking real errors
   const profileContext = useContext(ProfileContext);
   const profile = profileContext?.profile ?? null;
   const [copied, setCopied] = useState(false);
 
-  const handleBackToGlow = () => {
-    // Navigate based on effective role if available, otherwise default to home
-    if (
-      profile?.role &&
-      profile.role !== "member" &&
-      profile.role !== "guest"
-    ) {
-      router.push("/analytics");
-    } else {
-      router.push("/home");
-    }
-  };
+  const backHref =
+    profile?.role && profile.role !== "member" && profile.role !== "guest"
+      ? "/analytics"
+      : "/home";
 
   // Build a single diagnostic blob — everything an engineer needs to
   // reproduce the bug from the user's report, in one paste.
@@ -123,12 +114,13 @@ export default function Error({
               Report This Error
             </Button>
           </ReportProblem>
-          <button
-            onClick={handleBackToGlow}
-            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 transition-colors"
+          <Link
+            href={backHref}
+            prefetch={false}
+            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 transition-colors text-center"
           >
             Back to Glow
-          </button>
+          </Link>
         </div>
 
         {/* Additional Help */}

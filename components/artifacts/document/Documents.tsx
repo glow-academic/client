@@ -57,6 +57,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import Link from "next/link";
 
 import type {
   DeleteDocumentIn,
@@ -500,14 +501,6 @@ export default function Documents({
     setShowPreviewDialog(true);
   }, []);
 
-  // Handle document edit - navigate to edit page
-  const handleEdit = useCallback(
-    (document: (typeof documents)[number]) => {
-      router.push(`/management/documents/${document.document_id}`);
-    },
-    [router]
-  );
-
   // Handle single document delete
   const handleSingleDelete = useCallback(
     (document: (typeof documents)[number]) => {
@@ -730,13 +723,18 @@ export default function Documents({
                 <Eye className="h-4 w-4" />
               </Button>
               <Button
+                asChild
                 variant="outline"
                 size="sm"
                 data-testid={`edit-${document.document_id}`}
-                onClick={() => handleEdit(document)}
-                aria-label={`Edit ${document.name}`}
               >
-                <Edit className="h-4 w-4" />
+                <Link
+                  href={`/management/documents/${document.document_id}`}
+                  prefetch={false}
+                  aria-label={`Edit ${document.name}`}
+                >
+                  <Edit className="h-4 w-4" />
+                </Link>
               </Button>
               {document.document_id &&
                 canDeleteDocument(document.document_id) && (
@@ -763,7 +761,6 @@ export default function Documents({
       fieldMapping,
       departmentMapping,
       canDeleteDocument,
-      handleEdit,
       handlePreview,
       handleSingleDelete,
       isSelected,

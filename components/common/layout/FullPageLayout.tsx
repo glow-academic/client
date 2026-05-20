@@ -25,8 +25,7 @@
  */
 "use client";
 
-import React, { useCallback } from "react";
-import { useRouter } from "next/navigation";
+import React from "react";
 
 import {
   SidebarInset,
@@ -46,7 +45,6 @@ import type { ContextProfile } from "@/contexts/profile-context";
 import { GroupProviderClient } from "@/contexts/group-context";
 import { ThresholdsProvider } from "@/contexts/thresholds-context";
 import { GenerationListenerProvider } from "@/hooks/use-artifact-generation-context";
-import { SIDEBAR_SECTIONS } from "@/lib/sidebar-config";
 
 import type { SafeSessionSnapshot } from "@/lib/auth";
 
@@ -146,34 +144,10 @@ export function FullPageLayout({
   panelProps,
   children,
 }: FullPageLayoutProps) {
-  const router = useRouter();
   // When the viewport is narrow (e.g. ≤ 1280px), the right AI panel renders as
   // an overlay drawer instead of taking layout space. Left navigation keeps its
   // own mobile threshold (768px).
   const rightPanelIsMobile = useIsNarrow();
-
-  // Sidebar section change — navigate to artifact page
-  const handleSectionChange = useCallback(
-    (section: string) => {
-      let targetUrl = `/${section}`;
-      for (const route of SIDEBAR_SECTIONS) {
-        if (route.artifact === section) {
-          targetUrl = route.url;
-          break;
-        }
-        if (route.items) {
-          const child = route.items.find((item) => item.artifact === section);
-          if (child) {
-            targetUrl = child.url;
-            break;
-          }
-        }
-      }
-      router.push(targetUrl);
-      router.refresh();
-    },
-    [router],
-  );
 
   return (
     <>
@@ -190,7 +164,6 @@ export function FullPageLayout({
           <SidebarProvider defaultOpen={initialSidebarOpen ?? true}>
             <UnifiedSidebar
               activeSection={sidebarProps.activeSection}
-              onSectionChange={handleSectionChange}
               createFeedback={sidebarProps.createFeedback}
             />
             <SidebarInset>

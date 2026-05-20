@@ -22,7 +22,7 @@ import { useTransport } from "@/lib/transport/context";
 import { useTestLifecycle } from "@/hooks/use-test-lifecycle";
 import type { OutputOf } from "@/lib/api/types";
 import { AlertCircle, CheckCircle2, Clock, Play, Square, Settings } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -39,7 +39,6 @@ export default function Test({
   attemptId,
   attemptData,
 }: TestProps) {
-  const router = useRouter();
   const { _profile } = useProfile();
   const transport = useTransport();
   const [runs, setRuns] = useState<RunItem[]>(attemptData.runs || []);
@@ -286,16 +285,17 @@ export default function Test({
                         )}
                         {(run as RunItem & { benchmark_bundle_entry_id?: string | null }).benchmark_bundle_entry_id && (
                           <Button
-                            onClick={() =>
-                              router.push(
-                                `/invocation/${(run as RunItem & { benchmark_bundle_entry_id: string }).benchmark_bundle_entry_id}?testId=${attemptId}`
-                              )
-                            }
+                            asChild
                             variant="ghost"
                             size="sm"
                           >
-                            <Settings className="h-3 w-3 mr-1" />
-                            Customize
+                            <Link
+                              href={`/invocation/${(run as RunItem & { benchmark_bundle_entry_id: string }).benchmark_bundle_entry_id}?testId=${attemptId}`}
+                              prefetch={false}
+                            >
+                              <Settings className="h-3 w-3 mr-1" />
+                              Customize
+                            </Link>
                           </Button>
                         )}
                       </div>

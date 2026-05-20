@@ -4,29 +4,20 @@ import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Button } from "@/components/ui/button";
 import { ProfileContext } from "@/contexts/profile-context";
 import { Bug } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useContext } from "react";
 
 export default function NotFound() {
-  const router = useRouter();
-
   // Try to get profile context, but handle gracefully if not available
   // (not-found.tsx can render outside the layout hierarchy)
   // useContext returns null if context is not provided, which is safe
   const profileContext = useContext(ProfileContext);
   const profile = profileContext?.profile ?? null;
 
-  const handleBackToGlow = () => {
-    // Navigate based on effective role, default to /home if context unavailable
-    if (
-      profile?.role !== "member" &&
-      profile?.role !== "guest"
-    ) {
-      router.push("/analytics");
-    } else {
-      router.push("/home");
-    }
-  };
+  const backHref =
+    profile?.role !== "member" && profile?.role !== "guest"
+      ? "/analytics"
+      : "/home";
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-background to-secondary/30 px-4">
@@ -56,12 +47,13 @@ export default function NotFound() {
               Report This Issue
             </Button>
           </ReportProblem>
-          <button
-            onClick={handleBackToGlow}
-            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 transition-colors"
+          <Link
+            href={backHref}
+            prefetch={false}
+            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 transition-colors text-center"
           >
             Back to Glow
-          </button>
+          </Link>
         </div>
 
         {/* Additional Help */}

@@ -6,7 +6,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import * as React from "react";
 
 export interface NavigationBreadcrumbsProps {
@@ -18,18 +18,12 @@ export function NavigationBreadcrumbs({
   breadcrumbs,
   onSectionChange,
 }: NavigationBreadcrumbsProps) {
-  const router = useRouter();
-
-  const handleBreadcrumbClick = (crumb: {
+  const handleSectionClick = (crumb: {
     title: string;
     section?: string | null;
     url?: string;
   }) => {
-    // Prefer the server-provided URL (handles nested routes like /training/cohorts)
-    if (crumb.url) {
-      router.push(crumb.url);
-      router.refresh();
-    } else if (onSectionChange && crumb.section) {
+    if (onSectionChange && crumb.section) {
       onSectionChange(crumb.section);
     }
   };
@@ -43,10 +37,16 @@ export function NavigationBreadcrumbs({
               <BreadcrumbItem>
                 {index === breadcrumbs.length - 1 ? (
                   <BreadcrumbPage>{crumb.title}</BreadcrumbPage>
+                ) : crumb.url ? (
+                  <BreadcrumbLink asChild>
+                    <Link href={crumb.url} className="cursor-pointer">
+                      {crumb.title}
+                    </Link>
+                  </BreadcrumbLink>
                 ) : (
                   <BreadcrumbLink
                     className="cursor-pointer"
-                    onClick={() => handleBreadcrumbClick(crumb)}
+                    onClick={() => handleSectionClick(crumb)}
                   >
                     {crumb.title}
                   </BreadcrumbLink>

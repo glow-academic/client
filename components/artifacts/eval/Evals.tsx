@@ -7,6 +7,7 @@
 "use client";
 
 import { AlertCircle, Check, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -977,29 +978,39 @@ export default function Evals({
               )}
               {!isGhost && evalItem.can_edit && evalId ? (
                 <Button
+                  asChild
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push(`/system/evals/${evalId}`)}
-                  aria-label={`Edit ${evalName}`}
                   data-testid={`btn-edit-eval-${evalId}`}
                   title={`Edit ${evalName}`}
                   className="h-9 px-3"
                 >
-                  <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                  <span className="md:hidden">Edit</span>
+                  <Link
+                    href={`/system/evals/${evalId}`}
+                    prefetch={false}
+                    aria-label={`Edit ${evalName}`}
+                  >
+                    <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">Edit</span>
+                  </Link>
                 </Button>
               ) : !isGhost && evalId ? (
                 <Button
+                  asChild
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push(`/system/evals/${evalId}`)}
-                  aria-label={`View ${evalName}`}
                   data-testid={`btn-view-eval-${evalId}`}
                   title={`View ${evalName}`}
                   className="h-9 px-3"
                 >
-                  <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                  <span className="md:hidden">View</span>
+                  <Link
+                    href={`/system/evals/${evalId}`}
+                    prefetch={false}
+                    aria-label={`View ${evalName}`}
+                  >
+                    <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">View</span>
+                  </Link>
                 </Button>
               ) : null}
               {!isGhost && evalItem.can_delete && deleteEvalAction && evalId && (

@@ -15,6 +15,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
@@ -802,33 +803,43 @@ export default function Auths({
                   {ghost.error}
                 </span>
               )}
-              {!isGhost && (
+              {!isGhost && auth.auth_id && (
                 <>
                   {auth.can_edit ? (
                     <Button
+                      asChild
                       variant="outline"
                       size="sm"
-                      onClick={() => router.push(`/system/auth/${auth.auth_id}`)}
-                      aria-label={`Edit ${auth.name}`}
                       data-testid="btn-edit-auth"
                       title={`Edit ${auth.name}`}
                       className="h-9 px-3"
                     >
-                      <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                      <span className="md:hidden">Edit</span>
+                      <Link
+                        href={`/system/auth/${auth.auth_id}`}
+                        prefetch={false}
+                        aria-label={`Edit ${auth.name}`}
+                      >
+                        <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                        <span className="md:hidden">Edit</span>
+                      </Link>
                     </Button>
                   ) : (
                     <Button
+                      asChild
                       variant="outline"
                       size="sm"
-                      onClick={() => router.push(`/system/auth/${auth.auth_id}`)}
-                      aria-label={`View ${auth.name}`}
                       data-testid="btn-view-auth"
                       title={`View ${auth.name}`}
                       className="h-9 px-3"
                     >
-                      <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                      <span className="md:hidden">View</span>
+                      <Link
+                        href={`/system/auth/${auth.auth_id}`}
+                        prefetch={false}
+                        aria-label={`View ${auth.name}`}
+                      >
+                        <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                        <span className="md:hidden">View</span>
+                      </Link>
                     </Button>
                   )}
                   {auth.can_duplicate && (

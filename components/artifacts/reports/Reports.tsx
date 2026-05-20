@@ -5,6 +5,7 @@
 "use client";
 import { ColumnDef, Row, Table as TableType } from "@tanstack/react-table";
 import { Clock, MessageCircle, Target, Timer, X } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -554,11 +555,10 @@ export default function Reports({
           const profile = row.original;
           const displayName = profile.name;
           return (
-            <div
+            <Link
+              href={`/analytics/reports/${profile.profileId}`}
+              prefetch={false}
               className="flex items-center space-x-1 cursor-pointer hover:text-primary hover:underline justify-start pl-1 py-0 max-w-[130px]"
-              onClick={() =>
-                router.push(`/analytics/reports/${profile.profileId}`)
-              }
               title={`${displayName}${(profile.emails && profile.emails.length > 0) || profile.primary_email ? ` (${profile.emails && profile.emails.length > 0 ? profile.emails.join(", ") : profile.primary_email || ""})` : ""} - Click to view detailed report`}
               data-testid={`reports-profile-row-${profile.profileId}`}
             >
@@ -585,7 +585,7 @@ export default function Reports({
                   </span>
                 )}
               </div>
-            </div>
+            </Link>
           );
         },
         enableSorting: true,

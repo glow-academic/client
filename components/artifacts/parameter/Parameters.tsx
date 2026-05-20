@@ -22,6 +22,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
@@ -908,39 +909,41 @@ export default function Parameters({
                   {ghost.error}
                 </span>
               )}
-              {!isGhost && (parameter.can_edit ? (
+              {!isGhost && parameter.parameter_id && (parameter.can_edit ? (
                 <Button
+                  asChild
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    router.push(
-                      `/management/parameters/${parameter.parameter_id}`
-                    )
-                  }
-                  aria-label={`Edit ${parameter.name}`}
                   data-testid="btn-edit-parameter"
                   title={`Edit ${parameter.name}`}
                   className="h-9 px-3"
                 >
-                  <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                  <span className="md:hidden">Edit</span>
+                  <Link
+                    href={`/management/parameters/${parameter.parameter_id}`}
+                    prefetch={false}
+                    aria-label={`Edit ${parameter.name}`}
+                  >
+                    <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">Edit</span>
+                  </Link>
                 </Button>
               ) : (
                 <Button
+                  asChild
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    router.push(
-                      `/management/parameters/${parameter.parameter_id}`
-                    )
-                  }
-                  aria-label={`View ${parameter.name}`}
                   data-testid="btn-view-parameter"
                   title={`View ${parameter.name}`}
                   className="h-9 px-3"
                 >
-                  <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                  <span className="md:hidden">View</span>
+                  <Link
+                    href={`/management/parameters/${parameter.parameter_id}`}
+                    prefetch={false}
+                    aria-label={`View ${parameter.name}`}
+                  >
+                    <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">View</span>
+                  </Link>
                 </Button>
               ))}
               {!isGhost && parameter.can_duplicate && (

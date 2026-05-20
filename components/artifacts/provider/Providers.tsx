@@ -4,6 +4,7 @@
  */
 "use client";
 import { AlertCircle, Check, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -818,10 +819,6 @@ export default function Providers({
     setShowBulkEditDialog(true);
   };
 
-  const handleEdit = (id: string) => {
-    router.push(`/intelligence/providers/${id}`);
-  };
-
   const renderProviderCard = (
     provider: (typeof providers)[number],
     ghost?: Ghost<(typeof providers)[number]>,
@@ -979,24 +976,34 @@ export default function Providers({
               {!isGhost && providerId && (
                 <>
                   <Button
+                    asChild
                     variant="ghost"
                     size="icon"
-                    onClick={() => router.push(`/intelligence/providers/${providerId}`)}
-                    aria-label={providerName ? `View ${providerName}` : undefined}
                     data-testid={`btn-view-provider-${providerId}`}
                     title="View"
                   >
-                    <Eye className="h-4 w-4" />
+                    <Link
+                      href={`/intelligence/providers/${providerId}`}
+                      prefetch={false}
+                      aria-label={providerName ? `View ${providerName}` : undefined}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Link>
                   </Button>
                   {provider.can_edit && (
                     <Button
+                      asChild
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleEdit(providerId)}
-                      aria-label={providerName ? `Edit ${providerName}` : undefined}
                       data-testid={`btn-edit-provider-${providerId}`}
                     >
-                      <Edit className="h-4 w-4" />
+                      <Link
+                        href={`/intelligence/providers/${providerId}`}
+                        prefetch={false}
+                        aria-label={providerName ? `Edit ${providerName}` : undefined}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Link>
                     </Button>
                   )}
                   {provider.can_delete && (

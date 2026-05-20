@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { X } from "lucide-react";
+import Link from "next/link";
 
 type DebugInfoItem = {
   id: string;
@@ -426,14 +427,10 @@ export function RunsDataTable({
         cell: ({ row }) => {
           const groupId = row.original.groupId;
           return (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                router.push(`/analytics/pricing/${groupId}`);
-              }}
-            >
-              View
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/analytics/pricing/${groupId}`} prefetch={false}>
+                View
+              </Link>
             </Button>
           );
         },

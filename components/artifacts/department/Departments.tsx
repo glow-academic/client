@@ -6,6 +6,7 @@
  */
 "use client";
 import { AlertCircle, Check, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, Users, X } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
@@ -536,10 +537,6 @@ export default function Departments({
   // Note: cohort/profile faceted filtering removed since the list API
   // no longer returns cohort_ids/profile_ids per department row
 
-  const handleEdit = (id: string) => {
-    router.push(`/system/departments/${id}`);
-  };
-
   const handleDuplicate = async (department: (typeof departments)[number]) => {
     if (!department.can_duplicate || !duplicateDepartmentAction) {
       toast.error("This department cannot be duplicated");
@@ -880,29 +877,39 @@ export default function Departments({
             )}
             {!isGhost && (department.can_edit && department.department_id ? (
               <Button
+                asChild
                 variant="outline"
                 size="sm"
-                onClick={() => handleEdit(department.department_id!)}
-                aria-label={`Edit department ${department.name || "Unknown"}`}
                 data-testid="btn-edit-department"
                 title={`Edit department ${department.name || "Unknown"}`}
                 className="h-9 px-3"
               >
-                <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                <span className="md:hidden">Edit</span>
+                <Link
+                  href={`/system/departments/${department.department_id}`}
+                  prefetch={false}
+                  aria-label={`Edit department ${department.name || "Unknown"}`}
+                >
+                  <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                  <span className="md:hidden">Edit</span>
+                </Link>
               </Button>
             ) : department.department_id ? (
               <Button
+                asChild
                 variant="outline"
                 size="sm"
-                onClick={() => department.department_id && handleEdit(department.department_id)}
-                aria-label={`View department ${department.name || "Unknown"}`}
                 data-testid="btn-view-department"
                 title={`View department ${department.name || "Unknown"}`}
                 className="h-9 px-3"
               >
-                <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                <span className="md:hidden">View</span>
+                <Link
+                  href={`/system/departments/${department.department_id}`}
+                  prefetch={false}
+                  aria-label={`View department ${department.name || "Unknown"}`}
+                >
+                  <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                  <span className="md:hidden">View</span>
+                </Link>
               </Button>
             ) : null)}
             {!isGhost && department.can_duplicate && department.department_id && (

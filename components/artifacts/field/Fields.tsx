@@ -6,6 +6,7 @@
  */
 "use client";
 import { AlertCircle, Check, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
@@ -612,10 +613,6 @@ export default function Fields({
     }
   };
 
-  const handleEdit = (fieldId: string) => {
-    router.push(`/management/fields/${fieldId}`);
-  };
-
   const handleBulkDelete = async () => {
     // Either explicit-mode (deletable rows on current page) OR
     // all-matching mode (server resolves rows via filter). Both
@@ -886,33 +883,37 @@ export default function Fields({
                   {ghost.error}
                 </span>
               )}
-              {!isGhost && (
+              {!isGhost && field.field_id && (
                 <>
                   <Button
+                    asChild
                     variant="outline"
                     size="sm"
                     data-testid={`view-${field.field_id}`}
-                    onClick={() => {
-                      const fieldId = field.field_id;
-                      if (fieldId) router.push(`/management/fields/${fieldId}`);
-                    }}
-                    aria-label={`View ${field.name ?? ""}`}
                     title="View"
                   >
-                    <Eye className="h-4 w-4" />
+                    <Link
+                      href={`/management/fields/${field.field_id}`}
+                      prefetch={false}
+                      aria-label={`View ${field.name ?? ""}`}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Link>
                   </Button>
                   {field.can_edit && (
                     <Button
+                      asChild
                       variant="outline"
                       size="sm"
                       data-testid={`edit-${field.field_id}`}
-                      onClick={() => {
-                        const fieldId = field.field_id;
-                        if (fieldId) handleEdit(fieldId);
-                      }}
-                      aria-label={`Edit ${field.name ?? ""}`}
                     >
-                      <Edit className="h-4 w-4" />
+                      <Link
+                        href={`/management/fields/${field.field_id}`}
+                        prefetch={false}
+                        aria-label={`Edit ${field.name ?? ""}`}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Link>
                     </Button>
                   )}
                   {field.can_duplicate && (

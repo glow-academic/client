@@ -6,6 +6,7 @@
  */
 "use client";
 import { AlertCircle, Brain, Check, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Thermometer, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -737,10 +738,6 @@ export default function Agents({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortingKey, agents, pageIndex, pageSize]);
 
-  const handleEdit = (id: string) => {
-    router.push(`/intelligence/agents/${id}`);
-  };
-
   const handleDuplicate = async (id: string) => {
     if (!duplicateAgentAction || !profile?.id) return;
 
@@ -1092,29 +1089,39 @@ export default function Agents({
             )}
             {!isGhost && agent.can_edit && agent.agent_id ? (
               <Button
+                asChild
                 variant="outline"
                 size="sm"
-                onClick={() => handleEdit(agent.agent_id!)}
-                aria-label={`Edit agent ${agent.name ?? "Unnamed Agent"}`}
                 data-testid="btn-edit-agent"
                 title={`Edit agent ${agent.name ?? "Unnamed Agent"}`}
                 className="h-9 px-3"
               >
-                <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                <span className="md:hidden">Edit</span>
+                <Link
+                  href={`/intelligence/agents/${agent.agent_id}`}
+                  prefetch={false}
+                  aria-label={`Edit agent ${agent.name ?? "Unnamed Agent"}`}
+                >
+                  <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                  <span className="md:hidden">Edit</span>
+                </Link>
               </Button>
             ) : !isGhost && agent.agent_id ? (
               <Button
+                asChild
                 variant="outline"
                 size="sm"
-                onClick={() => handleEdit(agent.agent_id!)}
-                aria-label={`View agent ${agent.name ?? "Unnamed Agent"}`}
                 data-testid="btn-view-agent"
                 title={`View agent ${agent.name ?? "Unnamed Agent"}`}
                 className="h-9 px-3"
               >
-                <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                <span className="md:hidden">View</span>
+                <Link
+                  href={`/intelligence/agents/${agent.agent_id}`}
+                  prefetch={false}
+                  aria-label={`View agent ${agent.name ?? "Unnamed Agent"}`}
+                >
+                  <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                  <span className="md:hidden">View</span>
+                </Link>
               </Button>
             ) : null}
             {!isGhost && agent.can_duplicate && agent.agent_id && (

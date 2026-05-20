@@ -4,6 +4,7 @@
  */
 "use client";
 import { AlertCircle, Check, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -996,29 +997,39 @@ export default function Tools({
               )}
               {!isGhost && (tool.can_edit && toolId ? (
                 <Button
+                  asChild
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push(`/intelligence/tools/${toolId}`)}
-                  aria-label={`Edit ${toolName}`}
                   data-testid={`btn-edit-tool-${toolId}`}
                   title={`Edit ${toolName}`}
                   className="h-9 px-3"
                 >
-                  <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                  <span className="md:hidden">Edit</span>
+                  <Link
+                    href={`/intelligence/tools/${toolId}`}
+                    prefetch={false}
+                    aria-label={`Edit ${toolName}`}
+                  >
+                    <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">Edit</span>
+                  </Link>
                 </Button>
               ) : toolId ? (
                 <Button
+                  asChild
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push(`/intelligence/tools/${toolId}`)}
-                  aria-label={`View ${toolName}`}
                   data-testid={`btn-view-tool-${toolId}`}
                   title={`View ${toolName}`}
                   className="h-9 px-3"
                 >
-                  <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                  <span className="md:hidden">View</span>
+                  <Link
+                    href={`/intelligence/tools/${toolId}`}
+                    prefetch={false}
+                    aria-label={`View ${toolName}`}
+                  >
+                    <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">View</span>
+                  </Link>
                 </Button>
               ) : null)}
               {!isGhost && tool.can_duplicate && duplicateToolAction && toolId && (

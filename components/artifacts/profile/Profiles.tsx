@@ -114,6 +114,7 @@ import {
   UserX,
   X,
 } from "lucide-react";
+import Link from "next/link";
 
 // Import types from page (all types are already exported from the page)
 import type {
@@ -1339,20 +1340,23 @@ export default function Profiles({
                 <p>View Report</p>
               </TooltipContent>
             </Tooltip>
-            {canEditProfile && (
+            {canEditProfile && profile.profile_id && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    asChild
                     type="button"
                     variant="outline"
                     size="sm"
                     className="h-7 w-7 p-0"
-                    onClick={() => {
-                      router.push(`/management/profiles/${profile.profile_id}`);
-                    }}
                     data-testid="btn-edit-profile"
                   >
-                    <Edit className="h-3 w-3" />
+                    <Link
+                      href={`/management/profiles/${profile.profile_id}`}
+                      prefetch={false}
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>

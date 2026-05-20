@@ -8,6 +8,7 @@
  */
 "use client";
 import { AlertCircle, Check, Copy, Cpu, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -831,10 +832,6 @@ export default function Models({
     }
   };
 
-  const handleEdit = (modelId: string) => {
-    router.push(`/intelligence/models/${modelId}`);
-  };
-
   const handleBulkDelete = async () => {
     // Either explicit-mode (deletable rows on current page) OR
     // all-matching mode (server resolves rows via filter). Both
@@ -1130,31 +1127,41 @@ export default function Models({
             {ghost.error}
           </span>
         )}
-        {!isGhost && (<>
+        {!isGhost && model.model_id && (<>
         <Button
+          asChild
           variant="outline"
           size="sm"
-          onClick={() => model.model_id && router.push(`/intelligence/models/${model.model_id}`)}
-          aria-label={`View model ${model.name || "Unknown Model"}`}
           data-testid="btn-view-model"
           title={`View model ${model.name || "Unknown Model"}`}
           className="h-9 px-3"
         >
-          <Eye className="h-4 w-4 md:mr-0 mr-2" />
-          <span className="md:hidden">View</span>
+          <Link
+            href={`/intelligence/models/${model.model_id}`}
+            prefetch={false}
+            aria-label={`View model ${model.name || "Unknown Model"}`}
+          >
+            <Eye className="h-4 w-4 md:mr-0 mr-2" />
+            <span className="md:hidden">View</span>
+          </Link>
         </Button>
         {model.can_edit && (
           <Button
+            asChild
             variant="outline"
             size="sm"
-            onClick={() => model.model_id && handleEdit(model.model_id)}
-            aria-label={`Edit model ${model.name || "Unknown Model"}`}
             data-testid="btn-edit-model"
             title={`Edit model ${model.name || "Unknown Model"}`}
             className="h-9 px-3"
           >
-            <Edit className="h-4 w-4 md:mr-0 mr-2" />
-            <span className="md:hidden">Edit</span>
+            <Link
+              href={`/intelligence/models/${model.model_id}`}
+              prefetch={false}
+              aria-label={`Edit model ${model.name || "Unknown Model"}`}
+            >
+              <Edit className="h-4 w-4 md:mr-0 mr-2" />
+              <span className="md:hidden">Edit</span>
+            </Link>
           </Button>
         )}
         <Button

@@ -9,7 +9,7 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { Parser } from "nuqs";
 import { useQueryStates, type Values } from "nuqs";
 import * as React from "react";
@@ -288,7 +288,6 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
   registerSetFormData,
 }: GenericFormProps<T>) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const router = useRouter();
 
   // Use nuqs for all state management (URL-backed)
   // If external state is provided, use it; otherwise manage internally
@@ -604,17 +603,15 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
         <div className="flex justify-end gap-3">
           {submitButton.backUrl && (
             <Button
+              asChild
               type="button"
               variant="outline"
               data-testid="artifact-form-back"
-              onClick={() => {
-                if (router) {
-                  router.push(submitButton.backUrl!);
-                }
-              }}
               disabled={isSubmitting}
             >
-              {submitButton.backLabel || "Back"}
+              <Link href={submitButton.backUrl} prefetch={false}>
+                {submitButton.backLabel || "Back"}
+              </Link>
             </Button>
           )}
           <Button
