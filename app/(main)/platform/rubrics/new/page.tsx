@@ -1,6 +1,6 @@
 /**
- * app/(main)/system/rubrics/[rubricId]/page.tsx
- * Rubric edit page — full SSR rendering with FullPageLayout.
+ * app/(main)/platform/rubrics/new/page.tsx
+ * New rubric page — full SSR rendering with FullPageLayout.
  * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
@@ -8,11 +8,11 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import Rubric from "@/components/artifacts/rubric/Rubric";
 import { DraftProviderClient } from "@/contexts/draft-context";
+import Rubric from "@/components/artifacts/rubric/Rubric";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -29,8 +29,6 @@ type GetRubricIn = InputOf<"/rubric/get", "post">;
 type GetRubricOut = OutputOf<"/rubric/get", "post">;
 type CreateRubricIn = InputOf<"/rubric/create", "post">;
 type CreateRubricOut = OutputOf<"/rubric/create", "post">;
-type UpdateRubricIn = InputOf<"/rubric/update", "post">;
-type UpdateRubricOut = OutputOf<"/rubric/update", "post">;
 type PatchRubricDraftIn = InputOf<"/rubric/draft", "post">;
 type PatchRubricDraftOut = OutputOf<"/rubric/draft", "post">;
 type GroupRubricIn = InputOf<"/rubric/group", "post">;
@@ -44,7 +42,6 @@ type ContextOut = OutputOf<"/rubric/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getRubric = async (
-  rubricId: string | null,
   draftId: string | null,
   descriptionSearch: string | null,
   standardGroupSearch: string | null,
@@ -56,7 +53,7 @@ const getRubric = async (
     "/rubric/get",
     ({
       body: {
-        id: rubricId,
+        id: null,
         draft_id: draftId || null,
         descriptions:
           descriptionSearch
@@ -93,11 +90,6 @@ async function createRubric(input: CreateRubricIn): Promise<CreateRubricOut> {
   return api.post("/rubric/create", input);
 }
 
-async function updateRubric(input: UpdateRubricIn): Promise<UpdateRubricOut> {
-  "use server";
-  return api.post("/rubric/update", input);
-}
-
 async function patchRubricDraft(
   input: PatchRubricDraftIn
 ): Promise<PatchRubricDraftOut> {
@@ -121,26 +113,11 @@ async function createRubricProblem(input: ProblemRubricIn): Promise<ProblemRubri
   return api.post("/rubric/problem", input);
 }
 
-/** Per-item export — scopes to a single ``rubric_id`` so the AI
- *  consumer downstream only sees the row the user is editing. */
-async function exportRubricById(rubricId: string): Promise<{
-  file_id: string;
-  file_name?: string;
-}> {
-  "use server";
-  const result = (await api.post("/rubric/export", {
-    body: { rubric_id: rubricId },
-  } as unknown as InputOf<"/rubric/export", "post">)) as unknown as {
-    file_id: string;
-    file_name?: string;
-  };
-  return {
-    file_id: result.file_id,
-    ...(result.file_name !== undefined && { file_name: result.file_name }),
-  };
-}
-
-async function refreshRubric(): Promise<unknown> {
+// NOTE: /rubric/export REQUIRES a ``rubric_id`` and we don't have one
+// here on the /new page. Omit ``exportAction``/``bffDownloadPrefix`` so
+// the toolbar renders only [Drafts ▾] (leftSlot) + [↻ Refresh]. The
+// list/detail pages still wire export normally.
+async function refreshRubrics(): Promise<unknown> {
   "use server";
   return api.post("/rubric/refresh", {
     body: {},
@@ -163,23 +140,18 @@ async function searchRubricGenerations(input: GenerationsIn): Promise<Generation
  * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
  * component share one network call per request. Server-only; not a
  * cross-request cache. */
-const getRubricContextById = cache(
-  async (id: string): Promise<ContextOut> =>
-    api.post("/rubric/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+const getRubricContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/rubric/context", { body: { page_limit: 50, page_offset: 0 } }) as Promise<ContextOut>,
 );
 
 /** ---- Page metadata ---- */
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ rubricId: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata(): Promise<Metadata> {
   try {
-    const { rubricId } = await params;
-    const context = await getRubricContextById(rubricId);
+    const context = await getRubricContext();
     return {
-      title: context.page_metadata?.detail.title,
-      description: context.page_metadata?.detail.description,
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
     };
   } catch {
     return { title: "Rubrics" };
@@ -190,14 +162,11 @@ export async function generateMetadata({
 const SIDEBAR_COOKIE = "glow_sidebar";
 const PANEL_COOKIE = "glow_panel";
 
-export default async function EditRubricPage({
-  params,
+export default async function NewRubricPage({
   searchParams,
 }: {
-  params: Promise<{ rubricId: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { rubricId } = await params;
   const session = await getSession();
 
   // Read UI preferences from cookies for SSR
@@ -207,37 +176,41 @@ export default async function EditRubricPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Parse search params using nuqs
-  const paramsObj = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(paramsObj).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
-      }
-    }
-  });
-
-  // Inline server-side parsers for rubric search params
-  const rubricSearchParams = {
-    draftId: parseAsString,
-    descriptionSearch: parseAsString,
-    standardGroupSearch: parseAsString,
-    pointsSearch: parseAsString,
-    pointsShowSelected: parseAsBoolean,
-    standardGroupShowSelected: parseAsBoolean,
-    groupId: parseAsString,
-    groupSearch: parseAsString,
-  };
-  const loadRubricSearchParams = createLoader(rubricSearchParams);
-  const q = loadRubricSearchParams(searchParamsObj);
-
   try {
-    const [rubricData, context, draftsResult, groupResult] = await Promise.all([
+    // Profile data for providers
+    const context = await getRubricContext();
+    const snapshot = buildSnapshot(session, context.profile);
+
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
+      }
+    });
+
+    // Inline server-side parsers for rubric search params
+    const rubricSearchParams = {
+      draftId: parseAsString,
+      descriptionSearch: parseAsString,
+      standardGroupSearch: parseAsString,
+      pointsSearch: parseAsString,
+      pointsShowSelected: parseAsBoolean,
+      standardGroupShowSelected: parseAsBoolean,
+      groupId: parseAsString,
+      groupSearch: parseAsString,
+    };
+    const loadRubricSearchParams = createLoader(rubricSearchParams);
+    const q = loadRubricSearchParams(searchParamsObj);
+
+    // SSR data fetches
+    const [rubricData, draftsResult, groupResult] = await Promise.all([
       getRubric(
-        rubricId,
         q.draftId ?? null,
         q.descriptionSearch ?? null,
         q.standardGroupSearch ?? null,
@@ -245,16 +218,12 @@ export default async function EditRubricPage({
         q.pointsShowSelected ?? null,
         q.standardGroupShowSelected ?? null,
       ),
-      getRubricContextById(rubricId) as Promise<ContextOut>,
       api.post("/rubric/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/rubric/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupRubricIn,
       ),
     ]);
-    const snapshot = buildSnapshot(session, context.profile);
-
-    const entityName = context.page_metadata?.detail.title ?? "Rubric";
 
     return (
       <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
@@ -271,16 +240,14 @@ export default async function EditRubricPage({
               ) => Promise<Record<string, unknown>>,
             },
             breadcrumbs: [
-              { title: "System", section: "system", url: "/system" },
-              { title: "Rubrics", section: "rubrics", url: "/system/rubrics" },
-              { title: entityName },
+              { title: "Platform", section: "platform", url: "/platform" },
+              { title: "Rubrics", section: "rubrics", url: "/platform/rubrics" },
+              { title: "New Rubric" },
             ],
             toolbar: (
               <ArtifactToolbarActions
                 leftSlot={<SaveToolbar />}
-                exportAction={exportRubricById.bind(null, rubricId)}
-                refreshAction={refreshRubric}
-                bffDownloadPrefix="/api/rubric/download"
+                refreshAction={refreshRubrics}
               />
             ),
             panelProps: {
@@ -303,16 +270,10 @@ export default async function EditRubricPage({
             },
           } as any)}
         >
-          <div
-            className="space-y-6 px-4"
-            data-page="rubric-edit"
-            data-rubric-id={rubricId}
-          >
+          <div className="space-y-6 px-4" data-page="rubric-new">
             <Rubric
-              rubricId={rubricId}
               rubricData={rubricData}
               createRubricAction={createRubric}
-              updateRubricAction={updateRubric}
               patchRubricDraftAction={patchRubricDraft}
             />
           </div>
@@ -331,7 +292,7 @@ export default async function EditRubricPage({
         return (
           <UnifiedAccessDenied
             reason="not-logged-in"
-            pathname={`/system/rubrics/${rubricId}`}
+            pathname="/platform/rubrics/new"
           />
         );
       }
@@ -340,7 +301,7 @@ export default async function EditRubricPage({
           <UnifiedAccessDenied
             reason="department"
             resourceType="rubric"
-            redirectPath="/system/rubrics"
+            redirectPath="/platform/rubrics"
           />
         );
       }

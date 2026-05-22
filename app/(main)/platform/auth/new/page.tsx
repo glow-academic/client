@@ -1,6 +1,6 @@
 /**
- * app/(main)/system/auth/[authId]/page.tsx
- * Auth edit page — full SSR rendering with FullPageLayout.
+ * app/(main)/platform/auth/new/page.tsx
+ * Auth create page — full SSR rendering with FullPageLayout.
  * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222 & @siladiea
  * 04/14/2026
@@ -9,9 +9,10 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { FullPageLayout, type PanelProps } from "@/components/common/layout/FullPageLayout";
+import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import Auth from "@/components/artifacts/auth/Auth";
 import { DraftProviderClient } from "@/contexts/draft-context";
+import Auth from "@/components/artifacts/auth/Auth";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -28,8 +29,6 @@ type GetAuthIn = InputOf<"/auth/get", "post">;
 type GetAuthOut = OutputOf<"/auth/get", "post">;
 type CreateAuthIn = InputOf<"/auth/create", "post">;
 type CreateAuthOut = OutputOf<"/auth/create", "post">;
-type UpdateAuthIn = InputOf<"/auth/update", "post">;
-type UpdateAuthOut = OutputOf<"/auth/update", "post">;
 type PatchAuthDraftIn = InputOf<"/auth/draft", "post">;
 type PatchAuthDraftOut = OutputOf<"/auth/draft", "post">;
 type GroupAuthIn = InputOf<"/auth/group", "post">;
@@ -42,7 +41,7 @@ type ContextIn = InputOf<"/auth/context", "post">;
 type ContextOut = OutputOf<"/auth/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
-const getAuth = async (input: GetAuthIn): Promise<GetAuthOut> => {
+const getAuthDefault = async (input: GetAuthIn): Promise<GetAuthOut> => {
   return api.post("/auth/get", input, {
     cache: "no-store",
     headers: {
@@ -55,11 +54,6 @@ const getAuth = async (input: GetAuthIn): Promise<GetAuthOut> => {
 async function createAuth(input: CreateAuthIn): Promise<CreateAuthOut> {
   "use server";
   return api.post("/auth/create", input);
-}
-
-async function updateAuth(input: UpdateAuthIn): Promise<UpdateAuthOut> {
-  "use server";
-  return api.post("/auth/update", input);
 }
 
 async function patchAuthDraft(
@@ -85,6 +79,35 @@ async function createAuthProblem(input: ProblemAuthIn): Promise<ProblemAuthOut> 
   return api.post("/auth/problem", input);
 }
 
+/** Export-all — used by the /new page's Download button to fetch
+ *  the current full dataset as a CSV template. No per-item id
+ *  since the user hasn't created the new artifact yet. Cast through
+ *  ``unknown`` while openapi.json catches up to the file-modality
+ *  response shape. */
+async function exportAuths(): Promise<{
+  file_id: string;
+  file_name?: string;
+}> {
+  "use server";
+  const result = (await api.post("/auth/export", {
+    body: {},
+  } as unknown as InputOf<"/auth/export", "post">)) as unknown as {
+    file_id: string;
+    file_name?: string;
+  };
+  return {
+    file_id: result.file_id,
+    ...(result.file_name !== undefined && { file_name: result.file_name }),
+  };
+}
+
+async function refreshAuths(): Promise<unknown> {
+  "use server";
+  return api.post("/auth/refresh", {
+    body: {},
+  } as unknown as InputOf<"/auth/refresh", "post">);
+}
+
 /** ---- GenerationPanel server actions ---- */
 async function getAuthGroup(input: GroupAuthIn): Promise<GroupAuthOut> {
   "use server";
@@ -101,23 +124,18 @@ async function searchAuthGenerations(input: GenerationsIn): Promise<GenerationsO
  * Wrapped in React's ``cache()`` so ``generateMetadata`` and the page
  * component share one network call per request. Server-only; not a
  * cross-request cache. */
-const getAuthContextById = cache(
-  async (id: string): Promise<ContextOut> =>
-    api.post("/auth/context", { body: { entity_id: id } } as ContextIn) as Promise<ContextOut>,
+const getAuthContext = cache(
+  async (): Promise<ContextOut> =>
+    api.post("/auth/context", { body: {} } as ContextIn) as Promise<ContextOut>,
 );
 
 /** ---- Page metadata ---- */
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ authId: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata(): Promise<Metadata> {
   try {
-    const { authId } = await params;
-    const context = await getAuthContextById(authId);
+    const context = await getAuthContext();
     return {
-      title: context.page_metadata?.detail.title,
-      description: context.page_metadata?.detail.description,
+      title: context.page_metadata?.new.title,
+      description: context.page_metadata?.new.description,
     };
   } catch {
     return { title: "Auth" };
@@ -129,14 +147,11 @@ const SIDEBAR_COOKIE = "glow_sidebar";
 const PANEL_COOKIE = "glow_panel";
 
 /** ---- Server renders client with typed data and actions ---- */
-export default async function AuthEditPage({
-  params,
+export default async function AuthCreatePage({
   searchParams,
 }: {
-  params: Promise<{ authId: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { authId } = await params;
   const session = await getSession();
 
   // Read UI preferences from cookies for SSR
@@ -146,51 +161,48 @@ export default async function AuthEditPage({
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
-  // Profile data for providers
-  const context = await api.post("/auth/context", { body: {} } as ContextIn) as ContextOut;
-  const snapshot = buildSnapshot(session, context.profile);
-
-  // Parse search params using nuqs
-  const paramsObj = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(paramsObj).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
-      }
-    }
-  });
-
-  // Inline server-side parsers for auth search params
-  const authSearchParams = {
-    draftId: parseAsString,
-    groupId: parseAsString,
-    groupSearch: parseAsString,
-  };
-  const loadAuthSearchParams = createLoader(authSearchParams);
-  const q = loadAuthSearchParams(searchParamsObj);
-
-  // Fetch auth detail (always fresh - source of truth) with draft_id
   try {
+    // Profile data for providers
+    const context = await getAuthContext();
+    const snapshot = buildSnapshot(session, context.profile);
+
+    // Parse search params using nuqs
+    const params = await searchParams;
+    const searchParamsObj = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParamsObj.append(key, v));
+        } else {
+          searchParamsObj.set(key, value);
+        }
+      }
+    });
+
+    // Inline server-side parsers for auth search params
+    const authSearchParams = {
+      draftId: parseAsString,
+      groupId: parseAsString,
+      groupSearch: parseAsString,
+    };
+    const loadAuthSearchParams = createLoader(authSearchParams);
+    const q = loadAuthSearchParams(searchParamsObj);
+
+    // Fetch default auth detail with draft_id (auth_id = NULL for new mode)
     const input = {
       body: {
-        auth_id: authId,
+        auth_id: null, // NULL for new mode
         draft_id: q.draftId ?? null,
       } as GetAuthIn["body"],
     } as GetAuthIn;
-    const [authData, context, draftsResult, groupResult] = await Promise.all([
-      getAuth(input),
-      getAuthContextById(authId) as Promise<ContextOut>,
+    const [authData, draftsResult, groupResult] = await Promise.all([
+      getAuthDefault(input),
       api.post("/auth/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
         "/auth/group",
         { body: q.groupId ? { group_id: q.groupId } : {} } as GroupAuthIn,
       ),
     ]);
-
-    const entityName = context.page_metadata?.detail.title ?? "Auth";
 
     const layoutProps = {
       profileData: context.profile,
@@ -200,11 +212,18 @@ export default async function AuthEditPage({
         createFeedback: createAuthProblem as never,
       },
       breadcrumbs: [
-        { title: "System", section: "system", url: "/system" },
-        { title: "Auth", section: "auth", url: "/system/auth" },
-        { title: entityName },
+        { title: "Platform", section: "platform", url: "/platform" },
+        { title: "Auth", section: "auth", url: "/platform/auth" },
+        { title: "New Auth" },
       ],
-      toolbar: <SaveToolbar />,
+      toolbar: (
+        <ArtifactToolbarActions
+          leftSlot={<SaveToolbar />}
+          exportAction={exportAuths}
+          refreshAction={refreshAuths}
+          bffDownloadPrefix="/api/auth/download"
+        />
+      ),
       panelProps: {
         artifactType: "auth",
         initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -224,13 +243,10 @@ export default async function AuthEditPage({
     return (
       <DraftProviderClient drafts={(draftsResult.entries ?? []) as never}>
         <FullPageLayout {...layoutProps}>
-          <div className="space-y-6 px-4" data-page="auth-edit" data-auth-id={authId}>
+          <div className="space-y-6 px-4" data-page="auth-create">
             <Auth
-              key={q.draftId || "no-draft"}
-              authId={authId}
               authData={authData}
               createAuthAction={createAuth}
-              updateAuthAction={updateAuth}
               patchAuthDraftAction={patchAuthDraft}
             />
           </div>
@@ -249,7 +265,7 @@ export default async function AuthEditPage({
         return (
           <UnifiedAccessDenied
             reason="not-logged-in"
-            pathname={`/system/auth/${authId}`}
+            pathname="/platform/auth/new"
           />
         );
       }
@@ -258,12 +274,11 @@ export default async function AuthEditPage({
           <UnifiedAccessDenied
             reason="department"
             resourceType="auth"
-            redirectPath="/system/auth"
+            redirectPath="/platform/auth"
           />
         );
       }
     }
-    // Re-throw other errors
     throw error;
   }
 }
@@ -276,6 +291,4 @@ export type {
   PatchAuthDraftOut,
   CreateAuthIn,
   CreateAuthOut,
-  UpdateAuthIn,
-  UpdateAuthOut,
 };

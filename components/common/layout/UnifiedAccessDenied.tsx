@@ -164,11 +164,11 @@ export function UnifiedAccessDenied({
         case "persona":
           return "/training/personas";
         case "department":
-          return "/system/departments";
+          return "/platform/departments";
         case "agent":
           return "/intelligence/agents";
         case "rubric":
-          return "/system/rubrics";
+          return "/platform/rubrics";
         case "parameter":
           return "/management/parameters";
         case "video":
@@ -186,7 +186,7 @@ export function UnifiedAccessDenied({
         case "profile":
           return "/management/profiles";
         case "auth":
-          return "/system/auth";
+          return "/platform/auth";
         default:
           return "/";
       }
@@ -243,18 +243,18 @@ export function UnifiedAccessDenied({
           section === "analytics" ||
           section === "create" ||
           section === "management" ||
-          section === "system"
+          section === "platform"
         ) {
           return "This page is only available to instructional staff and administrators.";
         }
         return "You don't have permission to access this page.";
       case "instructional":
-        if (section === "management" || section === "system") {
+        if (section === "management" || section === "platform") {
           return "This page is only available to administrators.";
         }
         return "You don't have permission to access this page.";
       case "admin":
-        if (section === "system") {
+        if (section === "platform") {
           return "This page is only available to super administrators.";
         }
         return "You don't have permission to access this page.";

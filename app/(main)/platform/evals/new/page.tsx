@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/evals/new/page.tsx
+ * app/(main)/platform/evals/new/page.tsx
  * New eval page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222
  * 01/26/2025
@@ -227,8 +227,8 @@ export default async function NewEvalPage({
             createFeedback: createEvalProblem as never,
           }}
           breadcrumbs={[
-            { title: "System", section: "system", url: "/system" },
-            { title: "Evals", section: "evals", url: "/system/evals" },
+            { title: "Platform", section: "platform", url: "/platform" },
+            { title: "Evals", section: "evals", url: "/platform/evals" },
             { title: "New Eval" },
           ]}
           toolbar={
@@ -289,7 +289,7 @@ export default async function NewEvalPage({
         return (
           <UnifiedAccessDenied
             reason="not-logged-in"
-            pathname="/system/evals/new"
+            pathname="/platform/evals/new"
           />
         );
       }
@@ -298,7 +298,7 @@ export default async function NewEvalPage({
           <UnifiedAccessDenied
             reason="department"
             resourceType="eval"
-            redirectPath="/system/evals"
+            redirectPath="/platform/evals"
           />
         );
       }

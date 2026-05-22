@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/rubrics/page.tsx
+ * app/(main)/platform/rubrics/page.tsx
  * Rubric list page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
@@ -190,7 +190,7 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
     // Profile data for providers
     const context = await getRubricContext();
     const snapshot = buildSnapshot(session, context.profile);
-    guardPage("/system/rubrics", context.profile.role_permissions);
+    guardPage("/platform/rubrics", context.profile.role_permissions);
 
     // Parse search params using nuqs
     const params = await searchParams;
@@ -244,12 +244,12 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
           createFeedback: createRubricProblem,
         }}
         breadcrumbs={[
-          { title: "System", section: "system", url: "/system" },
+          { title: "Platform", section: "platform", url: "/platform" },
           { title: "Rubrics" },
         ]}
         toolbar={
           <ArtifactToolbarActions
-            newButton={{ label: "New Rubric", href: "/system/rubrics/new" }}
+            newButton={{ label: "New Rubric", href: "/platform/rubrics/new" }}
             refreshAction={refreshRubrics}
           />
         }
@@ -305,7 +305,7 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
         return (
           <UnifiedAccessDenied
             reason="not-logged-in"
-            pathname="/system/rubrics"
+            pathname="/platform/rubrics"
           />
         );
       }
@@ -314,7 +314,7 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
           <UnifiedAccessDenied
             reason="department"
             resourceType="rubric"
-            redirectPath="/system/rubrics"
+            redirectPath="/platform/rubrics"
           />
         );
       }

@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/evals/[evalId]/page.tsx
+ * app/(main)/platform/evals/[evalId]/page.tsx
  * Eval detail/edit page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222
  * 01/26/2025
@@ -237,8 +237,8 @@ export default async function EvalDetailPage({
             createFeedback: createEvalProblem as never,
           }}
           breadcrumbs={[
-            { title: "System", section: "system", url: "/system" },
-            { title: "Evals", section: "evals", url: "/system/evals" },
+            { title: "Platform", section: "platform", url: "/platform" },
+            { title: "Evals", section: "evals", url: "/platform/evals" },
             { title: entityName ?? "Eval" },
           ]}
           toolbar={
@@ -301,7 +301,7 @@ export default async function EvalDetailPage({
         return (
           <UnifiedAccessDenied
             reason="not-logged-in"
-            pathname={`/system/evals/${evalId}`}
+            pathname={`/platform/evals/${evalId}`}
           />
         );
       }
@@ -310,7 +310,7 @@ export default async function EvalDetailPage({
           <UnifiedAccessDenied
             reason="department"
             resourceType="eval"
-            redirectPath="/system/evals"
+            redirectPath="/platform/evals"
           />
         );
       }

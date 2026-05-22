@@ -8,7 +8,7 @@ const TOPIC = "rubrics-bulk";
 test.describe("demo: rubrics bulk", () => {
   test("records rubric bulk-operation affordances", async ({ page }) => {
     await recordBulkAffordances(page, {
-      path: "/system/rubrics",
+      path: "/platform/rubrics",
       toolbar: "rubrics-toolbar",
       surface: "rubrics-grid",
       card: "rubric-card",

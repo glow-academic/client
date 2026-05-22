@@ -66,7 +66,7 @@ import type {
   DuplicateAuthOut,
   UpdateAuthIn,
   UpdateAuthOut,
-} from "@/app/(main)/system/auth/page";
+} from "@/app/(main)/platform/auth/page";
 
 export interface AuthsProps {
   // Server-provided data (for server-side rendering)
@@ -815,7 +815,7 @@ export default function Auths({
                       className="h-9 px-3"
                     >
                       <HoverPrefetchLink
-                        href={`/system/auth/${auth.auth_id}`}
+                        href={`/platform/auth/${auth.auth_id}`}
                         delay={150}
                         aria-label={`Edit ${auth.name}`}
                       >
@@ -833,7 +833,7 @@ export default function Auths({
                       className="h-9 px-3"
                     >
                       <HoverPrefetchLink
-                        href={`/system/auth/${auth.auth_id}`}
+                        href={`/platform/auth/${auth.auth_id}`}
                         delay={150}
                         aria-label={`View ${auth.name}`}
                       >

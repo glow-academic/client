@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/evals/page.tsx
+ * app/(main)/platform/evals/page.tsx
  * Evals list page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222
  * 01/26/2025
@@ -184,7 +184,7 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
     // Profile data for providers
     const context = await getEvalContext();
     const snapshot = buildSnapshot(session, context.profile);
-    guardPage("/system/evals", context.profile.role_permissions);
+    guardPage("/platform/evals", context.profile.role_permissions);
 
     // Parse search params using nuqs
     const params = await searchParams;
@@ -236,12 +236,12 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
           createFeedback: createEvalProblem,
         }}
         breadcrumbs={[
-          { title: "System", section: "system", url: "/system" },
+          { title: "Platform", section: "platform", url: "/platform" },
           { title: "Evals" },
         ]}
         toolbar={
           <ArtifactToolbarActions
-            newButton={{ label: "New Eval", href: "/system/evals/new" }}
+            newButton={{ label: "New Eval", href: "/platform/evals/new" }}
             exportAction={exportEvals}
             refreshAction={refreshEvals}
             bffDownloadPrefix="/api/eval/download"
@@ -297,7 +297,7 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
         return (
           <UnifiedAccessDenied
             reason="not-logged-in"
-            pathname="/system/evals"
+            pathname="/platform/evals"
           />
         );
       }
@@ -306,7 +306,7 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
           <UnifiedAccessDenied
             reason="department"
             resourceType="eval"
-            redirectPath="/system/evals"
+            redirectPath="/platform/evals"
           />
         );
       }

@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/departments/[departmentId]/page.tsx
+ * app/(main)/platform/departments/[departmentId]/page.tsx
  * Department edit page — full SSR rendering with FullPageLayout.
  * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222 & @siladiea
@@ -223,8 +223,8 @@ export default async function DepartmentEditPage({
             ) => Promise<Record<string, unknown>>,
           }}
           breadcrumbs={[
-            { title: "System", section: "system", url: "/system" },
-            { title: "Departments", section: "departments", url: "/system/departments" },
+            { title: "Platform", section: "platform", url: "/platform" },
+            { title: "Departments", section: "departments", url: "/platform/departments" },
             { title: entityName },
           ]}
           toolbar={
@@ -284,7 +284,7 @@ export default async function DepartmentEditPage({
         return (
           <UnifiedAccessDenied
             reason="not-logged-in"
-            pathname={`/system/departments/${departmentId}`}
+            pathname={`/platform/departments/${departmentId}`}
           />
         );
       }
@@ -293,7 +293,7 @@ export default async function DepartmentEditPage({
           <UnifiedAccessDenied
             reason="department"
             resourceType="department"
-            redirectPath="/system/departments"
+            redirectPath="/platform/departments"
           />
         );
       }

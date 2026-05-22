@@ -1004,7 +1004,7 @@ function EvalComponent({
         toast.success(
           `Eval ${isEditMode ? "updated" : "created"} successfully!`
         );
-        router.push("/system/evals");
+        router.push("/platform/evals");
       } catch (error) {
         toast.error(
           `Failed to ${isEditMode ? "update" : "create"} eval: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -1134,7 +1134,7 @@ function EvalComponent({
 
   const submitButton = useMemo(
     () => ({
-      backUrl: "/system/evals",
+      backUrl: "/platform/evals",
       backLabel: "Back",
       createLabel: "Create Eval",
       updateLabel: "Update Eval",

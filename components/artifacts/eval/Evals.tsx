@@ -22,7 +22,7 @@ import type {
   UpdateEvalOut,
   CreateEvalIn,
   CreateEvalOut,
-} from "@/app/(main)/system/evals/page";
+} from "@/app/(main)/platform/evals/page";
 import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -986,7 +986,7 @@ export default function Evals({
                   className="h-9 px-3"
                 >
                   <HoverPrefetchLink
-                    href={`/system/evals/${evalId}`}
+                    href={`/platform/evals/${evalId}`}
                     delay={150}
                     aria-label={`Edit ${evalName}`}
                   >
@@ -1004,7 +1004,7 @@ export default function Evals({
                   className="h-9 px-3"
                 >
                   <HoverPrefetchLink
-                    href={`/system/evals/${evalId}`}
+                    href={`/platform/evals/${evalId}`}
                     delay={150}
                     aria-label={`View ${evalName}`}
                   >

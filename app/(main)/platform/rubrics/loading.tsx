@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/rubrics/loading.tsx
+ * app/(main)/platform/rubrics/loading.tsx
  * Loading skeleton for rubrics list page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025

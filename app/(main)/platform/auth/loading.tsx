@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/auth/loading.tsx
+ * app/(main)/platform/auth/loading.tsx
  * Loading skeleton for auth list page — wraps in FullPageSkeleton.
  * @AshokSaravanan222 & @siladiea
  * 04/14/2026

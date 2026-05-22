@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/departments/page.tsx
+ * app/(main)/platform/departments/page.tsx
  * Departments list page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
@@ -204,7 +204,7 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
     // Profile data for providers
     const context = await getDepartmentContext();
     const snapshot = buildSnapshot(session, context.profile);
-    guardPage("/system/departments", context.profile.role_permissions);
+    guardPage("/platform/departments", context.profile.role_permissions);
 
     // The departments list page doesn't yet expose URL-backed filters,
     // but we still build a ``body`` so bulk write endpoints under
@@ -239,12 +239,12 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
           createFeedback: createDepartmentProblem,
         }}
         breadcrumbs={[
-          { title: "System", section: "system", url: "/system" },
+          { title: "Platform", section: "platform", url: "/platform" },
           { title: "Departments" },
         ]}
         toolbar={
           <ArtifactToolbarActions
-            newButton={{ label: "New Department", href: "/system/departments/new" }}
+            newButton={{ label: "New Department", href: "/platform/departments/new" }}
             exportAction={exportDepartments}
             refreshAction={refreshDepartments}
             bffDownloadPrefix="/api/department/download"
@@ -297,7 +297,7 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
         return (
           <UnifiedAccessDenied
             reason="not-logged-in"
-            pathname="/system/departments"
+            pathname="/platform/departments"
           />
         );
       }
@@ -306,7 +306,7 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
           <UnifiedAccessDenied
             reason="department"
             resourceType="department"
-            redirectPath="/system/departments"
+            redirectPath="/platform/departments"
           />
         );
       }

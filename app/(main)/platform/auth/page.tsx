@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/auth/page.tsx
+ * app/(main)/platform/auth/page.tsx
  * Auth list page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222 & @siladiea
  * 04/14/2026
@@ -161,7 +161,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
     // Profile data for providers
     const context = await getAuthContext();
     const snapshot = buildSnapshot(session, context.profile);
-    guardPage("/system/auth", context.profile.role_permissions);
+    guardPage("/platform/auth", context.profile.role_permissions);
 
     // Build the search body — the same shape gets forwarded to the
     // bulk-write endpoints under select-all-matching mode so the
@@ -189,10 +189,10 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
           createFeedback: createAuthProblem,
         }}
         breadcrumbs={[
-          { title: "System", section: "system", url: "/system" },
+          { title: "Platform", section: "platform", url: "/platform" },
           { title: "Auth" },
         ]}
-        toolbar={<NewArtifactButton label="New Auth" href="/system/auth/new" />}
+        toolbar={<NewArtifactButton label="New Auth" href="/platform/auth/new" />}
         panelProps={{
           artifactType: "auth",
           initialPanelPrefs: await readGenerationPanelPrefs(),
@@ -237,7 +237,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
         return (
           <UnifiedAccessDenied
             reason="not-logged-in"
-            pathname="/system/auth"
+            pathname="/platform/auth"
           />
         );
       }
@@ -246,7 +246,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
           <UnifiedAccessDenied
             reason="department"
             resourceType="auth"
-            redirectPath="/system/auth"
+            redirectPath="/platform/auth"
           />
         );
       }

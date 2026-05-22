@@ -7,7 +7,7 @@ const TOPIC = "evals-create";
 
 test.describe("demo: evals create", () => {
   test("records eval name, description, flags, and department setup", async ({ page }) => {
-    await openArtifactForm(page, "/system/evals/new");
+    await openArtifactForm(page, "/platform/evals/new");
     await page.getByPlaceholder(/eval name/i).fill("Fall 2025 TA Assessment");
     await page
       .getByPlaceholder(/enter description/i)

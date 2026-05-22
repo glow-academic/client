@@ -807,7 +807,7 @@ function RubricComponent({
       }
 
       toast.success(`Rubric ${isEditMode ? "updated" : "created"} successfully!`);
-      router.push("/system/rubrics");
+      router.push("/platform/rubrics");
     },
     [
       isAutosaveEnabled,
@@ -1275,7 +1275,7 @@ function RubricComponent({
           }}
           onSubmit={handleSubmit}
           submitButton={{
-            backUrl: "/system/rubrics",
+            backUrl: "/platform/rubrics",
             backLabel: "Back",
             createLabel: "Create Rubric",
             updateLabel: "Update Rubric",

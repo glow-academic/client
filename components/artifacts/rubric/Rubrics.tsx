@@ -36,7 +36,7 @@ import type {
   UpdateRubricOut,
   CreateRubricIn,
   CreateRubricOut,
-} from "@/app/(main)/system/rubrics/page";
+} from "@/app/(main)/platform/rubrics/page";
 import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import TableRubric from "@/components/artifacts/rubric/TableRubric";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
@@ -1102,7 +1102,7 @@ export default function Rubrics({
                       data-testid="btn-edit-rubric"
                     >
                       <HoverPrefetchLink
-                        href={`/system/rubrics/${rubric.rubric_id}`}
+                        href={`/platform/rubrics/${rubric.rubric_id}`}
                         delay={150}
                         aria-label="Edit rubric"
                       >
@@ -1117,7 +1117,7 @@ export default function Rubrics({
                       data-testid="btn-view-rubric"
                     >
                       <HoverPrefetchLink
-                        href={`/system/rubrics/${rubric.rubric_id}`}
+                        href={`/platform/rubrics/${rubric.rubric_id}`}
                         delay={150}
                         aria-label={`View ${rubric.name}`}
                       >

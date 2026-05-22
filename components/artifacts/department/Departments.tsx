@@ -46,7 +46,7 @@ import type {
   UpdateDepartmentOut,
   CreateDepartmentIn,
   CreateDepartmentOut,
-} from "@/app/(main)/system/departments/page";
+} from "@/app/(main)/platform/departments/page";
 import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
@@ -885,7 +885,7 @@ export default function Departments({
                 className="h-9 px-3"
               >
                 <HoverPrefetchLink
-                  href={`/system/departments/${department.department_id}`}
+                  href={`/platform/departments/${department.department_id}`}
                   delay={150}
                   aria-label={`Edit department ${department.name || "Unknown"}`}
                 >
@@ -903,7 +903,7 @@ export default function Departments({
                 className="h-9 px-3"
               >
                 <HoverPrefetchLink
-                  href={`/system/departments/${department.department_id}`}
+                  href={`/platform/departments/${department.department_id}`}
                   delay={150}
                   aria-label={`View department ${department.name || "Unknown"}`}
                 >

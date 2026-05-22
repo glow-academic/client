@@ -7,7 +7,7 @@ const TOPIC = "rubrics-create";
 
 test.describe("demo: rubrics create", () => {
   test("records the basic rubric creation form", async ({ page }) => {
-    await openArtifactForm(page, "/system/rubrics/new");
+    await openArtifactForm(page, "/platform/rubrics/new");
     await page.getByPlaceholder(/sales call rubric/i).fill("Communication Skills Demo");
     await showFormStep(page, "basic");
     await saveDemoVideo(page, TOPIC);

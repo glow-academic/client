@@ -563,7 +563,7 @@ function DepartmentComponent({
       toast.success(
         `Department ${isEditMode ? "updated" : "created"} successfully!`,
       );
-      router.push("/system/departments");
+      router.push("/platform/departments");
     },
     [
       createDepartmentAction,
@@ -842,7 +842,7 @@ function DepartmentComponent({
           onReset={handleStepReset}
           onSubmit={handleSubmit}
           submitButton={{
-            backUrl: "/system/departments",
+            backUrl: "/platform/departments",
             backLabel: "Back",
             createLabel: "Create Department",
             updateLabel: "Update Department",

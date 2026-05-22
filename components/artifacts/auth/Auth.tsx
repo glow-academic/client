@@ -632,7 +632,7 @@ function AuthComponent({
       }
 
       toast.success(`Auth ${isEditMode ? "updated" : "created"} successfully!`);
-      router.push("/system/auth");
+      router.push("/platform/auth");
     },
     [
       isAutosaveEnabled,
@@ -1154,7 +1154,7 @@ function AuthComponent({
           }}
           onSubmit={handleSubmit}
           submitButton={{
-            backUrl: "/system/auth",
+            backUrl: "/platform/auth",
             backLabel: "Back",
             createLabel: "Create Auth",
             updateLabel: "Update Auth",

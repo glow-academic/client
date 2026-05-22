@@ -8,7 +8,7 @@ const TOPIC = "auths-idp";
 
 test.describe("demo: auths idp", () => {
   test("records greenfield IdP onboarding sections", async ({ page }) => {
-    await openArtifactForm(page, "/system/auth/new");
+    await openArtifactForm(page, "/platform/auth/new");
     await page.getByPlaceholder(/production api key/i).fill("Acme University SSO");
     await page
       .getByPlaceholder(/enter description/i)
