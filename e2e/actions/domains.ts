@@ -332,11 +332,10 @@ export const DOMAINS: Record<string, DomainSpec> = {
           { multiSelect: "documents" },
           { settle: true },
           { expand: "parameters" },
-          // NOTE: image upload step previously omitted because the FE
-          // was calling /v5/scenarios/upload (which 404'd). The FE now
-          // posts to /scenario/image_upload via the canonical
-          // server-action → backend path. Safe to re-enable:
-          //   { upload: { step: "context", file: "e2e/fixtures/sample.png" } }
+          // E2E treats the upload step as a black box: just attach a
+          // file via setInputFiles and let the FE drive whatever flow
+          // it has. (Was previously skipped due to a now-fixed backend
+          // routing bug; re-enable by adding the upload step.)
           { field: "problemStatement" },
           { settle: true },
           { field: "objective" },
@@ -363,10 +362,9 @@ export const DOMAINS: Record<string, DomainSpec> = {
           { multiSelect: "documents" },
           { settle: true },
           { expand: "parameters" },
-          // NOTE: video upload previously omitted because the FE was
-          // calling /v5/scenarios/upload (which 404'd). The FE now posts
-          // to /scenario/video_upload via the canonical server-action →
-          // backend path. Safe to re-enable a video upload step here.
+          // E2E treats video upload as a black box: setInputFiles +
+          // settle, no URL knowledge. (Was previously skipped due to a
+          // now-fixed backend routing bug.)
           { field: "question" },
           { settle: true },
         ],
