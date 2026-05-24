@@ -72,14 +72,24 @@ async function uploadFile(formData: FormData): Promise<UploadResult> {
     const { INTERNAL_HTTP_BASE } = await import("@/lib/api/config");
     const authHeaders = await getAuthHeaders();
 
-    const response = await fetch(`${INTERNAL_HTTP_BASE}/v5/scenarios/upload`, {
+    // Backend splits scenario uploads by media type:
+    //   POST /scenario/image_upload (image/*) / /scenario/video_upload (video/*)
+    // Both take multipart with a single `file` field. (Was hitting
+    // `/v5/scenarios/upload` which never existed → 404.)
+    const isVideo = (file.type || "").startsWith("video/");
+    const endpoint = isVideo ? "/scenario/video_upload" : "/scenario/image_upload";
+
+    const body = new FormData();
+    body.append("file", file);
+
+    const response = await fetch(`${INTERNAL_HTTP_BASE}${endpoint}`, {
       method: "POST",
       headers: {
         ...authHeaders,
-        "Content-Type": file.type || "application/octet-stream",
-        "X-Filename": file.name,
+        // Don't set Content-Type — fetch sets the multipart boundary
+        // automatically when body is FormData.
       },
-      body: Buffer.from(await file.arrayBuffer()),
+      body,
     });
 
     if (!response.ok) {

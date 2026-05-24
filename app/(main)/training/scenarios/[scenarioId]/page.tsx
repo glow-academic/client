@@ -69,14 +69,29 @@ async function uploadFile(formData: FormData): Promise<UploadResult> {
     const { INTERNAL_HTTP_BASE } = await import("@/lib/api/config");
     const authHeaders = await getAuthHeaders();
 
-    const response = await fetch(`${INTERNAL_HTTP_BASE}/v5/scenarios/upload`, {
+    // Server action → backend direct. We don't hop through the BFF
+    // (`/api/scenario/{image,video}_upload`) because this code already
+    // runs server-side; the BFF exists for client-side callers (e.g.
+    // a future drag-drop in a client component, same shape as
+    // `hooks/use-attempt-transcribe.ts` calling `/api/attempt/audio_upload`).
+    //
+    // Backend splits scenario uploads by media type:
+    //   POST /scenario/image_upload  (image/*)
+    //   POST /scenario/video_upload  (video/*)
+    // Both accept multipart with a single `file` field and return
+    // { upload_id, image_id|video_id, idempotency_key }.
+    const isVideo = (file.type || "").startsWith("video/");
+    const endpoint = isVideo ? "/scenario/video_upload" : "/scenario/image_upload";
+
+    const body = new FormData();
+    body.append("file", file);
+
+    const response = await fetch(`${INTERNAL_HTTP_BASE}${endpoint}`, {
       method: "POST",
-      headers: {
-        ...authHeaders,
-        "Content-Type": file.type || "application/octet-stream",
-        "X-Filename": file.name,
-      },
-      body: Buffer.from(await file.arrayBuffer()),
+      // Don't set Content-Type — fetch sets the multipart boundary
+      // automatically when body is FormData.
+      headers: { ...authHeaders },
+      body,
     });
 
     if (!response.ok) {
