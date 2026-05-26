@@ -14,6 +14,7 @@
 import { type APIRequestContext } from "@playwright/test";
 
 import { DOMAINS } from "../actions/domains";
+import { FACTORIES } from "./factories";
 
 const API_BASE = process.env["INTERNAL_API_BASE"] || "http://localhost:8000";
 const TOKEN = process.env["E2E_BYPASS_TOKEN"] ?? "";
@@ -23,10 +24,13 @@ const authHeaders = (): Record<string, string> => ({
 
 /**
  * Create one entity via ``/{singular}/create`` (path derived from the domain's
- * search endpoint). Returns true on a 2xx. The caller should
+ * search endpoint). The item is ``{ name, ...factory, ...extra }`` — a
+ * per-resource factory (support/factories.ts) supplies the fields the edit form
+ * re-validates (a model's value, a rubric's department, …); ``extra`` lets a
+ * caller override or add more. Returns true on a 2xx. The caller should
  * ``registry.track({ kind, name })`` so teardown reaps it. Best-effort: never
- * throws (returns false), since callers skip when a domain can't be seeded with
- * a bare name (required cross-entity relations).
+ * throws (returns false), so callers skip cleanly when a domain still can't be
+ * fully seeded (e.g. a relation with no seed rows).
  */
 export async function apiCreate(
   request: APIRequestContext,
@@ -37,10 +41,12 @@ export async function apiCreate(
   const spec = DOMAINS[kind];
   if (!spec) return false;
   const createPath = spec.api.search.replace(/\/search$/, "/create");
+  const factory = FACTORIES[kind];
+  const built = factory ? await factory(request) : {};
   try {
     const res = await request.post(`${API_BASE}${createPath}`, {
       headers: authHeaders(),
-      data: { [spec.api.listKey]: [{ name, ...extra }] },
+      data: { [spec.api.listKey]: [{ name, ...built, ...extra }] },
     });
     return res.ok();
   } catch {

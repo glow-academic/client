@@ -1,7 +1,7 @@
 // Auths — correctness suite. Only the name is required; description,
 // departments, the active flag, protocols, slugs, and auth items are
-// best-effort. The auth library has no free-text search (only picker filters),
-// so we open and assert the card directly. Auto-reaped by the registry.
+// best-effort. The auth library now has a (server-side) free-text search box,
+// so the flow searches like every other domain. Auto-reaped by the registry.
 
 import { test, expect } from "../fixtures";
 
@@ -20,6 +20,7 @@ test.describe("auths", () => {
     });
 
     await auths.open();
+    await auths.search(name);
     await expect(auths.card(name)).toBeVisible();
   });
 });

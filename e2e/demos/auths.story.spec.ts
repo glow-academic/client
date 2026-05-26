@@ -13,6 +13,7 @@ test.describe("demo: auths", () => {
     });
 
     await auths.open();
+    await auths.search(name);
     await auths.library.expectVisible(name);
 
     await saveDemoVideo(page, "auths-create-story");

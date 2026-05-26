@@ -166,7 +166,11 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
     // Build the search body — the same shape gets forwarded to the
     // bulk-write endpoints under select-all-matching mode so the
     // server resolves matching ids without a client-side enumeration.
-    const body: AuthsListBody = { page_size: 1000, page_offset: 0 };
+    const body: AuthsListBody = {
+      page_size: 1000,
+      page_offset: 0,
+      search: q.search || null,
+    };
 
     // Fetch list data, view cookie, and group in parallel
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([

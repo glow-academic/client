@@ -16,9 +16,10 @@ import {
   X,
 } from "lucide-react";
 import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
-import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ackOperation } from "@/lib/api/ack";
 
@@ -104,7 +105,59 @@ export default function Auths({
   currentSearchBody,
 }: AuthsProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { profile } = useProfile();
+
+  // Free-text search — server-side, the canonical pattern (see Personas.tsx):
+  // a debounced commit writes `?search=` to the URL, which the page reads into
+  // the `/auth/search` body for a fresh SSR fetch. The endpoint accepts
+  // `search` (SearchAuthApiRequest), so this filters real rows, not just the
+  // page already loaded.
+  const [searchTerm, setSearchTerm] = useState(
+    () => searchParams.get("search") ?? "",
+  );
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const commitSearch = useCallback(
+    (value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      const trimmed = value.trim();
+      if (trimmed) params.set("search", trimmed);
+      else params.delete("search");
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchTerm(value);
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      if (value === "") {
+        commitSearch("");
+        return;
+      }
+      searchTimeoutRef.current = setTimeout(() => commitSearch(value), 500);
+    },
+    [commitSearch],
+  );
+
+  const handleSearchBlur = useCallback(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    commitSearch(searchTerm);
+  }, [commitSearch, searchTerm]);
+
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        commitSearch(searchTerm);
+      }
+    },
+    [commitSearch, searchTerm],
+  );
 
   // Ghost-rail materializes audit-driven create/update/delete/duplicate
   // outcomes directly from `.completed` payloads, so the page no longer
@@ -1007,6 +1060,15 @@ export default function Auths({
       ) : (
         <div className="flex items-center justify-between flex-wrap gap-2" data-testid="auths-toolbar">
           <div className="flex items-center space-x-2 flex-wrap">
+          <Input
+            placeholder="Search auths..."
+            value={searchTerm}
+            onChange={(event) => handleSearchChange(event.target.value)}
+            onBlur={handleSearchBlur}
+            onKeyDown={handleSearchKeyDown}
+            className="h-8 w-full md:w-[150px] lg:w-[250px]"
+            data-testid="auths-search"
+          />
           <ThreePickerFilters
             slots={[
               {
