@@ -60,25 +60,28 @@ export interface ImagesProps {
   description?: string;
   multiSelect?: boolean; // Whether to allow multiple image selection
   maxImages?: number; // Maximum number of images allowed
-  onImageUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; // Upload handler
-  imageInputRef?: React.RefObject<HTMLInputElement>; // Ref for file input
-  isUploadingImage?: boolean; // Whether image is currently uploading
-  /** Artifact-scoped base path for upload/download URLs (e.g., "/document") */
-  uploadBasePath?: string;
-  /** Server action to upload a file — receives FormData, returns upload_id */
-  uploadFileAction?: (formData: FormData) => Promise<{
-    success: boolean;
-    upload_id?: string;
-    message?: string;
-  }>;
-  /** Report uploaded image values upward (unified draft pattern -- parent owns creation)
-   *  Called after TUS upload + finalize with the creation parameters.
-   *  TODO: Server-side DraftImageValue needs upload_id field for file-backed images. */
-  onImageUploadValue?: (image: {
-    name: string;
-    description: string;
-    upload_id: string;
-  }) => void;
+  /** Artifact-scoped upload function. When provided, the component
+   *  renders its own upload UI; the function performs the actual fetch
+   *  to the artifact's BFF route (e.g. ``uploadScenarioImage`` from
+   *  ``lib/uploads/scenario``). When unset, upload UI is hidden
+   *  (read-only). Mirrors ``hooks/use-attempt-transcribe.ts``: caller
+   *  hands us a File, we hand back the canonical resource id. The
+   *  backend upload writes the full chain (resource + entry + junction
+   *  + uploads_entry) and returns ``image_id``; the parent then pushes
+   *  that into the artifact's selected ``image_ids`` directly. */
+  uploadImage?: (file: File) => Promise<{ image_id: string; upload_id: string }>;
+  /** BFF base URL for image downloads (e.g. ``/api/scenario/image``);
+   *  ``ImageViewer`` builds ``${downloadBaseUrl}/${imageId}``. Defaults
+   *  to ``/api/system/image`` (the generic /system/image_download
+   *  proxy) for callers that don't yet own a scoped download route. */
+  downloadBaseUrl?: string;
+  /** Report newly uploaded image id upward so the parent can append it
+   *  to its selected ``image_ids``. The resource is already created by
+   *  the upload; this is just selection. */
+  onImageUploaded?: (image_id: string) => void;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Images({
@@ -96,26 +99,15 @@ export function Images({
   description: _description,
   multiSelect = false,
   maxImages = 1,
-  onImageUpload,
-  imageInputRef,
-  isUploadingImage = false,
-  uploadBasePath,
-  uploadFileAction,
-  onImageUploadValue,
+  uploadImage,
+  downloadBaseUrl = "/api/system/image",
+  onImageUploaded,
+  onAcceptPending,
+  onRejectPending,
 }: ImagesProps) {
   const ids = useMemo(() => image_ids ?? [], [image_ids]);
   const show = show_images ?? false;
   const allImages = useMemo(() => images ?? [], [images]);
-  // Artifact-scoped download. Each artifact owns its own
-  // ``/api/{artifact}/image/[imageId]`` BFF route that proxies to
-  // ``{artifact}/image_download``; falling back to ``/api/system/image``
-  // (the generic /system/image_download proxy) routes through the
-  // group-detail tree which has known schema-drift issues for image-
-  // resource fetches. Default keeps backwards compat with callers that
-  // don't yet pass ``uploadBasePath``.
-  const downloadBaseUrl = uploadBasePath
-    ? `/api${uploadBasePath}/image`
-    : "/api/system/image";
 
   // Internal state for selected images (for display)
   const [selectedImages, setSelectedImages] = useState<
@@ -201,10 +193,11 @@ export function Images({
     [onChange]
   );
 
-  // Upload function via server action
+  // Upload via the artifact-scoped helper. The component owns the
+  // toast / progress UI; the helper owns the URL + fetch shape.
   const uploadFile = useCallback(
     async (file: File) => {
-      if (!uploadFileAction) {
+      if (!uploadImage) {
         toast.error("Upload functionality not available");
         return;
       }
@@ -225,23 +218,11 @@ export function Images({
       );
 
       try {
-        const formData = new FormData();
-        formData.append("file", file);
+        const { image_id } = await uploadImage(file);
 
-        const result = await uploadFileAction(formData);
-
-        if (!result.success || !result.upload_id) {
-          throw new Error(result.message || "Upload failed");
-        }
-
-        const databaseUploadId = result.upload_id;
-
-        // Report upload value upward for unified draft pattern
-        onImageUploadValue?.({
-          name: file.name,
-          description: "",
-          upload_id: databaseUploadId,
-        });
+        // Upload writes the full resource chain server-side; the parent
+        // just needs to know which image_id to add to its selection.
+        onImageUploaded?.(image_id);
 
         toast.success(`Upload completed: ${file.name}!`, {
           description: "Image uploaded successfully",
@@ -277,13 +258,11 @@ export function Images({
         });
       }
     },
-    [
-      uploadFileAction,
-      onImageUploadValue,
-    ]
+    [uploadImage, onImageUploaded]
   );
 
-  // Internal upload handler for when uploadFileAction is provided
+  // Internal upload handler — fires when a user picks a file via the
+  // hidden file input. Active when ``uploadImage`` is set.
   const handleInternalUpload = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
@@ -317,19 +296,25 @@ export function Images({
   );
   const showDiff = pendingItems.length > 0;
 
-  // Accept pending — pending items are already in selection, no-op
+  // Accept pending — pending items already in selection; tell parent
+  // hook to strip them from ``pending_ids`` if provided.
   const handleAccept = useCallback(() => {
-    // no-op: pending items already in selection
-  }, []);
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
+  }, [onAcceptPending, pendingIds]);
 
-  // Reject pending — remove pending IDs from selection
+  // Reject pending — remove pending IDs from selection. Parent hook (if
+  // present) also strips them from ``pending_ids``.
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     onChange(ids.filter((id) => !pendingIds.has(id)));
-  }, [ids, onChange, pendingIds]);
+  }, [ids, onChange, onRejectPending, pendingIds]);
 
-  // Create internal file input ref if not provided (must be before conditional return)
-  const internalImageInputRef = useRef<HTMLInputElement>(null);
-  const effectiveImageInputRef = imageInputRef || internalImageInputRef;
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Don't render if show_images is false (AFTER all hooks)
   if (!show) {
@@ -510,18 +495,13 @@ export function Images({
               activeUploads.size === 0 && (
                 <div
                   onClick={() => {
-                    if (
-                      !disabled &&
-                      !isUploadingImage &&
-                      (onImageUpload || uploadFileAction)
-                    ) {
-                      effectiveImageInputRef.current?.click();
+                    if (!disabled && uploadImage) {
+                      imageInputRef.current?.click();
                     }
                   }}
                   className={cn(
                     "aspect-square w-32 min-w-[8rem] border-2 border-dashed border-muted-foreground/50 rounded-lg cursor-pointer bg-muted/20 hover:border-muted-foreground hover:bg-muted/50 transition-colors flex flex-col items-center justify-center shrink-0",
-                    (disabled || isUploadingImage) &&
-                      "opacity-50 cursor-not-allowed"
+                    disabled && "opacity-50 cursor-not-allowed"
                   )}
                 >
                   <Upload className="h-6 w-6 text-muted-foreground mb-1" />
@@ -559,17 +539,13 @@ export function Images({
         </div>
 
         {/* Hidden file input */}
-        {(onImageUpload || uploadFileAction) && (
+        {uploadImage && (
           <input
-            ref={effectiveImageInputRef}
+            ref={imageInputRef}
             type="file"
             accept="image/*"
-            onChange={
-              uploadFileAction ? handleInternalUpload : onImageUpload
-            }
-            disabled={
-              isUploadingImage || disabled || activeUploads.size > 0
-            }
+            onChange={handleInternalUpload}
+            disabled={disabled || activeUploads.size > 0}
             className="hidden"
           />
         )}

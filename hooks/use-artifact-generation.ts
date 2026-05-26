@@ -73,11 +73,35 @@ export interface GenerationMessage {
 export interface GenerationListener {
   messages: GenerationMessage[];
   isGenerating: boolean;
+  /** Per-resource_type generating set. Populated when a generate event
+   *  carries ``resource_types`` (or ``resource_type``) in its payload —
+   *  artifacts that fan out per-resource (Scenario StepCards) gate
+   *  buttons on ``generatingResources.has(rt)``; artifacts that don't
+   *  fan out (Persona) just read ``isGenerating``. Both kept in sync. */
+  generatingResources: Set<string>;
+  /** 0-100 percentage from the latest ``${artifact}.generate.text.progress``
+   *  payload. Reset to 0 on completed/failed. */
+  generationProgress: number;
   stage: GenerationStage;
   error: string | null;
   clearMessages: () => void;
   setGenerating: (value: boolean) => void;
   setError: (msg: string | null) => void;
+  /** Fire a multi-resource generate against ``/{artifactType}/generate``.
+   *  Seeds ``generatingResources`` optimistically, arms a per-resource
+   *  120s safety timeout, and posts the canonical envelope
+   *  (``instructions``, ``config: {operations, dangerous, group_id, params}``,
+   *  ``client_run_id``). Returns true if the request was dispatched, false
+   *  when called with an empty resource list. */
+  generateResources: (
+    resourceTypes: string[],
+    options?: Record<string, unknown>,
+  ) => boolean;
+  /** Clear a single resource_type from ``generatingResources`` without
+   *  cancelling other in-flight generates. Used by StepCard callbacks
+   *  that want to manually settle a resource once the resulting draft
+   *  patch lands. */
+  clearGeneratingResource: (resourceType: string) => void;
   /** URL-backed currently-selected group id. Mirrors the URL's
    *  ``?groupId=`` (via nuqs) for the active panel scope. ``null`` when
    *  the user is on the SSR-resolved default group (clean URL).
@@ -105,6 +129,17 @@ export interface GenerationListener {
 
 const GENERATION_TIMEOUT_MS = 120_000;
 
+/** Lift the resource_types list off an event payload. The server emits
+ *  either ``resource_types: string[]`` (fan-out) or ``resource_type: string``
+ *  (single) depending on the operation — accept both shapes. */
+function pickResourceTypes(raw: Record<string, unknown> | null | undefined): string[] {
+  if (!raw) return [];
+  const list = raw["resource_types"];
+  if (Array.isArray(list)) return list.filter((v): v is string => typeof v === "string");
+  const single = raw["resource_type"];
+  return typeof single === "string" ? [single] : [];
+}
+
 export function useArtifactGeneration(
   artifactType: string | null,
   groupId: string | null,
@@ -112,12 +147,21 @@ export function useArtifactGeneration(
   const transport = useTransport();
   const [messages, setMessages] = useState<GenerationMessage[]>([]);
   const [isGenerating, setIsGeneratingState] = useState(false);
+  const [generatingResources, setGeneratingResources] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [generationProgress, setGenerationProgress] = useState(0);
   const [stage, setStage] = useState<GenerationStage>("idle");
   const [error, setErrorState] = useState<string | null>(null);
   const groupIdRef = useRef(groupId);
   groupIdRef.current = groupId;
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Per-resource_type safety timers. Each resource gets its own 120s
+   *  watchdog so a single hung resource doesn't trap the whole panel. */
+  const resourceTimeoutsRef = useRef<
+    Map<string, ReturnType<typeof setTimeout>>
+  >(new Map());
   // Identity of the single reasoning bubble for the current generate
   // turn. The agentic loop streams reasoning_delta across multiple LLM
   // iterations (one round per tool-call batch); each iteration ends
@@ -212,7 +256,7 @@ export function useArtifactGeneration(
 
     // ── generate-loop lifecycle ────────────────────────────────────
     // Reserved op name — these mark the LLM run, not a tool call.
-    const handleGenerateStarted = () => {
+    const handleGenerateStarted = (data: Record<string, unknown>) => {
       setIsGeneratingState(true);
       setStage("generating");
       setErrorState(null);
@@ -227,9 +271,22 @@ export function useArtifactGeneration(
         setErrorState("Generation timed out");
         timeoutRef.current = null;
       }, GENERATION_TIMEOUT_MS);
+      // Per-resource fan-out: the server reports which resource_types are
+      // in flight on the started event. Add them to the set so artifacts
+      // that gate per-resource UI (Scenario StepCards) light up the right
+      // buttons. Artifacts that fan out at the artifact level (Persona)
+      // emit no resource_types and just rely on ``isGenerating``.
+      const rts = pickResourceTypes(data);
+      if (rts.length > 0) {
+        setGeneratingResources((prev) => {
+          const next = new Set(prev);
+          for (const rt of rts) next.add(rt);
+          return next;
+        });
+      }
     };
 
-    const handleGenerateCompleted = () => {
+    const handleGenerateCompleted = (data: Record<string, unknown>) => {
       clearTimer();
       setIsGeneratingState(false);
       setStage("idle");
@@ -239,6 +296,23 @@ export function useArtifactGeneration(
       // closeActiveReasoning in handleTextProgress. If it did fire but
       // somehow the ref still points at a bubble, close it now.
       closeActiveReasoning();
+      const rts = pickResourceTypes(data);
+      const rtsToCancel =
+        rts.length > 0 ? rts : Array.from(resourceTimeoutsRef.current.keys());
+      for (const rt of rtsToCancel) {
+        const t = resourceTimeoutsRef.current.get(rt);
+        if (t) {
+          clearTimeout(t);
+          resourceTimeoutsRef.current.delete(rt);
+        }
+      }
+      setGeneratingResources((prev) => {
+        if (rts.length === 0) return new Set();
+        const next = new Set(prev);
+        for (const rt of rts) next.delete(rt);
+        return next;
+      });
+      setGenerationProgress(0);
     };
 
     const handleGenerateFailed = (data: Record<string, unknown>) => {
@@ -252,6 +326,23 @@ export function useArtifactGeneration(
         ...prev,
         { id: crypto.randomUUID(), role: "assistant", text: message, type: "text", tool: null },
       ]);
+      const rts = pickResourceTypes(data);
+      const rtsToCancel =
+        rts.length > 0 ? rts : Array.from(resourceTimeoutsRef.current.keys());
+      for (const rt of rtsToCancel) {
+        const t = resourceTimeoutsRef.current.get(rt);
+        if (t) {
+          clearTimeout(t);
+          resourceTimeoutsRef.current.delete(rt);
+        }
+      }
+      setGeneratingResources((prev) => {
+        if (rts.length === 0) return new Set();
+        const next = new Set(prev);
+        for (const rt of rts) next.delete(rt);
+        return next;
+      });
+      setGenerationProgress(0);
     };
 
     // ── audited-op lifecycle (HTTP/socket-driven) ─────────────────
@@ -297,8 +388,8 @@ export function useArtifactGeneration(
       // calls and text deltas fire alongside, and flips to success on
       // ``persona.generate.completed``.
       if (operation === "generate") {
-        if (phase === "started") handleGenerateStarted();
-        else if (phase === "completed") handleGenerateCompleted();
+        if (phase === "started") handleGenerateStarted(data);
+        else if (phase === "completed") handleGenerateCompleted(data);
         else handleGenerateFailed(data);
         // No early return — let the standard lifecycle code below also
         // create/update the bubble keyed by ``call_id``.
@@ -384,6 +475,11 @@ export function useArtifactGeneration(
 
     // ── generate-internal sub-events ───────────────────────────────
     const handleTextProgress = (data: Record<string, unknown>) => {
+      // Server reports streaming progress as a percentage when the
+      // run knows its denominator (e.g. multi-resource fan-outs).
+      // Optional — text-only progress events carry only ``delta``.
+      const pct = data["percentage"];
+      if (typeof pct === "number") setGenerationProgress(pct);
       const delta = data.delta as string;
       if (!delta) return;
       // Reasoning channel often doesn't emit its own ``.complete`` on
@@ -647,19 +743,114 @@ export function useArtifactGeneration(
 
   // Cleanup timer on unmount
   useEffect(() => {
+    const timers = resourceTimeoutsRef.current;
     return () => {
       clearTimer();
+      for (const t of timers.values()) clearTimeout(t);
+      timers.clear();
     };
   }, [clearTimer]);
+
+  const clearGeneratingResource = useCallback((resourceType: string) => {
+    setGeneratingResources((prev) => {
+      if (!prev.has(resourceType)) return prev;
+      const next = new Set(prev);
+      next.delete(resourceType);
+      return next;
+    });
+    const t = resourceTimeoutsRef.current.get(resourceType);
+    if (t) {
+      clearTimeout(t);
+      resourceTimeoutsRef.current.delete(resourceType);
+    }
+  }, []);
+
+  const generateResources = useCallback(
+    (
+      resourceTypes: string[],
+      options: Record<string, unknown> = {},
+    ): boolean => {
+      if (!artifactType || resourceTypes.length === 0) return false;
+
+      // Seed the set optimistically so the UI reflects the click before
+      // the server's started event arrives.
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        for (const rt of resourceTypes) next.add(rt);
+        return next;
+      });
+
+      // Per-resource safety timeout — if neither completed nor failed
+      // fires for a resource in 120s, clear it so the spinner doesn't
+      // hang forever. The artifact-level timeout (timeoutRef) still
+      // guards the overall generate run.
+      for (const rt of resourceTypes) {
+        const existing = resourceTimeoutsRef.current.get(rt);
+        if (existing) clearTimeout(existing);
+        const t = setTimeout(() => {
+          setGeneratingResources((prev) => {
+            if (!prev.has(rt)) return prev;
+            const next = new Set(prev);
+            next.delete(rt);
+            return next;
+          });
+          resourceTimeoutsRef.current.delete(rt);
+        }, GENERATION_TIMEOUT_MS);
+        resourceTimeoutsRef.current.set(rt, t);
+      }
+
+      const runId =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
+      // Canonical wire shape — matches persona/scenario/attempt: HTTP-route
+      // path + nested `config:` envelope. Server reads `config.params` for
+      // artifact_id resolution and `config.operations` for the resource types.
+      void transport
+        .send(`/${artifactType}/generate`, {
+          instructions: [],
+          config: {
+            operations: resourceTypes,
+            dangerous: true,
+            group_id: groupIdRef.current,
+            params: { ...options },
+          },
+          client_run_id: runId,
+        })
+        .catch(() => {
+          // Send-side rejection: clear optimistic state + cancel timeouts.
+          for (const rt of resourceTypes) {
+            const t = resourceTimeoutsRef.current.get(rt);
+            if (t) {
+              clearTimeout(t);
+              resourceTimeoutsRef.current.delete(rt);
+            }
+          }
+          setGeneratingResources((prev) => {
+            const next = new Set(prev);
+            for (const rt of resourceTypes) next.delete(rt);
+            return next;
+          });
+        });
+
+      return true;
+    },
+    [artifactType, transport],
+  );
 
   return {
     messages,
     isGenerating,
+    generatingResources,
+    generationProgress,
     stage,
     error,
     clearMessages,
     setGenerating,
     setError,
+    generateResources,
+    clearGeneratingResource,
     // The bare hook has no URL access — these are no-op stubs
     // overridden by `GenerationListenerProvider`.
     selectedGroupId: null,

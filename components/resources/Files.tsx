@@ -47,15 +47,17 @@ export interface FilesProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  /** Server action to upload a file — receives FormData, returns file_id */
-  uploadFileAction?: (formData: FormData) => Promise<{
-    success: boolean;
-    file_id?: string;
-    message?: string;
-  }>;
+  /** Artifact-scoped upload function (e.g. ``uploadDocumentFile``).
+   *  Caller hands us a File, we hand back ``file_id``. When unset,
+   *  upload UI is hidden (read-only). Mirrors the ``uploadImage``
+   *  contract in Images.tsx. */
+  uploadFile?: (file: File) => Promise<{ file_id: string }>;
   searchTerm?: string;
   /** Called after upload completes — reports file_id for draft form state */
   onFileUploadComplete?: (fileId: string) => void;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Files({
@@ -70,9 +72,11 @@ export function Files({
   required = false,
   placeholder = "Select files...",
   description,
-  uploadFileAction,
+  uploadFile: uploadFileFn,
   searchTerm = "",
   onFileUploadComplete,
+  onAcceptPending,
+  onRejectPending,
 }: FilesProps) {
   const ids = useMemo(() => file_ids ?? [], [file_ids]);
   const show = show_files ?? true;
@@ -139,10 +143,10 @@ export function Files({
     [allFiles]
   );
 
-  // Handle file upload via server action
-  const uploadFile = useCallback(
+  // Handle file upload via the artifact-scoped helper.
+  const handleUpload = useCallback(
     async (file: File) => {
-      if (!uploadFileAction) {
+      if (!uploadFileFn) {
         toast.error("Upload functionality not available");
         return;
       }
@@ -163,14 +167,7 @@ export function Files({
       );
 
       try {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const result = await uploadFileAction(formData);
-
-        if (!result.success || !result.file_id) {
-          throw new Error(result.message || "Upload failed");
-        }
+        const result = await uploadFileFn(file);
 
         if (onFileUploadComplete) {
           onFileUploadComplete(result.file_id);
@@ -210,7 +207,7 @@ export function Files({
         });
       }
     },
-    [uploadFileAction, onFileUploadComplete]
+    [uploadFileFn, onFileUploadComplete]
   );
 
   // Dropzone configuration
@@ -218,7 +215,7 @@ export function Files({
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
         acceptedFiles.forEach((file) => {
-          uploadFile(file);
+          handleUpload(file);
         });
       }
     },
@@ -243,17 +240,24 @@ export function Files({
     [onChange]
   );
 
-  // Accept pending — pending items are already in selection, no-op
+  // Accept pending — pending items already in selection; tell parent
+  // hook to strip them from ``pending_ids`` if provided.
   const handleAccept = useCallback(() => {
-    // Pending items are already in ids (selected=true), just confirm
-    // The next draft save will persist them as active
-  }, []);
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
+  }, [onAcceptPending, pendingIds]);
 
-  // Reject pending — remove pending IDs from selection
+  // Reject pending — remove pending IDs from selection. Parent hook (if
+  // present) also strips them from ``pending_ids``.
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     const newIds = ids.filter((id) => !pendingIds.has(id));
     onChange(newIds);
-  }, [ids, pendingIds, onChange]);
+  }, [ids, pendingIds, onChange, onRejectPending]);
 
   if (!show) {
     return null;

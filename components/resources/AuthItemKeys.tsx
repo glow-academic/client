@@ -62,6 +62,9 @@ export interface AuthItemKeysProps {
   show_auth_item_keys?: boolean;
   label?: string;
   description?: string;
+  /** Per-field pending lifecycle (multi-select). See Departments.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 const pairKey = (authId: string, itemId: string) => `${authId}:${itemId}`;
@@ -76,6 +79,8 @@ export function AuthItemKeys({
   show_auth_item_keys = true,
   label = "Auth Item Keys",
   description = "Add a key/secret for each auth claim item. Values are encrypted server-side.",
+  onAcceptPending,
+  onRejectPending,
 }: AuthItemKeysProps) {
   // Encrypted claim items only — plaintext items are owned by AuthItemValues.
   const opts = useMemo(
@@ -203,16 +208,31 @@ export function AuthItemKeys({
     [onReveal, revealed],
   );
 
+  const pendingResourceIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const e of existingRows) {
+      if (e.pending && e.id && e.auth_id && e.item_id) ids.push(e.id);
+    }
+    return ids;
+  }, [existingRows]);
+
   const handleAccept = useCallback(() => {
     // Pending entries remain; next save confirms them.
-  }, []);
+    if (onAcceptPending && pendingResourceIds.length > 0) {
+      onAcceptPending(pendingResourceIds);
+    }
+  }, [onAcceptPending, pendingResourceIds]);
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     onChange(
       vals.filter(
         (v) => !(v.id && pendingPairs.has(pairKey(v.auth_id, v.item_id))),
       ),
     );
-  }, [onChange, pendingPairs, vals]);
+  }, [onChange, onRejectPending, pendingPairs, pendingResourceIds, vals]);
 
   if (!show_auth_item_keys) return null;
 

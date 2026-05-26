@@ -557,8 +557,12 @@ function RubricComponent({
   // ─── Per-field pending lifecycle ──────────────────────────────────
   // Mirrors persona — see Persona.tsx for full rationale. ``formStateKey``
   // already includes ``pending_ids`` so changes here trigger autosave.
-  type SingleField = "name_id" | "description_id";
-  type MultiField = "flag_ids" | "department_ids";
+  type SingleField = "name_id" | "description_id" | "pass_points_id";
+  type MultiField =
+    | "flag_ids"
+    | "department_ids"
+    | "standard_group_ids"
+    | "standard_ids";
 
   const handleAcceptPendingField = useCallback(
     (field: SingleField, pendingId: string) => {
@@ -567,6 +571,8 @@ function RubricComponent({
         [field]: pendingId,
         ...(field === "name_id" ? { name: null } : {}),
         ...(field === "description_id" ? { description: null } : {}),
+        // pass_points value (numeric) cleared when resolved id wins.
+        ...(field === "pass_points_id" ? { pass_points: null } : {}),
         pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
       }));
     },
@@ -1085,6 +1091,12 @@ function RubricComponent({
                       pass_points_id: null,
                     }))
                   }
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("pass_points_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("pass_points_id", pendingId)
+                  }
                 />
                 <Points
                   mode="readonly"
@@ -1146,6 +1158,12 @@ function RubricComponent({
                 }))
               }
               required={true}
+              onAcceptPending={(pendingIds) =>
+                handleAcceptPendingMulti("standard_group_ids", pendingIds)
+              }
+              onRejectPending={(pendingIds) =>
+                handleRejectPendingMulti("standard_group_ids", pendingIds)
+              }
             />
           </StepCard>
         );
@@ -1201,6 +1219,12 @@ function RubricComponent({
               });
             }}
             required={true}
+            onAcceptPending={(pendingIds) =>
+              handleAcceptPendingMulti("standard_ids", pendingIds)
+            }
+            onRejectPending={(pendingIds) =>
+              handleRejectPendingMulti("standard_ids", pendingIds)
+            }
           />
         </StepCard>
       );

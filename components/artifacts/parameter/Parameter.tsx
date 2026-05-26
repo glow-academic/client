@@ -923,6 +923,12 @@ function ParameterComponent({
                 required={false}
                 searchTerm={fieldSearchTerm}
                 showSelectedFilter={fieldShowSelected}
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("field_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("field_ids", pendingIds)
+                }
               />
             </StepCard>
           );

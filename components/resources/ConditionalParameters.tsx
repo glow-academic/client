@@ -37,6 +37,9 @@ export interface ConditionalParametersProps {
   onChange: (ids: string[]) => void;
   label?: string;
   required?: boolean;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function ConditionalParameters({
@@ -48,6 +51,8 @@ export function ConditionalParameters({
   onChange,
   label = "Conditional Parameters",
   required = false,
+  onAcceptPending,
+  onRejectPending,
 }: ConditionalParametersProps) {
   const ids = useMemo(
     () => conditional_parameter_ids ?? [],
@@ -60,12 +65,19 @@ export function ConditionalParameters({
   );
 
   const pendingItems = useMemo(
-    () => allItems.filter((item) => item.pending && item.parameter_id),
+    () => allItems.filter((item) => item.pending === true),
     [allItems],
   );
-  const pendingIds = useMemo(
-    () => new Set(pendingItems.map((item) => item.parameter_id).filter(Boolean) as string[]),
+  const pendingResourceIds = useMemo(
+    () =>
+      pendingItems
+        .map((item) => item.parameter_id)
+        .filter((id): id is string => !!id),
     [pendingItems],
+  );
+  const pendingIds = useMemo(
+    () => new Set(pendingResourceIds),
+    [pendingResourceIds],
   );
   const showDiff = pendingItems.length > 0;
 
@@ -89,13 +101,25 @@ export function ConditionalParameters({
     [allItems],
   );
 
+  // Accept pending — pending items are already in selection. Parent hook
+  // strips the pending resource ids from `pending_ids`. See
+  // ParameterFields.tsx for the full pattern.
   const handleAccept = useCallback(() => {
-    // Pending items are already selected; the next draft save confirms them.
-  }, []);
+    if (onAcceptPending && pendingResourceIds.length > 0) {
+      onAcceptPending(pendingResourceIds);
+    }
+    // Pending items are already selected; without a callback, the next draft
+    // save confirms them.
+  }, [onAcceptPending, pendingResourceIds]);
 
+  // Reject pending — drop them from selection AND from `pending_ids`.
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     onChange(ids.filter((id) => !pendingIds.has(id)));
-  }, [ids, onChange, pendingIds]);
+  }, [ids, onChange, pendingIds, pendingResourceIds, onRejectPending]);
 
   if (!show) {
     return null;

@@ -69,6 +69,9 @@ export interface StandardGroupsProps {
   description?: string;
   searchTerm?: string;
   showSelectedFilter?: boolean;
+  /** Per-field pending lifecycle (multi-select). See Departments.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
   // Legacy props — accepted for backward compat but unused after pending migration
   standardGroupIds?: string[];
 }
@@ -87,6 +90,8 @@ export function StandardGroups({
   description,
   searchTerm = "",
   showSelectedFilter = false,
+  onAcceptPending,
+  onRejectPending,
   // Legacy props — accepted for backward compat but unused after pending migration
   standardGroupIds,
 }: StandardGroupsProps) {
@@ -131,11 +136,18 @@ export function StandardGroups({
 
   // Pending state: items with pending=true from soft draft connections
   const pendingItems = useMemo(() => {
-    return allStandardGroups.filter((sg) => sg.pending && sg.standard_group_id);
+    return allStandardGroups.filter(
+      (sg) => sg.pending && (sg.standard_group_id ?? (sg as { id?: string | null }).id)
+    );
   }, [allStandardGroups]);
   const showDiff = pendingItems.length > 0;
   const pendingIds = useMemo(
-    () => new Set(pendingItems.map((sg) => sg.standard_group_id).filter(Boolean) as string[]),
+    () =>
+      new Set(
+        pendingItems
+          .map((sg) => sg.standard_group_id ?? (sg as { id?: string | null }).id)
+          .filter(Boolean) as string[]
+      ),
     [pendingItems]
   );
 
@@ -220,16 +232,23 @@ export function StandardGroups({
 
   // Accept pending — keep pending standard groups in selection (no-op, already selected)
   const handleAccept = useCallback(() => {
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
     // Pending items are already in ids (selected=true), just confirm
     // The next draft save will persist them as active
     // Nothing to change in form state — they're already included
-  }, []);
+  }, [onAcceptPending, pendingIds]);
 
   // Reject pending — remove pending standard groups from selection
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     const newIds = ids.filter((id) => !pendingIds.has(id));
     onChange(newIds);
-  }, [ids, pendingIds, onChange]);
+  }, [ids, pendingIds, onChange, onRejectPending]);
 
   // Don't render if show_standard_groups is false (AFTER all hooks)
   if (!show) {

@@ -64,6 +64,9 @@ export interface OptionsProps {
       question_id: string;
     }>
   ) => void;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Options({
@@ -77,6 +80,8 @@ export function Options({
   disabled = false,
   onChange,
   onOptionsChange,
+  onAcceptPending,
+  onRejectPending,
 }: OptionsProps) {
   const ids = useMemo(() => option_ids ?? [], [option_ids]);
   const show = show_options ?? false;
@@ -363,15 +368,23 @@ export function Options({
   );
   const showDiff = pendingItems.length > 0;
 
-  // Accept pending — pending items are already in selection, no-op
+  // Accept pending — pending items already in selection; tell parent
+  // hook to strip them from ``pending_ids`` if provided.
   const handleAccept = useCallback(() => {
-    // no-op: pending items already in selection
-  }, []);
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
+  }, [onAcceptPending, pendingIds]);
 
-  // Reject pending — remove pending IDs from selection
+  // Reject pending — remove pending IDs from selection. Parent hook (if
+  // present) also strips them from ``pending_ids``.
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     onChange(ids.filter((id) => !pendingIds.has(id)));
-  }, [ids, onChange, pendingIds]);
+  }, [ids, onChange, onRejectPending, pendingIds]);
 
   // Don't render if no questions or not shown
   if (!show || displayQuestions.length === 0) {

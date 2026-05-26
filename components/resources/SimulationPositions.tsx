@@ -61,6 +61,9 @@ export interface SimulationPositionsProps {
   description?: string;
   /** Callback to emit position values for unified draft */
   onSimulationPositionValues?: (positions: Array<{ simulation_id: string; value: number }>) => void;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function SimulationPositions({
@@ -76,6 +79,8 @@ export function SimulationPositions({
   required = false,
   description,
   onSimulationPositionValues,
+  onAcceptPending,
+  onRejectPending,
 }: SimulationPositionsProps) {
   const show = show_simulation_positions ?? false;
   const selectedSimulationIds = useMemo(
@@ -281,14 +286,29 @@ export function SimulationPositions({
 
   const showDiff = pendingItems.length > 0;
 
-  // Accept pending — pending items are already in the positions, just confirm
+  // Junction-row ids (simulation_positions_resource.id) flagged pending=true.
+  const pendingResourceIds = useMemo(
+    () =>
+      pendingItems
+        .map((p) => p.id)
+        .filter((id): id is string => !!id),
+    [pendingItems],
+  );
+
+  // Accept pending — pending items are already in the positions.
+  // Parent hook (if provided) strips them from ``pending_ids``.
   const handleAccept = useCallback(() => {
-    // Pending items are already included in localPositions — nothing to change
-    // The next draft save will persist them as active
-  }, []);
+    if (onAcceptPending && pendingResourceIds.length > 0) {
+      onAcceptPending(pendingResourceIds);
+    }
+  }, [onAcceptPending, pendingResourceIds]);
 
   // Reject pending — remove pending simulation IDs from positions
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     updatePositions((prev) => {
       const updated = new Map(prev);
       pendingIds.forEach((simId) => {
@@ -296,7 +316,7 @@ export function SimulationPositions({
       });
       return updated;
     });
-  }, [updatePositions, pendingIds]);
+  }, [updatePositions, pendingIds, onRejectPending, pendingResourceIds]);
 
   if (!show) {
     return null;

@@ -82,6 +82,9 @@ export interface LoginsProps {
   label?: string;
   description?: string;
   show_logins?: boolean;
+  /** Per-field pending lifecycle (multi-select). See Departments.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 type GridItem = {
@@ -107,6 +110,8 @@ export function Logins({
   label = "Logins",
   description = "Select which login buttons appear on the sign-in page.",
   show_logins = true,
+  onAcceptPending,
+  onRejectPending,
 }: LoginsProps) {
   const ids = useMemo(() => logins_ids ?? [], [logins_ids]);
   const catalog = useMemo(() => logins ?? [], [logins]);
@@ -190,10 +195,21 @@ export function Logins({
 
   const handleAccept = useCallback(() => {
     // Pending rows are already in ids; next non-pending save confirms them.
-  }, []);
+    if (onAcceptPending) {
+      const pendingResourceIds = Array.from(pendingIds);
+      if (pendingResourceIds.length > 0) {
+        onAcceptPending(pendingResourceIds);
+      }
+    }
+  }, [onAcceptPending, pendingIds]);
   const handleReject = useCallback(() => {
+    const pendingResourceIds = Array.from(pendingIds);
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     onChange(ids.filter((id) => !pendingIds.has(id)));
-  }, [ids, pendingIds, onChange]);
+  }, [ids, pendingIds, onChange, onRejectPending]);
 
   const canSubmit = useMemo(() => {
     if (draftType === "auth") return !!draftAuthId;

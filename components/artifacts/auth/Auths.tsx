@@ -1062,7 +1062,10 @@ export default function Auths({
         </div>
       ) : (
         <div className="@container">
-          <div className="grid grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4 gap-4">
+          <div
+            data-testid="auths-grid"
+            className="grid grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4 gap-4"
+          >
             {visibleAuthGhosts.map((g) => {
               // For update/delete, ``before`` is the snapshot lookup
               // from baseRows (existing row) — gives us name,

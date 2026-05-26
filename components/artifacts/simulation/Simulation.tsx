@@ -781,7 +781,14 @@ function SimulationComponent({
   // Mirrors persona pattern. Helpers manage pending_ids. formStateKey
   // already tracks pending_ids so accept/reject reliably triggers autosave.
   type SingleField = "name_id" | "description_id";
-  type MultiField = "department_ids" | "flag_ids";
+  type MultiField =
+    | "department_ids"
+    | "flag_ids"
+    | "scenario_ids"
+    | "scenario_flag_ids"
+    | "scenario_position_ids"
+    | "scenario_rubric_ids"
+    | "scenario_time_limit_ids";
 
   const handleAcceptPendingField = useCallback(
     (field: SingleField, pendingId: string) => {
@@ -1611,6 +1618,12 @@ function SimulationComponent({
                   required={SIMULATION_REQUIRED.scenarios}
                   searchTerm={scenarioSearch ?? ""}
                   showSelectedOnly={scenarioShowSelected}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("scenario_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("scenario_ids", pendingIds)
+                  }
                 />
                 <ScenarioFlags
                   options={(s as unknown as { scenario_flag_options?: Array<{ scenario_id?: string | null; flag_id?: string | null; type?: string | null; value?: boolean | null; name?: string | null; description?: string | null; icon?: string | null }> }).scenario_flag_options ?? []}
@@ -1620,6 +1633,12 @@ function SimulationComponent({
                   onChange={handleScenarioFlagToggle}
                   show_scenario_flags={showScenarioFlags}
                   disabled={disabled}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("scenario_flag_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("scenario_flag_ids", pendingIds)
+                  }
                 />
                 <ScenarioPositions
                   scenario_position_ids={formState.scenario_position_ids ?? []}
@@ -1645,6 +1664,12 @@ function SimulationComponent({
                       if (JSON.stringify(prev.scenario_positions) === JSON.stringify(nextVal)) return prev;
                       return { ...prev, scenario_positions: nextVal };
                     })
+                  }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("scenario_position_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("scenario_position_ids", pendingIds)
                   }
                 />
                 <ScenarioRubrics
@@ -1674,6 +1699,12 @@ function SimulationComponent({
                       scenario_rubrics: rubrics.length > 0 ? rubrics : null,
                     }))
                   }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("scenario_rubric_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("scenario_rubric_ids", pendingIds)
+                  }
                 />
                 <ScenarioTimeLimits
                   scenario_time_limit_ids={
@@ -1700,6 +1731,12 @@ function SimulationComponent({
                     })
                   }
                   allowUnlimited={allowUnlimitedTimeLimits}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("scenario_time_limit_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("scenario_time_limit_ids", pendingIds)
+                  }
                 />
               </div>
             </StepCard>

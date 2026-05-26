@@ -22,6 +22,7 @@ import { useCallback, useMemo } from "react";
 
 export interface SettingResourceItem {
   id?: string | null;
+  setting_id?: string | null;
   name?: string | null;
   description?: string | null;
   department_ids?: string[] | null;
@@ -51,6 +52,9 @@ export interface SettingsProps {
   id?: string;
   required?: boolean;
   description?: string;
+  /** Per-field pending lifecycle (multi-select). See Departments.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Settings({
@@ -62,17 +66,24 @@ export function Settings({
   id = "settings",
   required = false,
   description,
+  onAcceptPending,
+  onRejectPending,
 }: SettingsProps) {
   const ids = useMemo(() => settings_ids ?? [], [settings_ids]);
   const allSettings = useMemo(() => settings ?? [], [settings]);
 
   const pendingItems = useMemo(
-    () => allSettings.filter((s) => s.pending && s.id),
+    () => allSettings.filter((s) => s.pending && (s.setting_id ?? s.id)),
     [allSettings],
   );
   const showDiff = pendingItems.length > 0;
   const pendingIds = useMemo(
-    () => new Set(pendingItems.map((s) => s.id).filter(Boolean) as string[]),
+    () =>
+      new Set(
+        pendingItems
+          .map((s) => s.setting_id ?? s.id)
+          .filter(Boolean) as string[],
+      ),
     [pendingItems],
   );
 
@@ -114,12 +125,19 @@ export function Settings({
   );
 
   const handleAccept = useCallback(() => {
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
     // Pending items are already in selection — next save persists them.
-  }, []);
+  }, [onAcceptPending, pendingIds]);
 
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     onChange(ids.filter((x) => !pendingIds.has(x)));
-  }, [ids, pendingIds, onChange]);
+  }, [ids, pendingIds, onChange, onRejectPending]);
 
   if (allSettings.length === 0) return null;
 

@@ -428,8 +428,17 @@ function Setting({
   // ─── Per-field pending lifecycle ──────────────────────────────────
   // Mirrors persona pattern. Helpers manage pending_ids; existing
   // handlers retain their pruneSectionPending logic for full-list resets.
-  type SingleField = "name_id" | "description_id";
-  type MultiField = "department_ids" | "flag_ids" | "color_ids";
+  type SingleField = "name_id" | "description_id" | "mcp_id";
+  type MultiField =
+    | "department_ids"
+    | "flag_ids"
+    | "color_ids"
+    | "logins_ids"
+    | "system_ids"
+    | "threshold_ids"
+    | "provider_key_ids"
+    | "auth_item_key_ids"
+    | "auth_item_value_ids";
 
   const handleAcceptPendingField = useCallback(
     (field: SingleField, pendingId: string) => {
@@ -1219,6 +1228,12 @@ function Setting({
                   logins: [...prev.logins, { id: null, ...draft }],
                 }))
               }
+              onAcceptPending={(pendingIds) =>
+                handleAcceptPendingMulti("logins_ids", pendingIds)
+              }
+              onRejectPending={(pendingIds) =>
+                handleRejectPendingMulti("logins_ids", pendingIds)
+              }
             />
           </StepCard>
         );
@@ -1276,6 +1291,12 @@ function Setting({
                   ],
                 }))
               }
+              onAcceptPending={(pendingIds) =>
+                handleAcceptPendingMulti("system_ids", pendingIds)
+              }
+              onRejectPending={(pendingIds) =>
+                handleRejectPendingMulti("system_ids", pendingIds)
+              }
             />
           </StepCard>
         );
@@ -1330,6 +1351,12 @@ function Setting({
                     },
                   ],
                 }))
+              }
+              onAcceptPending={(pendingId) =>
+                handleAcceptPendingField("mcp_id", pendingId)
+              }
+              onRejectPending={(pendingId) =>
+                handleRejectPendingField("mcp_id", pendingId)
               }
             />
           </StepCard>
@@ -1395,6 +1422,12 @@ function Setting({
                           ],
                         };
                       })
+                    }
+                    onAcceptPending={(pendingIds) =>
+                      handleAcceptPendingMulti("threshold_ids", pendingIds)
+                    }
+                    onRejectPending={(pendingIds) =>
+                      handleRejectPendingMulti("threshold_ids", pendingIds)
                     }
                   />
                 );
@@ -1492,6 +1525,12 @@ function Setting({
                   }
                   onReveal={decryptKey}
                   show_provider_keys={true}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("provider_key_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("provider_key_ids", pendingIds)
+                  }
                 />
               )}
             </div>
@@ -1587,6 +1626,12 @@ function Setting({
                   }
                   onReveal={decryptKey}
                   show_auth_item_keys={true}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("auth_item_key_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("auth_item_key_ids", pendingIds)
+                  }
                 />
                 <AuthItemValues
                   options={(s?.auth_item_value_options ?? []).filter((opt) =>
@@ -1614,6 +1659,12 @@ function Setting({
                     })
                   }
                   show_auth_item_values={true}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("auth_item_value_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("auth_item_value_ids", pendingIds)
+                  }
                 />
               </>
             )}

@@ -47,7 +47,7 @@ export async function doRequest<T>(
   let body: BodyInit | null = null;
   let headers: HeadersInit = init?.headers ?? {};
 
-  // Inject auth headers (X-Api-Key + Authorization Bearer JWT)
+  // Inject auth headers (Authorization Bearer JWT)
   // Server resolves profile_id and session_id from the JWT — no X-Profile-Id needed
   if (typeof window === "undefined") {
     try {

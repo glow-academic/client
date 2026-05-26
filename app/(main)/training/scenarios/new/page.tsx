@@ -42,9 +42,6 @@ type ProblemScenarioOut = OutputOf<"/scenario/problem", "post">;
 type ContextIn = InputOf<"/scenario/context", "post">;
 type ContextOut = OutputOf<"/scenario/context", "post">;
 
-/** Upload action result — matches the interface expected by resource components */
-type UploadResult = { success: boolean; upload_id?: string; message?: string };
-
 async function getScenario(input: GetScenarioIn): Promise<GetScenarioOut> {
   "use server";
   return api.post("/scenario/get", input);
@@ -61,50 +58,6 @@ async function patchScenarioDraft(
   "use server";
   return api.post("/scenario/draft", input);
 }
-
-async function uploadFile(formData: FormData): Promise<UploadResult> {
-  "use server";
-  try {
-    const file = formData.get("file") as File | null;
-    if (!file) return { success: false, message: "No file provided" };
-
-    const { getAuthHeaders } = await import("@/lib/api/auth-headers");
-    const { INTERNAL_HTTP_BASE } = await import("@/lib/api/config");
-    const authHeaders = await getAuthHeaders();
-
-    // Backend splits scenario uploads by media type:
-    //   POST /scenario/image_upload (image/*) / /scenario/video_upload (video/*)
-    // Both take multipart with a single `file` field. (Was hitting
-    // `/v5/scenarios/upload` which never existed → 404.)
-    const isVideo = (file.type || "").startsWith("video/");
-    const endpoint = isVideo ? "/scenario/video_upload" : "/scenario/image_upload";
-
-    const body = new FormData();
-    body.append("file", file);
-
-    const response = await fetch(`${INTERNAL_HTTP_BASE}${endpoint}`, {
-      method: "POST",
-      headers: {
-        ...authHeaders,
-        // Don't set Content-Type — fetch sets the multipart boundary
-        // automatically when body is FormData.
-      },
-      body,
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      return { success: false, message: text || "Upload failed" };
-    }
-
-    const result = await response.json();
-    return { success: true, upload_id: result.upload_id };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Upload failed";
-    return { success: false, message };
-  }
-}
-
 
 async function getScenarioGroupHistory(groupId: string): Promise<GroupScenarioOut> {
   "use server";
@@ -335,8 +288,6 @@ export default async function NewScenarioPage({
               }
               createScenarioAction={createScenario}
               patchScenarioDraftAction={patchScenarioDraft}
-              uploadBasePath="/scenario"
-              uploadFileAction={uploadFile}
             />
           </div>
         </FullPageLayout>

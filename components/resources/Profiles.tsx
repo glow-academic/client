@@ -49,6 +49,9 @@ export interface ProfilesProps {
   description?: string;
   searchTerm?: string; // Search term for filtering profiles
   showSelectedFilter?: boolean; // Whether to show only selected profiles
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Profiles({
@@ -64,6 +67,8 @@ export function Profiles({
   description,
   searchTerm = "",
   showSelectedFilter = false,
+  onAcceptPending,
+  onRejectPending,
 }: ProfilesProps) {
   const ids = useMemo(() => profile_ids ?? [], [profile_ids]);
   const show = show_profiles ?? false;
@@ -137,18 +142,23 @@ export function Profiles({
     [ids, onChange]
   );
 
-  // Accept pending — keep pending profiles in selection
+  // Accept pending — keep pending profiles in selection.
+  // Parent hook (if provided) strips them from ``pending_ids``.
   const handleAccept = useCallback(() => {
-    // Pending items are already in ids (selected=true), just confirm
-    // The next draft save will persist them as active
-    // Nothing to change in form state — they're already included
-  }, []);
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
+  }, [onAcceptPending, pendingIds]);
 
   // Reject pending — remove pending profiles from selection
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     const newIds = ids.filter((id) => !pendingIds.has(id));
     onChange(newIds);
-  }, [ids, pendingIds, onChange]);
+  }, [ids, pendingIds, onChange, onRejectPending]);
 
   // Don't render if show_profiles is false (AFTER all hooks)
   if (!show) {

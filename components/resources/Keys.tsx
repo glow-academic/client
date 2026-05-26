@@ -63,6 +63,9 @@ export interface KeysProps {
    * Implementation typically calls `POST /provider/decrypt` (audited).
    */
   onReveal?: (key_id: string) => Promise<string | null>;
+  /** Per-field pending lifecycle (single-value). See Instructions.tsx. */
+  onAcceptPending?: (pendingId: string) => void;
+  onRejectPending?: (pendingId: string) => void;
 }
 
 export function Keys({
@@ -80,6 +83,8 @@ export function Keys({
   required = false,
   placeholder = "Select a key...",
   onReveal,
+  onAcceptPending,
+  onRejectPending,
 }: KeysProps) {
   const [revealed, setRevealed] = useState<Record<string, string>>({});
   const [revealing, setRevealing] = useState<Record<string, boolean>>({});
@@ -175,20 +180,39 @@ export function Keys({
 
   // Accept pending — keep pending keys in selection (no-op, they're already included)
   const handleAccept = useCallback(() => {
+    // Single-value pending lifecycle: parent decides what acceptance means.
+    if (!multiSelect && onAcceptPending) {
+      const firstPendingId = pendingItems
+        .map((k) => k.id)
+        .find((pid): pid is string => !!pid);
+      if (firstPendingId) {
+        onAcceptPending(firstPendingId);
+        return;
+      }
+    }
     // Pending items are already in ids (selected=true), just confirm
     // The next draft save will persist them as active
     // Nothing to change in form state — they're already included
-  }, []);
+  }, [multiSelect, onAcceptPending, pendingItems]);
 
   // Reject pending — remove pending keys from selection
   const handleReject = useCallback(() => {
+    if (!multiSelect && onRejectPending) {
+      const firstPendingId = pendingItems
+        .map((k) => k.id)
+        .find((pid): pid is string => !!pid);
+      if (firstPendingId) {
+        onRejectPending(firstPendingId);
+        return;
+      }
+    }
     if (multiSelect && onChange) {
       const newIds = ids.filter((id) => !pendingIds.has(id));
       onChange(newIds);
     } else if (onKeyIdChange && pendingIds.has(resourceId ?? "")) {
       onKeyIdChange(null);
     }
-  }, [ids, pendingIds, onChange, onKeyIdChange, resourceId, multiSelect]);
+  }, [ids, pendingIds, onChange, onKeyIdChange, resourceId, multiSelect, onRejectPending, pendingItems]);
 
   // Don't render if show_key is false (AFTER all hooks)
   if (!show) {

@@ -70,6 +70,9 @@ export interface ScenarioFlagsProps {
   label?: string;
   disabled?: boolean;
   show_scenario_flags?: boolean;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 type ScenarioFlagGroup = {
@@ -114,6 +117,8 @@ export function ScenarioFlags({
   label = "Scenario Flags",
   disabled = false,
   show_scenario_flags = true,
+  onAcceptPending,
+  onRejectPending,
 }: ScenarioFlagsProps) {
   // Group options by scenario_id, then by type. Each group has trueRow /
   // falseRow (one per value). The UI picks between these two flag_ids when
@@ -162,6 +167,16 @@ export function ScenarioFlags({
 
   const showDiff = pendingKeys.size > 0;
 
+  // Junction-row ids (scenario_flags_resource.id) flagged pending=true.
+  const pendingResourceIds = useMemo(
+    () =>
+      existing
+        .filter((e) => e.pending === true)
+        .map((e) => e.id)
+        .filter((id): id is string => !!id),
+    [existing],
+  );
+
   const handleToggle = useCallback(
     (scenario_id: string, type: string, checked: boolean) => {
       onChange(scenario_id, type, checked);
@@ -170,15 +185,21 @@ export function ScenarioFlags({
   );
 
   const handleAccept = useCallback(() => {
-    // Pending keys confirm themselves on next non-pending save; no-op here.
-  }, []);
+    if (onAcceptPending && pendingResourceIds.length > 0) {
+      onAcceptPending(pendingResourceIds);
+    }
+  }, [onAcceptPending, pendingResourceIds]);
 
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     for (const key of pendingKeys) {
       const [sid, type] = key.split(":");
       if (sid && type) onChange(sid, type, null);
     }
-  }, [pendingKeys, onChange]);
+  }, [pendingKeys, onChange, onRejectPending, pendingResourceIds]);
 
   // Order scenarios as provided; filter to those we have options for so the
   // component stays hidden when the catalog is empty for a scenario.

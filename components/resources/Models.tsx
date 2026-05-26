@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo } from "react";
 
 export interface ModelResourceItem {
   id?: string | null;
+  model_id?: string | null;
   name?: string | null;
   description?: string | null;
   modality_ids?: string[] | null;
@@ -51,6 +52,9 @@ export interface ModelsProps {
   onSearchChange?: (term: string) => void;
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
+  /** Per-field pending lifecycle (multi-select). See Departments.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Models({
@@ -71,6 +75,8 @@ export function Models({
   onSearchChange,
   showSelectedFilter = false,
   onShowSelectedChange,
+  onAcceptPending,
+  onRejectPending,
 }: ModelsProps) {
   // Mode is determined by which selection prop is supplied. Callers must
   // pick one — single = `model_id` + `onModelIdChange`, multi =
@@ -88,11 +94,16 @@ export function Models({
 
   // Pending state: items with pending=true from soft draft connections
   const pendingItems = useMemo(() => {
-    return allModels.filter((m) => m.pending && m.id);
+    return allModels.filter((m) => m.pending && (m.model_id ?? m.id));
   }, [allModels]);
   const showDiff = pendingItems.length > 0;
   const pendingIds = useMemo(
-    () => new Set(pendingItems.map((m) => m.id).filter(Boolean) as string[]),
+    () =>
+      new Set(
+        pendingItems
+          .map((m) => m.model_id ?? m.id)
+          .filter(Boolean) as string[]
+      ),
     [pendingItems]
   );
 
@@ -182,12 +193,19 @@ export function Models({
 
   // Accept pending — keep pending model in selection (no-op, next save persists)
   const handleAccept = useCallback(() => {
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
     // Pending items are already reflected in the models list
     // The next draft save will persist them as active
-  }, []);
+  }, [onAcceptPending, pendingIds]);
 
   // Reject pending — clear any pending selections.
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     if (isMulti) {
       const current = model_ids ?? [];
       const next = current.filter((id) => !pendingIds.has(id));
@@ -197,7 +215,7 @@ export function Models({
     if (resourceId && pendingIds.has(resourceId)) {
       onModelIdChange?.(null);
     }
-  }, [isMulti, model_ids, resourceId, pendingIds, onModelIdChange, onModelIdsChange]);
+  }, [isMulti, model_ids, resourceId, pendingIds, onModelIdChange, onModelIdsChange, onRejectPending]);
 
   // Don't render if show_models is false (AFTER all hooks)
   if (!show) {
@@ -205,7 +223,7 @@ export function Models({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="picker-models">
       <div className="flex items-center gap-2">
         <Label htmlFor={id} className="flex items-center gap-1">
           {label}

@@ -59,6 +59,11 @@ export interface ModelRubricsProps {
   description?: string;
   /** Value callback for unified draft — reports all model+rubric pairs */
   onModelRubricValues?: (rubrics: Array<{ model_id: string; rubric_id: string }>) => void;
+  /** Per-field pending lifecycle (multi-select, junction). Receives the
+   *  set of pending junction-row ids. See ParameterFields.tsx for the
+   *  junction pattern. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 const NONE_OPTION = "__none__";
@@ -84,6 +89,8 @@ export function ModelRubrics({
   required = false,
   description,
   onModelRubricValues,
+  onAcceptPending,
+  onRejectPending,
 }: ModelRubricsProps) {
   const show = show_model_rubrics ?? false;
   const currentResources = useMemo(
@@ -99,6 +106,11 @@ export function ModelRubrics({
   const showDiff = pendingItems.length > 0;
   const pendingModelIds = useMemo(
     () => new Set(pendingItems.map((r) => r.model_id).filter(Boolean) as string[]),
+    [pendingItems],
+  );
+  // Junction-row ids for the pending lifecycle hook.
+  const pendingJunctionIds = useMemo(
+    () => pendingItems.map((r) => r.id).filter(Boolean) as string[],
     [pendingItems],
   );
 
@@ -261,13 +273,20 @@ export function ModelRubrics({
 
   // Accept pending — pending items are already in selection, no-op
   const handleAccept = useCallback(() => {
+    if (onAcceptPending && pendingJunctionIds.length > 0) {
+      onAcceptPending(pendingJunctionIds);
+    }
     // Pending items are already in ids (selected=true), just confirm
     // The next draft save will persist them as active
     // Nothing to change in form state — they're already included
-  }, []);
+  }, [onAcceptPending, pendingJunctionIds]);
 
   // Reject pending — remove pending model rubric assignments
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingJunctionIds.length > 0) {
+      onRejectPending(pendingJunctionIds);
+      return;
+    }
     // Remove pending model IDs from rubricIdByModel and modelRubricIdsByModel
     setRubricIdByModel((prev) => {
       const next = new Map(prev);
@@ -283,14 +302,14 @@ export function ModelRubrics({
       });
       return next;
     });
-  }, [pendingModelIds]);
+  }, [pendingModelIds, pendingJunctionIds, onRejectPending]);
 
   if (!show || model_ids.length === 0) {
     return null;
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid="picker-model-rubrics">
       {label && (
         <div className="flex items-center gap-2">
           <Label htmlFor={id} className="flex items-center gap-1">

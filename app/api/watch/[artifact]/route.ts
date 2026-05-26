@@ -8,8 +8,8 @@
  * the token to JS where XSS can read it. Neither is acceptable.
  *
  * Solution: this Next.js route runs server-side, reads the user's
- * Auth.js session, attaches ``X-Api-Key`` + ``Authorization: Bearer``,
- * and pipes the upstream SSE response straight back to the browser.
+ * Auth.js session, attaches ``Authorization: Bearer``, and pipes the
+ * upstream SSE response straight back to the browser.
  * The JWT never leaves the Next.js process.
  *
  * Usage:
@@ -34,10 +34,6 @@ export const runtime = "nodejs";
 // SSE streams must not be buffered. ``force-dynamic`` opts the route
 // out of Next.js fetch caching entirely.
 export const dynamic = "force-dynamic";
-
-// Hardcoded for development — production should pull from env.
-// Mirrors lib/api/auth-headers.ts so SSR and BFF paths agree.
-const API_KEY = "glw_dev_test_key_123";
 
 const STRIP_RESPONSE_HEADERS = new Set([
   "content-length", // streaming — let the connection handle framing
@@ -74,7 +70,6 @@ export async function GET(
       method: "GET",
       headers: {
         Accept: "text/event-stream",
-        "X-Api-Key": API_KEY,
         Authorization: `Bearer ${session.id_token}`,
       },
       redirect: "manual",

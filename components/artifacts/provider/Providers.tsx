@@ -1232,7 +1232,10 @@ export default function Providers({
           out so the real row replaces the ghost in place without a
           duplicate frame. */}
       <div className="@container">
-        <div className="grid grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4 gap-6">
+        <div
+          data-testid="providers-grid"
+          className="grid grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4 gap-6"
+        >
           {providerGhosts
             .filter((g) => g.state !== "committed" && g.state !== "accepted")
             .map((g) => {

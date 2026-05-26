@@ -52,6 +52,9 @@ export interface TextsProps {
   searchTerm?: string;
   /** Called when text content is created — reports content for server-side chain creation */
   onTextContentCreate?: (content: string) => void;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Texts({
@@ -65,6 +68,8 @@ export function Texts({
   required = false,
   searchTerm,
   onTextContentCreate,
+  onAcceptPending,
+  onRejectPending,
 }: TextsProps) {
   const [newTextContent, setNewTextContent] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -106,25 +111,41 @@ export function Texts({
 
   // Pending state: items with pending=true from soft draft connections
   const pendingItems = useMemo(() => {
-    return texts.filter((t) => t.pending && t.texts_id);
+    return texts.filter((t) => t.pending === true);
   }, [texts]);
-  const pendingIds = useMemo(
-    () => new Set(pendingItems.map((t) => t.texts_id).filter(Boolean) as string[]),
+  const pendingResourceIds = useMemo(
+    () =>
+      pendingItems
+        .map((t) => t.texts_id)
+        .filter((id): id is string => !!id),
     [pendingItems]
+  );
+  const pendingIds = useMemo(
+    () => new Set(pendingResourceIds),
+    [pendingResourceIds]
   );
   const showDiff = pendingItems.length > 0;
 
-  // Accept pending — pending items are already in selection, just confirm (no-op for form state)
+  // Accept pending — pending items are already in selection. Parent hook
+  // strips the pending resource ids from `pending_ids`. See
+  // ParameterFields.tsx for the full pattern.
   const handleAccept = useCallback(() => {
-    // Pending items are already in the selection; accepting is a no-op for form state.
-    // The parent will clear the pending flag on the server side.
-  }, []);
+    if (onAcceptPending && pendingResourceIds.length > 0) {
+      onAcceptPending(pendingResourceIds);
+    }
+    // Pending items are already in the selection; accepting is a no-op for form state
+    // when no callback is provided. The parent will clear the pending flag server-side.
+  }, [onAcceptPending, pendingResourceIds]);
 
-  // Reject pending — remove pending item IDs from selection
+  // Reject pending — drop them from selection AND from `pending_ids`.
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     const newIds = text_ids.filter((id) => !pendingIds.has(id));
     onChange(newIds);
-  }, [text_ids, pendingIds, onChange]);
+  }, [text_ids, pendingIds, pendingResourceIds, onChange, onRejectPending]);
 
   if (!show_texts) return null;
 

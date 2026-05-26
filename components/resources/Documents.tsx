@@ -65,6 +65,9 @@ export interface DocumentsProps {
   placeholder?: string;
   description?: string;
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Documents({
@@ -80,6 +83,8 @@ export function Documents({
   placeholder: _placeholder = "Select documents...",
   description,
   videoEnabled = false,
+  onAcceptPending,
+  onRejectPending,
 }: DocumentsProps) {
   const ids = useMemo(() => document_ids ?? [], [document_ids]);
   const show = show_documents ?? false;
@@ -153,15 +158,23 @@ export function Documents({
   const pendingIds = useMemo(() => new Set(pendingItems.map((i) => i.id)), [pendingItems]);
   const showDiff = pendingItems.length > 0;
 
-  // Accept pending — pending items are already in the list, no-op for selection
+  // Accept pending — pending items already in selection; tell parent
+  // hook to strip them from ``pending_ids`` if provided.
   const handleAccept = useCallback(() => {
-    // no-op: pending items already in selection
-  }, []);
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
+  }, [onAcceptPending, pendingIds]);
 
-  // Reject pending — remove pending IDs from selection
+  // Reject pending — remove pending IDs from selection. Parent hook (if
+  // present) also strips them from ``pending_ids``.
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     onChange(ids.filter((id) => !pendingIds.has(id)));
-  }, [ids, onChange, pendingIds]);
+  }, [ids, onChange, onRejectPending, pendingIds]);
 
   // Don't render if show_documents is false (AFTER all hooks)
   if (!show) {

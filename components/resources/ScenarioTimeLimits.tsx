@@ -64,6 +64,9 @@ export interface ScenarioTimeLimitsProps {
    * simulations must specify a concrete time limit.
    */
   allowUnlimited?: boolean;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function ScenarioTimeLimits({
@@ -80,6 +83,8 @@ export function ScenarioTimeLimits({
   onTimeLimitIdsChange,
   onScenarioTimeLimitValues,
   allowUnlimited = false,
+  onAcceptPending,
+  onRejectPending,
 }: ScenarioTimeLimitsProps) {
   const show = show_scenario_time_limits ?? false;
   const timeLimitResources = useMemo(
@@ -257,20 +262,35 @@ export function ScenarioTimeLimits({
     [],
   );
 
-  // Accept pending — pending items are already in form state, nothing to change
+  // Junction-row ids (scenario_time_limits_resource.id) flagged pending=true.
+  const pendingResourceIds = useMemo(
+    () =>
+      pendingResources
+        .map((r) => r.id)
+        .filter((id): id is string => !!id),
+    [pendingResources],
+  );
+
+  // Accept pending — pending items already in form state.
+  // Parent hook (if provided) strips them from ``pending_ids``.
   const handleAccept = useCallback(() => {
-    // No-op: pending resources are already reflected in form state.
-    // The next draft save will persist them as active.
-  }, []);
+    if (onAcceptPending && pendingResourceIds.length > 0) {
+      onAcceptPending(pendingResourceIds);
+    }
+  }, [onAcceptPending, pendingResourceIds]);
 
   // Reject pending — clear pending time limit selections
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     for (const r of pendingResources) {
       if (r.scenario_id) {
         handleChange(r.scenario_id, "");
       }
     }
-  }, [pendingResources, handleChange]);
+  }, [pendingResources, handleChange, onRejectPending, pendingResourceIds]);
 
   if (!show || scenario_ids.length === 0) {
     return null;

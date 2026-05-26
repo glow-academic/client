@@ -38,6 +38,10 @@ import { Questions } from "@/components/resources/Questions";
 import { Videos } from "@/components/resources/Videos";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import {
+  uploadScenarioImage,
+  uploadScenarioVideo,
+} from "@/lib/uploads/scenario";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useScenarioAi } from "@/hooks/use-scenario-ai";
@@ -128,11 +132,6 @@ export interface ScenarioProps {
   patchScenarioDraftAction?: (
     input: PatchScenarioDraftIn,
   ) => Promise<PatchScenarioDraftOut>;
-  // Artifact-scoped upload props
-  uploadBasePath?: string;
-  uploadFileAction?: (
-    formData: FormData,
-  ) => Promise<{ success: boolean; upload_id?: string; message?: string }>;
 }
 
 const VALID_RESOURCE_TYPES: ScenarioResourceType[] = [
@@ -220,8 +219,6 @@ function ScenarioComponent({
   createScenarioAction,
   updateScenarioAction,
   patchScenarioDraftAction,
-  uploadBasePath,
-  uploadFileAction,
   groupId: groupIdProp,
 }: ScenarioProps) {
   // Fall back to the resolved group_id on the SSR payload when the
@@ -705,10 +702,12 @@ function ScenarioComponent({
       if (current.objectives && current.objectives.length > 0) payload["objectives"] = current.objectives;
       if (current.objective_ids && current.objective_ids.length > 0) payload["objective_ids"] = current.objective_ids;
 
-      if (current.images && current.images.length > 0) payload["images"] = current.images;
+      // Image + video resources are created server-side at upload time
+      // (full chain: resource + entry + junction + uploads_entry). The
+      // FE never sends ``images``/``videos`` value-arrays — that goes
+      // through draft.create_image/video which only writes the bare
+      // resource row and orphans the upload (see scenario/draft.py).
       if (current.image_ids && current.image_ids.length > 0) payload["image_ids"] = current.image_ids;
-
-      if (current.videos && current.videos.length > 0) payload["videos"] = current.videos;
       if (current.video_ids && current.video_ids.length > 0) payload["video_ids"] = current.video_ids;
 
       if (current.questions && current.questions.length > 0) payload["questions"] = current.questions;
@@ -780,8 +779,18 @@ function ScenarioComponent({
   // ─── Per-field pending lifecycle ──────────────────────────────────
   // Field components (Names, Descriptions, ...) call these when the user
   // clicks the inline ✓/✗ on a pending diff. Mirrors persona pattern.
-  type SingleField = "name_id" | "description_id";
-  type MultiField = "department_ids" | "parameter_field_ids" | "flag_ids";
+  type SingleField = "name_id" | "description_id" | "problem_statement_id";
+  type MultiField =
+    | "department_ids"
+    | "parameter_field_ids"
+    | "flag_ids"
+    | "persona_ids"
+    | "document_ids"
+    | "image_ids"
+    | "video_ids"
+    | "objective_ids"
+    | "question_ids"
+    | "option_ids";
 
   const handleAcceptPendingField = useCallback(
     (field: SingleField, pendingId: string) => {
@@ -792,6 +801,7 @@ function ScenarioComponent({
         // the resolved id instead of the (also-stale) text.
         ...(field === "name_id" ? { name: null } : {}),
         ...(field === "description_id" ? { description: null } : {}),
+        ...(field === "problem_statement_id" ? { problem_statement: null } : {}),
         pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
       }));
     },
@@ -2136,16 +2146,22 @@ function ScenarioComponent({
                         };
                       })
                     }
-                    onImageUploadValue={(img) =>
+                    onImageUploaded={(image_id) =>
                       setFormState((prev) => ({
                         ...prev,
-                        images: [...(prev.images ?? []), img],
+                        image_ids: [...prev.image_ids, image_id],
                       }))
                     }
                     multiSelect={true}
                     maxImages={3}
-                    uploadBasePath={uploadBasePath}
-                    uploadFileAction={uploadFileAction}
+                    uploadImage={uploadScenarioImage}
+                    downloadBaseUrl="/api/scenario/image"
+                    onAcceptPending={(pendingIds) =>
+                      handleAcceptPendingMulti("image_ids", pendingIds)
+                    }
+                    onRejectPending={(pendingIds) =>
+                      handleRejectPendingMulti("image_ids", pendingIds)
+                    }
                   />
                 )}
                 {showProblemStatement && (
@@ -2175,6 +2191,12 @@ function ScenarioComponent({
                     onSearchChange={(term: string) =>
                       setFormData({ problemStatementSearch: term || null })
                     }
+                    onAcceptPending={(pendingId) =>
+                      handleAcceptPendingField("problem_statement_id", pendingId)
+                    }
+                    onRejectPending={(pendingId) =>
+                      handleRejectPendingField("problem_statement_id", pendingId)
+                    }
                   />
                 )}
                 {showObjectives && (
@@ -2196,6 +2218,12 @@ function ScenarioComponent({
                       })
                     }
                     onObjectivesChange={handleObjectivesChange}
+                    onAcceptPending={(pendingIds) =>
+                      handleAcceptPendingMulti("objective_ids", pendingIds)
+                    }
+                    onRejectPending={(pendingIds) =>
+                      handleRejectPendingMulti("objective_ids", pendingIds)
+                    }
                   />
                 )}
               </div>
@@ -2264,6 +2292,12 @@ function ScenarioComponent({
                   }
                   required={false}
                   videoEnabled={urlVideoEnabled}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("persona_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("persona_ids", pendingIds)
+                  }
                 />
               </div>
             </StepCard>
@@ -2330,6 +2364,12 @@ function ScenarioComponent({
                   }
                   required={false}
                   videoEnabled={urlVideoEnabled}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("document_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("document_ids", pendingIds)
+                  }
                 />
               </div>
             </StepCard>
@@ -2466,14 +2506,20 @@ function ScenarioComponent({
                         };
                       })
                     }
-                    onVideoUploadValue={(vid) =>
+                    onVideoUploaded={(video_id) =>
                       setFormState((prev) => ({
                         ...prev,
-                        videos: [...(prev.videos ?? []), vid],
+                        video_ids: [...prev.video_ids, video_id],
                       }))
                     }
-                    uploadBasePath={uploadBasePath}
-                    uploadFileAction={uploadFileAction}
+                    uploadVideo={uploadScenarioVideo}
+                    downloadBaseUrl="/api/scenario/video"
+                    onAcceptPending={(pendingIds) =>
+                      handleAcceptPendingMulti("video_ids", pendingIds)
+                    }
+                    onRejectPending={(pendingIds) =>
+                      handleRejectPendingMulti("video_ids", pendingIds)
+                    }
                   />
                 )}
                 {showQuestions && (
@@ -2496,6 +2542,12 @@ function ScenarioComponent({
                     }
                     onQuestionsChange={handleQuestionsChange}
                     onInternalQuestionsChange={setInternalQuestions}
+                    onAcceptPending={(pendingIds) =>
+                      handleAcceptPendingMulti("question_ids", pendingIds)
+                    }
+                    onRejectPending={(pendingIds) =>
+                      handleRejectPendingMulti("question_ids", pendingIds)
+                    }
                   />
                 )}
                 {showQuestions && internalQuestions.length > 0 && (
@@ -2519,6 +2571,12 @@ function ScenarioComponent({
                       })
                     }
                     onOptionsChange={handleOptionsChange}
+                    onAcceptPending={(pendingIds) =>
+                      handleAcceptPendingMulti("option_ids", pendingIds)
+                    }
+                    onRejectPending={(pendingIds) =>
+                      handleRejectPendingMulti("option_ids", pendingIds)
+                    }
                   />
                 )}
               </div>
@@ -2614,9 +2672,7 @@ export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
   if (
     prevProps.createScenarioAction !== nextProps.createScenarioAction ||
     prevProps.updateScenarioAction !== nextProps.updateScenarioAction ||
-    prevProps.patchScenarioDraftAction !== nextProps.patchScenarioDraftAction ||
-    prevProps.uploadBasePath !== nextProps.uploadBasePath ||
-    prevProps.uploadFileAction !== nextProps.uploadFileAction
+    prevProps.patchScenarioDraftAction !== nextProps.patchScenarioDraftAction
   ) {
     return false;
   }

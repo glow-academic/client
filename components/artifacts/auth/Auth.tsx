@@ -501,7 +501,11 @@ function AuthComponent({
   // ─── Per-field pending lifecycle ──────────────────────────────────
   // See Persona.tsx for the canonical pattern and rationale.
   type SingleField = "name_id" | "description_id";
-  type MultiField = "flag_ids" | "department_ids";
+  type MultiField =
+    | "flag_ids"
+    | "department_ids"
+    | "protocol_ids"
+    | "slug_ids";
 
   const handleAcceptPendingField = useCallback(
     (field: SingleField, pendingId: string) => {
@@ -927,6 +931,12 @@ function AuthComponent({
                   }))
                 }
                 required={protocolsRequired}
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("protocol_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("protocol_ids", pendingIds)
+                }
               />
             </StepCard>
           );
@@ -974,6 +984,12 @@ function AuthComponent({
                   }))
                 }
                 required={slugsRequired}
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("slug_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("slug_ids", pendingIds)
+                }
               />
             </StepCard>
           );

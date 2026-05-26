@@ -42,9 +42,6 @@ type ProblemScenarioOut = OutputOf<"/scenario/problem", "post">;
 type ContextIn = InputOf<"/scenario/context", "post">;
 type ContextOut = OutputOf<"/scenario/context", "post">;
 
-/** Upload action result — matches the interface expected by resource components */
-type UploadResult = { success: boolean; upload_id?: string; message?: string };
-
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  * Uses unified get endpoint.
@@ -59,54 +56,6 @@ const getScenario = async (input: GetScenarioIn): Promise<GetScenarioOut> => {
 };
 
 /** ---- Strongly-typed server actions ---- */
-async function uploadFile(formData: FormData): Promise<UploadResult> {
-  "use server";
-  try {
-    const file = formData.get("file") as File | null;
-    if (!file) return { success: false, message: "No file provided" };
-
-    const { getAuthHeaders } = await import("@/lib/api/auth-headers");
-    const { INTERNAL_HTTP_BASE } = await import("@/lib/api/config");
-    const authHeaders = await getAuthHeaders();
-
-    // Server action → backend direct. We don't hop through the BFF
-    // (`/api/scenario/{image,video}_upload`) because this code already
-    // runs server-side; the BFF exists for client-side callers (e.g.
-    // a future drag-drop in a client component, same shape as
-    // `hooks/use-attempt-transcribe.ts` calling `/api/attempt/audio_upload`).
-    //
-    // Backend splits scenario uploads by media type:
-    //   POST /scenario/image_upload  (image/*)
-    //   POST /scenario/video_upload  (video/*)
-    // Both accept multipart with a single `file` field and return
-    // { upload_id, image_id|video_id, idempotency_key }.
-    const isVideo = (file.type || "").startsWith("video/");
-    const endpoint = isVideo ? "/scenario/video_upload" : "/scenario/image_upload";
-
-    const body = new FormData();
-    body.append("file", file);
-
-    const response = await fetch(`${INTERNAL_HTTP_BASE}${endpoint}`, {
-      method: "POST",
-      // Don't set Content-Type — fetch sets the multipart boundary
-      // automatically when body is FormData.
-      headers: { ...authHeaders },
-      body,
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      return { success: false, message: text || "Upload failed" };
-    }
-
-    const result = await response.json();
-    return { success: true, upload_id: result.upload_id };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Upload failed";
-    return { success: false, message };
-  }
-}
-
 async function updateScenario(input: UpdateScenarioIn): Promise<UpdateScenarioOut> {
   "use server";
   return api.post("/scenario/update", input);
@@ -355,8 +304,6 @@ export default async function EditScenarioPage({
               scenarioDetail={scenarioDetail}
               updateScenarioAction={updateScenario}
               patchScenarioDraftAction={patchScenarioDraft}
-              uploadBasePath="/scenario"
-              uploadFileAction={uploadFile}
             />
           </div>
         </FullPageLayout>

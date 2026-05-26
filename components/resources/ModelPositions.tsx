@@ -70,6 +70,11 @@ export interface ModelPositionsProps {
   onPositionIdsChange?: (ids: string[]) => void;
   /** Value callback for unified draft — reports all model+position pairs */
   onModelPositionValues?: (positions: Array<{ model_id: string; value: number }>) => void;
+  /** Per-field pending lifecycle (multi-select, junction). Receives the
+   *  set of pending junction-row ids. See ParameterFields.tsx for the
+   *  junction pattern. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function ModelPositions({
@@ -87,6 +92,8 @@ export function ModelPositions({
   description,
   onPositionIdsChange,
   onModelPositionValues,
+  onAcceptPending,
+  onRejectPending,
 }: ModelPositionsProps) {
   const show = show_model_positions ?? false;
   const currentPositions = useMemo(
@@ -126,6 +133,12 @@ export function ModelPositions({
   const showDiff = pendingItems.length > 0;
   const pendingIds = useMemo(
     () => new Set(pendingItems.map((p) => p.model_id).filter(Boolean) as string[]),
+    [pendingItems]
+  );
+  // Junction-row ids for the pending lifecycle hook — distinct from
+  // the pending model_id set used for local UI cleanup.
+  const pendingJunctionIds = useMemo(
+    () => pendingItems.map((p) => p.id).filter(Boolean) as string[],
     [pendingItems]
   );
 
@@ -320,12 +333,19 @@ export function ModelPositions({
 
   // Accept pending — keep pending positions in state (no-op, they're already included)
   const handleAccept = useCallback(() => {
+    if (onAcceptPending && pendingJunctionIds.length > 0) {
+      onAcceptPending(pendingJunctionIds);
+    }
     // Pending items are already in localPositions (selected), just confirm
     // The next draft save will persist them as active
-  }, []);
+  }, [onAcceptPending, pendingJunctionIds]);
 
   // Reject pending — remove pending positions from local state
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingJunctionIds.length > 0) {
+      onRejectPending(pendingJunctionIds);
+      return;
+    }
     isDirtyRef.current = true;
     const newPositions = new Map(localPositions);
     for (const pid of pendingIds) {
@@ -342,7 +362,7 @@ export function ModelPositions({
       generated: false,
     }));
     onChange(positionsArray);
-  }, [localPositions, pendingIds, simulation_id, onChange]);
+  }, [localPositions, pendingIds, pendingJunctionIds, simulation_id, onChange, onRejectPending]);
 
   // Don't render if show_model_positions is false or no models (AFTER all hooks)
   if (!show || model_ids.length === 0) {

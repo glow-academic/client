@@ -1,9 +1,6 @@
 {
-  "_comment": "Cross-repo compatibility manifest. Each release of this client repo embeds these constraints into the published compat.json asset so the CLI can refuse incompatible combinations before deploy.",
-  "api": {
-    "min_version": "1.0.0"
-  },
-  "cli": {
-    "min_version": "1.0.0"
+  "glow-api": {
+    "version": "1.0.50",
+    "synced_at": "2026-05-26T16:31:01Z"
   }
 }

@@ -88,6 +88,14 @@ export interface StandardsProps {
   id?: string;
   required?: boolean;
   description?: string;
+  /**
+   * Per-field pending lifecycle (multi-select). See Departments.tsx.
+   * TODO: wire accept/reject UI in this grid editor — props are accepted
+   * now so the parent (Persona/rubric form) can pass them down once a
+   * cell-level pending affordance is added.
+   */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 function uniqPreserveOrder(values: string[]): string[] {
@@ -119,6 +127,8 @@ export function Standards({
   id = "standards",
   required = false,
   description,
+  onAcceptPending: _onAcceptPending,
+  onRejectPending: _onRejectPending,
 }: StandardsProps) {
   const show = show_standards ?? true;
   const groupIds = useMemo(() => standard_group_ids ?? [], [standard_group_ids]);

@@ -1,6 +1,6 @@
 {
   "name": "glow",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "private": true,
   "type": "module",
   "engines": {
@@ -17,9 +17,11 @@
     "lint:fix": "next lint --fix --dir app --dir components --dir utils --dir hooks --dir lib --dir contexts",
     "format": "prettier --write .",
     "sync:types": "curl -sf ${API_URL:-http://localhost:8000}/openapi.json -o /tmp/glow-openapi.json && openapi-typescript /tmp/glow-openapi.json -o lib/api/schema.ts && rm -f /tmp/glow-openapi.json",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test e2e/specs",
+    "test:e2e:all": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "demo:record": "PLAYWRIGHT_DEMO=1 playwright test e2e/demos"
+    "demo:record": "PLAYWRIGHT_DEMO=1 playwright test e2e/demos",
+    "demo:polish": "node scripts/polish-video.mjs"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.9.1",
