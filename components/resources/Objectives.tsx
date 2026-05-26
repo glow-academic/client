@@ -155,6 +155,9 @@ export interface ObjectivesProps {
   objectiveMapping?: Record<string, string>;
   /** Report value changes upward (unified draft pattern — parent owns creation) */
   onObjectivesChange?: (objectives: string[]) => void;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Objectives({
@@ -173,6 +176,8 @@ export function Objectives({
   itemPlaceholder = "Learning objective",
   objectiveMapping = {},
   onObjectivesChange,
+  onAcceptPending,
+  onRejectPending,
 }: ObjectivesProps) {
   // Use standardized props
   const ids = useMemo(() => objective_ids ?? [], [objective_ids]);
@@ -329,15 +334,23 @@ export function Objectives({
     return indices.size > 0 ? indices : undefined;
   }, [showDiff, ids, pendingIds, internalTexts.length]);
 
-  // Accept pending — pending items are already in selection, no-op
+  // Accept pending — pending items already in selection; tell parent
+  // hook to strip them from ``pending_ids`` if provided.
   const handleAccept = useCallback(() => {
-    // no-op: pending items already in selection
-  }, []);
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
+  }, [onAcceptPending, pendingIds]);
 
-  // Reject pending — remove pending IDs from selection
+  // Reject pending — remove pending IDs from selection. Parent hook (if
+  // present) also strips them from ``pending_ids``.
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     onChange(ids.filter((id) => !pendingIds.has(id)));
-  }, [ids, onChange, pendingIds]);
+  }, [ids, onChange, onRejectPending, pendingIds]);
 
   // Don't render if show_objectives is false (AFTER all hooks)
   if (!show) {

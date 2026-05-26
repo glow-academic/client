@@ -57,7 +57,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 
 import type {
   DeleteDocumentIn,
@@ -728,13 +728,13 @@ export default function Documents({
                 size="sm"
                 data-testid={`edit-${document.document_id}`}
               >
-                <Link
+                <HoverPrefetchLink
                   href={`/management/documents/${document.document_id}`}
-                  prefetch={false}
+                  delay={150}
                   aria-label={`Edit ${document.name}`}
                 >
                   <Edit className="h-4 w-4" />
-                </Link>
+                </HoverPrefetchLink>
               </Button>
               {document.document_id &&
                 canDeleteDocument(document.document_id) && (

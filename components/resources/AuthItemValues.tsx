@@ -46,6 +46,9 @@ export interface AuthItemValuesProps {
   label?: string;
   description?: string;
   show_auth_item_values?: boolean;
+  /** Per-field pending lifecycle (multi-select). See Departments.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 const pairKey = (authId: string, itemId: string) => `${authId}:${itemId}`;
@@ -59,6 +62,8 @@ export function AuthItemValues({
   label = "Auth Item Values",
   description = "Enter the literal claim value each auth should send for each item.",
   show_auth_item_values = true,
+  onAcceptPending,
+  onRejectPending,
 }: AuthItemValuesProps) {
   // Plaintext claim values only — the AuthItemKeys component handles
   // encrypted items (encrypted=true). This split mirrors the server-side
@@ -162,15 +167,30 @@ export function AuthItemValues({
     [existingByPair, valueByPair, vals, onChange]
   );
 
+  const pendingResourceIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const e of existing ?? []) {
+      if (e.pending && e.id && e.auth_id && e.item_id) ids.push(e.id);
+    }
+    return ids;
+  }, [existing]);
+
   const handleAccept = useCallback(() => {
     // Pending values remain; next non-pending save confirms them.
-  }, []);
+    if (onAcceptPending && pendingResourceIds.length > 0) {
+      onAcceptPending(pendingResourceIds);
+    }
+  }, [onAcceptPending, pendingResourceIds]);
 
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     onChange(
       vals.filter((v) => !pendingPairs.has(pairKey(v.auth_id, v.item_id)))
     );
-  }, [onChange, pendingPairs, vals]);
+  }, [onChange, onRejectPending, pendingPairs, pendingResourceIds, vals]);
 
   if (!show_auth_item_values) return null;
 

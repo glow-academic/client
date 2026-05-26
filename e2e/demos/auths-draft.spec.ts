@@ -8,7 +8,7 @@ const TOPIC = "auths-draft";
 
 test.describe("demo: auths draft", () => {
   test("records a staged auth draft before publish", async ({ page }) => {
-    await openArtifactForm(page, "/system/auth/new");
+    await openArtifactForm(page, "/platform/auth/new");
     await page.getByPlaceholder(/production api key/i).fill("Draft Demo Auth");
     await page
       .getByPlaceholder(/enter description/i)

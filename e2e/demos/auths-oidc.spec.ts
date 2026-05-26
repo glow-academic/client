@@ -8,7 +8,7 @@ const TOPIC = "auths-oidc";
 
 test.describe("demo: auths oidc", () => {
   test("records protocol, slug, and encrypted item wiring", async ({ page }) => {
-    await openArtifactForm(page, "/system/auth/new");
+    await openArtifactForm(page, "/platform/auth/new");
     await page.getByPlaceholder(/production api key/i).fill("OIDC Demo Provider");
     await showFormStep(page, "protocols");
     await scrollToText(page, /oidc|saml|protocol/i);

@@ -25,6 +25,7 @@ import { useCallback, useMemo, useState } from "react";
 
 export interface ProtocolResourceItem {
   id?: string | null;
+  protocol_id?: string | null;
   value?: string | null;
   generated?: boolean | null;
   suggested?: boolean | null;
@@ -52,6 +53,9 @@ export interface ProtocolsProps {
   id?: string;
   required?: boolean;
   description?: string;
+  /** Per-field pending lifecycle (multi-select). See Departments.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Protocols({
@@ -67,6 +71,8 @@ export function Protocols({
   id = "protocols",
   required = false,
   description,
+  onAcceptPending,
+  onRejectPending,
 }: ProtocolsProps) {
   const ids = useMemo(() => protocol_ids ?? [], [protocol_ids]);
   const values = useMemo(() => protocol_values ?? [], [protocol_values]);
@@ -75,12 +81,17 @@ export function Protocols({
   const [input, setInput] = useState("");
 
   const pendingItems = useMemo(
-    () => allProtocols.filter((p) => p.pending && p.id),
+    () => allProtocols.filter((p) => p.pending && (p.protocol_id ?? p.id)),
     [allProtocols],
   );
   const showDiff = pendingItems.length > 0;
   const pendingIds = useMemo(
-    () => new Set(pendingItems.map((p) => p.id).filter(Boolean) as string[]),
+    () =>
+      new Set(
+        pendingItems
+          .map((p) => p.protocol_id ?? p.id)
+          .filter(Boolean) as string[],
+      ),
     [pendingItems],
   );
 
@@ -146,12 +157,19 @@ export function Protocols({
   }, [input, catalogItems, ids, values, onChange, onValuesChange]);
 
   const handleAccept = useCallback(() => {
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
     // Pending items are already in selection — next save persists them.
-  }, []);
+  }, [onAcceptPending, pendingIds]);
 
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     onChange(ids.filter((x) => !pendingIds.has(x)));
-  }, [ids, pendingIds, onChange]);
+  }, [ids, pendingIds, onChange, onRejectPending]);
 
   if (!show) return null;
 

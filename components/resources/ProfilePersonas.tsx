@@ -101,6 +101,9 @@ export interface ProfilePersonasProps {
   id?: string;
   required?: boolean;
   description?: string;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function ProfilePersonas({
@@ -120,6 +123,8 @@ export function ProfilePersonas({
   id = "profile_personas",
   required = false,
   description,
+  onAcceptPending,
+  onRejectPending,
 }: ProfilePersonasProps) {
   const show = show_profile_personas ?? false;
   const allPersonas = useMemo(
@@ -290,11 +295,26 @@ export function ProfilePersonas({
     [emitParentArray],
   );
 
+  // Junction-row ids (profile_personas_resource.id) flagged pending=true.
+  const pendingResourceIds = useMemo(
+    () =>
+      pendingItems
+        .map((p) => p.id)
+        .filter((id): id is string => !!id),
+    [pendingItems],
+  );
+
   const handleAccept = useCallback(() => {
-    // Pending items are already reflected — next save persists them.
-  }, []);
+    if (onAcceptPending && pendingResourceIds.length > 0) {
+      onAcceptPending(pendingResourceIds);
+    }
+  }, [onAcceptPending, pendingResourceIds]);
 
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     isDirtyRef.current = true;
     setSelectedPersonaByProfile((prev) => {
       const updated = new Map(prev);
@@ -304,7 +324,7 @@ export function ProfilePersonas({
       emitParentArray(updated);
       return updated;
     });
-  }, [pendingProfileIds, emitParentArray]);
+  }, [pendingProfileIds, emitParentArray, onRejectPending, pendingResourceIds]);
 
   if (!show || profile_ids.length === 0) {
     return null;

@@ -7,7 +7,7 @@ const TOPIC = "departments-create";
 
 test.describe("demo: departments create", () => {
   test("records department name and description setup", async ({ page }) => {
-    await openArtifactForm(page, "/system/departments/new");
+    await openArtifactForm(page, "/platform/departments/new");
     await page.getByPlaceholder(/customer success/i).fill("University");
     await page
       .getByPlaceholder(/enter description/i)

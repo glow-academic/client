@@ -8,7 +8,7 @@
  */
 "use client";
 import { AlertCircle, Check, Copy, Edit, Eye, FileCheck, FileSpreadsheet, Loader2, Pencil, Star, Trash2, X } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -36,7 +36,7 @@ import type {
   UpdateRubricOut,
   CreateRubricIn,
   CreateRubricOut,
-} from "@/app/(main)/system/rubrics/page";
+} from "@/app/(main)/platform/rubrics/page";
 import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import TableRubric from "@/components/artifacts/rubric/TableRubric";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
@@ -1101,14 +1101,14 @@ export default function Rubrics({
                       variant="outline"
                       data-testid="btn-edit-rubric"
                     >
-                      <Link
-                        href={`/system/rubrics/${rubric.rubric_id}`}
-                        prefetch={false}
+                      <HoverPrefetchLink
+                        href={`/platform/rubrics/${rubric.rubric_id}`}
+                        delay={150}
                         aria-label="Edit rubric"
                       >
                         <Edit className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
                         <span className="md:hidden">Edit</span>
-                      </Link>
+                      </HoverPrefetchLink>
                     </Button>
                   ) : (
                     <Button
@@ -1116,14 +1116,14 @@ export default function Rubrics({
                       variant="outline"
                       data-testid="btn-view-rubric"
                     >
-                      <Link
-                        href={`/system/rubrics/${rubric.rubric_id}`}
-                        prefetch={false}
+                      <HoverPrefetchLink
+                        href={`/platform/rubrics/${rubric.rubric_id}`}
+                        delay={150}
                         aria-label={`View ${rubric.name}`}
                       >
                         <Eye className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
                         <span className="md:hidden">View</span>
-                      </Link>
+                      </HoverPrefetchLink>
                     </Button>
                   )}
                   {rubric.can_duplicate && (

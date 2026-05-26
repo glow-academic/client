@@ -291,7 +291,12 @@ export default function Provider({
   // ─── Per-field pending lifecycle ──────────────────────────────────
   // Mirrors persona — see Persona.tsx for full rationale. ``formStateKey``
   // already includes ``pending_ids`` so changes here trigger autosave.
-  type SingleField = "name_id" | "description_id";
+  type SingleField =
+    | "name_id"
+    | "description_id"
+    | "value_id"
+    | "endpoint_id"
+    | "key_id";
   type MultiField = "flag_ids" | "department_ids";
 
   const handleAcceptPendingField = useCallback(
@@ -301,6 +306,8 @@ export default function Provider({
         [field]: pendingId,
         ...(field === "name_id" ? { name: null } : {}),
         ...(field === "description_id" ? { description: null } : {}),
+        ...(field === "value_id" ? { value: null } : {}),
+        ...(field === "endpoint_id" ? { endpoint: null } : {}),
         pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
       }));
     },
@@ -752,6 +759,12 @@ export default function Provider({
                     value: null,
                   }))
                 }
+                onAcceptPending={(pendingId) =>
+                  handleAcceptPendingField("value_id", pendingId)
+                }
+                onRejectPending={(pendingId) =>
+                  handleRejectPendingField("value_id", pendingId)
+                }
               />
               <Descriptions
                 description_id={formState.description_id}
@@ -854,6 +867,12 @@ export default function Provider({
                     endpoint: null,
                   }))
                 }
+                onAcceptPending={(pendingId) =>
+                  handleAcceptPendingField("endpoint_id", pendingId)
+                }
+                onRejectPending={(pendingId) =>
+                  handleRejectPendingField("endpoint_id", pendingId)
+                }
               />
             </StepCard>
           );
@@ -905,6 +924,12 @@ export default function Provider({
                   setFormState((prev) => ({ ...prev, key_id: id }))
                 }
                 onReveal={decryptKey}
+                onAcceptPending={(pendingId) =>
+                  handleAcceptPendingField("key_id", pendingId)
+                }
+                onRejectPending={(pendingId) =>
+                  handleRejectPendingField("key_id", pendingId)
+                }
               />
             </StepCard>
           );

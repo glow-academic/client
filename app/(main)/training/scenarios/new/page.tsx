@@ -42,9 +42,6 @@ type ProblemScenarioOut = OutputOf<"/scenario/problem", "post">;
 type ContextIn = InputOf<"/scenario/context", "post">;
 type ContextOut = OutputOf<"/scenario/context", "post">;
 
-/** Upload action result — matches the interface expected by resource components */
-type UploadResult = { success: boolean; upload_id?: string; message?: string };
-
 async function getScenario(input: GetScenarioIn): Promise<GetScenarioOut> {
   "use server";
   return api.post("/scenario/get", input);
@@ -61,40 +58,6 @@ async function patchScenarioDraft(
   "use server";
   return api.post("/scenario/draft", input);
 }
-
-async function uploadFile(formData: FormData): Promise<UploadResult> {
-  "use server";
-  try {
-    const file = formData.get("file") as File | null;
-    if (!file) return { success: false, message: "No file provided" };
-
-    const { getAuthHeaders } = await import("@/lib/api/auth-headers");
-    const { INTERNAL_HTTP_BASE } = await import("@/lib/api/config");
-    const authHeaders = await getAuthHeaders();
-
-    const response = await fetch(`${INTERNAL_HTTP_BASE}/v5/scenarios/upload`, {
-      method: "POST",
-      headers: {
-        ...authHeaders,
-        "Content-Type": file.type || "application/octet-stream",
-        "X-Filename": file.name,
-      },
-      body: Buffer.from(await file.arrayBuffer()),
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      return { success: false, message: text || "Upload failed" };
-    }
-
-    const result = await response.json();
-    return { success: true, upload_id: result.upload_id };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Upload failed";
-    return { success: false, message };
-  }
-}
-
 
 async function getScenarioGroupHistory(groupId: string): Promise<GroupScenarioOut> {
   "use server";
@@ -325,8 +288,6 @@ export default async function NewScenarioPage({
               }
               createScenarioAction={createScenario}
               patchScenarioDraftAction={patchScenarioDraft}
-              uploadBasePath="/scenario"
-              uploadFileAction={uploadFile}
             />
           </div>
         </FullPageLayout>

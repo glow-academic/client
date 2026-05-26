@@ -739,7 +739,14 @@ function CohortComponent({
   // ─── Per-field pending lifecycle ──────────────────────────────────
   // See Persona.tsx for the canonical pattern and rationale.
   type SingleField = "name_id" | "description_id";
-  type MultiField = "flag_ids" | "department_ids";
+  type MultiField =
+    | "flag_ids"
+    | "department_ids"
+    | "simulation_ids"
+    | "simulation_position_ids"
+    | "simulation_availability_ids"
+    | "profile_ids"
+    | "profile_persona_ids";
 
   const handleAcceptPendingField = useCallback(
     (field: SingleField, pendingId: string) => {
@@ -1527,6 +1534,12 @@ function CohortComponent({
                   required={false}
                   searchTerm={simulationSearchTerm}
                   showSelectedFilter={simulationShowSelected}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("simulation_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("simulation_ids", pendingIds)
+                  }
                 />
                 <SimulationPositions
                   simulation_ids={formState.simulation_ids ?? []}
@@ -1563,6 +1576,12 @@ function CohortComponent({
                       ...prev,
                       simulation_position_values: positions.length > 0 ? positions : null,
                     }))
+                  }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("simulation_position_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("simulation_position_ids", pendingIds)
                   }
                 />
                 <SimulationAvailability
@@ -1601,6 +1620,12 @@ function CohortComponent({
                         onGenerate: handleGenerateSimulationAvailability,
                       }
                     : {})}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("simulation_availability_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("simulation_availability_ids", pendingIds)
+                  }
                 />
               </div>
             </StepCard>
@@ -1689,7 +1714,12 @@ function CohortComponent({
                 onGenerate={handleGenerateProfiles}
                 searchTerm={profileSearchTerm}
                 showSelectedFilter={profileShowSelected}
-
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("profile_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("profile_ids", pendingIds)
+                }
               />
               <ProfilePersonas
                 profile_persona_ids={formState.profile_persona_ids ?? []}
@@ -1714,6 +1744,12 @@ function CohortComponent({
                     ...prev,
                     profile_persona_values: values.length > 0 ? values : null,
                   }))
+                }
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("profile_persona_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("profile_persona_ids", pendingIds)
                 }
               />
               </div>

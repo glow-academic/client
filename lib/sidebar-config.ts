@@ -101,15 +101,15 @@ export const SIDEBAR_SECTIONS: SidebarSectionConfig[] = [
     ],
   },
   {
-    title: "System",
+    title: "Platform",
     icon: "Server",
-    url: "/system/departments",
+    url: "/platform/departments",
     order: 7,
     items: [
-      { title: "Departments", artifact: "department", url: "/system/departments" },
-      { title: "Rubrics", artifact: "rubric", url: "/system/rubrics" },
-      { title: "Auth", artifact: "auth", url: "/system/auth" },
-      { title: "Evals", artifact: "eval", url: "/system/evals" },
+      { title: "Departments", artifact: "department", url: "/platform/departments" },
+      { title: "Rubrics", artifact: "rubric", url: "/platform/rubrics" },
+      { title: "Auth", artifact: "auth", url: "/platform/auth" },
+      { title: "Evals", artifact: "eval", url: "/platform/evals" },
     ],
   },
   {

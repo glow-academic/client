@@ -25,6 +25,7 @@ import { useCallback, useMemo, useState } from "react";
 
 export interface SlugResourceItem {
   id?: string | null;
+  slug_id?: string | null;
   value?: string | null;
   generated?: boolean | null;
   suggested?: boolean | null;
@@ -52,6 +53,9 @@ export interface SlugsProps {
   id?: string;
   required?: boolean;
   description?: string;
+  /** Per-field pending lifecycle (multi-select). See Departments.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Slugs({
@@ -67,6 +71,8 @@ export function Slugs({
   id = "slugs",
   required = false,
   description,
+  onAcceptPending,
+  onRejectPending,
 }: SlugsProps) {
   const ids = useMemo(() => slug_ids ?? [], [slug_ids]);
   const values = useMemo(() => slug_values ?? [], [slug_values]);
@@ -75,12 +81,17 @@ export function Slugs({
   const [input, setInput] = useState("");
 
   const pendingItems = useMemo(
-    () => allSlugs.filter((s) => s.pending && s.id),
+    () => allSlugs.filter((s) => s.pending && (s.slug_id ?? s.id)),
     [allSlugs],
   );
   const showDiff = pendingItems.length > 0;
   const pendingIds = useMemo(
-    () => new Set(pendingItems.map((s) => s.id).filter(Boolean) as string[]),
+    () =>
+      new Set(
+        pendingItems
+          .map((s) => s.slug_id ?? s.id)
+          .filter(Boolean) as string[],
+      ),
     [pendingItems],
   );
 
@@ -143,12 +154,19 @@ export function Slugs({
   }, [input, catalogItems, ids, values, onChange, onValuesChange]);
 
   const handleAccept = useCallback(() => {
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
     // Pending items are already in selection — next save persists them.
-  }, []);
+  }, [onAcceptPending, pendingIds]);
 
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     onChange(ids.filter((x) => !pendingIds.has(x)));
-  }, [ids, pendingIds, onChange]);
+  }, [ids, pendingIds, onChange, onRejectPending]);
 
   if (!show) return null;
 

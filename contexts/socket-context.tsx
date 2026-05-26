@@ -39,9 +39,6 @@ interface SocketProviderClientProps {
   idToken: string | null;
 }
 
-// Hardcoded for development — in production this would come from env
-const API_KEY = "glw_dev_test_key_123";
-
 export function SocketProviderClient({
   children,
   profileId,
@@ -70,7 +67,6 @@ export function SocketProviderClient({
       // Server resolves profile_id + session_id from the JWT.
       const socket = await createSocketClient(query, {
         token: idToken ? `Bearer ${idToken}` : undefined,
-        apiKey: API_KEY,
       });
 
       socketRef.current = socket;

@@ -355,7 +355,7 @@ function DepartmentComponent({
   // ─── Per-field pending lifecycle ──────────────────────────────────
   // See Persona.tsx for the canonical pattern and rationale.
   type SingleField = "name_id" | "description_id";
-  type MultiField = "flag_ids";
+  type MultiField = "flag_ids" | "setting_ids";
 
   const handleAcceptPendingField = useCallback(
     (field: SingleField, pendingId: string) => {
@@ -563,7 +563,7 @@ function DepartmentComponent({
       toast.success(
         `Department ${isEditMode ? "updated" : "created"} successfully!`,
       );
-      router.push("/system/departments");
+      router.push("/platform/departments");
     },
     [
       createDepartmentAction,
@@ -780,6 +780,12 @@ function DepartmentComponent({
                   setFormState((prev) => ({ ...prev, setting_ids: ids }))
                 }
                 required={false}
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("setting_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("setting_ids", pendingIds)
+                }
               />
             </StepCard>
           );
@@ -842,7 +848,7 @@ function DepartmentComponent({
           onReset={handleStepReset}
           onSubmit={handleSubmit}
           submitButton={{
-            backUrl: "/system/departments",
+            backUrl: "/platform/departments",
             backLabel: "Back",
             createLabel: "Create Department",
             updateLabel: "Update Department",

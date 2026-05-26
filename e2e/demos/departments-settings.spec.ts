@@ -8,7 +8,7 @@ const TOPIC = "departments-settings";
 
 test.describe("demo: departments settings", () => {
   test("records the department-level settings and flags section", async ({ page }) => {
-    await openArtifactForm(page, "/system/departments/new");
+    await openArtifactForm(page, "/platform/departments/new");
     await page.getByPlaceholder(/customer success/i).fill("University");
     await showFormStep(page, "settings");
     await scrollToText(page, /settings|flags|show selected/i);

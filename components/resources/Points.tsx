@@ -41,6 +41,15 @@ export interface PointsProps {
   placeholder?: string;
   filterType?: string; // only show suggestions with this `type` (default "pass")
   className?: string;
+  /**
+   * Per-field pending lifecycle (single-value, `pass_points_id`).
+   * Pattern after Instructions.tsx / Colors.tsx — pending = the one
+   * pending points resource. TODO: wire accept/reject UI in the picker;
+   * props are accepted now so the parent can pass them down once a
+   * pending affordance is added.
+   */
+  onAcceptPending?: (pendingId: string) => void;
+  onRejectPending?: (pendingId: string) => void;
 }
 
 export function Points({
@@ -55,6 +64,8 @@ export function Points({
   placeholder = "e.g. 16",
   filterType = "pass",
   className,
+  onAcceptPending: _onAcceptPending,
+  onRejectPending: _onRejectPending,
 }: PointsProps) {
   if (mode === "readonly") {
     return (

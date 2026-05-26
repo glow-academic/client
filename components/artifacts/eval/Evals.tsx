@@ -7,7 +7,7 @@
 "use client";
 
 import { AlertCircle, Check, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, X } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -22,7 +22,7 @@ import type {
   UpdateEvalOut,
   CreateEvalIn,
   CreateEvalOut,
-} from "@/app/(main)/system/evals/page";
+} from "@/app/(main)/platform/evals/page";
 import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { ThreePickerFilters } from "@/components/common/table/ThreePickerFilters";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -985,14 +985,14 @@ export default function Evals({
                   title={`Edit ${evalName}`}
                   className="h-9 px-3"
                 >
-                  <Link
-                    href={`/system/evals/${evalId}`}
-                    prefetch={false}
+                  <HoverPrefetchLink
+                    href={`/platform/evals/${evalId}`}
+                    delay={150}
                     aria-label={`Edit ${evalName}`}
                   >
                     <Edit className="h-4 w-4 md:mr-0 mr-2" />
                     <span className="md:hidden">Edit</span>
-                  </Link>
+                  </HoverPrefetchLink>
                 </Button>
               ) : !isGhost && evalId ? (
                 <Button
@@ -1003,14 +1003,14 @@ export default function Evals({
                   title={`View ${evalName}`}
                   className="h-9 px-3"
                 >
-                  <Link
-                    href={`/system/evals/${evalId}`}
-                    prefetch={false}
+                  <HoverPrefetchLink
+                    href={`/platform/evals/${evalId}`}
+                    delay={150}
                     aria-label={`View ${evalName}`}
                   >
                     <Eye className="h-4 w-4 md:mr-0 mr-2" />
                     <span className="md:hidden">View</span>
-                  </Link>
+                  </HoverPrefetchLink>
                 </Button>
               ) : null}
               {!isGhost && evalItem.can_delete && deleteEvalAction && evalId && (

@@ -44,7 +44,7 @@ import {
 import { useProfile } from "@/contexts/profile-context";
 import { useFederatedLogout } from "@/hooks/useFederatedLogout";
 import type { LucideIcon } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { useTheme } from "next-themes";
 import {
   Activity,
@@ -426,13 +426,12 @@ export function UnifiedSidebar({
                     asChild
                     className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm font-medium cursor-pointer"
                   >
-                    <Link
+                    <HoverPrefetchLink
                       href={getItemHref({
                         title: item.title,
                         url: item.url,
                         section: item.section!,
                       })}
-                      prefetch={false}
                       onClick={(e) =>
                         handleItemClick(e, {
                           title: item.title,
@@ -444,7 +443,7 @@ export function UnifiedSidebar({
                     >
                       <item.icon className="h-4 w-4" />
                       {item.title}
-                    </Link>
+                    </HoverPrefetchLink>
                   </SidebarGroupLabel>
                 </SidebarGroup>
               );
@@ -479,13 +478,12 @@ export function UnifiedSidebar({
                               isActive={activeSection === subItem.section}
                               className={`${subItem.isSubItem ? "pl-8 text-sm" : "pl-8"}`}
                             >
-                              <Link
+                              <HoverPrefetchLink
                                 href={getItemHref(subItem)}
-                                prefetch={false}
                                 onClick={(e) => handleItemClick(e, subItem)}
                               >
                                 {subItem.title}
-                              </Link>
+                              </HoverPrefetchLink>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         ))}

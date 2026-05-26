@@ -67,6 +67,9 @@ export interface McpProps {
   label?: string;
   description?: string;
   show_mcp?: boolean;
+  /** Per-field pending lifecycle (single-value). See Instructions.tsx. */
+  onAcceptPending?: (pendingId: string) => void;
+  onRejectPending?: (pendingId: string) => void;
 }
 
 type GridItem = {
@@ -88,6 +91,8 @@ export function Mcp({
   label = "MCP",
   description = "Pick the agent exposed as this setting's MCP server.",
   show_mcp = true,
+  onAcceptPending,
+  onRejectPending,
 }: McpProps) {
   const selectedId = mcp_id ?? null;
   const catalog = useMemo(() => mcp ?? [], [mcp]);
@@ -146,10 +151,19 @@ export function Mcp({
 
   const handleAccept = useCallback(() => {
     // Pending mcp row is already selected (if selected); next save confirms.
-  }, []);
+    if (onAcceptPending && selectedId && pendingIds.has(selectedId)) {
+      onAcceptPending(selectedId);
+    }
+  }, [onAcceptPending, selectedId, pendingIds]);
   const handleReject = useCallback(() => {
-    if (selectedId && pendingIds.has(selectedId)) onChange(null);
-  }, [selectedId, pendingIds, onChange]);
+    if (selectedId && pendingIds.has(selectedId)) {
+      if (onRejectPending) {
+        onRejectPending(selectedId);
+        return;
+      }
+      onChange(null);
+    }
+  }, [selectedId, pendingIds, onChange, onRejectPending]);
 
   const handleCreateSubmit = useCallback(() => {
     if (!onCreate || !draftAgentId) return;

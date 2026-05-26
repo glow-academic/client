@@ -50,21 +50,21 @@ export interface VideosProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  onVideoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; // Upload handler
-  videoInputRef?: React.RefObject<HTMLInputElement>; // Ref for file input
-  isUploadingVideo?: boolean; // Whether video is currently uploading
-  /** Artifact-scoped base path for upload/download URLs (e.g., "/scenario") */
-  uploadBasePath?: string;
-  /** Server action to upload a file — receives FormData, returns upload_id */
-  uploadFileAction?: (formData: FormData) => Promise<{
-    success: boolean;
-    upload_id?: string;
-    message?: string;
-  }>;
-  /** Report uploaded video values upward (unified draft pattern — parent owns creation)
-   *  Called after TUS upload + finalize with the creation parameters.
-   *  TODO: Server-side DraftVideoValue needs upload_id field for file-backed videos. */
-  onVideoUploadValue?: (video: { name: string; description: string; upload_id: string; length_seconds: number }) => void;
+  /** Artifact-scoped upload function (e.g. ``uploadScenarioVideo``).
+   *  Caller hands us a File, we hand back the canonical resource id.
+   *  Mirrors the ``uploadImage`` contract in Images.tsx — the upload
+   *  writes the full server-side chain and the parent just selects
+   *  the returned ``video_id``. */
+  uploadVideo?: (file: File) => Promise<{ video_id: string; upload_id: string }>;
+  /** BFF base URL for video downloads; the <video> tag builds
+   *  ``${downloadBaseUrl}/${videoId}``. Defaults to ``/api/system/video``. */
+  downloadBaseUrl?: string;
+  /** Report newly uploaded video id upward so the parent can append it
+   *  to its selected ``video_ids``. */
+  onVideoUploaded?: (video_id: string) => void;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Videos({
@@ -80,12 +80,11 @@ export function Videos({
   required = false,
   placeholder = "Select video...",
   description: _description,
-  onVideoUpload,
-  videoInputRef,
-  isUploadingVideo = false,
-  uploadBasePath,
-  uploadFileAction,
-  onVideoUploadValue,
+  uploadVideo,
+  downloadBaseUrl = "/api/system/video",
+  onVideoUploaded,
+  onAcceptPending,
+  onRejectPending,
 }: VideosProps) {
   const ids = useMemo(() => video_ids ?? [], [video_ids]);
   const show = show_videos ?? false;
@@ -139,8 +138,7 @@ export function Videos({
     }
   }, [ids, allVideos]);
 
-  // Create internal file input ref (must be before any early returns — rules of hooks)
-  const internalVideoInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   // TUS upload state
   const [activeUploads, setActiveUploads] = useState<
@@ -194,10 +192,11 @@ export function Videos({
     [onChange]
   );
 
-  // Upload function via server action
+  // Upload via the artifact-scoped helper. Component owns toast +
+  // progress; helper owns URL + fetch shape.
   const uploadFile = useCallback(
     async (file: File) => {
-      if (!uploadFileAction) {
+      if (!uploadVideo) {
         toast.error("Upload functionality not available");
         return;
       }
@@ -218,19 +217,11 @@ export function Videos({
       );
 
       try {
-        const formData = new FormData();
-        formData.append("file", file);
+        const { video_id } = await uploadVideo(file);
 
-        const result = await uploadFileAction(formData);
-
-        if (!result.success || !result.upload_id) {
-          throw new Error(result.message || "Upload failed");
-        }
-
-        const databaseUploadId = result.upload_id;
-
-        // Report upload value upward for unified draft pattern
-        onVideoUploadValue?.({ name: file.name, description: "", upload_id: databaseUploadId, length_seconds: 0 });
+        // Upload writes the full resource chain server-side; parent
+        // just appends video_id to its selection.
+        onVideoUploaded?.(video_id);
 
         toast.success(`Upload completed: ${file.name}!`, {
           description: "Video uploaded successfully",
@@ -267,19 +258,17 @@ export function Videos({
         });
       }
     },
-    [
-      uploadFileAction,
-      onVideoUploadValue,
-    ]
+    [uploadVideo, onVideoUploaded]
   );
 
-  // Internal upload handler for when uploadFileAction is provided
+  // Internal upload handler — fires when a user picks a file via the
+  // hidden file input. Active when ``uploadVideo`` is set.
   const handleInternalUpload = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = e.target.files;
-      if (files && files.length > 0) {
+      const first = e.target.files?.[0];
+      if (first) {
         // Only upload the first file for videos (single select)
-        uploadFile(files[0]);
+        uploadFile(first);
       }
       // Reset input
       e.target.value = "";
@@ -298,22 +287,28 @@ export function Videos({
   );
   const showDiff = pendingItems.length > 0;
 
-  // Accept pending — pending items are already in selection, no-op
+  // Accept pending — pending items already in selection; tell parent
+  // hook to strip them from ``pending_ids`` if provided.
   const handleAccept = useCallback(() => {
-    // no-op: pending items already in selection
-  }, []);
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
+  }, [onAcceptPending, pendingIds]);
 
-  // Reject pending — remove pending IDs from selection
+  // Reject pending — remove pending IDs from selection. Parent hook (if
+  // present) also strips them from ``pending_ids``.
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     onChange(ids.filter((id) => !pendingIds.has(id)));
-  }, [ids, onChange, pendingIds]);
+  }, [ids, onChange, onRejectPending, pendingIds]);
 
   // Don't render if show_videos is false (AFTER all hooks)
   if (!show) {
     return null;
   }
-
-  const effectiveVideoInputRef = videoInputRef || internalVideoInputRef;
 
   return (
     <div className="space-y-2">
@@ -435,10 +430,9 @@ export function Videos({
           in Images.tsx). Clicking anywhere on the black area opens the
           file picker. */}
       {(() => {
-        const canUpload = !!(onVideoUpload || uploadFileAction);
+        const canUpload = !!uploadVideo;
         const isEmptyState = !selectedVideo && canUpload;
-        const uploadDisabled =
-          disabled || isUploadingVideo || activeUploads.size > 0;
+        const uploadDisabled = disabled || activeUploads.size > 0;
 
         const containerClass = cn(
           "relative border rounded-lg overflow-hidden min-h-[400px] flex-1 bg-black flex items-center justify-center",
@@ -449,7 +443,7 @@ export function Videos({
 
         const handleEmptyClick = () => {
           if (isEmptyState && !uploadDisabled) {
-            effectiveVideoInputRef.current?.click();
+            videoInputRef.current?.click();
           }
         };
 
@@ -495,11 +489,7 @@ export function Videos({
             {selectedVideo ? (
               selectedVideo.id ? (
                 <video
-                  src={
-                    uploadBasePath
-                      ? `/api${uploadBasePath}/video/${selectedVideo.id}`
-                      : `/api/system/video/${selectedVideo.id}`
-                  }
+                  src={`${downloadBaseUrl}/${selectedVideo.id}`}
                   controls
                   className="w-full h-full object-contain"
                 />
@@ -530,13 +520,13 @@ export function Videos({
       })()}
 
       {/* Hidden file input */}
-      {(onVideoUpload || uploadFileAction) && (
+      {uploadVideo && (
         <input
-          ref={effectiveVideoInputRef}
+          ref={videoInputRef}
           type="file"
           accept="video/*"
-          onChange={uploadFileAction ? handleInternalUpload : onVideoUpload}
-          disabled={isUploadingVideo || disabled || activeUploads.size > 0}
+          onChange={handleInternalUpload}
+          disabled={disabled || activeUploads.size > 0}
           className="hidden"
         />
       )}

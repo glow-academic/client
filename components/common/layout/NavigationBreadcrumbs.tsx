@@ -6,7 +6,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import * as React from "react";
 
 export interface NavigationBreadcrumbsProps {
@@ -39,9 +39,9 @@ export function NavigationBreadcrumbs({
                   <BreadcrumbPage>{crumb.title}</BreadcrumbPage>
                 ) : crumb.url ? (
                   <BreadcrumbLink asChild>
-                    <Link href={crumb.url} className="cursor-pointer">
+                    <HoverPrefetchLink href={crumb.url} className="cursor-pointer">
                       {crumb.title}
-                    </Link>
+                    </HoverPrefetchLink>
                   </BreadcrumbLink>
                 ) : (
                   <BreadcrumbLink

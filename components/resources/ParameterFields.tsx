@@ -362,6 +362,7 @@ export function ParameterFields({
             <div key={param.parameter_id}>
               <button
                 type="button"
+                data-testid="parameter-group-toggle"
                 className={cn(
                   "w-full flex items-center gap-2 py-2 text-left transition-colors rounded-md",
                   "hover:bg-accent/50"

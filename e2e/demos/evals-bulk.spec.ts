@@ -8,7 +8,7 @@ const TOPIC = "evals-bulk";
 test.describe("demo: evals bulk", () => {
   test("records eval selection and all-matching bulk affordances", async ({ page }) => {
     await recordBulkAffordances(page, {
-      path: "/system/evals",
+      path: "/platform/evals",
       toolbar: "evals-toolbar",
       surface: "evals-grid",
       card: "eval-card",

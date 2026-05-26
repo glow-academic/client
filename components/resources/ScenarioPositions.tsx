@@ -70,6 +70,9 @@ export interface ScenarioPositionsProps {
   onPositionIdsChange?: (ids: string[]) => void;
   /** Value callback for unified draft — reports all scenario+position pairs */
   onScenarioPositionValues?: (positions: Array<{ scenario_id: string; value: number }>) => void;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function ScenarioPositions({
@@ -87,6 +90,8 @@ export function ScenarioPositions({
   description,
   onPositionIdsChange,
   onScenarioPositionValues,
+  onAcceptPending,
+  onRejectPending,
 }: ScenarioPositionsProps) {
   // Dirty flag: flipped true inside any user interaction (see
   // handlePositionChange / handleReject below). Both the hydrate effect and
@@ -318,15 +323,29 @@ export function ScenarioPositions({
       .map(([scenarioId]) => scenarioId);
   }, [localPositions]);
 
-  // Accept pending — keep pending positions in selection (no-op, already included)
+  // Junction-row ids (scenario_positions_resource.id) flagged pending=true.
+  const pendingResourceIds = useMemo(
+    () =>
+      pendingItems
+        .map((p) => p.id)
+        .filter((id): id is string => !!id),
+    [pendingItems],
+  );
+
+  // Accept pending — keep pending positions in selection.
+  // Parent hook (if provided) strips them from ``pending_ids``.
   const handleAccept = useCallback(() => {
-    // Pending items are already in positions (selected=true), just confirm
-    // The next draft save will persist them as active
-    // Nothing to change in form state — they're already included
-  }, []);
+    if (onAcceptPending && pendingResourceIds.length > 0) {
+      onAcceptPending(pendingResourceIds);
+    }
+  }, [onAcceptPending, pendingResourceIds]);
 
   // Reject pending — remove pending positions from selection
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     isDirtyRef.current = true;
     // Remove pending scenario IDs from localPositions and emit
     const newPositions = new Map(localPositions);
@@ -341,7 +360,7 @@ export function ScenarioPositions({
       generated: false,
     }));
     onChange(positionsArray);
-  }, [localPositions, pendingIds, simulation_id, onChange]);
+  }, [localPositions, pendingIds, simulation_id, onChange, onRejectPending, pendingResourceIds]);
 
   // Don't render if show_scenario_positions is false or no scenarios (AFTER all hooks)
   if (!show || scenario_ids.length === 0) {

@@ -54,6 +54,9 @@ export interface SimulationAvailabilityProps {
   onAvailabilityIdsChange?: (ids: string[]) => void;
   /** Callback to emit availability values for unified draft */
   onSimulationAvailabilityValues?: (values: Array<{ simulation_id: string; time: string; type: string }>) => void;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function SimulationAvailability({
@@ -69,6 +72,8 @@ export function SimulationAvailability({
   description,
   onAvailabilityIdsChange,
   onSimulationAvailabilityValues,
+  onAcceptPending,
+  onRejectPending,
 }: SimulationAvailabilityProps) {
   const show = show_simulation_availability ?? false;
   const availabilityResources = useMemo(
@@ -241,15 +246,29 @@ export function SimulationAvailability({
     [],
   );
 
-  // Accept pending — pending items are already in the resources, just confirm (no-op)
+  // Junction-row ids (simulation_availability_resource.id) flagged pending=true.
+  const pendingResourceIds = useMemo(
+    () =>
+      pendingItems
+        .map((r) => r.id)
+        .filter((id): id is string => !!id),
+    [pendingItems],
+  );
+
+  // Accept pending — pending items already in resources.
+  // Parent hook (if provided) strips them from ``pending_ids``.
   const handleAccept = useCallback(() => {
-    // Pending items are already included in availability resources.
-    // The next draft save will persist them as active.
-    // Nothing to change in form state.
-  }, []);
+    if (onAcceptPending && pendingResourceIds.length > 0) {
+      onAcceptPending(pendingResourceIds);
+    }
+  }, [onAcceptPending, pendingResourceIds]);
 
   // Reject pending — remove pending availability resources from state
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     // Remove pending items from availabilityIds
     const newIds = new Map(availabilityIds);
     pendingItems.forEach((r) => {
@@ -286,7 +305,7 @@ export function SimulationAvailability({
         .map(([, val]) => val);
       onAvailabilityIdsChange(ids);
     }
-  }, [availabilityIds, pendingItems, onAvailabilityIdsChange]);
+  }, [availabilityIds, pendingItems, onAvailabilityIdsChange, onRejectPending, pendingResourceIds]);
 
   if (!show || simulation_ids.length === 0) {
     return null;

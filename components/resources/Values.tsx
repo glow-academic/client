@@ -45,6 +45,9 @@ export interface ValuesProps {
   description?: string;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
+  /** Per-field pending lifecycle (single-value). See Instructions.tsx. */
+  onAcceptPending?: (pendingId: string) => void;
+  onRejectPending?: (pendingId: string) => void;
 }
 
 export function Values({
@@ -61,6 +64,8 @@ export function Values({
   required = false,
   placeholder = "Enter value",
   description,
+  onAcceptPending,
+  onRejectPending,
 }: ValuesProps) {
   // Treat as single-value (callers wrap singular id into array)
   const resource = value_resources?.[0] ?? null;
@@ -157,16 +162,24 @@ export function Values({
 
   // Accept pending — keep pending value in selection (no-op, already included)
   const handleAccept = useCallback(() => {
+    if (onAcceptPending && pendingItem?.id) {
+      onAcceptPending(pendingItem.id);
+      return;
+    }
     // Pending item is already in ids (selected=true), just confirm
     // The next draft save will persist it as active
-  }, []);
+  }, [onAcceptPending, pendingItem]);
 
   // Reject pending — remove pending value from selection
   const handleReject = useCallback(() => {
     if (!pendingItem?.id) return;
+    if (onRejectPending) {
+      onRejectPending(pendingItem.id);
+      return;
+    }
     const newIds = (value_ids ?? []).filter((vid) => vid !== pendingItem.id);
     onChange(newIds);
-  }, [value_ids, pendingItem, onChange]);
+  }, [value_ids, pendingItem, onChange, onRejectPending]);
 
   // Don't render if show_values is false (AFTER all hooks)
   if (!show) {

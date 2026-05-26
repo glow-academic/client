@@ -6,7 +6,7 @@
  */
 "use client";
 import { AlertCircle, Check, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, X } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
@@ -892,13 +892,13 @@ export default function Fields({
                     data-testid={`view-${field.field_id}`}
                     title="View"
                   >
-                    <Link
+                    <HoverPrefetchLink
                       href={`/management/fields/${field.field_id}`}
-                      prefetch={false}
+                      delay={150}
                       aria-label={`View ${field.name ?? ""}`}
                     >
                       <Eye className="h-4 w-4" />
-                    </Link>
+                    </HoverPrefetchLink>
                   </Button>
                   {field.can_edit && (
                     <Button
@@ -907,13 +907,13 @@ export default function Fields({
                       size="sm"
                       data-testid={`edit-${field.field_id}`}
                     >
-                      <Link
+                      <HoverPrefetchLink
                         href={`/management/fields/${field.field_id}`}
-                        prefetch={false}
+                        delay={150}
                         aria-label={`Edit ${field.name ?? ""}`}
                       >
                         <Edit className="h-4 w-4" />
-                      </Link>
+                      </HoverPrefetchLink>
                     </Button>
                   )}
                   {field.can_duplicate && (

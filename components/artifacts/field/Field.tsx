@@ -382,7 +382,10 @@ function FieldComponent({
   // diff resolves the id, removes it from ``pending_ids`` so the next
   // autosave promotes (accept) or drops (reject) the connection.
   type SingleField = "name_id" | "description_id";
-  type MultiField = "flag_ids" | "department_ids";
+  type MultiField =
+    | "flag_ids"
+    | "department_ids"
+    | "conditional_parameter_ids";
 
   const handleAcceptPendingField = useCallback(
     (field: SingleField, pendingId: string) => {
@@ -935,6 +938,12 @@ function FieldComponent({
                     ...prev,
                     conditional_parameter_ids: ids,
                   }))
+                }
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("conditional_parameter_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("conditional_parameter_ids", pendingIds)
                 }
               />
             </StepCard>

@@ -70,6 +70,9 @@ export interface SystemsProps {
   label?: string;
   description?: string;
   show_systems?: boolean;
+  /** Per-field pending lifecycle (multi-select). See Departments.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 type GridItem = {
@@ -93,6 +96,8 @@ export function Systems({
   label = "Systems",
   description = "Agents that route requests within this setting.",
   show_systems = true,
+  onAcceptPending,
+  onRejectPending,
 }: SystemsProps) {
   const ids = useMemo(() => system_ids ?? [], [system_ids]);
   const catalog = useMemo(() => systems ?? [], [systems]);
@@ -158,10 +163,21 @@ export function Systems({
 
   const handleAccept = useCallback(() => {
     // Pending rows stay selected; next non-pending save confirms them.
-  }, []);
+    if (onAcceptPending) {
+      const pendingResourceIds = Array.from(pendingIds);
+      if (pendingResourceIds.length > 0) {
+        onAcceptPending(pendingResourceIds);
+      }
+    }
+  }, [onAcceptPending, pendingIds]);
   const handleReject = useCallback(() => {
+    const pendingResourceIds = Array.from(pendingIds);
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     onChange(ids.filter((id) => !pendingIds.has(id)));
-  }, [ids, pendingIds, onChange]);
+  }, [ids, pendingIds, onChange, onRejectPending]);
 
   const toggleDraftAgent = useCallback((agentId: string) => {
     setDraftAgentIds((prev) =>

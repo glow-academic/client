@@ -4,7 +4,7 @@ import { ClientToServerEvents, ServerToClientEvents } from "./types";
 
 type QueryValue = string | number | boolean | undefined;
 export type SocketQuery = Record<string, QueryValue>;
-export type SocketAuth = { token?: string | undefined; apiKey?: string | undefined };
+export type SocketAuth = { token?: string | undefined };
 
 /** Browser sockets typically go direct to backend; swap to BFF if you proxy WS. */
 export async function createSocketClient(

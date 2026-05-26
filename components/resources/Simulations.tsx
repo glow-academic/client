@@ -55,6 +55,9 @@ export interface SimulationsProps {
   aiSimulationResources?:
     | Pick<SimulationResourceItem, "simulation_id" | "name">[]
     | null;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Simulations({
@@ -73,6 +76,8 @@ export function Simulations({
   showSelectedFilter = false,
   // Legacy props for backward compatibility
   simulationIds,
+  onAcceptPending,
+  onRejectPending,
 }: SimulationsProps) {
   // Use standardized props with fallback to legacy props
   const ids = useMemo(
@@ -171,18 +176,23 @@ export function Simulations({
     [ids, onChange]
   );
 
-  // Accept pending — keep pending simulations in selection
+  // Accept pending — keep pending simulations in selection.
+  // Parent hook (if provided) strips them from ``pending_ids``.
   const handleAccept = useCallback(() => {
-    // Pending items are already in ids (selected=true), just confirm
-    // The next draft save will persist them as active
-    // Nothing to change in form state — they're already included
-  }, []);
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
+  }, [onAcceptPending, pendingIds]);
 
   // Reject pending — remove pending simulations from selection
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     const newIds = ids.filter((id) => !pendingIds.has(id));
     onChange(newIds);
-  }, [ids, pendingIds, onChange]);
+  }, [ids, pendingIds, onChange, onRejectPending]);
 
   // Don't render if show_simulations is false (AFTER all hooks)
   if (!show) {

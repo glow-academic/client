@@ -45,6 +45,9 @@ export interface EndpointsProps {
   description?: string;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
+  /** Per-field pending lifecycle (single-value). See Instructions.tsx. */
+  onAcceptPending?: (pendingId: string) => void;
+  onRejectPending?: (pendingId: string) => void;
 }
 
 export function Endpoints({
@@ -61,6 +64,8 @@ export function Endpoints({
   required = false,
   placeholder = "Enter endpoint URL",
   description,
+  onAcceptPending,
+  onRejectPending,
 }: EndpointsProps) {
   // Treat as single-value (callers wrap singular id into array)
   const resourceId = endpoint_ids?.[0] ?? null;
@@ -161,17 +166,25 @@ export function Endpoints({
 
   // Accept pending — pending item is already in ids, just confirm (no-op)
   const handleAccept = useCallback(() => {
+    if (onAcceptPending && pendingItem?.id) {
+      onAcceptPending(pendingItem.id);
+      return;
+    }
     // Pending items are already in ids (selected=true), just confirm
     // The next draft save will persist them as active
     // Nothing to change in form state — they're already included
-  }, []);
+  }, [onAcceptPending, pendingItem]);
 
   // Reject pending — remove pending IDs from selection
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingItem?.id) {
+      onRejectPending(pendingItem.id);
+      return;
+    }
     const currentIds = resourceId ? [resourceId] : [];
     const newIds = currentIds.filter((id) => !pendingIds.has(id));
     onChange(newIds);
-  }, [resourceId, pendingIds, onChange]);
+  }, [resourceId, pendingIds, onChange, onRejectPending, pendingItem]);
 
   // Don't render if show_endpoints is false (AFTER all hooks)
   if (!show) {

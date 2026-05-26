@@ -24,6 +24,10 @@ import { Names } from "@/components/resources/Names";
 import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Texts } from "@/components/resources/Texts";
 import { Files } from "@/components/resources/Files";
+import {
+  uploadDocumentFile,
+  uploadDocumentImage,
+} from "@/lib/uploads/document";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
@@ -113,10 +117,6 @@ export interface DocumentProps {
   patchDocumentDraftAction?: (
     input: PatchDocumentDraftIn,
   ) => Promise<PatchDocumentDraftOut>;
-  uploadBasePath?: string;
-  uploadFileAction?: (
-    formData: FormData,
-  ) => Promise<{ success: boolean; file_id?: string; message?: string }>;
 }
 
 const collectPendingIds = (data: DocumentData | null | undefined): string[] => {
@@ -149,8 +149,6 @@ function DocumentComponent({
   createDocumentAction,
   updateDocumentAction,
   patchDocumentDraftAction,
-  uploadBasePath,
-  uploadFileAction,
 }: DocumentProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!documentId;
@@ -406,9 +404,11 @@ function DocumentComponent({
     if (current.parameter_field_ids.length > 0) payload["parameter_field_ids"] = current.parameter_field_ids;
     if (current.file_ids.length > 0) payload["file_ids"] = current.file_ids;
 
-    // Images: compound value creates new image_resource rows; ids reference
-    // existing rows. Send both — server merges.
-    if (current.pending_images.length > 0) payload["images"] = current.pending_images;
+    // Image resources are created server-side at upload time (full
+    // chain: resource + entry + junction + uploads_entry). The FE just
+    // tracks selected image_ids — never sends a ``images`` value-array,
+    // since that goes through draft.create_image which only writes the
+    // bare resource row and orphans the upload (see scenario/draft.py).
     if (current.image_ids.length > 0) payload["image_ids"] = current.image_ids;
 
     // Texts: compound value creates new text rows from pending content strings.
@@ -487,7 +487,10 @@ function DocumentComponent({
   type MultiField =
     | "flag_ids"
     | "department_ids"
-    | "parameter_field_ids";
+    | "parameter_field_ids"
+    | "file_ids"
+    | "image_ids"
+    | "text_ids";
 
   const handleAcceptPendingField = useCallback(
     (field: SingleField, pendingId: string) => {
@@ -1249,7 +1252,13 @@ function DocumentComponent({
                     file_ids: [...prev.file_ids, fileId],
                   }))
                 }
-                {...(uploadFileAction ? { uploadFileAction } : {})}
+                uploadFile={uploadDocumentFile}
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("file_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("file_ids", pendingIds)
+                }
               />
             </StepCard>
           );
@@ -1290,14 +1299,20 @@ function DocumentComponent({
                   setFormState((prev) => ({ ...prev, image_ids: ids }))
                 }
                 label="Images"
-                onImageUploadValue={(image) =>
+                onImageUploaded={(image_id) =>
                   setFormState((prev) => ({
                     ...prev,
-                    pending_images: [...prev.pending_images, image],
+                    image_ids: [...prev.image_ids, image_id],
                   }))
                 }
-                {...(uploadBasePath ? { uploadBasePath } : {})}
-                {...(uploadFileAction ? { uploadFileAction } : {})}
+                uploadImage={uploadDocumentImage}
+                downloadBaseUrl="/api/document/image"
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("image_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("image_ids", pendingIds)
+                }
               />
             </StepCard>
           );
@@ -1343,6 +1358,12 @@ function DocumentComponent({
                     pending_text_contents: [...prev.pending_text_contents, content],
                   }))
                 }
+                onAcceptPending={(pendingIds) =>
+                  handleAcceptPendingMulti("text_ids", pendingIds)
+                }
+                onRejectPending={(pendingIds) =>
+                  handleRejectPendingMulti("text_ids", pendingIds)
+                }
               />
             </StepCard>
           );
@@ -1369,8 +1390,6 @@ function DocumentComponent({
       isGenerating,
       stableDocumentDataFields,
       stepResources,
-      uploadBasePath,
-      uploadFileAction,
     ],
   );
 
@@ -1472,9 +1491,7 @@ export default React.memo(DocumentComponent, (prevProps, nextProps) => {
   if (
     prevProps.createDocumentAction !== nextProps.createDocumentAction ||
     prevProps.updateDocumentAction !== nextProps.updateDocumentAction ||
-    prevProps.patchDocumentDraftAction !== nextProps.patchDocumentDraftAction ||
-    prevProps.uploadBasePath !== nextProps.uploadBasePath ||
-    prevProps.uploadFileAction !== nextProps.uploadFileAction
+    prevProps.patchDocumentDraftAction !== nextProps.patchDocumentDraftAction
   ) {
     return false;
   }

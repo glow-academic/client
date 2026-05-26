@@ -63,6 +63,9 @@ export interface ProviderKeysProps {
   show_provider_keys?: boolean;
   label?: string;
   description?: string;
+  /** Per-field pending lifecycle (multi-select). See Departments.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function ProviderKeys({
@@ -75,6 +78,8 @@ export function ProviderKeys({
   show_provider_keys = true,
   label = "Provider Keys",
   description = "Add an API key for each provider. Keys are encrypted server-side.",
+  onAcceptPending,
+  onRejectPending,
 }: ProviderKeysProps) {
   const providers = useMemo(() => selected_providers ?? [], [selected_providers]);
   const vals = useMemo(() => values ?? [], [values]);
@@ -188,10 +193,21 @@ export function ProviderKeys({
 
   const handleAccept = useCallback(() => {
     // No-op — accept = leave entries in place; next save persists them.
-  }, []);
+    if (onAcceptPending) {
+      const pendingResourceIds = Array.from(pendingPairs);
+      if (pendingResourceIds.length > 0) {
+        onAcceptPending(pendingResourceIds);
+      }
+    }
+  }, [onAcceptPending, pendingPairs]);
   const handleReject = useCallback(() => {
+    const pendingResourceIds = Array.from(pendingPairs);
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     onChange(vals.filter((v) => !(v.id && pendingPairs.has(v.id))));
-  }, [onChange, pendingPairs, vals]);
+  }, [onChange, onRejectPending, pendingPairs, vals]);
 
   if (!show_provider_keys) return null;
 

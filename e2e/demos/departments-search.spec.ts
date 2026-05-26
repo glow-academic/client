@@ -8,7 +8,7 @@ const TOPIC = "departments-search";
 test.describe("demo: departments search", () => {
   test("records department search and drill-in affordances", async ({ page }) => {
     await recordSearchControls(page, {
-      path: "/system/departments",
+      path: "/platform/departments",
       toolbar: "departments-toolbar",
       surface: "departments-grid",
       search: "departments-search",

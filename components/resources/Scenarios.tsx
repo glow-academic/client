@@ -52,6 +52,9 @@ export interface ScenariosProps {
   aiScenarioResources?: Array<
     Pick<ScenarioResourceItem, "scenario_id" | "name">
   > | null;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Scenarios({
@@ -68,6 +71,8 @@ export function Scenarios({
   description,
   searchTerm,
   showSelectedOnly = false,
+  onAcceptPending,
+  onRejectPending,
 }: ScenariosProps) {
   const ids = useMemo(() => scenario_ids ?? [], [scenario_ids]);
   const show = show_scenarios ?? false;
@@ -146,18 +151,23 @@ export function Scenarios({
     });
   }, [ids, normalizedSearch, scenarioItems, showSelectedOnly]);
 
-  // Accept pending — keep pending scenarios in selection (no-op)
+  // Accept pending — keep pending scenarios in selection.
+  // Parent hook (if provided) strips them from ``pending_ids``.
   const handleAccept = useCallback(() => {
-    // Pending items are already in ids (selected=true), just confirm
-    // The next draft save will persist them as active
-    // Nothing to change in form state — they're already included
-  }, []);
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
+  }, [onAcceptPending, pendingIds]);
 
   // Reject pending — remove pending scenarios from selection
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     const newIds = ids.filter((id) => !pendingIds.has(id));
     onChange(newIds);
-  }, [ids, pendingIds, onChange]);
+  }, [ids, pendingIds, onChange, onRejectPending]);
 
   // Don't render if show_scenarios is false (AFTER all hooks)
   if (!show) {
@@ -165,7 +175,7 @@ export function Scenarios({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid="picker-scenarios">
       {label && (
         <div className="flex items-center gap-2">
           <Label htmlFor={id} className="flex items-center gap-1">

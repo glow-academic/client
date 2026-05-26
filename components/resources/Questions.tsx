@@ -58,6 +58,9 @@ export interface QuestionsProps {
   onQuestionsChange?: (questions: Array<{ question_text: string; time: number; allow_multiple: boolean }>) => void;
   /** Called whenever internal questions change (including unflushed) — allows parent to show dependent UI immediately */
   onInternalQuestionsChange?: (questions: { id: string; question_text: string }[]) => void;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 // Internal question type (matching ContentSection pattern)
@@ -86,6 +89,8 @@ export function Questions({
   videoLength = null,
   onQuestionsChange,
   onInternalQuestionsChange,
+  onAcceptPending,
+  onRejectPending,
 }: QuestionsProps) {
   // Use standardized props
   const ids = useMemo(() => question_ids ?? [], [question_ids]);
@@ -307,15 +312,23 @@ export function Questions({
   );
   const showDiff = pendingItems.length > 0;
 
-  // Accept pending — pending items are already in selection, no-op
+  // Accept pending — pending items already in selection; tell parent
+  // hook to strip them from ``pending_ids`` if provided.
   const handleAccept = useCallback(() => {
-    // no-op: pending items already in selection
-  }, []);
+    if (onAcceptPending && pendingIds.size > 0) {
+      onAcceptPending(Array.from(pendingIds));
+    }
+  }, [onAcceptPending, pendingIds]);
 
-  // Reject pending — remove pending IDs from selection
+  // Reject pending — remove pending IDs from selection. Parent hook (if
+  // present) also strips them from ``pending_ids``.
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingIds.size > 0) {
+      onRejectPending(Array.from(pendingIds));
+      return;
+    }
     onChange(ids.filter((id) => !pendingIds.has(id)));
-  }, [ids, onChange, pendingIds]);
+  }, [ids, onChange, onRejectPending, pendingIds]);
 
   // Don't render if show_questions is false (AFTER all hooks)
   if (!show) {

@@ -59,6 +59,9 @@ export interface ScenarioRubricsProps {
   description?: string;
   /** Value callback for unified draft — reports all scenario+rubric pairs */
   onScenarioRubricValues?: (rubrics: Array<{ scenario_id: string; rubric_id: string }>) => void;
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 const NONE_OPTION = "__none__";
@@ -84,6 +87,8 @@ export function ScenarioRubrics({
   required = false,
   description,
   onScenarioRubricValues,
+  onAcceptPending,
+  onRejectPending,
 }: ScenarioRubricsProps) {
   // Dirty flag: flipped true inside handleSelect (user interactions). Both
   // the hydrate effect and the value-emit effect gate on it so the parent
@@ -271,28 +276,42 @@ export function ScenarioRubrics({
     ];
   }, [required, rubricOptions]);
 
-  // Accept pending — keep pending rubric assignments in selection (no-op, already selected)
+  // Junction-row ids (scenario_rubrics_resource.id) flagged pending=true.
+  const pendingResourceIds = useMemo(
+    () =>
+      pendingItems
+        .map((r) => r.id)
+        .filter((id): id is string => !!id),
+    [pendingItems],
+  );
+
+  // Accept pending — keep pending rubric assignments in selection.
+  // Parent hook (if provided) strips them from ``pending_ids``.
   const handleAccept = useCallback(() => {
-    // Pending items are already in the resource array (selected=true), just confirm
-    // The next draft save will persist them as active
-    // Nothing to change in form state — they're already included
-  }, []);
+    if (onAcceptPending && pendingResourceIds.length > 0) {
+      onAcceptPending(pendingResourceIds);
+    }
+  }, [onAcceptPending, pendingResourceIds]);
 
   // Reject pending — remove pending scenario rubric assignments from selection
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     pendingItems.forEach((r) => {
       if (r.scenario_id) {
         handleSelect(r.scenario_id, NONE_OPTION);
       }
     });
-  }, [pendingItems, handleSelect]);
+  }, [pendingItems, handleSelect, onRejectPending, pendingResourceIds]);
 
   if (!show || scenario_ids.length === 0) {
     return null;
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid="picker-scenario-rubrics">
       {label && (
         <div className="flex items-center gap-2">
           <Label htmlFor={id} className="flex items-center gap-1">

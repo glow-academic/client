@@ -51,6 +51,9 @@ export interface FieldsProps {
   description?: string;
   searchTerm?: string; // Search term for filtering fields
   showSelectedFilter?: boolean; // Whether to show only selected fields
+  /** Per-field pending lifecycle (multi-select). See ParameterFields.tsx. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
   // Legacy props for backward compatibility
   fieldIds?: string[];
 }
@@ -70,6 +73,8 @@ export function Fields({
   description,
   searchTerm = "",
   showSelectedFilter = false,
+  onAcceptPending,
+  onRejectPending,
   // Legacy props for backward compatibility
   fieldIds,
 }: FieldsProps) {
@@ -80,12 +85,19 @@ export function Fields({
 
   // Pending state: items with pending=true from soft draft connections
   const pendingItems = useMemo(() => {
-    return allFieldsMemo.filter((f) => f.pending && f.field_id);
+    return allFieldsMemo.filter((f) => f.pending === true);
   }, [allFieldsMemo]);
   const showDiff = pendingItems.length > 0;
-  const pendingIds = useMemo(
-    () => new Set(pendingItems.map((f) => f.field_id).filter(Boolean) as string[]),
+  const pendingResourceIds = useMemo(
+    () =>
+      pendingItems
+        .map((f) => f.field_id)
+        .filter((id): id is string => !!id),
     [pendingItems]
+  );
+  const pendingIds = useMemo(
+    () => new Set(pendingResourceIds),
+    [pendingResourceIds]
   );
 
   // Convert fields array to FieldItem format for SelectableGrid
@@ -150,17 +162,26 @@ export function Fields({
     [ids, onChange]
   );
 
-  // Accept pending — keep pending fields in selection (no-op, already included)
+  // Accept pending — pending items are already in selection. Parent hook
+  // strips the pending resource ids from `pending_ids`. See
+  // ParameterFields.tsx for the full pattern.
   const handleAccept = useCallback(() => {
-    // Pending items are already in ids (selected=true), just confirm
-    // The next draft save will persist them as active
-  }, []);
+    if (onAcceptPending && pendingResourceIds.length > 0) {
+      onAcceptPending(pendingResourceIds);
+    }
+    // Pending items are already in ids (selected=true); when no callback is
+    // provided this is a no-op for form state and the next draft save persists.
+  }, [onAcceptPending, pendingResourceIds]);
 
-  // Reject pending — remove pending fields from selection
+  // Reject pending — drop them from selection AND from `pending_ids`.
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingResourceIds.length > 0) {
+      onRejectPending(pendingResourceIds);
+      return;
+    }
     const newIds = ids.filter((id) => !pendingIds.has(id));
     onChange(newIds);
-  }, [ids, pendingIds, onChange]);
+  }, [ids, pendingIds, pendingResourceIds, onChange, onRejectPending]);
 
   // Don't render if show_fields is false (AFTER all hooks)
   if (!show) {

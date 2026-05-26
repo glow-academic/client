@@ -23,7 +23,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -1214,13 +1214,13 @@ export function Scenarios({
                         data-testid="btn-view-scenario"
                         className="h-9 px-3"
                       >
-                        <Link
+                        <HoverPrefetchLink
                           href={`/training/scenarios/${scenario.scenario_id}`}
-                          prefetch={false}
+                          delay={150}
                         >
                           <Eye className="h-4 w-4 md:mr-0 mr-2" />
                           <span className="md:hidden">View</span>
-                        </Link>
+                        </HoverPrefetchLink>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>View</TooltipContent>
@@ -1274,13 +1274,13 @@ export function Scenarios({
                           data-testid="btn-edit-scenario"
                           className="h-9 px-3"
                         >
-                          <Link
+                          <HoverPrefetchLink
                             href={`/training/scenarios/${scenario.scenario_id}`}
-                            prefetch={false}
+                            delay={150}
                           >
                             <Edit className="h-4 w-4 md:mr-0 mr-2" />
                             <span className="md:hidden">Edit</span>
-                          </Link>
+                          </HoverPrefetchLink>
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>Edit</TooltipContent>
@@ -1295,13 +1295,13 @@ export function Scenarios({
                           data-testid="btn-view-scenario"
                           className="h-9 px-3"
                         >
-                          <Link
+                          <HoverPrefetchLink
                             href={`/training/scenarios/${scenario.scenario_id}`}
-                            prefetch={false}
+                            delay={150}
                           >
                             <Eye className="h-4 w-4 md:mr-0 mr-2" />
                             <span className="md:hidden">View</span>
-                          </Link>
+                          </HoverPrefetchLink>
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>View</TooltipContent>

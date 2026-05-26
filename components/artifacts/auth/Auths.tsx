@@ -15,10 +15,11 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
+import { Input } from "@/components/ui/input";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ackOperation } from "@/lib/api/ack";
 
@@ -66,7 +67,7 @@ import type {
   DuplicateAuthOut,
   UpdateAuthIn,
   UpdateAuthOut,
-} from "@/app/(main)/system/auth/page";
+} from "@/app/(main)/platform/auth/page";
 
 export interface AuthsProps {
   // Server-provided data (for server-side rendering)
@@ -104,7 +105,59 @@ export default function Auths({
   currentSearchBody,
 }: AuthsProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { profile } = useProfile();
+
+  // Free-text search — server-side, the canonical pattern (see Personas.tsx):
+  // a debounced commit writes `?search=` to the URL, which the page reads into
+  // the `/auth/search` body for a fresh SSR fetch. The endpoint accepts
+  // `search` (SearchAuthApiRequest), so this filters real rows, not just the
+  // page already loaded.
+  const [searchTerm, setSearchTerm] = useState(
+    () => searchParams.get("search") ?? "",
+  );
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const commitSearch = useCallback(
+    (value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      const trimmed = value.trim();
+      if (trimmed) params.set("search", trimmed);
+      else params.delete("search");
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchTerm(value);
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      if (value === "") {
+        commitSearch("");
+        return;
+      }
+      searchTimeoutRef.current = setTimeout(() => commitSearch(value), 500);
+    },
+    [commitSearch],
+  );
+
+  const handleSearchBlur = useCallback(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    commitSearch(searchTerm);
+  }, [commitSearch, searchTerm]);
+
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        commitSearch(searchTerm);
+      }
+    },
+    [commitSearch, searchTerm],
+  );
 
   // Ghost-rail materializes audit-driven create/update/delete/duplicate
   // outcomes directly from `.completed` payloads, so the page no longer
@@ -814,14 +867,14 @@ export default function Auths({
                       title={`Edit ${auth.name}`}
                       className="h-9 px-3"
                     >
-                      <Link
-                        href={`/system/auth/${auth.auth_id}`}
-                        prefetch={false}
+                      <HoverPrefetchLink
+                        href={`/platform/auth/${auth.auth_id}`}
+                        delay={150}
                         aria-label={`Edit ${auth.name}`}
                       >
                         <Edit className="h-4 w-4 md:mr-0 mr-2" />
                         <span className="md:hidden">Edit</span>
-                      </Link>
+                      </HoverPrefetchLink>
                     </Button>
                   ) : (
                     <Button
@@ -832,14 +885,14 @@ export default function Auths({
                       title={`View ${auth.name}`}
                       className="h-9 px-3"
                     >
-                      <Link
-                        href={`/system/auth/${auth.auth_id}`}
-                        prefetch={false}
+                      <HoverPrefetchLink
+                        href={`/platform/auth/${auth.auth_id}`}
+                        delay={150}
                         aria-label={`View ${auth.name}`}
                       >
                         <Eye className="h-4 w-4 md:mr-0 mr-2" />
                         <span className="md:hidden">View</span>
-                      </Link>
+                      </HoverPrefetchLink>
                     </Button>
                   )}
                   {auth.can_duplicate && (
@@ -1007,6 +1060,15 @@ export default function Auths({
       ) : (
         <div className="flex items-center justify-between flex-wrap gap-2" data-testid="auths-toolbar">
           <div className="flex items-center space-x-2 flex-wrap">
+          <Input
+            placeholder="Search auths..."
+            value={searchTerm}
+            onChange={(event) => handleSearchChange(event.target.value)}
+            onBlur={handleSearchBlur}
+            onKeyDown={handleSearchKeyDown}
+            className="h-8 w-full md:w-[150px] lg:w-[250px]"
+            data-testid="auths-search"
+          />
           <ThreePickerFilters
             slots={[
               {
@@ -1062,7 +1124,10 @@ export default function Auths({
         </div>
       ) : (
         <div className="@container">
-          <div className="grid grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4 gap-4">
+          <div
+            data-testid="auths-grid"
+            className="grid grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-3 @7xl:grid-cols-4 gap-4"
+          >
             {visibleAuthGhosts.map((g) => {
               // For update/delete, ``before`` is the snapshot lookup
               // from baseRows (existing row) — gives us name,

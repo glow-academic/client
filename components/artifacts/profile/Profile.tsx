@@ -475,7 +475,7 @@ function ProfileComponent({
   // ─── Per-field pending lifecycle ──────────────────────────────────
   // Mirrors persona — see Persona.tsx for full rationale. ``formStateKey``
   // already includes ``pending_ids`` so changes here trigger autosave.
-  type SingleField = "name_id";
+  type SingleField = "name_id" | "role_id";
   type MultiField = "flag_ids" | "department_ids";
 
   const handleAcceptPendingField = useCallback(
@@ -484,6 +484,9 @@ function ProfileComponent({
         ...prev,
         [field]: pendingId,
         ...(field === "name_id" ? { name: null } : {}),
+        // role_draft (inline-create) takes precedence over role_id on
+        // the patch payload — clear it when accepting a resolved id.
+        ...(field === "role_id" ? { role_draft: null } : {}),
         pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
       }));
     },
@@ -1442,6 +1445,12 @@ function ProfileComponent({
                 required={false}
                 searchTerm={roleSearch}
                 showSelectedFilter={roleShowSelected}
+                onAcceptPending={(pendingId) =>
+                  handleAcceptPendingField("role_id", pendingId)
+                }
+                onRejectPending={(pendingId) =>
+                  handleRejectPendingField("role_id", pendingId)
+                }
               />
             </StepCard>
           );

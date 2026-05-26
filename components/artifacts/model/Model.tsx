@@ -736,7 +736,7 @@ function ModelComponent({
   // Mirrors the canonical persona pattern: inline ✓ / ✗ on a pending
   // diff resolves the id, removes it from ``pending_ids`` so the next
   // autosave promotes (accept) or drops (reject) the connection.
-  type SingleField = "name_id" | "description_id";
+  type SingleField = "name_id" | "description_id" | "value_id";
   type MultiField = "flag_ids" | "department_ids" | "voice_ids";
 
   const handleAcceptPendingField = useCallback(
@@ -746,6 +746,7 @@ function ModelComponent({
         [field]: pendingId,
         ...(field === "name_id" ? { name: null } : {}),
         ...(field === "description_id" ? { description: null } : {}),
+        ...(field === "value_id" ? { value: null } : {}),
         pending_ids: prev.pending_ids.filter((id) => id !== pendingId),
       }));
     },
@@ -1438,6 +1439,12 @@ function ModelComponent({
                   placeholder="Select model value identifier (e.g., gpt-4, gemini-pro)"
                   required={s?.values?.required ?? true}
                   description="Unique identifier for this model (used in API calls)"
+                  onAcceptPending={(pendingId) =>
+                    handleAcceptPendingField("value_id", pendingId)
+                  }
+                  onRejectPending={(pendingId) =>
+                    handleRejectPendingField("value_id", pendingId)
+                  }
                 />
 
                 {/* Departments: canonical multi-select grid, always shown so

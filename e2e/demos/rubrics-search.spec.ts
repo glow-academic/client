@@ -8,7 +8,7 @@ const TOPIC = "rubrics-search";
 test.describe("demo: rubrics search", () => {
   test("records rubric search and department filters", async ({ page }) => {
     await recordSearchControls(page, {
-      path: "/system/rubrics",
+      path: "/platform/rubrics",
       toolbar: "rubrics-toolbar",
       surface: "rubrics-grid",
       search: "rubrics-search",

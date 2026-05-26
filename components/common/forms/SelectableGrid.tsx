@@ -71,6 +71,8 @@ export function SelectableGrid<T>({
                 type="button"
                 onClick={() => handleSelect(item)}
                 disabled={disabled ?? false}
+                data-testid="selectable-option"
+                data-selected={isSelected || undefined}
                 className={cn(
                   "relative text-left flex-shrink-0",
                   itemClassName || "w-[200px]",
@@ -111,6 +113,8 @@ export function SelectableGrid<T>({
               type="button"
               onClick={() => handleSelect(item)}
               disabled={disabled ?? false}
+              data-testid="selectable-option"
+              data-selected={isSelected || undefined}
               className={cn(
                 "relative text-left w-full",
                 disabled && "pointer-events-none opacity-50"

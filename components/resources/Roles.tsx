@@ -89,6 +89,9 @@ export interface RolesProps {
     permission_ids: string[];
     request_limits: RoleRequestLimitDraft[];
   }) => void;
+  /** Per-field pending lifecycle (single-value). See Instructions.tsx. */
+  onAcceptPending?: (pendingId: string) => void;
+  onRejectPending?: (pendingId: string) => void;
 }
 
 type RoleItem = {
@@ -532,20 +535,24 @@ export function Roles({
   permissions,
   request_limits_catalog: _request_limits_catalog,
   onCreateRoleDraft,
+  onAcceptPending,
+  onRejectPending,
 }: RolesProps) {
   // Pending state: items with pending=true from soft draft connections
   const pendingItems = useMemo(() => {
-    return (roles ?? []).filter((r) => r.pending && (r.id ?? r.role));
+    return (roles ?? []).filter((r) => r.pending === true);
   }, [roles]);
   const showDiff = pendingItems.length > 0;
-  const pendingIds = useMemo(
+  const pendingResourceIds = useMemo(
     () =>
-      new Set(
-        pendingItems
-          .map((r) => (r.id ?? r.role) as string)
-          .filter(Boolean)
-      ),
+      pendingItems
+        .map((r) => (r.id ?? r.role) as string | null | undefined)
+        .filter((id): id is string => !!id),
     [pendingItems]
+  );
+  const pendingIds = useMemo(
+    () => new Set(pendingResourceIds),
+    [pendingResourceIds]
   );
 
   const [roleOverrides, setRoleOverrides] = useState<
@@ -694,19 +701,29 @@ export function Roles({
     return [...roles];
   }, [availableRoles, searchTerm, showSelectedFilter, role]);
 
-  // Accept pending — pending items are already in selection, no-op
+  // Accept pending — single-value role. Parent hook strips the pending
+  // resource id from `pending_ids`. See Instructions.tsx for the full pattern.
   const handleAccept = useCallback(() => {
-    // Pending items are already in ids (selected=true), just confirm
-    // The next draft save will persist them as active
-  }, []);
+    const pendingId = pendingResourceIds[0];
+    if (onAcceptPending && pendingId) {
+      onAcceptPending(pendingId);
+    }
+    // Without a callback: pending item is already in selection, the next
+    // draft save will persist it as active.
+  }, [onAcceptPending, pendingResourceIds]);
 
-  // Reject pending — remove pending roles from selection
+  // Reject pending — drop pending role from selection AND from `pending_ids`.
   const handleReject = useCallback(() => {
+    const pendingId = pendingResourceIds[0];
+    if (onRejectPending && pendingId) {
+      onRejectPending(pendingId);
+      return;
+    }
     if (!multiSelect || !onRolesChange) return;
     const currentIds = role_ids ?? [];
     const newIds = currentIds.filter((id) => !pendingIds.has(id));
     onRolesChange(newIds);
-  }, [role_ids, pendingIds, onRolesChange, multiSelect]);
+  }, [role_ids, pendingIds, pendingResourceIds, onRolesChange, multiSelect, onRejectPending]);
 
   if (!show_roles) {
     return null;

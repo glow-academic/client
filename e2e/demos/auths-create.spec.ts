@@ -7,7 +7,7 @@ const TOPIC = "auths-create";
 
 test.describe("demo: auths create", () => {
   test("records auth provider shell creation", async ({ page }) => {
-    await openArtifactForm(page, "/system/auth/new");
+    await openArtifactForm(page, "/platform/auth/new");
     await page.getByPlaceholder(/production api key/i).fill("University SSO");
     await page
       .getByPlaceholder(/enter description/i)

@@ -779,7 +779,13 @@ function EvalComponent({
   // diff resolves the id, removes it from ``pending_ids`` so the next
   // autosave promotes (accept) or drops (reject) the connection.
   type SingleField = "name_id" | "description_id";
-  type MultiField = "flag_ids" | "department_ids";
+  type MultiField =
+    | "flag_ids"
+    | "department_ids"
+    | "model_ids"
+    | "model_flag_ids"
+    | "model_position_ids"
+    | "model_rubric_ids";
 
   const handleAcceptPendingField = useCallback(
     (field: SingleField, pendingId: string) => {
@@ -1004,7 +1010,7 @@ function EvalComponent({
         toast.success(
           `Eval ${isEditMode ? "updated" : "created"} successfully!`
         );
-        router.push("/system/evals");
+        router.push("/platform/evals");
       } catch (error) {
         toast.error(
           `Failed to ${isEditMode ? "update" : "create"} eval: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -1134,7 +1140,7 @@ function EvalComponent({
 
   const submitButton = useMemo(
     () => ({
-      backUrl: "/system/evals",
+      backUrl: "/platform/evals",
       backLabel: "Back",
       createLabel: "Create Eval",
       updateLabel: "Update Eval",
@@ -1361,6 +1367,12 @@ function EvalComponent({
                   required={false}
                   searchTerm={modelSearch ?? ""}
                   showSelectedFilter={modelShowSelected}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("model_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("model_ids", pendingIds)
+                  }
                 />
                 <ModelFlags
                   options={((s as any)?.model_flag_options ?? []) as any}
@@ -1370,6 +1382,12 @@ function EvalComponent({
                   onChange={handleModelFlagToggle}
                   show_model_flags={showModelFlags}
                   disabled={disabled}
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("model_flag_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("model_flag_ids", pendingIds)
+                  }
                 />
                 <ModelPositions
                   model_position_ids={formState.model_position_ids ?? []}
@@ -1399,6 +1417,12 @@ function EvalComponent({
                       return { ...prev, model_positions: nextVal };
                     })
                   }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("model_position_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("model_position_ids", pendingIds)
+                  }
                 />
                 <ModelRubrics
                   model_rubric_resources={
@@ -1423,6 +1447,12 @@ function EvalComponent({
                       if (JSON.stringify(prev.model_rubrics) === JSON.stringify(nextVal)) return prev;
                       return { ...prev, model_rubrics: nextVal };
                     })
+                  }
+                  onAcceptPending={(pendingIds) =>
+                    handleAcceptPendingMulti("model_rubric_ids", pendingIds)
+                  }
+                  onRejectPending={(pendingIds) =>
+                    handleRejectPendingMulti("model_rubric_ids", pendingIds)
                   }
                 />
               </div>

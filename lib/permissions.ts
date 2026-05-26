@@ -72,10 +72,10 @@ const PAGE_RULES: Record<string, PermissionRule> = {
   "/intelligence/models": { artifact: "model" },
   "/intelligence/providers": { artifact: "provider" },
   "/intelligence/tools": { artifact: "tool" },
-  "/system/departments": { artifact: "department" },
-  "/system/rubrics": { artifact: "rubric" },
-  "/system/auth": { artifact: "auth" },
-  "/system/evals": { artifact: "eval" },
+  "/platform/departments": { artifact: "department" },
+  "/platform/rubrics": { artifact: "rubric" },
+  "/platform/auth": { artifact: "auth" },
+  "/platform/evals": { artifact: "eval" },
   "/settings": { artifact: "setting" },
 };
 

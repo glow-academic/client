@@ -47,6 +47,13 @@ export interface ThresholdsProps {
   /** Called with the new integer value when the user finishes a drag. */
   onChange: (value: number) => void;
   description?: string;
+  /**
+   * Per-field pending lifecycle (multi-select). See Departments.tsx.
+   * TODO: this component does not yet implement handleAccept/handleReject —
+   * props are accepted for prop-shape consistency but currently unused.
+   */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 export function Thresholds({
@@ -61,6 +68,10 @@ export function Thresholds({
   disabled = false,
   onChange,
   description,
+  // TODO: wire onAcceptPending / onRejectPending once Thresholds gains a
+  // pending diff UI; currently destructured for prop-shape consistency.
+  onAcceptPending: _onAcceptPending,
+  onRejectPending: _onRejectPending,
 }: ThresholdsProps) {
   const rowsForType = useMemo(
     () =>

@@ -59,6 +59,11 @@ export interface ModelFlagsProps {
   label?: string;
   disabled?: boolean;
   show_model_flags?: boolean;
+  /** Per-field pending lifecycle (multi-select, junction). Receives the
+   *  set of pending junction-row ids. See ParameterFields.tsx for the
+   *  junction pattern. */
+  onAcceptPending?: (pendingIds: string[]) => void;
+  onRejectPending?: (pendingIds: string[]) => void;
 }
 
 type Group = {
@@ -94,6 +99,8 @@ export function ModelFlags({
   label = "Model Flags",
   disabled = false,
   show_model_flags = true,
+  onAcceptPending,
+  onRejectPending,
 }: ModelFlagsProps) {
   // Stable lookup for model display names.
   const modelLabelMap = useMemo(() => {
@@ -154,6 +161,13 @@ export function ModelFlags({
     }
     return set;
   }, [existing]);
+  const pendingJunctionIds = useMemo(
+    () =>
+      (existing ?? [])
+        .filter((row) => row.pending && row.id)
+        .map((row) => row.id!) as string[],
+    [existing],
+  );
   const showDiff = pendingKeys.size > 0;
 
   const handleToggle = useCallback(
@@ -164,15 +178,22 @@ export function ModelFlags({
   );
 
   const handleAccept = useCallback(() => {
+    if (onAcceptPending && pendingJunctionIds.length > 0) {
+      onAcceptPending(pendingJunctionIds);
+    }
     // Pending state is confirmed by the next non-pending save. No-op here.
-  }, []);
+  }, [onAcceptPending, pendingJunctionIds]);
 
   const handleReject = useCallback(() => {
+    if (onRejectPending && pendingJunctionIds.length > 0) {
+      onRejectPending(pendingJunctionIds);
+      return;
+    }
     for (const key of pendingKeys) {
       const [modelId, type] = key.split(":");
       if (modelId && type) onChange(modelId, type, null);
     }
-  }, [pendingKeys, onChange]);
+  }, [pendingKeys, pendingJunctionIds, onChange, onRejectPending]);
 
   const modelIds = useMemo(() => {
     return Array.from(groupsByModel.keys());

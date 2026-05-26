@@ -4,7 +4,7 @@
  */
 "use client";
 import { AlertCircle, Check, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Trash2, X } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -1004,14 +1004,14 @@ export default function Tools({
                   title={`Edit ${toolName}`}
                   className="h-9 px-3"
                 >
-                  <Link
+                  <HoverPrefetchLink
                     href={`/intelligence/tools/${toolId}`}
-                    prefetch={false}
+                    delay={150}
                     aria-label={`Edit ${toolName}`}
                   >
                     <Edit className="h-4 w-4 md:mr-0 mr-2" />
                     <span className="md:hidden">Edit</span>
-                  </Link>
+                  </HoverPrefetchLink>
                 </Button>
               ) : toolId ? (
                 <Button
@@ -1022,14 +1022,14 @@ export default function Tools({
                   title={`View ${toolName}`}
                   className="h-9 px-3"
                 >
-                  <Link
+                  <HoverPrefetchLink
                     href={`/intelligence/tools/${toolId}`}
-                    prefetch={false}
+                    delay={150}
                     aria-label={`View ${toolName}`}
                   >
                     <Eye className="h-4 w-4 md:mr-0 mr-2" />
                     <span className="md:hidden">View</span>
-                  </Link>
+                  </HoverPrefetchLink>
                 </Button>
               ) : null)}
               {!isGhost && tool.can_duplicate && duplicateToolAction && toolId && (

@@ -6,7 +6,7 @@
  */
 "use client";
 import { AlertCircle, Brain, Check, Copy, Edit, Eye, FileSpreadsheet, Loader2, Pencil, Thermometer, Trash2, X } from "lucide-react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -1096,14 +1096,14 @@ export default function Agents({
                 title={`Edit agent ${agent.name ?? "Unnamed Agent"}`}
                 className="h-9 px-3"
               >
-                <Link
+                <HoverPrefetchLink
                   href={`/intelligence/agents/${agent.agent_id}`}
-                  prefetch={false}
+                  delay={150}
                   aria-label={`Edit agent ${agent.name ?? "Unnamed Agent"}`}
                 >
                   <Edit className="h-4 w-4 md:mr-0 mr-2" />
                   <span className="md:hidden">Edit</span>
-                </Link>
+                </HoverPrefetchLink>
               </Button>
             ) : !isGhost && agent.agent_id ? (
               <Button
@@ -1114,14 +1114,14 @@ export default function Agents({
                 title={`View agent ${agent.name ?? "Unnamed Agent"}`}
                 className="h-9 px-3"
               >
-                <Link
+                <HoverPrefetchLink
                   href={`/intelligence/agents/${agent.agent_id}`}
-                  prefetch={false}
+                  delay={150}
                   aria-label={`View agent ${agent.name ?? "Unnamed Agent"}`}
                 >
                   <Eye className="h-4 w-4 md:mr-0 mr-2" />
                   <span className="md:hidden">View</span>
-                </Link>
+                </HoverPrefetchLink>
               </Button>
             ) : null}
             {!isGhost && agent.can_duplicate && agent.agent_id && (

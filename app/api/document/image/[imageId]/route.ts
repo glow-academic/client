@@ -1,0 +1,53 @@
+/**
+ * BFF proxy for document image downloads.
+ *
+ * Mirror of ``app/api/scenario/image/[imageId]/route.ts``. Auth headers
+ * are attached server-side and the binary body is streamed back to the
+ * <img> / <ImageViewer> consumer. Document.tsx wires this URL via
+ * ``downloadBaseUrl="/api/document/image"`` so renderers compose
+ * ``${downloadBaseUrl}/${imageId}`` and never know about
+ * INTERNAL_HTTP_BASE.
+ */
+
+import { getAuthHeaders } from "@/lib/api/auth-headers";
+import { INTERNAL_HTTP_BASE } from "@/lib/api/config";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ imageId: string }> },
+) {
+  try {
+    const { imageId } = await params;
+    const authHeaders = await getAuthHeaders();
+
+    const response = await fetch(
+      `${INTERNAL_HTTP_BASE}/document/image_download`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ image_id: imageId }),
+      },
+    );
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: (await response.text()) || "Failed to fetch image" },
+        { status: response.status },
+      );
+    }
+
+    const headers = new Headers();
+    const contentType =
+      response.headers.get("content-type") || "application/octet-stream";
+    headers.set("Content-Type", contentType);
+    const cd = response.headers.get("content-disposition");
+    if (cd) headers.set("Content-Disposition", cd);
+    const cl = response.headers.get("content-length");
+    if (cl) headers.set("Content-Length", cl);
+
+    return new NextResponse(response.body, { status: 200, headers });
+  } catch {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

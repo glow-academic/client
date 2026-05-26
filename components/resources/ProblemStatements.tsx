@@ -160,6 +160,9 @@ export interface ProblemStatementsProps {
   onSearchChange?: (term: string) => void;
   /** Report value changes upward (unified draft pattern — parent owns creation) */
   onProblemStatementChange?: (problemStatement: string) => void;
+  /** Per-field pending lifecycle (single-value). See Instructions.tsx. */
+  onAcceptPending?: (pendingId: string) => void;
+  onRejectPending?: (pendingId: string) => void;
 }
 
 export function ProblemStatements({
@@ -179,6 +182,8 @@ export function ProblemStatements({
   searchTerm,
   onSearchChange,
   onProblemStatementChange,
+  onAcceptPending,
+  onRejectPending,
 }: ProblemStatementsProps) {
   const resource = problem_statement_resource ?? null;
   const resourceId = problem_statement_id ?? null;
@@ -262,7 +267,9 @@ export function ProblemStatements({
   const currentText = internalValue || "";
   const pendingText = resource?.problem_statement || "";
 
-  // Accept pending — confirm the pending resource as the active selection
+  // Accept pending — confirm the pending resource as the active selection.
+  // Parent hook (when present) strips it from ``pending_ids``; otherwise we
+  // fall back to the legacy local promote-via-onProblemStatementIdChange.
   const handleAccept = useCallback(() => {
     if (!resource?.id) return;
     const text = resource.problem_statement || "";
@@ -270,13 +277,22 @@ export function ProblemStatements({
     lastSavedValueRef.current = text;
     lastServerTextRef.current = text;
     isDirtyRef.current = false;
-    onProblemStatementIdChange(resource.id);
-  }, [resource, onProblemStatementIdChange]);
+    if (onAcceptPending) {
+      onAcceptPending(resource.id);
+    } else {
+      onProblemStatementIdChange(resource.id);
+    }
+  }, [resource, onAcceptPending, onProblemStatementIdChange]);
 
-  // Reject pending — remove the pending resource from form state
+  // Reject pending — remove the pending resource from form state.
   const handleReject = useCallback(() => {
+    const pendingId = resource?.id;
+    if (onRejectPending && pendingId) {
+      onRejectPending(pendingId);
+      return;
+    }
     onProblemStatementIdChange(null);
-  }, [onProblemStatementIdChange]);
+  }, [resource, onRejectPending, onProblemStatementIdChange]);
 
   // Don't render if show_problem_statement is false (AFTER all hooks)
   if (!show) {
