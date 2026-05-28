@@ -262,7 +262,7 @@ export default function Personas({
     // audit events that nothing is subscribed to → no ghost.
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: basePersonas,
-    rowKey: "persona_id",
+    rowKey: "id",
     // ``personas`` plural is auto-derived as ``persona`` + "s" — kept
     // explicit here for clarity; matches the field name the create /
     // duplicate / update impls now include on their responses (see
@@ -334,7 +334,7 @@ export default function Personas({
    *  the full matching set under all-matching mode, but the loaded
    *  subset is what the toolbar's "X of Y" counts off-page. */
   const selectedPersonas = useMemo(() => {
-    return personas.filter((p) => p.persona_id && isSelected(p.persona_id));
+    return personas.filter((p) => p.id && isSelected(p.id));
   }, [personas, isSelected]);
 
   const deletablePersonas = useMemo(() => {
@@ -354,7 +354,7 @@ export default function Personas({
   // ``excludedPersonaIds`` is implicitly selected, so the predicate
   // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
-    const pageIds = personas.filter((p) => p.persona_id).map((p) => p.persona_id!);
+    const pageIds = personas.filter((p) => p.id).map((p) => p.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [personas, isSelected]);
@@ -391,7 +391,7 @@ export default function Personas({
   }, [setSelectedPersonaIds, setSelectAllMatching, setExcludedPersonaIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = personas.filter((p) => p.persona_id).map((p) => p.persona_id!);
+    const pageIds = personas.filter((p) => p.id).map((p) => p.id!);
     void setSelectAllMatching(false);
     void setExcludedPersonaIds([]);
     void setSelectedPersonaIds((prev) => {
@@ -997,7 +997,7 @@ export default function Personas({
             accept: true,
           }
         : {
-            ids: deletablePersonas.map((p) => p.persona_id!),
+            ids: deletablePersonas.map((p) => p.id!),
             accept: true,
           };
 
@@ -1103,7 +1103,7 @@ export default function Personas({
             if (isActive && activeFlagId) flag_ids.push(activeFlagId);
           }
           return {
-            id: p.persona_id!,
+            id: p.id!,
             ...sharedPatch,
             ...(hasAnyFlagChange && { flag_ids }),
           };
@@ -1210,8 +1210,8 @@ export default function Personas({
     const gradientStyle = generateGradientFromHex(hexColor);
     const iconColor = "#ffffff";
 
-    const isSelected = !isGhost && persona.persona_id
-      ? selectedPersonaIds.includes(persona.persona_id)
+    const isSelected = !isGhost && persona.id
+      ? selectedPersonaIds.includes(persona.id)
       : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
@@ -1219,8 +1219,8 @@ export default function Personas({
       // rendering as a ghost (no real id to select).
       if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
-      if (persona.persona_id) {
-        toggleSelection(persona.persona_id);
+      if (persona.id) {
+        toggleSelection(persona.id);
       }
     };
 
@@ -1243,7 +1243,7 @@ export default function Personas({
           isGhost ? "" : "cursor-pointer"
         } ${ghostBorderClass} ${isSelected ? "ring-2 ring-primary" : ""}`}
         data-testid={isGhost ? "persona-ghost-card" : "persona-card"}
-        data-persona-id={persona.persona_id}
+        data-persona-id={persona.id}
         data-ghost-state={ghostState}
         role="gridcell"
         aria-label={`persona card ${persona.name || (isGhost ? "Generating" : "Unnamed Persona")}`}
@@ -1267,7 +1267,7 @@ export default function Personas({
                     <Checkbox
                       checked={isSelected}
                       onCheckedChange={() => {
-                        if (persona.persona_id) toggleSelection(persona.persona_id);
+                        if (persona.id) toggleSelection(persona.id);
                       }}
                       className="rounded-full h-5 w-5"
                       aria-label={`Select persona ${persona.name || "Unnamed"}`}
@@ -1374,7 +1374,7 @@ export default function Personas({
                   {ghost.error}
                 </span>
               )}
-              {!isGhost && persona.persona_id && (<>{persona.can_edit ? (
+              {!isGhost && persona.id && (<>{persona.can_edit ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -1386,7 +1386,7 @@ export default function Personas({
                       className="h-9 px-3"
                     >
                       <HoverPrefetchLink
-                        href={`/training/personas/${persona.persona_id}`}
+                        href={`/training/personas/${persona.id}`}
                         delay={150}
                         aria-label={`Edit persona ${persona.name || "Unnamed"}`}
                       >
@@ -1409,7 +1409,7 @@ export default function Personas({
                       className="h-9 px-3"
                     >
                       <HoverPrefetchLink
-                        href={`/training/personas/${persona.persona_id}`}
+                        href={`/training/personas/${persona.id}`}
                         delay={150}
                         aria-label={`View persona ${persona.name || "Unnamed"}`}
                       >
@@ -1421,36 +1421,36 @@ export default function Personas({
                   <TooltipContent>View</TooltipContent>
                 </Tooltip>
               )}
-              {persona.can_duplicate && persona.persona_id && (
+              {persona.can_duplicate && persona.id && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        if (persona.persona_id) {
+                        if (persona.id) {
                           handleDuplicate(
-                            persona.persona_id,
+                            persona.id,
                             persona.name || "Unnamed Persona"
                           );
                         }
                       }}
-                      disabled={isDuplicating === persona.persona_id}
+                      disabled={isDuplicating === persona.id}
                       aria-busy={
-                        isDuplicating === persona.persona_id ? true : undefined
+                        isDuplicating === persona.id ? true : undefined
                       }
                       aria-label={`Duplicate persona ${persona.name || "Unnamed"}`}
                       data-testid="btn-duplicate-persona"
                       data-action-button
                       className="h-9 px-3"
                     >
-                      {isDuplicating === persona.persona_id ? (
+                      {isDuplicating === persona.id ? (
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
                       ) : (
                         <Copy className="h-4 w-4 md:mr-0 mr-2" />
                       )}
                       <span className="md:hidden">
-                        {isDuplicating === persona.persona_id
+                        {isDuplicating === persona.id
                           ? "Duplicating..."
                           : "Duplicate"}
                       </span>
@@ -1459,16 +1459,16 @@ export default function Personas({
                   <TooltipContent>Duplicate</TooltipContent>
                 </Tooltip>
               )}
-              {persona.can_delete && persona.persona_id && (
+              {persona.can_delete && persona.id && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        if (persona.persona_id) {
+                        if (persona.id) {
                           handleDeleteClick(
-                            persona.persona_id,
+                            persona.id,
                             persona.name || "Unnamed Persona"
                           );
                         }
@@ -1770,7 +1770,7 @@ export default function Personas({
           {tableRows.length ? (
             tableRows.map((row) => {
               const persona = row.original;
-              const key = persona.persona_id || `persona-${row.id}`;
+              const key = persona.id || `persona-${row.id}`;
               // Server-side pending status (from soft_calls_mv) — render
               // the row as a pending ghost so Accept/Reject controls
               // appear and the persona-card visual reflects the dormant
@@ -1782,7 +1782,7 @@ export default function Personas({
                       callId: persona.pending_call_id,
                       op: (persona.pending_operation as Ghost<(typeof personas)[0]>["op"]) ?? "create",
                       state: "pending",
-                      rowId: persona.persona_id ?? null,
+                      rowId: persona.id ?? null,
                       partial: persona as unknown as Ghost<(typeof personas)[0]>["partial"],
                       before: persona,
                       tool: null,
@@ -1885,7 +1885,7 @@ export default function Personas({
                     <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                     <ul className="text-sm space-y-0.5">
                       {deletablePersonas.map((p) => (
-                        <li key={p.persona_id} className="flex items-center gap-1.5">
+                        <li key={p.id} className="flex items-center gap-1.5">
                           <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                           {p.name || "Unnamed Persona"}
                         </li>
@@ -1898,7 +1898,7 @@ export default function Personas({
                     <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by scenarios):</p>
                     <ul className="text-sm space-y-0.5">
                       {nonDeletablePersonas.map((p) => (
-                        <li key={p.persona_id} className="flex items-center gap-1.5 text-muted-foreground">
+                        <li key={p.id} className="flex items-center gap-1.5 text-muted-foreground">
                           <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
                           {p.name || "Unnamed Persona"}
                         </li>

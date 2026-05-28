@@ -188,7 +188,7 @@ export default function Tools({
     // subscribed to → no ghost.
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseTools,
-    rowKey: "tool_id",
+    rowKey: "id",
     // ``tools`` plural is auto-derived as ``tool`` + "s" — kept
     // explicit here for clarity; matches the field name the create /
     // duplicate / update impls now include on their responses (see
@@ -289,7 +289,7 @@ export default function Tools({
    *  matching mode this is "every loaded row not in excludedIds";
    *  under explicit mode it's the rows whose id is in selectedIds. */
   const selectedTools = useMemo(() => {
-    return toolsArray.filter((t) => t.tool_id && isSelected(t.tool_id));
+    return toolsArray.filter((t) => t.id && isSelected(t.id));
   }, [toolsArray, isSelected]);
   const deletableTools = useMemo(
     () => selectedTools.filter((t) => t.can_delete),
@@ -331,7 +331,7 @@ export default function Tools({
   }, [setSelectedToolIds, setSelectAllMatching, setExcludedToolIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = toolsArray.filter((t) => t.tool_id).map((t) => t.tool_id!);
+    const pageIds = toolsArray.filter((t) => t.id).map((t) => t.id!);
     void setSelectAllMatching(false);
     void setExcludedToolIds([]);
     void setSelectedToolIds((prev) => Array.from(new Set([...prev, ...pageIds])));
@@ -351,7 +351,7 @@ export default function Tools({
   // ``excludedToolIds`` is implicitly selected, so the predicate
   // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
-    const pageIds = toolsArray.filter((t) => t.tool_id).map((t) => t.tool_id!);
+    const pageIds = toolsArray.filter((t) => t.id).map((t) => t.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [toolsArray, isSelected]);
@@ -697,12 +697,12 @@ export default function Tools({
       const result = await duplicateToolAction({
         body: { tool_id: toolId, accept: true },
       });
-      if (result.tool_id) {
-        const tool = toolsArray.find((t) => t.tool_id === toolId);
+      if (result.id) {
+        const tool = toolsArray.find((t) => t.id === toolId);
         toast.success(
           result.message || `Tool '${tool?.name || "Unknown"}' duplicated successfully`
         );
-        router.push(`/intelligence/tools/${result.tool_id}`);
+        router.push(`/intelligence/tools/${result.id}`);
       }
     } catch (error) {
       toast.error(
@@ -738,7 +738,7 @@ export default function Tools({
             accept: true,
           }
         : {
-            tool_ids: deletableTools.map((t) => t.tool_id!),
+            tool_ids: deletableTools.map((t) => t.id!),
             accept: true,
           };
 
@@ -809,7 +809,7 @@ export default function Tools({
             flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
           }
           return {
-            id: t.tool_id!,
+            id: t.id!,
             ...(hasActiveChange && { flag_ids }),
           };
         });
@@ -862,7 +862,7 @@ export default function Tools({
     const isPending = ghostState === "pending";
     const isFailed = ghostState === "failed";
 
-    const toolId = tool?.tool_id ?? "";
+    const toolId = tool?.id ?? "";
     const toolName = tool?.name ?? "";
 
     if (!isGhost && !toolId) return null;
@@ -1343,7 +1343,7 @@ export default function Tools({
                         callId: tool.pending_call_id,
                         op: (tool.pending_operation as Ghost<(typeof toolsArray)[number]>["op"]) ?? "create",
                         state: "pending",
-                        rowId: tool.tool_id ?? null,
+                        rowId: tool.id ?? null,
                         partial: tool as unknown as Ghost<(typeof toolsArray)[number]>["partial"],
                         before: tool,
                         tool: null,
@@ -1429,7 +1429,7 @@ export default function Tools({
                 <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                 <ul className="text-sm space-y-0.5">
                   {deletableTools.map((t) => (
-                    <li key={t.tool_id} className="flex items-center gap-1.5">
+                    <li key={t.id} className="flex items-center gap-1.5">
                       <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                       {t.name || "Unnamed Tool"}
                     </li>
@@ -1445,7 +1445,7 @@ export default function Tools({
                 <ul className="text-sm space-y-0.5">
                   {nonDeletableTools.map((t) => (
                     <li
-                      key={t.tool_id}
+                      key={t.id}
                       className="flex items-center gap-1.5 text-muted-foreground"
                     >
                       {t.name || "Unnamed Tool"}

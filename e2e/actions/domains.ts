@@ -52,6 +52,7 @@ export type CreateStep =
   // skip cleanly when it doesn't. Each value is the step id to scope within.
   | { multiSelect: string } // first option of the grid in that step
   | { pickIn: string } // first option of the grid inside a picker testid (when a step has several pickers)
+  | { pickInSticky: string } // like pickIn, but re-picks until the selection persists (fragile picks, e.g. eval model-rubric)
   | { toggle: string } // first switch in that step
   | { expand: string } // open first group → select first field
   | { flag: string } // toggle a feature flag by type (reveals conditional steps)
@@ -186,6 +187,8 @@ export class DomainFacade {
         await this.form.multiSelectFirst(step.multiSelect);
       } else if ("pickIn" in step) {
         await this.form.pickInFirst(step.pickIn);
+      } else if ("pickInSticky" in step) {
+        await this.form.pickInUntilSelected(step.pickInSticky);
       } else if ("toggle" in step) {
         await this.form.toggleFirst(step.toggle);
       } else if ("expand" in step) {
@@ -263,6 +266,8 @@ export class DomainFacade {
       await this.form.pickFirst(step.picker);
     } else if ("pickIn" in step) {
       await this.form.pickInFirst(step.pickIn);
+    } else if ("pickInSticky" in step) {
+      await this.form.pickInUntilSelected(step.pickInSticky);
     } else if ("addPrompt" in step) {
       await this.form.addPrompt(step.addPrompt);
     }
@@ -966,14 +971,18 @@ export const DOMAINS: Record<string, DomainSpec> = {
       { settle: true },
       { pickIn: "picker-models" }, // select a model → reveals its rubric grid
       { settle: true },
-      { pickIn: "picker-model-rubrics" }, // REQUIRED model rubric
-      { settle: true },
+      // The model-rubric is fragile: `ModelRubrics` freezes the pick locally
+      // (its `isDirtyRef`), but a draft re-seed re-mounts it and reverts the
+      // selection (the server returns no model_rubric_resources). So pick it
+      // LAST and go straight to submit — NO settle here — so the local
+      // `model_rubric_ids` reaches submit before any re-seed can clear it.
+      { pickInSticky: "picker-model-rubrics" }, // REQUIRED model rubric (no settle after)
     ],
     reconcile: [
       { error: /name is required/i, redo: { field: "name" } },
       {
         error: /model rubrics? (is|are) required/i,
-        redo: { pickIn: "picker-model-rubrics" },
+        redo: { pickInSticky: "picker-model-rubrics" },
       },
     ],
     createdSignal: /eval created successfully/i,

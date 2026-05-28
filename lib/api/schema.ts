@@ -95,7 +95,7 @@ export interface paths {
         put?: never;
         /**
          * Parse Persona Csv
-         * @description Parse a CSV file and return mapped items for preview (soft/accept on the raw upload).
+         * @description Parse a CSV file and return mapped items for preview.
          */
         post: operations["parse_persona_csv_persona_csv_post"];
         delete?: never;
@@ -357,11 +357,7 @@ export interface paths {
         /** Persona Watch */
         get: operations["persona_watch_persona_watch_get"];
         put?: never;
-        /**
-         * Persona Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["persona_watch_once_persona_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -781,11 +777,7 @@ export interface paths {
         /** Scenario Watch */
         get: operations["scenario_watch_scenario_watch_get"];
         put?: never;
-        /**
-         * Scenario Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["scenario_watch_once_scenario_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -823,7 +815,7 @@ export interface paths {
         put?: never;
         /**
          * Upload Image
-         * @description Upload an image for later use in scenarios (soft/accept dormant flow).
+         * @description Upload an image for later use in scenarios.
          */
         post: operations["upload_image_scenario_image_upload_post"];
         delete?: never;
@@ -863,7 +855,7 @@ export interface paths {
         put?: never;
         /**
          * Upload Video
-         * @description Upload a video for later use in scenarios (soft/accept dormant flow).
+         * @description Upload a video for later use in scenarios.
          */
         post: operations["upload_video_scenario_video_upload_post"];
         delete?: never;
@@ -1305,11 +1297,7 @@ export interface paths {
         /** Simulation Watch */
         get: operations["simulation_watch_simulation_watch_get"];
         put?: never;
-        /**
-         * Simulation Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["simulation_watch_once_simulation_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1729,11 +1717,7 @@ export interface paths {
         /** Document Watch */
         get: operations["document_watch_document_watch_get"];
         put?: never;
-        /**
-         * Document Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["document_watch_once_document_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1771,7 +1755,7 @@ export interface paths {
         put?: never;
         /**
          * Upload Text
-         * @description Upload a text file for later use in documents (soft/accept dormant flow).
+         * @description Upload a text file for later use in documents.
          */
         post: operations["upload_text_document_text_upload_post"];
         delete?: never;
@@ -1831,49 +1815,9 @@ export interface paths {
         put?: never;
         /**
          * Upload File
-         * @description Upload a file for later use in documents (soft/accept dormant flow).
+         * @description Upload a file for later use in documents.
          */
         post: operations["upload_file_document_file_upload_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/document/image_upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Upload Image
-         * @description Upload an image for later use in documents (soft/accept dormant flow).
-         */
-        post: operations["upload_image_document_image_upload_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/document/image_download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Download Image
-         * @description Download an image file by image resource ID.
-         */
-        post: operations["download_image_document_image_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2253,11 +2197,7 @@ export interface paths {
         /** Department Watch */
         get: operations["department_watch_department_watch_get"];
         put?: never;
-        /**
-         * Department Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["department_watch_once_department_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2677,11 +2617,7 @@ export interface paths {
         /** Cohort Watch */
         get: operations["cohort_watch_cohort_watch_get"];
         put?: never;
-        /**
-         * Cohort Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["cohort_watch_once_cohort_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3101,11 +3037,7 @@ export interface paths {
         /** Eval Watch */
         get: operations["eval_watch_eval_watch_get"];
         put?: never;
-        /**
-         * Eval Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["eval_watch_once_eval_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3525,11 +3457,7 @@ export interface paths {
         /** Rubric Watch */
         get: operations["rubric_watch_rubric_watch_get"];
         put?: never;
-        /**
-         * Rubric Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["rubric_watch_once_rubric_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3969,11 +3897,7 @@ export interface paths {
         /** Setting Watch */
         get: operations["setting_watch_setting_watch_get"];
         put?: never;
-        /**
-         * Setting Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["setting_watch_once_setting_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4393,11 +4317,7 @@ export interface paths {
         /** Agent Watch */
         get: operations["agent_watch_agent_watch_get"];
         put?: never;
-        /**
-         * Agent Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["agent_watch_once_agent_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4817,11 +4737,7 @@ export interface paths {
         /** Model Watch */
         get: operations["model_watch_model_watch_get"];
         put?: never;
-        /**
-         * Model Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["model_watch_once_model_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5261,11 +5177,7 @@ export interface paths {
         /** Provider Watch */
         get: operations["provider_watch_provider_watch_get"];
         put?: never;
-        /**
-         * Provider Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["provider_watch_once_provider_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5685,11 +5597,7 @@ export interface paths {
         /** Parameter Watch */
         get: operations["parameter_watch_parameter_watch_get"];
         put?: never;
-        /**
-         * Parameter Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["parameter_watch_once_parameter_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6109,11 +6017,7 @@ export interface paths {
         /** Field Watch */
         get: operations["field_watch_field_watch_get"];
         put?: never;
-        /**
-         * Field Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["field_watch_once_field_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6510,11 +6414,7 @@ export interface paths {
         /** Profile Watch */
         get: operations["profile_watch_profile_watch_get"];
         put?: never;
-        /**
-         * Profile Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["profile_watch_once_profile_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6997,11 +6897,7 @@ export interface paths {
         /** Auth Watch */
         get: operations["auth_watch_auth_watch_get"];
         put?: never;
-        /**
-         * Auth Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["auth_watch_once_auth_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -7441,11 +7337,7 @@ export interface paths {
         /** Tool Watch */
         get: operations["tool_watch_tool_watch_get"];
         put?: never;
-        /**
-         * Tool Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["tool_watch_once_tool_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -7626,8 +7518,7 @@ export interface paths {
          * @description Get page context for the attempt artifact.
          *
          *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Routed through the audit wrapper so ``snapshot_key`` replays a consistent
-         *     view across related reads.
+         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
         post: operations["get_attempt_context_attempt_context_post"];
         delete?: never;
@@ -7807,11 +7698,7 @@ export interface paths {
         /** Attempt Watch */
         get: operations["attempt_watch_attempt_watch_get"];
         put?: never;
-        /**
-         * Attempt Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["attempt_watch_once_attempt_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -8069,7 +7956,7 @@ export interface paths {
         put?: never;
         /**
          * Chat Speak
-         * @description Push audio bytes into a conversation's inbound buffer (or stage them).
+         * @description Push audio bytes into a conversation's inbound buffer.
          */
         post: operations["chat_speak_attempt_chat_speak_post"];
         delete?: never;
@@ -8759,11 +8646,7 @@ export interface paths {
         /** Test Watch */
         get: operations["test_watch_test_watch_get"];
         put?: never;
-        /**
-         * Test Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["test_watch_once_test_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -9072,8 +8955,7 @@ export interface paths {
          * @description Get page context for the system artifact.
          *
          *     Returns docs + profile identity + evaluated permissions in a single call.
-         *     Routed through the audit wrapper so ``snapshot_key`` replays a consistent
-         *     view across related reads.
+         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
         post: operations["get_system_context_system_context_post"];
         delete?: never;
@@ -9257,11 +9139,7 @@ export interface paths {
         /** System Watch */
         get: operations["system_watch_system_watch_get"];
         put?: never;
-        /**
-         * System Watch Once
-         * @description One-shot snapshot of run state, snapshot-replayable via ``snapshot_key``.
-         */
-        post: operations["system_watch_once_system_watch_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -9751,10 +9629,12 @@ export interface paths {
          * Client Config
          * @description Return OAuth client credentials for frontend integration.
          *
-         *     Authenticated by the deployment token (generated on first deploy by
-         *     the glow CLI and written to the server's .env). Any frontend can call
-         *     this with the token to fetch the keycloak client_id + secret needed
-         *     to connect to this server's auth.
+         *     Authenticated by deployment token (managed or self-hosted).
+         *     Any frontend (Next.js, React, mobile) can call this to get
+         *     the credentials needed to connect to this server's auth.
+         *
+         *     Like Google/Microsoft OAuth: you get a client_id + secret,
+         *     plug them into your app, done.
          */
         get: operations["client_config_auth_client_config_get"];
         put?: never;
@@ -9776,6 +9656,30 @@ export interface paths {
         get: operations["root_info__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docs-mcp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Docs Mcp Proxy
+         * @description Forward an MCP request to the Glow docs sibling.
+         *
+         *     This route is behind McpOAuthMiddleware, so the user is already
+         *     authenticated. We re-sign with the Glow API's key so the docs
+         *     can verify against our /jwks.
+         */
+        post: operations["docs_mcp_proxy_docs_mcp_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9912,11 +9816,6 @@ export interface components {
              * @description Profile ID to focus the summary card
              */
             summary_profile_id?: string | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * ActivityResources
@@ -10884,22 +10783,6 @@ export interface components {
              * @description Filter by infinite mode status
              */
             infinite_mode?: boolean | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call; on the ack, the server-minted soft key to activate/reject a staged archive
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the archive dormant (active=False); accept activates the whole set
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True activates the staged archive, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /** ArchiveAttemptsResponse */
         ArchiveAttemptsResponse: {
@@ -10914,11 +10797,6 @@ export interface components {
              * @description Profile IDs whose caches need invalidation
              */
             profile_ids_to_invalidate?: string[] | null;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with accept to activate/reject the staged archive.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ArchiveTestsRequest
@@ -10936,22 +10814,6 @@ export interface components {
              * @default true
              */
             archived: boolean;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call; on the ack, the server-minted soft key to activate/reject a staged archive
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the archive dormant (active=False); accept activates the whole set
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True activates the staged archive, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ArchiveTestsResponse
@@ -10964,11 +10826,6 @@ export interface components {
              * @default 0
              */
             updated_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with accept to activate/reject the staged archive.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ArtifactGenerateRequest
@@ -11063,30 +10920,14 @@ export interface components {
         AttemptCompleteRequest: {
             /**
              * Attempt Id
-             * @description Attempt to complete (omit on the ack call)
+             * Format: uuid
              */
-            attempt_id?: string | null;
+            attempt_id: string;
             /**
              * Message
              * @default
              */
             message: string;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call; on the ack, the server-minted soft key to activate/reject a staged completion
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the completion dormant (active=False) — agent proposes; accept activates it. Composes into a dormant benchmark scenario.
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True activates the staged completion, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /** AttemptCompleteResponse */
         AttemptCompleteResponse: {
@@ -11096,11 +10937,6 @@ export interface components {
             completion_id: string;
             /** Attempt Id */
             attempt_id: string;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with accept to activate/reject the staged completion.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * AttemptData
@@ -11320,22 +11156,6 @@ export interface components {
              * @description List of selected option UUIDs
              */
             option_ids: string[];
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call; on the ack, the server-minted soft key to activate/reject the staged response
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the response dormant (active=False); accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True activates the staged response, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /** AttemptStartRequest */
         AttemptStartRequest: {
@@ -11348,22 +11168,6 @@ export interface components {
              * @default false
              */
             infinite_mode: boolean;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call; on the ack, the server-minted soft key to activate/reject a staged attempt
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the attempt dormant (persona+attempt+junction active=False) — agent proposes; accept activates. The sim-env 'dormant attempt' primitive.
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True activates the staged attempt, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /** AttemptStartResponse */
         AttemptStartResponse: {
@@ -11379,11 +11183,6 @@ export interface components {
             chat_id: string;
             /** Department Id */
             department_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with accept to activate/reject the staged attempt.
-             */
-            idempotency_key?: string | null;
         };
         /** AttemptStopRequest */
         AttemptStopRequest: {
@@ -11392,32 +11191,11 @@ export interface components {
              * Format: uuid
              */
             group_id: string;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call; on the ack, set to the server-minted soft key to perform/reject a staged stop
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the stop (record the intent without cancelling) — for composing a stop into a dormant benchmark scenario; accept performs it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True performs the staged stop, False discards. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /** AttemptStopResponse */
         AttemptStopResponse: {
             /** Success */
             success: boolean;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with accept to perform/reject the staged stop.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * AudioDownloadAttemptApiRequest
@@ -11456,8 +11234,6 @@ export interface components {
             conversation_id: string;
             /** Group Id */
             group_id: string;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
         };
         /**
          * AudioStopInternalResult
@@ -11471,8 +11247,6 @@ export interface components {
              * @default true
              */
             stopped: boolean;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
         };
         /**
          * AudioUploadAttemptApiResponse
@@ -11497,11 +11271,6 @@ export interface components {
              * @description UUID of the uploads_entry (primitive raw file)
              */
             upload_id: string;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key; echo with accept to promote/reject the staged upload.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * AuthDepartmentResource
@@ -12192,11 +11961,6 @@ export interface components {
              * @default desc
              */
             history_sort_order: string;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * BenchmarkResponse
@@ -12235,241 +11999,139 @@ export interface components {
         };
         /** Body_parse_agent_csv_agent_csv_post */
         Body_parse_agent_csv_agent_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_auth_csv_auth_csv_post */
         Body_parse_auth_csv_auth_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_cohort_csv_cohort_csv_post */
         Body_parse_cohort_csv_cohort_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_department_csv_department_csv_post */
         Body_parse_department_csv_department_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_document_csv_document_csv_post */
         Body_parse_document_csv_document_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_eval_csv_eval_csv_post */
         Body_parse_eval_csv_eval_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_field_csv_field_csv_post */
         Body_parse_field_csv_field_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_model_csv_model_csv_post */
         Body_parse_model_csv_model_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_parameter_csv_parameter_csv_post */
         Body_parse_parameter_csv_parameter_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_persona_csv_persona_csv_post */
         Body_parse_persona_csv_persona_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_profile_csv_profile_csv_post */
         Body_parse_profile_csv_profile_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_provider_csv_provider_csv_post */
         Body_parse_provider_csv_provider_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_rubric_csv_rubric_csv_post */
         Body_parse_rubric_csv_rubric_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_scenario_csv_scenario_csv_post */
         Body_parse_scenario_csv_scenario_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_setting_csv_setting_csv_post */
         Body_parse_setting_csv_setting_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_simulation_csv_simulation_csv_post */
         Body_parse_simulation_csv_simulation_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_parse_tool_csv_tool_csv_post */
         Body_parse_tool_csv_tool_csv_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_upload_audio_attempt_audio_upload_post */
         Body_upload_audio_attempt_audio_upload_post: {
@@ -12490,85 +12152,38 @@ export interface components {
              * @default
              */
             description: string;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @default false
-             */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
         };
         /** Body_upload_file_document_file_upload_post */
         Body_upload_file_document_file_upload_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
-        };
-        /** Body_upload_image_document_image_upload_post */
-        Body_upload_image_document_image_upload_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @default false
-             */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_upload_image_scenario_image_upload_post */
         Body_upload_image_scenario_image_upload_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_upload_text_document_text_upload_post */
         Body_upload_text_document_text_upload_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /** Body_upload_video_scenario_video_upload_post */
         Body_upload_video_scenario_video_upload_post: {
-            /** File */
-            file?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * File
+             * Format: binary
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            file: string;
         };
         /**
          * CallDownloadAgentApiRequest
@@ -12860,12 +12475,10 @@ export interface components {
             /** Idempotency Key */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * Accept
+             * @default true
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /** ChatAnalysesResponse */
         ChatAnalysesResponse: {
@@ -12888,19 +12501,16 @@ export interface components {
              * Format: uuid
              */
             chat_id: string;
-            /** Message Id */
-            message_id?: string | null;
-            /** Audios Id */
-            audios_id?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * Message Id
+             * Format: uuid
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            message_id: string;
+            /**
+             * Audios Id
+             * Format: uuid
+             */
+            audios_id: string;
         };
         /** ChatAudioResponse */
         ChatAudioResponse: {
@@ -12908,8 +12518,6 @@ export interface components {
             success: boolean;
             /** Attempt Audio Id */
             attempt_audio_id: string;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
         };
         /** ChatCompleteRequest */
         ChatCompleteRequest: {
@@ -12923,15 +12531,6 @@ export interface components {
              * @default
              */
             message: string;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @default false
-             */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
         };
         /** ChatCompleteResponse */
         ChatCompleteResponse: {
@@ -12941,8 +12540,6 @@ export interface components {
             completion_id: string;
             /** Chat Id */
             chat_id: string;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
         };
         /**
          * ChatData
@@ -13283,12 +12880,10 @@ export interface components {
             /** Idempotency Key */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * Accept
+             * @default true
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /** ChatFeedbackResponse */
         ChatFeedbackResponse: {
@@ -13389,12 +12984,10 @@ export interface components {
             /** Idempotency Key */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * Accept
+             * @default true
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /** ChatHintsResponse */
         ChatHintsResponse: {
@@ -13454,12 +13047,10 @@ export interface components {
             /** Idempotency Key */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * Accept
+             * @default true
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /** ChatImprovementsResponse */
         ChatImprovementsResponse: {
@@ -13490,11 +13081,6 @@ export interface components {
             auto_link_parent: boolean;
             /** Audios Id */
             audios_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call instead of re-running
-             */
-            idempotency_key?: string | null;
         };
         /** ChatMessageResponse */
         ChatMessageResponse: {
@@ -13737,15 +13323,6 @@ export interface components {
              * Format: uuid
              */
             chat_id: string;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @default false
-             */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
         };
         /**
          * ChatSimulationOperational
@@ -13884,23 +13461,12 @@ export interface components {
             /** Chat Id */
             chat_id?: string | null;
             /** Audio */
-            audio?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @default false
-             */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            audio: string;
         };
         /** ChatSpeakResponse */
         ChatSpeakResponse: {
             /** Accepted */
             accepted: boolean;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
         };
         /** ChatStrengthItem */
         ChatStrengthItem: {
@@ -13925,12 +13491,10 @@ export interface components {
             /** Idempotency Key */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @default false
+             * Accept
+             * @default true
              */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /** ChatStrengthsResponse */
         ChatStrengthsResponse: {
@@ -13976,15 +13540,6 @@ export interface components {
              * Format: uuid
              */
             chat_id: string;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @default false
-             */
-            soft: boolean;
-            /** Accept */
-            accept?: boolean | null;
         };
         /**
          * CohortDepartment
@@ -14584,28 +14139,28 @@ export interface components {
              * @description Human-readable description
              */
             description: string;
-            /** @description Artifact tool documentation (None unless schema=true) */
+            /** @description Artifact tool documentation */
             artifact?: components["schemas"]["DocsResponse"] | null;
             /**
              * Entries
-             * @description Entry documentation list (None unless schema=true)
+             * @description Entry documentation list
              */
-            entries?: components["schemas"]["DocsResponse"][] | null;
+            entries: components["schemas"]["DocsResponse"][];
             /**
              * Resources
-             * @description Resource documentation list (None unless schema=true)
+             * @description Resource documentation list
              */
-            resources?: components["schemas"]["DocsResponse"][] | null;
+            resources: components["schemas"]["DocsResponse"][];
             /**
              * Permission Docs
-             * @description Permission function signatures for MCP/dev tooling (None unless schema=true)
+             * @description Permission function signatures (for MCP/dev tooling)
              */
-            permission_docs?: components["schemas"]["OperationInfo"][] | null;
+            permission_docs: components["schemas"]["OperationInfo"][];
             /**
              * Api Operations
-             * @description API operation documentation (None unless schema=true)
+             * @description API operation documentation
              */
-            api_operations?: components["schemas"]["OperationInfo"][] | null;
+            api_operations: components["schemas"]["OperationInfo"][];
             /** @description Page-level metadata */
             page_metadata?: components["schemas"]["DocsApiResponse"] | null;
             /** @description Starter prompts keyed by operation */
@@ -14683,25 +14238,20 @@ export interface components {
         CreateAgentApiRequest: {
             /**
              * Agents
-             * @description List of agents to create (omit on the ack call)
+             * @description List of agents to create
              */
-            agents?: components["schemas"]["CreateAgentItem"][] | null;
+            agents: components["schemas"]["CreateAgentItem"][];
             /**
              * Idempotency Key
              * @description Operation key for ack — promotes or rejects a dormant create
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * CreateAgentApiResponse
@@ -14997,12 +14547,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -15133,16 +14677,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * CreateCohortApiResponse
@@ -15269,12 +14808,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -15375,16 +14908,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * CreateDocumentApiResponse
@@ -15505,12 +15033,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant create
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -15653,11 +15175,6 @@ export interface components {
              * @description Run ID for audit linkage
              */
             run_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call instead of re-running
-             */
-            idempotency_key?: string | null;
         };
         /**
          * CreateFieldApiRequest
@@ -15675,16 +15192,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * CreateFieldApiResponse
@@ -15795,11 +15307,6 @@ export interface components {
              * @default false
              */
             full: boolean;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call instead of re-running
-             */
-            idempotency_key?: string | null;
         };
         /**
          * CreateInvocationApiRequest
@@ -15846,11 +15353,6 @@ export interface components {
             temperature_level_ids?: string[] | null;
             /** Modality Ids */
             modality_ids?: string[] | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call instead of re-running
-             */
-            idempotency_key?: string | null;
         };
         /** CreateInvocationApiResponse */
         CreateInvocationApiResponse: {
@@ -15881,12 +15383,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant create
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -16035,12 +15531,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -16162,15 +15652,9 @@ export interface components {
             personas?: components["schemas"]["CreatePersonaItem"][] | null;
             /**
              * Idempotency Key
-             * @description Idempotency key — safe-retry replay on the first call; ack of a dormant create when sent with accept
+             * @description Operation key for ack — promotes or rejects a dormant create
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the response echoes a server key to ack with ({idempotency_key, accept})
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -16332,12 +15816,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -16463,12 +15941,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant create
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -16600,12 +16072,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -16735,12 +16201,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant create
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -16932,12 +16392,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -17098,16 +16552,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * CreateSimulationApiResponse
@@ -17223,12 +16672,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant create
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the create dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -17707,11 +17150,6 @@ export interface components {
              * @description Search string for scenarios
              */
             scenario_search?: string | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /** DashboardRubricMeta */
         DashboardRubricMeta: {
@@ -17842,11 +17280,6 @@ export interface components {
              * @description Key identifier to decrypt
              */
             key_id: string;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * DecryptInvocationKeyApiResponse
@@ -17886,11 +17319,6 @@ export interface components {
              * @description Key identifier to decrypt
              */
             key_id: string;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * DecryptProviderKeyApiResponse
@@ -17930,11 +17358,6 @@ export interface components {
              * @description UUID of the key to decrypt
              */
             key_id: string;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * DecryptSettingKeyApiResponse
@@ -18033,16 +17456,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * DeleteAgentApiResponse
@@ -18137,12 +17555,6 @@ export interface components {
              * @description Operation key for ack — confirms or rejects a dormant delete
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
@@ -18262,16 +17674,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * DeleteCohortApiResponse
@@ -18356,12 +17763,6 @@ export interface components {
              * @description Operation key for ack — confirms or rejects a dormant delete
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
@@ -18481,16 +17882,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * DeleteDocumentApiResponse
@@ -18584,12 +17980,6 @@ export interface components {
              * @description Operation key for ack — confirms or rejects a dormant delete
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
@@ -18709,16 +18099,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * DeleteFieldApiResponse
@@ -18832,12 +18217,6 @@ export interface components {
              * @description Operation key for ack — confirms or rejects a dormant delete
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
@@ -18956,12 +18335,6 @@ export interface components {
              * @description Operation key for ack — confirms or rejects a dormant delete
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
@@ -19096,12 +18469,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the delete dormant — propose; the ack ({idempotency_key, accept}) confirms/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
              */
@@ -19221,12 +18588,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -19340,12 +18701,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -19453,12 +18808,6 @@ export interface components {
              * @description Operation key for ack — confirms or rejects a dormant delete
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
@@ -19577,12 +18926,6 @@ export interface components {
              * @description Operation key for ack — confirms or rejects a dormant delete
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
@@ -19718,12 +19061,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -19842,16 +19179,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * DeleteSimulationApiResponse
@@ -19961,12 +19293,6 @@ export interface components {
              * @description Operation key for ack — confirms or rejects a dormant delete
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the delete dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (confirm) or reject dormant state. Only meaningful with idempotency_key
@@ -20274,12 +19600,6 @@ export interface components {
             entity_id?: string | null;
             /** Snapshot Key */
             snapshot_key?: string | null;
-            /**
-             * Schema
-             * @description If true, include MCP/tooling schema metadata (artifact, entries, resources, permission_docs, api_operations). Defaults to false for lean page-bootstrap responses.
-             * @default false
-             */
-            schema: boolean;
         };
         /** DocsApiResponse */
         DocsApiResponse: {
@@ -21097,16 +20417,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * DuplicateAgentApiResponse
@@ -21151,12 +20466,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant duplicate
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -21212,16 +20521,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * DuplicateCohortApiResponse
@@ -21263,12 +20567,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant duplicate
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -21321,16 +20619,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * DuplicateDocumentApiResponse
@@ -21375,12 +20668,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant duplicate
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -21433,16 +20720,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /** DuplicateFieldApiResponse */
         DuplicateFieldApiResponse: {
@@ -21484,12 +20766,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant duplicate
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -21541,12 +20817,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant duplicate
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -21603,12 +20873,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -21659,12 +20923,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant duplicate
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -21725,12 +20983,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -21778,12 +21030,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant duplicate
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -21835,12 +21081,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant duplicate
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -21896,12 +21136,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -21956,16 +21190,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * DuplicateSimulationApiResponse
@@ -22007,12 +21236,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant duplicate
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the duplicate dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -22096,31 +21319,16 @@ export interface components {
         EmulateProfileApiRequest: {
             /**
              * Target Profile Id
-             * @description UUID of the profile to emulate (omit on the ack call)
+             * Format: uuid
+             * @description UUID of the profile to emulate
              */
-            target_profile_id?: string | null;
+            target_profile_id: string;
             /**
              * Ttl Minutes
              * @description Emulation duration in minutes
              * @default 120
              */
             ttl_minutes: number | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency / soft-call key. Echo the server-minted value with accept to promote/reject a staged emulation.
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the emulation grant dormant (active=False) — it impersonates nothing until accepted
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True promotes the staged emulation, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * EmulateProfileApiResponse
@@ -22147,11 +21355,6 @@ export interface components {
              * @description When the emulation grant expires
              */
             expires_at?: string | null;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with accept to promote/reject the staged emulation.
-             */
-            idempotency_key?: string | null;
         };
         /** EvalDepartmentResource */
         EvalDepartmentResource: {
@@ -22574,6 +21777,27 @@ export interface components {
              */
             pending: boolean;
         };
+        /**
+         * EvalModelRubricValue
+         * @description Inline-create shape for model_rubrics junction rows. Clients send
+         *     these on draft save when the user has picked a rubric for a model but
+         *     no model_rubrics_resource row exists yet; the server upserts the row
+         *     and merges the resulting id into model_rubric_ids.
+         */
+        EvalModelRubricValue: {
+            /**
+             * Model Id
+             * Format: uuid
+             * @description Target model identifier
+             */
+            model_id: string;
+            /**
+             * Rubric Id
+             * Format: uuid
+             * @description Selected rubric identifier
+             */
+            rubric_id: string;
+        };
         /** EvalNameResource */
         EvalNameResource: {
             /**
@@ -22685,22 +21909,6 @@ export interface components {
              * @description UUID of the agent to export
              */
             agent_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (active=False); ack with accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True promotes the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportAgentApiResponse
@@ -22723,11 +21931,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportAttemptApiRequest
@@ -22783,22 +21986,6 @@ export interface components {
              * @description Optional sub-mode within a view. Currently recognized: view=reports → mode='brightspace' (gradebook CSV only); view=home → mode='certificate' (PDF cert only) or 'attempts' (CSV only). Default (None) returns the full per-view bundle.
              */
             mode?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export; on the ack, the server-minted soft key to activate/reject a staged export
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (file chain active=False) — agent proposes; accept activates. Sim-env 'dormant export' primitive.
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True activates the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportAttemptApiResponse
@@ -22826,11 +22013,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with accept to activate/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportAuthApiRequest
@@ -22842,11 +22024,6 @@ export interface components {
              * @description UUID of the auth provider to export
              */
             auth_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportAuthApiResponse
@@ -22881,22 +22058,6 @@ export interface components {
         ExportCohortApiRequest: {
             /** Cohort Id */
             cohort_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (active=False); ack with accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True promotes the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportCohortApiResponse
@@ -22919,11 +22080,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportDepartmentApiRequest
@@ -22935,22 +22091,6 @@ export interface components {
              * @description UUID of the department to export
              */
             department_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (active=False); ack with accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True promotes the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportDepartmentApiResponse
@@ -22973,11 +22113,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportDocumentApiRequest
@@ -22989,11 +22124,6 @@ export interface components {
              * @description Document UUID to export
              */
             document_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportDocumentApiResponse
@@ -23028,22 +22158,6 @@ export interface components {
         ExportEvalApiRequest: {
             /** Eval Id */
             eval_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (active=False); ack with accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True promotes the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportEvalApiResponse
@@ -23066,11 +22180,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportFieldApiRequest
@@ -23082,22 +22191,6 @@ export interface components {
              * @description UUID of the field to export
              */
             field_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (active=False); ack with accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True promotes the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportFieldApiResponse
@@ -23120,11 +22213,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportModelApiRequest
@@ -23136,22 +22224,6 @@ export interface components {
              * @description Model identifier to export
              */
             model_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (active=False); ack with accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True promotes the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportModelApiResponse
@@ -23174,11 +22246,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportParameterApiRequest
@@ -23190,22 +22257,6 @@ export interface components {
              * @description Parameter identifier to export
              */
             parameter_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (active=False); ack with accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True promotes the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportParameterApiResponse
@@ -23228,11 +22279,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportPersonaApiRequest
@@ -23249,22 +22295,6 @@ export interface components {
              * @description Cache snapshot key for consistent reads across related requests
              */
             snapshot_key?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (active=False); ack with accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True promotes the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
             /**
              * Search
              * @description Filter personas by search text
@@ -23312,11 +22342,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportProfileApiRequest
@@ -23328,11 +22353,6 @@ export interface components {
              * @description UUID of the profile to export
              */
             profile_export_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportProfileApiResponse
@@ -23370,22 +22390,6 @@ export interface components {
              * @description Provider identifier to export
              */
             provider_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (active=False); ack with accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True promotes the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportProviderApiResponse
@@ -23408,11 +22412,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportRubricApiRequest
@@ -23430,22 +22429,6 @@ export interface components {
              * @description Optional attempt chat UUID. When provided, the PDF highlights achieved/passed standards and renders per-standard feedback resolved from the chat's latest grade. Without it, an empty rubric template is returned.
              */
             chat_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (active=False); ack with accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True promotes the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportRubricApiResponse
@@ -23474,11 +22457,6 @@ export interface components {
              * @description Number of rows in the export (rubric standards)
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportScenarioApiRequest
@@ -23510,11 +22488,6 @@ export interface components {
              * @description Filter by department UUIDs
              */
             filter_department_ids?: string[] | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportScenarioApiResponse
@@ -23552,22 +22525,6 @@ export interface components {
              * @description UUID of the setting to export
              */
             setting_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (active=False); ack with accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True promotes the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportSettingApiResponse
@@ -23590,11 +22547,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportSimulationApiRequest
@@ -23626,22 +22578,6 @@ export interface components {
              * @description Filter by department UUIDs
              */
             filter_department_ids?: string[] | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (active=False); ack with accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True promotes the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportSimulationApiResponse
@@ -23664,11 +22600,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportSystemApiRequest
@@ -23699,22 +22630,6 @@ export interface components {
              * @description Optional sub-mode within a view. Currently recognized: view=reports → mode='brightspace' (gradebook CSV only); view=home → mode='certificate' (PDF cert only) or 'attempts' (CSV only). Default (None) returns the full per-view bundle.
              */
             mode?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export; on the ack, the server-minted soft key to activate/reject a staged export
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (file chain active=False) — agent proposes; accept activates. Sim-env 'dormant export' primitive.
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True activates the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportSystemApiResponse
@@ -23737,11 +22652,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with accept to activate/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportTestApiRequest
@@ -23778,22 +22688,6 @@ export interface components {
              * @description Optional sub-mode within a view. Currently recognized: view=reports → mode='brightspace' (gradebook CSV only); view=home → mode='certificate' (PDF cert only) or 'attempts' (CSV only). Default (None) returns the full per-view bundle.
              */
             mode?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export; on the ack, the server-minted soft key to activate/reject a staged export
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (file chain active=False) — agent proposes; accept activates. Sim-env 'dormant export' primitive.
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True activates the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportTestApiResponse
@@ -23816,11 +22710,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with accept to activate/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ExportToolApiRequest
@@ -23832,22 +22721,6 @@ export interface components {
              * @description Tool identifier to export
              */
             tool_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior export instead of re-running
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the export dormant (active=False); ack with accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True promotes the staged export, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * ExportToolApiResponse
@@ -23870,11 +22743,6 @@ export interface components {
              * @description Number of data rows in the export
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged export.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * FeedbackEntry
@@ -24480,11 +23348,6 @@ export interface components {
              * @description UUID of the created files_resource
              */
             file_id: string;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (the audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged upload.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * FilterOption
@@ -24866,11 +23729,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsAgentApiResponse
@@ -24953,11 +23811,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsAttemptApiResponse
@@ -25040,11 +23893,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsAuthApiResponse
@@ -25127,11 +23975,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsCohortApiResponse
@@ -25214,11 +24057,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsDepartmentApiResponse
@@ -25301,11 +24139,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsDocumentApiResponse
@@ -25388,11 +24221,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsEvalApiResponse
@@ -25475,11 +24303,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsFieldApiResponse
@@ -25562,11 +24385,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsModelApiResponse
@@ -25649,11 +24467,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsParameterApiResponse
@@ -25823,11 +24636,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsProfileApiResponse
@@ -25910,11 +24718,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsProviderApiResponse
@@ -25997,11 +24800,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsRubricApiResponse
@@ -26084,11 +24882,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsScenarioApiResponse
@@ -26171,11 +24964,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsSettingApiResponse
@@ -26258,11 +25046,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsSimulationApiResponse
@@ -26345,11 +25128,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsSystemApiResponse
@@ -26432,11 +25210,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsTestApiResponse
@@ -26519,11 +25292,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GenerationsToolApiResponse
@@ -26976,11 +25744,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetAgentDraftsApiResponse
@@ -27007,11 +25770,6 @@ export interface components {
              * @description UUID of the attempt to fetch
              */
             attempt_id: string;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetAttemptDetailResponse
@@ -27439,11 +26197,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetAuthDraftsApiResponse
@@ -27699,11 +26452,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetChatDraftsApiResponse
@@ -28229,11 +26977,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetCohortDraftsApiResponse
@@ -28477,11 +27220,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetDepartmentDraftsApiResponse
@@ -28816,11 +27554,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetDocumentDraftsApiResponse
@@ -29154,11 +27887,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetEvalDraftsApiResponse
@@ -29431,11 +28159,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetFieldDraftsApiResponse
@@ -29535,13 +28258,7 @@ export interface components {
          * GetHomeRequest
          * @description Request for home get endpoint — simulation cards only.
          */
-        GetHomeRequest: {
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
-        };
+        GetHomeRequest: Record<string, never>;
         /**
          * GetHomeResponse
          * @description Client-facing API response for home get (operational).
@@ -29888,11 +28605,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetInvocationDraftsApiResponse
@@ -30310,11 +29022,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetModelDraftsApiResponse
@@ -30579,11 +29286,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetParameterDraftsApiResponse
@@ -30924,11 +29626,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetPersonaDraftsApiResponse
@@ -30945,13 +29642,7 @@ export interface components {
          * GetPracticeRequest
          * @description Request for practice get endpoint — simulation cards only.
          */
-        GetPracticeRequest: {
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
-        };
+        GetPracticeRequest: Record<string, never>;
         /**
          * GetPracticeResponse
          * @description Client-facing API response for practice get (operational).
@@ -31262,11 +29953,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetProfileDraftsApiResponse
@@ -31568,11 +30254,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetProviderDraftsApiResponse
@@ -31869,11 +30550,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetRubricDraftsApiResponse
@@ -31918,11 +30594,6 @@ export interface components {
              * @description UUID of the draft
              */
             draft_id?: string | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
             names?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
             descriptions?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
             problem_statements?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
@@ -32267,11 +30938,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetScenarioDraftsApiResponse
@@ -32295,11 +30961,6 @@ export interface components {
              * @description UUID of the session to fetch
              */
             session_id: string;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetSessionDetailResponse
@@ -32622,10 +31283,10 @@ export interface components {
              */
             name: string;
             /**
-             * System Ids
-             * @description Associated system UUIDs
+             * Agent Ids
+             * @description Associated agent UUIDs
              */
-            system_ids: string[];
+            agent_ids: string[];
             /**
              * Auth Item Key Ids
              * @description Associated auth item key UUIDs
@@ -32686,10 +31347,10 @@ export interface components {
             /** Logins Ids */
             logins_ids?: string[] | null;
             /**
-             * Pending System Ids
-             * @description Pending system UUIDs
+             * Pending Agent Ids
+             * @description Pending agent UUIDs
              */
-            pending_system_ids?: string[];
+            pending_agent_ids?: string[];
             /**
              * Pending Auth Item Key Ids
              * @description Pending auth item key UUIDs
@@ -32786,11 +31447,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetSettingDraftsApiResponse
@@ -33136,11 +31792,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetSimulationDraftsApiResponse
@@ -33324,11 +31975,6 @@ export interface components {
              * @description Run IDs currently selected in the picker; messages preloaded for preview
              */
             configs_selected?: string[];
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetTestArtifactResponse
@@ -34039,11 +32685,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * GetToolDraftsApiResponse
@@ -35817,11 +34458,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * HealthResponse
@@ -36074,18 +34710,6 @@ export interface components {
             image_id: string;
         };
         /**
-         * ImageDownloadDocumentApiRequest
-         * @description Request model for document image download endpoint. Mirrors scenario.
-         */
-        ImageDownloadDocumentApiRequest: {
-            /**
-             * Image Id
-             * Format: uuid
-             * @description UUID of the images_resource to download
-             */
-            image_id: string;
-        };
-        /**
          * ImageDownloadGroupApiRequest
          * @description Request model for group image download endpoint.
          */
@@ -36131,29 +34755,6 @@ export interface components {
             description?: string | null;
         };
         /**
-         * ImageUploadDocumentApiResponse
-         * @description Response model for document image upload endpoint. Mirrors scenario.
-         */
-        ImageUploadDocumentApiResponse: {
-            /**
-             * Image Id
-             * Format: uuid
-             * @description UUID of the created images_resource
-             */
-            image_id: string;
-            /**
-             * Upload Id
-             * Format: uuid
-             * @description UUID of the underlying uploads_entry
-             */
-            upload_id: string;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (the audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged upload.
-             */
-            idempotency_key?: string | null;
-        };
-        /**
          * ImageUploadScenarioApiResponse
          * @description Response model for scenario image upload endpoint.
          */
@@ -36170,11 +34771,6 @@ export interface components {
              * @description UUID of the uploads_entry (file on disk)
              */
             upload_id: string;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key; echo with accept to promote/reject the staged upload.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ImportField
@@ -37335,11 +35931,6 @@ export interface components {
              * @default desc
              */
             sort_order: string;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * LeaderboardResources
@@ -37530,11 +36121,6 @@ export interface components {
              * @default desc
              */
             sort_order: string;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * ListActivityResponse
@@ -37577,10 +36163,10 @@ export interface components {
          */
         ListAgentApiAgent: {
             /**
-             * Agent Id
-             * @description UUID of the agent
+             * Id
+             * @description Agent artifact UUID (used for navigation to /platform/agents/[id])
              */
-            agent_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Display name
@@ -37822,10 +36408,10 @@ export interface components {
          */
         ListCohortApiCohort: {
             /**
-             * Cohort Id
-             * @description Cohort UUID
+             * Id
+             * @description Cohort artifact UUID (used for navigation to /platform/cohorts/[id])
              */
-            cohort_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Cohort name
@@ -38042,10 +36628,10 @@ export interface components {
         /** ListDepartmentApiDepartment */
         ListDepartmentApiDepartment: {
             /**
-             * Department Id
-             * @description Unique department identifier
+             * Id
+             * @description Department artifact UUID (used for navigation to /platform/departments/[id])
              */
-            department_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Department display name
@@ -38154,10 +36740,10 @@ export interface components {
          */
         ListDocumentApiDocument: {
             /**
-             * Document Id
-             * @description Document UUID
+             * Id
+             * @description Document artifact UUID (used for navigation to /platform/documents/[id])
              */
-            document_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Document name
@@ -38294,10 +36880,10 @@ export interface components {
          */
         ListEvalApiEval: {
             /**
-             * Eval Id
-             * @description Eval UUID
+             * Id
+             * @description Eval artifact UUID (used for navigation to /platform/evals/[id])
              */
-            eval_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Eval name
@@ -38426,10 +37012,10 @@ export interface components {
         /** ListFieldApiField */
         ListFieldApiField: {
             /**
-             * Field Id
-             * @description Unique field identifier
+             * Id
+             * @description Field artifact UUID (used for navigation to /platform/fields/[id])
              */
-            field_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Field display name
@@ -38590,10 +37176,10 @@ export interface components {
          */
         ListModelApiModel: {
             /**
-             * Model Id
-             * @description Model unique identifier
+             * Id
+             * @description Model artifact UUID (used for navigation to /platform/models/[id])
              */
-            model_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Display name of the model
@@ -38712,10 +37298,10 @@ export interface components {
         /** ListParameterApiParameter */
         ListParameterApiParameter: {
             /**
-             * Parameter Id
-             * @description Parameter unique identifier
+             * Id
+             * @description Parameter artifact UUID (used for navigation to /platform/parameters/[id])
              */
-            parameter_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Display name of the parameter
@@ -38834,10 +37420,10 @@ export interface components {
          */
         ListPersonaApiPersona: {
             /**
-             * Persona Id
-             * @description UUID of the persona
+             * Id
+             * @description Persona artifact UUID (used for navigation to /platform/personas/[id])
              */
-            persona_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Display name
@@ -39059,11 +37645,6 @@ export interface components {
              * @default desc
              */
             sort_order: string;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * ListPricingResponse
@@ -39106,10 +37687,10 @@ export interface components {
          */
         ListProfilesApiProfile: {
             /**
-             * Profile Id
-             * @description Unique profile identifier
+             * Id
+             * @description Profile artifact UUID (used for navigation to /platform/profiles/[id])
              */
-            profile_id?: string | null;
+            id?: string | null;
             /**
              * Emails
              * @description All email addresses for the profile
@@ -39236,10 +37817,10 @@ export interface components {
          */
         ListProviderApiProvider: {
             /**
-             * Provider Id
-             * @description Provider unique identifier
+             * Id
+             * @description Provider artifact UUID (used for navigation to /platform/providers/[id])
              */
-            provider_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Display name of the provider
@@ -39391,10 +37972,10 @@ export interface components {
         /** ListRubricApiRubric */
         ListRubricApiRubric: {
             /**
-             * Rubric Id
-             * @description Rubric UUID
+             * Id
+             * @description Rubric artifact UUID (used for navigation to /platform/rubrics/[id])
              */
-            rubric_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Rubric name
@@ -39727,10 +38308,10 @@ export interface components {
          */
         ListScenarioApiScenario: {
             /**
-             * Scenario Id
-             * @description UUID of the scenario
+             * Id
+             * @description Scenario artifact UUID (used for navigation to /platform/scenarios/[id])
              */
-            scenario_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Display name
@@ -39939,10 +38520,10 @@ export interface components {
          */
         ListSettingApiSetting: {
             /**
-             * Settings Id
-             * @description Unique setting identifier
+             * Id
+             * @description Setting artifact UUID (used for navigation to /platform/settings/[id])
              */
-            settings_id?: string | null;
+            id?: string | null;
             /**
              * Created At
              * @description Timestamp when setting was created
@@ -40106,10 +38687,10 @@ export interface components {
          */
         ListSimulationApiSimulation: {
             /**
-             * Simulation Id
-             * @description UUID of the simulation
+             * Id
+             * @description Simulation artifact UUID (used for navigation to /platform/simulations/[id])
              */
-            simulation_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Display name
@@ -40247,10 +38828,10 @@ export interface components {
         /** ListToolApiTool */
         ListToolApiTool: {
             /**
-             * Tool Id
-             * @description Tool unique identifier
+             * Id
+             * @description Tool artifact UUID (used for navigation to /platform/tools/[id])
              */
-            tool_id?: string | null;
+            id?: string | null;
             /**
              * Name
              * @description Display name of the tool
@@ -41426,11 +40007,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseAuthCsvApiResponse
@@ -41448,11 +40024,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseCohortCsvApiResponse
@@ -41470,11 +40041,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseDepartmentCsvApiResponse
@@ -41492,11 +40058,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseDocumentCsvApiResponse
@@ -41514,11 +40075,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseEvalCsvApiResponse
@@ -41536,11 +40092,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseFieldCsvApiResponse
@@ -41558,11 +40109,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseModelCsvApiResponse
@@ -41580,11 +40126,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseParameterCsvApiResponse
@@ -41602,11 +40143,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParsePersonaCsvApiResponse
@@ -41634,11 +40170,6 @@ export interface components {
              * @description Number of data rows parsed
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseProfileCsvApiResponse
@@ -41656,11 +40187,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseProviderCsvApiResponse
@@ -41678,11 +40204,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseRubricCsvApiResponse
@@ -41700,11 +40221,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseScenarioCsvApiResponse
@@ -41732,11 +40248,6 @@ export interface components {
              * @description Number of data rows parsed
              */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseSettingCsvApiResponse
@@ -41754,11 +40265,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseSimulationCsvApiResponse
@@ -41776,11 +40282,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ParseToolCsvApiResponse
@@ -41798,11 +40299,6 @@ export interface components {
             mapped_fields: string[];
             /** Row Count */
             row_count: number;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged raw-CSV upload. NOTE: ack returns no items (the preview is only on the propose).
-             */
-            idempotency_key?: string | null;
         };
         /**
          * PatchAgentDraftApiRequest
@@ -41838,16 +40334,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Whether pending changes should be accepted
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
             /**
              * Name
              * @description Display name value
@@ -42022,12 +40513,6 @@ export interface components {
              * @description Stable idempotency key for ack/promote flows
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Whether to accept a pending draft when acknowledging
@@ -42358,16 +40843,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept or reject dormant draft state
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * PatchCohortDraftApiResponse
@@ -42464,12 +40944,6 @@ export interface components {
              * @description Operation key for ack or retry
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept or reject dormant state
@@ -42606,16 +41080,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * PatchDocumentDraftApiResponse
@@ -42742,6 +41211,11 @@ export interface components {
              */
             model_rubric_ids?: string[] | null;
             /**
+             * Model Rubrics
+             * @description Inline-create shape for model_rubrics junction rows: list of {model_id, rubric_id}. Resolver upserts the junction row and merges the id into model_rubric_ids.
+             */
+            model_rubrics?: components["schemas"]["EvalModelRubricValue"][] | null;
+            /**
              * Pending Ids
              * @description Resource IDs to keep inactive on the draft
              */
@@ -42751,12 +41225,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant draft
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept or reject dormant state. Only meaningful with idempotency_key
@@ -42875,16 +41343,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept or reject dormant state
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * PatchFieldDraftApiResponse
@@ -43099,12 +41562,6 @@ export interface components {
              * @description Operation key for accept/reject style ack
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept or reject when idempotency_key is supplied
@@ -43373,12 +41830,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept or reject dormant state
              */
@@ -43538,12 +41989,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -43673,12 +42118,6 @@ export interface components {
              * @description Idempotency key for draft writes
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Whether to accept the pending draft state
@@ -43837,12 +42276,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept or reject acknowledgement when idempotency_key is supplied
              */
@@ -43991,12 +42424,6 @@ export interface components {
              * @description Operation key for ack or retry
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept or reject dormant state
@@ -44200,12 +42627,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -44261,12 +42682,6 @@ export interface components {
              * @description Operation key for accept/reject acknowledgement
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept or reject pending draft state when used with idempotency_key
@@ -44563,16 +42978,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * PatchSimulationDraftApiResponse
@@ -44719,12 +43129,6 @@ export interface components {
              * @description Operation key for ack semantics
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the draft dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept or reject acknowledgement when idempotency_key is supplied
@@ -45566,11 +43970,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * PricingResources
@@ -45737,8 +44136,9 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * ProblemAgentApiResponse
@@ -45784,11 +44184,6 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call instead of re-running
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ProblemAttemptApiResponse
@@ -45892,8 +44287,9 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * ProblemCohortApiResponse
@@ -46002,8 +44398,9 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * ProblemDocumentApiResponse
@@ -46112,8 +44509,9 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * ProblemFieldApiResponse
@@ -46612,8 +45010,9 @@ export interface components {
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * ProblemSimulationApiResponse
@@ -46675,11 +45074,6 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call instead of re-running
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ProblemSystemApiResponse
@@ -46720,11 +45114,6 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call instead of re-running
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ProblemTestApiResponse
@@ -47857,39 +46246,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
-        };
-        /**
-         * RefreshApiRequest
-         * @description Optional request body for artifact refresh endpoints.
-         *
-         *     All fields optional so a bare ``POST /<artifact>/refresh`` (no body) still
-         *     works. ``idempotency_key`` drives the replay gate; ``soft``/``accept`` use the
-         *     lightweight ``enqueue_refreshes`` lifecycle (record intent without enqueuing;
-         *     ack enqueues) — safe at HTTP (no soft_calls_entry FK; keyed by operation_key).
-         */
-        RefreshApiRequest: {
-            /**
-             * Idempotency Key
-             * @description Idempotency key — safe-retry replay; ack of a staged (held) refresh when sent with accept
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the refresh as held (recorded, not enqueued); accept releases it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Accept (enqueue) or reject a held refresh. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * RefreshAuthApiRequest
@@ -47912,12 +46268,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * RefreshCohortApiRequest
@@ -47940,12 +46290,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * RefreshDepartmentApiRequest
@@ -47968,12 +46312,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * RefreshDocumentApiRequest
@@ -47996,12 +46334,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * RefreshEvalApiRequest
@@ -48024,12 +46356,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * RefreshFieldApiRequest
@@ -48052,12 +46378,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * RefreshModelApiRequest
@@ -48080,12 +46400,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * RefreshParameterApiRequest
@@ -48108,40 +46422,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
-        };
-        /**
-         * RefreshPersonaApiRequest
-         * @description Request model for persona refresh endpoint.
-         */
-        RefreshPersonaApiRequest: {
-            /**
-             * Targets
-             * @description MV targets to refresh (omit for all). Options: personas_mv, persona_drafts_mv
-             */
-            targets?: string[] | null;
-            /**
-             * Idempotency Key
-             * @description Operation key for ack
-             */
-            idempotency_key?: string | null;
-            /**
-             * Accept
-             * @description Accept or reject. Only meaningful with idempotency_key
-             * @default true
-             */
-            accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * RefreshProfileApiRequest
@@ -48164,12 +46444,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * RefreshProviderApiRequest
@@ -48192,12 +46466,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * RefreshResponse
@@ -48239,12 +46507,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * RefreshScenarioApiRequest
@@ -48267,12 +46529,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * RefreshSettingApiRequest
@@ -48295,12 +46551,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * RefreshSimulationApiRequest
@@ -48323,12 +46573,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * RefreshToolApiRequest
@@ -48351,12 +46595,6 @@ export interface components {
              * @default true
              */
             accept: boolean;
-            /**
-             * Soft
-             * @description Stage the refresh as a pending (held) request — recorded but not enqueued; ack with accept releases/enqueues it
-             * @default false
-             */
-            soft: boolean;
         };
         /**
          * ReplacementEntry
@@ -49004,11 +47242,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * ReportsResources
@@ -49326,11 +47559,6 @@ export interface components {
              * @default true
              */
             resolved: boolean;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call instead of re-running
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ResolveProblemApiResponse
@@ -49365,8 +47593,6 @@ export interface components {
             is_correct?: boolean | null;
             /** Response Id */
             response_id?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
         };
         /**
          * RubricDepartmentResource
@@ -50051,34 +48277,6 @@ export interface components {
              * @description UUID of the pricing configuration
              */
             pricing_id?: string | null;
-        };
-        /**
-         * RunStatus
-         * @description Outcome of one watched run.
-         */
-        RunStatus: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "completed" | "failed";
-            /**
-             * Modality
-             * @description Modality of generated output (image, video, text…)
-             */
-            modality?: string | null;
-            /**
-             * Resource Ids
-             * @description Resource UUIDs produced by this run (e.g. images_resource ids)
-             */
-            resource_ids?: string[];
-            /** Error */
-            error?: string | null;
         };
         /**
          * RunViewItem
@@ -51026,11 +49224,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchAttemptApiRequest
@@ -51143,11 +49336,6 @@ export interface components {
              * @default 20
              */
             page_size: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchAuthApiRequest
@@ -51170,11 +49358,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchCohortApiRequest
@@ -51207,11 +49390,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchDepartmentApiRequest
@@ -51230,11 +49408,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchDocumentApiRequest
@@ -51265,11 +49438,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchEvalApiRequest
@@ -51292,11 +49460,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchFieldApiRequest
@@ -51327,11 +49490,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /** SearchMessageResponse */
         SearchMessageResponse: {
@@ -51424,11 +49582,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchParameterApiRequest
@@ -51459,11 +49612,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchPersonaApiRequest
@@ -51572,11 +49720,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchProviderApiRequest
@@ -51605,11 +49748,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchRubricApiRequest
@@ -51636,11 +49774,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchScenarioApiRequest
@@ -51673,23 +49806,12 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchSettingApiRequest
          * @description Request model for setting search endpoint.
          */
-        SearchSettingApiRequest: {
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
-        };
+        SearchSettingApiRequest: Record<string, never>;
         /**
          * SearchSimulationApiRequest
          * @description Request model for simulation search endpoint.
@@ -51721,11 +49843,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchTestApiRequest
@@ -51756,11 +49873,6 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /**
          * SearchTestApiResponse
@@ -51877,11 +49989,6 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
-            /**
-             * Snapshot Key
-             * @description Cache snapshot key for consistent reads across related requests
-             */
-            snapshot_key?: string | null;
         };
         /** SecondaryAttemptImprovement */
         SecondaryAttemptImprovement: {
@@ -54416,8 +52523,6 @@ export interface components {
             invocation_id?: string | null;
             /** Benchmark Id */
             benchmark_id?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
         };
         /**
          * StarterPrompt
@@ -54443,8 +52548,6 @@ export interface components {
             success: boolean;
             /** Message */
             message?: string | null;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
         };
         /** TableInfo */
         TableInfo: {
@@ -54473,8 +52576,6 @@ export interface components {
              * @default 0
              */
             completed_count: number;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
         };
         /**
          * TestCompletePayload
@@ -54489,22 +52590,6 @@ export interface components {
              * @description UUID of the test
              */
             test_id: string;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call; on the ack, the server-minted soft key to activate/reject the staged completion
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the completion dormant (all completion rows active=False); accept activates the whole set
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True activates the staged completion, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * TestConfigGroup
@@ -54681,8 +52766,6 @@ export interface components {
              * @default true
              */
             success: boolean;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
         };
         /**
          * TestInvocationCompletePayload
@@ -54711,22 +52794,6 @@ export interface components {
              * @default
              */
             message: string;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call; on the ack, the server-minted soft key to activate/reject the staged completion
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the completion dormant (active=False); accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True activates the staged completion, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * TestResources
@@ -54883,11 +52950,6 @@ export interface components {
              * @default
              */
             message: string;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call instead of re-running
-             */
-            idempotency_key?: string | null;
         };
         /** TestRunEndResponse */
         TestRunEndResponse: {
@@ -54910,8 +52972,6 @@ export interface components {
              * @default true
              */
             success: boolean;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
         };
         /**
          * TestRunItem
@@ -55001,22 +53061,6 @@ export interface components {
              * @description UUID of the runs_entry to bind
              */
             run_id: string;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call; on the ack, the server-minted soft key to activate/reject the staged run binding
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the run binding dormant (active=False); accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True activates the staged run binding, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * TestStartPayload
@@ -55039,22 +53083,6 @@ export interface components {
              * @default false
              */
             infinite_mode: boolean;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call; on the ack, the server-minted soft key to activate/reject the staged test
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the test dormant (test+benchmark_test active=False); accept activates it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True activates the staged test, False rejects. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /** TestStatusSummary */
         TestStatusSummary: {
@@ -55094,22 +53122,6 @@ export interface components {
              * @description UUID of the test invocation to stop
              */
             invocation_id: string;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call; on the ack, the server-minted soft key to emit/discard the staged stop
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the stop (record intent without emitting); accept emits it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True emits the staged stop, False discards. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /** TestTraceInternalResult */
         TestTraceInternalResult: {
@@ -55120,8 +53132,6 @@ export interface components {
              * @default true
              */
             success: boolean;
-            /** Idempotency Key */
-            idempotency_key?: string | null;
         };
         /**
          * TestTracePayload
@@ -55180,22 +53190,6 @@ export interface components {
              * @description User-typed instruction templates; each minted separately
              */
             instructions?: string[] | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency key — replays the prior call; on the ack, the server-minted soft key to perform/discard the staged trace
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the trace (store intent without creating); accept performs it
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True performs the staged trace, False discards. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
         };
         /**
          * TextDownloadAgentApiRequest
@@ -55451,11 +53445,6 @@ export interface components {
              * @description UUID of the uploads_entry (file on disk)
              */
             upload_id: string;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (the audit call_id). On a soft propose, echo this back with `accept` to promote/reject the staged upload.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * ThemeBundle
@@ -57699,25 +55688,9 @@ export interface components {
         UnemulateProfileApiRequest: {
             /**
              * Target Profile Id
-             * @description Profile ID to stop emulating (omit on the ack call)
+             * @description Profile ID to stop emulating
              */
-            target_profile_id?: string | null;
-            /**
-             * Idempotency Key
-             * @description Idempotency / soft-call key. Echo the server-minted value with accept to perform/reject a proposed unemulation.
-             */
-            idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Propose the unemulation without performing it — emulation continues until accepted (record-and-hold)
-             * @default false
-             */
-            soft: boolean;
-            /**
-             * Accept
-             * @description Ack: True performs the proposed unemulation, False discards it. Only meaningful with idempotency_key
-             */
-            accept?: boolean | null;
+            target_profile_id: string;
         };
         /**
          * UnemulateProfileApiResponse
@@ -57734,11 +55707,6 @@ export interface components {
              * @description Reason if unemulation failed
              */
             reason?: string | null;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key (audit call_id). On a soft propose, echo this back with accept to perform/reject the proposed unemulation.
-             */
-            idempotency_key?: string | null;
         };
         /**
          * UpdateAgentApiRequest
@@ -57819,16 +55787,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * UpdateAgentApiResponse
@@ -58072,12 +56035,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant update
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -58352,16 +56309,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * UpdateCohortApiResponse
@@ -58606,12 +56558,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -58825,16 +56771,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * UpdateDocumentApiResponse
@@ -59060,12 +57001,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant update
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -59322,16 +57257,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * UpdateFieldApiResponse
@@ -59557,12 +57487,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant update
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -59859,12 +57783,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -60092,12 +58010,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant update
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -60434,12 +58346,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -60658,12 +58564,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant update
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -60897,12 +58797,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant update
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -61176,12 +59070,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant update
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -61593,12 +59481,6 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
              */
@@ -61934,16 +59816,11 @@ export interface components {
              */
             idempotency_key?: string | null;
             /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
-            /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
              */
-            accept?: boolean | null;
+            accept: boolean;
         };
         /**
          * UpdateSimulationApiResponse
@@ -62194,12 +60071,6 @@ export interface components {
              * @description Operation key for ack — promotes or rejects a dormant update
              */
             idempotency_key?: string | null;
-            /**
-             * Soft
-             * @description Stage the update dormant (active=False) — propose; the ack ({idempotency_key, accept}) promotes/rejects it
-             * @default false
-             */
-            soft: boolean;
             /**
              * Accept
              * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
@@ -62465,68 +60336,6 @@ export interface components {
              * @description UUID of the uploads_entry (file on disk)
              */
             upload_id: string;
-            /**
-             * Idempotency Key
-             * @description Server-minted soft-call key; echo with accept to promote/reject the staged upload.
-             */
-            idempotency_key?: string | null;
-        };
-        /**
-         * WatchApiRequest
-         * @description Watch a group's run for terminal events (or take a snapshot).
-         */
-        WatchApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Chat group whose events we watch
-             */
-            group_id: string;
-            /**
-             * Run Id
-             * @description Specific run to watch (e.g. the ``run_id`` returned by a prior ``X_Generate`` call). If None, watches every active run in the group at call time.
-             */
-            run_id?: string | null;
-            /**
-             * Wait For Complete
-             * @description If True, block until the watched run reaches a terminal (complete/failed) event or timeout fires. If False, return current state and exit immediately.
-             * @default true
-             */
-            wait_for_complete: boolean;
-            /**
-             * Timeout Seconds
-             * @description Max wait time when ``wait_for_complete=True``.
-             * @default 120
-             */
-            timeout_seconds: number;
-            /**
-             * Snapshot Key
-             * @description Read snapshot key — on the one-shot POST /watch, the audit wrapper records this watch's point-in-time view (latest run state at call time) keyed by it and replays the same view on any later call with the same key. Ignored by the SSE GET stream.
-             */
-            snapshot_key?: string | null;
-        };
-        /**
-         * WatchApiResponse
-         * @description One-shot view of run states with any captured resource ids.
-         */
-        WatchApiResponse: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Runs */
-            runs: components["schemas"]["RunStatus"][];
-            /**
-             * Timed Out
-             * @default false
-             */
-            timed_out: boolean;
-            /**
-             * Waited Seconds
-             * @default 0
-             */
-            waited_seconds: number;
         };
         /**
          * DraftFormState
@@ -64909,7 +62718,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_persona_csv_persona_csv_post"];
             };
@@ -65305,11 +63114,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RefreshPersonaApiRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -65318,15 +63123,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -65351,39 +63147,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    persona_watch_once_persona_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -65635,7 +63398,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_scenario_csv_scenario_csv_post"];
             };
@@ -66090,39 +63853,6 @@ export interface operations {
             };
         };
     };
-    scenario_watch_once_scenario_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     download_image_scenario_image_download_post: {
         parameters: {
             query?: never;
@@ -66166,7 +63896,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_upload_image_scenario_image_upload_post"];
             };
@@ -66235,7 +63965,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_upload_video_scenario_video_upload_post"];
             };
@@ -66565,7 +64295,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_simulation_csv_simulation_csv_post"];
             };
@@ -66974,39 +64704,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    simulation_watch_once_simulation_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67654,7 +65351,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_document_csv_document_csv_post"];
             };
@@ -67713,39 +65410,6 @@ export interface operations {
             };
         };
     };
-    document_watch_once_document_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     download_text_document_text_download_post: {
         parameters: {
             query?: never;
@@ -67786,7 +65450,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_upload_text_document_text_upload_post"];
             };
@@ -67885,7 +65549,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_upload_file_document_file_upload_post"];
             };
@@ -67898,75 +65562,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FileUploadDocumentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_image_document_image_upload_post: {
-        parameters: {
-            query?: {
-                name?: string | null;
-                description?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_image_document_image_upload_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImageUploadDocumentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_image_document_image_download_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ImageDownloadDocumentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -68383,7 +65978,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_department_csv_department_csv_post"];
             };
@@ -68594,39 +66189,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    department_watch_once_department_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69076,7 +66638,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_cohort_csv_cohort_csv_post"];
             };
@@ -69333,39 +66895,6 @@ export interface operations {
             };
         };
     };
-    cohort_watch_once_cohort_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     download_text_cohort_text_download_post: {
         parameters: {
             query?: never;
@@ -69604,7 +67133,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_eval_csv_eval_csv_post"];
             };
@@ -70046,39 +67575,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    eval_watch_once_eval_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70561,7 +68057,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_rubric_csv_rubric_csv_post"];
             };
@@ -70772,39 +68268,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    rubric_watch_once_rubric_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71287,7 +68750,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_setting_csv_setting_csv_post"];
             };
@@ -71531,39 +68994,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    setting_watch_once_setting_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71848,7 +69278,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_agent_csv_agent_csv_post"];
             };
@@ -72257,39 +69687,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    agent_watch_once_agent_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72772,7 +70169,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_model_csv_model_csv_post"];
             };
@@ -72983,39 +70380,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    model_watch_once_model_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73498,7 +70862,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_provider_csv_provider_csv_post"];
             };
@@ -73742,39 +71106,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    provider_watch_once_provider_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74257,7 +71588,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_parameter_csv_parameter_csv_post"];
             };
@@ -74468,39 +71799,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    parameter_watch_once_parameter_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74983,7 +72281,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_field_csv_field_csv_post"];
             };
@@ -75194,39 +72492,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    field_watch_once_field_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75478,7 +72743,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_profile_csv_profile_csv_post"];
             };
@@ -75900,39 +73165,6 @@ export interface operations {
             };
         };
     };
-    profile_watch_once_profile_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_profile_context_profile_context_post: {
         parameters: {
             query?: never;
@@ -76303,7 +73535,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_auth_csv_auth_csv_post"];
             };
@@ -76712,39 +73944,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    auth_watch_once_auth_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77260,7 +74459,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_parse_tool_csv_tool_csv_post"];
             };
@@ -77471,39 +74670,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tool_watch_once_tool_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77755,11 +74921,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["RefreshApiRequest"] | null;
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -77768,15 +74930,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -78098,39 +75251,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_watch_once_attempt_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79242,11 +76362,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["RefreshApiRequest"] | null;
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -79255,15 +76371,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -79688,39 +76795,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    test_watch_once_test_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80500,11 +77574,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["RefreshApiRequest"] | null;
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -80513,15 +77583,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -80546,39 +77607,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    system_watch_once_system_watch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WatchApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81304,6 +78332,26 @@ export interface operations {
         };
     };
     root_info__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    docs_mcp_proxy_docs_mcp_post: {
         parameters: {
             query?: never;
             header?: never;

@@ -167,7 +167,7 @@ export default function Fields({
     // audit events that nothing is subscribed to → no ghost.
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseFields,
-    rowKey: "field_id",
+    rowKey: "id",
     // ``fields`` plural matches the field name the create / duplicate /
     // update impls now include on their responses (see
     // ``hydrate_field_list_rows``). The hook reads ``output.fields``
@@ -263,7 +263,7 @@ export default function Fields({
     : selectedFieldIds.length;
 
   const selectedFields = useMemo(() => {
-    return fields.filter((f) => f.field_id && isSelected(f.field_id));
+    return fields.filter((f) => f.id && isSelected(f.id));
   }, [fields, isSelected]);
   const deletableFields = useMemo(
     () => selectedFields.filter((f) => f.can_delete),
@@ -303,7 +303,7 @@ export default function Fields({
   }, [setSelectedFieldIds, setSelectAllMatching, setExcludedFieldIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = fields.filter((f) => f.field_id).map((f) => f.field_id!);
+    const pageIds = fields.filter((f) => f.id).map((f) => f.id!);
     void setSelectAllMatching(false);
     void setExcludedFieldIds([]);
     void setSelectedFieldIds((prev) => Array.from(new Set([...prev, ...pageIds])));
@@ -313,7 +313,7 @@ export default function Fields({
   // all-matching mode every loaded row whose id isn't in
   // ``excludedFieldIds`` is implicitly selected.
   const allPageSelected = useMemo(() => {
-    const pageIds = fields.filter((f) => f.field_id).map((f) => f.field_id!);
+    const pageIds = fields.filter((f) => f.id).map((f) => f.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [fields, isSelected]);
@@ -636,7 +636,7 @@ export default function Fields({
             accept: true,
           }
         : {
-            field_ids: deletableFields.map((f) => f.field_id!),
+            field_ids: deletableFields.map((f) => f.id!),
             accept: true,
           };
 
@@ -709,7 +709,7 @@ export default function Fields({
             flag_ids = bulkEditActiveStatus && activeFlagId ? [activeFlagId] : [];
           }
           return {
-            id: f.field_id!,
+            id: f.id!,
             ...(hasActiveChange && { flag_ids }),
           };
         });
@@ -763,14 +763,14 @@ export default function Fields({
     const isFailed = ghostState === "failed";
 
     const isRowSelected =
-      !isGhost && field.field_id ? isSelected(field.field_id) : false;
+      !isGhost && field.id ? isSelected(field.id) : false;
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons or when
       // rendering as a ghost (no real id to select yet).
       if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
-      if (field.field_id) {
-        toggleSelection(field.field_id);
+      if (field.id) {
+        toggleSelection(field.id);
       }
     };
 
@@ -789,12 +789,12 @@ export default function Fields({
 
     return (
       <Card
-        key={field.field_id}
+        key={field.id}
         className={`group flex flex-col h-full hover:shadow-md transition-all ${
           isGhost ? "" : "cursor-pointer"
         } ${ghostBorderClass} ${isRowSelected ? "ring-2 ring-primary" : ""}`}
-        data-testid={isGhost ? "field-ghost-card" : `field-card-${field.field_id}`}
-        data-field-id={field.field_id}
+        data-testid={isGhost ? "field-ghost-card" : `field-card-${field.id}`}
+        data-field-id={field.id}
         data-ghost-state={ghostState}
         role="gridcell"
         aria-label={`field card ${field.name || (isGhost ? "Generating" : "Unnamed Field")}`}
@@ -819,7 +819,7 @@ export default function Fields({
                   <Checkbox
                     checked={isRowSelected}
                     onCheckedChange={() => {
-                      if (field.field_id) toggleSelection(field.field_id);
+                      if (field.id) toggleSelection(field.id);
                     }}
                     className="rounded-full h-5 w-5"
                     aria-label={`Select field ${field.name || "Unnamed"}`}
@@ -883,17 +883,17 @@ export default function Fields({
                   {ghost.error}
                 </span>
               )}
-              {!isGhost && field.field_id && (
+              {!isGhost && field.id && (
                 <>
                   <Button
                     asChild
                     variant="outline"
                     size="sm"
-                    data-testid={`view-${field.field_id}`}
+                    data-testid={`view-${field.id}`}
                     title="View"
                   >
                     <HoverPrefetchLink
-                      href={`/management/fields/${field.field_id}`}
+                      href={`/management/fields/${field.id}`}
                       delay={150}
                       aria-label={`View ${field.name ?? ""}`}
                     >
@@ -905,10 +905,10 @@ export default function Fields({
                       asChild
                       variant="outline"
                       size="sm"
-                      data-testid={`edit-${field.field_id}`}
+                      data-testid={`edit-${field.id}`}
                     >
                       <HoverPrefetchLink
-                        href={`/management/fields/${field.field_id}`}
+                        href={`/management/fields/${field.id}`}
                         delay={150}
                         aria-label={`Edit ${field.name ?? ""}`}
                       >
@@ -921,15 +921,15 @@ export default function Fields({
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const fieldId = field.field_id;
+                        const fieldId = field.id;
                         const fieldName = field.name ?? "";
                         if (fieldId) handleDuplicate(fieldId, fieldName);
                       }}
-                      disabled={isDuplicating === field.field_id}
+                      disabled={isDuplicating === field.id}
                       aria-label={`Duplicate ${field.name}`}
                       data-testid="btn-duplicate-field"
                     >
-                      {isDuplicating === field.field_id ? (
+                      {isDuplicating === field.id ? (
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                       ) : (
                         <Copy className="h-4 w-4" />
@@ -940,9 +940,9 @@ export default function Fields({
                     <Button
                       variant="outline"
                       size="sm"
-                      data-testid={`delete-${field.field_id}`}
+                      data-testid={`delete-${field.id}`}
                       onClick={() => {
-                        const fieldId = field.field_id;
+                        const fieldId = field.id;
                         const fieldName = field.name ?? "";
                         if (fieldId) handleDeleteClick(fieldId, fieldName);
                       }}
@@ -1232,7 +1232,7 @@ export default function Fields({
                           callId: fieldRow.pending_call_id,
                           op: (fieldRow.pending_operation as Ghost<(typeof fields)[0]>["op"]) ?? "create",
                           state: "pending",
-                          rowId: fieldRow.field_id ?? null,
+                          rowId: fieldRow.id ?? null,
                           partial: fieldRow as unknown as Ghost<(typeof fields)[0]>["partial"],
                           before: fieldRow,
                           tool: null,
@@ -1333,7 +1333,7 @@ export default function Fields({
                     <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                     <ul className="text-sm space-y-0.5">
                       {deletableFields.map((f) => (
-                        <li key={f.field_id} className="flex items-center gap-1.5">
+                        <li key={f.id} className="flex items-center gap-1.5">
                           <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                           {f.name || "Unnamed Field"}
                         </li>
@@ -1349,7 +1349,7 @@ export default function Fields({
                     <ul className="text-sm space-y-0.5">
                       {nonDeletableFields.map((f) => (
                         <li
-                          key={f.field_id}
+                          key={f.id}
                           className="flex items-center gap-1.5 text-muted-foreground"
                         >
                           {f.name || "Unnamed Field"}

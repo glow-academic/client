@@ -156,7 +156,7 @@ export default function Rubrics({
     // duplicating skeleton + pending soft state).
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseRubrics,
-    rowKey: "rubric_id",
+    rowKey: "id",
     // ``rubrics`` plural is auto-derived but kept explicit; matches
     // the response field on create/update/duplicate populated by
     // ``hydrate_rubric_list_rows``. The hook reads ``output.rubrics``
@@ -267,7 +267,7 @@ export default function Rubrics({
     : selectedRubricIds.length;
 
   const selectedRubrics = useMemo(() => {
-    return rubrics.filter((r) => r.rubric_id && isSelected(r.rubric_id));
+    return rubrics.filter((r) => r.id && isSelected(r.id));
   }, [rubrics, isSelected]);
   const deletableRubrics = useMemo(
     () => selectedRubrics.filter((r) => r.can_delete),
@@ -309,14 +309,14 @@ export default function Rubrics({
   }, [setSelectedRubricIds, setSelectAllMatching, setExcludedRubricIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = rubrics.filter((r) => r.rubric_id).map((r) => r.rubric_id!);
+    const pageIds = rubrics.filter((r) => r.id).map((r) => r.id!);
     void setSelectAllMatching(false);
     void setExcludedRubricIds([]);
     void setSelectedRubricIds((prev) => Array.from(new Set([...prev, ...pageIds])));
   }, [rubrics, setSelectAllMatching, setExcludedRubricIds, setSelectedRubricIds]);
 
   const allPageSelected = useMemo(() => {
-    const pageIds = rubrics.filter((r) => r.rubric_id).map((r) => r.rubric_id!);
+    const pageIds = rubrics.filter((r) => r.id).map((r) => r.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [rubrics, isSelected]);
@@ -752,10 +752,10 @@ export default function Rubrics({
       return;
     }
 
-    setIsDuplicating(rubric.rubric_id ?? null);
+    setIsDuplicating(rubric.id ?? null);
     try {
       await duplicateRubricAction({
-        body: { rubric_id: rubric.rubric_id ?? "", accept: true },
+        body: { rubric_id: rubric.id ?? "", accept: true },
       });
       toast.success(`Rubric "${rubric.name}" duplicated successfully`);
       router.refresh();
@@ -799,7 +799,7 @@ export default function Rubrics({
             accept: true,
           }
         : {
-            rubric_ids: deletableRubrics.map((r) => r.rubric_id!),
+            rubric_ids: deletableRubrics.map((r) => r.id!),
             accept: true,
           };
 
@@ -880,7 +880,7 @@ export default function Rubrics({
             flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
           }
           return {
-            id: r.rubric_id!,
+            id: r.id!,
             ...(hasAnyFlagChange && { flag_ids }),
           };
         });
@@ -952,14 +952,14 @@ export default function Rubrics({
         ? Math.round((totalPassPoints / totalPoints) * 100)
         : (rubric.pass_percentage ?? 0);
 
-    const cardIsSelected = !isGhost && isSelected(rubric.rubric_id);
+    const cardIsSelected = !isGhost && isSelected(rubric.id);
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons or when
       // rendering as a ghost (no real id to select).
       if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
-      if (rubric.rubric_id) {
-        toggleSelection(rubric.rubric_id);
+      if (rubric.id) {
+        toggleSelection(rubric.id);
       }
     };
 
@@ -978,12 +978,12 @@ export default function Rubrics({
 
     return (
       <Card
-        key={rubric.rubric_id}
+        key={rubric.id}
         className={`group w-full hover:shadow-md transition-all ${
           isGhost ? "" : "cursor-pointer"
         } ${ghostBorderClass} ${cardIsSelected ? "ring-2 ring-primary" : ""}`}
         data-testid={isGhost ? "rubric-ghost-card" : "rubric-card"}
-        data-rubric-id={rubric.rubric_id}
+        data-rubric-id={rubric.id}
         data-ghost-state={ghostState}
         role="gridcell"
         aria-label={`rubric card ${rubric.name || (isGhost ? "Generating" : "Unnamed Rubric")}`}
@@ -1010,7 +1010,7 @@ export default function Rubrics({
                     <Checkbox
                       checked={cardIsSelected}
                       onCheckedChange={() => {
-                        if (rubric.rubric_id) toggleSelection(rubric.rubric_id);
+                        if (rubric.id) toggleSelection(rubric.id);
                       }}
                       className="rounded-full h-5 w-5"
                       aria-label={`Select rubric ${rubric.name || "Unnamed"}`}
@@ -1093,7 +1093,7 @@ export default function Rubrics({
                   {ghost.error}
                 </span>
               )}
-              {!isGhost && rubric.rubric_id && (
+              {!isGhost && rubric.id && (
                 <>
                   {rubric.can_edit ? (
                     <Button
@@ -1102,7 +1102,7 @@ export default function Rubrics({
                       data-testid="btn-edit-rubric"
                     >
                       <HoverPrefetchLink
-                        href={`/platform/rubrics/${rubric.rubric_id}`}
+                        href={`/platform/rubrics/${rubric.id}`}
                         delay={150}
                         aria-label="Edit rubric"
                       >
@@ -1117,7 +1117,7 @@ export default function Rubrics({
                       data-testid="btn-view-rubric"
                     >
                       <HoverPrefetchLink
-                        href={`/platform/rubrics/${rubric.rubric_id}`}
+                        href={`/platform/rubrics/${rubric.id}`}
                         delay={150}
                         aria-label={`View ${rubric.name}`}
                       >
@@ -1130,11 +1130,11 @@ export default function Rubrics({
                     <Button
                       variant="outline"
                       onClick={() => handleDuplicate(rubric)}
-                      disabled={isDuplicating === rubric.rubric_id}
+                      disabled={isDuplicating === rubric.id}
                       data-testid="btn-duplicate-rubric"
                       aria-label="Duplicate rubric"
                     >
-                      {isDuplicating === rubric.rubric_id ? (
+                      {isDuplicating === rubric.id ? (
                         <>
                           <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 md:ml-0 mr-2" />
                           <span className="md:hidden">Duplicating...</span>
@@ -1151,8 +1151,8 @@ export default function Rubrics({
                     <Button
                       variant="outline"
                       onClick={() => {
-                        if (rubric.rubric_id) {
-                          handleDeleteClick(rubric.rubric_id, rubric.name ?? "");
+                        if (rubric.id) {
+                          handleDeleteClick(rubric.id, rubric.name ?? "");
                         }
                       }}
                       data-testid="btn-delete-rubric"
@@ -1525,7 +1525,7 @@ export default function Rubrics({
                     <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                     <ul className="text-sm space-y-0.5">
                       {deletableRubrics.map((r) => (
-                        <li key={r.rubric_id} className="flex items-center gap-1.5">
+                        <li key={r.id} className="flex items-center gap-1.5">
                           <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                           {r.name || "Unnamed Rubric"}
                         </li>
@@ -1541,7 +1541,7 @@ export default function Rubrics({
                     <ul className="text-sm space-y-0.5">
                       {nonDeletableRubrics.map((r) => (
                         <li
-                          key={r.rubric_id}
+                          key={r.id}
                           className="flex items-center gap-1.5 text-muted-foreground"
                         >
                           {r.name || "Unnamed Rubric"}

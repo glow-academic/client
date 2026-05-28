@@ -256,7 +256,7 @@ export function Simulations({
     // audit events that nothing is subscribed to → no ghost.
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseSimulations,
-    rowKey: "simulation_id",
+    rowKey: "id",
     // ``simulations`` plural is auto-derived as ``simulation`` + "s" —
     // kept explicit here for clarity; matches the field name the
     // create / duplicate / update impls now include on their
@@ -318,7 +318,7 @@ export function Simulations({
     : selectedSimulationIds.length;
 
   const selectedSimulations = useMemo(() => {
-    return simulations.filter((s) => s.simulation_id && isSelected(s.simulation_id));
+    return simulations.filter((s) => s.id && isSelected(s.id));
   }, [simulations, isSelected]);
 
   const deletableSimulations = useMemo(() => {
@@ -338,7 +338,7 @@ export function Simulations({
   // ``excludedSimulationIds`` is implicitly selected, so the predicate
   // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
-    const pageIds = simulations.filter((s) => s.simulation_id).map((s) => s.simulation_id!);
+    const pageIds = simulations.filter((s) => s.id).map((s) => s.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [simulations, isSelected]);
@@ -375,7 +375,7 @@ export function Simulations({
   }, [setSelectedSimulationIds, setSelectAllMatching, setExcludedSimulationIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = simulations.filter((s) => s.simulation_id).map((s) => s.simulation_id!);
+    const pageIds = simulations.filter((s) => s.id).map((s) => s.id!);
     void setSelectAllMatching(false);
     void setExcludedSimulationIds([]);
     void setSelectedSimulationIds((prev) => {
@@ -762,7 +762,7 @@ export function Simulations({
             accept: true,
           }
         : {
-            simulation_ids: deletableSimulations.map((s) => s.simulation_id!),
+            simulation_ids: deletableSimulations.map((s) => s.id!),
             accept: true,
           };
 
@@ -857,7 +857,7 @@ export function Simulations({
             if (isPractice && practiceFlagId) flagIds.push(practiceFlagId);
           }
           return {
-            id: sim.simulation_id!,
+            id: sim.id!,
             ...sharedPatch,
             ...(hasAnyFlagChange && { flag_ids: flagIds }),
           };
@@ -947,10 +947,10 @@ export function Simulations({
     const isPending = ghostState === "pending";
     const isFailed = ghostState === "failed";
 
-    if (!isGhost && !simulation.simulation_id) return null;
+    if (!isGhost && !simulation.id) return null;
 
-    const isSelected = !isGhost && simulation.simulation_id
-      ? selectedSimulationIds.includes(simulation.simulation_id)
+    const isSelected = !isGhost && simulation.id
+      ? selectedSimulationIds.includes(simulation.id)
       : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
@@ -958,8 +958,8 @@ export function Simulations({
       // rendering as a ghost (no real id to select yet).
       if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
-      if (simulation.simulation_id) {
-        toggleSelection(simulation.simulation_id);
+      if (simulation.id) {
+        toggleSelection(simulation.id);
       }
     };
 
@@ -978,10 +978,10 @@ export function Simulations({
 
     return (
     <Card
-      key={simulation.simulation_id || ghost?.callId}
+      key={simulation.id || ghost?.callId}
       aria-label={simulation.name || (isGhost ? "Generating" : undefined)}
       data-testid={isGhost ? "simulation-ghost-card" : "simulation-card"}
-      data-simulation-id={simulation.simulation_id}
+      data-simulation-id={simulation.id}
       data-ghost-state={ghostState}
       className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
         isGhost ? "" : "cursor-pointer"
@@ -1007,7 +1007,7 @@ export function Simulations({
                   <Checkbox
                     checked={isSelected}
                     onCheckedChange={() => {
-                      if (simulation.simulation_id) toggleSelection(simulation.simulation_id);
+                      if (simulation.id) toggleSelection(simulation.id);
                     }}
                     className="rounded-full h-5 w-5"
                     aria-label={`Select simulation ${simulation.name || "Unnamed"}`}
@@ -1089,7 +1089,7 @@ export function Simulations({
                 {ghost.error}
               </span>
             )}
-            {!isGhost && simulation.simulation_id && (<>{simulation.can_edit ? (
+            {!isGhost && simulation.id && (<>{simulation.can_edit ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -1100,7 +1100,7 @@ export function Simulations({
                     className="h-9 px-3"
                   >
                     <HoverPrefetchLink
-                      href={`/training/simulations/${simulation.simulation_id}`}
+                      href={`/training/simulations/${simulation.id}`}
                       delay={150}
                       aria-label={`Edit ${simulation.name || "Simulation"}`}
                     >
@@ -1122,7 +1122,7 @@ export function Simulations({
                     className="h-9 px-3"
                   >
                     <HoverPrefetchLink
-                      href={`/training/simulations/${simulation.simulation_id}`}
+                      href={`/training/simulations/${simulation.id}`}
                       delay={150}
                       aria-label={`View ${simulation.name}`}
                     >
@@ -1142,31 +1142,31 @@ export function Simulations({
                     size="sm"
                     data-testid="btn-duplicate-simulation"
                     onClick={() =>
-                      simulation.simulation_id &&
+                      simulation.id &&
                       handleDuplicate(
-                        simulation.simulation_id,
+                        simulation.id,
                         simulation.name || "Simulation"
                       )
                     }
                     disabled={
-                      isDuplicating === simulation.simulation_id ||
-                      !simulation.simulation_id
+                      isDuplicating === simulation.id ||
+                      !simulation.id
                     }
                     aria-busy={
-                      isDuplicating === simulation.simulation_id
+                      isDuplicating === simulation.id
                         ? true
                         : undefined
                     }
                     aria-label={`Duplicate ${simulation.name || "Simulation"}`}
                     className="h-9 px-3"
                   >
-                    {isDuplicating === simulation.simulation_id ? (
+                    {isDuplicating === simulation.id ? (
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
                     ) : (
                       <Copy className="h-4 w-4 md:mr-0 mr-2" />
                     )}
                     <span className="md:hidden">
-                      {isDuplicating === simulation.simulation_id
+                      {isDuplicating === simulation.id
                         ? "Duplicating..."
                         : "Duplicate"}
                     </span>
@@ -1183,9 +1183,9 @@ export function Simulations({
                     size="sm"
                     data-testid="btn-delete-simulation"
                     onClick={() =>
-                      simulation.simulation_id &&
+                      simulation.id &&
                       handleDeleteClick(
-                        simulation.simulation_id,
+                        simulation.id,
                         simulation.name || "Simulation"
                       )
                     }
@@ -1483,14 +1483,14 @@ export function Simulations({
               {tableRows.length ? (
                 tableRows.map((row) => {
                   const simulation = row.original;
-                  const key = simulation.simulation_id || `simulation-${row.id}`;
+                  const key = simulation.id || `simulation-${row.id}`;
                   const persistentGhost: Ghost<(typeof simulations)[number]> | undefined =
                     simulation.pending_status === "pending" && simulation.pending_call_id
                       ? {
                           callId: simulation.pending_call_id,
                           op: (simulation.pending_operation as Ghost<(typeof simulations)[number]>["op"]) ?? "create",
                           state: "pending",
-                          rowId: simulation.simulation_id ?? null,
+                          rowId: simulation.id ?? null,
                           partial: simulation as unknown as Ghost<(typeof simulations)[number]>["partial"],
                           before: simulation,
                           tool: null,
@@ -1588,7 +1588,7 @@ export function Simulations({
                       <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                       <ul className="text-sm space-y-0.5">
                         {deletableSimulations.map((s) => (
-                          <li key={s.simulation_id} className="flex items-center gap-1.5">
+                          <li key={s.id} className="flex items-center gap-1.5">
                             <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                             {s.name || "Unnamed Simulation"}
                           </li>
@@ -1601,7 +1601,7 @@ export function Simulations({
                       <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by cohorts):</p>
                       <ul className="text-sm space-y-0.5">
                         {nonDeletableSimulations.map((s) => (
-                          <li key={s.simulation_id} className="flex items-center gap-1.5 text-muted-foreground">
+                          <li key={s.id} className="flex items-center gap-1.5 text-muted-foreground">
                             <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
                             {s.name || "Unnamed Simulation"}
                           </li>

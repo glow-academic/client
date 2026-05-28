@@ -163,7 +163,7 @@ export default function Departments({
     // subscribed to → no ghost.
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseDepartments,
-    rowKey: "department_id",
+    rowKey: "id",
     // Plural matches the response field name on
     // ``hydrate_department_list_rows`` payloads — the hook reads
     // ``output.departments`` from the audit ``.completed`` payload to
@@ -303,7 +303,7 @@ export default function Departments({
    *  enumerate per-row patches (explicit) or send the filter envelope
    *  + ``patch`` for the server to expand (all-matching). */
   const selectedDepartments = useMemo(() => {
-    return departments.filter((d) => isSelected(d.department_id));
+    return departments.filter((d) => isSelected(d.id));
   }, [departments, isSelected]);
   const deletableDepartments = useMemo(
     () => selectedDepartments.filter((d) => d.can_delete),
@@ -345,7 +345,7 @@ export default function Departments({
   }, [setSelectedDepartmentIds, setSelectAllMatching, setExcludedDepartmentIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = departments.filter((d) => d.department_id).map((d) => d.department_id!);
+    const pageIds = departments.filter((d) => d.id).map((d) => d.id!);
     void setSelectAllMatching(false);
     void setExcludedDepartmentIds([]);
     void setSelectedDepartmentIds((prev) => Array.from(new Set([...prev, ...pageIds])));
@@ -365,7 +365,7 @@ export default function Departments({
   // ``excludedDepartmentIds`` is implicitly selected, so the predicate
   // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
-    const pageIds = departments.filter((d) => d.department_id).map((d) => d.department_id!);
+    const pageIds = departments.filter((d) => d.id).map((d) => d.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [departments, isSelected]);
@@ -543,14 +543,14 @@ export default function Departments({
       return;
     }
 
-    if (!department.department_id) {
+    if (!department.id) {
       toast.error("Department ID is required");
       return;
     }
-    setIsDuplicating(department.department_id);
+    setIsDuplicating(department.id);
     try {
       await duplicateDepartmentAction({
-        body: { department_id: department.department_id, accept: true },
+        body: { department_id: department.id, accept: true },
       });
       toast.success(`Department "${department.name}" duplicated successfully`);
       router.refresh();
@@ -608,7 +608,7 @@ export default function Departments({
             accept: true,
           }
         : {
-            department_ids: deletableDepartments.map((d) => d.department_id!),
+            department_ids: deletableDepartments.map((d) => d.id!),
             accept: true,
           };
 
@@ -679,7 +679,7 @@ export default function Departments({
             flag_ids = bulkEditActiveStatus && activeFlagId ? [activeFlagId] : [];
           }
           return {
-            id: d.department_id!,
+            id: d.id!,
             ...(hasActiveChange && { flag_ids }),
           };
         });
@@ -736,14 +736,14 @@ export default function Departments({
     const isPending = ghostState === "pending";
     const isFailed = ghostState === "failed";
 
-    const cardSelected = !isGhost && isSelected(department.department_id);
+    const cardSelected = !isGhost && isSelected(department.id);
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons or rendering
       // as a ghost (no real id to select yet).
       if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
-      if (department.department_id) {
-        toggleSelection(department.department_id);
+      if (department.id) {
+        toggleSelection(department.id);
       }
     };
 
@@ -762,12 +762,12 @@ export default function Departments({
 
     return (
     <Card
-      key={department.department_id}
+      key={department.id}
       className={`group hover:shadow-md transition-all ${
         isGhost ? "" : "cursor-pointer"
       } ${ghostBorderClass} ${cardSelected ? "ring-2 ring-primary" : ""}`}
       data-testid={isGhost ? "department-ghost-card" : "department-card"}
-      data-department-id={department.department_id}
+      data-department-id={department.id}
       data-ghost-state={ghostState}
       role="gridcell"
       aria-label={`department card ${department.name || (isGhost ? "Generating" : "Unnamed Department")}`}
@@ -793,7 +793,7 @@ export default function Departments({
                   <Checkbox
                     checked={cardSelected}
                     onCheckedChange={() => {
-                      if (department.department_id) toggleSelection(department.department_id);
+                      if (department.id) toggleSelection(department.id);
                     }}
                     className="rounded-full h-5 w-5"
                     aria-label={`Select department ${department.name || "Unnamed"}`}
@@ -875,7 +875,7 @@ export default function Departments({
                 {ghost.error}
               </span>
             )}
-            {!isGhost && (department.can_edit && department.department_id ? (
+            {!isGhost && (department.can_edit && department.id ? (
               <Button
                 asChild
                 variant="outline"
@@ -885,7 +885,7 @@ export default function Departments({
                 className="h-9 px-3"
               >
                 <HoverPrefetchLink
-                  href={`/platform/departments/${department.department_id}`}
+                  href={`/platform/departments/${department.id}`}
                   delay={150}
                   aria-label={`Edit department ${department.name || "Unknown"}`}
                 >
@@ -893,7 +893,7 @@ export default function Departments({
                   <span className="md:hidden">Edit</span>
                 </HoverPrefetchLink>
               </Button>
-            ) : department.department_id ? (
+            ) : department.id ? (
               <Button
                 asChild
                 variant="outline"
@@ -903,7 +903,7 @@ export default function Departments({
                 className="h-9 px-3"
               >
                 <HoverPrefetchLink
-                  href={`/platform/departments/${department.department_id}`}
+                  href={`/platform/departments/${department.id}`}
                   delay={150}
                   aria-label={`View department ${department.name || "Unknown"}`}
                 >
@@ -912,38 +912,38 @@ export default function Departments({
                 </HoverPrefetchLink>
               </Button>
             ) : null)}
-            {!isGhost && department.can_duplicate && department.department_id && (
+            {!isGhost && department.can_duplicate && department.id && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handleDuplicate(department)}
-                disabled={isDuplicating === department.department_id}
+                disabled={isDuplicating === department.id}
                 aria-busy={
-                  isDuplicating === department.department_id ? true : undefined
+                  isDuplicating === department.id ? true : undefined
                 }
                 aria-label={`Duplicate department ${department.name || "Unknown"}`}
                 data-testid="btn-duplicate-department"
                 title={`Duplicate department ${department.name || "Unknown"}`}
                 className="h-9 px-3"
               >
-                {isDuplicating === department.department_id ? (
+                {isDuplicating === department.id ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
                 ) : (
                   <Copy className="h-4 w-4 md:mr-0 mr-2" />
                 )}
                 <span className="md:hidden">
-                  {isDuplicating === department.department_id
+                  {isDuplicating === department.id
                     ? "Duplicating..."
                     : "Duplicate"}
                 </span>
               </Button>
             )}
-            {!isGhost && department.can_delete && department.department_id && (
+            {!isGhost && department.can_delete && department.id && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  handleDeleteClick(department.department_id!, department.name || "Unknown")
+                  handleDeleteClick(department.id!, department.name || "Unknown")
                 }
                 aria-label={`Delete department ${department.name || "Unknown"}`}
                 data-testid="btn-delete-department"
@@ -1183,7 +1183,7 @@ export default function Departments({
                         callId: department.pending_call_id,
                         op: (department.pending_operation as Ghost<(typeof departments)[0]>["op"]) ?? "create",
                         state: "pending",
-                        rowId: department.department_id ?? null,
+                        rowId: department.id ?? null,
                         partial: department as unknown as Ghost<(typeof departments)[0]>["partial"],
                         before: department,
                         tool: null,
@@ -1278,7 +1278,7 @@ export default function Departments({
                     <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                     <ul className="text-sm space-y-0.5">
                       {deletableDepartments.map((d) => (
-                        <li key={d.department_id} className="flex items-center gap-1.5">
+                        <li key={d.id} className="flex items-center gap-1.5">
                           <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                           {d.name || "Unnamed Department"}
                         </li>
@@ -1294,7 +1294,7 @@ export default function Departments({
                     <ul className="text-sm space-y-0.5">
                       {nonDeletableDepartments.map((d) => (
                         <li
-                          key={d.department_id}
+                          key={d.id}
                           className="flex items-center gap-1.5 text-muted-foreground"
                         >
                           {d.name || "Unnamed Department"}

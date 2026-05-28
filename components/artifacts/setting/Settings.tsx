@@ -144,7 +144,7 @@ export default function Settings({
     // audit events that nothing is subscribed to → no ghost.
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseSettings,
-    rowKey: "settings_id",
+    rowKey: "id",
     // ``settings`` plural matches the field name the create /
     // duplicate / update impls now include on their responses (see
     // ``hydrate_setting_list_rows``). The hook reads ``output.settings``
@@ -277,7 +277,7 @@ export default function Settings({
     : selectedSettingIds.length;
 
   const selectedSettings = useMemo(() => {
-    return settings.filter((s) => s.settings_id && isSelected(s.settings_id));
+    return settings.filter((s) => s.id && isSelected(s.id));
   }, [settings, isSelected]);
   const deletableSettings = useMemo(
     () => selectedSettings.filter((s) => s.can_delete),
@@ -319,14 +319,14 @@ export default function Settings({
   }, [setSelectedSettingIds, setSelectAllMatching, setExcludedSettingIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = settings.filter((s) => s.settings_id).map((s) => s.settings_id!);
+    const pageIds = settings.filter((s) => s.id).map((s) => s.id!);
     void setSelectAllMatching(false);
     void setExcludedSettingIds([]);
     void setSelectedSettingIds((prev) => Array.from(new Set([...prev, ...pageIds])));
   }, [settings, setSelectAllMatching, setExcludedSettingIds, setSelectedSettingIds]);
 
   const allPageSelected = useMemo(() => {
-    const pageIds = settings.filter((s) => s.settings_id).map((s) => s.settings_id!);
+    const pageIds = settings.filter((s) => s.id).map((s) => s.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [settings, isSelected]);
@@ -377,7 +377,7 @@ export default function Settings({
             accept: true,
           }
         : {
-            setting_ids: deletableSettings.map((s) => s.settings_id!),
+            setting_ids: deletableSettings.map((s) => s.id!),
             accept: true,
           };
 
@@ -443,7 +443,7 @@ export default function Settings({
           const flag_ids: string[] = [];
           if (bulkEditActiveStatus && activeFlagId) flag_ids.push(activeFlagId);
           return {
-            id: s.settings_id!,
+            id: s.id!,
             flag_ids,
           };
         });
@@ -663,7 +663,7 @@ export default function Settings({
     setting: (typeof settings)[0],
     ghost?: Ghost<(typeof settings)[0]>,
   ) => {
-    const settingsId = setting?.settings_id;
+    const settingsId = setting?.id;
     // Same card visual for real rows and in-flight ghosts — single
     // source of truth for layout, dimensions, badges. Ghost mode swaps
     // action buttons for a status badge (and Accept/Reject for soft-
@@ -1094,7 +1094,7 @@ export default function Settings({
                         callId: setting.pending_call_id,
                         op: (setting.pending_operation as Ghost<(typeof settings)[0]>["op"]) ?? "create",
                         state: "pending",
-                        rowId: setting.settings_id ?? null,
+                        rowId: setting.id ?? null,
                         partial: setting as unknown as Ghost<(typeof settings)[0]>["partial"],
                         before: setting,
                         tool: null,
@@ -1159,7 +1159,7 @@ export default function Settings({
                     <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                     <ul className="text-sm space-y-0.5">
                       {deletableSettings.map((s) => (
-                        <li key={s.settings_id} className="flex items-center gap-1.5">
+                        <li key={s.id} className="flex items-center gap-1.5">
                           <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                           {s.name || "Unnamed Setting"}
                         </li>
@@ -1175,7 +1175,7 @@ export default function Settings({
                     <ul className="text-sm space-y-0.5">
                       {nonDeletableSettings.map((s) => (
                         <li
-                          key={s.settings_id}
+                          key={s.id}
                           className="flex items-center gap-1.5 text-muted-foreground"
                         >
                           {s.name || "Unnamed Setting"}

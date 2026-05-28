@@ -51,7 +51,7 @@ export function BulkEditDialog({
 }: BulkEditDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px]" data-testid="dialog-bulk-edit">
         <DialogHeader>
           <DialogTitle>
             Edit {count} {entityLabelPlural}
@@ -69,7 +69,11 @@ export function BulkEditDialog({
           >
             Cancel
           </Button>
-          <Button onClick={onSave} disabled={isSaving || !canSave}>
+          <Button
+            onClick={onSave}
+            disabled={isSaving || !canSave}
+            data-testid="btn-apply-bulk-edit"
+          >
             {isSaving ? "Applying..." : "Apply Changes"}
           </Button>
         </DialogFooter>

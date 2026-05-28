@@ -548,7 +548,7 @@ export default function Profiles({
     // tool dispatch fires audit events that nothing is subscribed to.
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseProfiles,
-    rowKey: "profile_id",
+    rowKey: "id",
     // ``profiles`` plural matches the field name the create / duplicate
     // / update impls now include on their responses (see
     // ``hydrate_profile_list_rows``). The hook reads ``output.profiles``
@@ -1244,7 +1244,7 @@ export default function Profiles({
               if (selectAllMatching) {
                 const pageIds = table
                   .getFilteredRowModel()
-                  .rows.map((row) => row.original.profile_id)
+                  .rows.map((row) => row.original.id)
                   .filter((id): id is string => !!id);
                 if (value) {
                   setExcludedProfileIds((prev) =>
@@ -1261,7 +1261,7 @@ export default function Profiles({
               table.toggleAllPageRowsSelected(!!value);
               const visibleRowIds = table
                 .getFilteredRowModel()
-                .rows.map((row) => row.original.profile_id)
+                .rows.map((row) => row.original.id)
                 .filter((id): id is string => id !== null && id !== undefined);
               if (value) {
                 setSelectedProfileIds((prev) => {
@@ -1288,10 +1288,10 @@ export default function Profiles({
       cell: ({ row }) => (
         <div className="pr-2">
           <Checkbox
-            checked={isSelected(row.original.profile_id)}
+            checked={isSelected(row.original.id)}
             onCheckedChange={() => {
-              if (!row.original.profile_id) return;
-              toggleSelection(row.original.profile_id);
+              if (!row.original.id) return;
+              toggleSelection(row.original.id);
             }}
             aria-label="Select row"
             className="translate-y-[2px]"
@@ -1312,7 +1312,7 @@ export default function Profiles({
         const canEditProfile = profile.can_edit ?? false;
         const canEmulateProfile = profile.can_emulate ?? false;
         const isEmulated = profile.is_emulated ?? false;
-        const isThisEmulating = emulatingProfileId === profile.profile_id;
+        const isThisEmulating = emulatingProfileId === profile.id;
         return (
           <div className="flex items-center justify-center gap-1">
             <Tooltip>
@@ -1323,14 +1323,14 @@ export default function Profiles({
                   size="sm"
                   className="h-7 w-7 p-0"
                   onClick={() => {
-                    if (!profile.profile_id) return;
+                    if (!profile.id) return;
                     window.open(
-                      `/analytics/reports/${profile.profile_id}`,
+                      `/analytics/reports/${profile.id}`,
                       "_blank",
                       "noopener,noreferrer"
                     );
                   }}
-                  disabled={!profile.profile_id}
+                  disabled={!profile.id}
                   data-testid="btn-preview-profile"
                 >
                   <Eye className="h-3 w-3" />
@@ -1340,7 +1340,7 @@ export default function Profiles({
                 <p>View Report</p>
               </TooltipContent>
             </Tooltip>
-            {canEditProfile && profile.profile_id && (
+            {canEditProfile && profile.id && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -1352,7 +1352,7 @@ export default function Profiles({
                     data-testid="btn-edit-profile"
                   >
                     <HoverPrefetchLink
-                      href={`/management/profiles/${profile.profile_id}`}
+                      href={`/management/profiles/${profile.id}`}
                       delay={150}
                     >
                       <Edit className="h-3 w-3" />
@@ -1386,7 +1386,7 @@ export default function Profiles({
                 </TooltipContent>
               </Tooltip>
             )}
-            {canEmulateProfile && profile.profile_id && (
+            {canEmulateProfile && profile.id && (
               isEmulated ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1395,7 +1395,7 @@ export default function Profiles({
                       variant="outline"
                       size="sm"
                       className="h-7 w-7 p-0"
-                      onClick={() => handleUnemulate(profile.profile_id!)}
+                      onClick={() => handleUnemulate(profile.id!)}
                       disabled={isThisEmulating}
                       data-testid="btn-unemulate-profile"
                     >
@@ -1414,7 +1414,7 @@ export default function Profiles({
                       variant="outline"
                       size="sm"
                       className="h-7 w-7 p-0"
-                      onClick={() => handleEmulate(profile.profile_id!)}
+                      onClick={() => handleEmulate(profile.id!)}
                       disabled={isThisEmulating}
                       data-testid="btn-emulate-profile"
                     >
@@ -1515,7 +1515,7 @@ export default function Profiles({
 
   /** Selected rows that are loaded on the current page. */
   const selectedProfilesOnPage = useMemo(() => {
-    return profiles.filter((p) => p.profile_id && isSelected(p.profile_id));
+    return profiles.filter((p) => p.id && isSelected(p.id));
   }, [profiles, isSelected]);
 
   const deletableProfiles = useMemo(() => {
@@ -1542,7 +1542,7 @@ export default function Profiles({
 
   // Check if all profiles on the current page are selected.
   const allPageSelected = useMemo(() => {
-    const pageIds = profiles.filter((p) => p.profile_id).map((p) => p.profile_id!);
+    const pageIds = profiles.filter((p) => p.id).map((p) => p.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [profiles, isSelected]);
@@ -1578,7 +1578,7 @@ export default function Profiles({
   }, [setSelectedProfileIds, setSelectAllMatching, setExcludedProfileIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = profiles.filter((p) => p.profile_id).map((p) => p.profile_id!);
+    const pageIds = profiles.filter((p) => p.id).map((p) => p.id!);
     void setSelectAllMatching(false);
     void setExcludedProfileIds([]);
     void setSelectedProfileIds((prev) => {
@@ -1643,7 +1643,7 @@ export default function Profiles({
         const items = editableProfiles.map((p) => {
           const flag_ids = bulkEditActiveStatus && activeFlagId ? [activeFlagId] : [];
           return {
-            profile_id: p.profile_id!,
+            profile_id: p.id!,
             flag_ids,
           };
         });
@@ -1702,7 +1702,7 @@ export default function Profiles({
             accept: true,
           }
         : {
-            profile_ids: deletableProfiles.map((p) => p.profile_id!),
+            profile_ids: deletableProfiles.map((p) => p.id!),
             accept: true,
           };
 
@@ -1967,7 +1967,7 @@ export default function Profiles({
                       data-state={row.getIsSelected() && "selected"}
                       className="hover:bg-muted/30 transition-colors"
                       data-testid="profiles-row"
-                      data-profile-id={row.original.profile_id}
+                      data-profile-id={row.original.id}
                     >
                       {row
                         .getVisibleCells()
@@ -2628,7 +2628,7 @@ export default function Profiles({
                       </p>
                       <ul className="text-sm space-y-0.5 max-h-32 overflow-y-auto">
                         {deletableProfiles.map((s) => (
-                          <li key={s.profile_id} className="flex items-center gap-1.5">
+                          <li key={s.id} className="flex items-center gap-1.5">
                             <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                             {s.name} (
                             {s.primary_email ||
@@ -2647,14 +2647,14 @@ export default function Profiles({
                       <ul className="text-sm space-y-0.5 max-h-24 overflow-y-auto">
                         {nonDeletableProfiles.map((s) => (
                           <li
-                            key={s.profile_id}
+                            key={s.id}
                             className="flex items-center gap-1.5 text-muted-foreground"
                           >
                             {s.name} (
                             {s.primary_email ||
                               (s.emails && s.emails.length > 0 ? s.emails[0] : "")}
                             )
-                            {s.profile_id === profile?.id
+                            {s.id === profile?.id
                               ? " – your account"
                               : ""}
                           </li>
@@ -2720,7 +2720,7 @@ export default function Profiles({
                                 ? profileMember.emails[0]
                                 : "")}
                             )
-                            {profileMember.profile_id === profile?.id
+                            {profileMember.id === profile?.id
                               ? " – your account"
                               : " – cannot delete"}
                           </p>
@@ -2770,7 +2770,7 @@ export default function Profiles({
                     return;
                   }
 
-                  if (!deleteProfileMember.profile_id) {
+                  if (!deleteProfileMember.id) {
                     toast.error("Invalid user profile ID");
                     setShowSingleDeleteDialog(false);
                     setDeleteProfileMember(null);
@@ -2785,7 +2785,7 @@ export default function Profiles({
                     }
                     await deleteProfileAction({
                       body: {
-                        profile_ids: [deleteProfileMember.profile_id],
+                        profile_ids: [deleteProfileMember.id],
                         all: false,
                         accept: true,
                       },

@@ -88,4 +88,25 @@ export const FACTORIES: Record<string, Factory> = {
     const scenarioId = await resolveAnyId(request, "scenario");
     return scenarioId ? { scenario_ids: [scenarioId] } : {};
   },
+
+  // value is raw and the create accepts it, BUT it doesn't resolve into a
+  // `value_id` — so the edit form's required "Value *" field loads empty and
+  // edit-submit fails. Kept so the create body is correct; provider edit is
+  // gated on the backend resolving a raw value → value_id (the same
+  // create-doesn't-produce-the-resource-id gap below).
+  provider: async () => ({ value: `demo-provider-${Date.now()}` }),
 };
+
+// SYSTEMIC BACKEND GAP surfaced by these factories: the create API accepts a
+// reference (a relation id, a raw value/color) but does NOT populate the
+// resource id the *edit form re-validates*, so a factory-built entity fails on
+// edit. Concretely:
+//   • rubric→department_ids, (and model→provider_id, simulation→scenario_ids):
+//     the create rejects the artifact id with a junction FK error — the
+//     `*_junction` wants a `*_resource` id that `/x/search` doesn't expose
+//     (same gap as field→conditional-parameters, parameter→fields).
+//   • provider `value` (raw) → no `value_id` resolved.
+//   • settings color_ids (no /color/search), agents prompt_id (no seed prompts,
+//     no /prompt/create), evals model_rubric_ids (no resolve endpoint).
+// Only persona's factory works today (color/icon/instructions are raw fields
+// the create genuinely resolves on the fly). The rest need backend resolution.

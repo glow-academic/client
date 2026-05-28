@@ -177,7 +177,7 @@ export default function Parameters({
     // subscribed to → no ghost.
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseParameters,
-    rowKey: "parameter_id",
+    rowKey: "id",
     // ``parameters`` plural matches the field name the create / update
     // / duplicate impls now include on their responses (see
     // ``hydrate_parameter_list_rows``). The hook reads
@@ -243,7 +243,7 @@ export default function Parameters({
     : selectedParameterIds.length;
 
   const selectedParameters = useMemo(() => {
-    return parameters.filter((p) => p.parameter_id && isSelected(p.parameter_id));
+    return parameters.filter((p) => p.id && isSelected(p.id));
   }, [parameters, isSelected]);
 
   const deletableParameters = useMemo(
@@ -263,7 +263,7 @@ export default function Parameters({
   // ``excludedParameterIds`` is implicitly selected, so the predicate
   // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
-    const pageIds = parameters.filter((p) => p.parameter_id).map((p) => p.parameter_id!);
+    const pageIds = parameters.filter((p) => p.id).map((p) => p.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [parameters, isSelected]);
@@ -298,7 +298,7 @@ export default function Parameters({
   }, [setSelectedParameterIds, setSelectAllMatching, setExcludedParameterIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = parameters.filter((p) => p.parameter_id).map((p) => p.parameter_id!);
+    const pageIds = parameters.filter((p) => p.id).map((p) => p.id!);
     void setSelectAllMatching(false);
     void setExcludedParameterIds([]);
     void setSelectedParameterIds((prev) => Array.from(new Set([...prev, ...pageIds])));
@@ -520,14 +520,14 @@ export default function Parameters({
       return;
     }
 
-    if (!parameter.parameter_id) {
+    if (!parameter.id) {
       toast.error("Parameter ID is missing");
       return;
     }
-    setIsDuplicating(parameter.parameter_id);
+    setIsDuplicating(parameter.id);
     try {
       await duplicateParameterAction({
-        body: { parameter_id: parameter.parameter_id, accept: true },
+        body: { parameter_id: parameter.id, accept: true },
       });
       // profileId comes from X-Profile-Id header automatically
       toast.success(
@@ -597,7 +597,7 @@ export default function Parameters({
             accept: true,
           }
         : {
-            parameter_ids: deletableParameters.map((p) => p.parameter_id!),
+            parameter_ids: deletableParameters.map((p) => p.id!),
             accept: true,
           };
 
@@ -668,7 +668,7 @@ export default function Parameters({
             flag_ids = bulkEditActiveStatus && activeFlagId ? [activeFlagId] : [];
           }
           return {
-            id: p.parameter_id!,
+            id: p.id!,
             ...(hasActiveChange && { flag_ids }),
           };
         });
@@ -767,15 +767,15 @@ export default function Parameters({
     const count = parameter.num_items; // Pre-calculated from server
     // Use the mode-aware ``isSelected`` predicate (handles both
     // explicit and all-matching modes uniformly).
-    const rowSelected = !isGhost && isSelected(parameter.parameter_id);
+    const rowSelected = !isGhost && isSelected(parameter.id);
 
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons or when
       // rendering as a ghost (no real id to select).
       if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
-      if (parameter.parameter_id) {
-        toggleSelection(parameter.parameter_id);
+      if (parameter.id) {
+        toggleSelection(parameter.id);
       }
     };
 
@@ -794,12 +794,12 @@ export default function Parameters({
 
     return (
       <Card
-        key={parameter.parameter_id}
+        key={parameter.id}
         className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
           isGhost ? "" : "cursor-pointer"
         } ${ghostBorderClass} ${rowSelected ? "ring-2 ring-primary" : ""}`}
         data-testid={isGhost ? "parameter-ghost-card" : "parameter-card"}
-        data-parameter-id={parameter.parameter_id}
+        data-parameter-id={parameter.id}
         data-ghost-state={ghostState}
         role="gridcell"
         aria-label={`parameter card ${parameter.name || (isGhost ? "Generating" : "Unnamed Parameter")}`}
@@ -825,7 +825,7 @@ export default function Parameters({
                     <Checkbox
                       checked={rowSelected}
                       onCheckedChange={() => {
-                        if (parameter.parameter_id) toggleSelection(parameter.parameter_id);
+                        if (parameter.id) toggleSelection(parameter.id);
                       }}
                       className="rounded-full h-5 w-5"
                       aria-label={`Select parameter ${parameter.name || "Unnamed"}`}
@@ -909,7 +909,7 @@ export default function Parameters({
                   {ghost.error}
                 </span>
               )}
-              {!isGhost && parameter.parameter_id && (parameter.can_edit ? (
+              {!isGhost && parameter.id && (parameter.can_edit ? (
                 <Button
                   asChild
                   variant="outline"
@@ -919,7 +919,7 @@ export default function Parameters({
                   className="h-9 px-3"
                 >
                   <HoverPrefetchLink
-                    href={`/management/parameters/${parameter.parameter_id}`}
+                    href={`/management/parameters/${parameter.id}`}
                     delay={150}
                     aria-label={`Edit ${parameter.name}`}
                   >
@@ -937,7 +937,7 @@ export default function Parameters({
                   className="h-9 px-3"
                 >
                   <HoverPrefetchLink
-                    href={`/management/parameters/${parameter.parameter_id}`}
+                    href={`/management/parameters/${parameter.id}`}
                     delay={150}
                     aria-label={`View ${parameter.name}`}
                   >
@@ -951,22 +951,22 @@ export default function Parameters({
                   variant="outline"
                   size="sm"
                   onClick={() => handleDuplicate(parameter)}
-                  disabled={isDuplicating === parameter.parameter_id}
+                  disabled={isDuplicating === parameter.id}
                   aria-busy={
-                    isDuplicating === parameter.parameter_id ? true : undefined
+                    isDuplicating === parameter.id ? true : undefined
                   }
                   aria-label={`Duplicate ${parameter.name}`}
                   data-testid="btn-duplicate-parameter"
                   title={`Duplicate ${parameter.name}`}
                   className="h-9 px-3"
                 >
-                  {isDuplicating === parameter.parameter_id ? (
+                  {isDuplicating === parameter.id ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
                   ) : (
                     <Copy className="h-4 w-4 md:mr-0 mr-2" />
                   )}
                   <span className="md:hidden">
-                    {isDuplicating === parameter.parameter_id
+                    {isDuplicating === parameter.id
                       ? "Duplicating..."
                       : "Duplicate"}
                   </span>
@@ -977,12 +977,12 @@ export default function Parameters({
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    if (!parameter.parameter_id) {
+                    if (!parameter.id) {
                       toast.error("Parameter ID is missing");
                       return;
                     }
                     handleDeleteClick(
-                      parameter.parameter_id,
+                      parameter.id,
                       parameter.name || "Unknown Parameter"
                     );
                   }}
@@ -1316,7 +1316,7 @@ export default function Parameters({
                     <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                     <ul className="text-sm space-y-0.5">
                       {deletableParameters.map((p) => (
-                        <li key={p.parameter_id} className="flex items-center gap-1.5">
+                        <li key={p.id} className="flex items-center gap-1.5">
                           <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                           {p.name || "Unnamed Parameter"}
                         </li>
@@ -1332,7 +1332,7 @@ export default function Parameters({
                     <ul className="text-sm space-y-0.5">
                       {nonDeletableParameters.map((p) => (
                         <li
-                          key={p.parameter_id}
+                          key={p.id}
                           className="flex items-center gap-1.5 text-muted-foreground"
                         >
                           {p.name || "Unnamed Parameter"}

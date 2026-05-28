@@ -39,6 +39,21 @@ export class ArtifactForm {
     await this.demo.pause();
   }
 
+  /** Open the page's Drafts picker (the dropdown of saved drafts in
+   *  `components/common/drafts/SaveToolbar.tsx`). Each entry is
+   *  `data-testid="draft-menu-item-{draftId}"`. */
+  async openDraftsPicker(): Promise<void> {
+    await this.demo.click(this.page.getByTestId("draft-picker-trigger"));
+    await this.demo.pause();
+  }
+
+  /** The current draft id from the URL (`?draftId=…`), or null if not anchored.
+   *  After `waitForDraftSaved` this is the just-created draft's id. */
+  async currentDraftId(): Promise<string | null> {
+    const url = new URL(this.page.url());
+    return url.searchParams.get("draftId");
+  }
+
   /** Toggle a feature flag by its type — the `#flag-{type}` switch. Used to
    *  reveal conditional steps (e.g. a scenario's Context or Video step). */
   async toggleFlag(flagType: string): Promise<void> {
@@ -242,6 +257,31 @@ export class ArtifactForm {
     if (!(await this.visibleSoon(option, 8_000))) return;
     await this.demo.scrollTo(option);
     await this.demo.click(option);
+  }
+
+  /**
+   * Pick the first option inside a picker (by testid) and confirm the
+   * selection registered (`data-selected`, set by SelectableGrid). Used for an
+   * eval's model-rubric: the component freezes the selection locally after a
+   * click (its `isDirtyRef`), but a draft re-seed re-mounts it and reverts the
+   * pick — so the caller must go straight to submit with NO settle in between,
+   * and this method must NOT trigger a save. We just click and wait for React
+   * to commit `data-selected`, retrying a few times. Best-effort: skips if the
+   * grid never appears.
+   */
+  async pickInUntilSelected(testId: string): Promise<void> {
+    const grid = this.page.getByTestId(testId);
+    const anyOption = grid.getByTestId("selectable-option").first();
+    if (!(await this.visibleSoon(anyOption, 8_000))) return;
+    await this.demo.scrollTo(anyOption);
+    const selected = grid.locator(
+      '[data-testid="selectable-option"][data-selected]',
+    );
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if ((await selected.count()) > 0) return; // registered locally
+      await this.demo.click(grid.getByTestId("selectable-option").first());
+      await this.demo.pause(); // let React commit data-selected — NO draft save
+    }
   }
 
   /** Best-effort: flip the first toggle (e.g. a flag) inside a step. */

@@ -171,7 +171,7 @@ export default function Models({
     // skeleton + pending soft state).
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseModels,
-    rowKey: "model_id",
+    rowKey: "id",
     // ``models`` plural matches the field name the create / duplicate /
     // update impls now include on their responses (see
     // ``hydrate_model_list_rows``). The hook reads ``output.models``
@@ -260,7 +260,7 @@ export default function Models({
     : selectedModelIds.length;
 
   const selectedModels = useMemo(() => {
-    return models.filter((m) => m.model_id && isSelected(m.model_id));
+    return models.filter((m) => m.id && isSelected(m.id));
   }, [models, isSelected]);
   const deletableModels = useMemo(
     () => selectedModels.filter((m) => m.can_delete),
@@ -302,7 +302,7 @@ export default function Models({
   }, [setSelectedModelIds, setSelectAllMatching, setExcludedModelIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = models.filter((m) => m.model_id).map((m) => m.model_id!);
+    const pageIds = models.filter((m) => m.id).map((m) => m.id!);
     void setSelectAllMatching(false);
     void setExcludedModelIds([]);
     void setSelectedModelIds((prev) => Array.from(new Set([...prev, ...pageIds])));
@@ -318,7 +318,7 @@ export default function Models({
   }, [setSelectedModelIds, setExcludedModelIds, setSelectAllMatching]);
 
   const allPageSelected = useMemo(() => {
-    const pageIds = models.filter((m) => m.model_id).map((m) => m.model_id!);
+    const pageIds = models.filter((m) => m.id).map((m) => m.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [models, isSelected]);
@@ -796,11 +796,11 @@ export default function Models({
       toast.error("Cannot delete model: It is currently in use");
       return;
     }
-    if (!model.model_id) {
+    if (!model.id) {
       toast.error("Model ID is missing");
       return;
     }
-    setDeleteItem({ id: model.model_id, name: model.name || "Unknown Model" });
+    setDeleteItem({ id: model.id, name: model.name || "Unknown Model" });
     setShowDeleteDialog(true);
   };
 
@@ -812,14 +812,14 @@ export default function Models({
       return;
     }
 
-    if (!model.model_id) {
+    if (!model.id) {
       toast.error("Model ID is missing");
       return;
     }
-    setIsDuplicating(model.model_id);
+    setIsDuplicating(model.id);
     try {
       await duplicateModelAction({
-        body: { model_id: model.model_id, accept: true },
+        body: { model_id: model.id, accept: true },
       });
       toast.success(
         `Model '${model.name || "Unknown Model"}' duplicated successfully`
@@ -854,7 +854,7 @@ export default function Models({
             accept: true,
           }
         : {
-            model_ids: deletableModels.map((m) => m.model_id!),
+            model_ids: deletableModels.map((m) => m.id!),
             accept: true,
           };
 
@@ -931,7 +931,7 @@ export default function Models({
             flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
           }
           return {
-            id: m.model_id!,
+            id: m.id!,
             ...(hasActiveChange && { flag_ids }),
           };
         });
@@ -984,14 +984,14 @@ export default function Models({
     const isPending = ghostState === "pending";
     const isFailed = ghostState === "failed";
 
-    const cardSelected = !isGhost ? isSelected(model.model_id) : false;
+    const cardSelected = !isGhost ? isSelected(model.id) : false;
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons or when
       // rendering as a ghost (no real id to select).
       if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
-      if (model.model_id) {
-        toggleSelection(model.model_id);
+      if (model.id) {
+        toggleSelection(model.id);
       }
     };
 
@@ -1010,12 +1010,12 @@ export default function Models({
 
     return (
     <Card
-      key={model.model_id}
+      key={model.id}
       className={`group hover:shadow-md transition-all flex flex-col h-full min-h-[220px] ${
         isGhost ? "" : "cursor-pointer"
       } ${ghostBorderClass} ${cardSelected ? "ring-2 ring-primary" : ""}`}
       data-testid={isGhost ? "model-ghost-card" : "model-card"}
-      data-model-id={model.model_id}
+      data-model-id={model.id}
       data-ghost-state={ghostState}
       role="gridcell"
       aria-label={`model card ${model.name || (isGhost ? "Generating" : "Unnamed Model")}`}
@@ -1041,7 +1041,7 @@ export default function Models({
                   <Checkbox
                     checked={cardSelected}
                     onCheckedChange={() => {
-                      if (model.model_id) toggleSelection(model.model_id);
+                      if (model.id) toggleSelection(model.id);
                     }}
                     className="rounded-full h-5 w-5"
                     aria-label={`Select model ${model.name || "Unnamed"}`}
@@ -1127,7 +1127,7 @@ export default function Models({
             {ghost.error}
           </span>
         )}
-        {!isGhost && model.model_id && (<>
+        {!isGhost && model.id && (<>
         <Button
           asChild
           variant="outline"
@@ -1137,7 +1137,7 @@ export default function Models({
           className="h-9 px-3"
         >
           <HoverPrefetchLink
-            href={`/intelligence/models/${model.model_id}`}
+            href={`/intelligence/models/${model.id}`}
             delay={150}
             aria-label={`View model ${model.name || "Unknown Model"}`}
           >
@@ -1155,7 +1155,7 @@ export default function Models({
             className="h-9 px-3"
           >
             <HoverPrefetchLink
-              href={`/intelligence/models/${model.model_id}`}
+              href={`/intelligence/models/${model.id}`}
               delay={150}
               aria-label={`Edit model ${model.name || "Unknown Model"}`}
             >
@@ -1168,13 +1168,13 @@ export default function Models({
           variant="outline"
           size="sm"
           onClick={() => handleDuplicateModelClick(model)}
-          disabled={isDuplicating === model.model_id}
+          disabled={isDuplicating === model.id}
           aria-label={`Duplicate model ${model.name}`}
           data-testid="btn-duplicate-model"
           title={`Duplicate model ${model.name}`}
           className="h-9 px-3"
         >
-          {isDuplicating === model.model_id ? (
+          {isDuplicating === model.id ? (
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
           ) : (
             <>
@@ -1440,7 +1440,7 @@ export default function Models({
                           callId: modelRow.pending_call_id,
                           op: (modelRow.pending_operation as Ghost<(typeof models)[number]>["op"]) ?? "create",
                           state: "pending",
-                          rowId: modelRow.model_id ?? null,
+                          rowId: modelRow.id ?? null,
                           partial: modelRow as unknown as Ghost<(typeof models)[number]>["partial"],
                           before: modelRow,
                           tool: null,
@@ -1537,7 +1537,7 @@ export default function Models({
                       <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                       <ul className="text-sm space-y-0.5">
                         {deletableModels.map((m) => (
-                          <li key={m.model_id} className="flex items-center gap-1.5">
+                          <li key={m.id} className="flex items-center gap-1.5">
                             <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                             {m.name || "Unnamed Model"}
                           </li>
@@ -1553,7 +1553,7 @@ export default function Models({
                       <ul className="text-sm space-y-0.5">
                         {nonDeletableModels.map((m) => (
                           <li
-                            key={m.model_id}
+                            key={m.id}
                             className="flex items-center gap-1.5 text-muted-foreground"
                           >
                             {m.name || "Unnamed Model"}

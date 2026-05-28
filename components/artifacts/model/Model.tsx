@@ -1955,15 +1955,19 @@ function ModelComponent({
               <Qualities
                 quality_ids={formState.quality_ids}
                 quality_resources={((s?.qualities?.current ?? []).map((q) => ({
-                  quality_id: q.id,
-                  name: q.quality,
+                  id: q.id,
+                  quality: q.quality,
                   generated: q.generated,
+                  suggested: q.suggested,
+                  pending: q.pending,
                 })) as any)}
                 show_qualities={s?.qualities?.show ?? true}
                 qualities={((s?.qualities?.resources ?? []).map((q) => ({
-                  quality_id: q.id,
-                  name: q.quality,
+                  id: q.id,
+                  quality: q.quality,
                   generated: q.generated,
+                  suggested: q.suggested,
+                  pending: q.pending,
                 })) as any)}
                 disabled={disabled}
                 onChange={(ids) =>

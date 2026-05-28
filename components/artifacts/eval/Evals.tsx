@@ -249,7 +249,7 @@ export default function Evals({
 
   const selectedEvals = useMemo(() => {
     return (Array.isArray(evalsData?.evals) ? evalsData.evals : []).filter(
-      (e) => e.eval_id && isSelected(e.eval_id)
+      (e) => e.id && isSelected(e.id)
     );
   }, [evalsData?.evals, isSelected]);
   const deletableEvals = useMemo(
@@ -501,7 +501,7 @@ export default function Evals({
     // audit events that nothing is subscribed to → no ghost.
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseEvalsArray,
-    rowKey: "eval_id",
+    rowKey: "id",
     // ``evals`` plural matches the field name the create / duplicate
     // / update impls now include on their responses (see
     // ``hydrate_eval_list_rows``). The hook reads ``output.evals``
@@ -541,7 +541,7 @@ export default function Evals({
   );
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = evalsListArray.filter((e) => e.eval_id).map((e) => e.eval_id!);
+    const pageIds = evalsListArray.filter((e) => e.id).map((e) => e.id!);
     void setSelectAllMatching(false);
     void setExcludedEvalIds([]);
     void setSelectedEvalIds((prev) => Array.from(new Set([...prev, ...pageIds])));
@@ -551,7 +551,7 @@ export default function Evals({
   // ``excludedEvalIds`` is implicitly selected, so the predicate
   // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
-    const pageIds = evalsListArray.filter((e) => e.eval_id).map((e) => e.eval_id!);
+    const pageIds = evalsListArray.filter((e) => e.id).map((e) => e.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [evalsListArray, isSelected]);
@@ -586,7 +586,7 @@ export default function Evals({
             accept: true,
           } as unknown as DeleteEvalIn["body"])
         : ({
-            eval_ids: deletableEvals.map((e) => e.eval_id!),
+            eval_ids: deletableEvals.map((e) => e.id!),
             accept: true,
           } as DeleteEvalIn["body"]);
 
@@ -656,7 +656,7 @@ export default function Evals({
             flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
           }
           return {
-            id: e.eval_id!,
+            id: e.id!,
             ...(hasAnyFlagChange && { flag_ids }),
           };
         });
@@ -829,7 +829,7 @@ export default function Evals({
     const isPending = ghostState === "pending";
     const isFailed = ghostState === "failed";
 
-    const evalId = evalItem?.eval_id ?? "";
+    const evalId = evalItem?.id ?? "";
     const evalName = evalItem?.name ?? "";
 
     // Real rows must have an id; ghosts may not yet (creating). Skip
@@ -1284,7 +1284,7 @@ export default function Evals({
                         callId: evalRow.pending_call_id,
                         op: (evalRow.pending_operation as Ghost<(typeof evalsListArray)[number]>["op"]) ?? "create",
                         state: "pending",
-                        rowId: evalRow.eval_id ?? null,
+                        rowId: evalRow.id ?? null,
                         partial: evalRow as unknown as Ghost<(typeof evalsListArray)[number]>["partial"],
                         before: evalRow,
                         tool: null,
@@ -1360,7 +1360,7 @@ export default function Evals({
                     <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                     <ul className="text-sm space-y-0.5">
                       {deletableEvals.map((e) => (
-                        <li key={e.eval_id} className="flex items-center gap-1.5">
+                        <li key={e.id} className="flex items-center gap-1.5">
                           <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                           {e.name || "Unnamed Eval"}
                         </li>
@@ -1376,7 +1376,7 @@ export default function Evals({
                     <ul className="text-sm space-y-0.5">
                       {nonDeletableEvals.map((e) => (
                         <li
-                          key={e.eval_id}
+                          key={e.id}
                           className="flex items-center gap-1.5 text-muted-foreground"
                         >
                           {e.name || "Unnamed Eval"}

@@ -130,6 +130,9 @@ type EvalDraftFormState = {
   flag_ids?: string[] | null;
   department_ids?: string[] | null;
   model_ids?: string[] | null;
+  model_flag_ids?: string[] | null;
+  model_position_ids?: string[] | null;
+  model_rubric_ids?: string[] | null;
   pending_ids?: string[] | null;
 };
 
@@ -698,6 +701,12 @@ function EvalComponent({
           const nextModelIds =
             (serverFormState.model_ids as string[] | null | undefined) ??
             prev.model_ids;
+          const nextModelFlagIds =
+            serverFormState.model_flag_ids ?? prev.model_flag_ids;
+          const nextModelPositionIds =
+            serverFormState.model_position_ids ?? prev.model_position_ids;
+          const nextModelRubricIds =
+            serverFormState.model_rubric_ids ?? prev.model_rubric_ids;
           const nextPendingIds =
             (serverFormState.pending_ids as string[] | null | undefined) ??
             prev.pending_ids;
@@ -711,6 +720,16 @@ function EvalComponent({
             flag_ids: nextFlagIds,
             department_ids: nextDeptIds,
             model_ids: nextModelIds,
+            model_flag_ids: nextModelFlagIds,
+            model_position_ids: nextModelPositionIds,
+            model_rubric_ids: nextModelRubricIds,
+            // Clear inline-create values once the server has resolved
+            // them to junction ids — otherwise they'd resend on next
+            // autosave and the resolver would no-op against itself.
+            model_rubrics:
+              nextModelRubricIds.length > prev.model_rubric_ids.length
+                ? null
+                : prev.model_rubrics,
             pending_ids: nextPendingIds,
           };
 
@@ -722,6 +741,9 @@ function EvalComponent({
             JSON.stringify(prev.flag_ids) !== JSON.stringify(next.flag_ids) ||
             JSON.stringify(prev.department_ids) !== JSON.stringify(next.department_ids) ||
             JSON.stringify(prev.model_ids) !== JSON.stringify(next.model_ids) ||
+            JSON.stringify(prev.model_flag_ids) !== JSON.stringify(next.model_flag_ids) ||
+            JSON.stringify(prev.model_position_ids) !== JSON.stringify(next.model_position_ids) ||
+            JSON.stringify(prev.model_rubric_ids) !== JSON.stringify(next.model_rubric_ids) ||
             JSON.stringify(prev.pending_ids) !== JSON.stringify(next.pending_ids);
           if (!changed) return prev;
           serverSyncPendingRef.current = true;
@@ -955,11 +977,38 @@ function EvalComponent({
         throw new Error("Name is required");
       }
 
-      // Every model in the eval must be paired with a rubric. Mirrors
-      // the SIMULATION_REQUIRED.scenario_rubrics gate in Simulation.tsx
-      // — surfacing the error at submit time prevents a half-configured
-      // eval from landing in the DB.
-      if (!formState.model_rubric_ids || formState.model_rubric_ids.length === 0) {
+      // Synchronous flush — pre-empts the autosave debounce so picks
+      // (e.g. model_rubrics) made just before submit are resolved to
+      // junction ids by the server before we validate. Always runs
+      // when an action is available; the gate below uses the response.
+      let effectiveRubricIds = formState.model_rubric_ids;
+      if (patchActionRef.current) {
+        try {
+          const draftId =
+            (formDataRef.current as Record<string, unknown>)?.[
+              "draftId"
+            ] as string | null | undefined;
+          const result = await patchActionRef.current(
+            buildPatchPayload(draftId ?? null),
+          );
+          const fs = (result as Record<string, unknown>)?.[
+            "form_state"
+          ] as { model_rubric_ids?: string[] } | undefined;
+          if (fs?.model_rubric_ids) {
+            effectiveRubricIds = fs.model_rubric_ids;
+          }
+        } catch (err) {
+          console.warn("eval pre-submit flush failed", err);
+        }
+      }
+
+      // Gate on either junction ids OR pending value entries — a user
+      // who picked a rubric has model_rubrics populated even before
+      // the server resolves it to model_rubric_ids.
+      const hasRubricEvidence =
+        (effectiveRubricIds && effectiveRubricIds.length > 0) ||
+        (formState.model_rubrics?.length ?? 0) > 0;
+      if (!hasRubricEvidence) {
         toast.error("Model rubrics are required");
         throw new Error("Model rubrics are required");
       }
@@ -980,7 +1029,7 @@ function EvalComponent({
                   department_ids: formState.department_ids.length > 0 ? formState.department_ids : undefined,
                   model_ids: formState.model_ids.length > 0 ? formState.model_ids : undefined,
                   model_flag_ids: formState.model_flag_ids.length > 0 ? formState.model_flag_ids : undefined,
-                  model_rubric_ids: formState.model_rubric_ids.length > 0 ? formState.model_rubric_ids : undefined,
+                  model_rubric_ids: effectiveRubricIds.length > 0 ? effectiveRubricIds : undefined,
                   model_position_ids: formState.model_position_ids.length > 0 ? formState.model_position_ids : undefined,
                 },
               ],
@@ -999,7 +1048,7 @@ function EvalComponent({
                   department_ids: formState.department_ids.length > 0 ? formState.department_ids : undefined,
                   model_ids: formState.model_ids.length > 0 ? formState.model_ids : undefined,
                   model_flag_ids: formState.model_flag_ids.length > 0 ? formState.model_flag_ids : undefined,
-                  model_rubric_ids: formState.model_rubric_ids.length > 0 ? formState.model_rubric_ids : undefined,
+                  model_rubric_ids: effectiveRubricIds.length > 0 ? effectiveRubricIds : undefined,
                   model_position_ids: formState.model_position_ids.length > 0 ? formState.model_position_ids : undefined,
                 },
               ],
@@ -1027,6 +1076,8 @@ function EvalComponent({
       updateEvalAction,
       createEvalAction,
       router,
+      buildPatchPayload,
+      formDataRef,
     ]
   );
 

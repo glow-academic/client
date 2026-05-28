@@ -253,7 +253,7 @@ export default function Cohorts({
     // audit events that nothing is subscribed to → no ghost.
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseCohorts,
-    rowKey: "cohort_id",
+    rowKey: "id",
     // ``cohorts`` plural matches the field name the create /
     // duplicate / update impls now include on their responses (see
     // ``hydrate_cohort_list_rows``). The hook reads
@@ -316,7 +316,7 @@ export default function Cohorts({
     : selectedCohortIds.length;
 
   const selectedCohorts = useMemo(() => {
-    return cohorts.filter((c) => c.cohort_id && isSelected(c.cohort_id));
+    return cohorts.filter((c) => c.id && isSelected(c.id));
   }, [cohorts, isSelected]);
 
   const deletableCohorts = useMemo(() => {
@@ -336,7 +336,7 @@ export default function Cohorts({
   // ``excludedCohortIds`` is implicitly selected, so the predicate
   // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
-    const pageIds = cohorts.filter((c) => c.cohort_id).map((c) => c.cohort_id!);
+    const pageIds = cohorts.filter((c) => c.id).map((c) => c.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [cohorts, isSelected]);
@@ -373,7 +373,7 @@ export default function Cohorts({
   }, [setSelectedCohortIds, setSelectAllMatching, setExcludedCohortIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = cohorts.filter((c) => c.cohort_id).map((c) => c.cohort_id!);
+    const pageIds = cohorts.filter((c) => c.id).map((c) => c.id!);
     void setSelectAllMatching(false);
     void setExcludedCohortIds([]);
     void setSelectedCohortIds((prev) => {
@@ -742,7 +742,7 @@ export default function Cohorts({
             accept: true,
           }
         : {
-            cohort_ids: deletableCohorts.map((c) => c.cohort_id!),
+            cohort_ids: deletableCohorts.map((c) => c.id!),
             accept: true,
           };
 
@@ -833,7 +833,7 @@ export default function Cohorts({
             if (isActive && activeFlagId) flag_ids.push(activeFlagId);
           }
           return {
-            id: cohort.cohort_id!,
+            id: cohort.id!,
             ...sharedPatch,
             ...(hasAnyFlagChange && { flag_ids }),
           };
@@ -919,15 +919,15 @@ export default function Cohorts({
     const isPending = ghostState === "pending";
     const isFailed = ghostState === "failed";
 
-    const isSelectedRow = !isGhost && cohort.cohort_id ? isSelected(cohort.cohort_id) : false;
+    const isSelectedRow = !isGhost && cohort.id ? isSelected(cohort.id) : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons or when
       // rendering as a ghost (no real id to select).
       if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
-      if (cohort.cohort_id) {
-        toggleSelection(cohort.cohort_id);
+      if (cohort.id) {
+        toggleSelection(cohort.id);
       }
     };
 
@@ -946,10 +946,10 @@ export default function Cohorts({
 
     return (
     <Card
-      key={cohort.cohort_id || ""}
+      key={cohort.id || ""}
       {...(cohort.name ? { "aria-label": cohort.name } : {})}
       data-testid={isGhost ? "cohort-ghost-card" : "cohort-card"}
-      {...(cohort.cohort_id ? { "data-cohort-id": cohort.cohort_id } : {})}
+      {...(cohort.id ? { "data-cohort-id": cohort.id } : {})}
       data-ghost-state={ghostState}
       className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
         isGhost ? "" : "cursor-pointer"
@@ -974,7 +974,7 @@ export default function Cohorts({
                   <Checkbox
                     checked={isSelectedRow}
                     onCheckedChange={() => {
-                      if (cohort.cohort_id) toggleSelection(cohort.cohort_id);
+                      if (cohort.id) toggleSelection(cohort.id);
                     }}
                     className="rounded-full h-5 w-5"
                     aria-label={`Select cohort ${cohort.name || "Unnamed"}`}
@@ -1050,17 +1050,17 @@ export default function Cohorts({
                 {ghost.error}
               </span>
             )}
-            {!isGhost && cohort.cohort_id && (<>{cohort.can_edit ? (
+            {!isGhost && cohort.id && (<>{cohort.can_edit ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     asChild
                     variant="outline"
                     size="sm"
-                    data-testid={`edit-${cohort.cohort_id}`}
+                    data-testid={`edit-${cohort.id}`}
                   >
                     <HoverPrefetchLink
-                      href={`/training/cohorts/${cohort.cohort_id}`}
+                      href={`/training/cohorts/${cohort.id}`}
                       delay={150}
                       {...(cohort.name
                         ? { "aria-label": `Edit ${cohort.name}` }
@@ -1079,10 +1079,10 @@ export default function Cohorts({
                     asChild
                     variant="outline"
                     size="sm"
-                    data-testid={`view-${cohort.cohort_id}`}
+                    data-testid={`view-${cohort.id}`}
                   >
                     <HoverPrefetchLink
-                      href={`/training/cohorts/${cohort.cohort_id}`}
+                      href={`/training/cohorts/${cohort.id}`}
                       delay={150}
                       {...(cohort.name
                         ? { "aria-label": `View ${cohort.name}` }
@@ -1102,20 +1102,20 @@ export default function Cohorts({
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      cohort.cohort_id &&
+                      cohort.id &&
                       cohort.name &&
-                      handleDuplicate(cohort.cohort_id, cohort.name)
+                      handleDuplicate(cohort.id, cohort.name)
                     }
                     disabled={
-                      !cohort.cohort_id ||
-                      isDuplicating === cohort.cohort_id
+                      !cohort.id ||
+                      isDuplicating === cohort.id
                     }
                     {...(cohort.name
                       ? { "aria-label": `Duplicate ${cohort.name}` }
                       : {})}
                     data-testid="btn-duplicate-cohort"
                   >
-                    {cohort.cohort_id && isDuplicating === cohort.cohort_id ? (
+                    {cohort.id && isDuplicating === cohort.id ? (
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                     ) : (
                       <Copy className="h-4 w-4" />
@@ -1131,10 +1131,10 @@ export default function Cohorts({
                   <Button
                     variant="outline"
                     size="sm"
-                    data-testid={`delete-${cohort.cohort_id}`}
+                    data-testid={`delete-${cohort.id}`}
                     onClick={() =>
-                      cohort.cohort_id &&
-                      handleDeleteClick(cohort.cohort_id, cohort.name || "Untitled Cohort")
+                      cohort.id &&
+                      handleDeleteClick(cohort.id, cohort.name || "Untitled Cohort")
                     }
                     {...(cohort.name
                       ? { "aria-label": `Delete ${cohort.name}` }
@@ -1406,14 +1406,14 @@ export default function Cohorts({
               {tableRows.length ? (
                 tableRows.map((row) => {
                   const cohort = row.original;
-                  const key = cohort.cohort_id || `cohort-${row.id}`;
+                  const key = cohort.id || `cohort-${row.id}`;
                   const persistentGhost: Ghost<(typeof cohorts)[number]> | undefined =
                     cohort.pending_status === "pending" && cohort.pending_call_id
                       ? {
                           callId: cohort.pending_call_id,
                           op: (cohort.pending_operation as Ghost<(typeof cohorts)[number]>["op"]) ?? "create",
                           state: "pending",
-                          rowId: cohort.cohort_id ?? null,
+                          rowId: cohort.id ?? null,
                           partial: cohort as unknown as Ghost<(typeof cohorts)[number]>["partial"],
                           before: cohort,
                           tool: null,
@@ -1510,7 +1510,7 @@ export default function Cohorts({
                       <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                       <ul className="text-sm space-y-0.5">
                         {deletableCohorts.map((c) => (
-                          <li key={c.cohort_id} className="flex items-center gap-1.5">
+                          <li key={c.id} className="flex items-center gap-1.5">
                             <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                             {c.name || "Unnamed Cohort"}
                           </li>
@@ -1523,7 +1523,7 @@ export default function Cohorts({
                       <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use):</p>
                       <ul className="text-sm space-y-0.5">
                         {nonDeletableCohorts.map((c) => (
-                          <li key={c.cohort_id} className="flex items-center gap-1.5 text-muted-foreground">
+                          <li key={c.id} className="flex items-center gap-1.5 text-muted-foreground">
                             <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
                             {c.name || "Unnamed Cohort"}
                           </li>

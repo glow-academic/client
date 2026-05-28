@@ -315,7 +315,10 @@ export default function BulkImport({
   // ---- Render ----
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-5xl max-h-[90vh] overflow-y-auto"
+        data-testid="dialog-bulk-import"
+      >
         <DialogHeader>
           <DialogTitle>Import {artifactName} from CSV</DialogTitle>
           <DialogDescription>
@@ -529,7 +532,11 @@ export default function BulkImport({
             </Button>
           )}
           {stage === "review" && !saveResults && (
-            <Button onClick={handleSave} disabled={isSaving || editedData.length === 0}>
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || editedData.length === 0}
+              data-testid="btn-confirm-import"
+            >
               {isSaving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

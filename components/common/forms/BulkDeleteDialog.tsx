@@ -77,6 +77,7 @@ export function BulkDeleteDialog({
             onClick={onConfirm}
             disabled={isDeleting || count === 0}
             variant="destructive"
+            data-testid="btn-confirm-bulk-delete"
           >
             {isDeleting ? "Deleting..." : `Delete ${count}`}
           </AlertDialogAction>

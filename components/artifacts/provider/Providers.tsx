@@ -179,7 +179,7 @@ export default function Providers({
     // duplicating skeleton + pending soft state).
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseProviders,
-    rowKey: "provider_id",
+    rowKey: "id",
     // ``providers`` plural matches the field name the create /
     // duplicate / update impls now include on their responses (see
     // ``hydrate_provider_list_rows``). The hook reads
@@ -284,7 +284,7 @@ export default function Providers({
     : selectedProviderIds.length;
 
   const selectedProviders = useMemo(() => {
-    return providers.filter((p) => p.provider_id && isSelected(p.provider_id));
+    return providers.filter((p) => p.id && isSelected(p.id));
   }, [providers, isSelected]);
   const deletableProviders = useMemo(
     () => selectedProviders.filter((p) => p.can_delete),
@@ -326,7 +326,7 @@ export default function Providers({
   }, [setSelectedProviderIds, setSelectAllMatching, setExcludedProviderIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = providers.filter((p) => p.provider_id).map((p) => p.provider_id!);
+    const pageIds = providers.filter((p) => p.id).map((p) => p.id!);
     void setSelectAllMatching(false);
     void setExcludedProviderIds([]);
     void setSelectedProviderIds((prev) => Array.from(new Set([...prev, ...pageIds])));
@@ -346,7 +346,7 @@ export default function Providers({
   // ``excludedProviderIds`` is implicitly selected, so the predicate
   // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
-    const pageIds = providers.filter((p) => p.provider_id).map((p) => p.provider_id!);
+    const pageIds = providers.filter((p) => p.id).map((p) => p.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [providers, isSelected]);
@@ -709,7 +709,7 @@ export default function Providers({
             accept: true,
           }
         : {
-            provider_ids: deletableProviders.map((p) => p.provider_id!),
+            provider_ids: deletableProviders.map((p) => p.id!),
             accept: true,
           };
 
@@ -784,7 +784,7 @@ export default function Providers({
             flag_ids = isActive && activeFlagId ? [activeFlagId] : [];
           }
           return {
-            id: p.provider_id!,
+            id: p.id!,
             ...(hasActiveChange && { flag_ids }),
           };
         });
@@ -838,7 +838,7 @@ export default function Providers({
     const isPending = ghostState === "pending";
     const isFailed = ghostState === "failed";
 
-    const providerId = provider?.provider_id;
+    const providerId = provider?.id;
     const providerName = provider?.name;
     const isSelectedRow = !isGhost && providerId ? isSelected(providerId) : false;
 
@@ -1253,7 +1253,7 @@ export default function Providers({
           {tableRows.length > 0 ? (
             tableRows.map((row) => {
               const provider = row.original;
-              const key = provider.provider_id || `provider-${row.id}`;
+              const key = provider.id || `provider-${row.id}`;
               return <div key={key}>{renderProviderCard(provider)}</div>;
             })
           ) : (
@@ -1335,7 +1335,7 @@ export default function Providers({
                     <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                     <ul className="text-sm space-y-0.5">
                       {deletableProviders.map((p) => (
-                        <li key={p.provider_id} className="flex items-center gap-1.5">
+                        <li key={p.id} className="flex items-center gap-1.5">
                           <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                           {p.name || "Unnamed Provider"}
                         </li>
@@ -1351,7 +1351,7 @@ export default function Providers({
                     <ul className="text-sm space-y-0.5">
                       {nonDeletableProviders.map((p) => (
                         <li
-                          key={p.provider_id}
+                          key={p.id}
                           className="flex items-center gap-1.5 text-muted-foreground"
                         >
                           {p.name || "Unnamed Provider"}

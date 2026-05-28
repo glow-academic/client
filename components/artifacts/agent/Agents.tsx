@@ -190,7 +190,7 @@ export default function Agents({
     // materialize new/changed rows directly — no SSR refresh needed.
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseAgents,
-    rowKey: "agent_id",
+    rowKey: "id",
     artifactPlural: "agents",
   });
 
@@ -302,7 +302,7 @@ export default function Agents({
     : selectedAgentIds.length;
 
   const selectedAgents = useMemo(() => {
-    return agents.filter((a) => a.agent_id && isSelected(a.agent_id));
+    return agents.filter((a) => a.id && isSelected(a.id));
   }, [agents, isSelected]);
   const deletableAgents = useMemo(
     () => selectedAgents.filter((a) => a.can_delete),
@@ -344,7 +344,7 @@ export default function Agents({
   }, [setSelectedAgentIds, setSelectAllMatching, setExcludedAgentIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = agents.filter((a) => a.agent_id).map((a) => a.agent_id!);
+    const pageIds = agents.filter((a) => a.id).map((a) => a.id!);
     void setSelectAllMatching(false);
     void setExcludedAgentIds([]);
     void setSelectedAgentIds((prev) => Array.from(new Set([...prev, ...pageIds])));
@@ -364,7 +364,7 @@ export default function Agents({
   // ``excludedAgentIds`` is implicitly selected, so the predicate
   // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
-    const pageIds = agents.filter((a) => a.agent_id).map((a) => a.agent_id!);
+    const pageIds = agents.filter((a) => a.id).map((a) => a.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [agents, isSelected]);
@@ -807,7 +807,7 @@ export default function Agents({
             accept: true,
           }
         : {
-            agent_ids: deletableAgents.map((a) => a.agent_id!),
+            agent_ids: deletableAgents.map((a) => a.id!),
             accept: true,
           };
 
@@ -890,7 +890,7 @@ export default function Agents({
             if (isMcp && mcpFlagId) flag_ids.push(mcpFlagId);
           }
           return {
-            id: row.agent_id!,
+            id: row.id!,
             ...(hasAnyFlagChange && { flag_ids }),
           };
         });
@@ -946,14 +946,14 @@ export default function Agents({
     const isPending = ghostState === "pending";
     const isFailed = ghostState === "failed";
 
-    const cardSelected = !isGhost && agent.agent_id ? isSelected(agent.agent_id) : false;
+    const cardSelected = !isGhost && agent.id ? isSelected(agent.id) : false;
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons or when
       // rendering as a ghost (no real id to select yet).
       if (isGhost) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
-      if (agent.agent_id) {
-        toggleSelection(agent.agent_id);
+      if (agent.id) {
+        toggleSelection(agent.id);
       }
     };
 
@@ -971,14 +971,14 @@ export default function Agents({
       : "";
     return (
     <Card
-      key={agent.agent_id}
+      key={agent.id}
       className={`group hover:shadow-md transition-all ${
         isGhost ? "" : "cursor-pointer"
       } ${ghostBorderClass} ${
         cardSelected ? "ring-2 ring-primary" : ""
       }`}
       data-testid={isGhost ? "agent-ghost-card" : "agent-card"}
-      data-agent-id={agent.agent_id}
+      data-agent-id={agent.id}
       data-ghost-state={ghostState}
       role="gridcell"
       aria-label={`agent card ${agent.name || (isGhost ? "Generating" : "Unnamed Agent")}`}
@@ -1004,7 +1004,7 @@ export default function Agents({
                   <Checkbox
                     checked={cardSelected}
                     onCheckedChange={() => {
-                      if (agent.agent_id) toggleSelection(agent.agent_id);
+                      if (agent.id) toggleSelection(agent.id);
                     }}
                     className="rounded-full h-5 w-5"
                     aria-label={`Select agent ${agent.name || "Unnamed"}`}
@@ -1087,7 +1087,7 @@ export default function Agents({
                 {ghost.error}
               </span>
             )}
-            {!isGhost && agent.can_edit && agent.agent_id ? (
+            {!isGhost && agent.can_edit && agent.id ? (
               <Button
                 asChild
                 variant="outline"
@@ -1097,7 +1097,7 @@ export default function Agents({
                 className="h-9 px-3"
               >
                 <HoverPrefetchLink
-                  href={`/intelligence/agents/${agent.agent_id}`}
+                  href={`/intelligence/agents/${agent.id}`}
                   delay={150}
                   aria-label={`Edit agent ${agent.name ?? "Unnamed Agent"}`}
                 >
@@ -1105,7 +1105,7 @@ export default function Agents({
                   <span className="md:hidden">Edit</span>
                 </HoverPrefetchLink>
               </Button>
-            ) : !isGhost && agent.agent_id ? (
+            ) : !isGhost && agent.id ? (
               <Button
                 asChild
                 variant="outline"
@@ -1115,7 +1115,7 @@ export default function Agents({
                 className="h-9 px-3"
               >
                 <HoverPrefetchLink
-                  href={`/intelligence/agents/${agent.agent_id}`}
+                  href={`/intelligence/agents/${agent.id}`}
                   delay={150}
                   aria-label={`View agent ${agent.name ?? "Unnamed Agent"}`}
                 >
@@ -1124,11 +1124,11 @@ export default function Agents({
                 </HoverPrefetchLink>
               </Button>
             ) : null}
-            {!isGhost && agent.can_duplicate && agent.agent_id && (
+            {!isGhost && agent.can_duplicate && agent.id && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleDuplicate(agent.agent_id!)}
+                onClick={() => handleDuplicate(agent.id!)}
                 disabled={false}
                 aria-label={`Duplicate agent ${agent.name ?? "Unnamed Agent"}`}
                 data-testid="btn-duplicate-agent"
@@ -1139,13 +1139,13 @@ export default function Agents({
                 <span className="md:hidden">Duplicate</span>
               </Button>
             )}
-            {!isGhost && agent.can_delete && agent.agent_id && (
+            {!isGhost && agent.can_delete && agent.id && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() =>
                   handleDeleteClick(
-                    agent.agent_id!,
+                    agent.id!,
                     agent.name ?? "Unnamed Agent",
                   )
                 }
@@ -1419,7 +1419,7 @@ export default function Agents({
                         callId: agent.pending_call_id,
                         op: (agent.pending_operation as Ghost<(typeof agents)[0]>["op"]) ?? "create",
                         state: "pending",
-                        rowId: agent.agent_id ?? null,
+                        rowId: agent.id ?? null,
                         partial: agent as unknown as Ghost<(typeof agents)[0]>["partial"],
                         before: agent,
                         tool: null,
@@ -1518,7 +1518,7 @@ export default function Agents({
                     <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                     <ul className="text-sm space-y-0.5">
                       {deletableAgents.map((a) => (
-                        <li key={a.agent_id} className="flex items-center gap-1.5">
+                        <li key={a.id} className="flex items-center gap-1.5">
                           <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                           {a.name || "Unnamed Agent"}
                         </li>
@@ -1534,7 +1534,7 @@ export default function Agents({
                     <ul className="text-sm space-y-0.5">
                       {nonDeletableAgents.map((a) => (
                         <li
-                          key={a.agent_id}
+                          key={a.id}
                           className="flex items-center gap-1.5 text-muted-foreground"
                         >
                           {a.name || "Unnamed Agent"}

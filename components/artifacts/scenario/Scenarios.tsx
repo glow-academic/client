@@ -273,7 +273,7 @@ export function Scenarios({
     // audit events that nothing is subscribed to → no ghost.
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseScenarios,
-    rowKey: "scenario_id",
+    rowKey: "id",
     // ``scenarios`` plural matches the field name the create /
     // duplicate / update impls now include on their responses (see
     // ``hydrate_scenario_list_rows``). The hook reads
@@ -385,7 +385,7 @@ export function Scenarios({
     : selectedScenarioIds.length;
 
   const selectedScenarios = useMemo(() => {
-    return parentScenarios.filter((s) => s.scenario_id && isSelected(s.scenario_id));
+    return parentScenarios.filter((s) => s.id && isSelected(s.id));
   }, [parentScenarios, isSelected]);
 
   const deletableScenarios = useMemo(() => {
@@ -405,7 +405,7 @@ export function Scenarios({
   // ``excludedScenarioIds`` is implicitly selected, so the predicate
   // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
-    const pageIds = parentScenarios.filter((s) => s.scenario_id).map((s) => s.scenario_id!);
+    const pageIds = parentScenarios.filter((s) => s.id).map((s) => s.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [parentScenarios, isSelected]);
@@ -442,7 +442,7 @@ export function Scenarios({
   }, [setSelectedScenarioIds, setSelectAllMatching, setExcludedScenarioIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = parentScenarios.filter((s) => s.scenario_id).map((s) => s.scenario_id!);
+    const pageIds = parentScenarios.filter((s) => s.id).map((s) => s.id!);
     void setSelectAllMatching(false);
     void setExcludedScenarioIds([]);
     void setSelectedScenarioIds((prev) => {
@@ -667,7 +667,7 @@ export function Scenarios({
     const roots = scenarios.filter((s) => !s.parent_scenario_id);
     roots.forEach((parent) => {
       const children = scenarios.filter(
-        (s) => s.parent_scenario_id === parent.scenario_id,
+        (s) => s.parent_scenario_id === parent.id,
       );
       groups.push({ parent, children });
     });
@@ -771,7 +771,7 @@ export function Scenarios({
             accept: true,
           }
         : {
-            scenario_ids: deletableScenarios.map((s) => s.scenario_id!),
+            scenario_ids: deletableScenarios.map((s) => s.id!),
             accept: true,
           };
 
@@ -862,7 +862,7 @@ export function Scenarios({
             if (isActive && activeFlagId) flag_ids.push(activeFlagId);
           }
           return {
-            id: scenario.scenario_id!,
+            id: scenario.id!,
             ...sharedPatch,
             ...(hasAnyFlagChange && { flag_ids }),
           };
@@ -1057,7 +1057,7 @@ export function Scenarios({
     const isPending = ghostState === "pending";
     const isFailed = ghostState === "failed";
 
-    const isSelectedRow = !isGhost && !isChild && scenario.scenario_id ? isSelected(scenario.scenario_id) : false;
+    const isSelectedRow = !isGhost && !isChild && scenario.id ? isSelected(scenario.id) : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
       // Don't toggle selection if clicking action buttons, on a child,
@@ -1065,8 +1065,8 @@ export function Scenarios({
       if (isGhost) return;
       if (isChild) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
-      if (scenario.scenario_id) {
-        toggleSelection(scenario.scenario_id);
+      if (scenario.id) {
+        toggleSelection(scenario.id);
       }
     };
 
@@ -1085,9 +1085,9 @@ export function Scenarios({
 
     return (
       <Card
-        key={scenario.scenario_id}
+        key={scenario.id}
         data-testid={isGhost ? "scenario-ghost-card" : "scenario-card"}
-        data-scenario-id={scenario.scenario_id}
+        data-scenario-id={scenario.id}
         data-ghost-state={ghostState}
         className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
           isChild ? "ml-8 border-l-2 border-l-blue-200" : isGhost ? "" : "cursor-pointer"
@@ -1112,7 +1112,7 @@ export function Scenarios({
                     <Checkbox
                       checked={isSelectedRow}
                       onCheckedChange={() => {
-                        if (scenario.scenario_id) toggleSelection(scenario.scenario_id);
+                        if (scenario.id) toggleSelection(scenario.id);
                       }}
                       className="rounded-full h-5 w-5"
                       aria-label={`Select scenario ${scenario.name || "Unnamed"}`}
@@ -1202,7 +1202,7 @@ export function Scenarios({
                   {ghost.error}
                 </span>
               )}
-              {!isGhost && scenario.scenario_id && (scenario.generated ? (
+              {!isGhost && scenario.id && (scenario.generated ? (
                 // For generated scenarios: only show preview and duplicate
                 <>
                   <Tooltip>
@@ -1215,7 +1215,7 @@ export function Scenarios({
                         className="h-9 px-3"
                       >
                         <HoverPrefetchLink
-                          href={`/training/scenarios/${scenario.scenario_id}`}
+                          href={`/training/scenarios/${scenario.id}`}
                           delay={150}
                         >
                           <Eye className="h-4 w-4 md:mr-0 mr-2" />
@@ -1233,25 +1233,25 @@ export function Scenarios({
                           size="sm"
                           data-testid="btn-duplicate-scenario"
                           onClick={() =>
-                            scenario.scenario_id &&
+                            scenario.id &&
                             handleDuplicate(
-                              scenario.scenario_id,
+                              scenario.id,
                               scenario.name || "Unnamed Scenario"
                             )
                           }
                           disabled={
-                            isDuplicating === scenario.scenario_id ||
-                            !scenario.scenario_id
+                            isDuplicating === scenario.id ||
+                            !scenario.id
                           }
                           className="h-9 px-3"
                         >
-                          {isDuplicating === scenario.scenario_id ? (
+                          {isDuplicating === scenario.id ? (
                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
                           ) : (
                             <Copy className="h-4 w-4 md:mr-0 mr-2" />
                           )}
                           <span className="md:hidden">
-                            {isDuplicating === scenario.scenario_id
+                            {isDuplicating === scenario.id
                               ? "Duplicating..."
                               : "Duplicate"}
                           </span>
@@ -1275,7 +1275,7 @@ export function Scenarios({
                           className="h-9 px-3"
                         >
                           <HoverPrefetchLink
-                            href={`/training/scenarios/${scenario.scenario_id}`}
+                            href={`/training/scenarios/${scenario.id}`}
                             delay={150}
                           >
                             <Edit className="h-4 w-4 md:mr-0 mr-2" />
@@ -1296,7 +1296,7 @@ export function Scenarios({
                           className="h-9 px-3"
                         >
                           <HoverPrefetchLink
-                            href={`/training/scenarios/${scenario.scenario_id}`}
+                            href={`/training/scenarios/${scenario.id}`}
                             delay={150}
                           >
                             <Eye className="h-4 w-4 md:mr-0 mr-2" />
@@ -1315,25 +1315,25 @@ export function Scenarios({
                           size="sm"
                           data-testid="btn-duplicate-scenario"
                           onClick={() =>
-                            scenario.scenario_id &&
+                            scenario.id &&
                             handleDuplicate(
-                              scenario.scenario_id,
+                              scenario.id,
                               scenario.name || "Unnamed Scenario"
                             )
                           }
                           disabled={
-                            isDuplicating === scenario.scenario_id ||
-                            !scenario.scenario_id
+                            isDuplicating === scenario.id ||
+                            !scenario.id
                           }
                           className="h-9 px-3"
                         >
-                          {isDuplicating === scenario.scenario_id ? (
+                          {isDuplicating === scenario.id ? (
                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
                           ) : (
                             <Copy className="h-4 w-4 md:mr-0 mr-2" />
                           )}
                           <span className="md:hidden">
-                            {isDuplicating === scenario.scenario_id
+                            {isDuplicating === scenario.id
                               ? "Duplicating..."
                               : "Duplicate"}
                           </span>
@@ -1351,9 +1351,9 @@ export function Scenarios({
                           size="sm"
                           data-testid="btn-delete-scenario"
                           onClick={() =>
-                            scenario.scenario_id &&
+                            scenario.id &&
                             handleDeleteClick(
-                              scenario.scenario_id,
+                              scenario.id,
                               scenario.name || "Unnamed Scenario"
                             )
                           }
@@ -1461,7 +1461,7 @@ export function Scenarios({
 
   const renderGroupedScenarios = () => {
     return currentPageGroupedScenarios.map((group) => {
-      const parentId = group.parent.scenario_id;
+      const parentId = group.parent.id;
       if (!parentId) return null;
       const isCollapsed = collapsedGroups.has(parentId);
       const hasChildren = group.children.length > 0;
@@ -1475,7 +1475,7 @@ export function Scenarios({
               callId: group.parent.pending_call_id,
               op: (group.parent.pending_operation as Ghost<(typeof scenarios)[number]>["op"]) ?? "create",
               state: "pending",
-              rowId: group.parent.scenario_id ?? null,
+              rowId: group.parent.id ?? null,
               partial: group.parent as unknown as Ghost<(typeof scenarios)[number]>["partial"],
               before: group.parent,
               tool: null,
@@ -1814,7 +1814,7 @@ export function Scenarios({
                       <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                       <ul className="text-sm space-y-0.5">
                         {deletableScenarios.map((s) => (
-                          <li key={s.scenario_id} className="flex items-center gap-1.5">
+                          <li key={s.id} className="flex items-center gap-1.5">
                             <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                             {s.name || "Unnamed Scenario"}
                           </li>
@@ -1827,7 +1827,7 @@ export function Scenarios({
                       <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by simulations):</p>
                       <ul className="text-sm space-y-0.5">
                         {nonDeletableScenarios.map((s) => (
-                          <li key={s.scenario_id} className="flex items-center gap-1.5 text-muted-foreground">
+                          <li key={s.id} className="flex items-center gap-1.5 text-muted-foreground">
                             <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
                             {s.name || "Unnamed Scenario"}
                           </li>

@@ -227,7 +227,7 @@ export default function Documents({
     // subscribed to → no ghost.
     ops: ["create", "update", "delete", "duplicate"],
     baseRows: baseDocuments,
-    rowKey: "document_id",
+    rowKey: "id",
     // ``documents`` plural matches the field name the create /
     // duplicate / update impls now include on their responses (see
     // ``hydrate_document_list_rows``). The hook reads
@@ -418,7 +418,7 @@ export default function Documents({
    *  enumerate per-row patches (explicit) or send the filter envelope
    *  + ``patch`` for the server to expand (all-matching). */
   const selectedDocuments = useMemo(() => {
-    return documents.filter((d) => isSelected(d.document_id));
+    return documents.filter((d) => isSelected(d.id));
   }, [documents, isSelected]);
   const deletableDocuments = useMemo(
     () => selectedDocuments.filter((d) => d.can_delete),
@@ -460,7 +460,7 @@ export default function Documents({
   }, [setSelectedDocumentIds, setSelectAllMatching, setExcludedDocumentIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = documents.filter((d) => d.document_id).map((d) => d.document_id!);
+    const pageIds = documents.filter((d) => d.id).map((d) => d.id!);
     void setSelectAllMatching(false);
     void setExcludedDocumentIds([]);
     void setSelectedDocumentIds((prev) => Array.from(new Set([...prev, ...pageIds])));
@@ -489,7 +489,7 @@ export default function Documents({
   // Permission checking using server-provided flags
   const canDeleteDocument = useCallback(
     (documentId: string) => {
-      const doc = documents.find((d) => d.document_id === documentId);
+      const doc = documents.find((d) => d.id === documentId);
       return doc?.can_delete ?? false;
     },
     [documents]
@@ -517,7 +517,7 @@ export default function Documents({
         id: "select",
         header: () => null,
         cell: ({ row }) => {
-          const docId = row.original.document_id;
+          const docId = row.original.id;
           if (!docId) return null;
           const checked = isSelected(docId);
           return (
@@ -716,7 +716,7 @@ export default function Documents({
               <Button
                 variant="outline"
                 size="sm"
-                data-testid={`preview-${document.document_id}`}
+                data-testid={`preview-${document.id}`}
                 onClick={() => handlePreview(document)}
                 aria-label={`Preview ${document.name}`}
               >
@@ -726,22 +726,22 @@ export default function Documents({
                 asChild
                 variant="outline"
                 size="sm"
-                data-testid={`edit-${document.document_id}`}
+                data-testid={`edit-${document.id}`}
               >
                 <HoverPrefetchLink
-                  href={`/management/documents/${document.document_id}`}
+                  href={`/management/documents/${document.id}`}
                   delay={150}
                   aria-label={`Edit ${document.name}`}
                 >
                   <Edit className="h-4 w-4" />
                 </HoverPrefetchLink>
               </Button>
-              {document.document_id &&
-                canDeleteDocument(document.document_id) && (
+              {document.id &&
+                canDeleteDocument(document.id) && (
                   <Button
                     variant="outline"
                     size="sm"
-                    data-testid={`delete-${document.document_id}`}
+                    data-testid={`delete-${document.id}`}
                     onClick={() => handleSingleDelete(document)}
                     aria-label={`Delete ${document.name}`}
                     className="text-destructive hover:text-destructive"
@@ -842,7 +842,7 @@ export default function Documents({
             accept: true,
           }
         : {
-            document_ids: deletableDocuments.map((d) => d.document_id!),
+            document_ids: deletableDocuments.map((d) => d.id!),
             accept: true,
           };
 
@@ -940,7 +940,7 @@ export default function Documents({
             if (isTemplate && templateFlagId) flag_ids.push(templateFlagId);
           }
           return {
-            id: doc.document_id!,
+            id: doc.id!,
             ...sharedPatch,
             ...(hasAnyFlagChange && { flag_ids }),
           };
@@ -984,7 +984,7 @@ export default function Documents({
   // ``excludedDocumentIds`` is implicitly selected, so the predicate
   // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
-    const pageIds = documents.filter((d) => d.document_id).map((d) => d.document_id!);
+    const pageIds = documents.filter((d) => d.id).map((d) => d.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
   }, [documents, isSelected]);
@@ -1138,9 +1138,9 @@ export default function Documents({
 
   // Handle document delete
   const handleDelete = async () => {
-    if (!deletingDocument || !deletingDocument.document_id) return;
+    if (!deletingDocument || !deletingDocument.id) return;
 
-    if (!canDeleteDocument(deletingDocument.document_id)) {
+    if (!canDeleteDocument(deletingDocument.id)) {
       toast.error(
         "This document cannot be deleted as it is used in active scenarios"
       );
@@ -1153,7 +1153,7 @@ export default function Documents({
     try {
       if (!deleteDocumentAction) return;
       await deleteDocumentAction({
-        body: { document_ids: [deletingDocument.document_id], accept: true },
+        body: { document_ids: [deletingDocument.id], accept: true },
       });
       router.refresh();
       toast.success("Document deleted successfully");
@@ -1399,7 +1399,7 @@ export default function Documents({
                           callId: docRow.pending_call_id,
                           op: (docRow.pending_operation as Ghost<DocumentRow>["op"]) ?? "create",
                           state: "pending",
-                          rowId: docRow.document_id ?? null,
+                          rowId: docRow.id ?? null,
                           partial: docRow as unknown as Ghost<DocumentRow>["partial"],
                           before: docRow,
                           tool: null,
@@ -1413,7 +1413,7 @@ export default function Documents({
                           key={row.id}
                           className="hover:bg-muted/30 transition-colors"
                           data-testid="documents-row"
-                          data-document-id={row.original.document_id ?? undefined}
+                          data-document-id={row.original.id ?? undefined}
                         >
                           {row.getVisibleCells().map((cell) => (
                             <TableCell
@@ -1489,8 +1489,8 @@ export default function Documents({
                 disabled={
                   isDeleting ||
                   !deletingDocument ||
-                  !deletingDocument.document_id ||
-                  !canDeleteDocument(deletingDocument.document_id)
+                  !deletingDocument.id ||
+                  !canDeleteDocument(deletingDocument.id)
                 }
                 variant="destructive"
                 data-testid="btn-confirm-delete"
@@ -1540,7 +1540,7 @@ export default function Documents({
                       <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
                       <ul className="text-sm space-y-0.5">
                         {deletableDocuments.map((d) => (
-                          <li key={d.document_id} className="flex items-center gap-1.5">
+                          <li key={d.id} className="flex items-center gap-1.5">
                             <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
                             {d.name || "Unnamed Document"}
                           </li>
@@ -1553,7 +1553,7 @@ export default function Documents({
                       <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use):</p>
                       <ul className="text-sm space-y-0.5">
                         {nonDeletableDocuments.map((d) => (
-                          <li key={d.document_id} className="flex items-center gap-1.5 text-muted-foreground">
+                          <li key={d.id} className="flex items-center gap-1.5 text-muted-foreground">
                             {d.name || "Unnamed Document"}
                           </li>
                         ))}
@@ -1647,7 +1647,7 @@ export default function Documents({
               <div className="flex-1 min-h-0">
                 <DocumentViewer
                   document={{
-                    document_id: previewDocument.document_id ?? null,
+                    document_id: previewDocument.id ?? null,
                     name: previewDocument.name ?? null,
                     updated_at: previewDocument.updated_at ?? null,
                     extension: previewDocument.extension ?? null,
