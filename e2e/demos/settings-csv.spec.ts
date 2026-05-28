@@ -1,25 +1,20 @@
-// TODO: placeholder demo — not yet implemented (basic recording).
-// Flesh out or wire to the engine helpers in helpers/crud-demos.ts.
-import { expect, test } from "@playwright/test";
+import { mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-import { openLibrary } from "../helpers/artifact-demo";
-import { scrollToText } from "../helpers/demo-page";
-import { pauseForDemo, saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "settings-csv";
+import { test } from "../fixtures";
+import { saveDemoVideo } from "../helpers/demo-video";
 
 test.describe("demo: settings csv", () => {
-  test("records the settings CSV import entry point and upload preview shell", async ({ page }) => {
-    await openLibrary(page, "/settings", "settings-toolbar", "settings-grid");
-    const importButton = page.getByRole("button", { name: /import csv/i });
-    if (await importButton.isVisible().catch(() => false)) {
-      await importButton.click();
-      await expect(page.getByText(/import settings from csv/i)).toBeVisible({ timeout: 10_000 });
-      await scrollToText(page, /drop a \.csv file|download template|required/i);
-    } else {
-      await scrollToText(page, /import csv|export|settings/i);
-    }
-    await pauseForDemo();
-    await saveDemoVideo(page, TOPIC);
+  test("import settings from a CSV", async ({ settings, page, registry, runId }) => {
+    test.setTimeout(180_000);
+    const names = [`Imported Setting A ${runId}`, `Imported Setting B ${runId}`];
+    for (const n of names) registry.track({ kind: "setting", name: n });
+    const dir = await mkdtemp(join(tmpdir(), "glow-csv-"));
+    const csv = join(dir, "settings.csv");
+    await writeFile(csv, `Name\n${names[0]}\n${names[1]}\n`);
+    await settings.open();
+    await settings.library.bulkImport(csv);
+    await saveDemoVideo(page, "settings-csv");
   });
 });
