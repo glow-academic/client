@@ -1,18 +1,12 @@
-// TODO: placeholder demo — not yet implemented (basic recording).
-// Flesh out or wire to the engine helpers in helpers/crud-demos.ts.
-import { test } from "@playwright/test";
-
-import { openArtifactForm, showFormStep } from "../helpers/artifact-demo";
-import { scrollToText } from "../helpers/demo-page";
+import { test } from "../fixtures";
 import { saveDemoVideo } from "../helpers/demo-video";
 
-const TOPIC = "tools-args";
-
 test.describe("demo: tools args", () => {
-  test("records argument, position, and output configuration", async ({ page }) => {
-    await openArtifactForm(page, "/intelligence/tools/new");
-    await showFormStep(page, "arguments");
-    await scrollToText(page, /argument name|field type|output|template/i);
-    await saveDemoVideo(page, TOPIC);
+  test("define a tool argument", async ({ tools, page }) => {
+    test.setTimeout(120_000);
+    await tools.form.openNew();
+    await tools.form.fill("name", "Calculator");
+    await tools.form.addArgument("operand"); // Add Argument → name it (field_type defaults to string)
+    await saveDemoVideo(page, "tools-args");
   });
 });

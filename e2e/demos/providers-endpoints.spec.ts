@@ -1,18 +1,12 @@
-// TODO: placeholder demo — not yet implemented (basic recording).
-// Flesh out or wire to the engine helpers in helpers/crud-demos.ts.
-import { test } from "@playwright/test";
-
-import { openArtifactForm, showFormStep } from "../helpers/artifact-demo";
-import { scrollToText } from "../helpers/demo-page";
+import { test } from "../fixtures";
 import { saveDemoVideo } from "../helpers/demo-video";
 
-const TOPIC = "providers-endpoints";
-
 test.describe("demo: providers endpoints", () => {
-  test("records endpoint configuration for a provider", async ({ page }) => {
-    await openArtifactForm(page, "/intelligence/providers/new");
-    await showFormStep(page, "endpoint");
-    await scrollToText(page, /endpoint|base url|regional|gateway/i);
-    await saveDemoVideo(page, TOPIC);
+  test("configure a provider endpoint URL", async ({ providers, page }) => {
+    test.setTimeout(120_000);
+    await providers.form.openNew();
+    await providers.form.fill("name", "Acme Inference");
+    await providers.form.fillIfPresent("endpoint", "https://api.acme.example/v1");
+    await saveDemoVideo(page, "providers-endpoints");
   });
 });

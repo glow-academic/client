@@ -1,18 +1,12 @@
-// TODO: placeholder demo — not yet implemented (basic recording).
-// Flesh out or wire to the engine helpers in helpers/crud-demos.ts.
-import { test } from "@playwright/test";
-
-import { openLibrary } from "../helpers/artifact-demo";
-import { hoverFirstVisible, scrollToText } from "../helpers/demo-page";
+import { test } from "../fixtures";
 import { saveDemoVideo } from "../helpers/demo-video";
 
-const TOPIC = "rubrics-points";
-
 test.describe("demo: rubrics points", () => {
-  test("records point totals, pass thresholds, and usage warnings", async ({ page }) => {
-    await openLibrary(page, "/platform/rubrics", "rubrics-toolbar", "rubrics-grid");
-    await hoverFirstVisible(page, "rubric-card");
-    await scrollToText(page, /points|pass percentage|pass threshold|active simulation/i);
-    await saveDemoVideo(page, TOPIC);
+  test("set the rubric pass-points threshold", async ({ rubrics, page }) => {
+    test.setTimeout(120_000);
+    await rubrics.form.openNew();
+    await rubrics.form.fill("name", "Discovery Call Rubric");
+    await rubrics.form.fillIfPresent("passPoints", "12");
+    await saveDemoVideo(page, "rubrics-points");
   });
 });
