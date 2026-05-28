@@ -1,18 +1,9 @@
-import { test } from "@playwright/test";
-
-import { recordBulkAffordances } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "rubrics-bulk";
+import { test } from "../fixtures";
+import { bulkDeleteDemo } from "../helpers/crud-demos";
 
 test.describe("demo: rubrics bulk", () => {
-  test("records rubric bulk-operation affordances", async ({ page }) => {
-    await recordBulkAffordances(page, {
-      path: "/platform/rubrics",
-      toolbar: "rubrics-toolbar",
-      surface: "rubrics-grid",
-      card: "rubric-card",
-    });
-    await saveDemoVideo(page, TOPIC);
+  test("bulk-delete rubrics", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await bulkDeleteDemo({ page, demo, registry, request, runId }, "rubric");
   });
 });

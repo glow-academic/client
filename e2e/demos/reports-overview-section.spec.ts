@@ -1,3 +1,5 @@
+// TODO: placeholder demo — not yet implemented (basic recording).
+// Flesh out or wire to the engine helpers in helpers/crud-demos.ts.
 import { expect, test } from "@playwright/test";
 
 import { expectAuthenticated, scrollToText } from "../helpers/demo-page";

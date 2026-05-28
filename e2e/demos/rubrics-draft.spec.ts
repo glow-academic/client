@@ -1,16 +1,9 @@
-import { expect, test } from "@playwright/test";
-
-import { openArtifactForm } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "rubrics-draft";
+import { test } from "../fixtures";
+import { draftDemo } from "../helpers/crud-demos";
 
 test.describe("demo: rubrics draft", () => {
-  test("records draft controls for rubric scoring edits", async ({ page }) => {
-    await openArtifactForm(page, "/platform/rubrics/new");
-    await page.getByPlaceholder(/sales call rubric/i).fill("Draft Rubric Demo");
-    await expect(page.getByTestId("draft-toolbar")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("artifact-form-submit")).toBeVisible();
-    await saveDemoVideo(page, TOPIC);
+  test("save a rubric as a draft", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await draftDemo({ page, demo, registry, request, runId }, "rubric");
   });
 });

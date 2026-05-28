@@ -1,16 +1,8 @@
-import { test } from "@playwright/test";
-
-import { openLibrary } from "../helpers/artifact-demo";
-import { hoverFirstVisible, scrollToText } from "../helpers/demo-page";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "providers-overview";
+import { test } from "../fixtures";
+import { overviewDemo } from "../helpers/crud-demos";
 
 test.describe("demo: providers overview", () => {
-  test("records provider cards with endpoint, model, and key context", async ({ page }) => {
-    await openLibrary(page, "/intelligence/providers", "providers-toolbar", "providers-toolbar");
-    await hoverFirstVisible(page, "provider-card");
-    await scrollToText(page, /endpoint|model|key|department/i);
-    await saveDemoVideo(page, TOPIC);
+  test("browse the providers library", async ({ page, demo, registry, request, runId }) => {
+    await overviewDemo({ page, demo, registry, request, runId }, "provider");
   });
 });

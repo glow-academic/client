@@ -1,16 +1,8 @@
-import { test } from "@playwright/test";
-
-import { openLibrary } from "../helpers/artifact-demo";
-import { hoverFirstVisible, scrollToText } from "../helpers/demo-page";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "parameters-overview";
+import { test } from "../fixtures";
+import { overviewDemo } from "../helpers/crud-demos";
 
 test.describe("demo: parameters overview", () => {
-  test("records parameter cards with field counts and usage context", async ({ page }) => {
-    await openLibrary(page, "/management/parameters", "parameters-toolbar", "parameters-grid");
-    await hoverFirstVisible(page, "parameter-card");
-    await scrollToText(page, /fields|scenarios|departments|default/i);
-    await saveDemoVideo(page, TOPIC);
+  test("browse the parameters library", async ({ page, demo, registry, request, runId }) => {
+    await overviewDemo({ page, demo, registry, request, runId }, "parameter");
   });
 });

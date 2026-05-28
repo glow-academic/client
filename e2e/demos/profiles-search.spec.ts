@@ -1,20 +1,8 @@
-import { test } from "@playwright/test";
-
-import { recordSearchControls } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "profiles-search";
+import { test } from "../fixtures";
+import { searchDemo } from "../helpers/crud-demos";
 
 test.describe("demo: profiles search", () => {
-  test("records profile search with role and department filters nearby", async ({ page }) => {
-    await recordSearchControls(page, {
-      path: "/management/profiles",
-      toolbar: "profiles-toolbar",
-      surface: "profiles-table",
-      search: "profiles-search",
-      query: "Johnson",
-      card: "profiles-row",
-    });
-    await saveDemoVideo(page, TOPIC);
+  test("search the profiles library", async ({ page, demo, registry, request, runId }) => {
+    await searchDemo({ page, demo, registry, request, runId }, "profile");
   });
 });

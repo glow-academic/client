@@ -1,19 +1,9 @@
-import { test } from "@playwright/test";
-
-import { openArtifactForm } from "../helpers/artifact-demo";
-import { scrollToText } from "../helpers/demo-page";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "evals-draft";
+import { test } from "../fixtures";
+import { draftDemo } from "../helpers/crud-demos";
 
 test.describe("demo: evals draft", () => {
-  test("records a staged eval draft before publish", async ({ page }) => {
-    await openArtifactForm(page, "/platform/evals/new");
-    await page.getByPlaceholder(/eval name/i).fill("Draft Demo Eval");
-    await page
-      .getByPlaceholder(/enter description/i)
-      .fill("Draft eval scoring changes are staged before affecting runs.");
-    await scrollToText(page, /draft|create eval|save/i);
-    await saveDemoVideo(page, TOPIC);
+  test("save a eval as a draft", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await draftDemo({ page, demo, registry, request, runId }, "eval");
   });
 });

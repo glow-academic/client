@@ -1,18 +1,9 @@
-import { test } from "@playwright/test";
-
-import { recordBulkAffordances } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "scenarios-bulk";
+import { test } from "../fixtures";
+import { bulkDeleteDemo } from "../helpers/crud-demos";
 
 test.describe("demo: scenarios bulk", () => {
-  test("records scenario grid bulk affordances", async ({ page }) => {
-    await recordBulkAffordances(page, {
-      path: "/training/scenarios",
-      toolbar: "scenarios-toolbar",
-      surface: "scenarios-grid",
-      card: "scenario-card",
-    });
-    await saveDemoVideo(page, TOPIC);
+  test("bulk-delete scenarios", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await bulkDeleteDemo({ page, demo, registry, request, runId }, "scenario");
   });
 });

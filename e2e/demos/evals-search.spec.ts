@@ -1,20 +1,8 @@
-import { test } from "@playwright/test";
-
-import { recordSearchControls } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "evals-search";
+import { test } from "../fixtures";
+import { searchDemo } from "../helpers/crud-demos";
 
 test.describe("demo: evals search", () => {
-  test("records eval search with model, rubric, and department filters", async ({ page }) => {
-    await recordSearchControls(page, {
-      path: "/platform/evals",
-      toolbar: "evals-toolbar",
-      surface: "evals-grid",
-      search: "evals-search",
-      query: "fall",
-      card: "eval-card",
-    });
-    await saveDemoVideo(page, TOPIC);
+  test("search the evals library", async ({ page, demo, registry, request, runId }) => {
+    await searchDemo({ page, demo, registry, request, runId }, "eval");
   });
 });

@@ -1,20 +1,8 @@
-import { test } from "@playwright/test";
-
-import { recordSearchControls } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "rubrics-search";
+import { test } from "../fixtures";
+import { searchDemo } from "../helpers/crud-demos";
 
 test.describe("demo: rubrics search", () => {
-  test("records rubric search and department filters", async ({ page }) => {
-    await recordSearchControls(page, {
-      path: "/platform/rubrics",
-      toolbar: "rubrics-toolbar",
-      surface: "rubrics-grid",
-      search: "rubrics-search",
-      query: "communication",
-      card: "rubric-card",
-    });
-    await saveDemoVideo(page, TOPIC);
+  test("search the rubrics library", async ({ page, demo, registry, request, runId }) => {
+    await searchDemo({ page, demo, registry, request, runId }, "rubric");
   });
 });

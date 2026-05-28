@@ -1,18 +1,9 @@
-import { test } from "@playwright/test";
-
-import { recordBulkAffordances } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "simulations-bulk";
+import { test } from "../fixtures";
+import { bulkDeleteDemo } from "../helpers/crud-demos";
 
 test.describe("demo: simulations bulk", () => {
-  test("records simulation bulk-operation affordances", async ({ page }) => {
-    await recordBulkAffordances(page, {
-      path: "/training/simulations",
-      toolbar: "simulations-toolbar",
-      surface: "simulations-grid",
-      card: "simulation-card",
-    });
-    await saveDemoVideo(page, TOPIC);
+  test("bulk-delete simulations", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await bulkDeleteDemo({ page, demo, registry, request, runId }, "simulation");
   });
 });

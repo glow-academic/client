@@ -1,18 +1,9 @@
-import { test } from "@playwright/test";
-
-import { recordBulkAffordances } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "personas-bulk";
+import { test } from "../fixtures";
+import { bulkDeleteDemo } from "../helpers/crud-demos";
 
 test.describe("demo: personas bulk", () => {
-  test("records selectable persona grid and bulk affordances", async ({ page }) => {
-    await recordBulkAffordances(page, {
-      path: "/training/personas",
-      toolbar: "personas-toolbar",
-      surface: "personas-grid",
-      card: "persona-card",
-    });
-    await saveDemoVideo(page, TOPIC);
+  test("bulk-delete personas", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await bulkDeleteDemo({ page, demo, registry, request, runId }, "persona");
   });
 });

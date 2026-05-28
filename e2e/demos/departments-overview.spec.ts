@@ -1,16 +1,8 @@
-import { test } from "@playwright/test";
-
-import { openLibrary } from "../helpers/artifact-demo";
-import { hoverFirstVisible, scrollToText } from "../helpers/demo-page";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "departments-overview";
+import { test } from "../fixtures";
+import { overviewDemo } from "../helpers/crud-demos";
 
 test.describe("demo: departments overview", () => {
-  test("records department cards with membership and settings context", async ({ page }) => {
-    await openLibrary(page, "/platform/departments", "departments-toolbar", "departments-grid");
-    await hoverFirstVisible(page, "department-card");
-    await scrollToText(page, /profiles|settings|login|staff/i);
-    await saveDemoVideo(page, TOPIC);
+  test("browse the departments library", async ({ page, demo, registry, request, runId }) => {
+    await overviewDemo({ page, demo, registry, request, runId }, "department");
   });
 });

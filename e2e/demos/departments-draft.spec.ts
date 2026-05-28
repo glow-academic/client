@@ -1,19 +1,9 @@
-import { test } from "@playwright/test";
-
-import { openArtifactForm } from "../helpers/artifact-demo";
-import { scrollToText } from "../helpers/demo-page";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "departments-draft";
+import { test } from "../fixtures";
+import { draftDemo } from "../helpers/crud-demos";
 
 test.describe("demo: departments draft", () => {
-  test("records a staged department draft before publish", async ({ page }) => {
-    await openArtifactForm(page, "/platform/departments/new");
-    await page.getByPlaceholder(/customer success/i).fill("Draft Demo Department");
-    await page
-      .getByPlaceholder(/enter description/i)
-      .fill("Draft changes to department scope are staged before publishing.");
-    await scrollToText(page, /draft|create department|save/i);
-    await saveDemoVideo(page, TOPIC);
+  test("save a department as a draft", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await draftDemo({ page, demo, registry, request, runId }, "department");
   });
 });

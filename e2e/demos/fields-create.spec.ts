@@ -1,18 +1,12 @@
-import { test } from "@playwright/test";
-
-import { openArtifactForm, showFormStep } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "fields-create";
+import { test } from "../fixtures";
+import { createDemo } from "../helpers/crud-demos";
 
 test.describe("demo: fields create", () => {
-  test("records field name, description, and department setup", async ({ page }) => {
-    await openArtifactForm(page, "/management/fields/new");
-    await page.getByPlaceholder(/learning style/i).fill("Confused");
-    await page
-      .getByPlaceholder(/brief description/i)
-      .fill("The AI student is uncertain and asks clarifying questions.");
-    await showFormStep(page, "basic");
-    await saveDemoVideo(page, TOPIC);
+  test("instructor builds a field", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await createDemo({ page, demo, registry, request, runId }, "field", {
+      name: `Learning Style ${runId}`,
+      description: "How the learner prefers to absorb material.",
+    });
   });
 });

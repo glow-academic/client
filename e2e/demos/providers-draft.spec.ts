@@ -1,16 +1,9 @@
-import { expect, test } from "@playwright/test";
-
-import { openArtifactForm } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "providers-draft";
+import { test } from "../fixtures";
+import { draftDemo } from "../helpers/crud-demos";
 
 test.describe("demo: providers draft", () => {
-  test("records draft controls for endpoint and key changes", async ({ page }) => {
-    await openArtifactForm(page, "/intelligence/providers/new");
-    await page.getByPlaceholder(/openai/i).fill("Draft Provider Demo");
-    await expect(page.getByTestId("draft-toolbar")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("artifact-form-submit")).toBeVisible();
-    await saveDemoVideo(page, TOPIC);
+  test("save a provider as a draft", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await draftDemo({ page, demo, registry, request, runId }, "provider");
   });
 });

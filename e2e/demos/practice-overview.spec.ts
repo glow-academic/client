@@ -1,3 +1,5 @@
+// TODO: placeholder demo — not yet implemented (basic recording).
+// Flesh out or wire to the engine helpers in helpers/crud-demos.ts.
 import { expect, test } from "@playwright/test";
 import { expectAuthenticated } from "../helpers/demo-page";
 import { pauseForDemo, saveDemoVideo } from "../helpers/demo-video";

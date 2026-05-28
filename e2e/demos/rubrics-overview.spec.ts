@@ -1,16 +1,8 @@
-import { test } from "@playwright/test";
-
-import { openLibrary } from "../helpers/artifact-demo";
-import { hoverFirstVisible, scrollToText } from "../helpers/demo-page";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "rubrics-overview";
+import { test } from "../fixtures";
+import { overviewDemo } from "../helpers/crud-demos";
 
 test.describe("demo: rubrics overview", () => {
-  test("records rubric cards with scoring and usage context", async ({ page }) => {
-    await openLibrary(page, "/platform/rubrics", "rubrics-toolbar", "rubrics-grid");
-    await hoverFirstVisible(page, "rubric-card");
-    await scrollToText(page, /points|pass|standard|simulation/i);
-    await saveDemoVideo(page, TOPIC);
+  test("browse the rubrics library", async ({ page, demo, registry, request, runId }) => {
+    await overviewDemo({ page, demo, registry, request, runId }, "rubric");
   });
 });

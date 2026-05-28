@@ -1,16 +1,9 @@
-import { expect, test } from "@playwright/test";
-
-import { openArtifactForm } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "scenarios-draft";
+import { test } from "../fixtures";
+import { draftDemo } from "../helpers/crud-demos";
 
 test.describe("demo: scenarios draft", () => {
-  test("records draft controls while staging scenario edits", async ({ page }) => {
-    await openArtifactForm(page, "/training/scenarios/new");
-    await page.getByPlaceholder(/customer support escalation/i).fill("Draft Scenario Demo");
-    await expect(page.getByTestId("draft-toolbar")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("artifact-form-submit")).toBeVisible();
-    await saveDemoVideo(page, TOPIC);
+  test("save a scenario as a draft", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await draftDemo({ page, demo, registry, request, runId }, "scenario");
   });
 });

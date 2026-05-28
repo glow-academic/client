@@ -1,20 +1,8 @@
-import { test } from "@playwright/test";
-
-import { recordSearchControls } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "cohorts-search";
+import { test } from "../fixtures";
+import { searchDemo } from "../helpers/crud-demos";
 
 test.describe("demo: cohorts search", () => {
-  test("records cohort search with profile, simulation, and department filters", async ({ page }) => {
-    await recordSearchControls(page, {
-      path: "/training/cohorts",
-      toolbar: "cohorts-toolbar",
-      surface: "cohorts-grid",
-      search: "cohorts-search",
-      query: "Practice",
-      card: "cohort-card",
-    });
-    await saveDemoVideo(page, TOPIC);
+  test("search the cohorts library", async ({ page, demo, registry, request, runId }) => {
+    await searchDemo({ page, demo, registry, request, runId }, "cohort");
   });
 });

@@ -1,18 +1,9 @@
-import { test } from "@playwright/test";
-
-import { recordBulkAffordances } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "models-bulk";
+import { test } from "../fixtures";
+import { bulkDeleteDemo } from "../helpers/crud-demos";
 
 test.describe("demo: models bulk", () => {
-  test("records model bulk-operation affordances", async ({ page }) => {
-    await recordBulkAffordances(page, {
-      path: "/intelligence/models",
-      toolbar: "models-toolbar",
-      surface: "models-grid",
-      card: "model-card",
-    });
-    await saveDemoVideo(page, TOPIC);
+  test("bulk-delete models", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await bulkDeleteDemo({ page, demo, registry, request, runId }, "model");
   });
 });

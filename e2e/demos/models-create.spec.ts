@@ -1,16 +1,13 @@
-import { test } from "@playwright/test";
-
-import { openArtifactForm, showFormStep } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "models-create";
+import { test } from "../fixtures";
+import { createDemo } from "../helpers/crud-demos";
 
 test.describe("demo: models create", () => {
-  test("records the model name, description, and provider form", async ({ page }) => {
-    await openArtifactForm(page, "/intelligence/models/new");
-    await page.getByRole("textbox", { name: /value/i }).fill("gpt-4o-sim-demo");
-    await page.getByPlaceholder(/brief description/i).fill("Text model configured for learner simulations.");
-    await showFormStep(page, "provider");
-    await saveDemoVideo(page, TOPIC);
+  test("instructor builds a model", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await createDemo({ page, demo, registry, request, runId }, "model", {
+      name: `Aurora ${runId}`,
+      description: "A general-purpose chat model for tutoring scenarios.",
+      value: `aurora-${runId}`,
+    });
   });
 });

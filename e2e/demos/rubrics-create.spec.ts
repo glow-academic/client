@@ -1,15 +1,13 @@
-import { test } from "@playwright/test";
-
-import { openArtifactForm, showFormStep } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "rubrics-create";
+import { test } from "../fixtures";
+import { createDemo } from "../helpers/crud-demos";
 
 test.describe("demo: rubrics create", () => {
-  test("records the basic rubric creation form", async ({ page }) => {
-    await openArtifactForm(page, "/platform/rubrics/new");
-    await page.getByPlaceholder(/sales call rubric/i).fill("Communication Skills Demo");
-    await showFormStep(page, "basic");
-    await saveDemoVideo(page, TOPIC);
+  test("instructor builds a rubric", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await createDemo({ page, demo, registry, request, runId }, "rubric", {
+      name: `Sales Call Rubric ${runId}`,
+      description: "Scores how a rep handles a discovery call.",
+      passPoints: "12",
+    });
   });
 });

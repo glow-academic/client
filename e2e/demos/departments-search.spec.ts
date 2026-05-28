@@ -1,20 +1,8 @@
-import { test } from "@playwright/test";
-
-import { recordSearchControls } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "departments-search";
+import { test } from "../fixtures";
+import { searchDemo } from "../helpers/crud-demos";
 
 test.describe("demo: departments search", () => {
-  test("records department search and drill-in affordances", async ({ page }) => {
-    await recordSearchControls(page, {
-      path: "/platform/departments",
-      toolbar: "departments-toolbar",
-      surface: "departments-grid",
-      search: "departments-search",
-      query: "University",
-      card: "department-card",
-    });
-    await saveDemoVideo(page, TOPIC);
+  test("search the departments library", async ({ page, demo, registry, request, runId }) => {
+    await searchDemo({ page, demo, registry, request, runId }, "department");
   });
 });

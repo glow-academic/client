@@ -1,20 +1,8 @@
-import { test } from "@playwright/test";
-
-import { recordSearchControls } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "parameters-search";
+import { test } from "../fixtures";
+import { searchDemo } from "../helpers/crud-demos";
 
 test.describe("demo: parameters search", () => {
-  test("records parameter search with scenario, field, and department filters", async ({ page }) => {
-    await recordSearchControls(page, {
-      path: "/management/parameters",
-      toolbar: "parameters-toolbar",
-      surface: "parameters-grid",
-      search: "parameters-search",
-      query: "Temperament",
-      card: "parameter-card",
-    });
-    await saveDemoVideo(page, TOPIC);
+  test("search the parameters library", async ({ page, demo, registry, request, runId }) => {
+    await searchDemo({ page, demo, registry, request, runId }, "parameter");
   });
 });

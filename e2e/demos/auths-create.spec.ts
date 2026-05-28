@@ -1,18 +1,12 @@
-import { test } from "@playwright/test";
-
-import { openArtifactForm, showFormStep } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "auths-create";
+import { test } from "../fixtures";
+import { createDemo } from "../helpers/crud-demos";
 
 test.describe("demo: auths create", () => {
-  test("records auth provider shell creation", async ({ page }) => {
-    await openArtifactForm(page, "/platform/auth/new");
-    await page.getByPlaceholder(/production api key/i).fill("University SSO");
-    await page
-      .getByPlaceholder(/enter description/i)
-      .fill("OIDC login for university faculty and TAs.");
-    await showFormStep(page, "basic");
-    await saveDemoVideo(page, TOPIC);
+  test("instructor builds an auth", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await createDemo({ page, demo, registry, request, runId }, "auth", {
+      name: `Production API Key ${runId}`,
+      description: "Credentials for the production inference gateway.",
+    });
   });
 });

@@ -1,20 +1,8 @@
-import { test } from "@playwright/test";
-
-import { recordSearchControls } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "fields-search";
+import { test } from "../fixtures";
+import { searchDemo } from "../helpers/crud-demos";
 
 test.describe("demo: fields search", () => {
-  test("records field search with parameter and persona filters", async ({ page }) => {
-    await recordSearchControls(page, {
-      path: "/management/fields",
-      toolbar: "fields-toolbar",
-      surface: "fields-grid",
-      search: "fields-search",
-      query: "Confused",
-      card: /^field-card-/,
-    });
-    await saveDemoVideo(page, TOPIC);
+  test("search the fields library", async ({ page, demo, registry, request, runId }) => {
+    await searchDemo({ page, demo, registry, request, runId }, "field");
   });
 });

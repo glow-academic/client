@@ -1,18 +1,12 @@
-import { test } from "@playwright/test";
-
-import { openArtifactForm, showFormStep } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "evals-create";
+import { test } from "../fixtures";
+import { createDemo } from "../helpers/crud-demos";
 
 test.describe("demo: evals create", () => {
-  test("records eval name, description, flags, and department setup", async ({ page }) => {
-    await openArtifactForm(page, "/platform/evals/new");
-    await page.getByPlaceholder(/eval name/i).fill("Fall 2025 TA Assessment");
-    await page
-      .getByPlaceholder(/enter description/i)
-      .fill("Automated scoring of TA office hour simulations.");
-    await showFormStep(page, "basic");
-    await saveDemoVideo(page, TOPIC);
+  test("instructor builds an eval", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await createDemo({ page, demo, registry, request, runId }, "eval", {
+      name: `Tutor Quality Eval ${runId}`,
+      description: "Scores tutoring responses against the quality rubric.",
+    });
   });
 });

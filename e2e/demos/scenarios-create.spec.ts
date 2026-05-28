@@ -1,19 +1,15 @@
-import { test } from "@playwright/test";
-
-import { openArtifactForm } from "../helpers/artifact-demo";
-import { scrollToText } from "../helpers/demo-page";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "scenarios-create";
+import { test } from "../fixtures";
+import { createDemo } from "../helpers/crud-demos";
 
 test.describe("demo: scenarios create", () => {
-  test("records name, description, problem, and objectives setup", async ({ page }) => {
-    await openArtifactForm(page, "/training/scenarios/new");
-    await page.getByPlaceholder(/customer support escalation/i).fill("Academic Integrity Demo");
-    await page.getByPlaceholder(/describe the scenario/i).fill(
-      "Practice handling a student caught cheating while maintaining a professional tone.",
-    );
-    await scrollToText(page, /problem statement|objectives|personas/i);
-    await saveDemoVideo(page, TOPIC);
+  test("instructor builds a contextual scenario", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await createDemo({ page, demo, registry, request, runId }, "scenario", {
+      name: `Customer Escalation ${runId}`,
+      description: "A frustrated customer escalates a billing dispute.",
+      problemStatement:
+        "The customer was double-charged and wants an immediate refund.",
+      objective: "De-escalate the customer and resolve the billing issue.",
+    }, "contextual");
   });
 });

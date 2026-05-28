@@ -1,20 +1,8 @@
-import { test } from "@playwright/test";
-
-import { recordSearchControls } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "simulations-search";
+import { test } from "../fixtures";
+import { searchDemo } from "../helpers/crud-demos";
 
 test.describe("demo: simulations search", () => {
-  test("records simulation search and scenario facets", async ({ page }) => {
-    await recordSearchControls(page, {
-      path: "/training/simulations",
-      toolbar: "simulations-toolbar",
-      surface: "simulations-grid",
-      search: "simulations-search",
-      query: "training",
-      card: "simulation-card",
-    });
-    await saveDemoVideo(page, TOPIC);
+  test("search the simulations library", async ({ page, demo, registry, request, runId }) => {
+    await searchDemo({ page, demo, registry, request, runId }, "simulation");
   });
 });

@@ -1,23 +1,16 @@
-import { test } from "@playwright/test";
-
-import { openArtifactForm, showFormStep } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "personas-create";
+import { test } from "../fixtures";
+import { createDemo } from "../helpers/crud-demos";
 
 test.describe("demo: personas create", () => {
-  test("records name, description, color, icon, and instructions setup", async ({ page }) => {
-    await openArtifactForm(page, "/training/personas/new");
-    await page.getByPlaceholder(/enthusiastic student/i).fill("Confused Demo Student");
-    await page.getByTestId("input-persona-description").fill(
-      "A student who asks clarifying questions and gets frustrated when answers skip steps.",
-    );
-    await showFormStep(page, "color");
-    await showFormStep(page, "icon");
-    await showFormStep(page, "content");
-    await page.getByTestId("input-instructions").fill(
-      "You are a confused student in {{class}}. Ask clarifying questions and use short, uncertain replies.",
-    );
-    await saveDemoVideo(page, TOPIC);
+  test("instructor builds a confused-student persona", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await createDemo({ page, demo, registry, request, runId }, "persona", {
+      name: `Confused Student ${runId}`,
+      description:
+        "A first-year who asks clarifying questions and stalls when steps are skipped.",
+      instructions:
+        "You are a confused freshman in office hours. Ask short, uncertain questions.",
+      example: "Wait, sorry — could you explain that last step again?",
+    });
   });
 });

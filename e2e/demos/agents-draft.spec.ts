@@ -1,21 +1,9 @@
-import { expect, test } from "@playwright/test";
-
-import { expectAuthenticated, scrollToText } from "../helpers/demo-page";
-import { pauseForDemo, saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "agents-draft";
+import { test } from "../fixtures";
+import { draftDemo } from "../helpers/crud-demos";
 
 test.describe("demo: agents draft", () => {
-  test("records the draft toolbar and optimistic-edit surface", async ({ page }) => {
-    await page.goto("/intelligence/agents/new");
-    await expectAuthenticated(page);
-
-    await expect(page.getByRole("heading", { name: /agent is read-only/i })).toBeVisible({ timeout: 30_000 });
-    await page.getByPlaceholder(/customer support agent/i).scrollIntoViewIfNeeded();
-    await pauseForDemo();
-
-    await scrollToText(page, /Create Agent|Draft agent|Iterate draft/i);
-
-    await saveDemoVideo(page, TOPIC);
+  test("save a agent as a draft", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await draftDemo({ page, demo, registry, request, runId }, "agent");
   });
 });

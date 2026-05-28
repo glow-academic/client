@@ -1,20 +1,8 @@
-import { test } from "@playwright/test";
-
-import { recordSearchControls } from "../helpers/artifact-demo";
-import { saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "models-search";
+import { test } from "../fixtures";
+import { searchDemo } from "../helpers/crud-demos";
 
 test.describe("demo: models search", () => {
-  test("records model search and provider/department filters", async ({ page }) => {
-    await recordSearchControls(page, {
-      path: "/intelligence/models",
-      toolbar: "models-toolbar",
-      surface: "models-grid",
-      search: "models-search",
-      query: "gpt",
-      card: "model-card",
-    });
-    await saveDemoVideo(page, TOPIC);
+  test("search the models library", async ({ page, demo, registry, request, runId }) => {
+    await searchDemo({ page, demo, registry, request, runId }, "model");
   });
 });

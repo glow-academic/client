@@ -1,20 +1,9 @@
-import { expect, test } from "@playwright/test";
-
-import { expectAuthenticated, hoverFirstVisible, scrollToText } from "../helpers/demo-page";
-import { pauseForDemo, saveDemoVideo } from "../helpers/demo-video";
-
-const TOPIC = "agents-bulk";
+import { test } from "../fixtures";
+import { bulkDeleteDemo } from "../helpers/crud-demos";
 
 test.describe("demo: agents bulk", () => {
-  test("records the selectable grid and bulk-operation affordances", async ({ page }) => {
-    await page.goto("/intelligence/agents");
-    await expectAuthenticated(page);
-
-    await expect(page.getByTestId("agents-grid")).toBeVisible({ timeout: 30_000 });
-    await hoverFirstVisible(page, "agent-card");
-    await scrollToText(page, /select|bulk|delete|edit/i);
-    await pauseForDemo();
-
-    await saveDemoVideo(page, TOPIC);
+  test("bulk-delete agents", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(180_000);
+    await bulkDeleteDemo({ page, demo, registry, request, runId }, "agent");
   });
 });
