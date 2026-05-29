@@ -1,5 +1,3 @@
-// TODO: placeholder demo — not yet implemented (basic recording).
-// Flesh out or wire to the engine helpers in helpers/crud-demos.ts.
 import { test } from "@playwright/test";
 
 import { recordSearchControls } from "../helpers/artifact-demo";
