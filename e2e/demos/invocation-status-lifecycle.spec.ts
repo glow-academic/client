@@ -1,8 +1,9 @@
-// TODO: placeholder demo — not yet implemented.
-// Wire to helpers/crud-demos.ts (if CRUD) or author a bespoke flow, then
-// remove this fixme. Tracked so every doc slot is binary: done or TODO.
-import { test } from "@playwright/test";
-
-test.describe("demo: invocation-status-lifecycle", () => {
-  test.fixme("not yet implemented", async () => {});
+import { test } from "../fixtures";
+import { testDemo } from "../helpers/crud-demos";
+test.describe("demo: invocation status-lifecycle", () => {
+  test("invocation statuses on a test's detail page", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(120_000);
+    await testDemo({ page, demo, registry, request, runId }, "invocation-status-lifecycle",
+      [/queued|running|completed|failed|status/i, /invocation|model|scenario|score/i]);
+  });
 });
