@@ -156,7 +156,7 @@ export async function testDemo(
     data: {},
   });
   const body = res.ok() ? ((await res.json()) as Record<string, unknown>) : {};
-  const rows = (body["data"] as Array<Record<string, unknown>>) ?? [];
+  const rows = ((body["tests"] ?? body["data"]) as Array<Record<string, unknown>>) ?? [];
   const sorted = [...rows].sort(
     (a, b) => ((b["num_invocations"] as number) ?? 0) - ((a["num_invocations"] as number) ?? 0),
   );
