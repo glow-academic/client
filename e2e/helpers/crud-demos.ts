@@ -158,18 +158,16 @@ export async function genDemo(
   instructions: string,
   opts: { safeMode?: boolean } = {},
 ): Promise<void> {
+  if (opts.safeMode) {
+    // Safe mode is cookie-backed (read on panel mount) — set it before
+    // navigating instead of fighting the tooltip-wrapped settings dropdown.
+    await ctx.page
+      .context()
+      .addCookies([{ name: "glow.gp.safeMode", value: "1", url: "http://localhost:3000" }]);
+  }
   await ctx.page.goto("/training/personas");
   await expectAuthenticated(ctx.page);
   await openGenerationPanel(ctx.page);
-  // The panel renders in several responsive branches (multiple gp-* nodes);
-  // always drive the visible one.
-  const vis = (tid: string) => ctx.page.locator(`[data-testid="${tid}"]:visible`).first();
-  if (opts.safeMode) {
-    await vis("gp-settings").click();
-    await ctx.page.getByTestId("gp-safe-mode").click();
-    await ctx.page.keyboard.press("Escape"); // close the settings dropdown
-    await ctx.demo.pause();
-  }
   // Fill the VISIBLE instructions input and submit via Enter — handleKeyDown
   // fires handleSend() on THIS instance, sidestepping the multi-instance button
   // mismatch (the panel mounts several copies; a clicked button can belong to a
@@ -178,17 +176,22 @@ export async function genDemo(
   await ta.fill(instructions);
   await ctx.demo.pause();
   await ta.press("Enter");
-  // Live run: wait for the Generate spinner to clear (generation finished),
-  // bounded so a slow/failed model doesn't hang the recording.
-  await ctx.page
-    .locator('[data-testid="gp-generate"]:visible .animate-spin')
-    .waitFor({ state: "detached", timeout: 90_000 })
-    .catch(() => undefined);
-  await ctx.demo.pause(2000);
   if (opts.safeMode) {
-    // Soft-staged tool calls render an Accept control — take the audit path.
-    await ctx.page.getByRole("button", { name: /^Accept$/ }).first().click().catch(() => undefined);
+    // Safe mode soft-stages tool calls — the completion signal is the Accept
+    // control appearing (the spinner-clear path may not fire). Wait for it,
+    // then take the audit path.
+    const accept = ctx.page.getByRole("button", { name: /accept/i }).first();
+    await accept.waitFor({ state: "visible", timeout: 90_000 }).catch(() => undefined);
     await ctx.demo.pause(1500);
+    await accept.click().catch(() => undefined);
+    await ctx.demo.pause(1500);
+  } else {
+    // Normal run: wait for the Generate spinner to clear (generation finished).
+    await ctx.page
+      .locator('[data-testid="gp-generate"]:visible .animate-spin')
+      .waitFor({ state: "detached", timeout: 90_000 })
+      .catch(() => undefined);
+    await ctx.demo.pause(2000);
   }
   for (const t of scrollTexts(opts.safeMode)) await scrollToText(ctx.page, t).catch(() => undefined);
   await saveDemoVideo(ctx.page, topic);
