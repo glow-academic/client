@@ -170,9 +170,14 @@ export async function genDemo(
     await ctx.page.keyboard.press("Escape"); // close the settings dropdown
     await ctx.demo.pause();
   }
-  await ctx.page.getByPlaceholder("Instructions...").first().fill(instructions);
+  // Fill the VISIBLE instructions input and submit via Enter — handleKeyDown
+  // fires handleSend() on THIS instance, sidestepping the multi-instance button
+  // mismatch (the panel mounts several copies; a clicked button can belong to a
+  // different instance whose instructions are empty → disabled).
+  const ta = ctx.page.locator('[placeholder="Instructions..."]:visible').first();
+  await ta.fill(instructions);
   await ctx.demo.pause();
-  await vis("gp-generate").click();
+  await ta.press("Enter");
   // Live run: wait for the Generate spinner to clear (generation finished),
   // bounded so a slow/failed model doesn't hang the recording.
   await ctx.page
@@ -180,6 +185,11 @@ export async function genDemo(
     .waitFor({ state: "detached", timeout: 90_000 })
     .catch(() => undefined);
   await ctx.demo.pause(2000);
+  if (opts.safeMode) {
+    // Soft-staged tool calls render an Accept control — take the audit path.
+    await ctx.page.getByRole("button", { name: /^Accept$/ }).first().click().catch(() => undefined);
+    await ctx.demo.pause(1500);
+  }
   for (const t of scrollTexts(opts.safeMode)) await scrollToText(ctx.page, t).catch(() => undefined);
   await saveDemoVideo(ctx.page, topic);
 }
