@@ -179,11 +179,15 @@ export async function genDemo(
   if (opts.safeMode) {
     // Safe mode soft-stages tool calls — the completion signal is the Accept
     // control appearing (the spinner-clear path may not fire). Wait for it,
-    // then take the audit path.
+    // then take the audit path. BOTH waits are explicitly bounded: an un-timed
+    // .click() would otherwise wait the whole test timeout for actionability.
     const accept = ctx.page.getByRole("button", { name: /accept/i }).first();
-    await accept.waitFor({ state: "visible", timeout: 90_000 }).catch(() => undefined);
+    const appeared = await accept
+      .waitFor({ state: "visible", timeout: 90_000 })
+      .then(() => true)
+      .catch(() => false);
     await ctx.demo.pause(1500);
-    await accept.click().catch(() => undefined);
+    if (appeared) await accept.click({ timeout: 15_000 }).catch(() => undefined);
     await ctx.demo.pause(1500);
   } else {
     // Normal run: wait for the Generate spinner to clear (generation finished).
