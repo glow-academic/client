@@ -123,6 +123,7 @@ export async function attemptDemo(
   ctx: DemoCtx,
   topic: string,
   scrollTexts: RegExp[],
+  pick: "best" | "worst" = "best",
 ): Promise<void> {
   const res = await ctx.request.post(`${API_BASE}/attempt/search`, {
     headers: { Authorization: `Bearer ${process.env["E2E_BYPASS_TOKEN"] ?? ""}` },
@@ -132,7 +133,11 @@ export async function attemptDemo(
   const rows = (body["data"] as Array<Record<string, unknown>>) ?? [];
   const viewable = rows
     .filter((r) => r["show_view"] && typeof r["score"] === "number")
-    .sort((a, b) => (b["score"] as number) - (a["score"] as number));
+    .sort((a, b) =>
+      pick === "worst"
+        ? (a["score"] as number) - (b["score"] as number)
+        : (b["score"] as number) - (a["score"] as number),
+    );
   const id = viewable[0]?.["attempt_id"];
   test.skip(typeof id !== "string", "no completed+viewable attempt to feature");
   // The attempt-review page opens a live chat websocket, so networkidle never
