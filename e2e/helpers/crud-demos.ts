@@ -113,6 +113,36 @@ export async function editDemo(ctx: DemoCtx, key: string): Promise<void> {
   await saveDemoVideo(ctx.page, `${spec.plural}-edit`);
 }
 
+const API_BASE = process.env["INTERNAL_API_BASE"] || "http://localhost:8000";
+
+/** Open a real, completed+graded attempt's detail page (resolved from
+ *  /attempt/search, highest score, viewable) and tour the conversation +
+ *  scorecard — read-only, no live run. The linchpin for how-it-works /
+ *  annotated-example demos. */
+export async function attemptDemo(
+  ctx: DemoCtx,
+  topic: string,
+  scrollTexts: RegExp[],
+): Promise<void> {
+  const res = await ctx.request.post(`${API_BASE}/attempt/search`, {
+    headers: { Authorization: `Bearer ${process.env["E2E_BYPASS_TOKEN"] ?? ""}` },
+    data: {},
+  });
+  const body = res.ok() ? ((await res.json()) as Record<string, unknown>) : {};
+  const rows = (body["data"] as Array<Record<string, unknown>>) ?? [];
+  const viewable = rows
+    .filter((r) => r["show_view"] && typeof r["score"] === "number")
+    .sort((a, b) => (b["score"] as number) - (a["score"] as number));
+  const id = viewable[0]?.["attempt_id"];
+  test.skip(typeof id !== "string", "no completed+viewable attempt to feature");
+  // The attempt-review page opens a live chat websocket, so networkidle never
+  // settles — wait for DOM only, then let the review render.
+  await ctx.page.goto(`/attempt/${id}`, { waitUntil: "domcontentloaded" });
+  await ctx.demo.pause(3000);
+  for (const t of scrollTexts) await scrollToText(ctx.page, t).catch(() => undefined);
+  await saveDemoVideo(ctx.page, topic);
+}
+
 /** Open an existing artifact's detail/edit page (resolved from seed data) and
  *  tour the named sections — for "pattern" demos that showcase a real, already-
  *  configured artifact (a persona's instructions, a rubric's standards). */
