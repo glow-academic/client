@@ -1,8 +1,11 @@
-// TODO: placeholder demo — not yet implemented.
-// Wire to helpers/crud-demos.ts (if CRUD) or author a bespoke flow, then
-// remove this fixme. Tracked so every doc slot is binary: done or TODO.
-import { test } from "@playwright/test";
+import { test } from "../fixtures";
+import { detailDemo } from "../helpers/crud-demos";
 
-test.describe("demo: parameters-resolve", () => {
-  test.fixme("not yet implemented", async () => {});
+test.describe("demo: parameters resolve", () => {
+  test("tour a parameter's fields", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(120_000);
+    await detailDemo({ page, demo, registry, request, runId }, "parameter", "parameters-resolve", [
+      /fields|select fields/i, /description|department/i,
+    ]);
+  });
 });

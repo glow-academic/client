@@ -1,8 +1,11 @@
-// TODO: placeholder demo — not yet implemented.
-// Wire to helpers/crud-demos.ts (if CRUD) or author a bespoke flow, then
-// remove this fixme. Tracked so every doc slot is binary: done or TODO.
-import { test } from "@playwright/test";
+import { test } from "../fixtures";
+import { detailDemo } from "../helpers/crud-demos";
 
-test.describe("demo: patterns-rubric-criteria", () => {
-  test.fixme("not yet implemented", async () => {});
+test.describe("demo: patterns rubric criteria", () => {
+  test("tour a rubric's standards and pass threshold", async ({ page, demo, registry, request, runId }) => {
+    test.setTimeout(120_000);
+    await detailDemo({ page, demo, registry, request, runId }, "rubric", "patterns-rubric-criteria", [
+      /pass points|total points|threshold/i, /standard|group|criteria/i,
+    ]);
+  });
 });

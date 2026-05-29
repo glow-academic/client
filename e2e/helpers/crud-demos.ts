@@ -16,6 +16,8 @@ import { test } from "../fixtures";
 
 import { DOMAINS, DomainFacade, type CreateInput } from "../actions/domains";
 import { apiCreate, resolveId } from "../support/setup";
+import { resolveAnyId } from "../support/factories";
+import { scrollToText } from "./demo-page";
 import { saveDemoVideo } from "./demo-video";
 
 // The subset of the fixture each flow needs. Specs pass the whole fixture arg.
@@ -109,6 +111,23 @@ export async function editDemo(ctx: DemoCtx, key: string): Promise<void> {
   await facade.form.submit();
   await expect(ctx.page.getByText(/updated/i).first()).toBeVisible({ timeout: 45_000 });
   await saveDemoVideo(ctx.page, `${spec.plural}-edit`);
+}
+
+/** Open an existing artifact's detail/edit page (resolved from seed data) and
+ *  tour the named sections — for "pattern" demos that showcase a real, already-
+ *  configured artifact (a persona's instructions, a rubric's standards). */
+export async function detailDemo(
+  ctx: DemoCtx,
+  key: string,
+  topic: string,
+  scrollTexts: RegExp[],
+): Promise<void> {
+  const { spec, facade } = facadeFor(ctx, key);
+  const id = await resolveAnyId(ctx.request, key);
+  test.skip(!id, `no seed ${spec.singular} to open`);
+  await facade.form.openEdit(`${spec.listPath}/${id}`);
+  for (const t of scrollTexts) await scrollToText(ctx.page, t);
+  await saveDemoVideo(ctx.page, topic);
 }
 
 /** Seed two rows via the factory, select them, and bulk-delete for real
