@@ -143,6 +143,31 @@ export async function attemptDemo(
   await saveDemoVideo(ctx.page, topic);
 }
 
+/** Open a test's detail page (resolved from /test/search, preferring one with
+ *  invocations) and tour the invocation grid. Like attemptDemo, the page opens
+ *  a live ws → domcontentloaded + tolerant scroll. */
+export async function testDemo(
+  ctx: DemoCtx,
+  topic: string,
+  scrollTexts: RegExp[],
+): Promise<void> {
+  const res = await ctx.request.post(`${API_BASE}/test/search`, {
+    headers: { Authorization: `Bearer ${process.env["E2E_BYPASS_TOKEN"] ?? ""}` },
+    data: {},
+  });
+  const body = res.ok() ? ((await res.json()) as Record<string, unknown>) : {};
+  const rows = (body["data"] as Array<Record<string, unknown>>) ?? [];
+  const sorted = [...rows].sort(
+    (a, b) => ((b["num_invocations"] as number) ?? 0) - ((a["num_invocations"] as number) ?? 0),
+  );
+  const id = sorted[0]?.["test_id"];
+  test.skip(typeof id !== "string", "no test to feature");
+  await ctx.page.goto(`/test/${id}`, { waitUntil: "domcontentloaded" });
+  await ctx.demo.pause(3000);
+  for (const t of scrollTexts) await scrollToText(ctx.page, t).catch(() => undefined);
+  await saveDemoVideo(ctx.page, topic);
+}
+
 /** Open an existing artifact's detail/edit page (resolved from seed data) and
  *  tour the named sections — for "pattern" demos that showcase a real, already-
  *  configured artifact (a persona's instructions, a rubric's standards). */
