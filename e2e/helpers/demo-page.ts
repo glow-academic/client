@@ -42,13 +42,15 @@ export async function fillSearch(page: Page, testId: string, value: string): Pro
 }
 
 export async function openGenerationPanel(page: Page): Promise<void> {
-  const instructions = page.getByPlaceholder("Instructions...");
-  if (!(await instructions.isVisible().catch(() => false))) {
-    const toggle = page.getByTestId("toggle-right-panel");
-    if (await toggle.isVisible().catch(() => false)) {
-      await toggle.click();
-      await pauseForDemo();
-    }
+  const instructions = page.getByPlaceholder("Instructions...").first();
+  // Robust against a still-loading page / animating panel: retry the toggle a
+  // few times, waiting for it to exist before clicking.
+  for (let i = 0; i < 3; i++) {
+    if (await instructions.isVisible().catch(() => false)) return;
+    const toggle = page.getByTestId("toggle-right-panel").first();
+    await toggle.waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined);
+    await toggle.click().catch(() => undefined);
+    await pauseForDemo();
   }
   await expect(instructions).toBeVisible({ timeout: 30_000 });
 }
