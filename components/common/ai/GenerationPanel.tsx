@@ -1921,6 +1921,7 @@ export function GenerationPanel({
                             variant="outline"
                             className="h-9 w-9"
                             aria-label="Generation settings"
+                            data-testid="gp-settings"
                           >
                             <Settings2 className="h-4 w-4" />
                           </Button>
@@ -1937,6 +1938,7 @@ export function GenerationPanel({
                         checked={safeMode}
                         onCheckedChange={(v) => setSafeMode(Boolean(v))}
                         onSelect={(e) => e.preventDefault()}
+                        data-testid="gp-safe-mode"
                       >
                         <div className="flex flex-col">
                           <span className="text-sm">Safe mode</span>
@@ -1979,6 +1981,7 @@ export function GenerationPanel({
                           className="h-9 w-9"
                           onClick={handleSend}
                           disabled={isGenerating || !instructions.trim()}
+                          data-testid="gp-generate"
                         >
                           {isGenerating ? (
                             <Loader2 className="h-4 w-4 animate-spin" />

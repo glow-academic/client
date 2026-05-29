@@ -17,7 +17,7 @@ import { test } from "../fixtures";
 import { DOMAINS, DomainFacade, type CreateInput } from "../actions/domains";
 import { apiCreate, resolveId } from "../support/setup";
 import { resolveAnyId } from "../support/factories";
-import { scrollToText } from "./demo-page";
+import { expectAuthenticated, openGenerationPanel, scrollToText } from "./demo-page";
 import { saveDemoVideo } from "./demo-video";
 
 // The subset of the fixture each flow needs. Specs pass the whole fixture arg.
@@ -146,6 +146,47 @@ export async function attemptDemo(
   await ctx.demo.pause(3000);
   for (const t of scrollTexts) await scrollToText(ctx.page, t).catch(() => undefined);
   await saveDemoVideo(ctx.page, topic);
+}
+
+/** Drive the AI generation panel for real: open it on the personas library,
+ *  optionally enable safe mode (→ tool calls soft-staged for accept, the audit
+ *  path), type instructions, hit Generate, and wait out the live run. Bounded
+ *  so a slow model doesn't hang the test. Spends tokens. */
+export async function genDemo(
+  ctx: DemoCtx,
+  topic: string,
+  instructions: string,
+  opts: { safeMode?: boolean } = {},
+): Promise<void> {
+  await ctx.page.goto("/training/personas");
+  await expectAuthenticated(ctx.page);
+  await openGenerationPanel(ctx.page);
+  // The panel renders in several responsive branches (multiple gp-* nodes);
+  // always drive the visible one.
+  const vis = (tid: string) => ctx.page.locator(`[data-testid="${tid}"]:visible`).first();
+  if (opts.safeMode) {
+    await vis("gp-settings").click();
+    await ctx.page.getByTestId("gp-safe-mode").click();
+    await ctx.page.keyboard.press("Escape"); // close the settings dropdown
+    await ctx.demo.pause();
+  }
+  await ctx.page.getByPlaceholder("Instructions...").first().fill(instructions);
+  await ctx.demo.pause();
+  await vis("gp-generate").click();
+  // Live run: wait for the Generate spinner to clear (generation finished),
+  // bounded so a slow/failed model doesn't hang the recording.
+  await ctx.page
+    .locator('[data-testid="gp-generate"]:visible .animate-spin')
+    .waitFor({ state: "detached", timeout: 90_000 })
+    .catch(() => undefined);
+  await ctx.demo.pause(2000);
+  for (const t of scrollTexts(opts.safeMode)) await scrollToText(ctx.page, t).catch(() => undefined);
+  await saveDemoVideo(ctx.page, topic);
+}
+function scrollTexts(safe?: boolean): RegExp[] {
+  return safe
+    ? [/accept|reject|pending|staged|review|tool/i]
+    : [/generat|event|tool|message|response/i];
 }
 
 /** Open a test's detail page (resolved from /test/search, preferring one with
