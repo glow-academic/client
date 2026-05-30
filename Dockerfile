@@ -64,6 +64,12 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public         ./public
 
+# Demo/QA spec definitions for `glow record client` — text-only (a few KB).
+# The Playwright runtime + Chromium live on the host, not in this image, so
+# this adds negligible size and nothing is required at runtime.
+COPY --from=builder /app/e2e                  ./e2e
+COPY --from=builder /app/playwright.config.ts ./playwright.config.ts
+
 RUN chown -R nextjs:nodejs /app
 USER nextjs
 

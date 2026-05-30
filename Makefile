@@ -1,4 +1,4 @@
-.PHONY: dev build start lint typecheck format setup clean help sync-types test-e2e test-e2e-ui demo-record
+.PHONY: dev build start lint typecheck format setup clean help sync-types test-e2e test-e2e-ui
 .PHONY: docker-build docker-run up down logs
 .PHONY: detect-env deploy-target switch-traffic monitor
 
@@ -37,12 +37,8 @@ test-e2e: ## Run Playwright E2E tests
 test-e2e-ui: ## Open Playwright UI mode
 	bun run test:e2e:ui
 
-demo-record: ## Record Playwright demo specs (TOPIC=practice-overview optional)
-	@if [ -n "$(TOPIC)" ]; then \
-		PLAYWRIGHT_DEMO=1 bun x playwright test e2e/demos/$(TOPIC).spec.ts; \
-	else \
-		bun run demo:record; \
-	fi
+# Recording demos is now native to the CLI: `glow record client <workflow>`
+# drives the deployed client with the host's Playwright. See glow-academic-cli.
 
 format: ## Format code with Prettier
 	bun run format
