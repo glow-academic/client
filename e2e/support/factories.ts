@@ -23,7 +23,7 @@ import { type APIRequestContext } from "@playwright/test";
 import { DOMAINS } from "../actions/domains";
 
 const API_BASE = process.env["INTERNAL_API_BASE"] || "http://localhost:8000";
-const TOKEN = process.env["E2E_BYPASS_TOKEN"] ?? "";
+const TOKEN = process.env["GLOW_RECORD_TOKEN"] ?? "";
 const authHeaders = (): Record<string, string> => ({
   Authorization: `Bearer ${TOKEN}`,
 });

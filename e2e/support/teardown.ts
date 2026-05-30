@@ -2,8 +2,8 @@
 //
 // This is the "self-cleaning" half of the determinism story. It talks to
 // the backend's documented REST API directly (NOT the client UI, NOT a
-// DB), authenticating with the E2E bypass token the backend already
-// accepts as a Bearer (see app/api/e2e/login/route.ts). Because it only
+// DB), authenticating with the CLI's real token (GLOW_RECORD_TOKEN — the
+// same token `glow record` adopts a browser session from). Because it only
 // uses the API contract, swapping the backend out requires zero changes
 // here.
 //
@@ -17,7 +17,7 @@ import { DOMAINS } from "../actions/domains";
 import type { TrackedEntity } from "./registry";
 
 const API_BASE = process.env["INTERNAL_API_BASE"] || "http://localhost:8000";
-const TOKEN = process.env["E2E_BYPASS_TOKEN"] ?? "";
+const TOKEN = process.env["GLOW_RECORD_TOKEN"] ?? "";
 
 export async function reap(
   request: APIRequestContext,

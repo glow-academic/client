@@ -9,7 +9,7 @@
 // name resource on the fly — see CreatePersonaItem.name in the schema), so a
 // minimal create is just ``{ [plural]: [{ name }] }``. Pass ``extra`` for any
 // other raw fields a domain needs (e.g. a model's ``value``). Auth + base URL
-// match teardown: the E2E bypass token as a Bearer against INTERNAL_API_BASE.
+// match teardown: the CLI's real token (GLOW_RECORD_TOKEN) as a Bearer against INTERNAL_API_BASE.
 
 import { type APIRequestContext } from "@playwright/test";
 
@@ -17,7 +17,7 @@ import { DOMAINS } from "../actions/domains";
 import { FACTORIES } from "./factories";
 
 const API_BASE = process.env["INTERNAL_API_BASE"] || "http://localhost:8000";
-const TOKEN = process.env["E2E_BYPASS_TOKEN"] ?? "";
+const TOKEN = process.env["GLOW_RECORD_TOKEN"] ?? "";
 const authHeaders = (): Record<string, string> => ({
   Authorization: `Bearer ${TOKEN}`,
 });

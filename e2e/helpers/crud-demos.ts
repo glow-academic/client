@@ -126,7 +126,7 @@ export async function attemptDemo(
   pick: "best" | "worst" = "best",
 ): Promise<void> {
   const res = await ctx.request.post(`${API_BASE}/attempt/search`, {
-    headers: { Authorization: `Bearer ${process.env["E2E_BYPASS_TOKEN"] ?? ""}` },
+    headers: { Authorization: `Bearer ${process.env["GLOW_RECORD_TOKEN"] ?? ""}` },
     data: {},
   });
   const body = res.ok() ? ((await res.json()) as Record<string, unknown>) : {};
@@ -215,7 +215,7 @@ export async function testDemo(
   scrollTexts: RegExp[],
 ): Promise<void> {
   const res = await ctx.request.post(`${API_BASE}/test/search`, {
-    headers: { Authorization: `Bearer ${process.env["E2E_BYPASS_TOKEN"] ?? ""}` },
+    headers: { Authorization: `Bearer ${process.env["GLOW_RECORD_TOKEN"] ?? ""}` },
     data: {},
   });
   const body = res.ok() ? ((await res.json()) as Record<string, unknown>) : {};

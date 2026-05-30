@@ -1,32 +1,31 @@
-// One-time Playwright setup: forges a NextAuth session via the
-// /api/e2e/login bypass route + saves the cookie state to disk.
-// Downstream tests load the storage state automatically (configured
-// in playwright.config.ts) so every spec starts authenticated as the
-// bootstrap superadmin.
+// One-time Playwright setup: adopt a NextAuth session from the CLI's real
+// token (GLOW_RECORD_TOKEN, injected by `glow record` from your `glow login`
+// session) via /api/session/adopt, then save the cookie state to disk.
+// Downstream specs load it automatically (playwright.config.ts) so every spec
+// starts authenticated as the CLI's logged-in identity. No static bypass.
 //
-// To impersonate a different profile in a specific test, use
-// `authAs(context, profileId)` from `e2e/helpers/auth.ts` — that
-// overrides the saved state per-test.
+// To act as a different profile in a spec, use `authAs(context, profileId)`
+// from `e2e/helpers/auth.ts` — it emulates via the real /profile/emulate flow.
 
 import { test as setup, expect } from "@playwright/test"
 import { join } from "node:path"
 
 const AUTH_FILE = join(process.cwd(), "e2e/.auth/superadmin.json")
 
-setup("forge superadmin session", async ({ context }) => {
-  const token = process.env["E2E_BYPASS_TOKEN"]
+setup("adopt session from CLI token", async ({ context }) => {
+  const token = process.env["GLOW_RECORD_TOKEN"]
   if (!token) {
     throw new Error(
-      "E2E_BYPASS_TOKEN env var is required. Set it in .env.local " +
-      "(must match the api repo's E2E_BYPASS_TOKEN).",
+      "GLOW_RECORD_TOKEN env var is required. `glow record` injects it from " +
+      "your `glow login` session; for a manual run, export it yourself.",
     )
   }
   // Use context.request (not the top-level `request` fixture) so the
   // Set-Cookie response lands in this BrowserContext's cookie jar,
   // where storageState() can capture it.
-  const res = await context.request.post("/api/e2e/login", {
+  const res = await context.request.post("/api/session/adopt", {
     headers: { Authorization: `Bearer ${token}` },
   })
-  expect(res.ok(), `bypass login failed: ${res.status()} ${await res.text()}`).toBeTruthy()
+  expect(res.ok(), `session adopt failed: ${res.status()} ${await res.text()}`).toBeTruthy()
   await context.storageState({ path: AUTH_FILE })
 })
