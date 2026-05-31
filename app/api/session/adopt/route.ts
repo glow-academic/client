@@ -19,6 +19,18 @@ import { encode } from "next-auth/jwt"
 const SECRET = process.env["AUTH_SECRET"] ?? process.env["SECRET_KEY"] ?? ""
 const DISABLED = process.env["DISABLE_SESSION_ADOPT"] === "1" || SECRET.length === 0
 
+// Mirror Auth.js cookie naming. With an https app URL (production) Auth.js uses
+// secure cookies named `__Secure-authjs.session-token` — and that exact name
+// is also the JWE *salt*. If we write the plain `authjs.session-token`, the app
+// looks for the `__Secure-` cookie, finds none, reads the session as null, and
+// bounces to login. (http://127.0.0.1 is a secure context in Chromium, so the
+// `Secure` flag is still storable there for the recorder.)
+const APP_URL = process.env["AUTH_URL"] ?? process.env["NEXTAUTH_URL"] ?? ""
+const USE_SECURE_COOKIES = APP_URL.startsWith("https://")
+const COOKIE_NAME = USE_SECURE_COOKIES
+  ? "__Secure-authjs.session-token"
+  : "authjs.session-token"
+
 /** Decode a JWT payload (no signature check — the API verifies on use). */
 function decodeJwt(token: string): Record<string, unknown> | null {
   const parts = token.split(".")
@@ -55,7 +67,7 @@ export async function POST(req: Request) {
     typeof claims["email"] === "string" ? (claims["email"] as string) : undefined
 
   const sessionToken = await encode({
-    salt: "authjs.session-token",
+    salt: COOKIE_NAME,
     secret: SECRET,
     token: { sub, id_token: token, email },
     maxAge: 60 * 60 * 24,
@@ -63,9 +75,10 @@ export async function POST(req: Request) {
 
   const res = NextResponse.json({ ok: true, profile_id: sub })
   res.cookies.set({
-    name: "authjs.session-token",
+    name: COOKIE_NAME,
     value: sessionToken,
     httpOnly: true,
+    secure: USE_SECURE_COOKIES,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24,
