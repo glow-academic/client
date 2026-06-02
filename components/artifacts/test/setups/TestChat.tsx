@@ -434,23 +434,16 @@ export default function TestChat({
     handleStartAll();
   }, [handleStartAll]);
 
-  // ---- Lobby rendering ----
-  if (isLobby) {
-    return (
-      <TestLobby
-        test_id={test_id}
-        eval_name={test_data.eval_name ?? null}
-        eval_description={test_data.eval_description ?? null}
-        rubric_name={test_data.rubric_name ?? null}
-        infinite_mode={test_data.infinite_mode}
-        on_start={handleLobbyStart}
-        is_starting={isLobbyStarting}
-        is_connected={true}
-      />
-    );
-  }
-
-  // ---- Build props for GenericChatInterface ----
+  // ---- Hooks below were previously declared after the ``isLobby``
+  // early return, which made the hook count differ between the lobby
+  // and non-lobby render paths (rules-of-hooks: "rendered fewer hooks
+  // than expected" when toggling out of the lobby). They are pure
+  // ``useMemo``/``useCallback``/``useTestRun``/``useQueryStates`` with no
+  // side effects, so hoisting the CALLS above the early return is
+  // behavior-identical — nothing here runs work conditionally; the
+  // values are simply computed every render and only consumed below the
+  // return. The plain (non-hook) prop-object assembly stays after the
+  // early return where it was.
 
   // Two-axis switcher options for the graded view:
   //   • invocations (global) — one per InvocationDetail. Subtitle
@@ -496,44 +489,6 @@ export default function TestChat({
       })),
     [selectedInvocation],
   );
-
-  const chatHeaderProps = {
-    show_documents: showResources,
-    show_objectives: false,
-    show_rubric: false,
-    has_documents: true,
-    on_toggle_documents: (show: boolean) => setShowResources(show),
-    on_toggle_objectives: () => {},
-    on_toggle_rubric: () => {},
-    eval_name: test_data.eval_name ?? null,
-    status_summary: statusSummary,
-    history_count: filteredRuns.length,
-    invocations: headerInvocationOptions,
-    selected_invocation_id: selectedInvocationId,
-    on_select_invocation: handleSelectInvocation,
-    runs: headerRunOptions,
-    selected_run_id: selectedRunId,
-    on_select_run: handleSelectRun,
-    view_mode: viewMode,
-    on_toggle_view_mode: setViewMode,
-  };
-
-  const historyAreaProps: ModelHistoryViewProps = {
-    runs: filteredRuns,
-    messages,
-    starting_run_ids: startingRunIds,
-    stopping_run_ids: stoppingRunIds,
-    on_stop_run: handleStopRun,
-    is_connected: true,
-    selected_run_id: selectedRunId,
-  };
-
-  const rubricAreaProps: ModelRubricViewProps = {
-    invocation_details: invocationDetails,
-    selected_invocation_id: selectedInvocationId,
-    selected_run_id: selectedRunId,
-    test: test_data.test,
-  };
 
   // useTestRun.run drives the canonical 3-step fire:
   //   /test/trace (with run_id = config) → /test/generate → /test/run
@@ -726,39 +681,6 @@ export default function TestChat({
   );
   const currentExpandedPageSize = configsExpandedPageSize ?? 20;
 
-  // Bottom composer: picker (source of truth for what gets queued) +
-  // optional extra instructions + Run button.
-  const inputAreaProps: RunSelectorProps = {
-    is_starting: isAnySelectedStarting,
-    has_selection: selectedRunIds.length > 0,
-    on_run: handleRunSelected,
-    is_connected: true,
-    runs: runOptions,
-    groups: configsGroups,
-    per_group_total: configsPerGroupTotal,
-    total_runs: configsTotal,
-    selected_run_ids: selectedRunIds,
-    on_select_runs: setSelectedRunIds,
-    pagination: {
-      groups_page: currentGroupsPage,
-      groups_page_size: currentGroupsPageSize,
-      groups_total_bound: configsGroupsTotalBound,
-      on_groups_page_change: (page: number) => {
-        void setConfigsParams({ configsGroupsPage: page });
-      },
-      expanded: expandedIds,
-      on_expanded_change: (next: string[]) => {
-        void setConfigsParams({
-          configsExpanded: next.length > 0 ? next.join(",") : null,
-        });
-      },
-      expanded_page_size: currentExpandedPageSize,
-      on_expanded_page_size_change: (size: number) => {
-        void setConfigsParams({ configsExpandedPageSize: size });
-      },
-    },
-  };
-
   // Per-run tools picker catalog. Visible = any tool whose permissions
   // intersect with the operations the run actually exercised
   // (cfg.permissions, derived server-side from the run's calls). This
@@ -923,6 +845,97 @@ export default function TestChat({
     filterToolsForRun,
     prefillForConfig,
   ]);
+
+  // ---- Lobby rendering ----
+  if (isLobby) {
+    return (
+      <TestLobby
+        test_id={test_id}
+        eval_name={test_data.eval_name ?? null}
+        eval_description={test_data.eval_description ?? null}
+        rubric_name={test_data.rubric_name ?? null}
+        infinite_mode={test_data.infinite_mode}
+        on_start={handleLobbyStart}
+        is_starting={isLobbyStarting}
+        is_connected={true}
+      />
+    );
+  }
+
+  // ---- Build props for GenericChatInterface ----
+  // (All hooks consumed below were hoisted above the ``isLobby`` early
+  // return for rules-of-hooks; these are plain prop-object assemblies.)
+
+  const chatHeaderProps = {
+    show_documents: showResources,
+    show_objectives: false,
+    show_rubric: false,
+    has_documents: true,
+    on_toggle_documents: (show: boolean) => setShowResources(show),
+    on_toggle_objectives: () => {},
+    on_toggle_rubric: () => {},
+    eval_name: test_data.eval_name ?? null,
+    status_summary: statusSummary,
+    history_count: filteredRuns.length,
+    invocations: headerInvocationOptions,
+    selected_invocation_id: selectedInvocationId,
+    on_select_invocation: handleSelectInvocation,
+    runs: headerRunOptions,
+    selected_run_id: selectedRunId,
+    on_select_run: handleSelectRun,
+    view_mode: viewMode,
+    on_toggle_view_mode: setViewMode,
+  };
+
+  const historyAreaProps: ModelHistoryViewProps = {
+    runs: filteredRuns,
+    messages,
+    starting_run_ids: startingRunIds,
+    stopping_run_ids: stoppingRunIds,
+    on_stop_run: handleStopRun,
+    is_connected: true,
+    selected_run_id: selectedRunId,
+  };
+
+  const rubricAreaProps: ModelRubricViewProps = {
+    invocation_details: invocationDetails,
+    selected_invocation_id: selectedInvocationId,
+    selected_run_id: selectedRunId,
+    test: test_data.test,
+  };
+
+  // Bottom composer: picker (source of truth for what gets queued) +
+  // optional extra instructions + Run button.
+  const inputAreaProps: RunSelectorProps = {
+    is_starting: isAnySelectedStarting,
+    has_selection: selectedRunIds.length > 0,
+    on_run: handleRunSelected,
+    is_connected: true,
+    runs: runOptions,
+    groups: configsGroups,
+    per_group_total: configsPerGroupTotal,
+    total_runs: configsTotal,
+    selected_run_ids: selectedRunIds,
+    on_select_runs: setSelectedRunIds,
+    pagination: {
+      groups_page: currentGroupsPage,
+      groups_page_size: currentGroupsPageSize,
+      groups_total_bound: configsGroupsTotalBound,
+      on_groups_page_change: (page: number) => {
+        void setConfigsParams({ configsGroupsPage: page });
+      },
+      expanded: expandedIds,
+      on_expanded_change: (next: string[]) => {
+        void setConfigsParams({
+          configsExpanded: next.length > 0 ? next.join(",") : null,
+        });
+      },
+      expanded_page_size: currentExpandedPageSize,
+      on_expanded_page_size_change: (size: number) => {
+        void setConfigsParams({ configsExpandedPageSize: size });
+      },
+    },
+  };
 
   // Snapshot mode (graded view): when the user has no new-run configs
   // queued in the picker and an invocation is selected, show the
