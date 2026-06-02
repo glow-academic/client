@@ -64,7 +64,7 @@ export function createWsEvents(socket: AppSocket): EventChannel {
     // read ``data.event_type`` to derive the operation. Inject it here
     // so the WS payload looks identical from the consumer's POV.
     const enriched: Record<string, unknown> =
-      typeof data?.event_type === "string"
+      typeof data?.["event_type"] === "string"
         ? data
         : { ...data, event_type: event };
 
