@@ -49,79 +49,6 @@ type PatchEvalDraftIn = InputOf<"/eval/draft", "post">;
 type PatchEvalDraftOut = OutputOf<"/eval/draft", "post">;
 type EvalData = OutputOf<"/eval/get", "post">;
 
-type EvalNameItem = {
-  id?: string | null;
-  name?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type EvalDescriptionItem = {
-  id?: string | null;
-  description?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type EvalDepartmentItem = {
-  department_id?: string | null;
-  name?: string | null;
-  description?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type EvalModelItem = {
-  id?: string | null;
-  name?: string | null;
-  description?: string | null;
-  modality_ids?: string[] | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type EvalModelFlagItem = {
-  id?: string | null;
-  model_id?: string | null;
-  flag_id?: string | null;
-  name?: string | null;
-  description?: string | null;
-  icon?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type EvalModelPositionItem = {
-  id?: string | null;
-  model_id?: string | null;
-  value?: number | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-type EvalModelRubricItem = {
-  id?: string | null;
-  model_id?: string | null;
-  rubric_id?: string | null;
-  generated?: boolean | null;
-  suggested?: boolean | null;
-  selected?: boolean | null;
-  pending?: boolean | null;
-};
-
-
 type EvalDraftFormState = {
   name_id?: string | null;
   name?: string | null;
@@ -1459,7 +1386,6 @@ function EvalComponent({
                   }
                   simulation_id={evalId || null}
                   model_ids={formState.model_ids}
-                  onGenerate={handleGenerateModelPositions}
                   required={false}
                   onModelPositionValues={(positions) =>
                     setFormState((prev) => {

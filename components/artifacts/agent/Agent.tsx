@@ -199,17 +199,6 @@ export default function Agent({
   const flushRegistryRef = useRef<
     Map<string, () => Promise<Record<string, unknown> | void>>
   >(new Map());
-  const registerFlushCallbacks = useMemo(
-    () => ({
-      prompts: (
-        flush: () => Promise<{ prompt_id: string | null } | void>,
-      ) => {
-        flushRegistryRef.current.set("prompts", flush);
-      },
-    }),
-    [],
-  );
-
   // Stabilize server props to prevent unnecessary re-renders from object reference changes
   const stabilizeServerProp = React.useCallback(
     (
@@ -751,7 +740,7 @@ export default function Agent({
   );
 
   const handleAcceptPendingMulti = useCallback(
-    (field: MultiField, pendingIds: string[]) => {
+    (_field: MultiField, pendingIds: string[]) => {
       const removeSet = new Set(pendingIds);
       setDraftState((prev) => ({
         ...prev,
@@ -1338,11 +1327,6 @@ export default function Agent({
 
   const handleGenerateDepartments = useCallback(
     async () => handleGenerateResources(["departments"]),
-    [handleGenerateResources],
-  );
-
-  const handleGenerateFlags = useCallback(
-    async () => handleGenerateResources(["flags"]),
     [handleGenerateResources],
   );
 
@@ -2139,7 +2123,13 @@ export default function Agent({
                         onPromptIdChange={(id: string | null) => {
                           setDraftState((prev) => ({ ...prev, prompt_id: id, prompt: null }));
                         }}
-                        onPromptChange={(prompt) => {
+                        onPromptChange={(
+                          prompt: {
+                            system_prompt: string;
+                            name: string;
+                            description: string;
+                          } | null,
+                        ) => {
                           setDraftState((prev) => ({ ...prev, prompt, prompt_id: null }));
                         }}
                         searchTerm={promptSearch}

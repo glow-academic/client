@@ -180,7 +180,6 @@ export function Simulations({
   const scenarioSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cohortSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const departmentSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const flagSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Local search state (for immediate UI feedback while debouncing)
   const [localSearch, setLocalSearch] = useState(searchParams.get("search") ?? "");
@@ -688,17 +687,6 @@ export function Simulations({
     [updateSimulationsParams],
   );
 
-  const _handleFlagSearchChange = useCallback(
-    (term: string) => {
-      setLocalFlagSearch(term);
-      if (flagSearchTimeoutRef.current) clearTimeout(flagSearchTimeoutRef.current);
-      flagSearchTimeoutRef.current = setTimeout(() => {
-        updateSimulationsParams({ flagSearch: term || null });
-      }, 300);
-    },
-    [updateSimulationsParams],
-  );
-
   // Reset all filters
   const handleResetFilters = useCallback(() => {
     setColumnFilters([]);
@@ -722,7 +710,7 @@ export function Simulations({
 
     setIsDeleting(true);
     try {
-      await deleteSimulationAction({ body: { simulation_ids: [deleteItem.id], accept: true } });
+      await deleteSimulationAction({ body: { simulation_ids: [deleteItem.id], all: false, accept: true } });
       toast.success("Simulation deleted successfully");
       router.refresh();
     } catch (err) {
@@ -1035,20 +1023,20 @@ export function Simulations({
                 </Badge>
               )}
             </div>
-            {((columnVisibility.ai_badge !== false && simulation.generated) || (columnVisibility.practice_badge !== false && simulation.practice_simulation) || (columnVisibility.status_badge !== false && simulation.is_inactive)) && (
+            {((columnVisibility["ai_badge"] !== false && simulation.generated) || (columnVisibility["practice_badge"] !== false && simulation.practice_simulation) || (columnVisibility["status_badge"] !== false && simulation.is_inactive)) && (
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              {columnVisibility.ai_badge !== false && simulation.generated && (
+              {columnVisibility["ai_badge"] !== false && simulation.generated && (
                 <Badge variant="default">
                   <Sparkles className="h-3 w-3 mr-1" />
                   {simulation.mcp ? "MCP" : "AI"}
                 </Badge>
               )}
-              {columnVisibility.practice_badge !== false && simulation.practice_simulation && (
+              {columnVisibility["practice_badge"] !== false && simulation.practice_simulation && (
                 <Badge variant="outline" className="text-xs">
                   Practice
                 </Badge>
               )}
-              {columnVisibility.status_badge !== false && simulation.is_inactive && (
+              {columnVisibility["status_badge"] !== false && simulation.is_inactive && (
                 <Badge variant="secondary">Inactive</Badge>
               )}
             </div>
@@ -1203,14 +1191,14 @@ export function Simulations({
         </div>
       </CardHeader>
       <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-        {columnVisibility.card_description !== false && (
+        {columnVisibility["card_description"] !== false && (
           <p className="text-sm text-muted-foreground line-clamp-2">
             {simulation.description || "No description available"}
           </p>
         )}
-        {(columnVisibility.card_cohorts !== false || columnVisibility.scenario_dots !== false) && (
+        {(columnVisibility["card_cohorts"] !== false || columnVisibility["scenario_dots"] !== false) && (
           <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
-            {columnVisibility.card_cohorts !== false && (
+            {columnVisibility["card_cohorts"] !== false && (
               <span className="flex items-center gap-1">
                 <Users className="h-3 w-3" />
                 {simulation.num_cohorts}{" "}
@@ -1218,7 +1206,7 @@ export function Simulations({
               </span>
             )}
             <div className="flex-grow" />
-            {columnVisibility.scenario_dots !== false && simulation.scenario_ids && simulation.scenario_ids.length > 0 && (
+            {columnVisibility["scenario_dots"] !== false && simulation.scenario_ids && simulation.scenario_ids.length > 0 && (
               <div className="flex items-center gap-1">
                 {simulation.scenario_ids.map((scenarioId) => {
                   const scenario = scenarioMapping[scenarioId];
@@ -1696,12 +1684,12 @@ export function Simulations({
           onSave={async (items) => {
             if (!createSimulationAction) throw new Error("Create action not available");
             const simulations = items.map((item) => ({
-              name: item.name as string | undefined,
-              description: item.description as string | undefined,
-              is_inactive: item.is_inactive as boolean | undefined,
-              is_practice: item.is_practice as boolean | undefined,
-              departments: item.departments as string[] | undefined,
-              scenarios: item.scenarios as string[] | undefined,
+              name: item["name"] as string | undefined,
+              description: item["description"] as string | undefined,
+              is_inactive: item["is_inactive"] as boolean | undefined,
+              is_practice: item["is_practice"] as boolean | undefined,
+              departments: item["departments"] as string[] | undefined,
+              scenarios: item["scenarios"] as string[] | undefined,
             }));
             return createSimulationAction({ body: { simulations } } as CreateSimulationIn);
           }}

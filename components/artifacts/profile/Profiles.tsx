@@ -660,7 +660,7 @@ export default function Profiles({
             id: role.role ?? "",
             name: role.name ?? role.role ?? "Role",
             description: role.description ?? "",
-            iconSvg: role.icon ?? role.icon_value ?? null,
+            iconSvg: role.icon_value ?? null,
             icon: UserIcon,
             color: role.color_hex ?? "#64748b",
           };
@@ -892,7 +892,13 @@ export default function Profiles({
         },
       });
 
-      setProcessedRows(response.rows ?? []);
+      const rows =
+        response &&
+        typeof response === "object" &&
+        Array.isArray((response as { rows?: unknown }).rows)
+          ? ((response as { rows: ProcessedCSVRow[] }).rows)
+          : [];
+      setProcessedRows(rows);
       setEditableRows({});
       setCsvStage("review");
     } catch (error) {
@@ -908,7 +914,7 @@ export default function Profiles({
     const aliasMap: Record<string, number[]> = {};
     processedRows.forEach((row, idx) => {
       const editableRow = editableRows[idx] || row;
-      const emails = editableRow.emails || [];
+      const emails: string[] = editableRow.emails ?? [];
       emails.forEach((email) => {
         const normalized = normalizeEmail(email);
         if (normalized) {
@@ -1001,7 +1007,7 @@ export default function Profiles({
 
     const emailCounts: Record<string, number[]> = {};
     validRows.forEach((row, idx) => {
-      const emails = row.emails || [];
+      const emails: string[] = row.emails ?? [];
       emails.forEach((email) => {
         const normalized = normalizeEmail(email);
         if (normalized) {
@@ -1026,42 +1032,6 @@ export default function Profiles({
 
     setIsSubmitting(true);
     try {
-      const _profiles = validRows.map((row) => {
-        const rowDeptIds = row.department_ids || [];
-        const deptIds = rowDeptIds
-          .map((deptIdOrName) => {
-            if (validDepartmentIdsForCSV.includes(deptIdOrName)) {
-              return deptIdOrName;
-            }
-            const found = Object.entries(departmentMappingForCSV).find(
-              ([_, dept]) =>
-                dept.name.toLowerCase() === deptIdOrName.toLowerCase()
-            );
-            return found ? found[0] : null;
-          })
-          .filter((id): id is string => id !== null);
-
-        const emails = (row.emails || [])
-          .map((e) => normalizeEmail(e))
-          .filter((e) => e.length > 0);
-        if (emails.length === 0) {
-          emails.push("");
-        }
-        return {
-          name: row.name ?? "", // snake_case
-          emails: emails,
-          primary_email_index:
-            row.primary_email_index !== null &&
-            row.primary_email_index !== undefined &&
-            row.primary_email_index < emails.length
-              ? row.primary_email_index
-              : 0,
-          role: row.role ?? "member",
-          active: true, // Default to active for new profile
-          department_ids: deptIds,
-        };
-      });
-
       toast.error("Bulk create or update is no longer available. Please use individual profile create/update instead.");
       return;
     } catch (error) {
@@ -1126,8 +1096,8 @@ export default function Profiles({
           const emails = profile.emails || [];
           const emailMatch =
             emails.some((e) => e.toLowerCase().includes(valueLower)) ||
-            (profile.primary_email !== null &&
-              profile.primary_email.toLowerCase().includes(valueLower));
+            (profile.primary_email?.toLowerCase().includes(valueLower) ??
+              false);
           return Boolean(
             (profile.name ?? "").toLowerCase().includes(valueLower) ||
               emailMatch
@@ -2340,7 +2310,8 @@ export default function Profiles({
                             })
                             .map((row, index) => {
                               const editableRow = editableRows[index] || row;
-                              const errors = editableRow.errors ?? [];
+                              const errors: { field?: string | null }[] =
+                                editableRow.errors ?? [];
                               const hasNameError = errors.some(
                                 (e) => e.field === "name" // snake_case
                               );

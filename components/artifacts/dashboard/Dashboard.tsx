@@ -177,7 +177,7 @@ export default function Dashboard({
           pageSize={historyPageSize}
           showArchive={!!bulkArchiveAttemptsAction}
           singleProfile={false}
-          initialFilters={defaultFilters}
+          {...(defaultFilters && { initialFilters: defaultFilters })}
           profileOptions={profileOptions}
           simulationOptions={simulationOptions}
           scenarioOptions={scenarioOptions}
@@ -185,7 +185,7 @@ export default function Dashboard({
           simulationSearch={historySimulationSearch || ""}
           scenarioSearch={historyScenarioSearch || ""}
           {...(bulkArchiveAttemptsAction && { bulkArchiveAttemptsAction })}
-          initialColumnVisibility={initialColumnVisibility}
+          {...(initialColumnVisibility && { initialColumnVisibility })}
         />
       </div>
 

@@ -53,7 +53,7 @@ export default function FirstAttemptPassRate({
 
   // Get chart colors and pick one based on colorIndex
   const chartColors = useChartColors();
-  const chartColor = chartColors[colorIndex % 5];
+  const chartColor = chartColors[colorIndex % 5] ?? "";
 
   const statusDotClass =
     status === "success"

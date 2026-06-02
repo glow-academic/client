@@ -553,7 +553,7 @@ export default function Documents({
                   <span className="uppercase">
                     {document.extension ?? "FILE"}
                   </span>
-                  {!document.active && (
+                  {document.is_inactive && (
                     <Badge variant="secondary" className="text-[10px]">
                       Inactive
                     </Badge>
@@ -1153,7 +1153,7 @@ export default function Documents({
     try {
       if (!deleteDocumentAction) return;
       await deleteDocumentAction({
-        body: { document_ids: [deletingDocument.id], accept: true },
+        body: { document_ids: [deletingDocument.id], all: false, accept: true },
       });
       router.refresh();
       toast.success("Document deleted successfully");
@@ -1646,24 +1646,7 @@ export default function Documents({
             {previewDocument && (
               <div className="flex-1 min-h-0">
                 <DocumentViewer
-                  document={{
-                    document_id: previewDocument.id ?? null,
-                    name: previewDocument.name ?? null,
-                    updated_at: previewDocument.updated_at ?? null,
-                    extension: previewDocument.extension ?? null,
-                    scenario_ids: previewDocument.scenario_ids ?? null,
-                    can_edit: previewDocument.can_edit ?? null,
-                    can_delete: previewDocument.can_delete ?? null,
-                    active: previewDocument.active ?? null,
-                    department_ids: previewDocument.department_ids ?? null,
-                    file_id: previewDocument.file_id ?? null,
-                    field_ids: previewDocument.field_ids ?? null,
-                    valid_field_ids: previewDocument.valid_field_ids ?? null,
-                    active_scenario_count:
-                      previewDocument.active_scenario_count ?? null,
-                    total_scenario_links:
-                      previewDocument.total_scenario_links ?? null,
-                  }}
+                  document={previewDocument}
                   bare={true}
                   isFormDocument={false}
                   downloadBaseUrl="/api/documents/download"
