@@ -181,6 +181,21 @@ export default function Fields({
   // − delete overlays).
   const fields = mergedFields;
 
+  // Visible ghosts (non-terminal states) — used to keep the grid
+  // rendered even when the SSR result is empty so the user sees the
+  // in-flight create card immediately (e.g. first field on a fresh
+  // org). ``committed``/``accepted`` are dropped — the real row has
+  // already merged into ``mergedFields``. Hoisted above the
+  // ``isLoading`` early return so this hook is always called in the
+  // same order (rules-of-hooks); depends only on ``fieldGhosts``.
+  const visibleGhosts = useMemo(
+    () =>
+      fieldGhosts.filter(
+        (g) => g.state !== "committed" && g.state !== "accepted",
+      ),
+    [fieldGhosts],
+  );
+
   // Unified ack: live in-flight ghosts go through the hook; server-side
   // persistent pending rows (synthesized from ``pending_status``) ack
   // via the generic server action and refresh.
@@ -1006,19 +1021,6 @@ export default function Fields({
   const personaColumn = table.getColumn("personas");
   const departmentsColumn = table.getColumn("departments");
   const isFiltered = table.getState().columnFilters.length > 0;
-
-  // Visible ghosts (non-terminal states) — used to keep the grid
-  // rendered even when the SSR result is empty so the user sees the
-  // in-flight create card immediately (e.g. first field on a fresh
-  // org). ``committed``/``accepted`` are dropped — the real row has
-  // already merged into ``mergedFields``.
-  const visibleGhosts = useMemo(
-    () =>
-      fieldGhosts.filter(
-        (g) => g.state !== "committed" && g.state !== "accepted",
-      ),
-    [fieldGhosts],
-  );
 
   return (
     <div className="space-y-6">
