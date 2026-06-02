@@ -29,35 +29,60 @@ type ProfilesListIn = InputOf<"/profile/search", "post">;
 type ProfilesListOut = OutputOf<"/profile/search", "post">;
 
 /** ---- Body type for profile list request ----
- *  Mirrors the search-route filter fields (kept in sync manually
- *  because the SearchProfileApiRequest type isn't exported from the
- *  client OpenAPI tree). Used both for the SSR fetch and as the
- *  ``currentSearchBody`` prop forwarded to the bulk-write all-
- *  matching path. */
-type ProfilesListBody = {
-  search?: string | null;
-  cohort_ids?: string[] | null;
-  filter_department_ids?: string[] | null;
-  role_filter?: string | null;
-  cohort_search?: string | null;
-  department_search?: string | null;
-  role_search?: string | null;
-  flag_search?: string | null;
-  page_size?: number | null;
-  page_offset?: number | null;
-};
+ *  Derived from the OpenAPI ``/profile/search`` input so the
+ *  ``page_size`` / ``page_offset`` nullability stays in sync with the
+ *  server (matches the documents sibling). Used both for the SSR fetch
+ *  and as the ``currentSearchBody`` prop forwarded to the bulk-write
+ *  all-matching path (``/profile/delete`` accepts the same filters). */
+type ProfilesListBody = NonNullable<ProfilesListIn["body"]>;
 type DeleteProfileIn = InputOf<"/profile/delete", "post">;
 type DeleteProfileOut = OutputOf<"/profile/delete", "post">;
-type BulkDeleteProfileIn = InputOf<"/profile/bulk/delete", "post">;
-type BulkDeleteProfileOut = OutputOf<"/profile/bulk/delete", "post">;
+// Bulk delete is the SAME endpoint as single delete: the api's
+// ``/profile/delete`` (``DeleteProfileApiRequest``) accepts either an
+// explicit ``profile_ids`` list OR an all-matching body
+// (``all=true`` + ``excluded_ids`` + the ``/profile/search`` filter
+// fields). There is no separate ``/profile/bulk/delete`` route — the
+// old name 404'd. Alias the bulk types to the real delete types.
+type BulkDeleteProfileIn = DeleteProfileIn;
+type BulkDeleteProfileOut = DeleteProfileOut;
 type UpdateProfileIn = InputOf<"/profile/update", "post">;
 type UpdateProfileOut = OutputOf<"/profile/update", "post">;
-type SearchProfileIn = InputOf<"/profile/bulk/search", "post">;
-type SearchProfileOut = OutputOf<"/profile/bulk/search", "post">;
+// Bulk search is the real ``/profile/search`` endpoint (same as the
+// list fetch above). The old ``/profile/bulk/search`` route 404'd.
+type SearchProfileIn = ProfilesListIn;
+type SearchProfileOut = ProfilesListOut;
 type GetProfileIn = InputOf<"/profile/get", "post">;
 type GetProfileOut = OutputOf<"/profile/get", "post">;
-type ProcessCSVIn = InputOf<"/profile/bulk/process", "post">;
-type ProcessCSVOut = OutputOf<"/profile/bulk/process", "post">;
+// CSV processing — see ``processCSV`` below. The legacy
+// ``{csv_content, column_mappings}`` -> ``{rows}`` review contract
+// (formerly ``/profile/bulk/process``) is NOT exposed by the current
+// api; the only real CSV route is ``/profile/csv`` (multipart file
+// upload). These types describe the client-side review UX the page's
+// component drives, and are intentionally LOCAL (not derived from a
+// phantom endpoint) so the build is honest about the contract gap.
+type CSVColumnMapping = {
+  csv_column: string;
+  target_field: string | null;
+};
+type ProcessCSVIn = {
+  body: {
+    csv_content: string;
+    column_mappings: CSVColumnMapping[];
+  };
+};
+type ProcessedCSVRow = {
+  row_index?: number | null;
+  name?: string | null;
+  emails?: string[] | null;
+  role?: string | null;
+  department_ids?: string[] | null;
+  errors?: { field?: string | null; message?: string | null }[] | null;
+};
+type ProcessCSVOut = {
+  rows: ProcessedCSVRow[];
+};
+type ParseProfileCsvIn = InputOf<"/profile/csv", "post">;
+type ParseProfileCsvOut = OutputOf<"/profile/csv", "post">;
 type EmulateProfileIn = InputOf<"/profile/emulate", "post">;
 type EmulateProfileOut = OutputOf<"/profile/emulate", "post">;
 type UnemulateProfileOut = OutputOf<"/profile/unemulate", "post">;
@@ -72,8 +97,6 @@ type ContextOut = OutputOf<"/profile/context", "post">;
 /** ---- Derived types from server responses ---- */
 type ProfileListItem = NonNullable<ProfilesListOut["profiles"]>[number];
 type SearchProfileItem = NonNullable<SearchProfileOut["profiles"]>[number];
-type ProcessedCSVRow = NonNullable<ProcessCSVOut["rows"]>[number];
-type CSVColumnMapping = ProcessCSVIn["body"]["column_mappings"][number];
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getProfilesList = async (input: ProfilesListIn): Promise<ProfilesListOut> => {
@@ -98,7 +121,9 @@ async function bulkDeleteProfile(
   input: BulkDeleteProfileIn
 ): Promise<BulkDeleteProfileOut> {
   "use server";
-  return api.post("/profile/bulk/delete", input);
+  // Real endpoint: ``/profile/delete`` handles both explicit-id and
+  // all-matching bulk deletes via ``DeleteProfileApiRequest``.
+  return api.post("/profile/delete", input);
 }
 
 async function updateProfile(
@@ -122,7 +147,42 @@ async function getCreateProfileData(
 
 async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
   "use server";
-  return api.post("/profile/bulk/process", input);
+  // The legacy ``/profile/bulk/process`` JSON contract
+  // (``{csv_content, column_mappings}`` -> reviewable ``{rows}``) does
+  // not exist in the current api. The only real CSV route is
+  // ``/profile/csv``, a multipart file upload returning
+  // ``ParseProfileCsvApiResponse`` ({items, mapped_fields, ...}).
+  //
+  // We adapt: serialize the client-parsed ``csv_content`` back into a
+  // file and POST it to ``/profile/csv``, then map the resolved
+  // ``items`` into the review ``rows`` the UI expects. NOTE: the two
+  // flows are not semantically equivalent — ``/profile/csv`` resolves
+  // emails/roles to resource UUIDs server-side rather than returning
+  // raw editable strings, so the review grid loses fidelity for those
+  // columns. Tracked as an api/product gap (see PR for #15); kept here
+  // so the action targets a REAL route instead of 404ing.
+  const file = new File([input.body.csv_content], "profiles.csv", {
+    type: "text/csv",
+  });
+  const formData = new FormData();
+  formData.append("file", file);
+  const res: ParseProfileCsvOut = await api.post(
+    "/profile/csv",
+    { formData } as ParseProfileCsvIn,
+  );
+  const items = res.items ?? [];
+  const rows: ProcessedCSVRow[] = items.map((item, index) => ({
+    row_index: index + 1,
+    name: item.name ?? null,
+    // ``/profile/csv`` returns email/role/department *resource UUIDs*,
+    // not the raw strings the legacy review grid edited. We surface the
+    // ids we have; raw-string editing is no longer round-tripped.
+    emails: item.email_ids ?? null,
+    role: item.role_id ?? null,
+    department_ids: item.department_ids ?? null,
+    errors: [],
+  }));
+  return { rows };
 }
 
 /** ---- Emulation server actions ---- */
@@ -165,16 +225,6 @@ async function unemulateProfile(
   }
 }
 
-
-async function getProfileGroupHistory(groupId: string): Promise<GroupProfileOut> {
-  "use server";
-  return api.post("/profile/group", { body: { group_id: groupId } } as GroupProfileIn);
-}
-
-async function searchProfileGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/profile/generations", { body: { search: query || null } } as GenerationsIn);
-}
 
 async function createProfileProblem(input: ProblemProfileIn): Promise<ProblemProfileOut> {
   "use server";
@@ -246,12 +296,20 @@ export default async function ProfilesPage({ searchParams }: ProfilesPageProps) 
     // the server has something to plug into the resolver — but the
     // filter fields will be null/empty until profiles' filter state
     // migrates to nuqs URL params (parity with persona/scenario).
-    const body: ProfilesListBody = {};
+    // ``page_size``/``page_offset`` are required-but-nullable in the
+    // OpenAPI schema; passing null lets the server use its defaults.
+    const body: ProfilesListBody = {
+      page_size: null,
+      page_offset: null,
+    };
 
     // Fetch list data, create profile data, view cookie, and group in parallel
     const [listData, initialCreateProfileData, initialColumnVisibility, groupResult] = await Promise.all([
       getProfilesList({ body }),
-      getCreateProfileData({ body: { department_ids: [] } }),
+      // ``GetProfileApiRequest`` exposes a ``departments`` SectionFilter
+      // (object), not a ``department_ids`` array; ``getCreateProfileData``
+      // ignores its input anyway and sends an empty body, so pass {}.
+      getCreateProfileData({ body: {} }),
       readViewCookie("profiles"),
       api.post(
         "/profile/group",
@@ -263,11 +321,13 @@ export default async function ProfilesPage({ searchParams }: ProfilesPageProps) 
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "profile",
-          createFeedback: createProfileProblem,
+          createFeedback: createProfileProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Management", section: "management", url: "/management" },
@@ -286,12 +346,14 @@ export default async function ProfilesPage({ searchParams }: ProfilesPageProps) 
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getProfileGroupHistory,
-          searchGroups: searchProfileGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getProfileGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getProfileGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
           searchGenerationsAction:
-            searchProfileGenerations as PanelProps["searchGenerationsAction"],
+            searchProfileGenerations as unknown as NonNullable<
+              PanelProps["searchGenerationsAction"]
+            >,
         }}
       >
         <div className="space-y-6 px-4">
