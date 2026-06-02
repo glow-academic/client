@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { test } from "@playwright/test";
 import { expectAuthenticated, scrollToText } from "../helpers/demo-page";
 import { pauseForDemo, saveDemoVideo } from "../helpers/demo-video";
 test.describe("demo: index sidebar", () => {

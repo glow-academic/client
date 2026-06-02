@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { test } from "@playwright/test";
 
 import { openArtifactForm } from "../helpers/artifact-demo";
 import { scrollToText } from "../helpers/demo-page";
