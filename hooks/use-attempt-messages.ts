@@ -84,9 +84,13 @@ export function useAttemptMessages({
 }: UseAttemptMessagesConfig): UseAttemptMessagesResult {
   const userPersona =
     userPersonaId && personas ? personas[userPersonaId] ?? null : null;
+  const soleAssistantPersonaId =
+    assistantPersonaIds && assistantPersonaIds.length === 1
+      ? assistantPersonaIds[0]
+      : undefined;
   const defaultAssistantPersona =
-    assistantPersonaIds && assistantPersonaIds.length === 1 && personas
-      ? personas[assistantPersonaIds[0]] ?? null
+    soleAssistantPersonaId && personas
+      ? personas[soleAssistantPersonaId] ?? null
       : null;
   const [streamingContent, setStreamingContent] = useState<Map<string, string>>(
     new Map(),
@@ -118,7 +122,7 @@ export function useAttemptMessages({
     // unpacks parsed args to top-level, so `data.text` / `data.persona_id`
     // are available directly (as well as under `data.arguments`).
     const handleChatMessageProgress = (data: AnyEventData) => {
-      const chatId = data.chat_id as string | undefined;
+      const chatId = data["chat_id"] as string | undefined;
       if (chatId && chatId !== chatIdRef.current) return;
 
       // ``call_id`` is the server's pre-minted DB row id — the unified
@@ -126,10 +130,10 @@ export function useAttemptMessages({
       // Keying the optimistic bubble by call_id means the bubble naturally
       // dedups: on .completed we swap the key from call_id to message_id,
       // and the refetched real message shares that same message_id.
-      const callId = data.call_id as string | undefined;
+      const callId = data["call_id"] as string | undefined;
       if (!callId) return;
-      const args = (data.arguments as Record<string, unknown> | null) ?? {};
-      const text = ((data.text ?? args.text) as string | undefined) ?? "";
+      const args = (data["arguments"] as Record<string, unknown> | null) ?? {};
+      const text = ((data["text"] ?? args["text"]) as string | undefined) ?? "";
       // Don't early-return on empty text — the UI shows a LoadingDots
       // placeholder bubble (with persona card) while the AI is still
       // streaming args before the `text` field appears.
@@ -139,7 +143,7 @@ export function useAttemptMessages({
       //   2. Previously-resolved persona on the existing optimistic entry
       //   3. Default assistant persona (if this chat has exactly one)
       //   4. null → generic fallback in UI
-      const streamedPersonaId = (data.persona_id ?? args.persona_id) as
+      const streamedPersonaId = (data["persona_id"] ?? args["persona_id"]) as
         | string
         | undefined;
       const streamedPersona =
@@ -182,7 +186,7 @@ export function useAttemptMessages({
     // Canonical: tool call executed → message persisted. Works for text,
     // audio, and realtime (all paths end in this tool call).
     const handleChatMessageCompleted = (data: AnyEventData) => {
-      const chatId = data.chat_id as string | undefined;
+      const chatId = data["chat_id"] as string | undefined;
       if (chatId && chatId !== chatIdRef.current) return;
 
       // Let the parent do voice-specific cleanup (e.g. match optimistic
@@ -194,8 +198,8 @@ export function useAttemptMessages({
       // key to the real message_id so the refetched real message — which
       // shares that same message_id — dominates the id-based merge in
       // MessagesView. No duplicate bubble.
-      const callId = data.call_id as string | undefined;
-      const messageId = data.message_id as string | undefined;
+      const callId = data["call_id"] as string | undefined;
+      const messageId = data["message_id"] as string | undefined;
       if (callId && messageId && callId !== messageId) {
         setOptimisticMessages((prev) => {
           const existing = prev.get(callId);
@@ -220,7 +224,7 @@ export function useAttemptMessages({
 
     const handleChatMessageFailed = (data: AnyEventData) => {
       setIsSending(false);
-      const msg = (data.message as string | undefined) ?? "Failed to send message";
+      const msg = (data["message"] as string | undefined) ?? "Failed to send message";
       toast.error(msg);
     };
 
@@ -235,16 +239,16 @@ export function useAttemptMessages({
 
     const handleGenerateFailed = (data: AnyEventData) => {
       setIsSending(false);
-      toast.error((data.message as string) || "AI response failed");
+      toast.error((data["message"] as string) || "AI response failed");
     };
 
     const handleStopCompleted = (data: AnyEventData) => {
       setIsSending(false);
       setIsStopping(false);
-      if (data.success && data.message) {
-        toast.success(data.message as string);
-      } else if (data.success === false) {
-        toast.error((data.message as string) ?? "Failed to stop");
+      if (data["success"] && data["message"]) {
+        toast.success(data["message"] as string);
+      } else if (data["success"] === false) {
+        toast.error((data["message"] as string) ?? "Failed to stop");
       }
     };
 

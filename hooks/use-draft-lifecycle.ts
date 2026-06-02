@@ -52,7 +52,6 @@ export function useDraftLifecycle(config: {
     setSelectedDraftId,
     hasResourceIds,
     flushRegistryRef,
-    formStateRef,
     onPatchSuccess,
   } = config;
 
