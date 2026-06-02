@@ -21,6 +21,21 @@ const issuerInternal = process.env["AUTH_ISSUER_INTERNAL"] || issuer;
 const clientId = process.env["AUTH_CLIENT_ID"] || "glow-client";
 const clientSecret = process.env["AUTH_CLIENT_SECRET"] || secret;
 
+/** Read the `exp` (epoch seconds) from a JWT without verifying it. */
+function decodeJwtExp(idToken: string | undefined): number | undefined {
+  if (!idToken) return undefined;
+  const payload = idToken.split(".")[1];
+  if (!payload) return undefined;
+  try {
+    const claims = JSON.parse(
+      Buffer.from(payload, "base64url").toString("utf8"),
+    ) as { exp?: number };
+    return typeof claims.exp === "number" ? claims.exp : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export const {
   handlers,
   auth,
@@ -52,10 +67,66 @@ export const {
   trustHost: true,
   session: { strategy: "jwt" },
   callbacks: {
-    // Store id_token in JWT — server resolves identity from it on every request
+    // Store id_token in JWT — server resolves identity from it on every
+    // request — and keep it fresh. The id_token expires at ~1h but the
+    // session cookie lives much longer; without refresh, API calls would
+    // start 401'ing an hour after login. On initial sign-in we persist the
+    // refresh_token + expiry; on later calls we renew before expiry.
     async jwt({ token, account }) {
-      if (account?.id_token) {
+      // Initial sign-in: persist id/refresh tokens + expiry from the provider.
+      if (account) {
         token["id_token"] = account.id_token;
+        token["refresh_token"] = account.refresh_token as string | undefined;
+        token["expires_at"] =
+          (account.expires_at as number | undefined) ??
+          decodeJwtExp(account.id_token) ??
+          Math.floor(Date.now() / 1000) + 3600;
+        delete token["error"];
+        return token;
+      }
+
+      // Still valid (more than 60s of headroom)? Use as-is.
+      const expiresAt = token["expires_at"];
+      if (expiresAt && Date.now() < expiresAt * 1000 - 60_000) {
+        return token;
+      }
+
+      // Expired/near-expiry: rotate via the refresh_token grant.
+      const refreshToken = token["refresh_token"];
+      if (!refreshToken) {
+        token["error"] = "RefreshTokenMissing";
+        return token;
+      }
+      try {
+        const res = await fetch(`${issuerInternal}/token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            grant_type: "refresh_token",
+            refresh_token: refreshToken,
+            client_id: clientId,
+            client_secret: clientSecret,
+          }),
+        });
+        if (!res.ok) {
+          throw new Error(`token refresh failed: HTTP ${res.status}`);
+        }
+        const refreshed = (await res.json()) as {
+          id_token?: string;
+          refresh_token?: string;
+          expires_in?: number;
+        };
+        if (refreshed.id_token) token["id_token"] = refreshed.id_token;
+        // The API rotates refresh tokens, so adopt the new one (fall back to
+        // the old if the response omitted it).
+        token["refresh_token"] = refreshed.refresh_token ?? refreshToken;
+        token["expires_at"] =
+          Math.floor(Date.now() / 1000) + (refreshed.expires_in ?? 3600);
+        delete token["error"];
+      } catch {
+        // Keep the (expired) token but flag the failure so the session
+        // surfaces it; the next request can force a fresh sign-in.
+        token["error"] = "RefreshAccessTokenError";
       }
       return token;
     },
@@ -68,6 +139,11 @@ export const {
 
       if (token["id_token"]) {
         session.id_token = token["id_token"] as string;
+      }
+
+      // Surface a refresh failure so the UI can force re-login.
+      if (token["error"]) {
+        session.error = token["error"] as string;
       }
 
       // Expose issuer so client-side can construct standard OIDC logout URL
