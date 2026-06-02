@@ -193,8 +193,8 @@ export default async function BenchmarkPage({
     // Build benchmark overview filters with embedded history
     const overviewFilters: BenchmarkOverviewIn = {
       body: {
-        start_date: q.startDate ?? undefined,
-        end_date: q.endDate ?? undefined,
+        start_date: q.startDate ?? null,
+        end_date: q.endDate ?? null,
         department_ids: q.departmentIds ?? [],
         history_page: historyPage,
         history_page_size: historyPageSize,
@@ -269,11 +269,15 @@ export default async function BenchmarkPage({
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "benchmark",
-          createFeedback: createBenchmarkProblem,
+          // sidebarProps.createFeedback is intentionally loosely typed; pages
+          // pass their concrete problem action via this cast (repo-wide pattern).
+          createFeedback: createBenchmarkProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Benchmark", section: "benchmark", url: "/benchmark" },
@@ -298,10 +302,16 @@ export default async function BenchmarkPage({
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          prompts: context.prompts?.prompts,
-          getGroupAction: getTestGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts
+            ? { prompts: context.prompts.prompts }
+            : {}),
+          getGroupAction: getTestGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
           searchGenerationsAction:
-            searchTestGenerations as PanelProps["searchGenerationsAction"],
+            searchTestGenerations as unknown as NonNullable<
+              PanelProps["searchGenerationsAction"]
+            >,
         }}
       >
         <div className="space-y-6 px-4">
