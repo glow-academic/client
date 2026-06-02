@@ -197,9 +197,9 @@ export default function Session({ sessionDetail }: SessionProps) {
   );
 }
 
-function TimelineEventCard({ event, groupData }: { event: TimelineEvent; groupData?: GroupItem }) {
+function TimelineEventCard({ event, groupData }: { event: TimelineEvent; groupData?: GroupItem | undefined }) {
   const eventType = event.event_type || "unknown";
-  const config = EVENT_CONFIG[eventType] || EVENT_CONFIG.login!;
+  const config = EVENT_CONFIG[eventType] || EVENT_CONFIG["login"]!;
   const Icon = config.icon;
 
   const content = (

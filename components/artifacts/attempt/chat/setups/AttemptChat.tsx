@@ -164,21 +164,22 @@ export function AttemptChat({
 
   // Attempt message streaming hook
   const handleUserCompleteVoiceCleanup = useCallback(
-    (data: Parameters<import("@/lib/ws/types").ServerToClientEvents["attempt.message.user.completed"]>[0]) => {
+    (data: Record<string, unknown>) => {
       // Clean up voice optimistic messages matching this user message
       setOptimisticMessages((prev) => {
         const newMap = new Map(prev);
         let matchedOptimisticId: string | null = null;
 
         // Primary: item_id direct lookup (reliable, no content matching needed)
-        if (data.item_id) {
-          matchedOptimisticId = itemIdToOptimisticIdRef.current.get(data.item_id) ?? null;
+        const itemId = typeof data["item_id"] === "string" ? data["item_id"] : null;
+        if (itemId) {
+          matchedOptimisticId = itemIdToOptimisticIdRef.current.get(itemId) ?? null;
         }
 
         // Fallback: content matching for backwards compat (text flow or missing item_id).
         // Audit ``chat_message.completed`` carries {success, chat_id, message_id,
         // content_ids} — no raw ``content`` field — so guard the lookup.
-        const rawContent = (data as { content?: unknown }).content;
+        const rawContent = data["content"];
         if (!matchedOptimisticId && typeof rawContent === "string") {
           const normalizedContent = rawContent.trim().toLowerCase();
 
@@ -444,7 +445,7 @@ export function AttemptChat({
       };
     }
     const remaining =
-      backendTimer.limit !== null && backendTimer.elapsed !== null
+      backendTimer.limit != null && backendTimer.elapsed != null
         ? backendTimer.limit - backendTimer.elapsed
         : null;
     return {
@@ -493,9 +494,6 @@ export function AttemptChat({
       negative: serverTimer.negative,
     };
   }, [serverTimer, localElapsedOffset]);
-
-  // Check if this is a single chat attempt (no pagination needed)
-  const _isSingleChatAttempt = chats.length <= 1;
 
   // Get grade data for all chats (for pass/fail badges in pagination)
   const allDynamicRubrics = useMemo(() => {
@@ -917,10 +915,9 @@ export function AttemptChat({
   const chatHeaderProps: ChatHeaderProps = useMemo(() => {
     const chatDocuments = resolvedChat?.documents || [];
     const hasContent = chatDocuments.length > 0;
-    const _currentChatData = attemptData?.entries?.attempt_chat?.[currentChatIndex];
     const hasVideoQuestions = (resolvedChat?.questions?.length ?? 0) > 0;
     return {
-      timer: attemptData?.timer ? displayTimer : undefined,
+      ...(attemptData?.timer ? { timer: displayTimer } : {}),
       show_documents: showDocuments,
       show_objectives: showObjectives,
       show_rubric: showGrades,
@@ -1000,13 +997,13 @@ export function AttemptChat({
         current_chat: currentChat
           ? { id: currentChat.id, completed: currentChat.completed ?? null }
           : null,
-        group_id: attemptData?.group_id,
+        group_id: attemptData?.group_id ?? null,
         send_message: handleSendMessage,
         is_sending_message: isSendingMessage,
         is_active: isActive,
-        disabled: !isAttemptOwner || !currentChat || currentChat.completed,
+        disabled: !isAttemptOwner || !currentChat || (currentChat.completed ?? false),
         is_attempt_owner: isAttemptOwner,
-        chat_id: currentChat?.id,
+        ...(currentChat?.id ? { chat_id: currentChat.id } : {}),
         fork_at_message_id: forkAtMessageId,
         on_fork: setForkAtMessageId,
         on_cancel_fork: () => setForkAtMessageId(null),
@@ -1019,13 +1016,13 @@ export function AttemptChat({
         current_chat: currentChat
           ? { id: currentChat.id, completed: currentChat.completed ?? null }
           : null,
-        group_id: attemptData?.group_id,
+        group_id: attemptData?.group_id ?? null,
         send_message: handleSendMessage,
         is_sending_message: isSendingMessage,
         is_active: isActive,
-        disabled: !isAttemptOwner || !currentChat || currentChat.completed,
+        disabled: !isAttemptOwner || !currentChat || (currentChat.completed ?? false),
         is_attempt_owner: isAttemptOwner,
-        chat_id: currentChat?.id,
+        ...(currentChat?.id ? { chat_id: currentChat.id } : {}),
       };
       return props;
     } else if (chatAreaViewMode === "video") {
@@ -1036,9 +1033,9 @@ export function AttemptChat({
         // Pass empty questions/responses when completed to show plain video
         questions: isCompleted ? [] : (resolvedChat?.questions || []),
         responses: isCompleted ? [] : (currentChatData?.responses || []),
-        onNavigateToQuestion: isCompleted ? undefined : setQuestionIndex,
         // Allow video to fill available space when completed (no questions input below)
         allowFullHeight: isCompleted ?? false,
+        ...(isCompleted ? {} : { onNavigateToQuestion: setQuestionIndex }),
       };
       return props;
     } else if (chatAreaViewMode === "graded-video") {
@@ -1053,9 +1050,11 @@ export function AttemptChat({
       const props: RubricViewProps = {
         // Pass rubric structure directly - it already matches RubricStructureData type
         rubric_structure: attemptData?.rubric_structure || {},
-        grading_state: currentChatData?.grading_state,
-        analyses: currentChatData?.analyses,
-        group_id: attemptData?.group_id,
+        ...(currentChatData?.grading_state
+          ? { grading_state: currentChatData.grading_state }
+          : {}),
+        analyses: currentChatData?.analyses ?? null,
+        group_id: attemptData?.group_id ?? null,
         // Identifiers for the mobile "Open Full Rubric" PDF button —
         // TableRubric only renders it when both are present (plus
         // grading_state), matching v1's post-grading-only affordance.
@@ -1122,7 +1121,7 @@ export function AttemptChat({
       const props: HybridInputProps = {
         text_enabled: textEnabled,
         audio_enabled: audioEnabled,
-        enabled: !currentChat?.completed ?? true,
+        enabled: !currentChat?.completed,
         is_connected: true,
         disabled: false,
         is_attempt_owner: true,
@@ -1215,7 +1214,7 @@ export function AttemptChat({
     if (InputAreaComponent === HybridInput) {
       return voiceInputRef;
     }
-    return undefined;
+    return null;
   }, [InputAreaComponent]);
 
   // ---------------------------------------------------------------------------
@@ -1298,8 +1297,7 @@ export function AttemptChat({
                 </Badge>
               ) : null}
               <span className="text-sm font-medium">
-                {chat.scenario?.name ||
-                  attemptData?.resources?.scenarios?.[String(chat.scenario_id)]?.name ||
+                {attemptData?.resources?.scenarios?.[String(chat.scenario_id)]?.name ||
                   `Chat ${currentChatIndex + 1}`}
               </span>
               <span className="text-sm text-muted-foreground">
@@ -1356,7 +1354,7 @@ export function AttemptChat({
       on_close_document_modal={() => setShowDocumentModal(false)}
       on_close_objectives_modal={() => setShowObjectivesModal(false)}
       input_panel_height={inputPanelHeight}
-      hide_input_area={chatAreaViewMode === "video" && currentChat?.completed}
+      hide_input_area={chatAreaViewMode === "video" && (currentChat?.completed ?? false)}
       input_area_ref={inputAreaRef}
       pagination_footer={paginationFooter}
       background_image={
@@ -1364,7 +1362,7 @@ export function AttemptChat({
       }
       chat_header_props={chatHeaderProps}
       chat_area_props={chatAreaProps}
-      document_area_props={documentAreaProps}
+      {...(documentAreaProps ? { document_area_props: documentAreaProps } : {})}
       input_area_props={inputAreaProps}
     />
     </>

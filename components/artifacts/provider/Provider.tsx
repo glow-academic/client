@@ -326,7 +326,7 @@ export default function Provider({
   );
 
   const handleAcceptPendingMulti = useCallback(
-    (field: MultiField, pendingIds: string[]) => {
+    (_field: MultiField, pendingIds: string[]) => {
       const removeSet = new Set(pendingIds);
       setFormState((prev) => ({
         ...prev,

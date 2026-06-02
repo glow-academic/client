@@ -141,7 +141,6 @@ export function AttemptChatHeader({
 }: ChatHeaderProps) {
   const isMobile = useIsMobile();
   const isInfiniteMode = attempt?.infinite_mode ?? false;
-  const _hasTimeLimit = Boolean(simulation?.time_limit);
   const timeRemaining = timer?.remaining ?? null;
 
   const shouldShowObjectives =
@@ -313,7 +312,7 @@ export function AttemptChatHeader({
                       attempt?.infinite_mode
                         ? ""
                         : simulation?.time_limit &&
-                            timer?.remaining !== null &&
+                            timer?.remaining != null &&
                             timer.remaining < 0
                           ? "text-red-500"
                           : ""
@@ -324,7 +323,7 @@ export function AttemptChatHeader({
                       ? simulation?.time_limit
                         ? formatTime(timer?.negative ? (timeRemaining ?? 0) : Math.max(timeRemaining || 0, 0))
                         : formatTime(timer?.elapsed ?? 0)
-                      : simulation?.time_limit && timer?.remaining !== null
+                      : simulation?.time_limit && timer?.remaining != null
                         ? formatTime(timer.remaining)
                         : formatTime(timer?.elapsed ?? 0)}
                   </span>

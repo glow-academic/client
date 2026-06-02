@@ -24,19 +24,19 @@ export interface DocumentAreaProps {
   // Explicit document type - self-contained
   // These are already the documents for the current chat (pre-filtered by server)
   documents: Array<{
-    document_id: string | null;
-    name: string | null;
-    updated_at: string | null;
-    extension: string | null;
-    scenario_ids: Array<string> | null;
-    can_edit: boolean | null;
-    can_delete: boolean | null;
-    active: boolean | null;
-    department_ids: Array<string> | null;
-    text_id: string | null;
-    file_id: string | null;
-    template: boolean | null;
-    field_ids: Array<string> | null;
+    document_id?: string | null;
+    name?: string | null;
+    updated_at?: string | null;
+    extension?: string | null;
+    scenario_ids?: Array<string> | null;
+    can_edit?: boolean | null;
+    can_delete?: boolean | null;
+    active?: boolean | null;
+    department_ids?: Array<string> | null;
+    text_id?: string | null;
+    file_id?: string | null;
+    template?: boolean | null;
+    field_ids?: Array<string> | null;
   }>;
 
   selected_document_id: string | null;

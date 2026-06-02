@@ -43,6 +43,7 @@ import type { DocumentAreaProps } from "../documentAreas/AttemptDocumentArea";
 import type { QuestionTakingInputProps } from "../inputAreas/QuestionTakingInput";
 import type { TextInputProps } from "../inputAreas/TextInput";
 import type { VoiceInputProps } from "../inputAreas/VoiceInput";
+import type { HybridInputProps } from "../inputAreas/HybridInput";
 
 type ImageEntry = components["schemas"]["ImageEntry"];
 
@@ -56,16 +57,17 @@ export type ChatAreaViewMode =
 export interface GenericChatInterfaceProps {
   // Pluggable components (like resource components in Persona.tsx)
   chat_header: React.ComponentType<ChatHeaderProps>;
-  chat_area: React.ComponentType<
-    | MessagesViewProps
-    | VideoViewProps
-    | RubricViewProps
-    | QuestionReviewViewProps
-  >;
+  chat_area:
+    | React.ComponentType<MessagesViewProps>
+    | React.ComponentType<VideoViewProps>
+    | React.ComponentType<RubricViewProps>
+    | React.ComponentType<QuestionReviewViewProps>;
   document_area?: React.ComponentType<DocumentAreaProps>;
-  input_area: React.ComponentType<
-    TextInputProps | VoiceInputProps | QuestionTakingInputProps
-  >;
+  input_area:
+    | React.ComponentType<TextInputProps>
+    | React.ComponentType<VoiceInputProps>
+    | React.ComponentType<QuestionTakingInputProps>
+    | React.ComponentType<HybridInputProps>;
   input_area_ref?: React.Ref<unknown>;
 
   // View mode for chat area
@@ -105,7 +107,11 @@ export interface GenericChatInterfaceProps {
     | RubricViewProps
     | QuestionReviewViewProps;
   document_area_props?: DocumentAreaProps;
-  input_area_props: TextInputProps | VoiceInputProps | QuestionTakingInputProps;
+  input_area_props:
+    | TextInputProps
+    | VoiceInputProps
+    | QuestionTakingInputProps
+    | HybridInputProps;
 }
 
 export function GenericChatInterface({

@@ -173,19 +173,27 @@ export function MessagesView({
       complete: "attempt.chat_hints.completed",
       error: "attempt.chat_hints.failed",
     },
-    scope: { groupId: group_id },
+    scope: { groupId: group_id ?? null },
     accumulate: true,
   });
+
+  // Messages whose "new hints" indicator the user has already dismissed by
+  // opening the hint popover. Subtracted from the derived event set below.
+  const [dismissedHintIds, setDismissedHintIds] = useState<Set<string>>(
+    () => new Set<string>()
+  );
 
   // Track which messages have new hints from entry events
   const messagesWithNewHints = useMemo(() => {
     const ids = new Set<string>();
     hintsEvents.forEach((evt) => {
-      const entryId = (evt as Record<string, unknown>).entry_id;
-      if (typeof entryId === "string") ids.add(entryId);
+      const entryId = (evt as Record<string, unknown>)["entry_id"];
+      if (typeof entryId === "string" && !dismissedHintIds.has(entryId)) {
+        ids.add(entryId);
+      }
     });
     return ids;
-  }, [hintsEvents]);
+  }, [hintsEvents, dismissedHintIds]);
 
   // State for hints modal
   const [selectedHintMessageId, setSelectedHintMessageId] = useState<
@@ -336,7 +344,8 @@ export function MessagesView({
   const sortedMessages = useMemo(() => {
     return [...messages].sort(
       (a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        new Date(a.created_at ?? 0).getTime() -
+        new Date(b.created_at ?? 0).getTime()
     );
   }, [messages]);
 
@@ -479,7 +488,6 @@ export function MessagesView({
   }, []);
 
   const handleStarterPromptClick = (prompt: string) => {
-    const _tempId = `optimistic-user-${Date.now()}-${Math.random()}`;
     // Note: In real implementation, this would update optimistic_messages via callback
     send_message(prompt);
   };
@@ -507,6 +515,7 @@ export function MessagesView({
       const timer = setTimeout(scrollToBottom, 100);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [messages.length]);
 
   // Scroll-position observer — only needs to re-bind when the count
@@ -835,9 +844,9 @@ export function MessagesView({
                                         if (open) {
                                           setSelectedHintMessageId(message.id);
                                           if (hasNewHints) {
-                                            setMessagesWithNewHints((prev) => {
+                                            setDismissedHintIds((prev) => {
                                               const newSet = new Set(prev);
-                                              newSet.delete(message.id);
+                                              newSet.add(message.id);
                                               return newSet;
                                             });
                                           }

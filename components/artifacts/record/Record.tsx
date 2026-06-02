@@ -164,21 +164,21 @@ export default function Record({
           pageSize={historyPageSize}
           showArchive={false}
           singleProfile={true}
-          initialFilters={
-            defaultFilters
-              ? {
+          {...(defaultFilters
+            ? {
+                initialFilters: {
                   startDate: defaultFilters.startDate,
                   endDate: defaultFilters.endDate,
                   cohortIds: defaultFilters.cohortIds,
                   departmentIds: defaultFilters.departmentIds,
                   roles: defaultFilters.roles,
-                }
-              : undefined
-          }
+                },
+              }
+            : {})}
           profileOptions={[]}
           simulationOptions={simulationOptions}
           scenarioOptions={scenarioOptions}
-          initialColumnVisibility={initialColumnVisibility}
+          {...(initialColumnVisibility ? { initialColumnVisibility } : {})}
         />
       </div>
 
