@@ -158,8 +158,8 @@ export default function RubricHeatmap({
   // Get chart colors for correlation-based coloring
   const chartColors = useChartColors();
   // Use chart-2 for positive correlations, chart-1 for negative
-  const positiveColor = chartColors[1]; // chart-2
-  const negativeColor = chartColors[0]; // chart-1
+  const positiveColor = chartColors[1] ?? ""; // chart-2
+  const negativeColor = chartColors[0] ?? ""; // chart-1
 
   // Helper function to get color with opacity based on correlation strength
   const getCorrelationColor = (correlation: number): string => {
@@ -169,7 +169,7 @@ export default function RubricHeatmap({
     if (correlation > 0.1) return colorWithAlpha(positiveColor, opacity);
     if (correlation < -0.1) return colorWithAlpha(negativeColor, opacity);
     // Near zero: use a very faint neutral tint
-    return colorWithAlpha(chartColors[2], 0.08);
+    return colorWithAlpha(chartColors[2] ?? "", 0.08);
   };
 
   // Show no data state

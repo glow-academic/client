@@ -321,14 +321,17 @@ export default function PersonaPerformance({
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
         <div className="space-y-4 overflow-y-auto h-full">
-            {filteredChartData.map((persona, index) => (
+            {filteredChartData.map((persona, index) => {
+              const personaChartColor =
+                chartColors[index % chartColors.length] ?? "";
+              return (
               <Dialog key={persona.name}>
                 <DialogTrigger asChild>
                   <div
                     className="flex items-center justify-between p-4 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
                     style={{
-                      ...chartColorBackground(chartColors[index % chartColors.length]),
-                      borderLeft: `3px solid ${colorWithAlpha(chartColors[index % chartColors.length], 0.7)}`,
+                      ...chartColorBackground(personaChartColor),
+                      borderLeft: `3px solid ${colorWithAlpha(personaChartColor, 0.7)}`,
                     }}
                   >
                     <div className="flex items-center gap-3">
@@ -371,7 +374,7 @@ export default function PersonaPerformance({
                     {/* Performance Trend Chart */}
                     <PersonaTrendChart
                       trendData={getFilteredTrendData(persona)}
-                      chartColor={chartColors[index % chartColors.length]}
+                      chartColor={personaChartColor}
                     />
 
                     {/* Actionable Insights */}
@@ -384,7 +387,8 @@ export default function PersonaPerformance({
                   </div>
                 </DialogContent>
               </Dialog>
-            ))}
+              );
+            })}
         </div>
       </CardContent>
     </Card>

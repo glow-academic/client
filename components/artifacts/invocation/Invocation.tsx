@@ -500,15 +500,16 @@ export default function Invocation({
       />
 
       <TemperatureLevels
-        temperature_level_id={formState.temperature_level_id}
-        temperature_level_resource={data.temperature_levels?.find((item) => item.selected) ?? null}
+        temperature_level_ids={
+          formState.temperature_level_id ? [formState.temperature_level_id] : []
+        }
         show_temperature_levels={(data.temperature_levels?.length ?? 0) > 0}
         temperature_levels={data.temperature_levels ?? []}
         disabled={false}
-        onTemperatureLevelIdChange={(id) =>
+        onChange={(ids) =>
           setFormState((prev) => ({
             ...prev,
-            temperature_level_id: id,
+            temperature_level_id: ids[0] ?? null,
             pending_ids: prev.pending_ids.filter((pendingId) => pendingId !== (prev.temperature_level_id ?? "")),
           }))
         }
@@ -516,7 +517,6 @@ export default function Invocation({
 
       <Pricing
         pricing_ids={formState.pricing_id ? [formState.pricing_id] : []}
-        pricing_resources={formState.pricing_id ? data.pricing?.filter((item) => (item.pricing_id ?? item.id) === formState.pricing_id) ?? [] : []}
         show_pricing={(data.pricing?.length ?? 0) > 0}
         pricings={data.pricing ?? []}
         disabled={false}

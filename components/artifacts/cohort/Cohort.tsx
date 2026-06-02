@@ -773,7 +773,7 @@ function CohortComponent({
   );
 
   const handleAcceptPendingMulti = useCallback(
-    (field: MultiField, pendingIds: string[]) => {
+    (_field: MultiField, pendingIds: string[]) => {
       const removeSet = new Set(pendingIds);
       setFormState((prev) => ({
         ...prev,
@@ -1276,16 +1276,6 @@ function CohortComponent({
       const selectedProfiles = s?.profiles?.filter(isSelected) ?? [];
       const selectedProfilePersonas =
         s?.profile_personas?.filter(isSelected) ?? [];
-      const simulationSuggestions =
-        s?.simulations
-          ?.filter((simulation) => simulation.suggested && simulation.simulation_id)
-          .map((simulation) => simulation.simulation_id!)
-          ?? [];
-      const profileSuggestions =
-        s?.profiles
-          ?.filter((profile) => profile.suggested && profile.profile_id)
-          .map((profile) => profile.profile_id!)
-          ?? [];
       const simulationsForUi = (s?.simulations ?? []).map((sim) => ({
         simulation_id: sim.simulation_id ?? null,
         name: sim.name ?? null,
@@ -1512,7 +1502,6 @@ function CohortComponent({
                   simulation_ids={formState.simulation_ids ?? []}
                   simulation_resources={selectedSimulationsForUi}
                   show_simulations={true}
-                  simulation_suggestions={simulationSuggestions}
                   simulations={simulationsForUi}
                   disabled={disabled}
                   onChange={(ids) =>
@@ -1529,7 +1518,6 @@ function CohortComponent({
                       };
                     })
                   }
-                  onGenerate={handleGenerateSimulations}
                   label="Simulations"
                   required={false}
                   searchTerm={simulationSearchTerm}
@@ -1568,9 +1556,6 @@ function CohortComponent({
                   }}
                   label="Simulation Positions"
                   required={false}
-                  onGenerate={
-                    isEditMode ? handleGenerateSimulationPositions : undefined
-                  }
                   onSimulationPositionValues={(positions) =>
                     setFormState((prev) => ({
                       ...prev,
@@ -1694,7 +1679,6 @@ function CohortComponent({
                 profile_resources={selectedProfilesForUi}
                 profiles={profilesForUi}
                 show_profiles={true}
-                profile_suggestions={profileSuggestions}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => {
@@ -1711,7 +1695,6 @@ function CohortComponent({
                   })
                 }
                 required={false}
-                onGenerate={handleGenerateProfiles}
                 searchTerm={profileSearchTerm}
                 showSelectedFilter={profileShowSelected}
                 onAcceptPending={(pendingIds) =>

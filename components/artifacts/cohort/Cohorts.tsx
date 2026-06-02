@@ -177,7 +177,6 @@ export default function Cohorts({
   const simulationSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const profileSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const departmentSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const flagSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Local search state (for immediate UI feedback while debouncing)
   const [localSearch, setLocalSearch] = useState(searchParams.get("search") ?? "");
@@ -668,17 +667,6 @@ export default function Cohorts({
     [updateCohortsParams],
   );
 
-  const _handleFlagSearchChange = useCallback(
-    (term: string) => {
-      setLocalFlagSearch(term);
-      if (flagSearchTimeoutRef.current) clearTimeout(flagSearchTimeoutRef.current);
-      flagSearchTimeoutRef.current = setTimeout(() => {
-        updateCohortsParams({ flagSearch: term || null });
-      }, 300);
-    },
-    [updateCohortsParams],
-  );
-
   // Reset all filters
   const handleResetFilters = useCallback(() => {
     setColumnFilters([]);
@@ -702,7 +690,7 @@ export default function Cohorts({
 
     setIsDeleting(true);
     try {
-      await deleteCohortAction({ body: { cohort_ids: [deleteItem.id], accept: true } });
+      await deleteCohortAction({ body: { cohort_ids: [deleteItem.id], all: false, accept: true } });
       toast.success("Cohort deleted successfully");
       router.refresh();
     } catch (err) {
@@ -1001,15 +989,15 @@ export default function Cohorts({
                 </Badge>
               )}
             </div>
-            {((columnVisibility.ai_badge !== false && cohort.generated) || (columnVisibility.status_badge !== false && cohort.is_inactive)) && (
+            {((columnVisibility["ai_badge"] !== false && cohort.generated) || (columnVisibility["status_badge"] !== false && cohort.is_inactive)) && (
               <div className="mt-1 flex items-center gap-2">
-                {columnVisibility.ai_badge !== false && cohort.generated && (
+                {columnVisibility["ai_badge"] !== false && cohort.generated && (
                   <Badge variant="default">
                     <Sparkles className="h-3 w-3 mr-1" />
                     {cohort.mcp ? "MCP" : "AI"}
                   </Badge>
                 )}
-                {columnVisibility.status_badge !== false && cohort.is_inactive && (
+                {columnVisibility["status_badge"] !== false && cohort.is_inactive && (
                   <Badge variant="secondary">Inactive</Badge>
                 )}
               </div>
@@ -1150,23 +1138,23 @@ export default function Cohorts({
         </div>
       </CardHeader>
       <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-        {columnVisibility.card_description !== false && (
+        {columnVisibility["card_description"] !== false && (
           <p className="text-sm text-muted-foreground line-clamp-2">
             {cohort.description || "No description available"}
           </p>
         )}
-        {(columnVisibility.card_members !== false || columnVisibility.card_simulations !== false) && (
+        {(columnVisibility["card_members"] !== false || columnVisibility["card_simulations"] !== false) && (
           <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground flex-wrap">
-            {columnVisibility.card_members !== false && (
+            {columnVisibility["card_members"] !== false && (
               <span className="flex items-center gap-1">
                 <Users className="h-3 w-3" />
                 {cohort.num_members} members
               </span>
             )}
-            {columnVisibility.card_members !== false && columnVisibility.card_simulations !== false && cohort.simulation_ids && cohort.simulation_ids.length > 0 && (
+            {columnVisibility["card_members"] !== false && columnVisibility["card_simulations"] !== false && cohort.simulation_ids && cohort.simulation_ids.length > 0 && (
               <span className="text-muted-foreground">•</span>
             )}
-            {columnVisibility.card_simulations !== false && cohort.simulation_ids && cohort.simulation_ids.length > 0 && (
+            {columnVisibility["card_simulations"] !== false && cohort.simulation_ids && cohort.simulation_ids.length > 0 && (
               <span className="flex items-center gap-1">
                 <Play className="h-3 w-3" />
                 {cohort.simulation_ids.length}{" "}
@@ -1610,12 +1598,12 @@ export default function Cohorts({
             onSave={async (items) => {
               if (!createCohortAction) throw new Error("Create action not available");
               const cohorts = items.map((item) => ({
-                name: item.name as string | undefined,
-                description: item.description as string | undefined,
-                is_inactive: item.is_inactive as boolean | undefined,
-                departments: item.departments as string[] | undefined,
-                simulations: item.simulations as string[] | undefined,
-                profiles: item.profiles as string[] | undefined,
+                name: item["name"] as string | undefined,
+                description: item["description"] as string | undefined,
+                is_inactive: item["is_inactive"] as boolean | undefined,
+                departments: item["departments"] as string[] | undefined,
+                simulations: item["simulations"] as string[] | undefined,
+                profiles: item["profiles"] as string[] | undefined,
               }));
               return createCohortAction({ body: { cohorts } } as CreateCohortIn);
             }}

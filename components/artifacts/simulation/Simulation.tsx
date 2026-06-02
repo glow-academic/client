@@ -1424,16 +1424,6 @@ function SimulationComponent({
         practiceFlagOptionId &&
         (formState.flag_ids ?? []).includes(String(practiceFlagOptionId))
       );
-      const scenarioSuggestions = s.scenarios
-        .filter((item) => item.suggested && item.scenario_id)
-        .map((item) => item.scenario_id as string);
-      const scenarioPositionSuggestions = s.scenario_positions
-        .filter((item) => item.suggested && item.id)
-        .map((item) => item.id as string);
-      const scenarioRubricSuggestions = s.scenario_rubrics
-        .filter((item) => item.suggested && item.id)
-        .map((item) => item.id as string);
-
       switch (stepId) {
         case "basic":
           return (
