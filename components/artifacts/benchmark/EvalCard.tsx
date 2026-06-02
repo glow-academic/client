@@ -5,7 +5,6 @@
  * 01/XX/2025
  */
 
-import TableRubric from "@/components/artifacts/rubric/TableRubric";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,14 +12,6 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -33,7 +24,6 @@ import {
   Infinity,
   Loader2,
   Play,
-  Table,
   Timer,
   User,
 } from "lucide-react";
@@ -55,16 +45,6 @@ export interface EvalCardProps {
   onStartInfiniteMode?: ((evalId: string) => void) | undefined;
   loadingEval: string | null;
   profile: ProfileItem;
-  // Rubric data for dialog
-  standard_groups?: Record<string, string[]>;
-  standardGroupsMapping?: Record<
-    string,
-    { name: string; description: string; points: number; passPoints: number }
-  >;
-  standardsMapping?: Record<
-    string,
-    { name: string; description: string; points: number }
-  >;
 }
 
 export default function EvalCard({
@@ -81,9 +61,6 @@ export default function EvalCard({
   onStartInfiniteMode,
   loadingEval,
   profile: _profile,
-  standard_groups,
-  standardGroupsMapping,
-  standardsMapping,
 }: EvalCardProps) {
   const isLoading = loadingEval === evalId;
   const isDisabled = isLoading;
@@ -132,57 +109,6 @@ export default function EvalCard({
             >
               <IconComponent className="h-5 w-5" />
             </Button>
-            <div className="flex flex-col items-end space-y-1 flex-1 min-h-[40px] justify-between">
-              {/* Rubric Icon */}
-              {standard_groups &&
-                Object.keys(standard_groups).length > 0 && (
-                  <Dialog>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="relative z-20"
-                          >
-                            <Table className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>View Rubric</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <DialogContent className="max-w-4xl">
-                      <DialogDescription hidden>
-                        This dialog shows the rubric for the eval.
-                      </DialogDescription>
-                      <DialogHeader>
-                        <DialogTitle>Grading Rubric: {name}</DialogTitle>
-                      </DialogHeader>
-                      <div
-                        className="overflow-x-auto -mx-6 px-6"
-                        style={{ WebkitOverflowScrolling: "touch" }}
-                      >
-                        {standard_groups &&
-                        standardGroupsMapping &&
-                        standardsMapping ? (
-                          <TableRubric
-                            standardGroups={standard_groups}
-                            standardGroupsMapping={standardGroupsMapping}
-                            standardsMapping={standardsMapping}
-                            showFullStandardsOnMobile={true}
-                          />
-                        ) : (
-                          <p className="text-sm text-gray-500">
-                            No rubric is associated with this eval.
-                          </p>
-                        )}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                )}
-            </div>
           </div>
         </CardHeader>
 

@@ -12,26 +12,12 @@ type BenchmarkOverviewOut = OutputOf<"/test/benchmark", "post">;
 type EvalsArray = NonNullable<BenchmarkOverviewOut["evals"]>;
 type EvalItem = EvalsArray extends Array<infer T> ? T : never;
 
-// Rubric mapping types
-type RubricMapping = {
-  standard_groups: Record<string, string[]>;
-  standardGroupsMapping: Record<
-    string,
-    { name: string; description: string; points: number; passPoints: number }
-  >;
-  standardsMapping: Record<
-    string,
-    { name: string; description: string; points: number }
-  >;
-};
-
 interface BenchmarkZoneProps {
   evals: EvalItem[];
   profile: ProfileItem | null;
   onStartEval: (evalId: string) => void;
   onStartInfiniteMode?: ((evalId: string) => void) | undefined;
   loadingEval: string | null;
-  rubricMappings?: Record<string, RubricMapping> | undefined; // keyed by rubric_id
 }
 
 export default function BenchmarkZone({
@@ -40,7 +26,6 @@ export default function BenchmarkZone({
   onStartEval,
   onStartInfiniteMode,
   loadingEval,
-  rubricMappings,
 }: BenchmarkZoneProps) {
   const [carouselIndex, setCarouselIndex] = useState(0);
 
@@ -110,14 +95,6 @@ export default function BenchmarkZone({
         data-testid="benchmark-eval-grid"
       >
         {visibleEvals.map((evalItem) => {
-          // Server returns `rubric_ids: list[str]` (plural) — each eval is
-          // 1:1 with a rubric in the seed, so the first id is the lookup
-          // key. Falls back to undefined when none attached.
-          const primaryRubricId =
-            (evalItem.rubric_ids ?? [])[0] ?? null;
-          const rubricMapping = primaryRubricId
-            ? rubricMappings?.[primaryRubricId]
-            : undefined;
           const totalInvocations = evalItem.total_invocations ?? 0;
           const completedInvocations = evalItem.completed_invocations ?? 0;
           const pendingInvocations = Math.max(
@@ -141,9 +118,6 @@ export default function BenchmarkZone({
                 {...(onStartInfiniteMode && { onStartInfiniteMode })}
                 loadingEval={loadingEval}
                 profile={profile}
-                {...(rubricMapping?.standard_groups && { standard_groups: rubricMapping.standard_groups })}
-                {...(rubricMapping?.standardGroupsMapping && { standardGroupsMapping: rubricMapping.standardGroupsMapping })}
-                {...(rubricMapping?.standardsMapping && { standardsMapping: rubricMapping.standardsMapping })}
               />
             )
           );
