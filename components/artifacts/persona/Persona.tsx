@@ -67,6 +67,15 @@ type PatchPersonaDraftOut = OutputOf<
 
 type PersonaData = OutputOf<"/persona/get", "post">;
 
+// Element shape expected by ParameterFields#allParameters. The API schema
+// types the source `parameters` field as `unknown[]`.
+type ParameterSummary = {
+  parameter_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  conditional?: boolean | null;
+};
+
 type PersonaFormState = {
   // ID fields
   name_id: string | null;
@@ -545,39 +554,39 @@ function PersonaComponent({
 
       // For creatables: value takes precedence over ID
       if (current.name != null) {
-        payload.name = current.name;
+        payload["name"] = current.name;
       } else if (current.name_id) {
-        payload.name_id = current.name_id;
+        payload["name_id"] = current.name_id;
       }
 
       if (current.description != null) {
-        payload.description = current.description;
+        payload["description"] = current.description;
       } else if (current.description_id) {
-        payload.description_id = current.description_id;
+        payload["description_id"] = current.description_id;
       }
 
       if (current.instructions != null) {
-        payload.instructions = current.instructions;
+        payload["instructions"] = current.instructions;
       } else if (current.instructions_id) {
-        payload.instructions_id = current.instructions_id;
+        payload["instructions_id"] = current.instructions_id;
       }
 
       if (current.examples.length > 0) {
-        payload.examples = current.examples;
+        payload["examples"] = current.examples;
       } else if (current.example_ids.length > 0) {
-        payload.example_ids = current.example_ids;
+        payload["example_ids"] = current.example_ids;
       }
 
       // Non-creatable resources: always send IDs
-      if (current.color_id) payload.color_id = current.color_id;
-      if (current.icon_id) payload.icon_id = current.icon_id;
+      if (current.color_id) payload["color_id"] = current.color_id;
+      if (current.icon_id) payload["icon_id"] = current.icon_id;
       if (current.flag_ids.length > 0) payload["flag_ids"] = current.flag_ids;
-      if (current.department_ids.length > 0) payload.department_ids = current.department_ids;
-      if (current.parameter_field_ids.length > 0) payload.parameter_field_ids = current.parameter_field_ids;
-      if (current.voice_ids.length > 0) payload.voice_ids = current.voice_ids;
+      if (current.department_ids.length > 0) payload["department_ids"] = current.department_ids;
+      if (current.parameter_field_ids.length > 0) payload["parameter_field_ids"] = current.parameter_field_ids;
+      if (current.voice_ids.length > 0) payload["voice_ids"] = current.voice_ids;
 
       // Pending state
-      if (current.pending_ids.length > 0) payload.pending_ids = current.pending_ids;
+      if (current.pending_ids.length > 0) payload["pending_ids"] = current.pending_ids;
 
       return payload;
     },
@@ -1080,7 +1089,7 @@ function PersonaComponent({
   );
 
   const handleAcceptPendingMulti = useCallback(
-    (field: MultiField, pendingIds: string[]) => {
+    (_field: MultiField, pendingIds: string[]) => {
       const removeSet = new Set(pendingIds);
       setFormState((prev) => ({
         ...prev,
@@ -1426,13 +1435,10 @@ function PersonaComponent({
                     handleRejectPendingField("name_id", pendingId)
                   }
                   onNameChange={handleNameChange}
-                  onGenerate={generateHandlers["names"]}
                   placeholder="e.g., Enthusiastic Student"
                   defaultName="New Persona"
                   required={true}
                   hideDescription={true}
-
-                  showAiGenerate={false}
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
               }
@@ -1486,14 +1492,11 @@ function PersonaComponent({
                   onSearchChange={(term: string) =>
                     setStepFormData({ descriptionSearch: term || null })
                   }
-                  onGenerate={generateHandlers["descriptions"]}
                   label="Description"
                   placeholder="Detailed behavior description and personality traits"
                   required={false}
                   rows={4}
                   data-testid="input-persona-description"
-
-                  showAiGenerate={false}
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
                 <Departments
@@ -1520,9 +1523,6 @@ function PersonaComponent({
                     handleRejectPendingMulti("department_ids", pendingIds)
                   }
                   required={false}
-
-                  showAiGenerate={false}
-                  isAutosaveEnabled={isAutosaveEnabled}
                 />
                 <Flags
                   flags={s?.flags ?? []}
@@ -1584,7 +1584,9 @@ function PersonaComponent({
                 parameterIds={urlParameterIds}
                 parameterFieldIds={formState.parameter_field_ids}
                 parameterFieldResources={s?.parameter_fields?.filter((p: any) => p.selected) ?? []}
-                allParameters={s?.parameters ?? []}
+                // API schema types `parameters` as `unknown[]`; the runtime
+                // payload matches the `allParameters` element shape.
+                allParameters={(s?.parameters ?? []) as ParameterSummary[]}
                 availableFields={s?.parameter_fields ?? []}
                 onToggleParameter={(parameterId, open) => {
                   const current = urlParameterIds;
@@ -1608,10 +1610,7 @@ function PersonaComponent({
                   handleRejectPendingMulti("parameter_field_ids", pendingIds)
                 }
                 disabled={disabled}
-
-                showAiGenerate={false}
                 required={false}
-                onGenerate={generateHandlers["parameter_fields"]}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>
@@ -1684,7 +1683,6 @@ function PersonaComponent({
                 onRejectPending={(pendingId) =>
                   handleRejectPendingField("color_id", pendingId)
                 }
-                onGenerate={generateHandlers["colors"]}
                 searchTerm={
                   (stepFormData["colorSearch"] as string | null | undefined) ||
                   ""
@@ -1696,8 +1694,6 @@ function PersonaComponent({
                 onShowSelectedChange={(value) =>
                   setStepFormData({ colorShowSelected: value || null })
                 }
-
-                showAiGenerate={false}
                 required={true}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
@@ -1771,7 +1767,6 @@ function PersonaComponent({
                 onRejectPending={(pendingId) =>
                   handleRejectPendingField("icon_id", pendingId)
                 }
-                onGenerate={generateHandlers["icons"]}
                 searchTerm={
                   (stepFormData["iconSearch"] as string | null | undefined) ||
                   ""
@@ -1783,8 +1778,6 @@ function PersonaComponent({
                 onShowSelectedChange={(value) =>
                   setStepFormData({ iconShowSelected: value || null })
                 }
-
-                showAiGenerate={false}
                 required={true}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
@@ -1854,14 +1847,11 @@ function PersonaComponent({
                 onSearchChange={(term: string) =>
                   setStepFormData({ instructionsSearch: term || null })
                 }
-                onGenerate={generateHandlers["instructions"]}
                 label="Instructions"
                 placeholder="Instructions that define how the persona should behave and respond."
                 required={true}
                 rows={8}
                 data-testid="input-instructions"
-
-                showAiGenerate={false}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
               <Examples
@@ -1878,12 +1868,9 @@ function PersonaComponent({
                   handleRejectPendingMulti("example_ids", pendingIds)
                 }
                 onExamplesChange={handleExamplesChange}
-                onGenerate={generateHandlers["examples"]}
                 maxItems={10}
                 addButtonLabel="Add example"
                 itemPlaceholder="Message"
-
-                showAiGenerate={false}
                 required={false}
                 exampleMapping={exampleMapping}
               />
@@ -1909,9 +1896,6 @@ function PersonaComponent({
                 onRejectPending={(pendingIds) =>
                   handleRejectPendingMulti("voice_ids", pendingIds)
                 }
-
-                showAiGenerate={false}
-                onGenerate={generateHandlers["voices"]}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>

@@ -197,7 +197,6 @@ export function Scenarios({
   const personaSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const simulationSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const departmentSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const flagSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Local search state (for immediate UI feedback while debouncing)
   const [localSearch, setLocalSearch] = useState(searchParams.get("search") ?? "");
@@ -357,9 +356,17 @@ export function Scenarios({
     children: (typeof scenarios)[number][];
   };
 
+  // The list API schema does not (yet) surface ``parent_scenario_id`` on
+  // scenario rows, but the parent/child grouping below reads it. Widen the
+  // row type so the optional access is typed (it resolves to ``undefined``
+  // until the schema includes the field).
+  type ScenarioRow = (typeof scenarios)[number] & {
+    parent_scenario_id?: string | null;
+  };
+
   // Computed selection info (only root/parent scenarios)
   const parentScenarios = useMemo(() => {
-    return scenarios.filter((scenario) => !scenario.parent_scenario_id);
+    return scenarios.filter((scenario) => !(scenario as ScenarioRow).parent_scenario_id);
   }, [scenarios]);
 
   // ---- Selection helpers ----------------------------------------
@@ -664,10 +671,10 @@ export function Scenarios({
   // Group scenarios: roots and their children (server already returns only current page)
   const currentPageGroupedScenarios = useMemo(() => {
     const groups: GroupedScenario[] = [];
-    const roots = scenarios.filter((s) => !s.parent_scenario_id);
+    const roots = scenarios.filter((s) => !(s as ScenarioRow).parent_scenario_id);
     roots.forEach((parent) => {
       const children = scenarios.filter(
-        (s) => s.parent_scenario_id === parent.id,
+        (s) => (s as ScenarioRow).parent_scenario_id === parent.id,
       );
       groups.push({ parent, children });
     });
@@ -731,7 +738,7 @@ export function Scenarios({
 
     setIsDeleting(true);
     try {
-      await deleteScenarioAction({ body: { scenario_ids: [deleteItem.id], accept: true } });
+      await deleteScenarioAction({ body: { scenario_ids: [deleteItem.id], all: false, accept: true } });
       toast.success("Scenario deleted successfully");
       router.refresh();
     } catch (err) {
@@ -1005,17 +1012,6 @@ export function Scenarios({
     [updateScenariosParams],
   );
 
-  const _handleFlagSearchChange = useCallback(
-    (term: string) => {
-      setLocalFlagSearch(term);
-      if (flagSearchDebounceRef.current) clearTimeout(flagSearchDebounceRef.current);
-      flagSearchDebounceRef.current = setTimeout(() => {
-        updateScenariosParams({ flagSearch: term || null });
-      }, 300);
-    },
-    [updateScenariosParams],
-  );
-
   // Reset all filters
   const handleResetFilters = useCallback(() => {
     setColumnFilters([]);
@@ -1155,13 +1151,13 @@ export function Scenarios({
                       {ghostState === "failed" && "Failed"}
                     </Badge>
                   )}
-                  {!isGhost && columnVisibility.ai_badge !== false && scenario.generated && (
+                  {!isGhost && columnVisibility["ai_badge"] !== false && scenario.generated && (
                     <Badge variant="default">
                       <Sparkles className="h-3 w-3 mr-1" />
                       {scenario.mcp ? "MCP" : "AI"}
                     </Badge>
                   )}
-                  {!isGhost && columnVisibility.status_badge !== false && scenario.is_inactive && (
+                  {!isGhost && columnVisibility["status_badge"] !== false && scenario.is_inactive && (
                     <Badge variant="secondary">Inactive</Badge>
                   )}
                 </div>
@@ -1372,24 +1368,24 @@ export function Scenarios({
           </div>
         </CardHeader>
         <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-          {columnVisibility.problem_statement !== false && (
+          {columnVisibility["problem_statement"] !== false && (
             <p className="text-sm text-muted-foreground line-clamp-2">
               {scenario.problem_statement ||
                 "Scenario will be dynamically generated."}
             </p>
           )}
-          {!isChild && (columnVisibility.card_num_simulations !== false || columnVisibility.persona_badges !== false || columnVisibility.field_badges !== false) && (
+          {!isChild && (columnVisibility["card_num_simulations"] !== false || columnVisibility["persona_badges"] !== false || columnVisibility["field_badges"] !== false) && (
             <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground flex-wrap">
-              {columnVisibility.card_num_simulations !== false && (
+              {columnVisibility["card_num_simulations"] !== false && (
                 <span className="flex items-center gap-1">
                   <Users className="h-3 w-3" />
                   {scenario.num_simulations} simulation
                   {scenario.num_simulations !== 1 ? "s" : ""}
                 </span>
               )}
-              {columnVisibility.persona_badges !== false && scenario.persona_ids && scenario.persona_ids.length > 0 && (
+              {columnVisibility["persona_badges"] !== false && scenario.persona_ids && scenario.persona_ids.length > 0 && (
                 <>
-                  {columnVisibility.card_num_simulations !== false && (
+                  {columnVisibility["card_num_simulations"] !== false && (
                     <span className="text-muted-foreground">•</span>
                   )}
                   <div className="flex items-center gap-1 flex-wrap">
@@ -1422,9 +1418,9 @@ export function Scenarios({
                   </div>
                 </>
               )}
-              {columnVisibility.field_badges !== false && scenario.field_ids && scenario.field_ids.length > 0 && (
+              {columnVisibility["field_badges"] !== false && scenario.field_ids && scenario.field_ids.length > 0 && (
                 <>
-                  {(columnVisibility.card_num_simulations !== false || (columnVisibility.persona_badges !== false && scenario.persona_ids && scenario.persona_ids.length > 0)) && (
+                  {(columnVisibility["card_num_simulations"] !== false || (columnVisibility["persona_badges"] !== false && scenario.persona_ids && scenario.persona_ids.length > 0)) && (
                     <span className="text-muted-foreground">•</span>
                   )}
                   <div className="flex items-center gap-1 flex-wrap">
@@ -1915,19 +1911,19 @@ export function Scenarios({
           onSave={async (items) => {
             if (!createScenarioAction) throw new Error("Create action not available");
             const scenarios = items.map((item) => ({
-              name: item.name as string | undefined,
-              description: item.description as string | undefined,
-              problem_statement: item.problem_statement as string | undefined,
-              active_flag: item.active_flag as boolean | undefined,
-              departments: item.departments as string[] | undefined,
-              personas: item.personas as string[] | undefined,
-              documents: item.documents as string[] | undefined,
-              parameter_fields: item.parameter_fields as string[] | undefined,
-              objectives: item.objectives as string[] | undefined,
-              images: item.images as string[] | undefined,
-              videos: item.videos as string[] | undefined,
-              questions: item.questions as string[] | undefined,
-              options: item.options as string[] | undefined,
+              name: item["name"] as string | undefined,
+              description: item["description"] as string | undefined,
+              problem_statement: item["problem_statement"] as string | undefined,
+              active_flag: item["active_flag"] as boolean | undefined,
+              departments: item["departments"] as string[] | undefined,
+              personas: item["personas"] as string[] | undefined,
+              documents: item["documents"] as string[] | undefined,
+              parameter_fields: item["parameter_fields"] as string[] | undefined,
+              objectives: item["objectives"] as string[] | undefined,
+              images: item["images"] as string[] | undefined,
+              videos: item["videos"] as string[] | undefined,
+              questions: item["questions"] as string[] | undefined,
+              options: item["options"] as string[] | undefined,
             }));
             return createScenarioAction({ body: { scenarios } } as CreateScenarioIn);
           }}
