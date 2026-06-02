@@ -141,7 +141,6 @@ export default async function PracticePage({
   const historyPageSize = q.historyPageSize ?? 10;
   const historySearch = q.historySearch ?? undefined;
   void historySearch;
-  const _historySimulationIds = q.historySimulationIds ?? undefined;
   const historyScenarioIds = q.historyScenarioIds ?? undefined;
   const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
   const historySortBy = q.historySortBy ?? "date";
@@ -170,7 +169,7 @@ export default async function PracticePage({
           infinite_mode: historyInfiniteMode,
         }),
       },
-    } as SearchIn) as SearchOut,
+    } as SearchIn) as Promise<SearchOut>,
     api.post(
       "/attempt/group",
       { body: q.groupId ? { group_id: q.groupId } : {} } as GroupIn,
@@ -254,11 +253,13 @@ export default async function PracticePage({
     <FullPageLayout
       profileData={context.profile}
       sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
+      {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
       initialPanelOpen={initialPanelOpen}
       sidebarProps={{
         activeSection: "practice",
-        createFeedback: createPracticeProblem,
+        createFeedback: createPracticeProblem as unknown as (
+          input: Record<string, unknown>,
+        ) => Promise<Record<string, unknown>>,
       }}
       breadcrumbs={[
         { title: "Practice", section: "practice", url: "/practice" },
@@ -283,10 +284,14 @@ export default async function PracticePage({
         // on first paint, eliminating the hydration flicker.
         initialGroupHistory: groupResult as Record<string, unknown>,
         operations: ["draft", "get", "title"],
-        prompts: context.prompts?.prompts,
-        getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
+        ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+        getGroupAction: getAttemptGroup as unknown as NonNullable<
+          PanelProps["getGroupAction"]
+        >,
         searchGenerationsAction:
-          searchAttemptGenerations as PanelProps["searchGenerationsAction"],
+          searchAttemptGenerations as unknown as NonNullable<
+            PanelProps["searchGenerationsAction"]
+          >,
       }}
     >
       <div className="space-y-6 px-4">

@@ -266,9 +266,9 @@ export default async function AgentEditPage({
               ...(context.prompts?.prompts
                 ? { prompts: context.prompts.prompts }
                 : {}),
-              getGroupAction: getAgentGroup as PanelProps["getGroupAction"],
+              getGroupAction: getAgentGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
               searchGenerationsAction:
-                searchAgentGenerations as PanelProps["searchGenerationsAction"],
+                searchAgentGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
             } as any
           }
         >

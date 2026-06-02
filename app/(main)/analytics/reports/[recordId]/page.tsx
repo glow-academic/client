@@ -255,9 +255,7 @@ export default async function RecordPage({
 
     // Inject history into bundle so Record component reads `data.history`
     // exactly as before (lossless contract for the consumer component).
-    (data as Record<string, unknown>).history = historyResult;
-
-    const _entityName = context.page_metadata?.detail.title;
+    (data as Record<string, unknown>)["history"] = historyResult;
 
     // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
     const facets = data.analytics;
@@ -270,6 +268,8 @@ export default async function RecordPage({
       simulationFilters,
     };
 
+    const recordColumnVisibility = await readViewCookie("history");
+
     const recordProfileData = {
       name: data.profile_name || null,
       emails: data.profile_emails || null,
@@ -281,11 +281,13 @@ export default async function RecordPage({
       <FullPageLayout
         profileData={pageContext.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "reports",
-          createFeedback: createRecordProblem,
+          createFeedback: createRecordProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Analytics", section: "analytics", url: "/analytics" },
@@ -312,10 +314,14 @@ export default async function RecordPage({
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          prompts: context.prompts?.prompts,
-          getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getAttemptGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
           searchGenerationsAction:
-            searchAttemptGenerations as PanelProps["searchGenerationsAction"],
+            searchAttemptGenerations as unknown as NonNullable<
+              PanelProps["searchGenerationsAction"]
+            >,
         }}
       >
         <div className="px-4">
@@ -323,22 +329,24 @@ export default async function RecordPage({
             data={data}
             profileData={recordProfileData}
             profileId={recordId}
-            rubricIds={rubricIds}
-            rubricSearch={rubricSearch}
+            {...(rubricIds !== undefined && { rubricIds })}
+            {...(rubricSearch !== undefined && { rubricSearch })}
             rubricIndex={rubricIndex}
-            simulationPickerIds={simulationPickerIds}
-            simulationPickerSearch={simulationPickerSearch}
+            {...(simulationPickerIds !== undefined && { simulationPickerIds })}
+            {...(simulationPickerSearch !== undefined && { simulationPickerSearch })}
             simulationIndex={simulationIndex}
-            parameterIds={parameterIds}
-            parameterSearch={parameterSearch}
+            {...(parameterIds !== undefined && { parameterIds })}
+            {...(parameterSearch !== undefined && { parameterSearch })}
             parameterIndex={parameterIndex}
-            scenarioIds={scenarioIds}
-            scenarioSearch={scenarioSearch}
+            {...(scenarioIds !== undefined && { scenarioIds })}
+            {...(scenarioSearch !== undefined && { scenarioSearch })}
             scenarioIndex={scenarioIndex}
             historyPage={historyPage}
             historyPageSize={historyPageSize}
             defaultFilters={initialFilters}
-            initialColumnVisibility={await readViewCookie("history")}
+            {...(recordColumnVisibility !== undefined && {
+              initialColumnVisibility: recordColumnVisibility,
+            })}
           />
         </div>
       </FullPageLayout>

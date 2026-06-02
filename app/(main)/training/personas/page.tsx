@@ -102,7 +102,10 @@ async function updatePersona(input: UpdatePersonaIn): Promise<UpdatePersonaOut> 
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/persona/csv", { formData });
+  return api.post(
+    "/persona/csv",
+    { formData } as unknown as InputOf<"/persona/csv", "post">,
+  );
 }
 
 // Cast through ``unknown`` — openapi.json was generated against the
@@ -246,11 +249,13 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "persona",
-          createFeedback: createPersonaProblem,
+          createFeedback: createPersonaProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Training", section: "training", url: "/training" },
@@ -285,10 +290,10 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
             "search", "get", "duplicate", "update", "delete",
             "draft", "drafts", "create", "csv", "export", "title",
           ],
-          prompts: context.prompts?.prompts,
-          getGroupAction: getPersonaGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getPersonaGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
           searchGenerationsAction:
-            searchPersonaGenerations as PanelProps["searchGenerationsAction"],
+            searchPersonaGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
         }}
       >
         <div className="space-y-6 px-4" data-page="personas-index">
@@ -301,7 +306,12 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
             updatePersonaAction={updatePersona}
             parseCsvAction={parseCsv}
             currentSearchBody={body}
-            importFields={listData.import_fields ?? undefined}
+            {...(listData.import_fields
+              ? {
+                  importFields:
+                    listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[],
+                }
+              : {})}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}

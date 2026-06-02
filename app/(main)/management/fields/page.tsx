@@ -132,19 +132,12 @@ async function refreshFields(): Promise<unknown> {
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/field/csv", { formData });
+  return api.post(
+    "/field/csv",
+    { formData } as unknown as InputOf<"/field/csv", "post">,
+  );
 }
 
-
-async function getFieldGroupHistory(groupId: string): Promise<GroupFieldOut> {
-  "use server";
-  return api.post("/field/group", { body: { group_id: groupId } } as GroupFieldIn);
-}
-
-async function searchFieldGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/field/generations", { body: { search: query || null } } as GenerationsIn);
-}
 
 async function createFieldProblem(input: ProblemFieldIn): Promise<ProblemFieldOut> {
   "use server";
@@ -234,11 +227,13 @@ export default async function FieldsPage({ searchParams }: FieldsPageProps) {
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "field",
-          createFeedback: createFieldProblem,
+          createFeedback: createFieldProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Management", section: "management", url: "/management" },
@@ -264,12 +259,10 @@ export default async function FieldsPage({ searchParams }: FieldsPageProps) {
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getFieldGroupHistory,
-          searchGroups: searchFieldGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getFieldGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getFieldGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
           searchGenerationsAction:
-            searchFieldGenerations as PanelProps["searchGenerationsAction"],
+            searchFieldGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
         }}
       >
         <div className="space-y-6 px-4" data-page="fields-index">
@@ -281,7 +274,12 @@ export default async function FieldsPage({ searchParams }: FieldsPageProps) {
             updateFieldAction={updateField}
             createFieldAction={createField}
             parseCsvAction={parseCsv}
-            importFields={listData.import_fields ?? undefined}
+            {...(listData.import_fields
+              ? {
+                  importFields:
+                    listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[],
+                }
+              : {})}
             currentSearchBody={body}
           />
         </div>

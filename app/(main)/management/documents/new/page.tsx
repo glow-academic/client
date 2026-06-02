@@ -45,7 +45,6 @@ type ProblemDocumentIn = InputOf<"/document/problem", "post">;
 type ProblemDocumentOut = OutputOf<"/document/problem", "post">;
 type ContextIn = InputOf<"/document/context", "post">;
 type ContextOut = OutputOf<"/document/context", "post">;
-type DocumentDraftsIn = InputOf<"/document/drafts", "post">;
 type DocumentDraftsOut = OutputOf<"/document/drafts", "post">;
 type DocumentSectionFilter = Exclude<
   NonNullable<NonNullable<GetDocumentIn["body"]>["descriptions"]>,
@@ -145,7 +144,7 @@ const buildSectionFilter = (
  * cross-request cache. */
 const getDocumentContext = cache(
   async (): Promise<ContextOut> =>
-    api.post("/document/context", { body: { page_limit: 50, page_offset: 0 } }) as Promise<ContextOut>,
+    api.post("/document/context", { body: {} } as ContextIn) as Promise<ContextOut>,
 );
 
 /** ---- Page metadata ---- */
@@ -279,9 +278,9 @@ export default async function NewDocumentPage({
             initialGroupHistory: groupResult as Record<string, unknown>,
             operations: ["draft", "get", "title"],
             ...(context.prompts?.prompts ? { prompts: context.prompts.prompts } : {}),
-            getGroupAction: getDocumentGroup as PanelProps["getGroupAction"],
+            getGroupAction: getDocumentGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
             searchGenerationsAction:
-              searchDocumentGenerations as PanelProps["searchGenerationsAction"],
+              searchDocumentGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
           }}
         >
           <div

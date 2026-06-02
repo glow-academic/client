@@ -127,19 +127,12 @@ async function refreshCohorts(): Promise<unknown> {
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/cohort/csv", { formData });
+  return api.post(
+    "/cohort/csv",
+    { formData } as unknown as InputOf<"/cohort/csv", "post">,
+  );
 }
 
-
-async function getCohortGroupHistory(groupId: string): Promise<GroupCohortOut> {
-  "use server";
-  return api.post("/cohort/group", { body: { group_id: groupId } } as GroupCohortIn);
-}
-
-async function searchCohortGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/cohort/generations", { body: { search: query || null } } as GenerationsIn);
-}
 
 async function createCohortProblem(input: ProblemCohortIn): Promise<ProblemCohortOut> {
   "use server";
@@ -252,11 +245,13 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "cohort",
-          createFeedback: createCohortProblem,
+          createFeedback: createCohortProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Training", section: "training", url: "/training" },
@@ -282,12 +277,10 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getCohortGroupHistory,
-          searchGroups: searchCohortGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getCohortGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getCohortGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
           searchGenerationsAction:
-            searchCohortGenerations as PanelProps["searchGenerationsAction"],
+            searchCohortGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
         }}
       >
         <div className="space-y-6 px-4" data-page="cohorts-index">
@@ -300,7 +293,12 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
             updateCohortAction={updateCohort}
             parseCsvAction={parseCsv}
             currentSearchBody={body}
-            importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
+            {...(listData.import_fields
+              ? {
+                  importFields:
+                    listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[],
+                }
+              : {})}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}

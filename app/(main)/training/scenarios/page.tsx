@@ -129,19 +129,12 @@ async function refreshScenarios(): Promise<unknown> {
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/scenario/csv", { formData });
+  return api.post(
+    "/scenario/csv",
+    { formData } as unknown as InputOf<"/scenario/csv", "post">,
+  );
 }
 
-
-async function getScenarioGroupHistory(groupId: string): Promise<GroupScenarioOut> {
-  "use server";
-  return api.post("/scenario/group", { body: { group_id: groupId } } as GroupScenarioIn);
-}
-
-async function searchScenarioGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/scenario/generations", { body: { search: query || null } } as GenerationsIn);
-}
 
 async function createScenarioProblem(input: ProblemScenarioIn): Promise<ProblemScenarioOut> {
   "use server";
@@ -254,11 +247,13 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "scenario",
-          createFeedback: createScenarioProblem,
+          createFeedback: createScenarioProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Training", section: "training", url: "/training" },
@@ -284,12 +279,10 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getScenarioGroupHistory,
-          searchGroups: searchScenarioGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getScenarioGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getScenarioGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
           searchGenerationsAction:
-            searchScenarioGenerations as PanelProps["searchGenerationsAction"],
+            searchScenarioGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
         }}
       >
         <div className="space-y-6 px-4" data-page="scenarios-index">
@@ -302,7 +295,12 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
             updateScenarioAction={updateScenario}
             parseCsvAction={parseCsv}
             currentSearchBody={body}
-            importFields={listData.import_fields ?? undefined}
+            {...(listData.import_fields
+              ? {
+                  importFields:
+                    listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[],
+                }
+              : {})}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}

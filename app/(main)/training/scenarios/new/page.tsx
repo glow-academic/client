@@ -59,18 +59,8 @@ async function patchScenarioDraft(
   return api.post("/scenario/draft", input);
 }
 
-async function getScenarioGroupHistory(groupId: string): Promise<GroupScenarioOut> {
-  "use server";
-  return api.post("/scenario/group", { body: { group_id: groupId } } as GroupScenarioIn);
-}
-
 type GenerationsIn = InputOf<"/scenario/generations", "post">;
 type GenerationsOut = OutputOf<"/scenario/generations", "post">;
-
-async function searchScenarioGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/scenario/generations", { body: { search: query || null } } as GenerationsIn);
-}
 
 /** ---- GenerationPanel server actions ---- */
 async function getScenarioGroup(input: GroupScenarioIn): Promise<GroupScenarioOut> {
@@ -222,7 +212,10 @@ export default async function NewScenarioPage({
           ) : undefined,
           parameter_ids: parameterIds ?? undefined,
         } : undefined,
-      } as GetScenarioIn["body"],
+        // The nuqs-derived filter sub-objects use `undefined` where the wire
+        // type uses `?: T | null`; the runtime shape is correct, so bridge the
+        // (intentional) non-overlap with an `unknown` cast.
+      } as unknown as GetScenarioIn["body"],
     }),
       api.post("/scenario/drafts", { body: { page_limit: 50, page_offset: 0 } }),
       api.post(
@@ -231,16 +224,24 @@ export default async function NewScenarioPage({
       ),
     ]);
 
+    // SSR draft entries use plain strings where DraftItem expects branded
+    // UUIDs; this cast matches the eager-drafts precedent documented in
+    // contexts/draft-context.tsx.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const initialDrafts = (draftsResult.entries ?? []) as any;
+
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={initialDrafts}>
         <FullPageLayout
           profileData={context.profile}
           sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
+          {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
           initialPanelOpen={initialPanelOpen}
           sidebarProps={{
             activeSection: "scenario",
-            createFeedback: createScenarioProblem,
+            createFeedback: createScenarioProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
           }}
           breadcrumbs={[
             { title: "Training", section: "training", url: "/training" },
@@ -267,12 +268,10 @@ export default async function NewScenarioPage({
             // on first paint, eliminating the hydration flicker.
             initialGroupHistory: groupResult as Record<string, unknown>,
             operations: ["draft", "get", "title", "generate"],
-            getGroupHistory: getScenarioGroupHistory,
-            searchGroups: searchScenarioGroups,
-            prompts: context.prompts?.prompts,
-            getGroupAction: getScenarioGroup as PanelProps["getGroupAction"],
+            ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+            getGroupAction: getScenarioGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
             searchGenerationsAction:
-              searchScenarioGenerations as PanelProps["searchGenerationsAction"],
+              searchScenarioGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
           }}
         >
           <div

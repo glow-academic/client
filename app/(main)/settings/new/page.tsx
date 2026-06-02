@@ -248,9 +248,13 @@ export default async function NewSettingPage({
             getGroupHistory: getSettingGroupHistory,
             searchGroups: searchSettingGroups,
             prompts: context.prompts?.prompts,
-            getGroupAction: getSettingGroup as PanelProps["getGroupAction"],
+            getGroupAction: getSettingGroup as unknown as NonNullable<
+              PanelProps["getGroupAction"]
+            >,
             searchGenerationsAction:
-              searchSettingGenerations as PanelProps["searchGenerationsAction"],
+              searchSettingGenerations as unknown as NonNullable<
+                PanelProps["searchGenerationsAction"]
+              >,
           } as any}
         >
           <div

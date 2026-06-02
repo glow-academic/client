@@ -115,19 +115,12 @@ async function refreshRubrics(): Promise<unknown> {
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/rubric/csv", { formData });
+  return api.post(
+    "/rubric/csv",
+    { formData } as unknown as InputOf<"/rubric/csv", "post">,
+  );
 }
 
-
-async function getRubricGroupHistory(groupId: string): Promise<GroupRubricOut> {
-  "use server";
-  return api.post("/rubric/group", { body: { group_id: groupId } } as GroupRubricIn);
-}
-
-async function searchRubricGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/rubric/generations", { body: { search: query || null } } as GenerationsIn);
-}
 
 async function createRubricProblem(input: ProblemRubricIn): Promise<ProblemRubricOut> {
   "use server";
@@ -237,11 +230,13 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "rubric",
-          createFeedback: createRubricProblem,
+          createFeedback: createRubricProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Platform", section: "platform", url: "/platform" },
@@ -265,12 +260,10 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getRubricGroupHistory,
-          searchGroups: searchRubricGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getRubricGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getRubricGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
           searchGenerationsAction:
-            searchRubricGenerations as PanelProps["searchGenerationsAction"],
+            searchRubricGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
         }}
       >
         <div className="space-y-6 px-4" data-page="rubrics-index">
@@ -282,7 +275,12 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
             updateRubricAction={updateRubric}
             createRubricAction={createRubric}
             parseCsvAction={parseCsv}
-            importFields={listData.import_fields ?? undefined}
+            {...(listData.import_fields
+              ? {
+                  importFields:
+                    listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[],
+                }
+              : {})}
             currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}

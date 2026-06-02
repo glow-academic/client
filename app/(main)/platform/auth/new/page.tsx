@@ -233,9 +233,9 @@ export default async function AuthCreatePage({
         operations: ["draft", "get", "title"],
         getGroupHistory: getAuthGroupHistory,
         searchGroups: searchAuthGroups,
-        getGroupAction: getAuthGroup as PanelProps["getGroupAction"],
+        getGroupAction: getAuthGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
         searchGenerationsAction:
-          searchAuthGenerations as PanelProps["searchGenerationsAction"],
+          searchAuthGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
       },
       ...(initialSidebarOpen !== undefined ? { initialSidebarOpen } : {}),
       ...(initialPanelOpen !== undefined ? { initialPanelOpen } : {}),

@@ -251,11 +251,13 @@ export default async function NewPersonaPage({
         <FullPageLayout
           profileData={context.profile}
           sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
+          {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
           initialPanelOpen={initialPanelOpen}
           sidebarProps={{
             activeSection: "persona",
-            createFeedback: createPersonaProblem,
+            createFeedback: createPersonaProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
           }}
           breadcrumbs={[
             { title: "Training", section: "training", url: "/training" },
@@ -282,10 +284,10 @@ export default async function NewPersonaPage({
             // on first paint, eliminating the hydration flicker.
             initialGroupHistory: groupResult as Record<string, unknown>,
             operations: ["draft", "get", "title"],
-            prompts: context.prompts?.prompts,
-            getGroupAction: getPersonaGroup as PanelProps["getGroupAction"],
+            ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+            getGroupAction: getPersonaGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
             searchGenerationsAction:
-              searchPersonaGenerations as PanelProps["searchGenerationsAction"],
+              searchPersonaGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
           }}
         >
           <div

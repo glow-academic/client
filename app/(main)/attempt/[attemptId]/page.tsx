@@ -19,7 +19,7 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 import { loadAttemptSearchParams } from "@/lib/search-params/attempt";
 
-import { cache } from "react";
+import { cache, type ComponentProps } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type AttemptDetailIn = InputOf<"/attempt/get", "post">;
@@ -155,11 +155,13 @@ export default async function AttemptPage({
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "practice",
-          createFeedback: createAttemptProblem,
+          createFeedback: createAttemptProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: entityName || "Attempt" },
@@ -198,10 +200,14 @@ export default async function AttemptPage({
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          prompts: context.prompts?.prompts,
-          getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getAttemptGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
           searchGenerationsAction:
-            searchAttemptGenerations as PanelProps["searchGenerationsAction"],
+            searchAttemptGenerations as unknown as NonNullable<
+              PanelProps["searchGenerationsAction"]
+            >,
         }}
       >
         {/* Desktop-only gutter. On mobile the chat bubbles and input
@@ -210,7 +216,13 @@ export default async function AttemptPage({
         <div className="space-y-6 md:px-4">
           <AttemptChat
             attempt_id={attemptId}
-            attempt_data={attemptData}
+            // AttemptChat's `attempt_data` narrows the wire schema's nullable
+            // resource maps to non-null (a component-internal assumption); the
+            // SSR /attempt/get payload is the same runtime shape, so bridge the
+            // exactOptionalPropertyTypes mismatch with a typed cast.
+            attempt_data={
+              attemptData as ComponentProps<typeof AttemptChat>["attempt_data"]
+            }
             draft_id={draftId}
             infinite_mode={infiniteMode}
             user_instructions={userInstructions}
