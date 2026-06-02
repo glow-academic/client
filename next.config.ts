@@ -22,9 +22,13 @@ module.exports = {
   output: "standalone",
   devIndicators: false,
   trailingSlash: false,
-  // TODO: Re-enable type checking after fixing all TypeScript errors
-  typescript: { ignoreBuildErrors: true, tsconfigPath: "./tsconfig.json" },
-  // TODO: Re-enable after catching lint up with the v2.6.0 refactor
+  // Type errors now gate the build — the TS backlog was burned down (#1). The
+  // build fails on any tsc error, so contract drift (client reading API
+  // fields/endpoints that no longer exist) can't ship undetected again.
+  typescript: { ignoreBuildErrors: false, tsconfigPath: "./tsconfig.json" },
+  // TODO: ESLint still ignored during builds — ~16 errors remain (mostly
+  // react-hooks/exhaustive-deps, which are behavior-sensitive; a few no-console).
+  // Flip to false after a deliberate pass over those (tracked in #1).
   eslint: { ignoreDuringBuilds: true },
 
   reactStrictMode: false,
