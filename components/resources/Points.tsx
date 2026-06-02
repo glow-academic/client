@@ -67,18 +67,9 @@ export function Points({
   onAcceptPending: _onAcceptPending,
   onRejectPending: _onRejectPending,
 }: PointsProps) {
-  if (mode === "readonly") {
-    return (
-      <div className={cn("flex items-baseline gap-2", className)}>
-        <Label className="text-sm font-medium">{label}</Label>
-        <span className="text-lg font-semibold tabular-nums">
-          {value ?? "—"}
-        </span>
-      </div>
-    );
-  }
-
-  // picker mode
+  // Hooks must run unconditionally and in the same order every render, so they
+  // come before any early return — otherwise a readonly↔picker `mode` toggle
+  // changes the hook count and React crashes ("rendered fewer hooks").
   const suggestions = useMemo(
     () =>
       (points ?? [])
@@ -114,6 +105,18 @@ export function Points({
     },
     [onChange],
   );
+
+  // readonly mode — early return AFTER all hooks have run
+  if (mode === "readonly") {
+    return (
+      <div className={cn("flex items-baseline gap-2", className)}>
+        <Label className="text-sm font-medium">{label}</Label>
+        <span className="text-lg font-semibold tabular-nums">
+          {value ?? "—"}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("space-y-2", className)}>
