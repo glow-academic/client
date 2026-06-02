@@ -77,7 +77,7 @@ export function Icons({
   onSearchChange: _onSearchChange,
   showSelectedFilter = false,
   onShowSelectedChange: _onShowSelectedChange,
-  _isAutosaveEnabled = true,
+  isAutosaveEnabled: _isAutosaveEnabled = true,
   onAcceptPending,
   onRejectPending,
   // Legacy props for backward compatibility

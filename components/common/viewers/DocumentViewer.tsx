@@ -4,15 +4,28 @@ import CodeViewer from "@/components/common/viewers/CodeViewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { OutputOf } from "@/lib/api/types";
 import { isCodeByName } from "@/utils/mime-map";
 import { Download, FileText } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
-// Use server type from documents list API
-type DocumentsListOut = OutputOf<"/document/search", "post">;
-export type DocumentItem = NonNullable<DocumentsListOut["documents"]>[number];
+/**
+ * Shape the viewer actually consumes. The document content source is
+ * resolved from one of `text_id` (template/HTML stored in texts) or
+ * `file_id` (binary/file resource); `name` drives mime detection and the
+ * download filename. Callers (resource picker, attempt chat document area)
+ * build this from their own list payloads, so the contract is kept narrow
+ * and explicit rather than mirroring a full list-endpoint row.
+ */
+export interface DocumentItem {
+  name?: string | null;
+  /** Text/template resource UUID (HTML or plain-text content). */
+  text_id?: string | null;
+  /** File resource UUID (binary/PDF/image/etc.). */
+  file_id?: string | null;
+  /** Whether the document is a template (forces HTML rendering). */
+  template?: boolean | null;
+}
 
 export interface DocumentViewerProps {
   document: DocumentItem;
@@ -63,8 +76,7 @@ export default function DocumentViewer({
         }
         setContent(null);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const doc = document as any;
+        const doc = document;
 
         // Text-based documents (templates / HTML content stored in texts_entry)
         if (doc.text_id && textDownloadBaseUrl) {

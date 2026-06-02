@@ -69,7 +69,7 @@ export function ParameterFields({
   onToggleParameter,
   onChange,
   disabled = false,
-  _isAutosaveEnabled = true,
+  isAutosaveEnabled: _isAutosaveEnabled = true,
   required = false,
   label = "Parameter Fields",
   onAcceptPending,

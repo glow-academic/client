@@ -150,9 +150,17 @@ export function SimulationAvailability({
           : undefined;
 
         if (resource.type === "start") {
-          existing.start = timeValue;
+          if (timeValue === undefined) {
+            delete existing.start;
+          } else {
+            existing.start = timeValue;
+          }
         } else if (resource.type === "end") {
-          existing.end = timeValue;
+          if (timeValue === undefined) {
+            delete existing.end;
+          } else {
+            existing.end = timeValue;
+          }
         }
         nextAvailability.set(simId, existing);
 
@@ -235,9 +243,17 @@ export function SimulationAvailability({
         const next = new Map(prev);
         const existing = next.get(simulationId) ?? {};
         if (type === "start") {
-          existing.start = value || undefined;
+          if (value) {
+            existing.start = value;
+          } else {
+            delete existing.start;
+          }
         } else {
-          existing.end = value || undefined;
+          if (value) {
+            existing.end = value;
+          } else {
+            delete existing.end;
+          }
         }
         next.set(simulationId, { ...existing });
         return next;
@@ -287,9 +303,9 @@ export function SimulationAvailability({
           if (existing) {
             const updated = { ...existing };
             if (r.type === "start") {
-              updated.start = undefined;
+              delete updated.start;
             } else if (r.type === "end") {
-              updated.end = undefined;
+              delete updated.end;
             }
             next.set(r.simulation_id, updated);
           }

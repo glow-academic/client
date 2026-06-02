@@ -207,8 +207,11 @@ export function Instructions({
   const isDirtyRef = useRef(false);
   const lastServerTextRef = useRef<string>(resourceTemplate);
 
-  // Pending state: current resource has pending=true (soft draft, awaiting acceptance)
-  const isPending = resource?.pending === true;
+  // Pending state: current resource has pending=true (soft draft, awaiting
+  // acceptance). The legacy resource shape has no pending field, so guard
+  // with an ``in`` check before reading it.
+  const isPending =
+    resource !== null && "pending" in resource && resource.pending === true;
 
   const instructionsById = useMemo(() => {
     const mapping: Record<string, string> = {};
@@ -408,8 +411,8 @@ export function Instructions({
           compact={true}
           buttonClassName="h-8"
           showLabel={false}
-          initialSearchTerm={searchTerm}
-          onSearchChange={onSearchChange}
+          {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
+          {...(onSearchChange !== undefined ? { onSearchChange } : {})}
         />
       </div>
       {/* Conditional: DiffView when pending, otherwise Textarea */}

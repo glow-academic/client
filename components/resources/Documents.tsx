@@ -251,20 +251,8 @@ export function Documents({
 
           // Create document item for DocumentViewer
           const docForViewer: DocumentViewerItem = {
-            document_id: item.id,
             name: item.name || "Document",
-            updated_at: new Date().toISOString(),
-            extension: fullDoc?.file_path?.split(".").pop() || "",
-            scenario_ids: [],
-            can_edit: false,
-            can_delete: false,
-            active: true,
-            department_ids: [],
             file_id: fullDoc?.file_id ?? null,
-            field_ids: fullDoc?.field_ids || [],
-            valid_field_ids: null,
-            active_scenario_count: null,
-            total_scenario_links: null,
           };
 
           return (
@@ -373,22 +361,10 @@ export function Documents({
                 (d) => d.document_id === docId
               );
               const docForViewer: DocumentViewerItem = {
-                document_id: docId,
                 name:
                   documentItems.find((d) => d.id === docId)?.name ||
                   "Document",
-                updated_at: new Date().toISOString(),
-                extension: fullDoc?.file_path?.split(".").pop() || "",
-                scenario_ids: [],
-                can_edit: false,
-                can_delete: false,
-                active: true,
-                department_ids: [],
                 file_id: fullDoc?.file_id ?? null,
-                field_ids: fullDoc?.field_ids || [],
-                valid_field_ids: null,
-                active_scenario_count: null,
-                total_scenario_links: null,
               };
               return (
                 <div className="mt-4">

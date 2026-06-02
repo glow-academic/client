@@ -92,8 +92,9 @@ export function Simulations({
       if (trimmed === "0") return null;
       if (/^\d+$/.test(trimmed)) return null;
       const trailingZeroMatch = trimmed.match(/^(.*)\s0$/);
-      if (trailingZeroMatch && !/\d/.test(trailingZeroMatch[1])) {
-        const withoutTrailingZero = trailingZeroMatch[1].trim();
+      const leadingPart = trailingZeroMatch?.[1];
+      if (leadingPart !== undefined && !/\d/.test(leadingPart)) {
+        const withoutTrailingZero = leadingPart.trim();
         return withoutTrailingZero || null;
       }
       return trimmed;

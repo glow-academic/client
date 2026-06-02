@@ -1440,7 +1440,7 @@ export default function SimulationHistory({
 
     setIsArchiving(true);
     try {
-      let result;
+      let result: BulkArchiveAttemptsOut;
       let countMessage: string;
 
       if (isSelectAllActive && _initialFilters) {
@@ -1489,8 +1489,17 @@ export default function SimulationHistory({
           },
         });
 
-        // Use server-provided count for "Select All" operations
-        countMessage = `${result.updated_count || 0} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`;
+        // Use server-provided count for "Select All" operations. The action
+        // return type resolves to ``unknown`` (untyped response schema), so
+        // narrow before reading the count.
+        const updatedCount =
+          result &&
+          typeof result === "object" &&
+          "updated_count" in result &&
+          typeof result.updated_count === "number"
+            ? result.updated_count
+            : 0;
+        countMessage = `${updatedCount} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`;
       } else {
         // AttemptIds-based bulk archive: archive specific attempts (backward compatible)
         const selectedRows = table.getSelectedRowModel().flatRows;

@@ -149,7 +149,7 @@ export function SimulationPositions({
   const positionMap = useMemo(() => {
     const map = new Map<string, number>();
     currentPositions.forEach((pos) => {
-      if (pos.simulation_id && pos.value !== null) {
+      if (pos.simulation_id && pos.value !== null && pos.value !== undefined) {
         map.set(pos.simulation_id, pos.value);
       }
     });

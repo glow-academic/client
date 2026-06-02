@@ -26,7 +26,6 @@ const columnMap = {
   scenarios: "Scenarios",
   search: "Search",
   // Reports page columns
-  name: "Name",
   username: "Alias",
   avgScore: "Score",
   totalSessions: "Sessions",
@@ -42,7 +41,6 @@ const columnMap = {
   isStruggling: "Status",
   // Leaderboard page columns
   rank: "Rank",
-  name: "User",
   role: "Role",
   simsCompleted: "Sims Completed",
   completionPercentage: "Completion",

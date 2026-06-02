@@ -295,7 +295,7 @@ export function Examples({
         disabled={disabled}
         itemPlaceholder={itemPlaceholder}
         hideAddButton
-        pendingIndices={pendingIndices}
+        {...(pendingIndices !== undefined ? { pendingIndices } : {})}
       />
     </div>
   );

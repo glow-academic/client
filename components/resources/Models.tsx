@@ -271,7 +271,7 @@ export function Models({
         horizontal
         items={displayModels}
         selectedId={isMulti ? null : resourceId || null}
-        selectedIds={isMulti ? Array.from(selectedSet) : undefined}
+        {...(isMulti ? { selectedIds: Array.from(selectedSet) } : {})}
         onSelect={handleSelect}
         getId={(item) => item.id}
         renderItem={(model, isSelected) => {

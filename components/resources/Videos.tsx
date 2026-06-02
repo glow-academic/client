@@ -108,10 +108,10 @@ export function Videos({
         return {
           id: videoId,
           name: video.name,
-          length_seconds:
-            video.length_seconds === null || video.length_seconds === undefined
-              ? undefined
-              : video.length_seconds,
+          ...(video.length_seconds === null ||
+          video.length_seconds === undefined
+            ? {}
+            : { length_seconds: video.length_seconds }),
         };
       }
     }
@@ -127,10 +127,10 @@ export function Videos({
         setSelectedVideo({
           id: videoId,
           name: video.name,
-          length_seconds:
-            video.length_seconds === null || video.length_seconds === undefined
-              ? undefined
-              : video.length_seconds,
+          ...(video.length_seconds === null ||
+          video.length_seconds === undefined
+            ? {}
+            : { length_seconds: video.length_seconds }),
         });
       }
     } else if (ids.length === 0) {
@@ -170,10 +170,9 @@ export function Videos({
         mapping[videoId] = {
           id: videoId,
           name: v.name,
-          length_seconds:
-            v.length_seconds === null || v.length_seconds === undefined
-              ? undefined
-              : v.length_seconds,
+          ...(v.length_seconds === null || v.length_seconds === undefined
+            ? {}
+            : { length_seconds: v.length_seconds }),
         };
       }
     });

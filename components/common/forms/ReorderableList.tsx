@@ -206,7 +206,7 @@ export function ReorderableList<T extends string>({
       onDrop={(e) => handleDrop(e, index)}
       onRemove={() => removeItem(index)}
       totalItems={items.length}
-      pending={pendingIndices?.has(index)}
+      pending={pendingIndices?.has(index) ?? false}
     />
   );
 

@@ -131,7 +131,7 @@ export function Options({
           option_text: o.option_text ?? "",
           is_correct: o.is_correct ?? false,
           question_id:
-            ((o as Record<string, unknown>).question_id as string) ?? "",
+            ((o as Record<string, unknown>)["question_id"] as string) ?? "",
         };
       }
     });
