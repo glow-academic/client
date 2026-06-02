@@ -47,6 +47,7 @@ import { ThresholdsProvider } from "@/contexts/thresholds-context";
 import { GenerationListenerProvider } from "@/hooks/use-artifact-generation-context";
 
 import type { SafeSessionSnapshot } from "@/lib/auth";
+import type { CreateFeedbackIn, CreateFeedbackOut } from "@/lib/actions/feedback";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -149,6 +150,26 @@ export function FullPageLayout({
   // own mobile threshold (768px).
   const rightPanelIsMobile = useIsNarrow();
 
+  // ``sidebarProps.createFeedback`` is intentionally loosely typed (pages pass
+  // per-artifact "report problem" actions whose payload shapes vary), but
+  // UnifiedSidebar/ReportProblem consume the concrete feedback contract. Bridge
+  // the two with a thin adapter that narrows the loose result into the
+  // ``success``/``message``/``problem_id`` shape the panel reads.
+  const sidebarCreateFeedback = async (
+    input: CreateFeedbackIn,
+  ): Promise<CreateFeedbackOut> => {
+    const result = await sidebarProps.createFeedback(
+      input as unknown as Record<string, unknown>,
+    );
+    return {
+      problem_id:
+        typeof result["problem_id"] === "string" ? result["problem_id"] : "",
+      success: result["success"] === true,
+      message:
+        typeof result["message"] === "string" ? result["message"] : "",
+    };
+  };
+
   return (
     <>
       <ThemeStyle
@@ -160,11 +181,11 @@ export function FullPageLayout({
         initial={profileData}
         sessionSnapshot={sessionSnapshot}
       >
-        <GroupProviderClient initialGroupId={profileData?.group_id ?? null}>
+        <GroupProviderClient initialGroupId={null}>
           <SidebarProvider defaultOpen={initialSidebarOpen ?? true}>
             <UnifiedSidebar
               activeSection={sidebarProps.activeSection}
-              createFeedback={sidebarProps.createFeedback}
+              createFeedback={sidebarCreateFeedback}
             />
             <SidebarInset>
               <LeftSidebarBridge>
@@ -200,12 +221,21 @@ export function FullPageLayout({
                             panelProps.initialGroupHistory ?? null
                           }
                           operations={panelProps.operations}
-                          prompts={panelProps.prompts}
-                          getGroupAction={panelProps.getGroupAction}
-                          searchGenerationsAction={
-                            panelProps.searchGenerationsAction
-                          }
-                          initialPanelPrefs={panelProps.initialPanelPrefs}
+                          {...(panelProps.prompts !== undefined
+                            ? { prompts: panelProps.prompts }
+                            : {})}
+                          {...(panelProps.getGroupAction !== undefined
+                            ? { getGroupAction: panelProps.getGroupAction }
+                            : {})}
+                          {...(panelProps.searchGenerationsAction !== undefined
+                            ? {
+                                searchGenerationsAction:
+                                  panelProps.searchGenerationsAction,
+                              }
+                            : {})}
+                          {...(panelProps.initialPanelPrefs !== undefined
+                            ? { initialPanelPrefs: panelProps.initialPanelPrefs }
+                            : {})}
                         />
                       </GenerationListenerProvider>
                     ) : (

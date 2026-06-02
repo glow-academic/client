@@ -54,7 +54,7 @@ export interface VoicesProps {
 
 export function Voices({
   voice_ids,
-  voice_resources,
+  voice_resources: _voice_resources,
   show_voices = false,
   voices,
   disabled = false,

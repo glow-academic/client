@@ -439,7 +439,7 @@ export function Objectives({
           })}
           totalObjectives={internalTexts.length}
           maxObjectives={maxItems}
-          pending={pendingIndices?.has(index)}
+          pending={pendingIndices?.has(index) ?? false}
         />
       ))}
 

@@ -91,7 +91,7 @@ export function Emails({
       complete: "emails.generate.completed",
       error: "emails.generate.error",
     },
-    scope: { groupId: group_id },
+    scope: { ...(group_id !== undefined ? { groupId: group_id } : {}) },
     accumulate: true,
   });
   const suggestionsList = useMemo(

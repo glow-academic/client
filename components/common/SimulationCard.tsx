@@ -333,13 +333,18 @@ export default function SimulationCard({
                         // If rubrics are provided, show the current rubric's standard_groups
                         // Otherwise fall back to showing all standard_groups
                         const currentRubric = rubrics?.[currentRubricIndex];
-                        const visibleGroups = currentRubric
-                          ? Object.fromEntries(
-                              currentRubric.standard_group_ids
-                                .filter((sgId) => sgId in standard_groups)
-                                .map((sgId) => [sgId, standard_groups[sgId]])
-                            )
-                          : standard_groups;
+                        const visibleGroups: Record<string, string[]> =
+                          currentRubric
+                            ? currentRubric.standard_group_ids.reduce<
+                                Record<string, string[]>
+                              >((acc, sgId) => {
+                                const group = standard_groups[sgId];
+                                if (group !== undefined) {
+                                  acc[sgId] = group;
+                                }
+                                return acc;
+                              }, {})
+                            : standard_groups;
 
                         return Object.keys(visibleGroups).length > 0 ? (
                           <TableRubric

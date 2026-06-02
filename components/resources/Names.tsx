@@ -52,7 +52,7 @@ export interface NamesProps {
 }
 
 export function Names({
-  _name_id,
+  name_id: _name_id,
   name_resource,
   show_name = true,
   names,

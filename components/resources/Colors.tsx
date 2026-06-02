@@ -75,14 +75,14 @@ export interface ColorsProps {
 }
 
 export function Colors({
-  color_id,
+  color_id: _color_id,
   color_resource,
   show_color = false,
   colors,
   disabled = false,
   onColorIdChange,
   color_ids,
-  color_resources,
+  color_resources: _color_resources,
   onChange,
   multiSelect = false,
   label = "Color",
@@ -103,12 +103,14 @@ export function Colors({
 }: ColorsProps) {
   // Use standardized props with fallback to legacy props
   const resource = color_resource ?? colorResource ?? null;
-  const _resourceId = color_id ?? _colorId ?? null;
   const show = show_color ?? false;
   const ids = useMemo(() => color_ids ?? [], [color_ids]);
 
-  // Pending state: current resource has pending=true (soft draft, awaiting acceptance)
-  const isPending = resource?.pending === true;
+  // Pending state: current resource has pending=true (soft draft, awaiting
+  // acceptance). The legacy ``colorResource`` shape has no pending field, so
+  // guard with an ``in`` check before reading it.
+  const isPending =
+    resource !== null && "pending" in resource && resource.pending === true;
   const showDiff = isPending;
 
   // Accept pending — confirm the pending resource as the active selection.
@@ -516,9 +518,9 @@ export function Colors({
             return `${color.hex.toLowerCase()}-${color.name}-${color.index ?? 0}`;
           }}
           // Use selectedIds to mark all colors with matching hex as selected
-          selectedIds={
-            currentColor
-              ? displayColors
+          {...(currentColor
+            ? {
+                selectedIds: displayColors
                   .filter(
                     (color) =>
                       color.hex.toLowerCase() === currentColor.toLowerCase()
@@ -528,9 +530,9 @@ export function Colors({
                     return color.id
                       ? color.id
                       : `${color.hex.toLowerCase()}-${color.name}-${color.index ?? 0}`;
-                  })
-              : undefined
-          }
+                  }),
+              }
+            : {})}
           renderItem={(color, isSelected) => {
             const isPendingColor = showDiff && resource?.hex_code?.toLowerCase() === color.hex.toLowerCase();
 

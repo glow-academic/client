@@ -6,8 +6,8 @@ const POLL_INTERVAL = 60_000; // 60 seconds
 
 export function VersionBanner() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
-  const buildVersion = process.env.NEXT_PUBLIC_APP_VERSION || "dev";
-  const apiVersion = process.env.NEXT_PUBLIC_API_VERSION || "unknown";
+  const buildVersion = process.env["NEXT_PUBLIC_APP_VERSION"] || "dev";
+  const apiVersion = process.env["NEXT_PUBLIC_API_VERSION"] || "unknown";
 
   useEffect(() => {
     if (buildVersion === "dev") return;

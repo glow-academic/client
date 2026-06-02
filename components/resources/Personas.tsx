@@ -84,7 +84,7 @@ export interface PersonasProps {
 
 export function Personas({
   persona_ids,
-  persona_resources,
+  persona_resources: _persona_resources,
   show_personas = false,
   personas,
   disabled = false,

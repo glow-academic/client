@@ -192,7 +192,7 @@ export function ModelPositions({
   const positionMap = useMemo(() => {
     const map = new Map<string, number>();
     currentPositions.forEach((pos) => {
-      if (pos.model_id && pos.value !== null) {
+      if (pos.model_id && pos.value !== null && pos.value !== undefined) {
         map.set(pos.model_id, pos.value);
       }
     });
