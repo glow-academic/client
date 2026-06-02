@@ -10,8 +10,6 @@ import {
   AlertCircle,
   Check,
   CheckCircle,
-  ChevronDown,
-  ChevronRight,
   Copy,
   Edit,
   Eye,
@@ -145,11 +143,8 @@ export function Scenarios({
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
-    new Set(),
-  );
 
-  // Selection state (root/parent scenarios only) — URL-backed so it
+  // Selection state — URL-backed so it
   // survives refresh and is craftable as a shareable / LLM-generated
   // focus link. Three params model the full state machine:
   //
@@ -350,24 +345,14 @@ export function Scenarios({
     [scenariosData],
   );
 
-  // Define GroupedScenario type based on scenarios
-  type GroupedScenario = {
-    parent: (typeof scenarios)[number];
-    children: (typeof scenarios)[number][];
-  };
-
-  // The list API schema does not (yet) surface ``parent_scenario_id`` on
-  // scenario rows, but the parent/child grouping below reads it. Widen the
-  // row type so the optional access is typed (it resolves to ``undefined``
-  // until the schema includes the field).
-  type ScenarioRow = (typeof scenarios)[number] & {
-    parent_scenario_id?: string | null;
-  };
-
-  // Computed selection info (only root/parent scenarios)
-  const parentScenarios = useMemo(() => {
-    return scenarios.filter((scenario) => !(scenario as ScenarioRow).parent_scenario_id);
-  }, [scenarios]);
+  // The ``/scenario/search`` row type (``ListScenarioApiScenario``) does
+  // not expose ``parent_scenario_id``, so scenarios have no parent/child
+  // hierarchy in this list — every row is a standalone scenario. (A prior
+  // ``ScenarioRow`` type-widening + grouping read of ``parent_scenario_id``
+  // was removed: it always resolved to ``undefined`` at runtime, so the
+  // nesting never rendered.) Selection helpers operate over the full list
+  // of scenarios loaded on the current page.
+  const pageScenarios = scenarios;
 
   // ---- Selection helpers ----------------------------------------
   // ``isSelected`` is the single read predicate every row uses; it
@@ -392,8 +377,8 @@ export function Scenarios({
     : selectedScenarioIds.length;
 
   const selectedScenarios = useMemo(() => {
-    return parentScenarios.filter((s) => s.id && isSelected(s.id));
-  }, [parentScenarios, isSelected]);
+    return pageScenarios.filter((s) => s.id && isSelected(s.id));
+  }, [pageScenarios, isSelected]);
 
   const deletableScenarios = useMemo(() => {
     return selectedScenarios.filter((s) => s.can_delete);
@@ -412,15 +397,15 @@ export function Scenarios({
   // ``excludedScenarioIds`` is implicitly selected, so the predicate
   // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
-    const pageIds = parentScenarios.filter((s) => s.id).map((s) => s.id!);
+    const pageIds = pageScenarios.filter((s) => s.id).map((s) => s.id!);
     if (pageIds.length === 0) return false;
     return pageIds.every((id) => isSelected(id));
-  }, [parentScenarios, isSelected]);
+  }, [pageScenarios, isSelected]);
 
   // Whether there ARE more matching rows than what's loaded on this
   // page — used to decide whether to surface the "Select all N
   // matching" affordance after the user selects the page.
-  const hasMoreThanCurrentPage = totalMatchingCount > parentScenarios.length;
+  const hasMoreThanCurrentPage = totalMatchingCount > pageScenarios.length;
 
   // Toggle selection for a single scenario. Under all-matching mode
   // we toggle membership in excludedScenarioIds (deselect ⇒ add to
@@ -449,14 +434,14 @@ export function Scenarios({
   }, [setSelectedScenarioIds, setSelectAllMatching, setExcludedScenarioIds]);
 
   const selectAllOnPage = useCallback(() => {
-    const pageIds = parentScenarios.filter((s) => s.id).map((s) => s.id!);
+    const pageIds = pageScenarios.filter((s) => s.id).map((s) => s.id!);
     void setSelectAllMatching(false);
     void setExcludedScenarioIds([]);
     void setSelectedScenarioIds((prev) => {
       const combined = new Set([...prev, ...pageIds]);
       return Array.from(combined);
     });
-  }, [parentScenarios, setSelectAllMatching, setExcludedScenarioIds, setSelectedScenarioIds]);
+  }, [pageScenarios, setSelectAllMatching, setExcludedScenarioIds, setSelectedScenarioIds]);
 
   /** Promote the current page-only selection into "all matching
    *  filter" mode. Clears explicit ids and exclusions — the all-
@@ -668,25 +653,12 @@ export function Scenarios({
     ];
   }, [personaMapping]);
 
-  // Group scenarios: roots and their children (server already returns only current page)
-  const currentPageGroupedScenarios = useMemo(() => {
-    const groups: GroupedScenario[] = [];
-    const roots = scenarios.filter((s) => !(s as ScenarioRow).parent_scenario_id);
-    roots.forEach((parent) => {
-      const children = scenarios.filter(
-        (s) => (s as ScenarioRow).parent_scenario_id === parent.id,
-      );
-      groups.push({ parent, children });
-    });
-    return groups;
-  }, [scenarios]);
-
   // Page count for manual pagination
   const pageCount = Math.ceil(totalCount / pageSize);
 
   // Create table instance with manual pagination/filtering
   const table = useReactTable({
-    data: parentScenarios,
+    data: pageScenarios,
     columns,
     state: {
       sorting,
@@ -935,19 +907,6 @@ export function Scenarios({
     setShowDeleteDialog(true);
   };
 
-
-  const toggleGroupCollapse = (parentId: string) => {
-    setCollapsedGroups((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(parentId)) {
-        newSet.delete(parentId);
-      } else {
-        newSet.add(parentId);
-      }
-      return newSet;
-    });
-  };
-
   // Debounced search handler
   const handleSearchChange = useCallback(
     (value: string) => {
@@ -1032,10 +991,6 @@ export function Scenarios({
 
   const renderScenarioCard = (
     scenario: (typeof scenarios)[number],
-    isChild: boolean = false,
-    showDropdown?: boolean,
-    isCollapsed?: boolean,
-    onToggleCollapse?: () => void,
     ghost?: Ghost<(typeof scenarios)[number]>,
   ) => {
     // Same card visual for real rows and in-flight ghosts — single
@@ -1053,13 +1008,12 @@ export function Scenarios({
     const isPending = ghostState === "pending";
     const isFailed = ghostState === "failed";
 
-    const isSelectedRow = !isGhost && !isChild && scenario.id ? isSelected(scenario.id) : false;
+    const isSelectedRow = !isGhost && scenario.id ? isSelected(scenario.id) : false;
 
     const handleCardClick = (e: React.MouseEvent) => {
-      // Don't toggle selection if clicking action buttons, on a child,
-      // or when rendering as a ghost (no real id to select).
+      // Don't toggle selection if clicking action buttons or when
+      // rendering as a ghost (no real id to select).
       if (isGhost) return;
-      if (isChild) return;
       if ((e.target as HTMLElement).closest("[data-action-button]")) return;
       if (scenario.id) {
         toggleSelection(scenario.id);
@@ -1086,9 +1040,9 @@ export function Scenarios({
         data-scenario-id={scenario.id}
         data-ghost-state={ghostState}
         className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
-          isChild ? "ml-8 border-l-2 border-l-blue-200" : isGhost ? "" : "cursor-pointer"
+          isGhost ? "" : "cursor-pointer"
         } ${ghostBorderClass} ${isSelectedRow ? "ring-2 ring-primary" : ""}`}
-        aria-selected={!isChild && !isGhost ? isSelectedRow : undefined}
+        aria-selected={!isGhost ? isSelectedRow : undefined}
         aria-busy={inFlight ? true : undefined}
         onClick={handleCardClick}
       >
@@ -1096,9 +1050,9 @@ export function Scenarios({
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="space-y-2 flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                {/* Selection checkbox — inline before name (parent only).
+                {/* Selection checkbox — inline before name.
                     Hidden in ghost mode (no row id to select yet). */}
-                {!isChild && !isGhost && (
+                {!isGhost && (
                   <div
                     className={`transition-all overflow-hidden flex-shrink-0 ${
                       selectedCount > 0 ? "w-5 opacity-100" : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
@@ -1118,21 +1072,6 @@ export function Scenarios({
                 {/* In-flight ghost without a streamed name yet → spinner. */}
                 {isGhost && inFlight && (
                   <Loader2 className="h-4 w-4 animate-spin flex-shrink-0 text-muted-foreground" />
-                )}
-                {showDropdown && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 hover:bg-muted flex-shrink-0 -ml-1"
-                    onClick={onToggleCollapse}
-                    data-action-button
-                  >
-                    {isCollapsed ? (
-                      <ChevronRight className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </Button>
                 )}
                 <CardTitle className="text-lg flex-1 min-w-0 truncate">
                   {scenario.name || (isGhost ? "Generating…" : "Unnamed Scenario")}
@@ -1374,7 +1313,7 @@ export function Scenarios({
                 "Scenario will be dynamically generated."}
             </p>
           )}
-          {!isChild && (columnVisibility["card_num_simulations"] !== false || columnVisibility["persona_badges"] !== false || columnVisibility["field_badges"] !== false) && (
+          {(columnVisibility["card_num_simulations"] !== false || columnVisibility["persona_badges"] !== false || columnVisibility["field_badges"] !== false) && (
             <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground flex-wrap">
               {columnVisibility["card_num_simulations"] !== false && (
                 <span className="flex items-center gap-1">
@@ -1455,25 +1394,26 @@ export function Scenarios({
     );
   };
 
-  const renderGroupedScenarios = () => {
-    return currentPageGroupedScenarios.map((group) => {
-      const parentId = group.parent.id;
-      if (!parentId) return null;
-      const isCollapsed = collapsedGroups.has(parentId);
-      const hasChildren = group.children.length > 0;
+  // Flat list — ``/scenario/search`` returns no parent/child hierarchy, so
+  // every row renders at the top level (this is what happened at runtime
+  // before too; the old grouping branch was dead).
+  const renderScenarioList = () => {
+    return scenarios.map((scenario) => {
+      const scenarioId = scenario.id;
+      if (!scenarioId) return null;
 
       // Server-side pending status (from soft_calls_mv) — render the row
       // as a pending ghost so Accept/Reject controls appear. Live in-flight
       // ghosts continue to come from the audit hub (rendered separately).
       const persistentGhost: Ghost<(typeof scenarios)[number]> | undefined =
-        group.parent.pending_status === "pending" && group.parent.pending_call_id
+        scenario.pending_status === "pending" && scenario.pending_call_id
           ? {
-              callId: group.parent.pending_call_id,
-              op: (group.parent.pending_operation as Ghost<(typeof scenarios)[number]>["op"]) ?? "create",
+              callId: scenario.pending_call_id,
+              op: (scenario.pending_operation as Ghost<(typeof scenarios)[number]>["op"]) ?? "create",
               state: "pending",
-              rowId: group.parent.id ?? null,
-              partial: group.parent as unknown as Ghost<(typeof scenarios)[number]>["partial"],
-              before: group.parent,
+              rowId: scenario.id ?? null,
+              partial: scenario as unknown as Ghost<(typeof scenarios)[number]>["partial"],
+              before: scenario,
               tool: null,
               error: null,
               arguments: {},
@@ -1481,23 +1421,8 @@ export function Scenarios({
           : undefined;
 
       return (
-        <div key={parentId} className="space-y-2">
-          {/* Parent Scenario Card */}
-          {renderScenarioCard(
-            group.parent,
-            false,
-            hasChildren,
-            isCollapsed,
-            () => toggleGroupCollapse(parentId),
-            persistentGhost,
-          )}
-
-          {/* Child Scenarios */}
-          {hasChildren && !isCollapsed && (
-            <div className="space-y-2">
-              {group.children.map((child) => renderScenarioCard(child, true))}
-            </div>
-          )}
+        <div key={scenarioId}>
+          {renderScenarioCard(scenario, persistentGhost)}
         </div>
       );
     });
@@ -1580,7 +1505,7 @@ export function Scenarios({
                 data-testid="select-all-matching-banner"
               >
                 <span className="text-muted-foreground">
-                  All {parentScenarios.length} on this page selected.
+                  All {pageScenarios.length} on this page selected.
                 </span>
                 <Button
                   variant="link"
@@ -1718,12 +1643,12 @@ export function Scenarios({
                 const scenarioShell = (g.before ?? g.partial) as (typeof scenarios)[number];
                 return (
                   <div key={`ghost-${g.callId}`}>
-                    {renderScenarioCard(scenarioShell, false, false, false, undefined, g)}
+                    {renderScenarioCard(scenarioShell, g)}
                   </div>
                 );
               })}
-            {currentPageGroupedScenarios.length > 0 ? (
-              renderGroupedScenarios()
+            {scenarios.length > 0 ? (
+              renderScenarioList()
             ) : (
               scenarioGhosts.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
