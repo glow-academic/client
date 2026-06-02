@@ -633,9 +633,6 @@ export default function Personas({
   const scenarioSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fieldSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const departmentSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const colorSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const iconSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const voiceSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [localScenarioSearch, setLocalScenarioSearch] = useState(scenarioSearch);
   const [localFieldSearch, setLocalFieldSearch] = useState(fieldSearch);
@@ -683,44 +680,6 @@ export default function Personas({
     [updatePersonasParams]
   );
 
-  const _handleColorSearchChange = useCallback(
-    (value: string) => {
-      setLocalColorSearch(value);
-      if (colorSearchTimeoutRef.current) {
-        clearTimeout(colorSearchTimeoutRef.current);
-      }
-      colorSearchTimeoutRef.current = setTimeout(() => {
-        updatePersonasParams({ colorSearch: value });
-      }, 300);
-    },
-    [updatePersonasParams]
-  );
-
-  const _handleIconSearchChange = useCallback(
-    (value: string) => {
-      setLocalIconSearch(value);
-      if (iconSearchTimeoutRef.current) {
-        clearTimeout(iconSearchTimeoutRef.current);
-      }
-      iconSearchTimeoutRef.current = setTimeout(() => {
-        updatePersonasParams({ iconSearch: value });
-      }, 300);
-    },
-    [updatePersonasParams]
-  );
-
-  const _handleVoiceSearchChange = useCallback(
-    (value: string) => {
-      setLocalVoiceSearch(value);
-      if (voiceSearchTimeoutRef.current) {
-        clearTimeout(voiceSearchTimeoutRef.current);
-      }
-      voiceSearchTimeoutRef.current = setTimeout(() => {
-        updatePersonasParams({ voiceSearch: value });
-      }, 300);
-    },
-    [updatePersonasParams]
-  );
 
   // Sync column filters to URL when they change
   const handleColumnFiltersChange = useCallback(
@@ -1311,15 +1270,15 @@ export default function Personas({
                   </Badge>
                 )}
               </div>
-              {((columnVisibility.ai_badge !== false && persona.generated) || (columnVisibility.status_badge !== false && persona.is_inactive)) && (
+              {((columnVisibility["ai_badge"] !== false && persona.generated) || (columnVisibility["status_badge"] !== false && persona.is_inactive)) && (
                 <div className="mt-1 flex items-center gap-2">
-                  {columnVisibility.ai_badge !== false && persona.generated && (
+                  {columnVisibility["ai_badge"] !== false && persona.generated && (
                     <Badge variant="default">
                       <Sparkles className="h-3 w-3 mr-1" />
                       {persona.mcp ? "MCP" : "AI"}
                     </Badge>
                   )}
-                  {columnVisibility.status_badge !== false && persona.is_inactive && (
+                  {columnVisibility["status_badge"] !== false && persona.is_inactive && (
                     <Badge variant="secondary">Inactive</Badge>
                   )}
                 </div>
@@ -1489,23 +1448,23 @@ export default function Personas({
           </div>
         </CardHeader>
         <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-          {columnVisibility.card_description !== false && (
+          {columnVisibility["card_description"] !== false && (
             <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
               {persona.description || "No description available"}
             </p>
           )}
-          {(columnVisibility.num_scenarios !== false || columnVisibility.num_profiles !== false) && (
+          {(columnVisibility["num_scenarios"] !== false || columnVisibility["num_profiles"] !== false) && (
             <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
-              {columnVisibility.num_scenarios !== false && (
+              {columnVisibility["num_scenarios"] !== false && (
                 <span className="flex items-center gap-1">
                   <Eye className="h-3 w-3" />
                   {persona.num_scenarios} {persona.num_scenarios === 1 ? "scenario" : "scenarios"}
                 </span>
               )}
-              {columnVisibility.num_scenarios !== false && columnVisibility.num_profiles !== false && (
+              {columnVisibility["num_scenarios"] !== false && columnVisibility["num_profiles"] !== false && (
                 <span className="text-muted-foreground">&middot;</span>
               )}
-              {columnVisibility.num_profiles !== false && (
+              {columnVisibility["num_profiles"] !== false && (
                 <span className="flex items-center gap-1">
                   <Users className="h-3 w-3" />
                   {persona.num_profiles ?? 0} {persona.num_profiles === 1 ? "profile" : "profiles"}
@@ -2090,16 +2049,16 @@ export default function Personas({
           onSave={async (items) => {
             if (!createPersonaAction) throw new Error("Create action not available");
             const personas = items.map((item) => ({
-              name: item.name as string | undefined,
-              description: item.description as string | undefined,
-              color: item.color as string | undefined,
-              icon: item.icon as string | undefined,
-              instructions: item.instructions as string | undefined,
+              name: item["name"] as string | undefined,
+              description: item["description"] as string | undefined,
+              color: item["color"] as string | undefined,
+              icon: item["icon"] as string | undefined,
+              instructions: item["instructions"] as string | undefined,
               active: item['active_flag'] as boolean | undefined,
-              departments: item.departments as string[] | undefined,
-              parameter_fields: item.parameter_fields as string[] | undefined,
-              examples: item.examples as string[] | undefined,
-              voices: item.voices as string[] | undefined,
+              departments: item["departments"] as string[] | undefined,
+              parameter_fields: item["parameter_fields"] as string[] | undefined,
+              examples: item["examples"] as string[] | undefined,
+              voices: item["voices"] as string[] | undefined,
             }));
             return createPersonaAction({ body: { personas } } as CreatePersonaIn);
           }}

@@ -56,6 +56,15 @@ import { parseAsArrayOf, parseAsBoolean, parseAsString, type Parser } from "nuqs
 
 // Types defined inline using InputOf/OutputOf
 type GetScenarioOut = OutputOf<"/scenario/get", "post">;
+
+// Element shape expected by ParameterFields#allParameters. The API schema
+// types the source `parameters` field as `unknown[]`.
+type ParameterSummary = {
+  parameter_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  conditional?: boolean | null;
+};
 type CreateScenarioIn = InputOf<"/scenario/create", "post">;
 type CreateScenarioOut = OutputOf<"/scenario/create", "post">;
 type UpdateScenarioIn = InputOf<"/scenario/update", "post">;
@@ -306,14 +315,14 @@ function ScenarioComponent({
 
     return {
       name_id: scenarioData.names?.find((n: any) => n.selected)?.id
-        ? String(scenarioData.names.find((n: any) => n.selected).id)
+        ? String(scenarioData.names.find((n: any) => n.selected)?.id)
         : null,
       description_id: scenarioData.descriptions?.find((d: any) => d.selected)?.id
-        ? String(scenarioData.descriptions.find((d: any) => d.selected).id)
+        ? String(scenarioData.descriptions.find((d: any) => d.selected)?.id)
         : null,
       problem_statement_id: scenarioData.problem_statements?.find((p: any) => p.selected)
         ?.problem_statement_id
-        ? String(scenarioData.problem_statements.find((p: any) => p.selected).problem_statement_id)
+        ? String(scenarioData.problem_statements.find((p: any) => p.selected)?.problem_statement_id)
         : null,
       flag_ids: (scenarioData.flags?.filter((f: any) => f.selected) ?? [])
         .map((f: any) => f.id)
@@ -1583,79 +1592,9 @@ function ScenarioComponent({
         throw new Error("Scenario name is required");
       }
 
-      const hasDescription = !!formState.description_id || !!formState.description;
-      if (
-        false &&
-        !hasDescription
-      ) {
-        toast.error("Scenario description is required");
-        throw new Error("Scenario description is required");
-      }
-
-      const hasProblemStatement = !!formState.problem_statement_id || !!formState.problem_statement;
-      if (
-        false &&
-        !hasProblemStatement
-      ) {
-        toast.error("Problem statement is required");
-        throw new Error("Problem statement is required");
-      }
-
-      if (
-        false &&
-        formState.objective_ids.length === 0
-      ) {
-        toast.error("Objectives are required");
-        throw new Error("Objectives are required");
-      }
-
-      if (
-        false &&
-        formState.department_ids.length === 0
-      ) {
-        toast.error("Departments are required");
-        throw new Error("Departments are required");
-      }
-
-      if (
-        false &&
-        formState.persona_ids.length === 0
-      ) {
-        toast.error("Personas are required");
-        throw new Error("Personas are required");
-      }
-
-      if (
-        false &&
-        formState.document_ids.length === 0
-      ) {
-        toast.error("Documents are required");
-        throw new Error("Documents are required");
-      }
-
-      if (
-        false &&
-        formState.image_ids.length === 0
-      ) {
-        toast.error("Images are required");
-        throw new Error("Images are required");
-      }
-
-      if (
-        false &&
-        formState.video_ids.length === 0
-      ) {
-        toast.error("Videos are required");
-        throw new Error("Videos are required");
-      }
-
-      if (
-        false &&
-        formState.question_ids.length === 0
-      ) {
-        toast.error("Questions are required");
-        throw new Error("Questions are required");
-      }
+      // NOTE: description / problem-statement / objectives / departments /
+      // personas / documents / images / videos / questions validations are
+      // intentionally disabled (previously guarded by `false && ...`).
 
       if (!profile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
@@ -1891,7 +1830,6 @@ function ScenarioComponent({
                   name_id={formState.name_id ?? null}
                   name_resource={s?.names?.find((n: any) => n.selected) ?? null}
                   show_name={true}
-                  name_suggestions={[]}
                   names={s?.names ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
@@ -1908,12 +1846,10 @@ function ScenarioComponent({
                   onRejectPending={(pendingId) =>
                     handleRejectPendingField("name_id", pendingId)
                   }
-                  onGenerate={generateHandlers["names"]}
                   placeholder="e.g., Customer Support Escalation"
                   defaultName="New Scenario"
                   required={true}
                   hideDescription={true}
-                  showAiGenerate={false}
                 />
               }
               resetFields={["name", "description", "departments"]}
@@ -1940,7 +1876,6 @@ function ScenarioComponent({
                   description_id={formState.description_id ?? null}
                   description_resource={s?.descriptions?.find((d: any) => d.selected) ?? null}
                   show_description={true}
-                  description_suggestions={[]}
                   descriptions={s?.descriptions ?? []}
                   searchTerm={descriptionSearch}
                   onSearchChange={(term: string) =>
@@ -1961,18 +1896,15 @@ function ScenarioComponent({
                   onRejectPending={(pendingId) =>
                     handleRejectPendingField("description_id", pendingId)
                   }
-                  onGenerate={generateHandlers["descriptions"]}
                   label="Description"
                   placeholder="Describe the scenario"
                   required={false}
-                  showAiGenerate={false}
                 />
 
                 <Departments
                   department_ids={formState.department_ids}
                   department_resources={s?.departments?.filter((d: any) => d.selected) ?? []}
                   show_departments={true}
-                  department_suggestions={[]}
                   departments={s?.departments ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
@@ -1993,8 +1925,6 @@ function ScenarioComponent({
                   }
                   label="Departments"
                   required={false}
-                  showAiGenerate={false}
-                  onGenerate={generateHandlers["departments"]}
                 />
 
                 {/* Server-driven Flags — assessmentMode gates which feature
@@ -2277,7 +2207,6 @@ function ScenarioComponent({
                   persona_ids={formState.persona_ids}
                   persona_resources={s?.personas?.filter((p: any) => p.selected) ?? []}
                   show_personas={true}
-                  persona_suggestions={[]}
                   personas={s?.personas ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
@@ -2425,7 +2354,9 @@ function ScenarioComponent({
                   parameterIds={urlParameterIds}
                   parameterFieldIds={formState.parameter_field_ids}
                   parameterFieldResources={s?.parameter_fields?.filter((f: any) => f.selected) ?? []}
-                  allParameters={s?.parameters ?? []}
+                  // API schema types `parameters` as `unknown[]`; the runtime
+                  // payload matches the `allParameters` element shape.
+                  allParameters={(s?.parameters ?? []) as ParameterSummary[]}
                   availableFields={s?.parameter_fields ?? []}
                   onToggleParameter={(parameterId, open) => {
                     const current = urlParameterIds;
@@ -2452,7 +2383,6 @@ function ScenarioComponent({
                     handleRejectPendingMulti("parameter_field_ids", pendingIds)
                   }
                   disabled={disabled}
-                  showAiGenerate={false}
                   required={false}
                 />
               </div>
