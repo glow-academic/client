@@ -24,16 +24,10 @@ import {
 } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, useQueryState } from "nuqs";
-import React, { useCallback, useMemo, useState } from "react";
-import { useDropzone } from "react-dropzone";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import {
-  PROFILE_ROLES,
-  generateGradientFromHex,
-} from "@/components/common/forms/profile-roles";
 import { BulkDeleteDialog } from "@/components/common/forms/BulkDeleteDialog";
 import { BulkEditDialog } from "@/components/common/forms/BulkEditDialog";
 import { BulkEditFlagField } from "@/components/common/forms/BulkEditFlagField";
@@ -54,27 +48,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -93,17 +67,9 @@ import { useArtifactGhosts } from "@/hooks/use-artifact-ghosts";
 import { useProfileAi } from "@/hooks/use-profile-ai";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { useProfile } from "@/contexts/profile-context";
-import { cn } from "@/lib/utils";
-import { SvgIcon } from "@/components/common/SvgIcon";
 import {
-  Check,
-  CheckCircle2,
-  ChevronsUpDown,
-  Download,
   Edit,
   Eye,
-  FileUp,
-  Map,
   Pencil,
   Play,
   RefreshCw,
@@ -120,15 +86,13 @@ import { HoverPrefetchLink } from "@/components/common/HoverPrefetchLink";
 import type {
   BulkDeleteProfileIn,
   BulkDeleteProfileOut,
-  CSVColumnMapping,
+  CreateProfileIn,
+  CreateProfileOut,
   DeleteProfileIn,
   DeleteProfileOut,
   EmulateProfileActionIn,
   EmulateProfileActionOut,
   GetProfileOut,
-  ProcessCSVIn,
-  ProcessCSVOut,
-  ProcessedCSVRow,
   ProfileListItem,
   ProfilesListBody,
   SearchProfileIn,
@@ -137,6 +101,10 @@ import type {
   UpdateProfileIn,
   UpdateProfileOut,
 } from "@/app/(main)/management/profiles/page";
+import BulkImport, {
+  type ImportFieldDef,
+  type ParseCsvResult,
+} from "@/components/common/BulkImport";
 
 // Explicitly define server action types (matching the page exports)
 export type DeleteProfileAction = (
@@ -151,7 +119,9 @@ export type UpdateProfileAction = (
 export type SearchProfileAction = (
   input: SearchProfileIn
 ) => Promise<SearchProfileOut>;
-export type ProcessCSVAction = (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
+export type CreateProfileAction = (
+  input: CreateProfileIn
+) => Promise<CreateProfileOut>;
 export type EmulateProfileAction = (
   input: EmulateProfileActionIn
 ) => Promise<EmulateProfileActionOut>;
@@ -165,7 +135,9 @@ export interface ProfilesProps {
   deleteProfileAction?: DeleteProfileAction;
   bulkDeleteProfileAction?: BulkDeleteProfileAction;
   updateProfileAction?: UpdateProfileAction;
-  processCSVAction?: ProcessCSVAction;
+  createProfileAction?: CreateProfileAction;
+  parseCsvAction?: (formData: FormData) => Promise<ParseCsvResult>;
+  importFields?: ImportFieldDef[];
   emulateProfileAction?: EmulateProfileAction;
   unemulateProfileAction?: EmulateProfileAction;
   /** The body the page used for its SSR ``/profile/search`` call.
@@ -224,190 +196,21 @@ const getRoleDisplayName = (role: string, roleName?: string | null): string => {
   }
 };
 
-// CSV Import constants and helpers
-type CSVStage = "upload" | "mapping" | "review";
-
-const TARGET_FIELDS = [
-  {
-    value: "name", // snake_case
-    label: "Name",
-    description: "The profile's full name",
-    required: true,
-  },
-  {
-    value: "email",
-    label: "Email",
-    description: "Email address (full email with @domain)",
-    required: true,
-  },
-  {
-    value: "role",
-    label: "Role",
-    description: "Profile role (instructional, ta, guest, admin, etc.)",
-    required: false,
-  },
-  {
-    value: "department",
-    label: "Department",
-    description: "Department assignment (optional if scoped)",
-    required: false,
-  },
-] as const;
-
-const unparseCSV = (data: Record<string, string>[]): string => {
-  if (data.length === 0) return "";
-  const headers = Object.keys(data[0] || {});
-  const csvContent = [
-    headers.join(","),
-    ...data.map((row) =>
-      headers
-        .map((header) => {
-          const value = row[header] || "";
-          if (
-            value.includes(",") ||
-            value.includes('"') ||
-            value.includes("\n")
-          ) {
-            return `"${value.replace(/"/g, '""')}"`;
-          }
-          return value;
-        })
-        .join(",")
-    ),
-  ];
-  return csvContent.join("\n");
-};
-
-const autoMapColumn = (columnName: string): string | null => {
-  const lower = columnName.toLowerCase().trim();
-  if (["name", "full name", "fullname", "full_name"].includes(lower)) {
-    return "name"; // snake_case
-  }
-  if (
-    ["email", "alias", "username", "user", "login", "email address"].includes(
-      lower
-    )
-  ) {
-    return "email";
-  }
-  if (["role", "user role", "permission"].includes(lower)) {
-    return "role";
-  }
-  if (["department", "dept", "department_id", "dept_id"].includes(lower)) {
-    return "department";
-  }
-  return null;
-};
-
-const normalizeEmail = (email: string): string => {
-  return email.trim().toLowerCase();
-};
-
-// ColumnPicker Component for CSV mapping
-interface ColumnPickerProps {
-  value: string | null;
-  onValueChange: (value: string | null) => void;
-  availableFields: Array<(typeof TARGET_FIELDS)[number]>;
-}
-
-function ColumnPicker({
-  value,
-  onValueChange,
-  availableFields,
-}: ColumnPickerProps) {
-  const [open, setOpen] = useState(false);
-
-  const handleSelect = (fieldValue: string) => {
-    if (fieldValue === "__ignore__") {
-      onValueChange(null);
-    } else {
-      onValueChange(fieldValue);
-    }
-    setOpen(false);
-  };
-
-  const selectedField = availableFields.find((f) => f.value === value);
-  const displayValue = value
-    ? selectedField?.label || value
-    : "Select field...";
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between"
-        >
-          <span className="truncate">{displayValue}</span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
-        <Command>
-          <CommandList>
-            <CommandEmpty>No field found.</CommandEmpty>
-            <CommandGroup>
-              <CommandItem onSelect={() => handleSelect("__ignore__")}>
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-muted-foreground">(Ignore)</span>
-                  {!value && <Check className="ml-auto h-4 w-4 opacity-100" />}
-                </div>
-              </CommandItem>
-            </CommandGroup>
-            <CommandGroup heading="Fields">
-              {availableFields.map((field) => (
-                <CommandItem
-                  key={field.value}
-                  onSelect={() => handleSelect(field.value)}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        <span className="truncate">{field.label}</span>
-                        {field.required && (
-                          <span className="text-destructive">*</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1 truncate">
-                        {field.description}
-                      </div>
-                    </div>
-                    <Check
-                      className={cn(
-                        "ml-auto h-4 w-4 shrink-0",
-                        value === field.value ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 export default function Profiles({
   listData: serverListData,
-  initialCreateProfileData,
   initialColumnVisibility,
   deleteProfileAction,
   bulkDeleteProfileAction,
   updateProfileAction,
-  processCSVAction,
+  createProfileAction,
+  parseCsvAction,
+  importFields,
   emulateProfileAction,
   unemulateProfileAction,
   currentSearchBody,
 }: ProfilesProps) {
   const router = useRouter();
-  const {
-    profile,
-    roleResources,
-  } = useProfile();
+  const { profile } = useProfile();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useProfileAi({
@@ -501,23 +304,8 @@ export default function Profiles({
     [unemulateProfileAction]
   );
 
-  // CSV Import state
-  const [showCSVImportModal, setShowCSVImportModal] = useState(false);
-  const [csvStage, setCsvStage] = useState<CSVStage>("upload");
-  const [csvContent, setCsvContent] = useState<string>("");
-  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
-  const [csvRows, setCsvRows] = useState<Record<string, string>[]>([]);
-  const [columnMappings, setColumnMappings] = useState<CSVColumnMapping[]>([]);
-  const [processedRows, setProcessedRows] = useState<ProcessedCSVRow[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editableRows, setEditableRows] = useState<
-    Record<number, ProcessedCSVRow>
-  >({});
-  const [includedColumns, setIncludedColumns] = useState<
-    Record<string, boolean>
-  >({});
-  const [showErrorRows, setShowErrorRows] = useState(true);
+  // CSV Import dialog (centralized BulkImport — see render below)
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
@@ -617,443 +405,6 @@ export default function Profiles({
         .filter((opt) => opt.value && opt.label),
     [serverListData?.permissions_filter],
   );
-
-  // Transform mappings for CSV import
-  const departmentMappingForCSV = useMemo(() => {
-    const createProfileData = initialCreateProfileData;
-    const mapping: Record<string, { name: string; description: string }> = {};
-    if (
-      createProfileData &&
-      "departments" in createProfileData &&
-      Array.isArray(createProfileData.departments)
-    ) {
-      createProfileData.departments.forEach((dept) => {
-        if (dept && dept.department_id) {
-          mapping[dept.department_id] = {
-            name: dept.name ?? "",
-            description: dept.description ?? "",
-          };
-        }
-      });
-    }
-    return mapping;
-  }, [initialCreateProfileData]);
-
-  const validDepartmentIdsForCSV = useMemo(
-    () => Object.keys(departmentMappingForCSV),
-    [departmentMappingForCSV]
-  );
-  const roleOptionsForCSV = useMemo(
-    () => initialCreateProfileData?.role_options || [],
-    [initialCreateProfileData]
-  );
-  const roleResourcesForCSV = useMemo(() => {
-    const baseRoles =
-      initialCreateProfileData?.roles && initialCreateProfileData.roles.length > 0
-        ? initialCreateProfileData.roles
-        : roleResources || [];
-    return (
-      baseRoles
-        ?.filter((role) => role?.role)
-        .map((role) => {
-          return {
-            id: role.role ?? "",
-            name: role.name ?? role.role ?? "Role",
-            description: role.description ?? "",
-            iconSvg: role.icon_value ?? null,
-            icon: UserIcon,
-            color: role.color_hex ?? "#64748b",
-          };
-        }) ?? []
-    );
-  }, [initialCreateProfileData, roleResources]);
-
-  // CSV Import logic
-  const validRoles = useMemo(() => {
-    const roleOrder = ["member", "instructional", "admin", "superadmin", "custom"];
-    return roleOrder.filter((role) => roleOptionsForCSV.includes(role));
-  }, [roleOptionsForCSV]);
-
-  const availableTargetFields = useMemo(() => {
-    return [...TARGET_FIELDS];
-  }, []);
-
-  const csvRequirements = useMemo(() => {
-    return {
-      required: ["First Name", "Last Name", "Email"],
-      optional: ["Role", "Department"],
-    };
-  }, []);
-
-  // Reset CSV state when modal closes
-  React.useEffect(() => {
-    if (!showCSVImportModal) {
-      setCsvStage("upload");
-      setCsvContent("");
-      setCsvHeaders([]);
-      setCsvRows([]);
-      setColumnMappings([]);
-      setProcessedRows([]);
-      setEditableRows({});
-      setIncludedColumns({});
-      setShowErrorRows(true);
-    }
-  }, [showCSVImportModal]);
-
-  const hasErrors = useMemo(
-    () => processedRows.some((row) => (row.errors?.length ?? 0) > 0),
-    [processedRows]
-  );
-
-  React.useEffect(() => {
-    if (hasErrors) {
-      setShowErrorRows(true);
-    }
-  }, [hasErrors]);
-
-  const parseCSV = useCallback(
-    (
-      csvText: string
-    ): { headers: string[]; rows: Record<string, string>[] } => {
-      // Strip BOM character that Excel adds to CSV exports
-      const cleanText = csvText.replace(/^\ufeff/, "");
-      const lines = cleanText.split("\n").filter((line) => line.trim());
-      if (lines.length < 2) {
-        throw new Error("CSV must have at least a header row and one data row");
-      }
-
-      const stripQuotes = (val: string): string => {
-        const trimmed = val.trim();
-        if (
-          trimmed.length >= 2 &&
-          trimmed.startsWith('"') &&
-          trimmed.endsWith('"')
-        ) {
-          return trimmed.slice(1, -1).replace(/""/g, '"');
-        }
-        return trimmed;
-      };
-
-      const headers = lines[0]!.split(",").map((h) => stripQuotes(h));
-      const rows: Record<string, string>[] = [];
-
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-        if (!line?.trim()) continue;
-
-        const values = line.split(",").map((v) => stripQuotes(v));
-        const row: Record<string, string> = {};
-        headers.forEach((header, index) => {
-          row[header] = values[index] || "";
-        });
-        rows.push(row);
-      }
-
-      return { headers, rows };
-    },
-    []
-  );
-
-  const handleFileUpload = useCallback(
-    (file: File) => {
-      if (!file.name.endsWith(".csv")) {
-        toast.error("Please upload a CSV file (.csv format).");
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const csvText = (event.target?.result as string) || "";
-          const { headers, rows } = parseCSV(csvText);
-
-          setCsvContent(csvText);
-          setCsvHeaders(headers);
-          setCsvRows(rows);
-
-          const mappings: CSVColumnMapping[] = headers.map((header) => ({
-            csv_column: header,
-            target_field: autoMapColumn(header),
-          }));
-          setColumnMappings(mappings);
-
-          const requiredFields = ["name", "email"]; // snake_case
-          const initialIncludes: Record<string, boolean> = {};
-          headers.forEach((header) => {
-            const mappedField = autoMapColumn(header);
-            initialIncludes[header] = mappedField
-              ? requiredFields.includes(mappedField)
-              : true;
-          });
-          setIncludedColumns(initialIncludes);
-
-          setCsvStage("mapping");
-          toast.success(`CSV file loaded with ${rows.length} row(s).`);
-        } catch (error) {
-          toast.error(
-            `Error parsing CSV: ${error instanceof Error ? error.message : "Unknown error"}`
-          );
-        }
-      };
-      reader.readAsText(file);
-    },
-    [parseCSV]
-  );
-
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      const file = acceptedFiles[0];
-      if (file) {
-        handleFileUpload(file);
-      }
-    },
-    [handleFileUpload]
-  );
-
-  const {
-    getRootProps,
-    getInputProps,
-    isDragActive,
-    open: openFileDialog,
-  } = useDropzone({
-    onDrop,
-    accept: {
-      "text/csv": [".csv"],
-    },
-    noKeyboard: true,
-  });
-
-  const downloadTemplate = useCallback(() => {
-    const template = [
-      {
-        name: "Sarah Johnson", // snake_case
-        email: "redacted@purdue.edu",
-        role: "instructional",
-        department: "",
-      },
-      {
-        name: "Jane Smith", // snake_case
-        email: "redacted@purdue.edu",
-        role: "instructional",
-        department: "",
-      },
-      {
-        name: "John Doe", // snake_case
-        email: "redacted@purdue.edu",
-        role: "member",
-        department: "",
-      },
-    ];
-
-    const csv = unparseCSV(template);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", "profiles_template.csv");
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, []);
-
-  const handleProcessCSV = useCallback(async () => {
-    const activeMappings = columnMappings.filter(
-      (m) => m.csv_column && includedColumns[m.csv_column] !== false
-    );
-
-    const requiredFields = ["name", "email"];
-    const mappedFields = activeMappings
-      .map((m) => m.target_field)
-      .filter((f): f is string => f !== null);
-
-    const missingFields = requiredFields.filter(
-      (field) => !mappedFields.includes(field)
-    );
-    if (missingFields.length > 0) {
-      toast.error(
-        `Please map the following required fields: ${missingFields.join(", ")}`
-      );
-      return;
-    }
-
-    if (!processCSVAction) {
-      toast.error("Process CSV action not available");
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      const response = await processCSVAction({
-        body: {
-          csv_content: csvContent,
-          column_mappings: activeMappings,
-        },
-      });
-
-      const rows =
-        response &&
-        typeof response === "object" &&
-        Array.isArray((response as { rows?: unknown }).rows)
-          ? ((response as { rows: ProcessedCSVRow[] }).rows)
-          : [];
-      setProcessedRows(rows);
-      setEditableRows({});
-      setCsvStage("review");
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to process CSV file.";
-      toast.error(errorMessage);
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [csvContent, columnMappings, includedColumns, processCSVAction]);
-
-  const duplicateAliasMap = useMemo(() => {
-    const aliasMap: Record<string, number[]> = {};
-    processedRows.forEach((row, idx) => {
-      const editableRow = editableRows[idx] || row;
-      const emails: string[] = editableRow.emails ?? [];
-      emails.forEach((email) => {
-        const normalized = normalizeEmail(email);
-        if (normalized) {
-          if (!aliasMap[normalized]) {
-            aliasMap[normalized] = [];
-          }
-          aliasMap[normalized]!.push(idx);
-        }
-      });
-    });
-    const duplicates = new Set<number>();
-    Object.values(aliasMap).forEach((indices) => {
-      if (indices.length > 1) {
-        indices.forEach((idx) => duplicates.add(idx));
-      }
-    });
-    return duplicates;
-  }, [processedRows, editableRows]);
-
-  const updateEditableRow = useCallback(
-    (rowIndex: number, field: string, value: string | null | string[]) => {
-      setEditableRows((prev) => {
-        const current = prev[rowIndex] || processedRows[rowIndex];
-        if (!current) return prev;
-
-        const updated = { ...current } as ProcessedCSVRow &
-          Record<string, string | null | string[]>;
-
-        if (field === "department_ids") {
-          updated[field] = Array.isArray(value) ? value : [];
-        } else if (field === "emails") {
-          if (Array.isArray(value)) {
-            updated[field] = value;
-          } else if (typeof value === "string") {
-            updated[field] = value
-              .split(",")
-              .map((e) => e.trim())
-              .filter((e) => e.length > 0);
-          } else {
-            updated[field] = [];
-          }
-        } else {
-          updated[field] = value;
-        }
-
-        const errors = [...(updated.errors ?? [])];
-        const errorIndex = errors.findIndex((e) => e.field === field);
-        if (errorIndex >= 0) {
-          errors.splice(errorIndex, 1);
-        }
-        updated.errors = errors;
-
-        return { ...prev, [rowIndex]: updated };
-      });
-    },
-    [processedRows]
-  );
-
-  const handleCSVSubmit = useCallback(async () => {
-    const finalRows = processedRows.map((row, index) => {
-      return editableRows[index] || row;
-    });
-
-    const validRows = finalRows.filter(
-      (row) => (row.errors?.length ?? 0) === 0
-    );
-
-    if (validRows.length === 0) {
-      toast.error("No valid rows to process. Please fix errors.");
-      return;
-    }
-
-    const invalidRoles = validRows
-      .map((row, idx) => {
-        const role = row.role || "member";
-        if (!validRoles.includes(role)) {
-          return { index: idx, role };
-        }
-        return null;
-      })
-      .filter((r): r is { index: number; role: string } => r !== null);
-
-    if (invalidRoles.length > 0) {
-      toast.error(
-        `Invalid roles found: ${invalidRoles.map((r) => r.role).join(", ")}. ` +
-          `Allowed roles: ${validRoles.join(", ")}`
-      );
-      return;
-    }
-
-    const emailCounts: Record<string, number[]> = {};
-    validRows.forEach((row, idx) => {
-      const emails: string[] = row.emails ?? [];
-      emails.forEach((email) => {
-        const normalized = normalizeEmail(email);
-        if (normalized) {
-          if (!emailCounts[normalized]) {
-            emailCounts[normalized] = [];
-          }
-          emailCounts[normalized]!.push(idx);
-        }
-      });
-    });
-
-    const duplicateEmails = Object.entries(emailCounts)
-      .filter(([, indices]) => indices.length > 1)
-      .map(([email]) => email);
-
-    if (duplicateEmails.length > 0) {
-      toast.error(
-        `Duplicate emails found in CSV: ${duplicateEmails.join(", ")}`
-      );
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      toast.error("Bulk create or update is no longer available. Please use individual profile create/update instead.");
-      return;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to create or update profiles.";
-      toast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [
-    processedRows,
-    editableRows,
-    departmentMappingForCSV,
-    validDepartmentIdsForCSV,
-    validRoles,
-  ]);
-
-  const validRowCount = processedRows.filter(
-    (row) => (row.errors?.length ?? 0) === 0
-  ).length;
 
   // Table columns definition
   const columns = useMemo<ColumnDef<ProfileListItem>[]>(
@@ -1768,14 +1119,14 @@ export default function Profiles({
             </div>
 
             <div className="flex items-center space-x-2 mb-2">
-              {/* CSV Import Button */}
-              {selectedCount === 0 && processCSVAction && (
+              {/* CSV Import Button — centralized BulkImport (one-shot
+                  ``/profile/csv`` → ``/profile/create``). */}
+              {selectedCount === 0 && parseCsvAction && importFields && (
                 <Button
                   type="button"
                   size="sm"
                   variant="default"
-                  disabled={!initialCreateProfileData}
-                  onClick={() => setShowCSVImportModal(true)}
+                  onClick={() => setShowBulkImportDialog(true)}
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   CSV Import
@@ -1974,586 +1325,31 @@ export default function Profiles({
           <DataTablePagination table={table} largePage={true} />
         </div>
 
-        {/* CSV Import Modal */}
-        {showCSVImportModal && (
-          <Dialog
-            open={showCSVImportModal}
-            onOpenChange={setShowCSVImportModal}
-          >
-            <DialogContent
-              className="max-w-5xl max-h-[90vh] overflow-y-auto"
-              data-testid="csv-upload-modal"
-            >
-              <DialogHeader>
-                <DialogTitle>Import Profiles from CSV</DialogTitle>
-              </DialogHeader>
-
-              <div className="space-y-6 py-4">
-                {/* Stage indicator */}
-                <div className="flex items-center justify-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                        csvStage === "upload"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {csvStage === "upload" ? (
-                        <FileUp className="h-4 w-4" />
-                      ) : (
-                        "1"
-                      )}
-                    </div>
-                    <span
-                      className={csvStage === "upload" ? "font-medium" : ""}
-                    >
-                      Upload
-                    </span>
-                  </div>
-                  <div className="h-1 w-16 bg-muted" />
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                        csvStage === "mapping"
-                          ? "bg-primary text-primary-foreground"
-                          : csvStage === "review"
-                            ? "bg-muted text-muted-foreground"
-                            : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {csvStage === "mapping" ? (
-                        <Map className="h-4 w-4" />
-                      ) : (
-                        "2"
-                      )}
-                    </div>
-                    <span
-                      className={csvStage === "mapping" ? "font-medium" : ""}
-                    >
-                      Mapping
-                    </span>
-                  </div>
-                  <div className="h-1 w-16 bg-muted" />
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                        csvStage === "review"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {csvStage === "review" ? (
-                        <CheckCircle2 className="h-4 w-4" />
-                      ) : (
-                        "3"
-                      )}
-                    </div>
-                    <span
-                      className={csvStage === "review" ? "font-medium" : ""}
-                    >
-                      Review
-                    </span>
-                  </div>
-                </div>
-
-                {/* Stage 1: Upload */}
-                {csvStage === "upload" && (
-                  <div
-                    className="space-y-6"
-                    data-testid="csv-upload-stage-upload"
-                  >
-                    <div
-                      {...getRootProps()}
-                      className={cn(
-                        "border-2 border-dashed rounded-lg p-16 text-center transition-colors cursor-pointer relative",
-                        isDragActive
-                          ? "border-primary bg-primary/5"
-                          : "border-muted-foreground/25 hover:border-primary/50"
-                      )}
-                    >
-                      <input
-                        {...getInputProps()}
-                        data-testid="csv-file-input"
-                      />
-                      <div className="absolute top-4 right-4">
-                        <Button
-                          type="button"
-                          variant="default"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            downloadTemplate();
-                          }}
-                          className="flex items-center gap-2"
-                        >
-                          <Download className="h-4 w-4" />
-                          Download Template
-                        </Button>
-                      </div>
-                      <div className="space-y-3">
-                        <p className="text-muted-foreground">
-                          Upload your .csv file or{" "}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openFileDialog();
-                            }}
-                            className="text-primary hover:underline font-medium"
-                          >
-                            browse
-                          </button>
-                        </p>
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          <p>
-                            <span className="font-medium">Required:</span>{" "}
-                            {csvRequirements.required.join(", ")}
-                          </p>
-                          {csvRequirements.optional.length > 0 && (
-                            <p>
-                              <span className="font-medium">Optional:</span>{" "}
-                              {csvRequirements.optional.join(", ")}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div
-                      className={`flex items-center pt-4 border-t ${
-                        csvHeaders.length > 0
-                          ? "justify-between"
-                          : "justify-end"
-                      }`}
-                    >
-                      {csvHeaders.length > 0 ? (
-                        <>
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowCSVImportModal(false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              setCsvStage("mapping");
-                            }}
-                          >
-                            Next
-                          </Button>
-                        </>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          onClick={() => setShowCSVImportModal(false)}
-                        >
-                          Cancel
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Stage 2: Mapping */}
-                {csvStage === "mapping" && (
-                  <div
-                    className="space-y-4"
-                    data-testid="csv-upload-stage-mapping"
-                  >
-                    <div
-                      className="rounded-md border"
-                      data-testid="csv-column-mapping-table"
-                    >
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[200px]">
-                              Your File Column
-                            </TableHead>
-                            <TableHead className="w-[200px]">
-                              Your Sample Data
-                            </TableHead>
-                            <TableHead>Destination Column</TableHead>
-                            <TableHead className="w-[100px] text-center">
-                              Include
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {csvHeaders.map((header) => {
-                            const mapping = columnMappings.find(
-                              (m) => m.csv_column === header
-                            );
-                            const targetField = mapping?.target_field || null;
-                            const sampleData = csvRows[0]?.[header] || "";
-                            const truncatedSample =
-                              sampleData.length > 30
-                                ? `${sampleData.substring(0, 30)}...`
-                                : sampleData;
-                            const isIncluded =
-                              includedColumns[header] !== false;
-
-                            return (
-                              <TableRow
-                                key={header}
-                                data-testid={`csv-column-mapping-${header}`}
-                              >
-                                <TableCell className="font-medium">
-                                  {header}
-                                </TableCell>
-                                <TableCell className="text-muted-foreground text-sm">
-                                  {truncatedSample || "-"}
-                                </TableCell>
-                                <TableCell>
-                                  <ColumnPicker
-                                    value={targetField}
-                                    onValueChange={(newValue) => {
-                                      setColumnMappings((prev) =>
-                                        prev.map((m) =>
-                                          m.csv_column === header
-                                            ? { ...m, target_field: newValue }
-                                            : m
-                                        )
-                                      );
-                                    }}
-                                    availableFields={availableTargetFields}
-                                  />
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  <Checkbox
-                                    checked={isIncluded}
-                                    onCheckedChange={(checked) => {
-                                      setIncludedColumns((prev) => ({
-                                        ...prev,
-                                        [header]: checked === true,
-                                      }));
-                                    }}
-                                  />
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => setCsvStage("upload")}
-                      >
-                        Back
-                      </Button>
-                      <Button
-                        onClick={handleProcessCSV}
-                        disabled={isProcessing}
-                      >
-                        {isProcessing ? "Processing..." : "Continue to Review"}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Stage 3: Review */}
-                {csvStage === "review" && (
-                  <div
-                    className="space-y-4"
-                    data-testid="csv-upload-stage-review"
-                  >
-                    <div className="flex items-center justify-between">
-                      {hasErrors && (
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={showErrorRows}
-                              onCheckedChange={setShowErrorRows}
-                              id="show-errors"
-                            />
-                            <Label
-                              htmlFor="show-errors"
-                              className="text-sm font-normal cursor-pointer"
-                            >
-                              Show rows with errors
-                            </Label>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div
-                      className="rounded-md border max-h-96 overflow-auto"
-                      data-testid="csv-review-table"
-                    >
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Row</TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Alias</TableHead>
-                            <TableHead>Role</TableHead>
-                            {validDepartmentIdsForCSV.length > 1 && (
-                              <TableHead>Department</TableHead>
-                            )}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {processedRows
-                            .filter((row, index) => {
-                              const editableRow = editableRows[index] || row;
-                              const hasRowErrors =
-                                (editableRow.errors?.length ?? 0) > 0;
-                              if (!showErrorRows && hasRowErrors) {
-                                return false;
-                              }
-                              return true;
-                            })
-                            .map((row, index) => {
-                              const editableRow = editableRows[index] || row;
-                              const errors: { field?: string | null }[] =
-                                editableRow.errors ?? [];
-                              const hasNameError = errors.some(
-                                (e) => e.field === "name" // snake_case
-                              );
-                              const hasAliasError = errors.some(
-                                (e) => e.field === "email"
-                              );
-                              const hasDuplicateAlias =
-                                duplicateAliasMap.has(index);
-                              const hasRoleError = errors.some(
-                                (e) => e.field === "role"
-                              );
-                              const hasDepartmentError =
-                                validDepartmentIdsForCSV.length > 1 &&
-                                errors.some(
-                                  (e) =>
-                                    e.field === "department_ids" ||
-                                    e.field === "department_id"
-                                );
-                              return (
-                                <TableRow
-                                  key={index}
-                                  data-testid={`csv-review-row-${index}`}
-                                >
-                                  <TableCell>{row.row_index}</TableCell>
-                                  <TableCell
-                                    className={
-                                      hasNameError
-                                        ? "bg-destructive/10"
-                                        : ""
-                                    }
-                                  >
-                                    <Input
-                                      value={editableRow.name || ""} // snake_case
-                                      onChange={(e) =>
-                                        updateEditableRow(
-                                          index,
-                                          "name", // snake_case
-                                          e.target.value || null
-                                        )
-                                      }
-                                      className="h-8 w-full min-w-[120px]"
-                                    />
-                                  </TableCell>
-                                  <TableCell
-                                    className={
-                                      hasAliasError || hasDuplicateAlias
-                                        ? "bg-destructive/10"
-                                        : ""
-                                    }
-                                  >
-                                    <Input
-                                      value={
-                                        (editableRow.emails || []).join(", ") ||
-                                        ""
-                                      }
-                                      onChange={(e) =>
-                                        updateEditableRow(
-                                          index,
-                                          "emails",
-                                          e.target.value || ""
-                                        )
-                                      }
-                                      placeholder="redacted@purdue.edu, redacted@purdue.edu"
-                                      className="h-8 w-full min-w-[120px]"
-                                    />
-                                  </TableCell>
-                                  <TableCell
-                                    className={
-                                      hasRoleError ? "bg-destructive/10" : ""
-                                    }
-                                  >
-                                    <GenericPicker
-                                      items={(roleResourcesForCSV.length > 0
-                                        ? roleResourcesForCSV
-                                        : PROFILE_ROLES
-                                      ).filter((r) =>
-                                        validRoles.includes(r.id)
-                                      )}
-                                      selectedIds={
-                                        editableRow.role
-                                          ? [editableRow.role]
-                                          : []
-                                      }
-                                      onSelect={(ids) =>
-                                        updateEditableRow(
-                                          index,
-                                          "role",
-                                          ids[0] || null
-                                        )
-                                      }
-                                      getId={(role) => role.id}
-                                      getLabel={(role) => role.name}
-                                      getSearchText={(role) =>
-                                        `${role.name} ${role.description || ""}`
-                                      }
-                                      renderItem={(role, isSelected) => {
-                                        const FallbackIcon =
-                                          role.icon || UserIcon;
-                                        const hexColor =
-                                          role.color || "#64748b";
-                                        return (
-                                          <div className="flex items-center gap-3 w-full">
-                                            <div
-                                              className="p-2 rounded-lg shadow-lg flex-shrink-0"
-                                              style={{
-                                                background:
-                                                  generateGradientFromHex(
-                                                    hexColor
-                                                  ),
-                                              }}
-                                            >
-                                              {"iconSvg" in role && role.iconSvg ? (
-                                                <SvgIcon svg={role.iconSvg} className="h-4 w-4 text-white" />
-                                              ) : (
-                                                <FallbackIcon className="h-4 w-4 text-white" />
-                                              )}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                              <div className="font-medium truncate">
-                                                {role.name}
-                                              </div>
-                                              {role.description && (
-                                                <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                                  {role.description}
-                                                </div>
-                                              )}
-                                            </div>
-                                            <Check
-                                              className={cn(
-                                                "ml-auto",
-                                                isSelected
-                                                  ? "opacity-100"
-                                                  : "opacity-0"
-                                              )}
-                                            />
-                                          </div>
-                                        );
-                                      }}
-                                      renderButton={(selectedItems) => {
-                                        if (selectedItems.length === 0)
-                                          return "Select role...";
-                                        const role = selectedItems[0];
-                                        const FallbackIcon =
-                                          role?.icon || UserIcon;
-                                        const hexColor =
-                                          role?.color || "#64748b";
-                                        return (
-                                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                                            <div
-                                              className="p-1 rounded-md shadow-sm flex-shrink-0"
-                                              style={{
-                                                background:
-                                                  generateGradientFromHex(
-                                                    hexColor
-                                                  ),
-                                              }}
-                                            >
-                                              {role && "iconSvg" in role && role.iconSvg ? (
-                                                <SvgIcon svg={role.iconSvg} className="h-3.5 w-3.5 text-white" />
-                                              ) : (
-                                                <FallbackIcon className="h-3.5 w-3.5 text-white" />
-                                              )}
-                                            </div>
-                                            <span className="truncate">
-                                              {role?.name || "Select role"}
-                                            </span>
-                                          </div>
-                                        );
-                                      }}
-                                      placeholder="Select role"
-                                      multiSelect={false}
-                                      hideSelectedChips={true}
-                                      buttonClassName="h-8"
-                                      groupHeading="Profile Roles"
-                                    />
-                                  </TableCell>
-                                  {validDepartmentIdsForCSV.length > 1 && (
-                                    <TableCell
-                                      className={
-                                        hasDepartmentError
-                                          ? "bg-destructive/10"
-                                          : ""
-                                      }
-                                    >
-                                      <GenericPicker
-                                        items={departmentMappingForCSV}
-                                        itemIds={validDepartmentIdsForCSV}
-                                        selectedIds={
-                                          (editableRow.department_ids ||
-                                            row.department_ids ||
-                                            []) as string[]
-                                        }
-                                        onSelect={(ids) =>
-                                          updateEditableRow(
-                                            index,
-                                            "department_ids",
-                                            ids
-                                          )
-                                        }
-                                        getId={(dept) =>
-                                          (dept as unknown as { id: string }).id
-                                        }
-                                        getLabel={(dept) => dept.name || ""}
-                                        getSearchText={(dept) =>
-                                          `${dept.name} ${dept.description || ""}`
-                                        }
-                                        placeholder="Select departments"
-                                        multiSelect={true}
-                                        compact={true}
-                                        hideSelectedChips={true}
-                                      />
-                                    </TableCell>
-                                  )}
-                                </TableRow>
-                              );
-                            })}
-                        </TableBody>
-                      </Table>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => setCsvStage("mapping")}
-                      >
-                        Back
-                      </Button>
-                      <Button
-                        onClick={handleCSVSubmit}
-                        disabled={isSubmitting || validRowCount === 0}
-                        data-testid="csv-submit-button"
-                      >
-                        {isSubmitting
-                          ? "Processing..."
-                          : `Import Profiles`}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
+        {/* CSV Import Dialog — centralized BulkImport. Mirrors the
+            documents sibling: one-shot /profile/csv parse →
+            review/edit grid → /profile/create bulk create. */}
+        {parseCsvAction && importFields && (
+          <BulkImport
+            open={showBulkImportDialog}
+            onClose={() => {
+              setShowBulkImportDialog(false);
+              router.refresh();
+            }}
+            fields={importFields}
+            artifactName="Profiles"
+            parseCsvAction={parseCsvAction}
+            onSave={async (items) => {
+              if (!createProfileAction)
+                throw new Error("Create action not available");
+              const profiles = items.map((item) => ({
+                name: item["name"] as string | undefined,
+                departments: item["departments"] as string[] | undefined,
+              }));
+              return createProfileAction({
+                body: { profiles },
+              } as CreateProfileIn);
+            }}
+          />
         )}
 
         {/* Bulk Delete Confirmation */}

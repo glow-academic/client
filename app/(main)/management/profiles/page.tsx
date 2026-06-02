@@ -24,6 +24,7 @@ import { loadProfilesSearchParams } from "@/lib/search-params/profiles";
 
 import { cache } from "react";
 import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
+import type { ImportFieldDef, ParseCsvResult } from "@/components/common/BulkImport";
 /** ---- Strong types from OpenAPI ---- */
 type ProfilesListIn = InputOf<"/profile/search", "post">;
 type ProfilesListOut = OutputOf<"/profile/search", "post">;
@@ -53,36 +54,8 @@ type SearchProfileIn = ProfilesListIn;
 type SearchProfileOut = ProfilesListOut;
 type GetProfileIn = InputOf<"/profile/get", "post">;
 type GetProfileOut = OutputOf<"/profile/get", "post">;
-// CSV processing — see ``processCSV`` below. The legacy
-// ``{csv_content, column_mappings}`` -> ``{rows}`` review contract
-// (formerly ``/profile/bulk/process``) is NOT exposed by the current
-// api; the only real CSV route is ``/profile/csv`` (multipart file
-// upload). These types describe the client-side review UX the page's
-// component drives, and are intentionally LOCAL (not derived from a
-// phantom endpoint) so the build is honest about the contract gap.
-type CSVColumnMapping = {
-  csv_column: string;
-  target_field: string | null;
-};
-type ProcessCSVIn = {
-  body: {
-    csv_content: string;
-    column_mappings: CSVColumnMapping[];
-  };
-};
-type ProcessedCSVRow = {
-  row_index?: number | null;
-  name?: string | null;
-  emails?: string[] | null;
-  role?: string | null;
-  department_ids?: string[] | null;
-  errors?: { field?: string | null; message?: string | null }[] | null;
-};
-type ProcessCSVOut = {
-  rows: ProcessedCSVRow[];
-};
-type ParseProfileCsvIn = InputOf<"/profile/csv", "post">;
-type ParseProfileCsvOut = OutputOf<"/profile/csv", "post">;
+type CreateProfileIn = InputOf<"/profile/create", "post">;
+type CreateProfileOut = OutputOf<"/profile/create", "post">;
 type EmulateProfileIn = InputOf<"/profile/emulate", "post">;
 type EmulateProfileOut = OutputOf<"/profile/emulate", "post">;
 type UnemulateProfileOut = OutputOf<"/profile/unemulate", "post">;
@@ -145,44 +118,19 @@ async function getCreateProfileData(
   });
 }
 
-async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
+async function createProfile(
+  input: CreateProfileIn,
+): Promise<CreateProfileOut> {
   "use server";
-  // The legacy ``/profile/bulk/process`` JSON contract
-  // (``{csv_content, column_mappings}`` -> reviewable ``{rows}``) does
-  // not exist in the current api. The only real CSV route is
-  // ``/profile/csv``, a multipart file upload returning
-  // ``ParseProfileCsvApiResponse`` ({items, mapped_fields, ...}).
-  //
-  // We adapt: serialize the client-parsed ``csv_content`` back into a
-  // file and POST it to ``/profile/csv``, then map the resolved
-  // ``items`` into the review ``rows`` the UI expects. NOTE: the two
-  // flows are not semantically equivalent — ``/profile/csv`` resolves
-  // emails/roles to resource UUIDs server-side rather than returning
-  // raw editable strings, so the review grid loses fidelity for those
-  // columns. Tracked as an api/product gap (see PR for #15); kept here
-  // so the action targets a REAL route instead of 404ing.
-  const file = new File([input.body.csv_content], "profiles.csv", {
-    type: "text/csv",
-  });
-  const formData = new FormData();
-  formData.append("file", file);
-  const res: ParseProfileCsvOut = await api.post(
+  return api.post("/profile/create", input);
+}
+
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
+  "use server";
+  return api.post(
     "/profile/csv",
-    { formData } as ParseProfileCsvIn,
+    { formData } as unknown as InputOf<"/profile/csv", "post">,
   );
-  const items = res.items ?? [];
-  const rows: ProcessedCSVRow[] = items.map((item, index) => ({
-    row_index: index + 1,
-    name: item.name ?? null,
-    // ``/profile/csv`` returns email/role/department *resource UUIDs*,
-    // not the raw strings the legacy review grid edited. We surface the
-    // ids we have; raw-string editing is no longer round-tripped.
-    emails: item.email_ids ?? null,
-    role: item.role_id ?? null,
-    department_ids: item.department_ids ?? null,
-    errors: [],
-  }));
-  return { rows };
 }
 
 /** ---- Emulation server actions ---- */
@@ -264,6 +212,33 @@ export async function generateMetadata(): Promise<Metadata> {
     return { title: "Profiles" };
   }
 }
+
+/** ---- CSV import fields ----
+ *  Mirrors the api's ``PROFILE_IMPORT_FIELDS`` (the source of truth the
+ *  ``/profile/csv`` parser auto-maps against and that ``/profile/create``
+ *  consumes via ``CreateProfileItem``). Unlike the documents sibling, the
+ *  ``/profile/search`` list response does NOT echo ``import_fields``, so we
+ *  declare them here. Only ``name`` (required) and ``departments`` (multi,
+ *  comma-separated names) are recognized server-side — email/role are
+ *  resolved per-profile elsewhere and are NOT part of the one-shot CSV
+ *  contract (this is the phantom-contract gap #21 is closing). */
+const PROFILE_IMPORT_FIELDS: ImportFieldDef[] = [
+  {
+    key: "name",
+    label: "Name",
+    required: true,
+    example: "Jane Doe",
+    description: "Profile display name",
+  },
+  {
+    key: "departments",
+    label: "Departments",
+    required: false,
+    multi: true,
+    example: "Nursing, Medicine",
+    description: "Comma-separated department names",
+  },
+];
 
 /** ---- Cookies ---- */
 const SIDEBAR_COOKIE = "glow_sidebar";
@@ -364,7 +339,9 @@ export default async function ProfilesPage({ searchParams }: ProfilesPageProps) 
             deleteProfileAction={deleteProfile}
             bulkDeleteProfileAction={bulkDeleteProfile}
             updateProfileAction={updateProfile}
-            processCSVAction={processCSV}
+            createProfileAction={createProfile}
+            parseCsvAction={parseCsv}
+            importFields={PROFILE_IMPORT_FIELDS}
             emulateProfileAction={emulateProfile}
             unemulateProfileAction={unemulateProfile}
             currentSearchBody={body}
@@ -406,16 +383,14 @@ export default async function ProfilesPage({ searchParams }: ProfilesPageProps) 
 export type {
   BulkDeleteProfileIn,
   BulkDeleteProfileOut,
-  CSVColumnMapping,
+  CreateProfileIn,
+  CreateProfileOut,
   DeleteProfileIn,
   DeleteProfileOut,
   EmulateProfileActionIn,
   EmulateProfileActionOut,
   GetProfileIn,
   GetProfileOut,
-  ProcessCSVIn,
-  ProcessCSVOut,
-  ProcessedCSVRow,
   ProfileListItem,
   ProfilesListBody,
   ProfilesListIn,
