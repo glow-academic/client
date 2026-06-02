@@ -228,11 +228,13 @@ export default async function ReportsFullPage({
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "reports",
-          createFeedback: createReportsProblem,
+          createFeedback: createReportsProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Analytics", section: "analytics", url: "/analytics" },
@@ -258,10 +260,14 @@ export default async function ReportsFullPage({
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          prompts: context.prompts?.prompts,
-          getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getAttemptGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
           searchGenerationsAction:
-            searchAttemptGenerations as PanelProps["searchGenerationsAction"],
+            searchAttemptGenerations as unknown as NonNullable<
+              PanelProps["searchGenerationsAction"]
+            >,
         }}
       >
         <div className="space-y-6 px-4" data-page="reports-index">

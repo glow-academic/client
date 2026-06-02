@@ -132,8 +132,11 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
     const [bundleData, groupResult] = await Promise.all([
       getHealthBundle({
         body: {
-          date_from: q.startDate ?? undefined,
-          date_to: q.endDate ?? undefined,
+          ...(q.startDate ? { date_from: q.startDate } : {}),
+          ...(q.endDate ? { date_to: q.endDate } : {}),
+          // Server-side defaults from the OpenAPI schema (HealthRequest).
+          page_limit: 168,
+          page_offset: 0,
         },
       }),
       api.post(
@@ -149,11 +152,13 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "health",
-          createFeedback: createHealthProblem,
+          createFeedback: createHealthProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Health" },
@@ -178,9 +183,14 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          prompts: context.prompts?.prompts,
-          getGroupAction: getSystemGroup as PanelProps["getGroupAction"],
-          searchGenerationsAction: searchSystemGenerations as PanelProps["searchGenerationsAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getSystemGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
+          searchGenerationsAction:
+            searchSystemGenerations as unknown as NonNullable<
+              PanelProps["searchGenerationsAction"]
+            >,
         }}
       >
         <div className="space-y-6 px-4">

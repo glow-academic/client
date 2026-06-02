@@ -125,18 +125,12 @@ async function refreshProviders(): Promise<unknown> {
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/provider/csv", { formData });
-}
-
-
-async function getProviderGroupHistory(groupId: string): Promise<GroupProviderOut> {
-  "use server";
-  return api.post("/provider/group", { body: { group_id: groupId } } as GroupProviderIn);
-}
-
-async function searchProviderGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/provider/generations", { body: { search: query || null } } as GenerationsIn);
+  // Multipart body sent via request-core's `formData` escape hatch, which the
+  // typed `{ file: string }` input doesn't model — cast to satisfy it.
+  return api.post(
+    "/provider/csv",
+    { formData } as unknown as InputOf<"/provider/csv", "post">,
+  );
 }
 
 async function createProviderProblem(input: ProblemProviderIn): Promise<ProblemProviderOut> {
@@ -248,11 +242,13 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "provider",
-          createFeedback: createProviderProblem,
+          createFeedback: createProviderProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
@@ -278,12 +274,14 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getProviderGroupHistory,
-          searchGroups: searchProviderGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getProviderGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getProviderGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
           searchGenerationsAction:
-            searchProviderGenerations as PanelProps["searchGenerationsAction"],
+            searchProviderGenerations as unknown as NonNullable<
+              PanelProps["searchGenerationsAction"]
+            >,
         }}
       >
         <div className="space-y-6 px-4" data-page="providers-index">
@@ -294,7 +292,12 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
             updateProviderAction={updateProvider}
             createProviderAction={createProvider}
             parseCsvAction={parseCsv}
-            importFields={listData.import_fields ?? undefined}
+            {...(listData.import_fields
+              ? {
+                  importFields:
+                    listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[],
+                }
+              : {})}
             currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}

@@ -122,18 +122,12 @@ async function refreshModels(): Promise<unknown> {
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/model/csv", { formData });
-}
-
-
-async function getModelGroupHistory(groupId: string): Promise<GroupModelOut> {
-  "use server";
-  return api.post("/model/group", { body: { group_id: groupId } } as GroupModelIn);
-}
-
-async function searchModelGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/model/generations", { body: { search: query || null } } as GenerationsIn);
+  // Multipart body sent via request-core's `formData` escape hatch, which the
+  // typed `{ file: string }` input doesn't model — cast to satisfy it.
+  return api.post(
+    "/model/csv",
+    { formData } as unknown as InputOf<"/model/csv", "post">,
+  );
 }
 
 async function createModelProblem(input: ProblemModelIn): Promise<ProblemModelOut> {
@@ -246,11 +240,13 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "model",
-          createFeedback: createModelProblem,
+          createFeedback: createModelProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
@@ -276,12 +272,14 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getModelGroupHistory,
-          searchGroups: searchModelGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getModelGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getModelGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
           searchGenerationsAction:
-            searchModelGenerations as PanelProps["searchGenerationsAction"],
+            searchModelGenerations as unknown as NonNullable<
+              PanelProps["searchGenerationsAction"]
+            >,
         }}
       >
         <div className="space-y-6 px-4" data-page="models-index">
@@ -293,7 +291,12 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
             updateModelAction={updateModel}
             createModelAction={createModel}
             parseCsvAction={parseCsv}
-            importFields={listData.import_fields ?? undefined}
+            {...(listData.import_fields
+              ? {
+                  importFields:
+                    listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[],
+                }
+              : {})}
             currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}

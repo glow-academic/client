@@ -109,19 +109,12 @@ async function refreshEvals(): Promise<unknown> {
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/eval/csv", { formData });
+  return api.post(
+    "/eval/csv",
+    { formData } as unknown as InputOf<"/eval/csv", "post">,
+  );
 }
 
-
-async function getEvalGroupHistory(groupId: string): Promise<GroupEvalOut> {
-  "use server";
-  return api.post("/eval/group", { body: { group_id: groupId } } as GroupEvalIn);
-}
-
-async function searchEvalGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/eval/generations", { body: { search: query || null } } as GenerationsIn);
-}
 
 async function createEvalProblem(input: ProblemEvalIn): Promise<ProblemEvalOut> {
   "use server";
@@ -229,11 +222,13 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "eval",
-          createFeedback: createEvalProblem,
+          createFeedback: createEvalProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Platform", section: "platform", url: "/platform" },
@@ -259,12 +254,10 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getEvalGroupHistory,
-          searchGroups: searchEvalGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getEvalGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getEvalGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
           searchGenerationsAction:
-            searchEvalGenerations as PanelProps["searchGenerationsAction"],
+            searchEvalGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
         }}
       >
         <div className="space-y-6 px-4" data-page="evals-index">
@@ -275,7 +268,12 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
             updateEvalAction={updateEval}
             createEvalAction={createEval}
             parseCsvAction={parseCsv}
-            importFields={listData.import_fields ?? undefined}
+            {...(listData.import_fields
+              ? {
+                  importFields:
+                    listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[],
+                }
+              : {})}
             currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}

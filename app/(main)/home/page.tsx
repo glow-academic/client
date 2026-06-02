@@ -139,7 +139,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const historyPageSize = q.historyPageSize ?? 10;
   const historySearch = q.historySearch ?? undefined;
   void historySearch;
-  const _historySimulationIds = q.historySimulationIds ?? undefined;
   const historyScenarioIds = q.historyScenarioIds ?? undefined;
   const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
   const historySortBy = q.historySortBy ?? "date";
@@ -168,7 +167,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           infinite_mode: historyInfiniteMode,
         }),
       },
-    } as SearchIn) as SearchOut,
+    } as SearchIn) as Promise<SearchOut>,
     // Honor an explicit `?groupId=` from the URL — that's the panel's
     // user-picked chat. Empty/null URL means default time-windowed
     // group, which the server resolves itself from {body: {}}.
@@ -247,11 +246,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <FullPageLayout
       profileData={context.profile}
       sessionSnapshot={snapshot}
-      initialSidebarOpen={initialSidebarOpen}
+      {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
       initialPanelOpen={initialPanelOpen}
       sidebarProps={{
         activeSection: "home",
-        createFeedback: createHomeProblem,
+        createFeedback: createHomeProblem as unknown as (
+          input: Record<string, unknown>,
+        ) => Promise<Record<string, unknown>>,
       }}
       breadcrumbs={[
         { title: "Home", section: "home", url: "/home" },
@@ -271,10 +272,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         groupName:
           (groupResult as GroupOut & { name?: string | null })?.name ?? null,
         operations: ["draft", "get", "title"],
-        prompts: context.prompts?.prompts,
-        getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
+        ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+        getGroupAction: getAttemptGroup as unknown as NonNullable<
+          PanelProps["getGroupAction"]
+        >,
         searchGenerationsAction:
-          searchAttemptGenerations as PanelProps["searchGenerationsAction"],
+          searchAttemptGenerations as unknown as NonNullable<
+            PanelProps["searchGenerationsAction"]
+          >,
       }}
     >
       <div className="space-y-6 px-4">

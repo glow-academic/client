@@ -28,14 +28,12 @@ import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 type DashboardIn = InputOf<"/attempt/dashboard", "post">;
 type DashboardOut = OutputOf<"/attempt/dashboard", "post">;
 type DashboardHistoryOut = NonNullable<DashboardOut["history"]>;
-type BulkArchiveAttemptsIn = InputOf<
-  "/api/v5/attempts/simulation/archive",
-  "post"
->;
-type BulkArchiveAttemptsOut = OutputOf<
-  "/api/v5/attempts/simulation/archive",
-  "post"
->;
+// The action sends a filter-rich body (roles / simulation_filters / search /
+// page fields) that the generated `/attempt/archive` schema doesn't yet model;
+// keep the input loose so the SSR action and the SimulationHistory caller stay
+// in sync until the OpenAPI spec catches up. The output is the real schema.
+type BulkArchiveAttemptsIn = { body: Record<string, unknown> };
+type BulkArchiveAttemptsOut = OutputOf<"/attempt/archive", "post">;
 
 /** ---- Generation types ---- */
 type ContextIn = InputOf<"/attempt/context", "post">;
@@ -202,7 +200,7 @@ export default async function DashboardPage({
           ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
           ...(roleIds.length && { role_ids: roleIds }),
         },
-      } as SearchIn) as SearchOut,
+      } as SearchIn) as Promise<SearchOut>,
       readViewCookie("history"),
       api.post(
         "/attempt/group",
@@ -210,7 +208,7 @@ export default async function DashboardPage({
       ),
     ]);
     // Inject history into data so Dashboard component can read it
-    (data as Record<string, unknown>).history = historyResult;
+    (data as Record<string, unknown>)["history"] = historyResult;
 
     // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
     const facets = data.analytics;
@@ -244,11 +242,13 @@ export default async function DashboardPage({
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "dashboard",
-          createFeedback: createDashboardProblem,
+          createFeedback: createDashboardProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Analytics", section: "analytics", url: "/analytics" },
@@ -274,35 +274,39 @@ export default async function DashboardPage({
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          prompts: context.prompts?.prompts,
-          getGroupAction: getAttemptGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getAttemptGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
           searchGenerationsAction:
-            searchAttemptGenerations as PanelProps["searchGenerationsAction"],
+            searchAttemptGenerations as unknown as NonNullable<
+              PanelProps["searchGenerationsAction"]
+            >,
         }}
       >
         <div className="px-4">
           <Dashboard
             data={data}
-            initialColumnVisibility={initialHistoryVisibility}
-            rubricIds={rubricIds}
-            rubricSearch={rubricSearch}
+            {...(initialHistoryVisibility !== undefined && { initialColumnVisibility: initialHistoryVisibility })}
+            {...(rubricIds !== undefined && { rubricIds })}
+            {...(rubricSearch !== undefined && { rubricSearch })}
             rubricIndex={rubricIndex}
-            simulationPickerIds={simulationPickerIds}
-            simulationPickerSearch={simulationPickerSearch}
+            {...(simulationPickerIds !== undefined && { simulationPickerIds })}
+            {...(simulationPickerSearch !== undefined && { simulationPickerSearch })}
             simulationIndex={simulationIndex}
-            parameterIds={parameterIds}
-            parameterSearch={parameterSearch}
+            {...(parameterIds !== undefined && { parameterIds })}
+            {...(parameterSearch !== undefined && { parameterSearch })}
             parameterIndex={parameterIndex}
-            scenarioIds={scenarioIds}
-            scenarioSearch={scenarioSearch}
+            {...(scenarioIds !== undefined && { scenarioIds })}
+            {...(scenarioSearch !== undefined && { scenarioSearch })}
             scenarioIndex={scenarioIndex}
             historyPage={historyPage}
             historyPageSize={historyPageSize}
             defaultFilters={defaultFilters}
             bulkArchiveAttemptsAction={bulkArchiveAttempts}
-            historyProfileSearch={historyProfileSearch}
-            historySimulationSearch={historySimulationSearch}
-            historyScenarioSearch={historyScenarioSearch}
+            {...(historyProfileSearch !== undefined && { historyProfileSearch })}
+            {...(historySimulationSearch !== undefined && { historySimulationSearch })}
+            {...(historyScenarioSearch !== undefined && { historyScenarioSearch })}
           />
         </div>
       </FullPageLayout>
@@ -345,7 +349,12 @@ async function bulkArchiveAttempts(
   input: BulkArchiveAttemptsIn
 ): Promise<BulkArchiveAttemptsOut> {
   "use server";
-  return api.post("/attempts/simulation/archive", input);
+  // Body is intentionally loose (see BulkArchiveAttemptsIn) — the server
+  // accepts the extra filter fields the typed schema doesn't yet list.
+  return api.post(
+    "/attempt/archive",
+    input as unknown as InputOf<"/attempt/archive", "post">,
+  );
 }
 
 async function createDashboardProblem(input: ProblemDashboardIn): Promise<ProblemDashboardOut> {

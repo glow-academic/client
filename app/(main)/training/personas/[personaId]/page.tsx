@@ -232,21 +232,29 @@ export default async function PersonaEditPage({
     const entityName = context.page_metadata?.detail.title;
     const snapshot = buildSnapshot(session, context.profile);
 
+    // SSR draft entries use plain strings where DraftItem expects branded
+    // UUIDs; this cast matches the eager-drafts precedent documented in
+    // contexts/draft-context.tsx.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const initialDrafts = (draftsResult.entries ?? []) as any;
+
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={initialDrafts}>
         <FullPageLayout
           profileData={context.profile}
           sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
+          {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
           initialPanelOpen={initialPanelOpen}
           sidebarProps={{
             activeSection: "persona",
-            createFeedback: createPersonaProblem,
+            createFeedback: createPersonaProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
           }}
           breadcrumbs={[
             { title: "Training", section: "training", url: "/training" },
             { title: "Personas", section: "personas", url: "/training/personas" },
-            { title: entityName },
+            { title: entityName ?? "Persona" },
           ]}
           toolbar={
             <ArtifactToolbarActions
@@ -268,10 +276,10 @@ export default async function PersonaEditPage({
             // on first paint, eliminating the hydration flicker.
             initialGroupHistory: groupResult as Record<string, unknown>,
             operations: ["draft", "get", "title"],
-            prompts: context.prompts?.prompts,
-            getGroupAction: getPersonaGroup as PanelProps["getGroupAction"],
+            ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+            getGroupAction: getPersonaGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
             searchGenerationsAction:
-              searchPersonaGenerations as PanelProps["searchGenerationsAction"],
+              searchPersonaGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
           }}
         >
           <div

@@ -89,18 +89,8 @@ async function patchSimulationDraft(
 }
 
 
-async function getSimulationGroupHistory(groupId: string): Promise<GroupSimulationOut> {
-  "use server";
-  return api.post("/simulation/group", { body: { group_id: groupId } } as GroupSimulationIn);
-}
-
 type GenerationsIn = InputOf<"/simulation/generations", "post">;
 type GenerationsOut = OutputOf<"/simulation/generations", "post">;
-
-async function searchSimulationGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/simulation/generations", { body: { search: query || null } } as GenerationsIn);
-}
 
 /** ---- GenerationPanel server actions ---- */
 async function getSimulationGroup(input: GroupSimulationIn): Promise<GroupSimulationOut> {
@@ -254,7 +244,9 @@ export default async function EditSimulationPage({
           initialPanelOpen={initialPanelOpen}
           sidebarProps={{
             activeSection: "simulation",
-            createFeedback: createSimulationProblem,
+            createFeedback: createSimulationProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
           } as never}
           breadcrumbs={[
             { title: "Training", section: "training", url: "/training" },
@@ -281,12 +273,10 @@ export default async function EditSimulationPage({
             // on first paint, eliminating the hydration flicker.
             initialGroupHistory: groupResult as Record<string, unknown>,
             operations: ["draft", "get", "title"],
-            getGroupHistory: getSimulationGroupHistory,
-            searchGroups: searchSimulationGroups,
-            prompts: context.prompts?.prompts,
-            getGroupAction: getSimulationGroup as PanelProps["getGroupAction"],
+            ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+            getGroupAction: getSimulationGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
             searchGenerationsAction:
-              searchSimulationGenerations as PanelProps["searchGenerationsAction"],
+              searchSimulationGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
           } as never}
         >
           <div

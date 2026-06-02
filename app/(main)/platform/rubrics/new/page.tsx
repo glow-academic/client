@@ -142,7 +142,7 @@ async function searchRubricGenerations(input: GenerationsIn): Promise<Generation
  * cross-request cache. */
 const getRubricContext = cache(
   async (): Promise<ContextOut> =>
-    api.post("/rubric/context", { body: { page_limit: 50, page_offset: 0 } }) as Promise<ContextOut>,
+    api.post("/rubric/context", { body: {} } as ContextIn) as Promise<ContextOut>,
 );
 
 /** ---- Page metadata ---- */
@@ -264,9 +264,9 @@ export default async function NewRubricPage({
               ...(context.prompts?.prompts
                 ? { prompts: context.prompts.prompts }
                 : {}),
-              getGroupAction: getRubricGroup as PanelProps["getGroupAction"],
+              getGroupAction: getRubricGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
               searchGenerationsAction:
-                searchRubricGenerations as PanelProps["searchGenerationsAction"],
+                searchRubricGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
             },
           } as any)}
         >

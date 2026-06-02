@@ -258,9 +258,9 @@ export default async function NewEvalPage({
             ...(context.prompts?.prompts
               ? { prompts: context.prompts.prompts }
               : {}),
-            getGroupAction: getEvalGroup as PanelProps["getGroupAction"],
+            getGroupAction: getEvalGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
             searchGenerationsAction:
-              searchEvalGenerations as PanelProps["searchGenerationsAction"],
+              searchEvalGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
           } as never}
         >
           <div

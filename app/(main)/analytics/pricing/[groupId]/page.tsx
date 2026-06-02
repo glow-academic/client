@@ -169,17 +169,17 @@ export default async function PricingGroupPage({
       ),
     ]);
 
-    const _entityName = context.page_metadata?.detail.title;
-
     return (
       <FullPageLayout
         profileData={pageContext.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "pricing",
-          createFeedback: createGroupProblem,
+          createFeedback: createGroupProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Analytics", section: "analytics", url: "/analytics" },
@@ -205,9 +205,14 @@ export default async function PricingGroupPage({
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: genGroupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          prompts: context.prompts?.prompts,
-          getGroupAction: getSystemGroup as PanelProps["getGroupAction"],
-          searchGenerationsAction: searchSystemGenerations as PanelProps["searchGenerationsAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getSystemGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
+          searchGenerationsAction:
+            searchSystemGenerations as unknown as NonNullable<
+              PanelProps["searchGenerationsAction"]
+            >,
         }}
       >
         <div className="space-y-6 px-4 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">

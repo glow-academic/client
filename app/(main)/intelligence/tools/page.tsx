@@ -127,18 +127,12 @@ async function refreshTools(): Promise<unknown> {
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/tool/csv", { formData });
-}
-
-
-async function getToolGroupHistory(groupId: string): Promise<GroupToolOut> {
-  "use server";
-  return api.post("/tool/group", { body: { group_id: groupId } } as GroupToolIn);
-}
-
-async function searchToolGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/tool/generations", { body: { search: query || null } } as GenerationsIn);
+  // Multipart body sent via request-core's `formData` escape hatch, which the
+  // typed `{ file: string }` input doesn't model — cast to satisfy it.
+  return api.post(
+    "/tool/csv",
+    { formData } as unknown as InputOf<"/tool/csv", "post">,
+  );
 }
 
 async function createToolProblem(input: ProblemToolIn): Promise<ProblemToolOut> {
@@ -250,11 +244,13 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "tool",
-          createFeedback: createToolProblem,
+          createFeedback: createToolProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
@@ -280,12 +276,14 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getToolGroupHistory,
-          searchGroups: searchToolGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getToolGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getToolGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
           searchGenerationsAction:
-            searchToolGenerations as PanelProps["searchGenerationsAction"],
+            searchToolGenerations as unknown as NonNullable<
+              PanelProps["searchGenerationsAction"]
+            >,
         }}
       >
         <div className="space-y-6 px-4" data-page="tools-index">
@@ -297,7 +295,12 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
             updateToolAction={updateTool}
             createToolAction={createTool}
             parseCsvAction={parseCsv}
-            importFields={listData.import_fields ?? undefined}
+            {...(listData.import_fields
+              ? {
+                  importFields:
+                    listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[],
+                }
+              : {})}
             currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}

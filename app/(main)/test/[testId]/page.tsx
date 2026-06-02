@@ -189,11 +189,13 @@ export default async function TestPage({
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "benchmark",
-          createFeedback: createTestProblem,
+          createFeedback: createTestProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Benchmark", section: "benchmark", url: "/benchmark" },
@@ -226,10 +228,14 @@ export default async function TestPage({
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["invocation_get", "invocation_create", "draft", "title"],
-          prompts: context.prompts?.prompts,
-          getGroupAction: getTestGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getTestGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
           searchGenerationsAction:
-            searchTestGenerations as PanelProps["searchGenerationsAction"],
+            searchTestGenerations as unknown as NonNullable<
+              PanelProps["searchGenerationsAction"]
+            >,
         }}
       >
         <div className="px-4">

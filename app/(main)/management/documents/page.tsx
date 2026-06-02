@@ -118,19 +118,12 @@ async function refreshDocuments(): Promise<unknown> {
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/document/csv", { formData });
+  return api.post(
+    "/document/csv",
+    { formData } as unknown as InputOf<"/document/csv", "post">,
+  );
 }
 
-
-async function getDocumentGroupHistory(groupId: string): Promise<GroupDocumentOut> {
-  "use server";
-  return api.post("/document/group", { body: { group_id: groupId } } as GroupDocumentIn);
-}
-
-async function searchDocumentGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/document/generations", { body: { search: query || null } } as GenerationsIn);
-}
 
 async function createDocumentProblem(input: ProblemDocumentIn): Promise<ProblemDocumentOut> {
   "use server";
@@ -222,11 +215,13 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "document",
-          createFeedback: createDocumentProblem,
+          createFeedback: createDocumentProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Management", section: "management", url: "/management" },
@@ -252,12 +247,10 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getDocumentGroupHistory,
-          searchGroups: searchDocumentGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getDocumentGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getDocumentGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
           searchGenerationsAction:
-            searchDocumentGenerations as PanelProps["searchGenerationsAction"],
+            searchDocumentGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
         }}
       >
         <div className="space-y-6 px-4" data-page="documents-index">
@@ -268,7 +261,12 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
             updateDocumentAction={updateDocument}
             createDocumentAction={createDocument}
             parseCsvAction={parseCsv}
-            importFields={listData.import_fields ?? undefined}
+            {...(listData.import_fields
+              ? {
+                  importFields:
+                    listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[],
+                }
+              : {})}
             currentSearchBody={body}
           />
         </div>

@@ -250,9 +250,9 @@ export default async function DepartmentEditPage({
             ...(context.prompts?.prompts
               ? { prompts: context.prompts.prompts }
               : {}),
-            getGroupAction: getDepartmentGroup as PanelProps["getGroupAction"],
+            getGroupAction: getDepartmentGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
             searchGenerationsAction:
-              searchDepartmentGenerations as PanelProps["searchGenerationsAction"],
+              searchDepartmentGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
           } as any}
         >
           <div

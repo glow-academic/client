@@ -129,19 +129,12 @@ async function refreshSimulations(): Promise<unknown> {
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/simulation/csv", { formData });
+  return api.post(
+    "/simulation/csv",
+    { formData } as unknown as InputOf<"/simulation/csv", "post">,
+  );
 }
 
-
-async function getSimulationGroupHistory(groupId: string): Promise<GroupSimulationOut> {
-  "use server";
-  return api.post("/simulation/group", { body: { group_id: groupId } } as GroupSimulationIn);
-}
-
-async function searchSimulationGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/simulation/generations", { body: { search: query || null } } as GenerationsIn);
-}
 
 /** ---- GenerationPanel server actions ---- */
 async function getSimulationGroup(input: GroupSimulationIn): Promise<GroupSimulationOut> {
@@ -254,11 +247,13 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "simulation",
-          createFeedback: createSimulationProblem,
+          createFeedback: createSimulationProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Training", section: "training", url: "/training" },
@@ -284,12 +279,10 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getSimulationGroupHistory,
-          searchGroups: searchSimulationGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getSimulationGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getSimulationGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
           searchGenerationsAction:
-            searchSimulationGenerations as PanelProps["searchGenerationsAction"],
+            searchSimulationGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
         }}
       >
         <div className="space-y-6 px-4" data-page="simulations-index">
@@ -302,7 +295,12 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
             updateSimulationAction={updateSimulation}
             parseCsvAction={parseCsv}
             currentSearchBody={body}
-            importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
+            {...(listData.import_fields
+              ? {
+                  importFields:
+                    listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[],
+                }
+              : {})}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalCount={listData.total_count ?? 0}

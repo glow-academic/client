@@ -128,19 +128,12 @@ async function refreshDepartments(): Promise<unknown> {
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/department/csv", { formData });
+  return api.post(
+    "/department/csv",
+    { formData } as unknown as InputOf<"/department/csv", "post">,
+  );
 }
 
-
-async function getDepartmentGroupHistory(groupId: string): Promise<GroupDepartmentOut> {
-  "use server";
-  return api.post("/department/group", { body: { group_id: groupId } } as GroupDepartmentIn);
-}
-
-async function searchDepartmentGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/department/generations", { body: { search: query || null } } as GenerationsIn);
-}
 
 async function createDepartmentProblem(input: ProblemDepartmentIn): Promise<ProblemDepartmentOut> {
   "use server";
@@ -232,11 +225,13 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "department",
-          createFeedback: createDepartmentProblem,
+          createFeedback: createDepartmentProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Platform", section: "platform", url: "/platform" },
@@ -262,12 +257,10 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getDepartmentGroupHistory,
-          searchGroups: searchDepartmentGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getDepartmentGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getDepartmentGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
           searchGenerationsAction:
-            searchDepartmentGenerations as PanelProps["searchGenerationsAction"],
+            searchDepartmentGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
         }}
       >
         <div className="space-y-6 px-4" data-page="departments-index">
@@ -279,7 +272,12 @@ export default async function DepartmentsPage({ searchParams }: DepartmentsPageP
             updateDepartmentAction={updateDepartment}
             createDepartmentAction={createDepartment}
             parseCsvAction={parseCsv}
-            importFields={listData.import_fields ?? undefined}
+            {...(listData.import_fields
+              ? {
+                  importFields:
+                    listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[],
+                }
+              : {})}
             currentSearchBody={body}
           />
         </div>

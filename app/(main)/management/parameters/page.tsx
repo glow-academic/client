@@ -75,7 +75,9 @@ const getParametersList = async (
   const bypassCache = await isHardRefresh();
   return api.post(
     "/parameter/search",
-    { body },
+    // `ParametersListBody` marks page_size/page_offset optional while the wire
+    // type requires them (nullable); the server applies defaults, so cast.
+    { body } as InputOf<"/parameter/search", "post">,
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -140,19 +142,12 @@ async function refreshParameters(): Promise<unknown> {
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/parameter/csv", { formData });
+  return api.post(
+    "/parameter/csv",
+    { formData } as unknown as InputOf<"/parameter/csv", "post">,
+  );
 }
 
-
-async function getParameterGroupHistory(groupId: string): Promise<GroupParameterOut> {
-  "use server";
-  return api.post("/parameter/group", { body: { group_id: groupId } } as GroupParameterIn);
-}
-
-async function searchParameterGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/parameter/generations", { body: { search: query || null } } as GenerationsIn);
-}
 
 async function createParameterProblem(input: ProblemParameterIn): Promise<ProblemParameterOut> {
   "use server";
@@ -239,11 +234,13 @@ export default async function ContextPage({ searchParams }: ParametersPageProps)
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "parameter",
-          createFeedback: createParameterProblem,
+          createFeedback: createParameterProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Management", section: "management", url: "/management" },
@@ -269,12 +266,10 @@ export default async function ContextPage({ searchParams }: ParametersPageProps)
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getParameterGroupHistory,
-          searchGroups: searchParameterGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getParameterGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getParameterGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
           searchGenerationsAction:
-            searchParameterGenerations as PanelProps["searchGenerationsAction"],
+            searchParameterGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
         }}
       >
         <div className="space-y-6 px-4" data-page="parameters-index">
@@ -286,7 +281,12 @@ export default async function ContextPage({ searchParams }: ParametersPageProps)
             updateParameterAction={updateParameter}
             createParameterAction={createParameter}
             parseCsvAction={parseCsv}
-            importFields={listData.import_fields ?? undefined}
+            {...(listData.import_fields
+              ? {
+                  importFields:
+                    listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[],
+                }
+              : {})}
             currentSearchBody={body}
           />
         </div>

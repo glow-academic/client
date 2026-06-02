@@ -89,16 +89,6 @@ async function updateAuth(input: UpdateAuthIn): Promise<UpdateAuthOut> {
 }
 
 
-async function getAuthGroupHistory(groupId: string): Promise<GroupAuthOut> {
-  "use server";
-  return api.post("/auth/group", { body: { group_id: groupId } } as GroupAuthIn);
-}
-
-async function searchAuthGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/auth/generations", { body: { search: query || null } } as GenerationsIn);
-}
-
 async function createAuthProblem(input: ProblemAuthIn): Promise<ProblemAuthOut> {
   "use server";
   return api.post("/auth/problem", input);
@@ -186,11 +176,13 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "auth",
-          createFeedback: createAuthProblem,
+          createFeedback: createAuthProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Platform", section: "platform", url: "/platform" },
@@ -209,12 +201,10 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getAuthGroupHistory,
-          searchGroups: searchAuthGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getAuthGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getAuthGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
           searchGenerationsAction:
-            searchAuthGenerations as PanelProps["searchGenerationsAction"],
+            searchAuthGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
         }}
       >
         <div className="space-y-6 px-4" data-page="auth-index">

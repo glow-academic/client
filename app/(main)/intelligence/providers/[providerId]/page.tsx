@@ -304,9 +304,9 @@ export default async function EditProviderPage({
               getGroupHistory: getProviderGroupHistory,
               searchGroups: searchProviderGroups,
               prompts: context.prompts?.prompts,
-              getGroupAction: getProviderGroup as PanelProps["getGroupAction"],
+              getGroupAction: getProviderGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
               searchGenerationsAction:
-                searchProviderGenerations as PanelProps["searchGenerationsAction"],
+                searchProviderGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
             },
           } as any)}
         >

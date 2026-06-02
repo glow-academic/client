@@ -122,18 +122,12 @@ async function refreshAgents(): Promise<unknown> {
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/agent/csv", { formData });
-}
-
-
-async function getAgentGroupHistory(groupId: string): Promise<GroupAgentOut> {
-  "use server";
-  return api.post("/agent/group", { body: { group_id: groupId } } as GroupAgentIn);
-}
-
-async function searchAgentGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/agent/generations", { body: { search: query || null } } as GenerationsIn);
+  // Multipart body sent via request-core's `formData` escape hatch, which the
+  // typed `{ file: string }` input doesn't model — cast to satisfy it.
+  return api.post(
+    "/agent/csv",
+    { formData } as unknown as InputOf<"/agent/csv", "post">,
+  );
 }
 
 async function createAgentProblem(input: ProblemAgentIn): Promise<ProblemAgentOut> {
@@ -246,11 +240,13 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
       <FullPageLayout
         profileData={context.profile}
         sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
+        {...(initialSidebarOpen !== undefined && { initialSidebarOpen })}
         initialPanelOpen={initialPanelOpen}
         sidebarProps={{
           activeSection: "agent",
-          createFeedback: createAgentProblem,
+          createFeedback: createAgentProblem as unknown as (
+            input: Record<string, unknown>,
+          ) => Promise<Record<string, unknown>>,
         }}
         breadcrumbs={[
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
@@ -276,12 +272,14 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
           // on first paint, eliminating the hydration flicker.
           initialGroupHistory: groupResult as Record<string, unknown>,
           operations: ["draft", "get", "title"],
-          getGroupHistory: getAgentGroupHistory,
-          searchGroups: searchAgentGroups,
-          prompts: context.prompts?.prompts,
-          getGroupAction: getAgentGroup as PanelProps["getGroupAction"],
+          ...(context.prompts?.prompts && { prompts: context.prompts.prompts }),
+          getGroupAction: getAgentGroup as unknown as NonNullable<
+            PanelProps["getGroupAction"]
+          >,
           searchGenerationsAction:
-            searchAgentGenerations as PanelProps["searchGenerationsAction"],
+            searchAgentGenerations as unknown as NonNullable<
+              PanelProps["searchGenerationsAction"]
+            >,
         }}
       >
         <div className="space-y-6 px-4" data-page="agents-index">
@@ -293,7 +291,12 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
             updateAgentAction={updateAgent}
             createAgentAction={createAgent}
             parseCsvAction={parseCsv}
-            importFields={listData.import_fields ?? undefined}
+            {...(listData.import_fields
+              ? {
+                  importFields:
+                    listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[],
+                }
+              : {})}
             currentSearchBody={body}
             pageIndex={pageIndex}
             pageSize={pageSize}

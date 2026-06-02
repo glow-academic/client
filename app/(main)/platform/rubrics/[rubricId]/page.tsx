@@ -297,9 +297,9 @@ export default async function EditRubricPage({
               ...(context.prompts?.prompts
                 ? { prompts: context.prompts.prompts }
                 : {}),
-              getGroupAction: getRubricGroup as PanelProps["getGroupAction"],
+              getGroupAction: getRubricGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
               searchGenerationsAction:
-                searchRubricGenerations as PanelProps["searchGenerationsAction"],
+                searchRubricGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
             },
           } as any)}
         >

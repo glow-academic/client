@@ -301,9 +301,9 @@ export default async function ToolDetailPage({
         getGroupHistory: getToolGroupHistory,
         searchGroups: searchToolGroups,
         prompts: context.prompts?.prompts,
-        getGroupAction: getToolGroup as PanelProps["getGroupAction"],
+        getGroupAction: getToolGroup as unknown as NonNullable<PanelProps["getGroupAction"]>,
         searchGenerationsAction:
-          searchToolGenerations as PanelProps["searchGenerationsAction"],
+          searchToolGenerations as unknown as NonNullable<PanelProps["searchGenerationsAction"]>,
       },
     } as any;
 
