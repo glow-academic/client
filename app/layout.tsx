@@ -43,7 +43,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning={true}
       >
-        <Providers session={session} theme={themeCookie}>
+        <Providers session={session} {...(themeCookie !== undefined ? { theme: themeCookie } : {})}>
           {children}
         </Providers>
       </body>
