@@ -88,15 +88,15 @@ export function useGenerationDraft({
   useEffect(() => {
     const matchesGroup = (data: Record<string, unknown>): boolean => {
       if (!groupIdRef.current) return false;
-      return data.group_id === groupIdRef.current;
+      return data["group_id"] === groupIdRef.current;
     };
 
     // SSE delivers the operation result inside ``payload.output``;
     // socket.io spreads it at the top level. Read both so this hook
     // works regardless of which transport delivered the event.
     const readBody = <T,>(data: Record<string, unknown>): T => {
-      const payload = data.payload as Record<string, unknown> | undefined;
-      const output = payload?.output as Record<string, unknown> | undefined;
+      const payload = data["payload"] as Record<string, unknown> | undefined;
+      const output = payload?.["output"] as Record<string, unknown> | undefined;
       return (output ?? data) as T;
     };
 

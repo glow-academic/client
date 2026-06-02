@@ -184,35 +184,35 @@ function formatRelativeTime(dateStr: string | null | undefined): string {
  * nested run's timestamps fall BETWEEN the parent's tool-call dispatch
  * and that final text. A pure time sort restores chronological order.
  */
-function flattenMessages(res: GroupMessagesOut | Record<string, unknown>): HistoricalMessage[] {
+function flattenMessages(res: Record<string, unknown>): HistoricalMessage[] {
   const flat: Array<HistoricalMessage & { _ts: number }> = [];
-  for (const runWithMessages of (res as Record<string, unknown>).runs as Array<Record<string, unknown>> ?? []) {
-    const messages = runWithMessages.messages as Array<Record<string, unknown>> ?? [];
+  for (const runWithMessages of (res["runs"] as Array<Record<string, unknown>>) ?? []) {
+    const messages = (runWithMessages["messages"] as Array<Record<string, unknown>>) ?? [];
     for (const msg of messages) {
-      const tsRaw = msg.created_at as string | undefined;
+      const tsRaw = msg["created_at"] as string | undefined;
       const ts = tsRaw ? new Date(tsRaw).getTime() : 0;
       flat.push({
         _ts: ts,
         createdAt: ts,
-        id: msg.id ? String(msg.id) : crypto.randomUUID(),
-        role: (msg.role as string) ?? "assistant",
-        textIds: ((msg.text_ids as string[]) ?? []).map(String),
-        audioIds: ((msg.audio_ids as string[]) ?? []).map(String),
-        imageIds: ((msg.image_ids as string[]) ?? []).map(String),
-        videoIds: ((msg.video_ids as string[]) ?? []).map(String),
-        fileIds: ((msg.file_ids as string[]) ?? []).map(String),
-        callIds: ((msg.call_ids as string[]) ?? []).map(String),
-        calls: ((msg.calls as Array<Record<string, unknown>>) ?? []).map((c) => ({
-          id: String(c.id),
-          templateName: (c.template_name as string) ?? (c.tool_name as string) ?? null,
-          tool: (c.tool as Record<string, unknown> | null) ?? null,
-          ledgerStatus: (c.ledger_status as "pending" | "accepted" | "rejected" | null) ?? null,
-          ledgerOperation: (c.ledger_operation as string | null) ?? null,
-          ledgerArtifact: (c.ledger_artifact as string | null) ?? null,
-          ledgerArtifactId: (c.ledger_artifact_id as string | null) ?? null,
+        id: msg["id"] ? String(msg["id"]) : crypto.randomUUID(),
+        role: (msg["role"] as string) ?? "assistant",
+        textIds: ((msg["text_ids"] as string[]) ?? []).map(String),
+        audioIds: ((msg["audio_ids"] as string[]) ?? []).map(String),
+        imageIds: ((msg["image_ids"] as string[]) ?? []).map(String),
+        videoIds: ((msg["video_ids"] as string[]) ?? []).map(String),
+        fileIds: ((msg["file_ids"] as string[]) ?? []).map(String),
+        callIds: ((msg["call_ids"] as string[]) ?? []).map(String),
+        calls: ((msg["calls"] as Array<Record<string, unknown>>) ?? []).map((c) => ({
+          id: String(c["id"]),
+          templateName: (c["template_name"] as string) ?? (c["tool_name"] as string) ?? null,
+          tool: (c["tool"] as Record<string, unknown> | null) ?? null,
+          ledgerStatus: (c["ledger_status"] as "pending" | "accepted" | "rejected" | null) ?? null,
+          ledgerOperation: (c["ledger_operation"] as string | null) ?? null,
+          ledgerArtifact: (c["ledger_artifact"] as string | null) ?? null,
+          ledgerArtifactId: (c["ledger_artifact_id"] as string | null) ?? null,
         })),
-        inContext: msg.in_context !== false,
-        inContextReason: (msg.in_context_reason as string) ?? "kept",
+        inContext: msg["in_context"] !== false,
+        inContextReason: (msg["in_context_reason"] as string) ?? "kept",
         reasoning: msg["reasoning"] === true,
       });
     }
@@ -997,7 +997,8 @@ export function GenerationPanel({
     if (allPrompts.length <= 3) return allPrompts;
     const result: typeof allPrompts = [];
     for (let i = 0; i < 3; i++) {
-      result.push(allPrompts[(promptOffset + i) % allPrompts.length]);
+      const prompt = allPrompts[(promptOffset + i) % allPrompts.length];
+      if (prompt) result.push(prompt);
     }
     return result;
   }, [allPrompts, promptOffset]);
@@ -1028,7 +1029,7 @@ export function GenerationPanel({
   // ``title``.
   useEffect(() => {
     return transport.on(`${artifactType}.title.completed`, (data) => {
-      const title = data.title as string;
+      const title = data["title"] as string;
       if (title) setSelectedGroupName(title);
     });
   }, [transport, artifactType]);
@@ -1188,12 +1189,13 @@ export function GenerationPanel({
         const res = searchGenerationsAction
           ? await searchGenerationsAction({ body: { search: query.trim() || null } })
           : await transport.send(`/${artifactType}/generations`, { search: query.trim() || null });
-        const mapped = (res.items ?? []).map((item: Record<string, unknown>) => ({
-          id: String(item.group_id),
-          name: (item.group_name as string) || "Untitled",
-          updatedAt: formatRelativeTime((item.last_run_at ?? item.created_at) as unknown as string),
+        const items = (res["items"] as Array<Record<string, unknown>>) ?? [];
+        const mapped = items.map((item: Record<string, unknown>) => ({
+          id: String(item["group_id"]),
+          name: (item["group_name"] as string) || "Untitled",
+          updatedAt: formatRelativeTime((item["last_run_at"] ?? item["created_at"]) as unknown as string),
         }));
-        mapped.sort((a, b) => {
+        mapped.sort((a: GroupSearchItem, b: GroupSearchItem) => {
           const aUntitled = a.name === "Untitled" ? 1 : 0;
           const bUntitled = b.name === "Untitled" ? 1 : 0;
           return aUntitled - bUntitled;

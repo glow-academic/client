@@ -221,7 +221,8 @@ export function useAudioWorklet(
         const pcm16 = new Int16Array(audioBuffer);
         const float32 = new Float32Array(pcm16.length);
         for (let i = 0; i < pcm16.length; i++) {
-          float32[i] = pcm16[i] / (pcm16[i] < 0 ? 0x8000 : 0x7fff);
+          const sample = pcm16[i] ?? 0;
+          float32[i] = sample / (sample < 0 ? 0x8000 : 0x7fff);
         }
 
         audioBufferQueueRef.current.push(float32);

@@ -319,7 +319,7 @@ export function useArtifactGeneration(
       clearTimer();
       setIsGeneratingState(false);
       closeActiveReasoning();
-      const message = (data.message as string) || "Generation failed";
+      const message = (data["message"] as string) || "Generation failed";
       setStage("error");
       setErrorState(message);
       setMessages((prev) => [
@@ -361,7 +361,7 @@ export function useArtifactGeneration(
     const parseEventType = (
       data: Record<string, unknown>,
     ): { artifact: string; operation: string; phase: string } | null => {
-      const eventType = data.event_type;
+      const eventType = data["event_type"];
       if (typeof eventType !== "string") return null;
       const parts = eventType.split(".");
       // started/completed/failed live at depth 3; deeper events
@@ -395,13 +395,13 @@ export function useArtifactGeneration(
         // create/update the bubble keyed by ``call_id``.
       }
 
-      const callId = (data.call_id as string) || "";
+      const callId = (data["call_id"] as string) || "";
       if (!callId) return;
       // SSE delivers role inside `payload`; WS delivers it at the
       // top level. Read both — consumers don't need to care which
       // transport delivered the event.
-      const payload = (data.payload as Record<string, unknown> | undefined) ?? {};
-      const rawRole = data.role ?? payload.role;
+      const payload = (data["payload"] as Record<string, unknown> | undefined) ?? {};
+      const rawRole = data["role"] ?? payload["role"];
       const role = rawRole === "user" ? "user" : "assistant";
       const toolName = titleCase(`${parsed.artifact} ${operation}`);
       // ``tool`` is the canonical wire envelope from the audit framework
@@ -411,8 +411,8 @@ export function useArtifactGeneration(
       // Explicit ``| null`` typing avoids ``exactOptionalPropertyTypes``
       // friction at the setMessages site below.
       const tool: Record<string, unknown> | null =
-        ((data.tool as Record<string, unknown> | null | undefined) ??
-          (payload.tool as Record<string, unknown> | null | undefined) ??
+        ((data["tool"] as Record<string, unknown> | null | undefined) ??
+          (payload["tool"] as Record<string, unknown> | null | undefined) ??
           null);
 
       if (phase === "started") {
@@ -442,20 +442,20 @@ export function useArtifactGeneration(
       // by the audit emit — pick it up so live bubbles render the
       // inline Accept/Reject without waiting for a group refetch.
       const ledgerStatus =
-        (data.ledger_status as "pending" | "accepted" | "rejected" | null | undefined) ??
-        (payload.ledger_status as "pending" | "accepted" | "rejected" | null | undefined) ??
+        (data["ledger_status"] as "pending" | "accepted" | "rejected" | null | undefined) ??
+        (payload["ledger_status"] as "pending" | "accepted" | "rejected" | null | undefined) ??
         null;
       const ledgerOperation =
-        (data.ledger_operation as string | null | undefined) ??
-        (payload.ledger_operation as string | null | undefined) ??
+        (data["ledger_operation"] as string | null | undefined) ??
+        (payload["ledger_operation"] as string | null | undefined) ??
         null;
       const ledgerArtifact =
-        (data.ledger_artifact as string | null | undefined) ??
-        (payload.ledger_artifact as string | null | undefined) ??
+        (data["ledger_artifact"] as string | null | undefined) ??
+        (payload["ledger_artifact"] as string | null | undefined) ??
         null;
       const ledgerArtifactId =
-        (data.ledger_artifact_id as string | null | undefined) ??
-        (payload.ledger_artifact_id as string | null | undefined) ??
+        (data["ledger_artifact_id"] as string | null | undefined) ??
+        (payload["ledger_artifact_id"] as string | null | undefined) ??
         null;
       setMessages((prev) =>
         prev.map((m) =>
@@ -480,7 +480,7 @@ export function useArtifactGeneration(
       // Optional — text-only progress events carry only ``delta``.
       const pct = data["percentage"];
       if (typeof pct === "number") setGenerationProgress(pct);
-      const delta = data.delta as string;
+      const delta = data["delta"] as string;
       if (!delta) return;
       // Reasoning channel often doesn't emit its own ``.complete`` on
       // models that interleave reasoning + text within one iteration
@@ -504,8 +504,8 @@ export function useArtifactGeneration(
     };
 
     const handleTextComplete = (data: Record<string, unknown>) => {
-      const role = (data.role as string) || "assistant";
-      const text = data.text as string;
+      const role = (data["role"] as string) || "assistant";
+      const text = data["text"] as string;
       if (!text) return;
       if (role === "system" || role === "developer") return;
       if (role === "user") {
@@ -587,10 +587,10 @@ export function useArtifactGeneration(
     // bubble; the other arrives, finds the id, and is a no-op for
     // creation but still drives status updates.
     const handleCallStart = (data: Record<string, unknown>) => {
-      const callId = data.call_id as string;
-      const toolName = data.tool_name as string;
+      const callId = data["call_id"] as string;
+      const toolName = data["tool_name"] as string;
       if (!callId) return;
-      const role = data.role === "user" ? "user" : "assistant";
+      const role = data["role"] === "user" ? "user" : "assistant";
       setMessages((prev) => {
         if (prev.some((m) => m.id === callId)) return prev;
         return [
@@ -612,8 +612,8 @@ export function useArtifactGeneration(
     };
 
     const handleCallComplete = (data: Record<string, unknown>) => {
-      const callId = data.call_id as string;
-      const success = data.success as boolean;
+      const callId = data["call_id"] as string;
+      const success = data["success"] as boolean;
       if (!callId) return;
       setMessages((prev) =>
         prev.map((msg) =>
@@ -635,7 +635,7 @@ export function useArtifactGeneration(
     const handleMediaStart =
       (modality: "image" | "video" | "audio") =>
       (data: Record<string, unknown>) => {
-        const messageId = data.message_id as string | undefined;
+        const messageId = data["message_id"] as string | undefined;
         if (!messageId) return;
         setMessages((prev) => {
           if (prev.some((m) => m.id === messageId)) return prev;
@@ -657,7 +657,7 @@ export function useArtifactGeneration(
     const handleMediaComplete =
       (modality: "image" | "video" | "audio") =>
       (data: Record<string, unknown>) => {
-        const messageId = data.message_id as string | undefined;
+        const messageId = data["message_id"] as string | undefined;
         if (!messageId) return;
         // Resource id keys differ by modality on the wire — pick the
         // one this complete event carries.
@@ -676,7 +676,7 @@ export function useArtifactGeneration(
             text: "",
             type: "media",
             modality,
-            resourceId,
+            ...(resourceId !== undefined && { resourceId }),
             pending: false,
             tool: null,
           };
@@ -693,7 +693,7 @@ export function useArtifactGeneration(
     const handleMediaError =
       (modality: "image" | "video" | "audio") =>
       (data: Record<string, unknown>) => {
-        const messageId = data.message_id as string | undefined;
+        const messageId = data["message_id"] as string | undefined;
         if (!messageId) return;
         setMessages((prev) =>
           prev.map((m) =>

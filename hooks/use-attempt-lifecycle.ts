@@ -2,11 +2,19 @@ import { useCallback, useEffect, useRef } from "react";
 import type { Transport } from "@/lib/transport/types";
 import { useGroupIdOptional } from "@/contexts/group-context";
 
-// Event payload types — loosely typed to match Transport's Record<string, unknown>
+// Event payload types — loosely typed to match Transport's Record<string, unknown>.
+// Known fields are declared as optional alongside the index signature so they can
+// be accessed via dot notation while staying assignable to/from Record<string, unknown>.
 export type AttemptStartedEvent = Record<string, unknown>;
-export type AttemptChatStartedEvent = Record<string, unknown>;
-export type AttemptChatEndedEvent = Record<string, unknown>;
-export type AttemptEndedEvent = Record<string, unknown>;
+export type AttemptChatStartedEvent = {
+  attempt_id?: string;
+} & Record<string, unknown>;
+export type AttemptChatEndedEvent = {
+  chat_id?: string;
+} & Record<string, unknown>;
+export type AttemptEndedEvent = {
+  attempt_id?: string;
+} & Record<string, unknown>;
 export type AttemptGradedEvent = Record<string, unknown>;
 export type AttemptErrorEvent = Record<string, unknown>;
 export type AttemptResponseResultEvent = Record<string, unknown>;
