@@ -26,24 +26,14 @@ import { readGenerationPanelPrefs } from "@/lib/generation/panel-prefs";
 /** ---- Strong types from OpenAPI ---- */
 type BenchmarkOverviewIn = InputOf<"/test/benchmark", "post">;
 type BenchmarkOverviewOut = OutputOf<"/test/benchmark", "post">;
-// For backward compatibility, extract evals list structure from overview
+// For backward compatibility, extract evals list structure from overview.
+// NOTE: rubric/agent/standard breakdown fields were removed from
+// BenchmarkResponse server-side, so only the fields the API still returns
+// are surfaced here.
 type EvalsListOut = {
   evals: BenchmarkOverviewOut["evals"];
-  rubric_mapping: Record<string, Record<string, unknown>>;
   department_mapping: Record<string, { name: string; description: string }>;
-  agent_mapping: Record<string, Record<string, unknown>>;
-  standard_groups_mapping: Record<
-    string,
-    { name: string; description: string; points: number; passPoints: number }
-  >;
-  standards_mapping: Record<
-    string,
-    { name: string; description: string; points: number }
-  >;
-  rubric_standard_groups_mapping: Record<string, Record<string, string[]>>;
-  rubric_options: BenchmarkOverviewOut["rubric_options"];
   department_options: BenchmarkOverviewOut["department_options"];
-  agent_options: BenchmarkOverviewOut["agent_options"];
   date_range_earliest: string | null;
   date_range_latest: string | null;
 };
@@ -232,19 +222,7 @@ export default async function BenchmarkPage({
     // Extract inline analytics facets
     const facets = overviewData.analytics;
 
-    // Convert arrays to dicts for backward compatibility with Benchmark component
-    const rubricMapping: Record<string, Record<string, unknown>> = {};
-    for (const rubric of overviewData.rubrics || []) {
-      if (rubric.rubric_id) {
-        rubricMapping[rubric.rubric_id] = {
-          name: rubric.name || "",
-          description: rubric.description || "",
-          points: rubric.points || 0,
-          pass_points: rubric.pass_points || 0,
-        };
-      }
-    }
-
+    // Convert department array to a dict for the Benchmark component.
     const departmentMapping: Record<
       string,
       { name: string; description: string }
@@ -258,152 +236,16 @@ export default async function BenchmarkPage({
       }
     }
 
-    const agentMapping: Record<string, Record<string, unknown>> = {};
-    for (const agent of overviewData.agents || []) {
-      if (agent.agent_id) {
-        agentMapping[agent.agent_id] = {
-          name: agent.name || "",
-          description: agent.description || "",
-        };
-      }
-    }
-
-    const standardGroupsMapping: Record<
-      string,
-      { name: string; description: string; points: number; passPoints: number }
-    > = {};
-    for (const sg of overviewData.standard_groups || []) {
-      if (sg.standard_group_id) {
-        standardGroupsMapping[sg.standard_group_id] = {
-          name: sg.name || "",
-          description: sg.description || "",
-          points: sg.points || 0,
-          passPoints: sg.pass_points || 0,
-        };
-      }
-    }
-
-    const standardsMapping: Record<
-      string,
-      { name: string; description: string; points: number }
-    > = {};
-    for (const std of overviewData.standards || []) {
-      if (std.standard_id) {
-        standardsMapping[std.standard_id] = {
-          name: std.name || "",
-          description: std.description || "",
-          points: std.points || 0,
-        };
-      }
-    }
-
-    // Build rubric_standard_groups_mapping from array
-    const rubricStandardGroupsMapping: Record<
-      string,
-      Record<string, string[]>
-    > = {};
-    for (const rsg of overviewData.rubric_standard_groups || []) {
-      if (rsg.rubric_id && rsg.standard_group_id) {
-        if (!rubricStandardGroupsMapping[rsg.rubric_id]) {
-          rubricStandardGroupsMapping[rsg.rubric_id] = {};
-        }
-        const standardIds = rsg.standard_ids || [];
-        const rubricMap = rubricStandardGroupsMapping[rsg.rubric_id];
-        if (rubricMap) {
-          rubricMap[rsg.standard_group_id] = standardIds.map((id) =>
-            id.toString()
-          );
-        }
-      }
-    }
-
-    // Extract evals list structure from overview for Benchmark component
+    // Extract evals list structure from overview for Benchmark component.
+    // Rubric/agent/standard breakdown fields no longer exist on
+    // BenchmarkResponse, so they are not assembled here.
     const evalsData: EvalsListOut = {
       evals: overviewData.evals,
-      rubric_mapping: rubricMapping,
       department_mapping: departmentMapping,
-      agent_mapping: agentMapping,
-      standard_groups_mapping: standardGroupsMapping,
-      standards_mapping: standardsMapping,
-      rubric_standard_groups_mapping: rubricStandardGroupsMapping,
-      rubric_options: overviewData.rubric_options || [],
       department_options: overviewData.department_options || [],
-      agent_options: overviewData.agent_options || [],
       date_range_earliest: overviewData.date_range_earliest ?? null,
       date_range_latest: overviewData.date_range_latest ?? null,
     };
-
-    // Build rubric mappings from evals list response
-    const rubricMappings: Record<
-      string,
-      {
-        standard_groups: Record<string, string[]>;
-        standardGroupsMapping: Record<
-          string,
-          {
-            name: string;
-            description: string;
-            points: number;
-            passPoints: number;
-          }
-        >;
-        standardsMapping: Record<
-          string,
-          { name: string; description: string; points: number }
-        >;
-      }
-    > = {};
-
-    const uniqueRubricIds = Array.from(
-      new Set(
-        (evalsData.evals || [])
-          .map((evalItem) => evalItem.rubric_id)
-          .filter((id): id is string => id !== null)
-      )
-    );
-
-    for (const rubricId of uniqueRubricIds) {
-      const rubricStandardGroupsMap =
-        evalsData.rubric_standard_groups_mapping?.[rubricId] || {};
-
-      const standard_groups: Record<string, string[]> = {};
-      for (const [groupId, standardIds] of Object.entries(
-        rubricStandardGroupsMap
-      )) {
-        if (Array.isArray(standardIds)) {
-          standard_groups[groupId] = standardIds;
-        }
-      }
-
-      const sgMapping: Record<
-        string,
-        {
-          name: string;
-          description: string;
-          points: number;
-          passPoints: number;
-        }
-      > = {};
-      for (const groupId of Object.keys(standard_groups)) {
-        const groupData = evalsData.standard_groups_mapping?.[groupId];
-        if (groupData) {
-          sgMapping[groupId] = {
-            name: groupData.name || "",
-            description: groupData.description || "",
-            points: groupData.points || 0,
-            passPoints: groupData.passPoints || 0,
-          };
-        }
-      }
-
-      if (rubricId) {
-        rubricMappings[rubricId] = {
-          standard_groups,
-          standardGroupsMapping: sgMapping,
-          standardsMapping: evalsData.standards_mapping || {},
-        };
-      }
-    }
 
     // Extract history from embedded response
     const historyData = overviewData.history;
@@ -463,10 +305,7 @@ export default async function BenchmarkPage({
         }}
       >
         <div className="space-y-6 px-4">
-          <Benchmark
-            evalsData={evalsData}
-            rubricMappings={rubricMappings}
-          />
+          <Benchmark evalsData={evalsData} />
 
           {/* History section — data embedded in benchmark/get response */}
           <div className="mt-12">

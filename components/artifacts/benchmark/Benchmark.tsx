@@ -13,27 +13,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useTestStart } from "@/hooks/use-test-start";
 import BenchmarkZone, { BenchmarkZoneSkeleton } from "./BenchmarkZone";
-// Rubric mapping types
-type RubricMapping = {
-  standard_groups: Record<string, string[]>;
-  standardGroupsMapping: Record<
-    string,
-    { name: string; description: string; points: number; passPoints: number }
-  >;
-  standardsMapping: Record<
-    string,
-    { name: string; description: string; points: number }
-  >;
-};
 
 export interface BenchmarkProps {
   evalsData: EvalsListOut;
-  rubricMappings?: Record<string, RubricMapping>; // keyed by rubric_id
 }
 
 export default function Benchmark({
   evalsData,
-  rubricMappings,
 }: BenchmarkProps) {
   const { profile } = useProfile();
   const { start, stage, error } = useTestStart();
@@ -126,7 +112,6 @@ export default function Benchmark({
           onStartEval={handleStartEval}
           onStartInfiniteMode={handleStartInfiniteMode}
           loadingEval={loadingEval}
-          rubricMappings={rubricMappings}
         />
       </div>
     </TooltipProvider>
