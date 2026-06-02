@@ -155,17 +155,18 @@ export function colorWithAlpha(color: string, alpha: number): string {
 
   // Handle hex format
   if (color.startsWith("#")) {
-    const hex = color.slice(1);
-    let r: number, g: number, b: number;
+    // Expand shorthand (#abc → #aabbcc) so the slice logic is uniform and
+    // never indexes a possibly-undefined character.
+    let hex = color.slice(1);
     if (hex.length === 3) {
-      r = parseInt(hex[0] + hex[0], 16);
-      g = parseInt(hex[1] + hex[1], 16);
-      b = parseInt(hex[2] + hex[2], 16);
-    } else {
-      r = parseInt(hex.slice(0, 2), 16);
-      g = parseInt(hex.slice(2, 4), 16);
-      b = parseInt(hex.slice(4, 6), 16);
+      hex = hex
+        .split("")
+        .map((c) => c + c)
+        .join("");
     }
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 

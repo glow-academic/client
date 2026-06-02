@@ -186,7 +186,7 @@ class PerArtifactSseMultiplexer {
       } catch {
         return;
       }
-      const eventType = envelope.event_type;
+      const eventType = envelope["event_type"];
       if (typeof eventType !== "string") return;
 
       // Unwrap to match the WS handler shape: handlers expect the
@@ -195,7 +195,7 @@ class PerArtifactSseMultiplexer {
       // wraps everything in ``EventEnvelope`` with ``payload`` nested,
       // so a handler reading ``data.message_id`` / ``data.text`` /
       // ``data.delta`` would silently miss every field. Flatten here.
-      const rawPayload = envelope.payload;
+      const rawPayload = envelope["payload"];
       const payload: Record<string, unknown> =
         rawPayload && typeof rawPayload === "object"
           ? (rawPayload as Record<string, unknown>)

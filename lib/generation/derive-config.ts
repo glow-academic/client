@@ -50,6 +50,7 @@ export function deriveGenerationConfig(
   if (!segment) return null;
 
   const artifactType = ARTIFACT_ROUTES[segment];
+  if (!artifactType) return null;
 
   // Determine mode from URL tail
   const match = pathname.match(/\/(\w+)\/(new|[\w-]+)$/);
@@ -67,13 +68,13 @@ export function deriveGenerationConfig(
   // Operations based on mode. ``title`` (write) lets the LLM rename the
   // conversation group at end of turn — the read-side ``group`` resolve
   // is auto-fired by the audit framework, not exposed as a tool.
-  const operations = [...MODE_OPERATIONS[mode], "title"];
+  const operations = [...(MODE_OPERATIONS[mode] ?? []), "title"];
 
   // Params from URL
   const params: Record<string, string> = {};
   const draftId = searchParams.get("draftId");
-  if (draftId) params.draft_id = draftId;
-  if (mode === "edit" && tail) params.artifact_id = tail;
+  if (draftId) params["draft_id"] = draftId;
+  if (mode === "edit" && tail) params["artifact_id"] = tail;
 
   return { artifactType, mode, operations, params };
 }
