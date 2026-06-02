@@ -52,7 +52,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { useSettingAi } from "@/hooks/use-setting-ai";
-import { useProfile } from "@/contexts/profile-context";
 
 export interface SettingsProps {
   // Server-provided data (for server-side rendering)
@@ -98,7 +97,6 @@ export default function Settings({
   currentSearchBody,
   totalCount,
 }: SettingsProps) {
-  const { departmentIds } = useProfile();
   const router = useRouter();
 
   useSettingAi({

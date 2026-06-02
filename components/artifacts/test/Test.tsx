@@ -17,7 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useProfile } from "@/contexts/profile-context";
 import { useTransport } from "@/lib/transport/context";
 import { useTestLifecycle } from "@/hooks/use-test-lifecycle";
 import type { OutputOf } from "@/lib/api/types";
@@ -39,7 +38,6 @@ export default function Test({
   attemptId,
   attemptData,
 }: TestProps) {
-  const { _profile } = useProfile();
   const transport = useTransport();
   const [runs, setRuns] = useState<RunItem[]>(attemptData.runs || []);
   const [startingRunIds, setStartingRunIds] = useState<Set<string>>(new Set());

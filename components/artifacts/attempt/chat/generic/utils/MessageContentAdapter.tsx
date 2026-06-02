@@ -10,9 +10,9 @@ import Markdown from "@/components/common/markdown/Markdown";
 // Feedback entry type (matches API schema)
 export interface FeedbackEntryForAdapter {
   id: string;
-  type: string | null; // "strength" | "improvement"
-  highlights?: Array<{ section: string | null }> | null;
-  replaces?: Array<{ section: string | null; replace: string | null }> | null;
+  type?: string | null; // "strength" | "improvement"
+  highlights?: Array<{ section?: string | null }> | null;
+  replaces?: Array<{ section?: string | null; replace?: string | null }> | null;
 }
 
 export interface MessageContentAdapterProps {

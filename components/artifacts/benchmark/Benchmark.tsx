@@ -44,7 +44,10 @@ export default function Benchmark({
   );
 
   const loadingEval =
-    stage === "starting" || stage === "loading" || stage === "running"
+    stage === "starting" ||
+    stage === "loading" ||
+    stage === "drafting" ||
+    stage === "generating"
       ? startingEvalId
       : null;
 

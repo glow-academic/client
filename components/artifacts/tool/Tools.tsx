@@ -697,12 +697,12 @@ export default function Tools({
       const result = await duplicateToolAction({
         body: { tool_id: toolId, accept: true },
       });
-      if (result.id) {
+      if (result.success && result.tool_id) {
         const tool = toolsArray.find((t) => t.id === toolId);
         toast.success(
           result.message || `Tool '${tool?.name || "Unknown"}' duplicated successfully`
         );
-        router.push(`/intelligence/tools/${result.id}`);
+        router.push(`/intelligence/tools/${result.tool_id}`);
       }
     } catch (error) {
       toast.error(
