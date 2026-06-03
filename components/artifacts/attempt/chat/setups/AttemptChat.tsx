@@ -561,7 +561,6 @@ export function AttemptChat({
     }, 500);
 
     return () => clearTimeout(gracePeriodTimeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attemptData, currentChatIndex, setStreamingContent, setOptimisticMessages, currentChat?.id, messagesByChat]);
 
   // Auto-show grades/rubric or responses when all chats are completed

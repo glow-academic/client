@@ -759,7 +759,6 @@ export default function Profiles({
       (c) => c.id !== "select" && c.id !== "actions"
     );
     return [checkboxColumn, ...filtered, actionsColumn];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     // ``isSelected`` / ``toggleSelection`` are declared further down
     // but stable per render via useCallback; included so the columns
     // re-build when selection state changes.
@@ -799,7 +798,6 @@ export default function Profiles({
   const columnFiltersKey = JSON.stringify(columnFilters);
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     // ``profiles`` (the full merged reference) — not ``profiles.length``
     // — keeps tableRows in sync when an update mutates row content
     // (length unchanged). ``mergedProfiles`` is stable upstream via its

@@ -1195,7 +1195,6 @@ function PersonaComponent({
         throw error;
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       isEditMode,
       personaId,
