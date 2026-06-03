@@ -170,8 +170,9 @@ export function Questions({
         return newQuestions;
       });
       ids.forEach((id, idx) => {
-        if (newQuestions[idx]?.question_text) {
-          questionIdMapRef.current.set(newQuestions[idx].question_text, id);
+        const questionText = newQuestions[idx]?.question_text;
+        if (questionText) {
+          questionIdMapRef.current.set(questionText, id);
         }
       });
     }

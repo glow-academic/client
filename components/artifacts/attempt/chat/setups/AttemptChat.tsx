@@ -138,8 +138,8 @@ export function AttemptChat({
       messages.forEach((message) => {
         const chatId = message.chat_id ? String(message.chat_id) : null;
         if (!chatId) return;
-        if (!grouped[chatId]) grouped[chatId] = [];
-        grouped[chatId].push(message);
+        const bucket = grouped[chatId] ?? (grouped[chatId] = []);
+        bucket.push(message);
       });
       return grouped;
     },
