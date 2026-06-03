@@ -94,8 +94,9 @@ export function RangeSlider({
 
   const getLabelPosition = (val: number): number => {
     // Use measured handle position if available, otherwise fallback to calculation
-    if (handlePositions[val] !== undefined) {
-      return handlePositions[val];
+    const measured = handlePositions[val];
+    if (measured !== undefined) {
+      return measured;
     }
     // Fallback to percentage calculation
     return ((val - min) / (max - min)) * 100;
