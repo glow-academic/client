@@ -425,7 +425,6 @@ function ScenarioComponent({
       if (t && row.value != null) map[t] = row.value;
     }
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formState.flag_ids, scenarioData?.flags]);
 
   const searchParams = useSearchParams();
@@ -457,7 +456,6 @@ function ScenarioComponent({
       map.set(t, list);
     }
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenarioData?.flags]);
 
   const handleFlagToggle = useCallback(

@@ -530,7 +530,6 @@ export default function Agent({
       instructions_id: data.instructions?.resource?.id ?? null,
       pending_ids: (data.pending_ids ?? []) as string[],
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     sectionData,
     defaultDepartmentIds,
@@ -1130,7 +1129,6 @@ export default function Agent({
 
         toast.success(
           `Agent ${isEditMode ? "updated" : "created"} successfully!`,
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         );
         resetFormAndState();
         router.push("/intelligence/agents");
@@ -1142,7 +1140,6 @@ export default function Agent({
         throw error;
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       draftState,
       isEditMode,
@@ -1243,7 +1240,6 @@ export default function Agent({
           return departmentsSection?.current?.some((d: any) => d.generated) ?? false;
         case "reasoning_levels":
           return reasoningLevelsSection?.resource?.generated ?? false;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         case "temperature_levels":
           return temperatureLevelsSection?.resource?.generated ?? false;
         case "voices":

@@ -973,7 +973,6 @@ export default function TestChat({
     <GenericChatInterface
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       chat_header={TestChatHeader as any}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       chat_area={
         viewMode === "rubric"
           ? (ModelRubricView as any)
@@ -988,7 +987,6 @@ export default function TestChat({
       on_send_message={() => {}}
       on_stop_message={() => {}}
       chat_header_props={chatHeaderProps as ChatHeaderProps}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       chat_area_props={
         viewMode === "rubric"
           ? (rubricAreaProps as any)

@@ -915,7 +915,6 @@ function CohortComponent({
     } else {
       patchActionRef.current = undefined;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patchCohortDraftAction, serverSyncPendingRef]);
 
   const handleGenerateResources = useCallback(

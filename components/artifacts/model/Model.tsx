@@ -421,7 +421,6 @@ function ModelComponent({
       if (t && row.value != null) map[t] = row.value;
     }
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formState.flag_ids, modelData?.flags]);
 
   type FlagRow = NonNullable<NonNullable<typeof modelData>["flags"]>[number];
@@ -435,7 +434,6 @@ function ModelComponent({
       map.set(t, list);
     }
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelData?.flags]);
 
   const handleFlagToggle = useCallback(
@@ -1395,7 +1393,6 @@ function ModelComponent({
 
                 <Values
                   value_ids={formState.value_id ? [formState.value_id] : []}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   value_resources={((formState.value_id && s?.values?.resource
                       ? [
                           {
@@ -1406,7 +1403,6 @@ function ModelComponent({
                         ]
                       : []) as any)}
                   show_values={s?.values?.show ?? true}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   values={((s?.values?.resources ?? []).map((v) => ({
                     id: v.id,
                     value: v.value,
@@ -1617,7 +1613,6 @@ function ModelComponent({
                           key={bucket.key}
                           modality_ids={currentIds}
                           show_modalities={s?.modalities?.show ?? true}
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           modalities={(bucket.rows.map((m) => ({
                             modality_id: m.id,
                             name: m.modality,
@@ -1831,7 +1826,6 @@ function ModelComponent({
                     ? (formState.reasoning_level_ids[0] ?? null)
                     : null
                 }
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 reasoning_level_resource={((formState.reasoning_level_ids.length > 0 &&
                   s?.reasoning_levels?.current?.[0]
                     ? {
@@ -1842,7 +1836,6 @@ function ModelComponent({
                       }
                     : null) as any)}
                 show_reasoning_levels={s?.reasoning_levels?.show ?? true}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 reasoning_levels={((s?.reasoning_levels?.resources ?? []).map(
                   (r) => ({
                     id: r.id,

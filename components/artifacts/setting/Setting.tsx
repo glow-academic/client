@@ -364,7 +364,6 @@ function Setting({
       map.set(t, list);
     }
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s?.flags]);
 
   const handleFlagToggle = useCallback(
