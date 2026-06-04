@@ -138,8 +138,8 @@ export function AttemptChat({
       messages.forEach((message) => {
         const chatId = message.chat_id ? String(message.chat_id) : null;
         if (!chatId) return;
-        if (!grouped[chatId]) grouped[chatId] = [];
-        grouped[chatId].push(message);
+        const bucket = grouped[chatId] ?? (grouped[chatId] = []);
+        bucket.push(message);
       });
       return grouped;
     },
@@ -561,7 +561,6 @@ export function AttemptChat({
     }, 500);
 
     return () => clearTimeout(gracePeriodTimeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attemptData, currentChatIndex, setStreamingContent, setOptimisticMessages, currentChat?.id, messagesByChat]);
 
   // Auto-show grades/rubric or responses when all chats are completed

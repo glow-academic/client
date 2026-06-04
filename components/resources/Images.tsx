@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import {
   Check,
   Eye,
-  Image,
+  Image as ImageIcon,
   Loader2,
   Upload,
   X,
@@ -328,7 +328,7 @@ export function Images({
         {label ? (
           <div className="flex items-center gap-2">
             <Label htmlFor={id} className="flex items-center gap-1.5">
-              <Image className="h-3.5 w-3.5 text-muted-foreground" />
+              <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
               {label}
               {(required || images_required) && (
                 <span className="text-destructive">*</span>

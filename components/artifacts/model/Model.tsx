@@ -29,13 +29,22 @@ import { Providers } from "@/components/resources/Providers";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
-import { Modalities } from "@/components/resources/Modalities";
+import {
+  Modalities,
+  type ModalityResourceItem,
+} from "@/components/resources/Modalities";
 import { Names } from "@/components/resources/Names";
 import { Pricing } from "@/components/resources/Pricing";
-import { Qualities } from "@/components/resources/Qualities";
-import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
+import {
+  Qualities,
+  type QualitiesResourceItem,
+} from "@/components/resources/Qualities";
+import {
+  ReasoningLevels,
+  type ReasoningLevelResourceItem,
+} from "@/components/resources/ReasoningLevels";
 import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
-import { Values } from "@/components/resources/Values";
+import { Values, type ValueResourceItem } from "@/components/resources/Values";
 import { Voices } from "@/components/resources/Voices";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
@@ -331,9 +340,9 @@ function ModelComponent({
       value_id: data.values?.find((item) => item.selected)?.id ?? null,
       provider_id: data.providers?.find((item) => item.selected)?.id ?? null,
       flag_ids: (data.flags ?? [])
-        .filter((f: any) => f.selected)
-        .map((f: any) => f.id)
-        .filter((id: any): id is string => !!id),
+        .filter((f) => f.selected)
+        .map((f) => f.id)
+        .filter((id): id is string => !!id),
       modality_ids: (data.modalities ?? [])
         .filter((item) => item.selected)
         .map((m) => m.id as string)
@@ -390,8 +399,8 @@ function ModelComponent({
     () =>
       new Set(
         (modelData?.flags ?? [])
-          .filter((f: any) => f.pending && f.id)
-          .map((f: any) => f.id as string),
+          .filter((f) => f.pending && f.id)
+          .map((f) => f.id as string),
       ),
     [modelData?.flags],
   );
@@ -411,31 +420,29 @@ function ModelComponent({
     const map: Record<string, boolean | null> = {};
     const byId = new Map(
       (modelData?.flags ?? [])
-        .filter((f: any) => f.id)
-        .map((f: any) => [String(f.id), f]),
+        .filter((f) => f.id)
+        .map((f) => [String(f.id), f] as const),
     );
     for (const id of formState.flag_ids) {
-      const row = byId.get(id) as any;
+      const row = byId.get(id);
       if (!row) continue;
       const t = row.type ?? row.name;
       if (t && row.value != null) map[t] = row.value;
     }
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formState.flag_ids, modelData?.flags]);
 
   type FlagRow = NonNullable<NonNullable<typeof modelData>["flags"]>[number];
   const flagRowsByType = useMemo(() => {
     const map = new Map<string, FlagRow[]>();
     for (const f of modelData?.flags ?? []) {
-      const t = (f as any).type ?? (f as any).name;
+      const t = f.type ?? f.name;
       if (!t) continue;
       const list = map.get(t) ?? [];
-      list.push(f as FlagRow);
+      list.push(f);
       map.set(t, list);
     }
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelData?.flags]);
 
   const handleFlagToggle = useCallback(
@@ -1395,26 +1402,28 @@ function ModelComponent({
 
                 <Values
                   value_ids={formState.value_id ? [formState.value_id] : []}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  value_resources={((formState.value_id && s?.values?.resource
+                  value_resources={
+                    formState.value_id && s?.values?.resource
                       ? [
                           {
-                            id: s.values.resource.id,
-                            value: s.values.resource.value,
-                            generated: s.values.resource.generated,
+                            id: s.values.resource.id ?? null,
+                            value: s.values.resource.value ?? null,
+                            generated: s.values.resource.generated ?? null,
                           },
                         ]
-                      : []) as any)}
+                      : []
+                  }
                   show_values={s?.values?.show ?? true}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  values={((s?.values?.resources ?? []).map((v) => ({
-                    id: v.id,
-                    value: v.value,
-                    generated: v.generated,
-                    suggested: v.suggested,
-                    pending: v.pending,
-                    selected: v.selected,
-                  })) as any)}
+                  values={(s?.values?.resources ?? []).map(
+                    (v): ValueResourceItem => ({
+                      id: v.id ?? null,
+                      value: v.value ?? null,
+                      generated: v.generated ?? null,
+                      suggested: v.suggested ?? null,
+                      pending: v.pending ?? null,
+                      selected: v.selected ?? null,
+                    }),
+                  )}
                   searchTerm={valueSearch}
                   onSearchChange={(term: string) =>
                     setFormData({ valueSearch: term || null })
@@ -1477,8 +1486,7 @@ function ModelComponent({
                     still clears the associated ids array when a toggle
                     turns off (e.g. modalities_enabled → modality_ids). */}
                 <Flags
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  flags={allFlags as any}
+                  flags={allFlags}
                   values={flagValues}
                   show_flags={allFlags.length > 0}
                   columns={1}
@@ -1617,14 +1625,15 @@ function ModelComponent({
                           key={bucket.key}
                           modality_ids={currentIds}
                           show_modalities={s?.modalities?.show ?? true}
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          modalities={(bucket.rows.map((m) => ({
-                            modality_id: m.id,
-                            name: m.modality,
-                            generated: m.generated,
-                            suggested: m.suggested,
-                            pending: m.pending,
-                          })) as any)}
+                          modalities={bucket.rows.map(
+                            (m): ModalityResourceItem => ({
+                              modality_id: m.id ?? null,
+                              name: m.modality ?? null,
+                              generated: m.generated ?? null,
+                              suggested: m.suggested ?? null,
+                              pending: m.pending ?? null,
+                            }),
+                          )}
                           disabled={disabled}
                           onChange={(nextBucketIds) =>
                             setFormState((prev) => {
@@ -1831,27 +1840,28 @@ function ModelComponent({
                     ? (formState.reasoning_level_ids[0] ?? null)
                     : null
                 }
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                reasoning_level_resource={((formState.reasoning_level_ids.length > 0 &&
+                reasoning_level_resource={
+                  formState.reasoning_level_ids.length > 0 &&
                   s?.reasoning_levels?.current?.[0]
                     ? {
-                        id: s.reasoning_levels.current[0].id,
+                        id: s.reasoning_levels.current[0].id ?? null,
                         reasoning_level:
-                          s.reasoning_levels.current[0].reasoning_level,
-                        generated: s.reasoning_levels.current[0].generated,
+                          s.reasoning_levels.current[0].reasoning_level ?? null,
+                        generated:
+                          s.reasoning_levels.current[0].generated ?? null,
                       }
-                    : null) as any)}
+                    : null
+                }
                 show_reasoning_levels={s?.reasoning_levels?.show ?? true}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                reasoning_levels={((s?.reasoning_levels?.resources ?? []).map(
-                  (r) => ({
-                    id: r.id,
-                    reasoning_level: r.reasoning_level,
-                    generated: r.generated,
-                    suggested: r.suggested,
-                    pending: r.pending,
+                reasoning_levels={(s?.reasoning_levels?.resources ?? []).map(
+                  (r): ReasoningLevelResourceItem => ({
+                    id: r.id ?? null,
+                    reasoning_level: r.reasoning_level ?? null,
+                    generated: r.generated ?? null,
+                    suggested: r.suggested ?? null,
+                    pending: r.pending ?? null,
                   }),
-                ) as any)}
+                )}
                 disabled={disabled}
                 onReasoningLevelIdChange={(id) =>
                   setFormState({
@@ -1954,21 +1964,25 @@ function ModelComponent({
             >
               <Qualities
                 quality_ids={formState.quality_ids}
-                quality_resources={((s?.qualities?.current ?? []).map((q) => ({
-                  id: q.id,
-                  quality: q.quality,
-                  generated: q.generated,
-                  suggested: q.suggested,
-                  pending: q.pending,
-                })) as any)}
+                quality_resources={(s?.qualities?.current ?? []).map(
+                  (q): QualitiesResourceItem => ({
+                    id: q.id ?? null,
+                    quality: q.quality ?? null,
+                    generated: q.generated ?? null,
+                    suggested: q.suggested ?? null,
+                    pending: q.pending ?? null,
+                  }),
+                )}
                 show_qualities={s?.qualities?.show ?? true}
-                qualities={((s?.qualities?.resources ?? []).map((q) => ({
-                  id: q.id,
-                  quality: q.quality,
-                  generated: q.generated,
-                  suggested: q.suggested,
-                  pending: q.pending,
-                })) as any)}
+                qualities={(s?.qualities?.resources ?? []).map(
+                  (q): QualitiesResourceItem => ({
+                    id: q.id ?? null,
+                    quality: q.quality ?? null,
+                    generated: q.generated ?? null,
+                    suggested: q.suggested ?? null,
+                    pending: q.pending ?? null,
+                  }),
+                )}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState({ ...formState, quality_ids: ids })

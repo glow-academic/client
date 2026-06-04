@@ -244,8 +244,9 @@ export function Objectives({
           return newTexts;
         });
         ids.forEach((id, idx) => {
-          if (texts[idx]) {
-            objectiveIdMapRef.current.set(texts[idx], id);
+          const text = texts[idx];
+          if (text) {
+            objectiveIdMapRef.current.set(text, id);
           }
         });
       }

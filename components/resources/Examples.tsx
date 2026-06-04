@@ -146,8 +146,9 @@ export function Examples({
       return newTexts;
     });
     ids.forEach((id, idx) => {
-      if (newTexts[idx]) {
-        exampleIdMapRef.current.set(newTexts[idx], id);
+      const text = newTexts[idx];
+      if (text) {
+        exampleIdMapRef.current.set(text, id);
       }
     });
   }, [ids, effectiveExampleMapping]);

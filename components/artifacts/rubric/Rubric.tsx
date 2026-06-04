@@ -43,6 +43,7 @@ type UpdateRubricOut = OutputOf<"/rubric/update", "post">;
 type PatchRubricDraftIn = InputOf<"/rubric/draft", "post">;
 type PatchRubricDraftOut = OutputOf<"/rubric/draft", "post">;
 type RubricData = OutputOf<"/rubric/get", "post">;
+type FlagRow = NonNullable<RubricData["flags"]>[number];
 type RubricResourceType =
   | "names"
   | "descriptions"
@@ -83,82 +84,6 @@ type RubricDraftFormStateCompat = {
     standard_group_id: string;
   }> | null;
   pending_ids?: string[] | null;
-};
-
-type RubricDataCompat = RubricData & {
-  pending_ids?: string[] | null;
-  names?: Array<{
-    id?: string | null;
-    name?: string | null;
-    generated?: boolean | null;
-    selected?: boolean | null;
-    suggested?: boolean | null;
-    pending?: boolean | null;
-  }> | null;
-  descriptions?: Array<{
-    id?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-    selected?: boolean | null;
-    suggested?: boolean | null;
-    pending?: boolean | null;
-  }> | null;
-  flags?: Array<{
-    id?: string | null;
-    name?: string | null;
-    type?: string | null;
-    value?: boolean | null;
-    description?: string | null;
-    icon_id?: string | null;
-    icon?: string | null;
-    generated?: boolean | null;
-    selected?: boolean | null;
-    suggested?: boolean | null;
-    pending?: boolean | null;
-  }> | null;
-  departments?: Array<{
-    department_id?: string | null;
-    id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    generated?: boolean | null;
-    selected?: boolean | null;
-    suggested?: boolean | null;
-    pending?: boolean | null;
-  }> | null;
-  points?: Array<{
-    id?: string | null;
-    value?: number | null;
-    type?: string | null;
-    generated?: boolean | null;
-    selected?: boolean | null;
-    suggested?: boolean | null;
-    pending?: boolean | null;
-  }> | null;
-  standard_groups?: Array<{
-    id?: string | null;
-    standard_group_id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    points?: number | null;
-    pass_points?: number | null;
-    generated?: boolean | null;
-    selected?: boolean | null;
-    suggested?: boolean | null;
-    pending?: boolean | null;
-  }> | null;
-  standards?: Array<{
-    id?: string | null;
-    standard_id?: string | null;
-    standard_group_id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    points?: number | null;
-    generated?: boolean | null;
-    selected?: boolean | null;
-    suggested?: boolean | null;
-    pending?: boolean | null;
-  }> | null;
 };
 
 // Grid-editor value-object shape. Duplicates StandardValue from
@@ -271,7 +196,7 @@ function RubricComponent({
 }: RubricProps) {
   const router = useRouter();
   const isEditMode = !!rubricId;
-  const s = rubricData as RubricDataCompat | undefined;
+  const s = rubricData;
 
   const [formState, setFormState] = useState<RubricFormState>({
     name: null,
@@ -322,9 +247,9 @@ function RubricComponent({
       name_id: s.names?.find((item) => item.selected)?.id ?? null,
       description: null,
       description_id: s.descriptions?.find((item) => item.selected)?.id ?? null,
-      flag_ids: (s.flags?.filter((item: any) => item.selected) ?? [])
-        .map((item: any) => item.id)
-        .filter((id: unknown): id is string => !!id),
+      flag_ids: (s.flags?.filter((item) => item.selected) ?? [])
+        .map((item) => item.id)
+        .filter((id): id is string => !!id),
       department_ids:
         (s.departments ?? [])
           .filter((x) => x.selected)
@@ -898,11 +823,11 @@ function RubricComponent({
     const map: Record<string, boolean | null> = {};
     const byId = new Map(
       (s?.flags ?? [])
-        .filter((f: any) => f.id)
-        .map((f: any) => [f.id as string, f]),
+        .filter((f): f is FlagRow & { id: string } => !!f.id)
+        .map((f) => [f.id, f] as const),
     );
     for (const id of formState.flag_ids) {
-      const row: any = byId.get(id);
+      const row = byId.get(id);
       if (!row) continue;
       const type = row.type ?? row.name;
       if (type && row.value != null) map[type] = row.value;
@@ -911,9 +836,9 @@ function RubricComponent({
   }, [formState.flag_ids, s?.flags]);
 
   const flagRowsByType = useMemo(() => {
-    const map = new Map<string, any[]>();
+    const map = new Map<string, FlagRow[]>();
     for (const f of s?.flags ?? []) {
-      const t = (f as any).type ?? (f as any).name;
+      const t = f.type ?? f.name;
       if (!t) continue;
       const list = map.get(t) ?? [];
       list.push(f);

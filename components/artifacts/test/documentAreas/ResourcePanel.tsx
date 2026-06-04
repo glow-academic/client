@@ -284,10 +284,10 @@ function AgentSnapshotView({ snapshot, resources }: AgentSnapshotViewProps) {
       : null;
   const promptText = lookupString(resources.prompts, promptId, "prompt");
   const toolIds = Array.isArray(agentRow?.["tool_ids"])
-    ? (agentRow["tool_ids"] as string[])
+    ? (agentRow?.["tool_ids"] as string[])
     : [];
   const instructionIds = Array.isArray(agentRow?.["instruction_ids"])
-    ? (agentRow["instruction_ids"] as string[])
+    ? (agentRow?.["instruction_ids"] as string[])
     : [];
   const toolNames = toolIds
     .map((tid) => lookupString(resources.tools, tid, "name"))

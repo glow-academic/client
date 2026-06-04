@@ -146,6 +146,29 @@ export function GenericChatInterface({
     ? `/api/system/image/${background_image.image_id}`
     : null;
 
+  // chat_area / input_area are unions of ComponentType over their respective
+  // prop unions. TS can't correlate "this component goes with that props
+  // member" across a union spread (it requires the props to satisfy *every*
+  // member), so we re-type each pluggable component as a single
+  // ComponentType accepting the full prop union. The setup file
+  // (AttemptChat.tsx) is responsible for passing a component/props pair that
+  // line up; this re-type only widens the local view, it doesn't loosen the
+  // public prop contract above.
+  const ChatAreaC = ChatArea as React.ComponentType<
+    | MessagesViewProps
+    | VideoViewProps
+    | RubricViewProps
+    | QuestionReviewViewProps
+  >;
+  const InputAreaC = InputArea as React.ComponentType<
+    (
+      | TextInputProps
+      | VoiceInputProps
+      | QuestionTakingInputProps
+      | HybridInputProps
+    ) & { ref?: React.Ref<unknown> }
+  >;
+
   return (
     <div
       // 100dvh tracks the *visible* viewport on mobile — accounts for the
@@ -191,8 +214,7 @@ export function GenericChatInterface({
                 )}
                 {chat_area_view_mode === "video" ? (
                   <div className={cn("px-1 relative z-10", hide_input_area && "h-full")}>
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    <ChatArea {...(chat_area_props as any)} />
+                    <ChatAreaC {...chat_area_props} />
                   </div>
                 ) : (
                   // MessagesView owns its own ScrollArea + scroll-to-bottom
@@ -207,8 +229,7 @@ export function GenericChatInterface({
                   // that + the page-level md:px-4 gutter, so message
                   // bubbles visibly shrank away from the edges on mobile.
                   <div className="flex-1 min-h-0 relative z-10 flex flex-col">
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    <ChatArea {...(chat_area_props as any)} />
+                    <ChatAreaC {...chat_area_props} />
                   </div>
                 )}
               </div>
@@ -242,15 +263,9 @@ export function GenericChatInterface({
                     }
                   >
                     {input_area_ref ? (
-                      <InputArea
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        ref={input_area_ref as any}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        {...(input_area_props as any)}
-                      />
+                      <InputAreaC ref={input_area_ref} {...input_area_props} />
                     ) : (
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      <InputArea {...(input_area_props as any)} />
+                      <InputAreaC {...input_area_props} />
                     )}
                   </div>
                 )}

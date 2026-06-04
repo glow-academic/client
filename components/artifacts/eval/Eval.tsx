@@ -48,6 +48,7 @@ type UpdateEvalOut = OutputOf<"/eval/update", "post">;
 type PatchEvalDraftIn = InputOf<"/eval/draft", "post">;
 type PatchEvalDraftOut = OutputOf<"/eval/draft", "post">;
 type EvalData = OutputOf<"/eval/get", "post">;
+type EvalFlagRow = NonNullable<EvalData["flags"]>[number];
 
 type EvalDraftFormState = {
   name_id?: string | null;
@@ -128,11 +129,10 @@ function EvalComponent({
       departments: evalData.departments,
       models: evalData.models,
       model_flags: evalData.model_flags,
-      model_flag_options:
-        (evalData as { model_flag_options?: unknown[] }).model_flag_options ?? [],
+      model_flag_options: evalData.model_flag_options ?? [],
       model_rubrics: evalData.model_rubrics,
       model_positions: evalData.model_positions,
-      rubrics: (evalData as { rubrics?: Array<{ id: string | null; name: string | null; description?: string | null }> }).rubrics,
+      rubrics: evalData.rubrics,
       basic_show_ai_generate: evalData.basic_show_ai_generate,
       model_show_ai_generate: evalData.model_show_ai_generate,
       group_id: evalData.group_id,
@@ -328,11 +328,11 @@ function EvalComponent({
     const map: Record<string, boolean | null> = {};
     const byId = new Map(
       (s?.flags ?? [])
-        .filter((f: any) => f.id)
-        .map((f: any) => [f.id as string, f]),
+        .filter((f) => f.id)
+        .map((f) => [f.id as string, f] as const),
     );
     for (const id of formState.flag_ids) {
-      const row: any = byId.get(id);
+      const row = byId.get(id);
       if (!row) continue;
       const type = row.type ?? row.name;
       if (type && row.value != null) map[type] = row.value;
@@ -341,9 +341,9 @@ function EvalComponent({
   }, [formState.flag_ids, s?.flags]);
 
   const flagRowsByType = useMemo(() => {
-    const map = new Map<string, any[]>();
+    const map = new Map<string, EvalFlagRow[]>();
     for (const f of s?.flags ?? []) {
-      const t = (f as any).type ?? (f as any).name;
+      const t = f.type ?? f.name;
       if (!t) continue;
       const list = map.get(t) ?? [];
       list.push(f);
@@ -383,11 +383,11 @@ function EvalComponent({
     const map: Record<string, boolean | null> = {};
     const byId = new Map(
       (s?.model_flags ?? [])
-        .filter((r: any) => r.id)
-        .map((r: any) => [r.id as string, r]),
+        .filter((r) => r.id)
+        .map((r) => [r.id as string, r] as const),
     );
     for (const id of formState.model_flag_ids) {
-      const row: any = byId.get(id);
+      const row = byId.get(id);
       if (!row) continue;
       const t = row.type ?? row.name;
       if (row.model_id && t && row.value != null) {
@@ -400,13 +400,7 @@ function EvalComponent({
   const handleModelFlagToggle = useCallback(
     (modelId: string, type: string, next: boolean | null) => {
       setFormState((prev) => {
-        const options =
-          ((s as any)?.model_flag_options as Array<{
-            model_id?: string | null;
-            flag_id?: string | null;
-            type?: string | null;
-            value?: boolean | null;
-          }> | undefined) ?? [];
+        const options = s?.model_flag_options ?? [];
 
         // All flag_ids that belong to this (model, type) bucket — we drop
         // every such id and optionally add back the one matching the new bool.
@@ -1353,8 +1347,8 @@ function EvalComponent({
                   }
                 />
                 <ModelFlags
-                  options={((s as any)?.model_flag_options ?? []) as any}
-                  existing={(s?.model_flags ?? []) as any}
+                  options={s?.model_flag_options ?? []}
+                  existing={s?.model_flags ?? []}
                   values={modelFlagValues}
                   models={s?.models ?? []}
                   onChange={handleModelFlagToggle}
