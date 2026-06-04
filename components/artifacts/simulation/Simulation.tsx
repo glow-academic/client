@@ -57,6 +57,12 @@ type PatchSimulationDraftOut = OutputOf<
 >;
 
 type SimulationData = OutputOf<"/simulation/get", "post">;
+type SimScenarioFlagRow = NonNullable<
+  NonNullable<SimulationData["scenario_flags"]>
+>[number];
+type SimScenarioFlagOptionRow = NonNullable<
+  NonNullable<SimulationData["scenario_flag_options"]>
+>[number];
 type SimulationResourceType =
   | ResourceType
   | "scenario_time_limits";
@@ -338,11 +344,11 @@ function SimulationComponent({
     const map: Record<string, boolean | null> = {};
     const byId = new Map(
       (simulationData?.flags ?? [])
-        .filter((f: any) => f.id)
-        .map((f: any) => [String(f.id), f]),
+        .filter((f) => f.id)
+        .map((f) => [String(f.id), f] as const),
     );
     for (const id of formState.flag_ids) {
-      const row = byId.get(id) as any;
+      const row = byId.get(id);
       if (!row) continue;
       const t = row.type ?? row.name;
       if (t && row.value != null) map[t] = row.value;
@@ -354,10 +360,10 @@ function SimulationComponent({
   const flagRowsByType = React.useMemo(() => {
     const map = new Map<string, SimFlagRow[]>();
     for (const f of simulationData?.flags ?? []) {
-      const t = (f as any).type ?? (f as any).name;
+      const t = f.type ?? f.name;
       if (!t) continue;
       const list = map.get(t) ?? [];
-      list.push(f as SimFlagRow);
+      list.push(f);
       map.set(t, list);
     }
     return map;
@@ -391,11 +397,11 @@ function SimulationComponent({
     const map: Record<string, boolean | null> = {};
     const sfById = new Map(
       (simulationData?.scenario_flags ?? [])
-        .filter((sf: any) => sf.id)
-        .map((sf: any) => [String(sf.id), sf]),
+        .filter((sf) => sf.id)
+        .map((sf) => [String(sf.id), sf] as const),
     );
     for (const id of formState.scenario_flag_ids ?? []) {
-      const row = sfById.get(id) as any;
+      const row = sfById.get(id);
       if (!row) continue;
       const t = row.type ?? row.name;
       const sid = row.scenario_id;
@@ -413,8 +419,10 @@ function SimulationComponent({
   const handleScenarioFlagToggle = useCallback(
     (scenario_id: string, type: string, next: boolean | null) => {
       setFormState((prev) => {
-        const existingRows = (simulationDataRef.current?.scenario_flags ?? []) as Array<any>;
-        const optionRows = ((simulationDataRef.current as any)?.scenario_flag_options ?? []) as Array<any>;
+        const existingRows: SimScenarioFlagRow[] =
+          simulationDataRef.current?.scenario_flags ?? [];
+        const optionRows: SimScenarioFlagOptionRow[] =
+          simulationDataRef.current?.scenario_flag_options ?? [];
         const key = `${scenario_id}:${type}`;
 
         // Figure out which scenario_flag_ids belong to this (scenario, type)
@@ -440,7 +448,7 @@ function SimulationComponent({
         // New value-array entry for denormalized create path (server
         // resolves via scenario_flag_values).
         const nextValueEntries: Array<{ scenario_id: string; type: string; value: boolean }> = [];
-        for (const v of (prev as any).scenario_flag_values ?? []) {
+        for (const v of prev.scenario_flag_values ?? []) {
           if (!(v.scenario_id === scenario_id && v.type === type)) {
             nextValueEntries.push(v);
           }
@@ -1416,8 +1424,8 @@ function SimulationComponent({
       // capitalization doesn't silently disable the toggle.
       // Canonical: select the practice=true flag-resource row by (type, value).
       const practiceFlagOptionId = (s.flags ?? []).find(
-        (f: any) =>
-          ((f.type ?? f.name ?? "") as string).toLowerCase() === "practice"
+        (f) =>
+          (f.type ?? f.name ?? "").toLowerCase() === "practice"
           && f.value === true,
       )?.id;
       const allowUnlimitedTimeLimits = !!(
