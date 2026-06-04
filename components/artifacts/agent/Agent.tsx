@@ -23,19 +23,37 @@ import {
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
-import { Departments } from "@/components/resources/Departments";
-import { Descriptions } from "@/components/resources/Descriptions";
+import {
+  Departments,
+  type DepartmentResourceItem,
+} from "@/components/resources/Departments";
+import {
+  Descriptions,
+  type DescriptionResourceItem,
+} from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
-import { Instructions } from "@/components/resources/Instructions";
-import { Models } from "@/components/resources/Models";
+import {
+  Instructions,
+  type InstructionResourceItem,
+} from "@/components/resources/Instructions";
+import { Models, type ModelResourceItem } from "@/components/resources/Models";
 import { Names } from "@/components/resources/Names";
-import { Prompts } from "@/components/resources/Prompts";
-import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
+import { Prompts, type PromptResourceItem } from "@/components/resources/Prompts";
+import {
+  ReasoningLevels,
+  type ReasoningLevelResourceItem,
+} from "@/components/resources/ReasoningLevels";
 import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
-import { Tools } from "@/components/resources/Tools";
-import { Voices } from "@/components/resources/Voices";
-import { Qualities } from "@/components/resources/Qualities";
-import { Rubrics } from "@/components/resources/Rubrics";
+import { Tools, type ToolResourceItem } from "@/components/resources/Tools";
+import { Voices, type VoiceResourceItem } from "@/components/resources/Voices";
+import {
+  Qualities,
+  type QualitiesResourceItem,
+} from "@/components/resources/Qualities";
+import {
+  Rubrics,
+  type RubricsResourceItem,
+} from "@/components/resources/Rubrics";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useAgentAi } from "@/hooks/use-agent-ai";
@@ -159,17 +177,24 @@ const toMultiSection = <
   };
 };
 
-const DescriptionsField = Descriptions as any;
-const DepartmentsField = Departments as any;
-const ToolsField = Tools as any;
-const ModelsField = Models as any;
+const DescriptionsField = Descriptions;
+const DepartmentsField = Departments;
+const ToolsField = Tools;
+const ModelsField = Models;
+// JUDGMENT-GATED: TemperatureLevels was refactored to a slider/multi-id API
+// (`temperature_level_ids` + `onChange`), but Agent.tsx still drives it with the
+// legacy single-id contract (`temperature_level_id`/`onTemperatureLevelIdChange`)
+// plus product-gated `temperature_lower`/`temperature_upper` reads that don't
+// exist on the model schema. Wiring the genuine type here needs cross-file API
+// reconciliation (a product decision), so the wrapper cast is preserved.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TemperatureLevelsField = TemperatureLevels as any;
-const ReasoningLevelsField = ReasoningLevels as any;
-const VoicesField = Voices as any;
-const QualitiesField = Qualities as any;
-const RubricsField = Rubrics as any;
-const PromptsField = Prompts as any;
-const InstructionsField = Instructions as any;
+const ReasoningLevelsField = ReasoningLevels;
+const VoicesField = Voices;
+const QualitiesField = Qualities;
+const RubricsField = Rubrics;
+const PromptsField = Prompts;
+const InstructionsField = Instructions;
 
 export interface AgentProps {
   agentId?: string;
@@ -1310,21 +1335,6 @@ export default function Agent({
   );
 
   // Individual generation handlers
-  const handleGenerateDescription = useCallback(
-    async () => handleGenerateResources(["descriptions"]),
-    [handleGenerateResources],
-  );
-
-  const handleGenerateDepartments = useCallback(
-    async () => handleGenerateResources(["departments"]),
-    [handleGenerateResources],
-  );
-
-  const handleGenerateReasoningLevels = useCallback(
-    async () => handleGenerateResources(["reasoning_levels"]),
-    [handleGenerateResources],
-  );
-
   const handleGenerateTemperatureLevels = useCallback(
     async () => handleGenerateResources(["temperature_levels"]),
     [handleGenerateResources],
@@ -1373,17 +1383,93 @@ export default function Agent({
   );
 
   const mergedNames = namesSection?.resources ?? [];
-  const mergedDescriptions = descriptionsSection?.resources ?? [];
-  const mergedModels = modelsSection?.resources ?? [];
-  const mergedPrompts = promptsSection?.resources ?? [];
-  const mergedInstructions = instructionsSection?.resources ?? [];
+  const mergedDescriptions: DescriptionResourceItem[] = (
+    descriptionsSection?.resources ?? []
+  ).map((d) => ({
+    id: d.id ?? null,
+    description: d.description ?? null,
+    generated: d.generated ?? null,
+    suggested: d.suggested ?? null,
+    pending: d.pending ?? null,
+  }));
+  const mergedModels: ModelResourceItem[] = (
+    modelsSection?.resources ?? []
+  ).map((m) => ({
+    id: m.id ?? null,
+    name: m.name ?? null,
+    description: m.description ?? null,
+    modality_ids: m.modality_ids ?? null,
+    suggested: m.suggested ?? null,
+    pending: m.pending ?? null,
+  }));
+  const mergedPrompts: PromptResourceItem[] = (
+    promptsSection?.resources ?? []
+  ).map((p) => ({
+    id: p.id ?? null,
+    name: p.name ?? null,
+    description: p.description ?? null,
+    system_prompt: p.system_prompt ?? null,
+    generated: p.generated ?? null,
+    pending: p.pending ?? null,
+  }));
+  const mergedInstructions: InstructionResourceItem[] = (
+    instructionsSection?.resources ?? []
+  ).map((i) => ({
+    id: i.id ?? null,
+    template: i.template ?? null,
+    generated: i.generated ?? null,
+    suggested: i.suggested ?? null,
+    pending: i.pending ?? null,
+  }));
   const mergedTemperatureLevels = temperatureLevelsSection?.resources ?? [];
-  const mergedReasoningLevels = reasoningLevelsSection?.resources ?? [];
-  const mergedTools = toolsSection?.resources ?? [];
-  const mergedVoices = voicesSection?.resources ?? [];
+  const mergedReasoningLevels: ReasoningLevelResourceItem[] = (
+    reasoningLevelsSection?.resources ?? []
+  ).map((r) => ({
+    id: r.id ?? null,
+    reasoning_level: r.reasoning_level ?? null,
+    generated: r.generated ?? null,
+    suggested: r.suggested ?? null,
+    pending: r.pending ?? null,
+  }));
+  const mergedTools: ToolResourceItem[] = (toolsSection?.resources ?? []).map(
+    (t) => ({
+      id: t.id ?? null,
+      name: t.name ?? null,
+      description: t.description ?? null,
+      generated: t.generated ?? null,
+      suggested: t.suggested ?? null,
+      pending: t.pending ?? null,
+    }),
+  );
+  const mergedVoices: VoiceResourceItem[] = (
+    voicesSection?.resources ?? []
+  ).map((v) => ({
+    id: v.id ?? null,
+    voice: v.voice ?? null,
+    generated: v.generated ?? null,
+    suggested: v.suggested ?? null,
+    pending: v.pending ?? null,
+  }));
   const mergedDepartments = departmentsSection?.resources ?? [];
-  const mergedQualities = qualitiesSection?.resources ?? [];
-  const mergedRubrics = rubricsSection?.resources ?? [];
+  const mergedQualities: QualitiesResourceItem[] = (
+    qualitiesSection?.resources ?? []
+  ).map((q) => ({
+    id: q.id ?? null,
+    quality: q.quality ?? null,
+    generated: q.generated ?? null,
+    suggested: q.suggested ?? null,
+    pending: q.pending ?? null,
+  }));
+  const mergedRubrics: RubricsResourceItem[] = (
+    rubricsSection?.resources ?? []
+  ).map((r) => ({
+    id: r.id ?? null,
+    name: r.name ?? null,
+    description: r.description ?? null,
+    generated: r.generated ?? null,
+    suggested: r.suggested ?? null,
+    pending: r.pending ?? null,
+  }));
 
   return (
     <div className="space-y-6 py-4 px-4">
@@ -1524,9 +1610,6 @@ export default function Agent({
                             descriptionsSection?.resource ?? null
                           }
                           show_description={descriptionsSection?.show ?? true}
-                          description_suggestions={
-                            descriptionsSection?.suggestions ?? []
-                          }
                           descriptions={mergedDescriptions}
                           disabled={isReadonly}
                           onDescriptionIdChange={handleDescriptionIdChange}
@@ -1541,31 +1624,41 @@ export default function Agent({
                           onSearchChange={(term: string) =>
                             setStepFormData({ descriptionSearch: term || null })
                           }
-                          onGenerate={handleGenerateDescription}
                           label="Description"
                           placeholder="Detailed behavior description and personality traits"
                           required={descriptionsSection?.required ?? false}
                           rows={4}
                           data-testid="input-agent-description"
-
-                          showAiGenerate={false}
                         />
 
                         {/* Department Selection */}
                         <DepartmentsField
                           department_ids={draftState.departmentIds || []}
-                          department_resources={
-                            (departmentsSection?.current ??
-                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                              []) as any[]
-                          }
+                          department_resources={(
+                            departmentsSection?.current ?? []
+                          ).map(
+                            (d): DepartmentResourceItem => ({
+                              department_id: d.department_id ?? null,
+                              name: d.name ?? null,
+                              description: d.description ?? null,
+                              generated: d.generated ?? null,
+                              suggested: d.suggested ?? null,
+                              pending: d.pending ?? null,
+                            }),
+                          )}
                           show_departments={
                             departmentsSection?.show ?? false
                           }
-                          department_suggestions={
-                            (departmentsSection?.suggestions ?? []) as string[]
-                          }
-                          departments={mergedDepartments}
+                          departments={(mergedDepartments ?? []).map(
+                            (d): DepartmentResourceItem => ({
+                              department_id: d.department_id ?? null,
+                              name: d.name ?? null,
+                              description: d.description ?? null,
+                              generated: d.generated ?? null,
+                              suggested: d.suggested ?? null,
+                              pending: d.pending ?? null,
+                            }),
+                          )}
                           disabled={isReadonly}
                           onChange={(ids: string[]) => {
                             setDraftState((prev) => ({
@@ -1579,10 +1672,7 @@ export default function Agent({
                           onRejectPending={(pendingIds: string[]) =>
                             handleRejectPendingMulti("departmentIds", pendingIds)
                           }
-                          onGenerate={handleGenerateDepartments}
                           required={departmentsSection?.required ?? false}
-
-                          showAiGenerate={false}
                         />
 
                         <Flags
@@ -1684,14 +1774,18 @@ export default function Agent({
                     >
                       <ToolsField
                         tool_ids={draftState.tool_ids}
-                        tool_resources={
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          (toolsSection?.current ?? []) as any[]
-                        }
+                        tool_resources={(toolsSection?.current ?? []).map(
+                          (t): ToolResourceItem => ({
+                            id: t.id ?? null,
+                            name: t.name ?? null,
+                            description: t.description ?? null,
+                            generated: t.generated ?? null,
+                            suggested: t.suggested ?? null,
+                            pending: t.pending ?? null,
+                          }),
+                        )}
                         show_tools={toolsSection?.show ?? false}
-                        tool_suggestions={toolsSection?.suggestions ?? []}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        tools={mergedTools as any[]}
+                        tools={mergedTools}
                         disabled={isReadonly}
                         onChange={(ids: string[]) =>
                           setDraftState((prev) => ({ ...prev, tool_ids: ids }))
@@ -1699,8 +1793,6 @@ export default function Agent({
                         label="Tools"
                         description="Select the tools this agent can use. Tools define what operations the agent can perform."
                         required={toolsSection?.required ?? false}
-
-                        showAiGenerate={false}
                         searchTerm={toolSearch}
                         onSearchChange={(term: string) =>
                           setStepFormData({ toolSearch: term || null })
@@ -1764,12 +1856,22 @@ export default function Agent({
                       <ModelsField
                         model_id={draftState.modelId || null}
                         model_resource={
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          (modelsSection?.resource ?? null) as any
+                          modelsSection?.resource
+                            ? {
+                                id: modelsSection.resource.id ?? null,
+                                name: modelsSection.resource.name ?? null,
+                                description:
+                                  modelsSection.resource.description ?? null,
+                                modality_ids:
+                                  modelsSection.resource.modality_ids ?? null,
+                                suggested:
+                                  modelsSection.resource.suggested ?? null,
+                                pending: modelsSection.resource.pending ?? null,
+                              }
+                            : null
                         }
                         show_models={modelsSection?.show ?? true}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        models={mergedModels as any[]}
+                        models={mergedModels}
                         disabled={isReadonly}
                         onModelIdChange={(modelId: string | null) => {
                           setDraftState((prev) => ({
@@ -1901,17 +2003,28 @@ export default function Agent({
                       <ReasoningLevelsField
                         reasoning_level_id={draftState.reasoning_level_id}
                         reasoning_level_resource={
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          (reasoningLevelsSection?.resource ?? null) as any
+                          reasoningLevelsSection?.resource
+                            ? {
+                                id: reasoningLevelsSection.resource.id ?? null,
+                                reasoning_level:
+                                  reasoningLevelsSection.resource
+                                    .reasoning_level ?? null,
+                                generated:
+                                  reasoningLevelsSection.resource.generated ??
+                                  null,
+                                suggested:
+                                  reasoningLevelsSection.resource.suggested ??
+                                  null,
+                                pending:
+                                  reasoningLevelsSection.resource.pending ??
+                                  null,
+                              }
+                            : null
                         }
                         show_reasoning_levels={
                           reasoningLevelsSection?.show ?? true
                         }
-                        reasoning_level_suggestions={
-                          reasoningLevelsSection?.suggestions ?? []
-                        }
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        reasoning_levels={mergedReasoningLevels as any[]}
+                        reasoning_levels={mergedReasoningLevels}
                         disabled={isReadonly}
                         onReasoningLevelIdChange={(id: string | null) =>
                           setDraftState((prev) => ({
@@ -1919,9 +2032,6 @@ export default function Agent({
                             reasoning_level_id: id,
                           }))
                         }
-                        onGenerate={handleGenerateReasoningLevels}
-
-                        showAiGenerate={false}
                       />
                     </StepCard>
                   );
@@ -1956,14 +2066,17 @@ export default function Agent({
                     >
                       <VoicesField
                         voice_ids={draftState.voice_ids}
-                        voice_resources={
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          (voicesSection?.current ?? []) as any[]
-                        }
+                        voice_resources={(voicesSection?.current ?? []).map(
+                          (v): VoiceResourceItem => ({
+                            id: v.id ?? null,
+                            voice: v.voice ?? null,
+                            generated: v.generated ?? null,
+                            suggested: v.suggested ?? null,
+                            pending: v.pending ?? null,
+                          }),
+                        )}
                         show_voices={voicesSection?.show ?? true}
-                        voice_suggestions={voicesSection?.suggestions ?? []}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        voices={mergedVoices as any[]}
+                        voices={mergedVoices}
                         disabled={isReadonly}
                         onVoiceIdsChange={(ids: string[]) =>
                           setDraftState((prev) => ({ ...prev, voice_ids: ids }))
@@ -2008,13 +2121,17 @@ export default function Agent({
                     >
                       <QualitiesField
                         quality_ids={draftState.quality_ids}
-                        quality_resources={
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          (qualitiesSection?.current ?? []) as any[]
-                        }
+                        quality_resources={(qualitiesSection?.current ?? []).map(
+                          (q): QualitiesResourceItem => ({
+                            id: q.id ?? null,
+                            quality: q.quality ?? null,
+                            generated: q.generated ?? null,
+                            suggested: q.suggested ?? null,
+                            pending: q.pending ?? null,
+                          }),
+                        )}
                         show_qualities={qualitiesSection?.show ?? false}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        qualities={mergedQualities as any[]}
+                        qualities={mergedQualities}
                         disabled={isReadonly}
                         onChange={(ids: string[]) =>
                           setDraftState((prev) => ({
@@ -2057,14 +2174,18 @@ export default function Agent({
                     >
                       <RubricsField
                         rubric_ids={draftState.rubric_ids}
-                        rubric_resources={
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          (rubricsSection?.current ?? []) as any[]
-                        }
+                        rubric_resources={(rubricsSection?.current ?? []).map(
+                          (r): RubricsResourceItem => ({
+                            id: r.id ?? null,
+                            name: r.name ?? null,
+                            description: r.description ?? null,
+                            generated: r.generated ?? null,
+                            suggested: r.suggested ?? null,
+                            pending: r.pending ?? null,
+                          }),
+                        )}
                         show_rubrics={rubricsSection?.show ?? false}
-                        rubric_suggestions={rubricsSection?.suggestions ?? []}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        rubrics={mergedRubrics as any[]}
+                        rubrics={mergedRubrics}
                         disabled={isReadonly}
                         onChange={(ids: string[]) =>
                           setDraftState((prev) => ({
@@ -2073,7 +2194,6 @@ export default function Agent({
                           }))
                         }
                         label="Rubrics"
-                        showAiGenerate={false}
                       />
                     </StepCard>
                   );
@@ -2111,12 +2231,22 @@ export default function Agent({
                       <PromptsField
                         prompt_id={draftState.prompt_id}
                         prompt_resource={
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          (promptsSection?.resource ?? null) as any
+                          promptsSection?.resource
+                            ? {
+                                id: promptsSection.resource.id ?? null,
+                                name: promptsSection.resource.name ?? null,
+                                description:
+                                  promptsSection.resource.description ?? null,
+                                system_prompt:
+                                  promptsSection.resource.system_prompt ?? null,
+                                generated:
+                                  promptsSection.resource.generated ?? null,
+                                pending: promptsSection.resource.pending ?? null,
+                              }
+                            : null
                         }
                         show_prompts={promptsSection?.show ?? true}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        prompts={mergedPrompts as any[]}
+                        prompts={mergedPrompts}
                         disabled={isReadonly}
                         onPromptIdChange={(id: string | null) => {
                           setDraftState((prev) => ({ ...prev, prompt_id: id, prompt: null }));
@@ -2171,16 +2301,24 @@ export default function Agent({
                       <InstructionsField
                         instructions_id={draftState.instructions_id}
                         instructions_resource={
-                          (instructionsSection?.resource ??
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            null) as any
+                          instructionsSection?.resource
+                            ? {
+                                id: instructionsSection.resource.id ?? null,
+                                template:
+                                  instructionsSection.resource.template ?? null,
+                                generated:
+                                  instructionsSection.resource.generated ??
+                                  null,
+                                suggested:
+                                  instructionsSection.resource.suggested ??
+                                  null,
+                                pending:
+                                  instructionsSection.resource.pending ?? null,
+                              }
+                            : null
                         }
                         show_instructions={instructionsSection?.show ?? true}
-                        instructions_suggestions={
-                          instructionsSection?.suggestions ?? []
-                        }
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        instructions={mergedInstructions as any[]}
+                        instructions={mergedInstructions}
                         disabled={isReadonly}
                         onInstructionsIdChange={(id: string | null) =>
                           setDraftState((prev) => ({
@@ -2198,8 +2336,6 @@ export default function Agent({
                         onSearchChange={(term: string) =>
                           setStepFormData({ instructionsSearch: term || null })
                         }
-
-                        showAiGenerate={false}
                       />
                     </StepCard>
                   );
