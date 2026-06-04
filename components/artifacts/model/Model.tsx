@@ -331,9 +331,9 @@ function ModelComponent({
       value_id: data.values?.find((item) => item.selected)?.id ?? null,
       provider_id: data.providers?.find((item) => item.selected)?.id ?? null,
       flag_ids: (data.flags ?? [])
-        .filter((f: any) => f.selected)
-        .map((f: any) => f.id)
-        .filter((id: any): id is string => !!id),
+        .filter((f) => f.selected)
+        .map((f) => f.id)
+        .filter((id): id is string => !!id),
       modality_ids: (data.modalities ?? [])
         .filter((item) => item.selected)
         .map((m) => m.id as string)
@@ -390,8 +390,8 @@ function ModelComponent({
     () =>
       new Set(
         (modelData?.flags ?? [])
-          .filter((f: any) => f.pending && f.id)
-          .map((f: any) => f.id as string),
+          .filter((f) => f.pending && f.id)
+          .map((f) => f.id as string),
       ),
     [modelData?.flags],
   );
@@ -411,11 +411,11 @@ function ModelComponent({
     const map: Record<string, boolean | null> = {};
     const byId = new Map(
       (modelData?.flags ?? [])
-        .filter((f: any) => f.id)
-        .map((f: any) => [String(f.id), f]),
+        .filter((f) => f.id)
+        .map((f) => [String(f.id), f] as const),
     );
     for (const id of formState.flag_ids) {
-      const row = byId.get(id) as any;
+      const row = byId.get(id);
       if (!row) continue;
       const t = row.type ?? row.name;
       if (t && row.value != null) map[t] = row.value;
@@ -427,10 +427,10 @@ function ModelComponent({
   const flagRowsByType = useMemo(() => {
     const map = new Map<string, FlagRow[]>();
     for (const f of modelData?.flags ?? []) {
-      const t = (f as any).type ?? (f as any).name;
+      const t = f.type ?? f.name;
       if (!t) continue;
       const list = map.get(t) ?? [];
-      list.push(f as FlagRow);
+      list.push(f);
       map.set(t, list);
     }
     return map;
