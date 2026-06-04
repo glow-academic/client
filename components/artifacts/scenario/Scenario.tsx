@@ -78,6 +78,36 @@ type PatchScenarioDraftOut = OutputOf<
   "post"
 >;
 
+// Loose row shape shared by the step-level pending helpers, which iterate
+// resource arrays by their resource-type key and probe a grab-bag of possible
+// id fields. Mirrors the union of id fields across the generated element types
+// (plus a couple of defensive keys that may appear on future shapes).
+type ScenarioResourceRow = {
+  id?: string | null;
+  department_id?: string | null;
+  persona_id?: string | null;
+  document_id?: string | null;
+  field_id?: string | null;
+  image_id?: string | null;
+  video_id?: string | null;
+  question_id?: string | null;
+  option_id?: string | null;
+  flag_option_id?: string | null;
+  pending?: boolean | null;
+};
+
+const resourceRowId = (item: ScenarioResourceRow): string | null | undefined =>
+  item.id ??
+  item.department_id ??
+  item.persona_id ??
+  item.document_id ??
+  item.field_id ??
+  item.image_id ??
+  item.video_id ??
+  item.question_id ??
+  item.option_id ??
+  item.flag_option_id;
+
 type ScenarioResourceType =
   | "names"
   | "descriptions"
@@ -314,54 +344,54 @@ function ScenarioComponent({
     }
 
     return {
-      name_id: scenarioData.names?.find((n: any) => n.selected)?.id
-        ? String(scenarioData.names.find((n: any) => n.selected)?.id)
+      name_id: scenarioData.names?.find((n) => n.selected)?.id
+        ? String(scenarioData.names.find((n) => n.selected)?.id)
         : null,
-      description_id: scenarioData.descriptions?.find((d: any) => d.selected)?.id
-        ? String(scenarioData.descriptions.find((d: any) => d.selected)?.id)
+      description_id: scenarioData.descriptions?.find((d) => d.selected)?.id
+        ? String(scenarioData.descriptions.find((d) => d.selected)?.id)
         : null,
-      problem_statement_id: scenarioData.problem_statements?.find((p: any) => p.selected)
+      problem_statement_id: scenarioData.problem_statements?.find((p) => p.selected)
         ?.problem_statement_id
-        ? String(scenarioData.problem_statements.find((p: any) => p.selected)?.problem_statement_id)
+        ? String(scenarioData.problem_statements.find((p) => p.selected)?.problem_statement_id)
         : null,
-      flag_ids: (scenarioData.flags?.filter((f: any) => f.selected) ?? [])
-        .map((f: any) => f.id)
-        .filter((id: any): id is string => !!id)
+      flag_ids: (scenarioData.flags?.filter((f) => f.selected) ?? [])
+        .map((f) => f.id)
+        .filter((id): id is string => !!id)
         .map(String),
-      department_ids: (scenarioData.departments?.filter((d: any) => d.selected) ?? [])
-        .map((item: any) => item.department_id)
+      department_ids: (scenarioData.departments?.filter((d) => d.selected) ?? [])
+        .map((item) => item.department_id)
         .filter(Boolean)
         .map(String),
-      persona_ids: (scenarioData.personas?.filter((p: any) => p.selected) ?? [])
-        .map((item: any) => item.persona_id)
+      persona_ids: (scenarioData.personas?.filter((p) => p.selected) ?? [])
+        .map((item) => item.persona_id)
         .filter(Boolean)
         .map(String),
-      document_ids: (scenarioData.documents?.filter((d: any) => d.selected) ?? [])
-        .map((item: any) => item.document_id)
+      document_ids: (scenarioData.documents?.filter((d) => d.selected) ?? [])
+        .map((item) => item.document_id)
         .filter(Boolean)
         .map(String),
-      parameter_field_ids: (scenarioData.parameter_fields?.filter((f: any) => f.selected) ?? [])
-        .map((item: any) => item.id)
+      parameter_field_ids: (scenarioData.parameter_fields?.filter((f) => f.selected) ?? [])
+        .map((item) => item.id)
         .filter(Boolean)
         .map(String),
-      image_ids: (scenarioData.images?.filter((i: any) => i.selected) ?? [])
-        .map((item: any) => item.image_id)
+      image_ids: (scenarioData.images?.filter((i) => i.selected) ?? [])
+        .map((item) => item.image_id)
         .filter(Boolean)
         .map(String),
-      objective_ids: (scenarioData.objectives?.filter((o: any) => o.selected) ?? [])
-        .map((item: any) => item.id)
+      objective_ids: (scenarioData.objectives?.filter((o) => o.selected) ?? [])
+        .map((item) => item.id)
         .filter(Boolean)
         .map(String),
-      video_ids: (scenarioData.videos?.filter((v: any) => v.selected) ?? [])
-        .map((item: any) => item.video_id)
+      video_ids: (scenarioData.videos?.filter((v) => v.selected) ?? [])
+        .map((item) => item.video_id)
         .filter(Boolean)
         .map(String),
-      question_ids: (scenarioData.questions?.filter((q: any) => q.selected) ?? [])
-        .map((item: any) => item.question_id)
+      question_ids: (scenarioData.questions?.filter((q) => q.selected) ?? [])
+        .map((item) => item.question_id)
         .filter(Boolean)
         .map(String),
-      option_ids: (scenarioData.options?.filter((o: any) => o.selected) ?? [])
-        .map((item: { option_id?: string | null; selected?: boolean }) => item.option_id)
+      option_ids: (scenarioData.options?.filter((o) => o.selected) ?? [])
+        .map((item) => item.option_id)
         .filter(Boolean)
         .map(String),
       name: null,
@@ -374,19 +404,19 @@ function ScenarioComponent({
       options: null,
       // Collect all pending resource IDs from the API response
       pending_ids: [
-        ...((scenarioData.names ?? []).filter((n: any) => n.pending).map((n: any) => n.id).filter(Boolean)),
-        ...((scenarioData.descriptions ?? []).filter((d: any) => d.pending).map((d: any) => d.id).filter(Boolean)),
-        ...((scenarioData.problem_statements ?? []).filter((p: any) => p.pending).map((p: any) => p.id).filter(Boolean)),
-        ...((scenarioData.flags ?? []).filter((f: any) => f.pending).map((f: any) => f.id).filter(Boolean)),
-        ...((scenarioData.departments ?? []).filter((d: any) => d.pending).map((d: any) => d.department_id).filter(Boolean)),
-        ...((scenarioData.personas ?? []).filter((p: any) => p.pending).map((p: any) => p.id).filter(Boolean)),
-        ...((scenarioData.documents ?? []).filter((d: any) => d.pending).map((d: any) => d.id).filter(Boolean)),
-        ...((scenarioData.objectives ?? []).filter((o: any) => o.pending).map((o: any) => o.id).filter(Boolean)),
-        ...((scenarioData.images ?? []).filter((i: any) => i.pending).map((i: any) => i.id).filter(Boolean)),
-        ...((scenarioData.videos ?? []).filter((v: any) => v.pending).map((v: any) => v.id).filter(Boolean)),
-        ...((scenarioData.questions ?? []).filter((q: any) => q.pending).map((q: any) => q.id).filter(Boolean)),
-        ...((scenarioData.options ?? []).filter((o: any) => o.pending).map((o: any) => o.id).filter(Boolean)),
-        ...((scenarioData.parameter_fields ?? []).filter((p: any) => p.pending).map((p: any) => p.id).filter(Boolean)),
+        ...((scenarioData.names ?? []).filter((n) => n.pending).map((n) => n.id).filter(Boolean).map(String)),
+        ...((scenarioData.descriptions ?? []).filter((d) => d.pending).map((d) => d.id).filter(Boolean).map(String)),
+        ...((scenarioData.problem_statements ?? []).filter((p) => p.pending).map((p) => p.problem_statement_id).filter(Boolean).map(String)),
+        ...((scenarioData.flags ?? []).filter((f) => f.pending).map((f) => f.id).filter(Boolean).map(String)),
+        ...((scenarioData.departments ?? []).filter((d) => d.pending).map((d) => d.department_id).filter(Boolean).map(String)),
+        ...((scenarioData.personas ?? []).filter((p) => p.pending).map((p) => p.persona_id).filter(Boolean).map(String)),
+        ...((scenarioData.documents ?? []).filter((d) => d.pending).map((d) => d.document_id).filter(Boolean).map(String)),
+        ...((scenarioData.objectives ?? []).filter((o) => o.pending).map((o) => o.id).filter(Boolean).map(String)),
+        ...((scenarioData.images ?? []).filter((i) => i.pending).map((i) => i.image_id).filter(Boolean).map(String)),
+        ...((scenarioData.videos ?? []).filter((v) => v.pending).map((v) => v.video_id).filter(Boolean).map(String)),
+        ...((scenarioData.questions ?? []).filter((q) => q.pending).map((q) => q.question_id).filter(Boolean).map(String)),
+        ...((scenarioData.options ?? []).filter((o) => o.pending).map((o) => o.option_id).filter(Boolean).map(String)),
+        ...((scenarioData.parameter_fields ?? []).filter((p) => p.pending).map((p) => p.id).filter(Boolean).map(String)),
       ],
     };
   }, [scenarioData]);
@@ -415,11 +445,11 @@ function ScenarioComponent({
     const map: Record<string, boolean | null> = {};
     const byId = new Map(
       (scenarioData?.flags ?? [])
-        .filter((f: any) => f.id)
-        .map((f: any) => [String(f.id), f]),
+        .filter((f) => f.id)
+        .map((f) => [String(f.id), f] as const),
     );
     for (const id of formState.flag_ids) {
-      const row = byId.get(id) as any;
+      const row = byId.get(id);
       if (!row) continue;
       const t = row.type ?? row.name;
       if (t && row.value != null) map[t] = row.value;
@@ -449,10 +479,10 @@ function ScenarioComponent({
   const flagRowsByType = useMemo(() => {
     const map = new Map<string, FlagRow[]>();
     for (const f of scenarioData?.flags ?? []) {
-      const t = (f as any).type ?? (f as any).name;
+      const t = f.type ?? f.name;
       if (!t) continue;
       const list = map.get(t) ?? [];
-      list.push(f as FlagRow);
+      list.push(f);
       map.set(t, list);
     }
     return map;
@@ -519,8 +549,8 @@ function ScenarioComponent({
   const scenarioDepartmentIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.departments?.filter((d: any) => d.selected) ?? [])
-          .map((item: any) => item.department_id)
+        (scenarioData?.departments?.filter((d) => d.selected) ?? [])
+          .map((item) => item.department_id)
           .filter(Boolean),
       ),
     [scenarioData?.departments],
@@ -528,8 +558,8 @@ function ScenarioComponent({
   const scenarioPersonaIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.personas?.filter((p: any) => p.selected) ?? [])
-          .map((item: any) => item.persona_id)
+        (scenarioData?.personas?.filter((p) => p.selected) ?? [])
+          .map((item) => item.persona_id)
           .filter(Boolean),
       ),
     [scenarioData?.personas],
@@ -537,8 +567,8 @@ function ScenarioComponent({
   const scenarioDocumentIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.documents?.filter((d: any) => d.selected) ?? [])
-          .map((item: any) => item.document_id)
+        (scenarioData?.documents?.filter((d) => d.selected) ?? [])
+          .map((item) => item.document_id)
           .filter(Boolean),
       ),
     [scenarioData?.documents],
@@ -546,8 +576,8 @@ function ScenarioComponent({
   const scenarioParameterFieldIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.parameter_fields?.filter((f: any) => f.selected) ?? [])
-          .map((item: any) => item.id)
+        (scenarioData?.parameter_fields?.filter((f) => f.selected) ?? [])
+          .map((item) => item.id)
           .filter(Boolean),
       ),
     [scenarioData?.parameter_fields],
@@ -555,8 +585,8 @@ function ScenarioComponent({
   const scenarioImageIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.images?.filter((i: any) => i.selected) ?? [])
-          .map((item: any) => item.image_id)
+        (scenarioData?.images?.filter((i) => i.selected) ?? [])
+          .map((item) => item.image_id)
           .filter(Boolean),
       ),
     [scenarioData?.images],
@@ -564,8 +594,8 @@ function ScenarioComponent({
   const scenarioObjectiveIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.objectives?.filter((o: any) => o.selected) ?? [])
-          .map((item: any) => item.id)
+        (scenarioData?.objectives?.filter((o) => o.selected) ?? [])
+          .map((item) => item.id)
           .filter(Boolean),
       ),
     [scenarioData?.objectives],
@@ -573,8 +603,8 @@ function ScenarioComponent({
   const scenarioVideoIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.videos?.filter((v: any) => v.selected) ?? [])
-          .map((item: any) => item.video_id)
+        (scenarioData?.videos?.filter((v) => v.selected) ?? [])
+          .map((item) => item.video_id)
           .filter(Boolean),
       ),
     [scenarioData?.videos],
@@ -582,8 +612,8 @@ function ScenarioComponent({
   const scenarioQuestionIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.questions?.filter((q: any) => q.selected) ?? [])
-          .map((item: any) => item.question_id)
+        (scenarioData?.questions?.filter((q) => q.selected) ?? [])
+          .map((item) => item.question_id)
           .filter(Boolean),
       ),
     [scenarioData?.questions],
@@ -591,8 +621,8 @@ function ScenarioComponent({
   const scenarioOptionIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.options?.filter((o: any) => o.selected) ?? [])
-          .map((item: { option_id?: string | null; selected?: boolean }) => item.option_id)
+        (scenarioData?.options?.filter((o) => o.selected) ?? [])
+          .map((item) => item.option_id)
           .filter(Boolean),
       ),
     [scenarioData?.options],
@@ -1131,36 +1161,36 @@ function ScenarioComponent({
       if (!stableScenarioDataFields) return false;
       switch (resourceType as ScenarioResourceType) {
         case "names":
-          return stableScenarioDataFields.names?.find((n: any) => n.selected)?.generated ?? false;
+          return stableScenarioDataFields.names?.find((n) => n.selected)?.generated ?? false;
         case "descriptions":
           return (
-            stableScenarioDataFields.descriptions?.find((d: any) => d.selected)?.generated ?? false
+            stableScenarioDataFields.descriptions?.find((d) => d.selected)?.generated ?? false
           );
         case "problem_statements":
           return (
-            stableScenarioDataFields.problem_statements?.find((p: any) => p.selected)?.generated ??
+            stableScenarioDataFields.problem_statements?.find((p) => p.selected)?.generated ??
             false
           );
         case "objectives":
           return (
             stableScenarioDataFields.objectives?.filter(
-              (o: any) => o.selected,
+              (o) => o.selected,
             )?.some(
-              (o: { generated?: boolean | null }) => o.generated,
+              (o) => o.generated,
             ) ?? false
           );
         case "scenario_flags":
           return (
             stableScenarioDataFields.flags?.some(
-              (f: { generated?: boolean | null }) => f.generated,
+              (f) => f.generated,
             ) ?? false
           );
         case "departments":
           return (
             stableScenarioDataFields.departments?.filter(
-              (d: any) => d.selected,
+              (d) => d.selected,
             )?.some(
-              (d: { generated?: boolean | null }) => d.generated,
+              (d) => d.generated,
             ) ?? false
           );
         case "personas":
@@ -1175,33 +1205,33 @@ function ScenarioComponent({
         case "parameter_fields":
           return (
             stableScenarioDataFields.parameter_fields?.filter(
-              (f: any) => f.selected,
+              (f) => f.selected,
             )?.some(
-              (f: { generated?: boolean | null }) => f.generated,
+              (f) => f.generated,
             ) ?? false
           );
         case "images":
           return (
             stableScenarioDataFields.images?.filter(
-              (i: any) => i.selected,
+              (i) => i.selected,
             )?.some(
-              (i: { generated?: boolean | null }) => i.generated,
+              (i) => i.generated,
             ) ?? false
           );
         case "videos":
           return (
             stableScenarioDataFields.videos?.filter(
-              (v: any) => v.selected,
+              (v) => v.selected,
             )?.some(
-              (v: { generated?: boolean | null }) => v.generated,
+              (v) => v.generated,
             ) ?? false
           );
         case "questions":
           return (
             stableScenarioDataFields.questions?.filter(
-              (q: any) => q.selected,
+              (q) => q.selected,
             )?.some(
-              (q: { generated?: boolean | null }) => q.generated,
+              (q) => q.generated,
             ) ?? false
           );
         default:
@@ -1308,10 +1338,11 @@ function ScenarioComponent({
       const data = scenarioDataRef.current;
       if (!data) return false;
       const resources = stepResources[stepId] ?? [];
+      const byType = data as Record<string, ScenarioResourceRow[] | null | undefined>;
       for (const rt of resources) {
-        const items = (data as any)[rt] ?? [];
+        const items = byType[rt] ?? [];
         for (const item of items) {
-          const itemId = item.id ?? item.department_id ?? item.persona_id ?? item.document_id ?? item.field_id ?? item.image_id ?? item.video_id ?? item.question_id ?? item.option_id ?? item.flag_option_id;
+          const itemId = resourceRowId(item);
           if (itemId && pendingSet.has(itemId)) return true;
         }
       }
@@ -1326,11 +1357,12 @@ function ScenarioComponent({
       if (!data) return;
       const resources = stepResources[stepId] ?? [];
       const idsToAccept: string[] = [];
+      const byType = data as Record<string, ScenarioResourceRow[] | null | undefined>;
       for (const rt of resources) {
-        const items = (data as any)[rt] ?? [];
+        const items = byType[rt] ?? [];
         for (const item of items) {
           if (item.pending) {
-            const itemId = item.id ?? item.department_id ?? item.persona_id ?? item.document_id ?? item.field_id ?? item.image_id ?? item.video_id ?? item.question_id ?? item.option_id ?? item.flag_option_id;
+            const itemId = resourceRowId(item);
             if (itemId) idsToAccept.push(itemId);
           }
         }
@@ -1350,11 +1382,12 @@ function ScenarioComponent({
       if (!data) return;
       const resources = stepResources[stepId] ?? [];
       const idsToReject: string[] = [];
+      const byType = data as Record<string, ScenarioResourceRow[] | null | undefined>;
       for (const rt of resources) {
-        const items = (data as any)[rt] ?? [];
+        const items = byType[rt] ?? [];
         for (const item of items) {
           if (item.pending) {
-            const itemId = item.id ?? item.department_id ?? item.persona_id ?? item.document_id ?? item.field_id ?? item.image_id ?? item.video_id ?? item.question_id ?? item.option_id ?? item.flag_option_id;
+            const itemId = resourceRowId(item);
             if (itemId) idsToReject.push(itemId);
           }
         }
@@ -1618,11 +1651,11 @@ function ScenarioComponent({
           const byType: Record<string, string | undefined> = {};
           const byId = new Map(
             (scenarioData?.flags ?? [])
-              .filter((f: any) => f.id)
-              .map((f: any) => [String(f.id), f]),
+              .filter((f) => f.id)
+              .map((f) => [String(f.id), f] as const),
           );
           for (const id of formState.flag_ids) {
-            const row = byId.get(id) as any;
+            const row = byId.get(id);
             if (!row) continue;
             const t = row.type ?? row.name;
             if (t && row.value === true) byType[t] = id;
@@ -1826,7 +1859,7 @@ function ScenarioComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={s?.names?.find((n: any) => n.selected) ?? null}
+                  name_resource={s?.names?.find((n) => n.selected) ?? null}
                   show_name={true}
                   names={s?.names ?? []}
                   disabled={disabled}
@@ -1872,7 +1905,7 @@ function ScenarioComponent({
               <div className="space-y-4">
                 <Descriptions
                   description_id={formState.description_id ?? null}
-                  description_resource={s?.descriptions?.find((d: any) => d.selected) ?? null}
+                  description_resource={s?.descriptions?.find((d) => d.selected) ?? null}
                   show_description={true}
                   descriptions={s?.descriptions ?? []}
                   searchTerm={descriptionSearch}
@@ -1901,7 +1934,7 @@ function ScenarioComponent({
 
                 <Departments
                   department_ids={formState.department_ids}
-                  department_resources={s?.departments?.filter((d: any) => d.selected) ?? []}
+                  department_resources={s?.departments?.filter((d) => d.selected) ?? []}
                   show_departments={true}
                   departments={s?.departments ?? []}
                   disabled={disabled}
@@ -1934,7 +1967,7 @@ function ScenarioComponent({
                     // Keep presentation ordering local: Active first, then
                     // the rest in server order.
                     const filtered = (s?.flags ?? []).filter(
-                      (f: any) => {
+                      (f) => {
                         const t = f.type ?? f.name;
                         // Mode-driven feature gating
                         if (t === "images_enabled") return !assessmentMode;
@@ -1944,7 +1977,7 @@ function ScenarioComponent({
                         return true;
                       },
                     );
-                    return [...filtered].sort((a: any, b: any) => {
+                    return [...filtered].sort((a, b) => {
                       const at = a.type ?? a.name;
                       const bt = b.type ?? b.name;
                       if (at === "scenario_active") return -1;
@@ -2059,7 +2092,7 @@ function ScenarioComponent({
                 {showImages && (
                   <Images
                     image_ids={formState.image_ids}
-                    image_resources={s?.images?.filter((i: any) => i.selected) ?? []}
+                    image_resources={s?.images?.filter((i) => i.selected) ?? []}
                     show_images={showImages}
                     images_required={false}
                     images={s?.images ?? []}
@@ -2098,7 +2131,7 @@ function ScenarioComponent({
                       formState.problem_statement_id ?? null
                     }
                     problem_statement_resource={
-                      s?.problem_statements?.find((p: any) => p.selected) ?? null
+                      s?.problem_statements?.find((p) => p.selected) ?? null
                     }
                     show_problem_statement={showProblemStatement}
                     problem_statements={s?.problem_statements ?? []}
@@ -2130,7 +2163,7 @@ function ScenarioComponent({
                 {showObjectives && (
                   <Objectives
                     objective_ids={formState.objective_ids}
-                    objective_resources={s?.objectives?.filter((o: any) => o.selected) ?? []}
+                    objective_resources={s?.objectives?.filter((o) => o.selected) ?? []}
                     show_objectives={showObjectives}
                     objectives_required={false}
                     objectives={s?.objectives ?? []}
@@ -2203,7 +2236,7 @@ function ScenarioComponent({
               <div className="space-y-6">
                 <Personas
                   persona_ids={formState.persona_ids}
-                  persona_resources={s?.personas?.filter((p: any) => p.selected) ?? []}
+                  persona_resources={s?.personas?.filter((p) => p.selected) ?? []}
                   show_personas={true}
                   personas={s?.personas ?? []}
                   disabled={disabled}
@@ -2275,7 +2308,7 @@ function ScenarioComponent({
               <div className="space-y-6">
                 <Documents
                   document_ids={formState.document_ids}
-                  document_resources={s?.documents?.filter((d: any) => d.selected) ?? []}
+                  document_resources={s?.documents?.filter((d) => d.selected) ?? []}
                   show_documents={true}
                   documents={s?.documents ?? []}
                   disabled={disabled}
@@ -2351,7 +2384,7 @@ function ScenarioComponent({
                 <ParameterFields
                   parameterIds={urlParameterIds}
                   parameterFieldIds={formState.parameter_field_ids}
-                  parameterFieldResources={s?.parameter_fields?.filter((f: any) => f.selected) ?? []}
+                  parameterFieldResources={s?.parameter_fields?.filter((f) => f.selected) ?? []}
                   // API schema types `parameters` as `unknown[]`; the runtime
                   // payload matches the `allParameters` element shape.
                   allParameters={(s?.parameters ?? []) as ParameterSummary[]}
@@ -2419,7 +2452,7 @@ function ScenarioComponent({
                 {showVideo && (
                   <Videos
                     video_ids={formState.video_ids}
-                    video_resources={s?.videos?.filter((v: any) => v.selected) ?? []}
+                    video_resources={s?.videos?.filter((v) => v.selected) ?? []}
                     show_videos={showVideo}
                     videos_required={false}
                     videos={s?.videos ?? []}
@@ -2453,7 +2486,7 @@ function ScenarioComponent({
                 {showQuestions && (
                   <Questions
                     question_ids={formState.question_ids}
-                    question_resources={s?.questions?.filter((q: any) => q.selected) ?? []}
+                    question_resources={s?.questions?.filter((q) => q.selected) ?? []}
                     show_questions={showQuestions}
                     questions_required={false}
                     questions={s?.questions ?? []}
@@ -2481,11 +2514,11 @@ function ScenarioComponent({
                 {showQuestions && internalQuestions.length > 0 && (
                   <Options
                     option_ids={formState.option_ids}
-                    option_resources={s?.options?.filter((o: any) => o.selected) ?? []}
+                    option_resources={s?.options?.filter((o) => o.selected) ?? []}
                     show_options={true}
                     options={s?.options ?? []}
                     question_ids={formState.question_ids}
-                    question_resources={s?.questions?.filter((q: any) => q.selected) ?? []}
+                    question_resources={s?.questions?.filter((q) => q.selected) ?? []}
                     internalQuestions={internalQuestions}
                     disabled={disabled}
                     onChange={(ids) =>
