@@ -336,7 +336,7 @@ function ProfileComponent({
             // — keeping the value would cause infinite re-saves (value takes
             // precedence → new resource → new id → repeat).
             name: formStateFromServer.name_id ? null : prev.name,
-            flag_ids: (formStateFromServer as any).flag_ids ?? prev.flag_ids,
+            flag_ids: formStateFromServer.flag_ids ?? prev.flag_ids,
             department_ids:
               formStateFromServer.department_ids ?? prev.department_ids,
             email_ids: formStateFromServer.email_ids ?? prev.email_ids,
@@ -592,9 +592,7 @@ function ProfileComponent({
           );
         case "roles":
           return (
-            (stableProfileData as any).roles?.some(
-              (item: any) => item.generated,
-            ) ?? false
+            stableProfileData.roles?.some((item) => item.generated) ?? false
           );
       }
     },
@@ -1068,11 +1066,11 @@ function ProfileComponent({
                     const map: Record<string, boolean | null> = {};
                     const byId = new Map(
                       (profileData?.flags ?? [])
-                        .filter((f: any) => f.id)
-                        .map((f: any) => [f.id as string, f])
+                        .filter((f) => f.id)
+                        .map((f) => [f.id as string, f] as const)
                     );
                     for (const id of formState.flag_ids) {
-                      const row = byId.get(id) as any;
+                      const row = byId.get(id);
                       if (!row) continue;
                       const type = row.type ?? row.name;
                       if (type && row.value != null) map[type] = row.value;
@@ -1086,16 +1084,16 @@ function ProfileComponent({
                   onChange={(type, next) => {
                     setFormState((prev) => {
                       const rows = (profileData?.flags ?? []).filter(
-                        (f: any) => (f.type ?? f.name) === type
+                        (f) => (f.type ?? f.name) === type
                       );
                       const rowIds = new Set(
-                        rows.map((r: any) => r.id).filter((id: any): id is string => !!id)
+                        rows.map((r) => r.id).filter((id): id is string => !!id)
                       );
                       const retained = prev.flag_ids.filter((id) => !rowIds.has(id));
                       const target =
                         next == null
                           ? null
-                          : rows.find((r: any) => r.value === next)?.id ?? null;
+                          : rows.find((r) => r.value === next)?.id ?? null;
                       return {
                         ...prev,
                         flag_ids: target ? [...retained, target] : retained,
