@@ -279,14 +279,9 @@ function ToolComponent({
   const selectedDescription = s?.descriptions?.find((item) => item.selected) ?? null;
 
   const getInitialFormState = useCallback((): ToolFormState => {
-    // Departments may be exposed under the (planned) `departments` field on
-    // the GET response; until the API surfaces them, fall back to an empty
-    // catalog. The picker below renders selected ids regardless.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const departmentResources = ((s as any)?.departments ?? []) as Array<{
-      department_id?: string | null;
-      selected?: boolean | null;
-    }>;
+    // Department resources from the GET response. The picker below renders
+    // selected ids regardless.
+    const departmentResources = s?.departments ?? [];
     return {
       name_id: selectedName?.id ?? null,
       name: null,
@@ -1237,15 +1232,13 @@ function ToolComponent({
                     handleRejectPendingField("description_id", pendingId)
                   }
                 />
-                {/* Departments — multi-select. Catalog is sourced from
-                    `(toolData as any).departments` once the GET endpoint
-                    surfaces it; the picker simply renders nothing until then.
-                    Form state, draft autosave, and create/update payloads all
-                    already round-trip `department_ids`. */}
+                {/* Departments — multi-select. Catalog is sourced from the
+                    GET response's `departments` field; the picker renders
+                    nothing when empty. Form state, draft autosave, and
+                    create/update payloads all round-trip `department_ids`. */}
                 <Departments
                   department_ids={formState.department_ids}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  departments={((s as any)?.departments ?? []) as any[]}
+                  departments={s?.departments ?? []}
                   show_departments
                   disabled={disabled}
                   onChange={(ids: string[]) =>
