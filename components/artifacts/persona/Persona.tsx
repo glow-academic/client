@@ -67,6 +67,9 @@ type PatchPersonaDraftOut = OutputOf<
 
 type PersonaData = OutputOf<"/persona/get", "post">;
 
+// Element type of the persona flag-resource array (carries type/name/value/id).
+type FlagRow = NonNullable<PersonaData["flags"]>[number];
+
 // Element shape expected by ParameterFields#allParameters. The API schema
 // types the source `parameters` field as `unknown[]`.
 type ParameterSummary = {
@@ -321,18 +324,18 @@ function PersonaComponent({
       if (!stablePersonaDataFields) return false;
       switch (resourceType) {
         case "names":
-          return stablePersonaDataFields.names?.find((n: any) => n.selected)?.generated ?? false;
+          return stablePersonaDataFields.names?.find((n) => n.selected)?.generated ?? false;
         case "descriptions":
           return (
-            stablePersonaDataFields.descriptions?.find((d: any) => d.selected)?.generated ?? false
+            stablePersonaDataFields.descriptions?.find((d) => d.selected)?.generated ?? false
           );
         case "colors":
-          return stablePersonaDataFields.colors?.find((c: any) => c.selected)?.generated ?? false;
+          return stablePersonaDataFields.colors?.find((c) => c.selected)?.generated ?? false;
         case "icons":
-          return stablePersonaDataFields.icons?.find((i: any) => i.selected)?.generated ?? false;
+          return stablePersonaDataFields.icons?.find((i) => i.selected)?.generated ?? false;
         case "instructions":
           return (
-            stablePersonaDataFields.instructions?.find((i: any) => i.selected)?.generated ?? false
+            stablePersonaDataFields.instructions?.find((i) => i.selected)?.generated ?? false
           );
         case "flags":
           return (
@@ -340,25 +343,25 @@ function PersonaComponent({
           );
         case "departments":
           return (
-            stablePersonaDataFields.departments?.filter((d: any) => d.selected)?.some(
+            stablePersonaDataFields.departments?.filter((d) => d.selected)?.some(
               (d) => d.generated,
             ) ?? false
           );
         case "parameter_fields":
           return (
-            stablePersonaDataFields.parameter_fields?.filter((p: any) => p.selected)?.some(
+            stablePersonaDataFields.parameter_fields?.filter((p) => p.selected)?.some(
               (f) => f.generated,
             ) ?? false
           );
         case "examples":
           return (
-            stablePersonaDataFields.examples?.filter((e: any) => e.selected)?.some(
+            stablePersonaDataFields.examples?.filter((e) => e.selected)?.some(
               (e) => e.generated,
             ) ?? false
           );
         case "voices":
           return (
-            stablePersonaDataFields.voices?.filter((v: any) => v.selected)?.some(
+            stablePersonaDataFields.voices?.filter((v) => v.selected)?.some(
               (v) => v.generated,
             ) ?? false
           );
@@ -392,26 +395,26 @@ function PersonaComponent({
     }
 
     return {
-      name_id: data.names?.find((n: any) => n.selected)?.id ?? null,
-      description_id: data.descriptions?.find((d: any) => d.selected)?.id ?? null,
-      color_id: data.colors?.find((c: any) => c.selected)?.id ?? null,
-      icon_id: data.icons?.find((i: any) => i.selected)?.id ?? null,
-      instructions_id: data.instructions?.find((i: any) => i.selected)?.id ?? null,
-      flag_ids: (data.flags?.filter((f: any) => f.selected) ?? [])
-        .map((f: any) => f.id)
-        .filter((id: unknown): id is string => !!id),
-      department_ids: (data.departments?.filter((d: any) => d.selected) ?? [])
-        .map((d) => d.department_id)
-        .filter(Boolean) as string[],
-      parameter_field_ids: (data.parameter_fields?.filter((p: any) => p.selected) ?? [])
+      name_id: data.names?.find((n) => n.selected)?.id ?? null,
+      description_id: data.descriptions?.find((d) => d.selected)?.id ?? null,
+      color_id: data.colors?.find((c) => c.selected)?.id ?? null,
+      icon_id: data.icons?.find((i) => i.selected)?.id ?? null,
+      instructions_id: data.instructions?.find((i) => i.selected)?.id ?? null,
+      flag_ids: (data.flags?.filter((f) => f.selected) ?? [])
         .map((f) => f.id)
-        .filter(Boolean) as string[],
-      example_ids: (data.examples?.filter((e: any) => e.selected) ?? [])
+        .filter((id): id is string => !!id),
+      department_ids: (data.departments?.filter((d) => d.selected) ?? [])
+        .map((d) => d.department_id)
+        .filter((id): id is string => !!id),
+      parameter_field_ids: (data.parameter_fields?.filter((p) => p.selected) ?? [])
+        .map((f) => f.id)
+        .filter((id): id is string => !!id),
+      example_ids: (data.examples?.filter((e) => e.selected) ?? [])
         .map((e) => e.id)
-        .filter(Boolean) as string[],
-      voice_ids: (data.voices?.filter((v: any) => v.selected) ?? [])
+        .filter((id): id is string => !!id),
+      voice_ids: (data.voices?.filter((v) => v.selected) ?? [])
         .map((v) => v.id)
-        .filter(Boolean) as string[],
+        .filter((id): id is string => !!id),
       // Value fields start null — IDs from server are the source of truth on load
       name: null,
       description: null,
@@ -419,17 +422,17 @@ function PersonaComponent({
       examples: [],
       // Collect all pending resource IDs from the API response
       pending_ids: [
-        ...((data.names ?? []).filter((n: any) => n.pending).map((n: any) => n.id).filter(Boolean)),
-        ...((data.descriptions ?? []).filter((d: any) => d.pending).map((d: any) => d.id).filter(Boolean)),
-        ...((data.colors ?? []).filter((c: any) => c.pending).map((c: any) => c.id).filter(Boolean)),
-        ...((data.icons ?? []).filter((i: any) => i.pending).map((i: any) => i.id).filter(Boolean)),
-        ...((data.instructions ?? []).filter((i: any) => i.pending).map((i: any) => i.id).filter(Boolean)),
-        ...((data.flags ?? []).filter((f: any) => f.pending).map((f: any) => f.id).filter(Boolean)),
-        ...((data.departments ?? []).filter((d: any) => d.pending).map((d: any) => d.department_id).filter(Boolean)),
-        ...((data.parameter_fields ?? []).filter((p: any) => p.pending).map((p: any) => p.id).filter(Boolean)),
-        ...((data.examples ?? []).filter((e: any) => e.pending).map((e: any) => e.id).filter(Boolean)),
-        ...((data.voices ?? []).filter((v: any) => v.pending).map((v: any) => v.id).filter(Boolean)),
-      ],
+        ...((data.names ?? []).filter((n) => n.pending).map((n) => n.id)),
+        ...((data.descriptions ?? []).filter((d) => d.pending).map((d) => d.id)),
+        ...((data.colors ?? []).filter((c) => c.pending).map((c) => c.id)),
+        ...((data.icons ?? []).filter((i) => i.pending).map((i) => i.id)),
+        ...((data.instructions ?? []).filter((i) => i.pending).map((i) => i.id)),
+        ...((data.flags ?? []).filter((f) => f.pending).map((f) => f.id)),
+        ...((data.departments ?? []).filter((d) => d.pending).map((d) => d.department_id)),
+        ...((data.parameter_fields ?? []).filter((p) => p.pending).map((p) => p.id)),
+        ...((data.examples ?? []).filter((e) => e.pending).map((e) => e.id)),
+        ...((data.voices ?? []).filter((v) => v.pending).map((v) => v.id)),
+      ].filter((id): id is string => !!id),
     };
   }, []);
 
@@ -445,26 +448,26 @@ function PersonaComponent({
   // Memoize stringified array dependencies
   const departmentIdsStr = React.useMemo(() => {
     return JSON.stringify(
-      (personaData?.departments?.filter((d: any) => d.selected) ?? [])
+      (personaData?.departments?.filter((d) => d.selected) ?? [])
         .map((d) => d.department_id)
         .filter(Boolean),
     );
   }, [personaData?.departments]);
   const parameterFieldIdsStr = React.useMemo(() => {
     return JSON.stringify(
-      (personaData?.parameter_fields?.filter((p: any) => p.selected) ?? [])
+      (personaData?.parameter_fields?.filter((p) => p.selected) ?? [])
         .map((f) => f.id)
         .filter(Boolean),
     );
   }, [personaData?.parameter_fields]);
   const exampleIdsStr = React.useMemo(() => {
     return JSON.stringify(
-      (personaData?.examples?.filter((e: any) => e.selected) ?? []).map((e) => e.id).filter(Boolean),
+      (personaData?.examples?.filter((e) => e.selected) ?? []).map((e) => e.id).filter(Boolean),
     );
   }, [personaData?.examples]);
   const voiceIdsStr = React.useMemo(() => {
     return JSON.stringify(
-      (personaData?.voices?.filter((v: any) => v.selected) ?? []).map((v) => v.id).filter(Boolean),
+      (personaData?.voices?.filter((v) => v.selected) ?? []).map((v) => v.id).filter(Boolean),
     );
   }, [personaData?.voices]);
 
@@ -765,8 +768,8 @@ function PersonaComponent({
         } as PatchPersonaDraftIn);
 
         // Sync resolved IDs from server form_state (server is source of truth)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const fs = (result as any)?.form_state as Record<string, unknown> | undefined;
+        const fs: PatchPersonaDraftOut["form_state"] | undefined =
+          result?.form_state;
         if (fs) {
           setFormState((prev) => {
             const next = {
@@ -774,20 +777,20 @@ function PersonaComponent({
               // Sync resolved IDs and clear value fields — server created the resource,
               // so the ID is now the source of truth. Keeping the value would cause
               // infinite re-saves (value takes precedence → creates new resource → new ID → repeat).
-              name_id: (fs["name_id"] as string) ?? prev.name_id,
-              name: fs["name_id"] ? null : prev.name,
-              description_id: (fs["description_id"] as string) ?? prev.description_id,
-              description: fs["description_id"] ? null : prev.description,
-              instructions_id: (fs["instructions_id"] as string) ?? prev.instructions_id,
-              instructions: fs["instructions_id"] ? null : prev.instructions,
-              color_id: (fs["color_id"] as string) ?? prev.color_id,
-              icon_id: (fs["icon_id"] as string) ?? prev.icon_id,
-              flag_ids: (fs["flag_ids"] as string[] | null) ?? prev.flag_ids,
-              department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
-              parameter_field_ids: (fs["parameter_field_ids"] as string[]) ?? prev.parameter_field_ids,
-              example_ids: (fs["example_ids"] as string[]) ?? prev.example_ids,
-              examples: (fs["example_ids"] as string[])?.length ? [] : prev.examples,
-              voice_ids: (fs["voice_ids"] as string[]) ?? prev.voice_ids,
+              name_id: fs.name_id ?? prev.name_id,
+              name: fs.name_id ? null : prev.name,
+              description_id: fs.description_id ?? prev.description_id,
+              description: fs.description_id ? null : prev.description,
+              instructions_id: fs.instructions_id ?? prev.instructions_id,
+              instructions: fs.instructions_id ? null : prev.instructions,
+              color_id: fs.color_id ?? prev.color_id,
+              icon_id: fs.icon_id ?? prev.icon_id,
+              flag_ids: fs.flag_ids ?? prev.flag_ids,
+              department_ids: fs.department_ids ?? prev.department_ids,
+              parameter_field_ids: fs.parameter_field_ids ?? prev.parameter_field_ids,
+              example_ids: fs.example_ids ?? prev.example_ids,
+              examples: fs.example_ids?.length ? [] : prev.examples,
+              voice_ids: fs.voice_ids ?? prev.voice_ids,
             };
             // Only set the server-sync "absorb" flag when the state actually changes.
             // If we set it unconditionally, the flag can stick (when server returns the
@@ -961,6 +964,29 @@ function PersonaComponent({
 
 
   // --- Pending state helpers per step ---
+  // Normalize a persona resource row to the two fields these helpers read.
+  // The resource arrays on PersonaData are heterogeneous (most carry `id`,
+  // departments carry `department_id`); `parameters` is typed `unknown[]`.
+  type PendingRow = {
+    id?: string | null;
+    department_id?: string | null;
+    pending?: boolean | null;
+  };
+  const collectStepRows = useCallback(
+    (data: PersonaData, resources: ResourceType[]): PendingRow[] => {
+      const rows: PendingRow[] = [];
+      for (const rt of resources) {
+        const items = data[rt as keyof PersonaData];
+        if (!Array.isArray(items)) continue;
+        for (const item of items as PendingRow[]) {
+          rows.push(item);
+        }
+      }
+      return rows;
+    },
+    [],
+  );
+
   const stepHasPending = useCallback(
     (stepId: string): boolean => {
       const pendingSet = new Set(formState.pending_ids);
@@ -968,16 +994,13 @@ function PersonaComponent({
       const data = personaDataRef.current;
       if (!data) return false;
       const resources = stepResources[stepId] ?? [];
-      for (const rt of resources) {
-        const items = (data as any)[rt] ?? [];
-        for (const item of items) {
-          const itemId = item.id ?? item.department_id;
-          if (itemId && pendingSet.has(itemId)) return true;
-        }
+      for (const item of collectStepRows(data, resources)) {
+        const itemId = item.id ?? item.department_id;
+        if (itemId && pendingSet.has(itemId)) return true;
       }
       return false;
     },
-    [formState.pending_ids, stepResources],
+    [formState.pending_ids, stepResources, collectStepRows],
   );
 
   const handleAcceptAllForStep = useCallback(
@@ -986,13 +1009,10 @@ function PersonaComponent({
       if (!data) return;
       const resources = stepResources[stepId] ?? [];
       const idsToAccept: string[] = [];
-      for (const rt of resources) {
-        const items = (data as any)[rt] ?? [];
-        for (const item of items) {
-          if (item.pending) {
-            const itemId = item.id ?? item.department_id;
-            if (itemId) idsToAccept.push(itemId);
-          }
+      for (const item of collectStepRows(data, resources)) {
+        if (item.pending) {
+          const itemId = item.id ?? item.department_id;
+          if (itemId) idsToAccept.push(itemId);
         }
       }
       // Remove accepted IDs from pending_ids (keep in form state = confirmed)
@@ -1001,7 +1021,7 @@ function PersonaComponent({
         pending_ids: prev.pending_ids.filter((id) => !idsToAccept.includes(id)),
       }));
     },
-    [stepResources],
+    [stepResources, collectStepRows],
   );
 
   const handleRejectAllForStep = useCallback(
@@ -1010,13 +1030,10 @@ function PersonaComponent({
       if (!data) return;
       const resources = stepResources[stepId] ?? [];
       const idsToReject: string[] = [];
-      for (const rt of resources) {
-        const items = (data as any)[rt] ?? [];
-        for (const item of items) {
-          if (item.pending) {
-            const itemId = item.id ?? item.department_id;
-            if (itemId) idsToReject.push(itemId);
-          }
+      for (const item of collectStepRows(data, resources)) {
+        if (item.pending) {
+          const itemId = item.id ?? item.department_id;
+          if (itemId) idsToReject.push(itemId);
         }
       }
       const rejectSet = new Set(idsToReject);
@@ -1036,7 +1053,7 @@ function PersonaComponent({
         pending_ids: prev.pending_ids.filter((id) => !rejectSet.has(id)),
       }));
     },
-    [stepResources],
+    [stepResources, collectStepRows],
   );
 
   // ─── Per-field pending lifecycle ──────────────────────────────────
@@ -1328,11 +1345,11 @@ function PersonaComponent({
     const map: Record<string, boolean | null> = {};
     const byId = new Map(
       (stablePersonaDataFields?.flags ?? [])
-        .filter((f: any) => f.id)
-        .map((f: any) => [f.id as string, f]),
+        .filter((f): f is FlagRow & { id: string } => !!f.id)
+        .map((f) => [f.id, f] as const),
     );
     for (const id of formState.flag_ids) {
-      const row: any = byId.get(id);
+      const row = byId.get(id);
       if (!row) continue;
       const type = row.type ?? row.name;
       if (type && row.value != null) map[type] = row.value;
@@ -1341,9 +1358,9 @@ function PersonaComponent({
   }, [formState.flag_ids, stablePersonaDataFields?.flags]);
 
   const flagRowsByType = useMemo(() => {
-    const map = new Map<string, any[]>();
+    const map = new Map<string, FlagRow[]>();
     for (const f of stablePersonaDataFields?.flags ?? []) {
-      const t = (f as any).type ?? (f as any).name;
+      const t = f.type ?? f.name;
       if (!t) continue;
       const list = map.get(t) ?? [];
       list.push(f);
@@ -1416,7 +1433,7 @@ function PersonaComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={s?.names?.find((n: any) => n.selected) ?? null}
+                  name_resource={s?.names?.find((n) => n.selected) ?? null}
                   show_name={true}
                   names={s?.names ?? []}
                   disabled={disabled}
@@ -1464,7 +1481,7 @@ function PersonaComponent({
               <div className="space-y-4">
                 <Descriptions
                   description_id={formState.description_id ?? null}
-                  description_resource={s?.descriptions?.find((d: any) => d.selected) ?? null}
+                  description_resource={s?.descriptions?.find((d) => d.selected) ?? null}
                   show_description={true}
                   descriptions={s?.descriptions ?? []}
                   disabled={disabled}
@@ -1500,7 +1517,7 @@ function PersonaComponent({
                 />
                 <Departments
                   department_ids={formState.department_ids ?? []}
-                  department_resources={s?.departments?.filter((d: any) => d.selected) ?? []}
+                  department_resources={s?.departments?.filter((d) => d.selected) ?? []}
                   show_departments={true}
                   departments={s?.departments ?? []}
                   disabled={disabled}
@@ -1582,7 +1599,7 @@ function PersonaComponent({
               <ParameterFields
                 parameterIds={urlParameterIds}
                 parameterFieldIds={formState.parameter_field_ids}
-                parameterFieldResources={s?.parameter_fields?.filter((p: any) => p.selected) ?? []}
+                parameterFieldResources={s?.parameter_fields?.filter((p) => p.selected) ?? []}
                 // API schema types `parameters` as `unknown[]`; the runtime
                 // payload matches the `allParameters` element shape.
                 allParameters={(s?.parameters ?? []) as ParameterSummary[]}
@@ -1666,7 +1683,7 @@ function PersonaComponent({
             >
               <Colors
                 color_id={formState.color_id ?? null}
-                color_resource={s?.colors?.find((c: any) => c.selected) ?? null}
+                color_resource={s?.colors?.find((c) => c.selected) ?? null}
                 show_color={true}
                 colors={s?.colors ?? []}
                 disabled={disabled}
@@ -1750,7 +1767,7 @@ function PersonaComponent({
             >
               <Icons
                 icon_id={formState.icon_id ?? null}
-                icon_resource={s?.icons?.find((i: any) => i.selected) ?? null}
+                icon_resource={s?.icons?.find((i) => i.selected) ?? null}
                 show_icon={true}
                 icons={s?.icons ?? []}
                 disabled={disabled}
@@ -1817,7 +1834,7 @@ function PersonaComponent({
                 instructions_id={formState.instructions_id ?? null}
                 instructions_resource={
                   formState.instructions_id
-                    ? (s?.instructions?.find((i: any) => i.selected) ?? null)
+                    ? (s?.instructions?.find((i) => i.selected) ?? null)
                     : null
                 }
                 show_instructions={true}
@@ -1855,7 +1872,7 @@ function PersonaComponent({
               />
               <Examples
                 example_ids={formState.example_ids ?? []}
-                example_resources={s?.examples?.filter((e: any) => e.selected) ?? []}
+                example_resources={s?.examples?.filter((e) => e.selected) ?? []}
                 show_examples={true}
                 examples={s?.examples ?? []}
                 disabled={disabled}
@@ -1875,7 +1892,7 @@ function PersonaComponent({
               />
               <Voices
                 voice_ids={formState.voice_ids ?? []}
-                voice_resources={s?.voices?.filter((v: any) => v.selected) ?? []}
+                voice_resources={s?.voices?.filter((v) => v.selected) ?? []}
                 show_voices={true}
                 voices={s?.voices ?? []}
                 disabled={disabled}
@@ -1980,36 +1997,36 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
   const prevData = prevProps.personaData;
   const nextData = nextProps.personaData;
   const prevIds = {
-    name_id: prevData?.names?.find((n: any) => n.selected)?.id ?? null,
-    description_id: prevData?.descriptions?.find((d: any) => d.selected)?.id ?? null,
-    color_id: prevData?.colors?.find((c: any) => c.selected)?.id ?? null,
-    icon_id: prevData?.icons?.find((i: any) => i.selected)?.id ?? null,
-    instructions_id: prevData?.instructions?.find((i: any) => i.selected)?.id ?? null,
-    flag_ids: (prevData?.flags?.filter((f: any) => f.selected) ?? []).map((f: any) => f.id).filter(Boolean),
-    department_ids: (prevData?.departments?.filter((d: any) => d.selected) ?? [])
+    name_id: prevData?.names?.find((n) => n.selected)?.id ?? null,
+    description_id: prevData?.descriptions?.find((d) => d.selected)?.id ?? null,
+    color_id: prevData?.colors?.find((c) => c.selected)?.id ?? null,
+    icon_id: prevData?.icons?.find((i) => i.selected)?.id ?? null,
+    instructions_id: prevData?.instructions?.find((i) => i.selected)?.id ?? null,
+    flag_ids: (prevData?.flags?.filter((f) => f.selected) ?? []).map((f) => f.id).filter(Boolean),
+    department_ids: (prevData?.departments?.filter((d) => d.selected) ?? [])
       .map((d) => d.department_id)
       .filter(Boolean),
-    parameter_field_ids: (prevData?.parameter_fields?.filter((p: any) => p.selected) ?? [])
+    parameter_field_ids: (prevData?.parameter_fields?.filter((p) => p.selected) ?? [])
       .map((f) => f.id)
       .filter(Boolean),
-    example_ids: (prevData?.examples?.filter((e: any) => e.selected) ?? [])
+    example_ids: (prevData?.examples?.filter((e) => e.selected) ?? [])
       .map((e) => e.id)
       .filter(Boolean),
   };
   const nextIds = {
-    name_id: nextData?.names?.find((n: any) => n.selected)?.id ?? null,
-    description_id: nextData?.descriptions?.find((d: any) => d.selected)?.id ?? null,
-    color_id: nextData?.colors?.find((c: any) => c.selected)?.id ?? null,
-    icon_id: nextData?.icons?.find((i: any) => i.selected)?.id ?? null,
-    instructions_id: nextData?.instructions?.find((i: any) => i.selected)?.id ?? null,
-    flag_ids: (nextData?.flags?.filter((f: any) => f.selected) ?? []).map((f: any) => f.id).filter(Boolean),
-    department_ids: (nextData?.departments?.filter((d: any) => d.selected) ?? [])
+    name_id: nextData?.names?.find((n) => n.selected)?.id ?? null,
+    description_id: nextData?.descriptions?.find((d) => d.selected)?.id ?? null,
+    color_id: nextData?.colors?.find((c) => c.selected)?.id ?? null,
+    icon_id: nextData?.icons?.find((i) => i.selected)?.id ?? null,
+    instructions_id: nextData?.instructions?.find((i) => i.selected)?.id ?? null,
+    flag_ids: (nextData?.flags?.filter((f) => f.selected) ?? []).map((f) => f.id).filter(Boolean),
+    department_ids: (nextData?.departments?.filter((d) => d.selected) ?? [])
       .map((d) => d.department_id)
       .filter(Boolean),
-    parameter_field_ids: (nextData?.parameter_fields?.filter((p: any) => p.selected) ?? [])
+    parameter_field_ids: (nextData?.parameter_fields?.filter((p) => p.selected) ?? [])
       .map((f) => f.id)
       .filter(Boolean),
-    example_ids: (nextData?.examples?.filter((e: any) => e.selected) ?? [])
+    example_ids: (nextData?.examples?.filter((e) => e.selected) ?? [])
       .map((e) => e.id)
       .filter(Boolean),
   };
