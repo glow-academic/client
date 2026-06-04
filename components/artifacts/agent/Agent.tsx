@@ -295,33 +295,33 @@ export default function Agent({
   const agentData = (
     isEditMode ? agentDetail : agentDetailDefault
   ) as CanonicalAgentData | undefined;
-  const sectionData = useMemo<any>(() => {
+  const sectionData = useMemo(() => {
     if (!agentData) return undefined;
-    const flags = (agentData.flags ?? []) as any[];
-    const selectedFlags = flags.filter((flag: any) => flag.selected);
+    const flags = agentData.flags ?? [];
+    const selectedFlags = flags.filter((flag) => flag.selected);
     return {
       ...agentData,
-      names: toSingleSection(agentData.names as any, {
+      names: toSingleSection(agentData.names, {
         show: true,
         required: true,
         showAiGenerate: !!agentData.basic_show_ai_generate,
       }),
-      descriptions: toSingleSection(agentData.descriptions as any, {
+      descriptions: toSingleSection(agentData.descriptions, {
         show: true,
         required: false,
         showAiGenerate: !!agentData.basic_show_ai_generate,
       }),
-      models: toSingleSection(agentData.models as any, {
+      models: toSingleSection(agentData.models, {
         show: true,
         required: true,
         showAiGenerate: !!agentData.basic_show_ai_generate,
       }),
-      prompts: toSingleSection(agentData.prompts as any, {
+      prompts: toSingleSection(agentData.prompts, {
         show: true,
         required: false,
         showAiGenerate: !!agentData.general_show_ai_generate,
       }),
-      instructions: toSingleSection(agentData.instructions as any, {
+      instructions: toSingleSection(agentData.instructions, {
         show: true,
         required: false,
         showAiGenerate: !!agentData.general_show_ai_generate,
@@ -335,10 +335,10 @@ export default function Agent({
       },
       departments: {
         ...toMultiSection(
-          ((agentData.departments ?? []) as any[]).map((item: any) => ({
+          (agentData.departments ?? []).map((item) => ({
             ...item,
-            id: item.department_id,
-          })) as any,
+            id: item.department_id ?? null,
+          })),
           {
             show: true,
             required: false,
@@ -346,32 +346,32 @@ export default function Agent({
           },
         ),
       },
-      tools: toMultiSection(agentData.tools as any, {
+      tools: toMultiSection(agentData.tools, {
         show: true,
         required: false,
         showAiGenerate: !!agentData.general_show_ai_generate,
       }),
-      temperature_levels: toSingleSection(agentData.temperature_levels as any, {
+      temperature_levels: toSingleSection(agentData.temperature_levels, {
         show: true,
         required: false,
         showAiGenerate: !!agentData.general_show_ai_generate,
       }),
-      reasoning_levels: toSingleSection(agentData.reasoning_levels as any, {
+      reasoning_levels: toSingleSection(agentData.reasoning_levels, {
         show: true,
         required: false,
         showAiGenerate: !!agentData.general_show_ai_generate,
       }),
-      voices: toMultiSection(agentData.voices as any, {
+      voices: toMultiSection(agentData.voices, {
         show: true,
         required: false,
         showAiGenerate: !!agentData.general_show_ai_generate,
       }),
-      qualities: toMultiSection(agentData.qualities as any, {
+      qualities: toMultiSection(agentData.qualities, {
         show: true,
         required: false,
         showAiGenerate: !!agentData.general_show_ai_generate,
       }),
-      rubrics: toMultiSection(agentData.rubrics as any, {
+      rubrics: toMultiSection(agentData.rubrics, {
         show: true,
         required: false,
         showAiGenerate: !!agentData.general_show_ai_generate,
@@ -484,33 +484,29 @@ export default function Agent({
       };
     }
 
-    const currentFlagIds: string[] = ((data.flags?.current ?? []) as any[])
-      .map((f: any) => f.id)
-      .filter((id: any): id is string => !!id);
+    const currentFlagIds: string[] = (data.flags?.current ?? [])
+      .map((f) => f.id)
+      .filter((id): id is string => !!id);
     const currentDepartments =
       data.departments?.current
-        ?.map((d: any) => d.department_id)
-        .filter((id: any): id is string => !!id) ?? [];
+        ?.map((d) => d.department_id)
+        .filter((id): id is string => !!id) ?? [];
     const currentTools =
       data.tools?.current
-        ?.map((t: any) => t.id)
-        .filter((id: any): id is string => !!id) ?? [];
+        ?.map((t) => t.id)
+        .filter((id): id is string => !!id) ?? [];
     const currentVoices =
       data.voices?.current
-        ?.map((v: any) => v.id)
-        .filter((id: any): id is string => !!id) ?? [];
+        ?.map((v) => v.id)
+        .filter((id): id is string => !!id) ?? [];
     const currentQualities =
       data.qualities?.current
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ?.map((q: any) => q.id)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .filter((id: any): id is string => !!id) ?? [];
+        ?.map((q) => q.id)
+        .filter((id): id is string => !!id) ?? [];
     const currentRubrics =
       data.rubrics?.current
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ?.map((r: any) => r.id)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .filter((id: any): id is string => !!id) ?? [];
+        ?.map((r) => r.id)
+        .filter((id): id is string => !!id) ?? [];
 
     return {
       name_id: data.names?.resource?.id ?? null,
@@ -528,7 +524,7 @@ export default function Agent({
       quality_ids: currentQualities,
       rubric_ids: currentRubrics,
       instructions_id: data.instructions?.resource?.id ?? null,
-      pending_ids: (data.pending_ids ?? []) as string[],
+      pending_ids: data.pending_ids ?? [],
     };
   }, [
     sectionData,
@@ -605,21 +601,21 @@ export default function Agent({
             name: fs.name_id ? null : prev.name,
             description_id: fs.description_id ?? prev.description_id,
             description: fs.description_id ? null : prev.description,
-            flag_ids: (fs as any).flag_ids ?? prev.flag_ids,
+            flag_ids: fs.flag_ids ?? prev.flag_ids,
             departmentIds: fs.department_ids ?? prev.departmentIds,
-            modelId: (fs as any).model_id ?? prev.modelId,
+            modelId: fs.model_id ?? prev.modelId,
             tool_ids: fs.tool_ids ?? prev.tool_ids,
             reasoning_level_id:
-              (fs as any).reasoning_level_id ?? prev.reasoning_level_id,
+              fs.reasoning_level_id ?? prev.reasoning_level_id,
             temperature_level_id:
-              (fs as any).temperature_level_id ?? prev.temperature_level_id,
+              fs.temperature_level_id ?? prev.temperature_level_id,
             voice_ids: fs.voice_ids ?? prev.voice_ids,
-            quality_ids: (fs as any).quality_ids ?? prev.quality_ids,
-            rubric_ids: (fs as any).rubric_ids ?? prev.rubric_ids,
-            prompt_id: (fs as any).prompt_id ?? prev.prompt_id,
+            quality_ids: fs.quality_ids ?? prev.quality_ids,
+            rubric_ids: fs.rubric_ids ?? prev.rubric_ids,
+            prompt_id: fs.prompt_id ?? prev.prompt_id,
             instructions_id:
-              (fs as any).instruction_id ?? prev.instructions_id,
-            pending_ids: (fs as any).pending_ids ?? prev.pending_ids,
+              fs.instruction_id ?? prev.instructions_id,
+            pending_ids: fs.pending_ids ?? prev.pending_ids,
           };
           // Only set the server-sync absorb flag when state actually changes.
           // (Same fix as Persona / Parameter / Profile.)
@@ -787,17 +783,26 @@ export default function Agent({
     }
 
     const selectedModel = modelsSection?.resources?.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (m: any) => m.id === draftState.modelId,
+      (m) => m.id === draftState.modelId,
     );
     if (!selectedModel) {
       return null;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const inputMods = (selectedModel as any).input_modalities ?? [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const outputMods = (selectedModel as any).output_modalities ?? [];
+    // JUDGMENT-GATED: the generated model resource only carries `modality_ids`
+    // (string ids), not `input_modalities`/`output_modalities` string arrays.
+    // These reads have always resolved to `[]` at runtime (the fields don't
+    // exist on the payload), so every `has_*` flag below is currently `false`.
+    // Resolving capabilities from `modality_ids` (or extending the API) is a
+    // product/runtime decision, so the original `as`-cast behavior is preserved
+    // verbatim here. Casting through `unknown` to a precise local shape keeps
+    // this lint-clean without `any` while leaving the behavior unchanged.
+    const modalityCarrier = selectedModel as unknown as {
+      input_modalities?: string[] | null;
+      output_modalities?: string[] | null;
+    };
+    const inputMods = modalityCarrier.input_modalities ?? [];
+    const outputMods = modalityCarrier.output_modalities ?? [];
 
     return {
       input_modalities: inputMods,
@@ -1017,10 +1022,8 @@ export default function Agent({
 
         const validDepartmentIds =
           departmentsSection?.resources
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ?.map((d: any) => d.department_id)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .filter((id: any): id is string => !!id) ?? [];
+            ?.map((d) => d.department_id)
+            .filter((id): id is string => !!id) ?? [];
         const finalDepartmentIds = transformDepartmentIdsForSubmit(
           ((effectiveFormState["department_ids"] as string[]) ??
             (effectiveFormState["departmentIds"] as string[])) ??
@@ -1223,37 +1226,28 @@ export default function Agent({
           return descriptionsSection?.resource?.generated ?? false;
         case "models":
           return (
-            modelsSection?.resources?.some(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (m: any) => (m as { generated?: boolean }).generated,
-            ) ?? false
+            modelsSection?.resources?.some((m) => m.generated) ?? false
           );
         case "prompts":
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return promptsSection?.resources?.some((p: any) => p.generated) ?? false;
+          return promptsSection?.resources?.some((p) => p.generated) ?? false;
         case "instructions":
           return instructionsSection?.resource?.generated ?? false;
         case "flags":
-          return flagsSection?.current?.some((f: any) => f.generated) ?? false;
+          return flagsSection?.current?.some((f) => f.generated) ?? false;
         case "departments":
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return departmentsSection?.current?.some((d: any) => d.generated) ?? false;
+          return departmentsSection?.current?.some((d) => d.generated) ?? false;
         case "reasoning_levels":
           return reasoningLevelsSection?.resource?.generated ?? false;
         case "temperature_levels":
           return temperatureLevelsSection?.resource?.generated ?? false;
         case "voices":
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return voicesSection?.current?.some((v: any) => v.generated) ?? false;
+          return voicesSection?.current?.some((v) => v.generated) ?? false;
         case "tools":
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return toolsSection?.current?.some((t: any) => t.generated) ?? false;
+          return toolsSection?.current?.some((t) => t.generated) ?? false;
         case "qualities":
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return qualitiesSection?.current?.some((q: any) => q.generated) ?? false;
+          return qualitiesSection?.current?.some((q) => q.generated) ?? false;
         case "rubrics":
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return rubricsSection?.current?.some((r: any) => r.generated) ?? false;
+          return rubricsSection?.current?.some((r) => r.generated) ?? false;
         default:
           return false;
       }
@@ -1592,15 +1586,17 @@ export default function Agent({
                         />
 
                         <Flags
-                          flags={(flagsSection?.resources ?? []) as any}
+                          flags={flagsSection?.resources ?? []}
                           values={(() => {
                             const map: Record<string, boolean | null> = {};
-                            const rows = (flagsSection?.resources ?? []) as any[];
+                            const rows = flagsSection?.resources ?? [];
                             const byId = new Map(
-                              rows.filter((f: any) => f.id).map((f: any) => [f.id as string, f])
+                              rows
+                                .filter((f) => f.id)
+                                .map((f) => [f.id as string, f] as const)
                             );
                             for (const id of draftState.flag_ids) {
-                              const row = byId.get(id) as any;
+                              const row = byId.get(id);
                               if (!row) continue;
                               const type = row.type ?? row.name;
                               if (type && row.value != null) map[type] = row.value;
@@ -1613,14 +1609,14 @@ export default function Agent({
                           disabled={isReadonly}
                           onChange={(type: string, next: boolean | null) => {
                             setDraftState((prev) => {
-                              const rows = ((flagsSection?.resources ?? []) as any[])
-                                .filter((f: any) => (f.type ?? f.name) === type);
+                              const rows = (flagsSection?.resources ?? [])
+                                .filter((f) => (f.type ?? f.name) === type);
                               const rowIds = new Set(
-                                rows.map((r: any) => r.id).filter((id: any): id is string => !!id)
+                                rows.map((r) => r.id).filter((id): id is string => !!id)
                               );
                               const retained = prev.flag_ids.filter((id) => !rowIds.has(id));
                               const target =
-                                next == null ? null : rows.find((r: any) => r.value === next)?.id ?? null;
+                                next == null ? null : rows.find((r) => r.value === next)?.id ?? null;
                               return {
                                 ...prev,
                                 flag_ids: target ? [...retained, target] : retained,
@@ -1800,9 +1796,17 @@ export default function Agent({
 
                 case "temperature": {
                   const selectedModel = modelsSection?.resources?.find(
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (m: any) => m.id === draftState.modelId,
+                    (m) => m.id === draftState.modelId,
                   );
+                  // JUDGMENT-GATED: see `selectedModelCapabilities` above — the
+                  // generated model resource has no `temperature_lower`/`upper`
+                  // fields, so these have always resolved to `null` at runtime.
+                  // Behavior preserved verbatim pending a product/runtime
+                  // decision on sourcing temperature bounds.
+                  const selectedModelTemp = selectedModel as unknown as {
+                    temperature_lower?: number | null;
+                    temperature_upper?: number | null;
+                  } | undefined;
 
                   return (
                     <StepCard
@@ -1846,12 +1850,10 @@ export default function Agent({
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         temperature_levels={mergedTemperatureLevels as any[]}
                         temperature_lower={
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          (selectedModel as any)?.temperature_lower ?? null
+                          selectedModelTemp?.temperature_lower ?? null
                         }
                         temperature_upper={
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          (selectedModel as any)?.temperature_upper ?? null
+                          selectedModelTemp?.temperature_upper ?? null
                         }
                         disabled={isReadonly}
                         onTemperatureLevelIdChange={(id: string | null) =>
