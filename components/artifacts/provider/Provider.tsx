@@ -91,27 +91,27 @@ export default function Provider({
   const emptyFlushRegistryRef = useRef<
     Map<string, () => Promise<Record<string, unknown> | void>>
   >(new Map());
-  const s = providerData as (ProviderData & Record<string, any>) | undefined;
+  const s = providerData;
 
   const getInitialFormState = useCallback((): ProviderFormState => {
-    const selectedName = s?.names?.find((item: any) => item.selected) ?? null;
+    const selectedName = s?.names?.find((item) => item.selected) ?? null;
     const selectedDescription =
-      s?.descriptions?.find((item: any) => item.selected) ?? null;
-    const selectedValue = s?.values?.find((item: any) => item.selected) ?? null;
-    const selectedEndpoint = s?.endpoints?.find((item: any) => item.selected) ?? null;
-    const selectedKey = s?.keys?.find((item: any) => item.selected) ?? null;
+      s?.descriptions?.find((item) => item.selected) ?? null;
+    const selectedValue = s?.values?.find((item) => item.selected) ?? null;
+    const selectedEndpoint = s?.endpoints?.find((item) => item.selected) ?? null;
+    const selectedKey = s?.keys?.find((item) => item.selected) ?? null;
 
     return {
       name_id: selectedName?.id ?? null,
       name: null,
       description_id: selectedDescription?.id ?? null,
       description: null,
-      flag_ids: (s?.flags?.filter((item: any) => item.selected) ?? [])
-        .map((item: any) => item.id)
-        .filter((id: unknown): id is string => !!id),
-      department_ids: (s?.departments?.filter((item: any) => item.selected) ?? [])
-        .map((item: any) => item.department_id)
-        .filter(Boolean),
+      flag_ids: (s?.flags?.filter((item) => item.selected) ?? [])
+        .map((item) => item.id)
+        .filter((id): id is string => !!id),
+      department_ids: (s?.departments?.filter((item) => item.selected) ?? [])
+        .map((item) => item.department_id)
+        .filter((id): id is string => !!id),
       value_id: selectedValue?.id ?? null,
       value: null,
       endpoint_id: selectedEndpoint?.id ?? null,
@@ -189,11 +189,11 @@ export default function Provider({
     const map: Record<string, boolean | null> = {};
     const byId = new Map(
       (s?.flags ?? [])
-        .filter((f: any) => f.id)
-        .map((f: any) => [f.id as string, f])
+        .filter((f) => f.id)
+        .map((f) => [f.id as string, f] as const)
     );
     for (const id of formState.flag_ids) {
-      const row = byId.get(id) as any;
+      const row = byId.get(id);
       if (!row) continue;
       const type = row.type ?? row.name;
       if (type && row.value != null) map[type] = row.value;
@@ -459,29 +459,29 @@ export default function Provider({
     (resourceType: ResourceType) => {
       if (!s) return false;
       if (resourceType === "names") {
-        return s.names?.find((item: any) => item.selected)?.generated ?? false;
+        return s.names?.find((item) => item.selected)?.generated ?? false;
       }
       if (resourceType === "descriptions") {
         return (
-          s.descriptions?.find((item: any) => item.selected)?.generated ?? false
+          s.descriptions?.find((item) => item.selected)?.generated ?? false
         );
       }
       if (resourceType === "flags") {
-        return s.flags?.some((item: any) => item.selected && item.generated) ?? false;
+        return s.flags?.some((item) => item.selected && item.generated) ?? false;
       }
       if (resourceType === "departments") {
         return (
-          s.departments?.some((item: any) => item.selected && item.generated) ?? false
+          s.departments?.some((item) => item.selected && item.generated) ?? false
         );
       }
       if (resourceType === "values") {
-        return s.values?.find((item: any) => item.selected)?.generated ?? false;
+        return s.values?.find((item) => item.selected)?.generated ?? false;
       }
       if (resourceType === "endpoints") {
-        return s.endpoints?.find((item: any) => item.selected)?.generated ?? false;
+        return s.endpoints?.find((item) => item.selected)?.generated ?? false;
       }
       if (resourceType === "keys") {
-        return s.keys?.find((item: any) => item.selected)?.generated ?? false;
+        return s.keys?.find((item) => item.selected)?.generated ?? false;
       }
       return false;
     },
@@ -691,7 +691,7 @@ export default function Provider({
               customHeader={
                 <Names
                   name_id={formState.name_id}
-                  name_resource={s?.names?.find((item: any) => item.selected) ?? null}
+                  name_resource={s?.names?.find((item) => item.selected) ?? null}
                   show_name={true}
                   names={s?.names ?? []}
                   disabled={disabled}
@@ -739,7 +739,7 @@ export default function Provider({
                   name in the header. */}
               <Values
                 value_ids={formState.value_id ? [formState.value_id] : []}
-                value_resources={s?.values?.filter((item: any) => item.selected) ?? []}
+                value_resources={s?.values?.filter((item) => item.selected) ?? []}
                 values={s?.values ?? []}
                 value={formState.value}
                 onValueChange={(value) =>
@@ -769,7 +769,7 @@ export default function Provider({
               <Descriptions
                 description_id={formState.description_id}
                 description_resource={
-                  s?.descriptions?.find((item: any) => item.selected) ?? null
+                  s?.descriptions?.find((item) => item.selected) ?? null
                 }
                 show_description={true}
                 descriptions={s?.descriptions ?? []}
@@ -801,7 +801,7 @@ export default function Provider({
               />
               <Departments
                 department_ids={formState.department_ids}
-                department_resources={s?.departments?.filter((item: any) => item.selected) ?? []}
+                department_resources={s?.departments?.filter((item) => item.selected) ?? []}
                 show_departments={true}
                 departments={s?.departments ?? []}
                 disabled={disabled}
@@ -848,7 +848,7 @@ export default function Provider({
             >
               <Endpoints
                 endpoint_ids={formState.endpoint_id ? [formState.endpoint_id] : []}
-                endpoint_resources={s?.endpoints?.filter((item: any) => item.selected) ?? []}
+                endpoint_resources={s?.endpoints?.filter((item) => item.selected) ?? []}
                 endpoints={s?.endpoints ?? []}
                 endpoint={formState.endpoint}
                 onEndpointChange={(endpoint) =>
@@ -907,15 +907,15 @@ export default function Provider({
             >
               <Keys
                 key_id={formState.key_id}
-                key_resource={s?.keys?.find((item: any) => item.selected) ?? null}
+                key_resource={s?.keys?.find((item) => item.selected) ?? null}
                 keys={
-                  (s?.keys ?? []).map((item: any) => ({
-                    id: item.id,
-                    name: item.name,
-                    description: item.description,
-                    key_masked: item.key,
+                  (s?.keys ?? []).map((item) => ({
+                    id: item.id ?? null,
+                    name: item.name ?? null,
+                    description: item.description ?? null,
+                    key_masked: item.key ?? null,
                     active: true,
-                    generated: item.generated,
+                    generated: item.generated ?? null,
                   }))
                 }
                 show_key={true}
