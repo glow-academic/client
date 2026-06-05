@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-import { expectAuthenticated, hoverFirstVisible } from "../helpers/demo-page";
-import { pauseForDemo, saveDemoVideo } from "../helpers/demo-video";
+import { expectAuthenticated, settleLoaded } from "../helpers/demo-page";
+import { saveDemoVideo } from "../helpers/demo-video";
 
 const TOPIC = "home-overview";
 
@@ -11,10 +11,11 @@ test.describe("demo: home overview", () => {
     await expectAuthenticated(page);
 
     await expect(page.getByTestId("home-overview")).toBeVisible({ timeout: 30_000 });
-    await pauseForDemo();
 
-    await hoverFirstVisible(page, /^simulation-progress-/);
-    await hoverFirstVisible(page, /^start-simulation-/);
+    // Wait out the skeleton lead-in, then tour the loaded simulation deck.
+    await settleLoaded(page, {
+      hoverTestIds: [/^simulation-progress-/, /^start-simulation-/],
+    });
 
     await saveDemoVideo(page, TOPIC);
   });
