@@ -1004,7 +1004,7 @@ export default function Leaderboard({
 
 export function LeaderboardSkeleton() {
   return (
-    <div className="space-y-6" data-testid="leaderboard-container">
+    <div className="space-y-6" data-testid="leaderboard-skeleton">
       <div className="space-y-8">
         {/* Accolades Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

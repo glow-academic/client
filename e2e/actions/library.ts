@@ -9,6 +9,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
 import { DemoDriver } from "../demo/DemoDriver";
+import { waitOutSkeleton } from "../helpers/demo-page";
 import type { DomainSpec } from "./domains";
 
 export class Library {
@@ -58,7 +59,14 @@ export class Library {
       .waitFor({ state: "visible", timeout: 10_000 })
       .then(() => true)
       .catch(() => false);
-    if (populated) await this.demo.pause();
+    if (populated) {
+      // Central lead-in trim: the grid renders before its card data fully
+      // lands, so the opening frames are still shimmer. Wait the skeleton out
+      // (bounded, demo-mode-only) so the LOADED grid — not the blank/skeleton
+      // frame — dominates every overview/search clip routed through here.
+      await waitOutSkeleton(this.page);
+      await this.demo.pause();
+    }
     return populated;
   }
 
