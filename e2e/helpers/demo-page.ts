@@ -7,6 +7,38 @@ export async function expectAuthenticated(page: Page): Promise<void> {
   await expect(page.getByText("Redirecting to login")).toHaveCount(0);
 }
 
+/**
+ * Wait out the loading skeleton so the captured video is mostly the LOADED,
+ * populated screen rather than the pre-load shimmer.
+ *
+ * Every `<Skeleton>` carries `data-testid="skeleton"`, so once the page's real
+ * content has rendered the skeletons detach. We:
+ *   1. wait for the skeletons to go (bounded — a page with none returns fast),
+ *   2. hold a short settle beat so the populated screen is on frame, then
+ *   3. tour the loaded content (scroll/hover) so it dominates the clip.
+ *
+ * Call this AFTER the page's ready-testid is visible. It is a no-op outside
+ * demo mode (the pauses/tours are gated on PLAYWRIGHT_DEMO).
+ */
+export async function settleLoaded(
+  page: Page,
+  opts: { scrollTexts?: Array<string | RegExp>; hoverTestIds?: Array<string | RegExp> } = {},
+): Promise<void> {
+  // Skeletons detach once data lands. Bounded so a skeleton-free page (or one
+  // that keeps a lingering shimmer somewhere off-screen) never hangs the clip.
+  await page
+    .getByTestId("skeleton")
+    .first()
+    .waitFor({ state: "detached", timeout: 15_000 })
+    .catch(() => undefined);
+  // Hold on the populated screen so it, not the skeleton, fills the frame.
+  await pauseForDemo(1_200);
+  for (const text of opts.scrollTexts ?? []) await scrollToText(page, text);
+  for (const testId of opts.hoverTestIds ?? []) await hoverFirstVisible(page, testId);
+  // A final beat on the loaded content so the clip ends substantive.
+  await pauseForDemo(800);
+}
+
 export async function hoverFirstVisible(page: Page, testId: string | RegExp): Promise<void> {
   const target = page.getByTestId(testId).first();
   if (await target.isVisible().catch(() => false)) {
