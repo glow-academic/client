@@ -168,6 +168,16 @@ export async function genDemo(
   await ctx.page.goto("/training/personas");
   await expectAuthenticated(ctx.page);
   await openGenerationPanel(ctx.page);
+
+  // Start a clean chat so the only content on the panel after this run is what
+  // THIS generation produced — makes the "did anything generate?" assertion
+  // below honest (no pre-seeded historical bubbles to mistake for output).
+  await ctx.page
+    .getByRole("button", { name: /new chat/i })
+    .first()
+    .click({ timeout: 5_000 })
+    .catch(() => undefined);
+
   // Fill the VISIBLE instructions input and submit via Enter — handleKeyDown
   // fires handleSend() on THIS instance, sidestepping the multi-instance button
   // mismatch (the panel mounts several copies; a clicked button can belong to a
@@ -175,30 +185,71 @@ export async function genDemo(
   const ta = ctx.page.locator('[placeholder="Instructions..."]:visible').first();
   await ta.fill(instructions);
   await ctx.demo.pause();
+  const submittedAt = Date.now();
   await ta.press("Enter");
+
+  // What proves a REAL generation ran (vs. an instant empty no-op when the
+  // backend has no LLM provider key → dispatches=0 → an empty "completion"):
+  // a substantive output artifact has to appear. In safe mode that's the
+  // Accept control (a tool call got soft-staged). In a normal run it's an
+  // assistant-attributed message bubble (`justify-start`) carrying the
+  // generated text / tool output — distinct from the user's own instruction
+  // bubble (`justify-end`), which always appears regardless.
+  let produced = false;
   if (opts.safeMode) {
     // Safe mode soft-stages tool calls — the completion signal is the Accept
     // control appearing (the spinner-clear path may not fire). Wait for it,
     // then take the audit path. BOTH waits are explicitly bounded: an un-timed
     // .click() would otherwise wait the whole test timeout for actionability.
     const accept = ctx.page.getByRole("button", { name: /accept/i }).first();
-    const appeared = await accept
+    produced = await accept
       .waitFor({ state: "visible", timeout: 90_000 })
       .then(() => true)
       .catch(() => false);
     await ctx.demo.pause(1500);
-    if (appeared) await accept.click({ timeout: 15_000 }).catch(() => undefined);
+    if (produced) await accept.click({ timeout: 15_000 }).catch(() => undefined);
     await ctx.demo.pause(1500);
   } else {
-    // Normal run: wait for the Generate spinner to clear (generation finished).
+    // Normal run: wait for an assistant-side CONTENT bubble to appear — that
+    // is the generated output streaming in. Distinctions that keep this
+    // honest:
+    //   - the instruction we typed renders in a `justify-end` (user) row, so
+    //     it can't satisfy a `justify-start` (assistant) match;
+    //   - the transient "generating" placeholder is a `justify-start` row too,
+    //     but its inner div has NO `max-w-[85%]` (it's just a spinner) — every
+    //     real content bubble / tool bubble / event pill carries `max-w-[85%]`.
+    // So we require an assistant row holding a real `max-w-[85%]` content
+    // bubble, which an empty no-op run (dispatches=0) never produces. Bounded
+    // so a slow model fails at the timeout, not the whole test budget.
+    const assistantBubble = ctx.page.locator('div.flex.justify-start .max-w-\\[85\\%\\]').first();
+    produced = await assistantBubble
+      .waitFor({ state: "visible", timeout: 90_000 })
+      .then(() => true)
+      .catch(() => false);
+    // Then let the spinner clear so the clip ends on a settled, complete run.
     await ctx.page
       .locator('[data-testid="gp-generate"]:visible .animate-spin')
       .waitFor({ state: "detached", timeout: 90_000 })
       .catch(() => undefined);
     await ctx.demo.pause(2000);
   }
+
   for (const t of scrollTexts(opts.safeMode)) await scrollToText(ctx.page, t).catch(() => undefined);
   await saveDemoVideo(ctx.page, topic);
+
+  // Fail loud. A run that produced no output artifact — or that "completed" in
+  // under 3s (the empty no-op signature when there's no LLM key) — is a broken
+  // generation backend, NOT a passing demo. Assert AFTER saving the video so
+  // the (honest, broken) recording is still captured for QA.
+  const elapsedMs = Date.now() - submittedAt;
+  expect(
+    produced,
+    "generation produced no output (Accept control / assistant response never appeared) — the generation backend is broken (e.g. no LLM provider key)",
+  ).toBe(true);
+  expect(
+    elapsedMs,
+    `generation "completed" in ${elapsedMs}ms — an instant empty no-op, not a real run`,
+  ).toBeGreaterThan(3_000);
 }
 function scrollTexts(safe?: boolean): RegExp[] {
   return safe
