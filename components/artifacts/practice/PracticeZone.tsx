@@ -76,7 +76,20 @@ export default function PracticeZone({
     [rubrics]
   );
 
-  if (!simulations || simulations.length === 0) return null;
+  // Empty state — a logged-in user with no assigned simulations is NOT a
+  // guest; render guidance rather than a blank content area (mirrors the
+  // Home page's "No Simulations Available" empty state).
+  if (!simulations || simulations.length === 0) {
+    return (
+      <div className="text-center py-12" data-testid="practice-empty-state">
+        <h2 className="text-2xl font-bold mb-4">No Simulations Available</h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          There are no practice simulations assigned to you yet. Please contact
+          an administrator.
+        </p>
+      </div>
+    );
+  }
 
   // Get simulations for current page
   const startIndex = carouselIndex * maxVisible;
