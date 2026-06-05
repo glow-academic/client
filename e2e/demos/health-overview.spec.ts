@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-import { expectAuthenticated, scrollToText } from "../helpers/demo-page";
-import { pauseForDemo, saveDemoVideo } from "../helpers/demo-video";
+import { expectAuthenticated, settleLoaded } from "../helpers/demo-page";
+import { saveDemoVideo } from "../helpers/demo-video";
 
 const TOPIC = "health-overview";
 
@@ -10,9 +10,12 @@ test.describe("demo: health overview", () => {
     await page.goto("/health");
     await expectAuthenticated(page);
     await expect(page.locator('[data-page="logs-dashboard"]')).toBeVisible({ timeout: 30_000 });
-    await pauseForDemo();
 
-    await scrollToText(page, /application metrics|database|redis|websocket|authentication/i);
+    // Wait out the skeleton lead-in, then dwell on the Application Metrics +
+    // service-health panels so the populated health view fills the clip.
+    await settleLoaded(page, {
+      scrollTexts: [/application metrics|database|redis|websocket|authentication/i],
+    });
 
     await saveDemoVideo(page, TOPIC);
   });

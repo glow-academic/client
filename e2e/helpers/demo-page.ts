@@ -24,6 +24,27 @@ export async function settleLoaded(
   page: Page,
   opts: { scrollTexts?: Array<string | RegExp>; hoverTestIds?: Array<string | RegExp> } = {},
 ): Promise<void> {
+  await waitOutSkeleton(page);
+  for (const text of opts.scrollTexts ?? []) await scrollToText(page, text);
+  for (const testId of opts.hoverTestIds ?? []) await hoverFirstVisible(page, testId);
+  // A final beat on the loaded content so the clip ends substantive.
+  await pauseForDemo(800);
+}
+
+/**
+ * The skeleton-settle core of {@link settleLoaded}, with no scroll/hover tour.
+ *
+ * Waits for the loading shimmer (`data-testid="skeleton"`) to detach, then
+ * holds one beat on the populated screen so the LOADED content — not the
+ * skeleton — is what fills the opening frames of the clip.
+ *
+ * This is the single high-leverage hook wired into the shared library path
+ * (`Library.openIfPopulated`) so every grid-based overview/search demo trims
+ * the blank/skeleton lead-in with no per-demo wiring. It is bounded (a page
+ * with no skeleton returns fast) and a no-op outside demo mode (the pause is
+ * gated on PLAYWRIGHT_DEMO), so it is safe on demos that lack a skeleton.
+ */
+export async function waitOutSkeleton(page: Page): Promise<void> {
   // Skeletons detach once data lands. Bounded so a skeleton-free page (or one
   // that keeps a lingering shimmer somewhere off-screen) never hangs the clip.
   await page
@@ -33,10 +54,6 @@ export async function settleLoaded(
     .catch(() => undefined);
   // Hold on the populated screen so it, not the skeleton, fills the frame.
   await pauseForDemo(1_200);
-  for (const text of opts.scrollTexts ?? []) await scrollToText(page, text);
-  for (const testId of opts.hoverTestIds ?? []) await hoverFirstVisible(page, testId);
-  // A final beat on the loaded content so the clip ends substantive.
-  await pauseForDemo(800);
 }
 
 export async function hoverFirstVisible(page: Page, testId: string | RegExp): Promise<void> {
