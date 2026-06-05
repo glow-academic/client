@@ -10,6 +10,7 @@ import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import type { FullPageLayoutProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Field from "@/components/artifacts/field/Field";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -268,7 +269,7 @@ export default async function FieldEditPage({
               searchGroups: searchFieldGroups,
               prompts: context.prompts?.prompts,
             },
-          } as any)}
+          } as Omit<FullPageLayoutProps, "children">)}
         >
           <div
             className="space-y-6 px-4"

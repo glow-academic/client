@@ -9,7 +9,7 @@
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type FullPageLayoutProps } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Parameter from "@/components/artifacts/parameter/Parameter";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -254,7 +254,7 @@ export default async function ParameterEditPage({
               searchGroups: searchParameterGroups,
               prompts: context.prompts?.prompts,
             },
-          } as any)}
+          } as Omit<FullPageLayoutProps, "children">)}
         >
           <div
             className="space-y-6 px-4"

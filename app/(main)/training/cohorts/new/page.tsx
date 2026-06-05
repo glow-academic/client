@@ -8,7 +8,7 @@
 
 import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { FullPageLayout, type FullPageLayoutProps } from "@/components/common/layout/FullPageLayout";
 import { ArtifactToolbarActions } from "@/components/common/layout/ArtifactToolbarActions";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -259,7 +259,7 @@ export default async function NewCohortPage({
               searchGroups: searchCohortGroups,
               prompts: context.prompts?.prompts,
             },
-          } as any)}
+          } as Omit<FullPageLayoutProps, "children">)}
         >
           <div
             className="space-y-6 px-4"
