@@ -157,7 +157,10 @@ export function BenchmarkZoneSkeleton() {
       </div>
 
       {/* Carousel container */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+        data-testid="benchmark-eval-grid-skeleton"
+      >
         {Array.from({ length: CARD_COUNT }).map((_, index) => (
           <EvalCardSkeleton key={`benchmark-card-${index}`} />
         ))}
