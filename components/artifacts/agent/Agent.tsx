@@ -457,6 +457,9 @@ export default function Agent({
     description_id: string | null;
     description: string | null;
     prompt_id: string | null;
+    // Inline-authored system prompt (creatable): value takes precedence over
+    // prompt_id until the server resolves it to an id, mirroring name/description.
+    prompt: { system_prompt: string; name: string; description: string } | null;
     modelId: string;
     flag_ids: string[];
     tool_ids: string[];
@@ -495,6 +498,7 @@ export default function Agent({
         description_id: null,
         description: null,
         prompt_id: null,
+        prompt: null,
         modelId: "",
         flag_ids: [],
         tool_ids: [],
@@ -539,6 +543,7 @@ export default function Agent({
       description_id: data.descriptions?.resource?.id ?? null,
       description: null,
       prompt_id: data.prompts?.resource?.id ?? null,
+      prompt: null,
       modelId: data.models?.resource?.id ?? "",
       flag_ids: currentFlagIds,
       tool_ids: currentTools,
@@ -638,6 +643,9 @@ export default function Agent({
             quality_ids: fs.quality_ids ?? prev.quality_ids,
             rubric_ids: fs.rubric_ids ?? prev.rubric_ids,
             prompt_id: fs.prompt_id ?? prev.prompt_id,
+            // Clear the authored prompt value once the server resolved it to an
+            // id (same anti-re-save reasoning as name/description above).
+            prompt: fs.prompt_id ? null : prev.prompt,
             instructions_id:
               fs.instruction_id ?? prev.instructions_id,
             pending_ids: fs.pending_ids ?? prev.pending_ids,
@@ -654,6 +662,7 @@ export default function Agent({
             prev.reasoning_level_id !== next.reasoning_level_id ||
             prev.temperature_level_id !== next.temperature_level_id ||
             prev.prompt_id !== next.prompt_id ||
+            JSON.stringify(prev.prompt) !== JSON.stringify(next.prompt) ||
             prev.instructions_id !== next.instructions_id ||
             JSON.stringify(prev.departmentIds) !== JSON.stringify(next.departmentIds) ||
             JSON.stringify(prev.tool_ids) !== JSON.stringify(next.tool_ids) ||
@@ -683,7 +692,21 @@ export default function Agent({
 
     // Single-select IDs: emit only if truthy
     if (current.modelId) payload["model_id"] = current.modelId;
-    if (current.prompt_id) payload["prompt_id"] = current.prompt_id;
+    // Prompt is a creatable: send the authored value so the server resolves it
+    // to a prompt_id (CreatePromptInput), falling back to an already-resolved
+    // id. Value takes precedence — same pattern as name/description above.
+    // Without this the Monaco-typed prompt never reaches /agent/draft, prompt_id
+    // never resolves, and the submit guard ("Prompt selection is required")
+    // blocks every create.
+    if (current.prompt?.system_prompt) {
+      payload["prompt"] = {
+        system_prompt: current.prompt.system_prompt,
+        name: current.prompt.name ?? "",
+        description: current.prompt.description ?? "",
+      };
+    } else if (current.prompt_id) {
+      payload["prompt_id"] = current.prompt_id;
+    }
     if (current.instructions_id) payload["instructions_id"] = current.instructions_id;
     if (current.temperature_level_id)
       payload["temperature_level_id"] = current.temperature_level_id;
@@ -993,7 +1016,7 @@ export default function Agent({
       voice_ids: (_s, init) => ({ voice_ids: init.voice_ids }),
       quality_ids: (_s, init) => ({ quality_ids: init.quality_ids }),
       rubric_ids: (_s, init) => ({ rubric_ids: init.rubric_ids }),
-      prompt_id: (_s, init) => ({ prompt_id: init.prompt_id }),
+      prompt_id: (_s, init) => ({ prompt_id: init.prompt_id, prompt: null }),
       instructions_id: (_s, init) => ({
         instructions_id: init.instructions_id,
       }),
