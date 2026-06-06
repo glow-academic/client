@@ -19,6 +19,7 @@ import { apiCreate, resolveId } from "../support/setup";
 import { resolveAnyId } from "../support/factories";
 import { expectAuthenticated, openGenerationPanel, scrollToText } from "./demo-page";
 import { saveDemoVideo } from "./demo-video";
+import { exerciseListView } from "./exercise-list";
 
 // The subset of the fixture each flow needs. Specs pass the whole fixture arg.
 interface DemoCtx {
@@ -35,14 +36,37 @@ function facadeFor(ctx: DemoCtx, key: string) {
   return { spec, facade: new DomainFacade(ctx.page, ctx.demo, spec, ctx.registry) };
 }
 
-/** Browse the populated library (read-only). Skips when the library is empty. */
-export async function overviewDemo(ctx: DemoCtx, key: string): Promise<void> {
+/** Browse the populated library (read-only). Skips when the library is empty.
+ *
+ *  `afterBrowse` runs once the loaded grid is on screen and browsed — to
+ *  exercise the list's interactive affordances — BEFORE the video is saved (the
+ *  save closes the page, so any extra interaction has to happen first).
+ *
+ *  DEFAULT: when no `afterBrowse` is supplied, it defaults to
+ *  `exerciseListView(page)` — the shared helper that drives search / faceted
+ *  filter / card-View toggle / pagination / page-size, each step independently
+ *  GUARDED (visible()/count() bail) so a control the page lacks is skipped, not
+ *  failed. This makes every overviewDemo-based demo exercise the interactive
+ *  paths on camera with no per-spec wiring. Non-list overviews (dashboard /
+ *  health / home / generation / practice / session / pricing / reports) have no
+ *  search box / filters / pagination, so all five steps skip cleanly there — the
+ *  default is safe across the board.
+ *
+ *  A caller MAY still pass its own `afterBrowse` to override (e.g. tuned opts);
+ *  the caller's hook WINS — it replaces the default rather than composing, so
+ *  there's never a double-invocation. Pass `async () => {}` to opt out entirely. */
+export async function overviewDemo(
+  ctx: DemoCtx,
+  key: string,
+  afterBrowse: (page: DemoCtx["page"]) => Promise<void> = (page) => exerciseListView(page),
+): Promise<void> {
   const { spec, facade } = facadeFor(ctx, key);
   test.skip(
     !(await facade.library.openIfPopulated()),
     `${spec.plural} library is empty (no seed data to browse)`,
   );
   await facade.library.browse();
+  await afterBrowse(ctx.page);
   await saveDemoVideo(ctx.page, `${spec.plural}-overview`);
 }
 
@@ -279,7 +303,27 @@ export async function testDemo(
   await ctx.page.goto(`/test/${id}`, { waitUntil: "domcontentloaded" });
   await ctx.demo.pause(3000);
   for (const t of scrollTexts) await scrollToText(ctx.page, t).catch(() => undefined);
+  // Save the (honest) recording FIRST so a crashed page is still captured for
+  // QA, then fail loud — mirrors genDemo's assert-after-save discipline.
   await saveDemoVideo(ctx.page, topic);
+
+  // FAIL-LOUD: the tolerant `scrollToText(...).catch()` tour above swallows a
+  // crashed page, so without this the demo reports PASS while filming the
+  // error boundary (the same silent-green class as the old draftDemo). The
+  // observed failure was the route throwing into `app/error.tsx`, which
+  // renders an "An error occurred" card carrying the raw message (e.g. "No
+  // group found for id ...") and REPLACES the whole route subtree — so the
+  // layout's `page-header` is gone. Assert both directions:
+  //   (+) the loaded test-detail layout actually rendered, and
+  //   (-) we are NOT sitting on the error boundary.
+  await expect(
+    ctx.page.getByTestId("page-header"),
+    "test detail page did not render (no page-header) — the route likely threw into the error boundary",
+  ).toBeVisible({ timeout: 15_000 });
+  await expect(
+    ctx.page.getByRole("heading", { name: "An error occurred" }),
+    "test detail page rendered the error boundary — the route crashed instead of showing the invocation grid",
+  ).toHaveCount(0);
 }
 
 /** Open an existing artifact's detail/edit page (resolved from seed data) and
