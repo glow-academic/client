@@ -19,6 +19,7 @@ import { apiCreate, resolveId } from "../support/setup";
 import { resolveAnyId } from "../support/factories";
 import { expectAuthenticated, openGenerationPanel, scrollToText } from "./demo-page";
 import { saveDemoVideo } from "./demo-video";
+import { exerciseListView } from "./exercise-list";
 
 // The subset of the fixture each flow needs. Specs pass the whole fixture arg.
 interface DemoCtx {
@@ -36,13 +37,28 @@ function facadeFor(ctx: DemoCtx, key: string) {
 }
 
 /** Browse the populated library (read-only). Skips when the library is empty.
- *  `afterBrowse` runs once the loaded grid is on screen and browsed — e.g. to
+ *
+ *  `afterBrowse` runs once the loaded grid is on screen and browsed — to
  *  exercise the list's interactive affordances — BEFORE the video is saved (the
- *  save closes the page, so any extra interaction has to happen first). */
+ *  save closes the page, so any extra interaction has to happen first).
+ *
+ *  DEFAULT: when no `afterBrowse` is supplied, it defaults to
+ *  `exerciseListView(page)` — the shared helper that drives search / faceted
+ *  filter / card-View toggle / pagination / page-size, each step independently
+ *  GUARDED (visible()/count() bail) so a control the page lacks is skipped, not
+ *  failed. This makes every overviewDemo-based demo exercise the interactive
+ *  paths on camera with no per-spec wiring. Non-list overviews (dashboard /
+ *  health / home / generation / practice / session / pricing / reports) have no
+ *  search box / filters / pagination, so all five steps skip cleanly there — the
+ *  default is safe across the board.
+ *
+ *  A caller MAY still pass its own `afterBrowse` to override (e.g. tuned opts);
+ *  the caller's hook WINS — it replaces the default rather than composing, so
+ *  there's never a double-invocation. Pass `async () => {}` to opt out entirely. */
 export async function overviewDemo(
   ctx: DemoCtx,
   key: string,
-  afterBrowse?: (page: DemoCtx["page"]) => Promise<void>,
+  afterBrowse: (page: DemoCtx["page"]) => Promise<void> = (page) => exerciseListView(page),
 ): Promise<void> {
   const { spec, facade } = facadeFor(ctx, key);
   test.skip(
@@ -50,7 +66,7 @@ export async function overviewDemo(
     `${spec.plural} library is empty (no seed data to browse)`,
   );
   await facade.library.browse();
-  if (afterBrowse) await afterBrowse(ctx.page);
+  await afterBrowse(ctx.page);
   await saveDemoVideo(ctx.page, `${spec.plural}-overview`);
 }
 
