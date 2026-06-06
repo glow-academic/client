@@ -82,6 +82,34 @@ export async function scrollToText(page: Page, text: string | RegExp): Promise<v
   }
 }
 
+/**
+ * Assert the LOADED benchmark eval grid is on screen, scoped to the *visible*
+ * instance.
+ *
+ * `data-testid="benchmark-eval-grid"` is rendered by exactly one live source —
+ * the loaded carousel grid in `BenchmarkZone` (the loading skeletons in
+ * `benchmark/loading.tsx` carry no such testid, and `BenchmarkZoneSkeleton`,
+ * the only other node that ever had it, is transitively dead — its sole
+ * renderer is imported nowhere). Statically there is one grid.
+ *
+ * At runtime, though, the demo recorder occasionally observes a *second*
+ * `benchmark-eval-grid` that is `hidden` — a transient stale-tree artifact of
+ * Next's dev-mode `force-dynamic` layout (an outgoing route subtree can briefly
+ * coexist with the incoming one). A bare `getByTestId(...).toBeVisible()` is a
+ * strict locator, so the two matches trip a strict-mode violation ("resolved to
+ * 2 elements") before the visibility check even runs.
+ *
+ * Scoping to `{ visible: true }` makes the assertion target the one grid the
+ * user actually sees and ignore any hidden duplicate, so it resolves uniquely
+ * regardless of a lingering hidden copy. The component is correct as-is, so the
+ * right place for this robustness is the demo locator, not a component change.
+ */
+export async function expectBenchmarkGridVisible(page: Page): Promise<void> {
+  await expect(
+    page.getByTestId("benchmark-eval-grid").filter({ visible: true }),
+  ).toBeVisible({ timeout: 30_000 });
+}
+
 export async function fillSearch(page: Page, testId: string, value: string): Promise<void> {
   const input = page.getByTestId(testId);
   await expect(input).toBeVisible({ timeout: 30_000 });
