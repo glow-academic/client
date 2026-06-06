@@ -908,8 +908,11 @@ export const DOMAINS: Record<string, DomainSpec> = {
     listPath: "/platform/auth",
     newPath: "/platform/auth/new",
     // Card grid: `auth-card` (default matches). The grid testid was added to
-    // Auths.tsx. The auth library has NO free-text search (only picker
-    // filters), so its spec opens and asserts directly — no `search()`.
+    // Auths.tsx. The auth library NOW ships a real free-text search box
+    // (`auths-search`, server-side via `?search=` → /auth/search), added in
+    // "fix(auth): thread search into AuthsListBody". So the default
+    // `searchTestId` (`auths-search`) resolves and the search demo exercises a
+    // genuine filtering affordance — no longer picker-only.
     fields: {
       name: { placeholder: /production api key/i },
       description: { placeholder: /enter description/i },
