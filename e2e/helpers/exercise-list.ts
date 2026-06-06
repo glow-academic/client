@@ -28,8 +28,11 @@ import { pauseForDemo } from "./demo-video";
 import { waitOutSkeleton } from "./demo-page";
 
 export interface ExerciseListOptions {
-  /** Search term to type. Defaults to "a" — a single common letter matches
-   *  most seeded libraries so the filtered grid is visibly non-empty. */
+  /** Search term to type. When omitted, the search step first tries to derive a
+   *  SELECTIVE term from the first visible card's name (so the grid visibly
+   *  narrows on camera); if no card name is readable it falls back to this value
+   *  and, failing that, to "a" — a single common letter that matches most
+   *  seeded libraries so the filtered grid is still visibly non-empty. */
   searchTerm?: string;
   /** Skip the search step. */
   skipSearch?: boolean;
@@ -87,9 +90,8 @@ export async function exerciseListView(
   opts: ExerciseListOptions = {},
 ): Promise<void> {
   const beat = opts.beat ?? 900;
-  const term = opts.searchTerm ?? "a";
 
-  if (!opts.skipSearch) await exerciseSearch(page, term, beat);
+  if (!opts.skipSearch) await exerciseSearch(page, opts.searchTerm, beat);
   if (!opts.skipFilters) await exerciseFilters(page, beat);
   if (!opts.skipViewToggle) await exerciseViewToggle(page, beat);
   if (!opts.skipPagination) await exercisePagination(page, beat);
@@ -99,12 +101,42 @@ export async function exerciseListView(
 // ---- Step 1: search ----------------------------------------------------
 
 /**
+ * Derive a SELECTIVE search term from the first visible card on the page so the
+ * SEARCH step visibly narrows the grid (rather than typing a near-universal "a"
+ * that matches nearly every row). Every artifact card carries a uniform
+ * `aria-label="{domain} card {name}"` (verified across personas/agents/rubrics/
+ * …), so we read that, strip the "{domain} card " prefix, and take the first
+ * word of the actual name — distinctive enough to filter to ≥ that card.
+ *
+ * Fully guarded: returns null on any miss (no card, unreadable label, empty
+ * name) so the caller falls back to the supplied term / "a". Never throws.
+ */
+async function deriveSelectiveTerm(page: Page): Promise<string | null> {
+  const card = page.locator('[aria-label*=" card "]').first();
+  if (!(await visible(card))) return null;
+  const label = (await card.getAttribute("aria-label").catch(() => null)) ?? "";
+  // "{domain} card {name}" → take everything after the first " card ".
+  const name = label.replace(/^.*?\scard\s/i, "").trim();
+  // Skip the ghost/placeholder labels ("… card Generating", "Unnamed …") — they
+  // aren't real, filterable data, so fall back rather than search for them.
+  if (!name || /^(Generating|Unnamed\b)/i.test(name)) return null;
+  // First word, trimmed of leading/trailing punctuation. Require ≥2 chars so the
+  // term is meaningfully selective (a 1-char token is no better than "a").
+  const word = (name.split(/\s+/)[0] ?? "").replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+  return word.length >= 2 ? word : null;
+}
+
+/**
  * Type a term into the list's search box, settle on the filtered grid, then
  * clear it back. The box is the shared list search `<input>` (the only
  * top-level search input on these pages); we locate it by its placeholder so
  * the helper stays domain-agnostic. Skips cleanly if no search box is present.
+ *
+ * The term is SELECTIVE: we prefer a distinctive word derived from a currently-
+ * visible card (so the grid visibly narrows on camera), guarded with a fallback
+ * to the caller-supplied `searchTerm` and finally to "a".
  */
-async function exerciseSearch(page: Page, term: string, beat: number): Promise<void> {
+async function exerciseSearch(page: Page, searchTerm: string | undefined, beat: number): Promise<void> {
   // Every artifact list search renders placeholder text starting with "Search"
   // ("Search system agents…", "Search personas…", "Search providers…", …) —
   // verified uniform across all artifact toolbars. We target by placeholder
@@ -114,6 +146,11 @@ async function exerciseSearch(page: Page, term: string, beat: number): Promise<v
   // aria-label), which is why the old role+name locator silently missed.
   const box = page.getByPlaceholder(/search/i).first();
   if (!(await visible(box))) return;
+
+  // Resolve the term to type: prefer a distinctive word from a visible card (so
+  // the grid visibly narrows), else the caller-supplied term, else "a". The
+  // derivation is fully guarded and never throws, so any failure just falls back.
+  const term = (await deriveSelectiveTerm(page).catch(() => null)) ?? searchTerm ?? "a";
 
   await box.scrollIntoViewIfNeeded().catch(() => undefined);
   await box.click({ timeout: 10_000 }).catch(() => undefined);
