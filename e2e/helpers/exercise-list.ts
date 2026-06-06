@@ -75,7 +75,8 @@ async function settle(page: Page, beat: number): Promise<void> {
  * Steps, each independently guarded and skippable:
  *   1. SEARCH    — type a term, settle on the filtered grid, then clear.
  *   2. FILTERS   — open the first faceted filter, pick its first option, settle
- *                  on the filtered grid, then reopen and "Clear filters".
+ *                  on the filtered grid, then click the toolbar "Reset" button
+ *                  to clear the filter (returning the grid to full/multi-page).
  *   3. VIEW      — open the "View" column-visibility menu, toggle the first
  *                  card feature off, pause, toggle it back on, close.
  *   4. PAGINATE  — click Next (if enabled), settle, then Prev, settle.
@@ -99,15 +100,19 @@ export async function exerciseListView(
 
 /**
  * Type a term into the list's search box, settle on the filtered grid, then
- * clear it back. The box is the shared `{plural}-search` `<input>` (the only
- * top-level search input on these pages); we locate it by role+placeholder so
+ * clear it back. The box is the shared list search `<input>` (the only
+ * top-level search input on these pages); we locate it by its placeholder so
  * the helper stays domain-agnostic. Skips cleanly if no search box is present.
  */
 async function exerciseSearch(page: Page, term: string, beat: number): Promise<void> {
-  // Every artifact list search renders placeholder text like "Search system
-  // agents…" / "Search personas…". A visible textbox whose placeholder starts
-  // with "Search" is the list search box across all domains.
-  const box = page.getByRole("textbox", { name: /search/i }).first();
+  // Every artifact list search renders placeholder text starting with "Search"
+  // ("Search system agents…", "Search personas…", "Search providers…", …) —
+  // verified uniform across all artifact toolbars. We target by placeholder
+  // rather than the `{plural}-search` testid because that testid suffix is NOT
+  // universal (providers uses `input-search-providers`), and rather than an
+  // accessible name (most inputs expose only the placeholder, no /search/i
+  // aria-label), which is why the old role+name locator silently missed.
+  const box = page.getByPlaceholder(/search/i).first();
   if (!(await visible(box))) return;
 
   await box.scrollIntoViewIfNeeded().catch(() => undefined);
@@ -132,8 +137,9 @@ async function exerciseSearch(page: Page, term: string, beat: number): Promise<v
  * Open the first faceted filter (a `DataTableFacetedFilter` popover — its
  * trigger is an outline button whose accessible name is the filter title, e.g.
  * "Tool"/"Model"/"Department"), pick its first option (a `CommandItem`, role
- * `option`), settle on the filtered grid, then reopen and click "Clear
- * filters". Skips cleanly if no filter trigger / no options are present.
+ * `option`), settle on the filtered grid, then click the toolbar "Reset" button
+ * to clear the applied filter. Skips cleanly if no filter trigger / no options
+ * are present.
  */
 async function exerciseFilters(page: Page, beat: number): Promise<void> {
   // The filter triggers are the buttons inside the toolbar carrying the dashed
@@ -164,16 +170,17 @@ async function exerciseFilters(page: Page, beat: number): Promise<void> {
   await page.keyboard.press("Escape").catch(() => undefined);
   await settle(page, beat);
 
-  // Reset: reopen the same filter and click "Clear filters".
-  if (await visible(trigger)) {
-    await trigger.click({ timeout: 10_000 }).catch(() => undefined);
-    await pauseForDemo(beat);
-    const clear = page.getByRole("option", { name: /clear filters/i }).first();
-    if (await visible(clear)) {
-      await clear.click({ timeout: 10_000 }).catch(() => undefined);
-      await pauseForDemo(beat);
-    }
-    await page.keyboard.press("Escape").catch(() => undefined);
+  // Reset: the toolbar renders a "Reset" button (text "Reset" + an ✕ icon),
+  // shown only while `isFiltered`. Clicking it calls `table.resetColumnFilters()`
+  // AND resets the URL params to `page: 0` — i.e. it fully clears the applied
+  // filter and returns the grid to its full (multi-page) state. This is what
+  // un-pins the grid from "Page 1 of 1" so the later pagination step has a Next
+  // page to move to. (The `DataTableFacetedFilter` popover's "Clear filters"
+  // CommandItem only clears the column locally and was the silent miss before.)
+  const reset = page.getByRole("button", { name: /reset/i }).first();
+  if (await visible(reset)) {
+    await reset.scrollIntoViewIfNeeded().catch(() => undefined);
+    await reset.click({ timeout: 10_000 }).catch(() => undefined);
     await settle(page, beat);
   }
 }
