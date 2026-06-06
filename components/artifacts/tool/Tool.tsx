@@ -29,6 +29,7 @@ import { useToolAi } from "@/hooks/use-tool-ai";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { logger } from "@/utils/logger";
 import { Check, X } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
@@ -808,7 +809,7 @@ function ToolComponent({
           body: { args: previewArgs, outputs: previewOutputs, mock },
         } as PreviewToolIn);
       } catch (err) {
-        console.error("tool preview failed", err);
+        logger.error("tool preview failed", err);
         return null;
       }
     },

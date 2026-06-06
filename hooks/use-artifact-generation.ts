@@ -23,6 +23,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTransport } from "@/lib/transport";
+import { logger } from "@/utils/logger";
 
 // ---------------------------------------------------------------------------
 // Primitive interface — any artifact generation hook implements this
@@ -818,8 +819,12 @@ export function useArtifactGeneration(
           },
           client_run_id: runId,
         })
-        .catch(() => {
-          // Send-side rejection: clear optimistic state + cancel timeouts.
+        .catch((err: unknown) => {
+          // Send-side rejection (request never reached the server, so no
+          // SSE ``failed`` event will arrive to surface it). Clear optimistic
+          // state + cancel timeouts, then surface the failure the same way
+          // ``handleGenerateFailed`` does — otherwise the spinner just
+          // vanishes and the user thinks nothing happened.
           for (const rt of resourceTypes) {
             const t = resourceTimeoutsRef.current.get(rt);
             if (t) {
@@ -832,6 +837,14 @@ export function useArtifactGeneration(
             for (const rt of resourceTypes) next.delete(rt);
             return next;
           });
+          logger.error("Resource generation request failed", err);
+          const message = "Generation failed — could not reach the server.";
+          setStage("error");
+          setErrorState(message);
+          setMessages((prev) => [
+            ...prev,
+            { id: crypto.randomUUID(), role: "assistant", text: message, type: "text", tool: null },
+          ]);
         });
 
       return true;

@@ -86,6 +86,7 @@ import {
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
+import { logger } from "@/utils/logger";
 import { parseAsString, type Parser } from "nuqs";
 
 type CreateSettingIn = InputOf<"/setting/create", "post">;
@@ -866,7 +867,7 @@ function Setting({
           .key;
         return decrypted ?? null;
       } catch (err) {
-        console.error("decrypt failed", err);
+        logger.error("decrypt failed", err);
         return null;
       }
     },

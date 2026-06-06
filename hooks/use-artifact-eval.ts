@@ -24,6 +24,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useTransport } from "@/lib/transport";
+import { logger } from "@/utils/logger";
 
 export interface Candidate {
   agent_id: string;
@@ -252,7 +253,7 @@ export function useArtifactEval(
         try {
           await onCandidateRef.current?.(c, helpers);
         } catch (err) {
-          console.error("useArtifactEval.onCandidate handler threw:", err);
+          logger.error("useArtifactEval.onCandidate handler threw:", err);
         }
       },
     );
@@ -298,7 +299,7 @@ export function useArtifactEval(
         try {
           await onCandidatesReadyRef.current?.(finalList, helpers);
         } catch (err) {
-          console.error(
+          logger.error(
             "useArtifactEval.onCandidatesReady handler threw:",
             err,
           );

@@ -7,6 +7,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { logger } from "@/utils/logger";
+
 export interface AudioWorkletConfig {
   sample_rate: number;
   channel_count: number;
@@ -76,7 +78,7 @@ export function useAudioWorklet(
       audioBufferQueueRef.current = [];
       isMicMutedRef.current = false;
     } catch (err) {
-      console.warn("[Voice] Error cleaning up audio:", err);
+      logger.warn("[Voice] Error cleaning up audio:", err);
     }
 
     setIsVoiceModeEnabled(false);
@@ -151,7 +153,7 @@ export function useAudioWorklet(
       setIsVoiceModeEnabled(true);
       setIsMicMuted(false);
     } catch (error) {
-      console.error("[Voice] Error starting voice mode:", error);
+      logger.error("[Voice] Error starting voice mode:", error);
       await cleanup();
       throw error;
     }
@@ -195,7 +197,7 @@ export function useAudioWorklet(
 
       source.start(0);
     } catch (err) {
-      console.error("[Voice] Error playing audio:", err);
+      logger.error("[Voice] Error playing audio:", err);
       audioPlaybackSourceRef.current = null;
       playQueuedAudio();
     }
@@ -231,7 +233,7 @@ export function useAudioWorklet(
           playQueuedAudio();
         }
       } catch (err) {
-        console.error("[Voice] Error handling audio delta:", err);
+        logger.error("[Voice] Error handling audio delta:", err);
       }
     },
     [playQueuedAudio]

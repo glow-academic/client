@@ -37,6 +37,7 @@ import { useEvalAi } from "@/hooks/use-eval-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
+import { logger } from "@/utils/logger";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
@@ -919,7 +920,7 @@ function EvalComponent({
             effectiveRubricIds = fs.model_rubric_ids;
           }
         } catch (err) {
-          console.warn("eval pre-submit flush failed", err);
+          logger.warn("eval pre-submit flush failed", err);
         }
       }
 
