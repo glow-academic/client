@@ -161,7 +161,31 @@ export class Library {
     await this.demo.click(this.bulkDeleteTrigger);
     const confirm = this.page.getByTestId("btn-confirm-bulk-delete");
     await expect(confirm).toBeVisible({ timeout: 15_000 });
-    await this.demo.click(confirm);
+    // The confirm handler fires `{singular}/delete` then `router.refresh()`,
+    // but neither is awaited by the click — so a caller that navigates right
+    // after (the bulk-delete demo's `open()` → goto) would abort the in-flight
+    // DELETE before it commits, leaving the "deleted" rows still present on the
+    // re-fetched list. Wait for the delete POST to come back 2xx *before*
+    // returning so the mutation has actually persisted. Bounded; falls through
+    // on a domain whose delete endpoint we don't know.
+    const deletePath = this.spec.api.delete;
+    const [resp] = await Promise.all([
+      deletePath
+        ? this.page
+            .waitForResponse(
+              (r) => r.url().includes(deletePath) && r.request().method() === "POST",
+              { timeout: 30_000 },
+            )
+            .catch(() => null)
+        : Promise.resolve(null),
+      this.demo.click(confirm),
+    ]);
+    if (resp) {
+      expect(
+        resp.ok(),
+        `bulk delete POST ${deletePath} returned ${resp.status()}`,
+      ).toBeTruthy();
+    }
     await this.demo.pause(800);
   }
 
