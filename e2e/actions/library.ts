@@ -29,6 +29,12 @@ export class Library {
       this.spec.gridTestId ?? `${this.spec.plural}-grid`,
     );
   }
+  /** Whether this library renders as a table (documents, profiles) rather than
+   *  a card grid — keyed off the established `{plural}-table` gridTestId
+   *  convention. Rows here are multi-cell, so name derivation differs. */
+  private get isTable(): boolean {
+    return (this.spec.gridTestId ?? "").endsWith("-table");
+  }
   private get searchBox(): Locator {
     return this.page.getByTestId(
       this.spec.searchTestId ?? `${this.spec.plural}-search`,
@@ -247,7 +253,14 @@ export class Library {
   /** The first card's display name — read from its aria-label
    *  ("{singular} card {name}") or, failing that, its text. Lets a search demo
    *  query real data instead of a hard-coded term. Null when the grid is
-   *  empty. */
+   *  empty.
+   *
+   *  Table surfaces (documents, profiles — `gridTestId` ends `-table`) have no
+   *  per-card aria-label and a row is many cells (name + email + dept + …), so
+   *  scraping the whole row's textContent concatenates them into one space-less
+   *  blob (e.g. an email run into the name) that matches nothing. Both tables
+   *  render the name in a `.font-medium` cell, distinct from the muted
+   *  secondary text — read that cell so the derived term is one real name. */
   async firstCardName(): Promise<string | null> {
     const first = this.page
       .getByTestId(this.spec.cardTestId ?? `${this.spec.singular}-card`)
@@ -256,6 +269,12 @@ export class Library {
     const label = (await first.getAttribute("aria-label").catch(() => "")) ?? "";
     const m = label.match(new RegExp(`${this.spec.singular}\\s+card\\s+(.+)`, "i"));
     if (m?.[1]) return m[1].trim();
+    if (this.isTable) {
+      const nameCell = first.locator(".font-medium").first();
+      const cellText = (await nameCell.textContent().catch(() => "")) ?? "";
+      const name = cellText.trim().split(/\s+/).slice(0, 3).join(" ");
+      if (name) return name;
+    }
     const text = (await first.textContent().catch(() => "")) ?? "";
     return text.trim().split(/\s+/).slice(0, 3).join(" ") || null;
   }
