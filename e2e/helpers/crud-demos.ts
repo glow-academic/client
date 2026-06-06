@@ -35,14 +35,22 @@ function facadeFor(ctx: DemoCtx, key: string) {
   return { spec, facade: new DomainFacade(ctx.page, ctx.demo, spec, ctx.registry) };
 }
 
-/** Browse the populated library (read-only). Skips when the library is empty. */
-export async function overviewDemo(ctx: DemoCtx, key: string): Promise<void> {
+/** Browse the populated library (read-only). Skips when the library is empty.
+ *  `afterBrowse` runs once the loaded grid is on screen and browsed — e.g. to
+ *  exercise the list's interactive affordances — BEFORE the video is saved (the
+ *  save closes the page, so any extra interaction has to happen first). */
+export async function overviewDemo(
+  ctx: DemoCtx,
+  key: string,
+  afterBrowse?: (page: DemoCtx["page"]) => Promise<void>,
+): Promise<void> {
   const { spec, facade } = facadeFor(ctx, key);
   test.skip(
     !(await facade.library.openIfPopulated()),
     `${spec.plural} library is empty (no seed data to browse)`,
   );
   await facade.library.browse();
+  if (afterBrowse) await afterBrowse(ctx.page);
   await saveDemoVideo(ctx.page, `${spec.plural}-overview`);
 }
 
