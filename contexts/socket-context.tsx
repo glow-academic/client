@@ -57,6 +57,16 @@ export function SocketProviderClient({
       setIsConnected(false);
     }
 
+    // Guards against the async-connect race: ``createSocketClient`` awaits a
+    // dynamic ``import("socket.io-client")``, so the effect can be torn down
+    // (unmount or profileId change) before the socket resolves. Without this
+    // flag the cleanup below runs while ``socketRef.current`` is still null —
+    // disconnecting nothing — and the resolved socket then lands in the ref
+    // with live ``connect``/``disconnect`` listeners that are never removed
+    // (a leaked WebSocket + setState-after-unmount). When cancelled, dispose
+    // the freshly-created socket immediately instead of storing it.
+    let cancelled = false;
+
     const connectWebSocket = async () => {
       const query: Record<string, string | number | undefined> = {
         timestamp: Date.now(),
@@ -68,6 +78,11 @@ export function SocketProviderClient({
       const socket = await createSocketClient(query, {
         token: idToken ? `Bearer ${idToken}` : undefined,
       });
+
+      if (cancelled) {
+        socket.disconnect();
+        return;
+      }
 
       socketRef.current = socket;
 
@@ -95,13 +110,14 @@ export function SocketProviderClient({
     connectWebSocket();
 
     return () => {
+      cancelled = true;
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
         setIsConnected(false);
       }
     };
-  }, [profileId]);
+  }, [profileId, idToken]);
 
   const value = useMemo<SocketContextType>(
     () => ({
