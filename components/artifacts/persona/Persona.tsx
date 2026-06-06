@@ -43,6 +43,7 @@ import { useArtifactEval, type Candidate } from "@/hooks/use-artifact-eval";
 import { useGenerationDraft } from "@/hooks/use-generation-draft";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useTransport } from "@/lib/transport";
+import { logger } from "@/utils/logger";
 
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 
@@ -244,7 +245,7 @@ function PersonaComponent({
             .map((c) => reject(c)),
         );
       } catch (err) {
-        console.error("Eval bootstrap failed:", err);
+        logger.error("Eval bootstrap failed:", err);
         toast.error(
           err instanceof Error ? err.message : "Eval workflow failed",
         );
