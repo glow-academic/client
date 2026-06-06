@@ -303,7 +303,27 @@ export async function testDemo(
   await ctx.page.goto(`/test/${id}`, { waitUntil: "domcontentloaded" });
   await ctx.demo.pause(3000);
   for (const t of scrollTexts) await scrollToText(ctx.page, t).catch(() => undefined);
+  // Save the (honest) recording FIRST so a crashed page is still captured for
+  // QA, then fail loud — mirrors genDemo's assert-after-save discipline.
   await saveDemoVideo(ctx.page, topic);
+
+  // FAIL-LOUD: the tolerant `scrollToText(...).catch()` tour above swallows a
+  // crashed page, so without this the demo reports PASS while filming the
+  // error boundary (the same silent-green class as the old draftDemo). The
+  // observed failure was the route throwing into `app/error.tsx`, which
+  // renders an "An error occurred" card carrying the raw message (e.g. "No
+  // group found for id ...") and REPLACES the whole route subtree — so the
+  // layout's `page-header` is gone. Assert both directions:
+  //   (+) the loaded test-detail layout actually rendered, and
+  //   (-) we are NOT sitting on the error boundary.
+  await expect(
+    ctx.page.getByTestId("page-header"),
+    "test detail page did not render (no page-header) — the route likely threw into the error boundary",
+  ).toBeVisible({ timeout: 15_000 });
+  await expect(
+    ctx.page.getByRole("heading", { name: "An error occurred" }),
+    "test detail page rendered the error boundary — the route crashed instead of showing the invocation grid",
+  ).toHaveCount(0);
 }
 
 /** Open an existing artifact's detail/edit page (resolved from seed data) and
