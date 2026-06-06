@@ -163,7 +163,14 @@ export default function Activity({ activityData, isLoading = false }: ActivityPr
       accessorKey: "created_at",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Time" />,
       cell: ({ row }) => {
-        const date = new Date(row.getValue("created_at") as string);
+        // ``created_at`` is mapped from the nullable ``session_created_at``
+        // with a ``""`` fallback (see sessionsList above), so guard the
+        // empty/unparseable case to avoid rendering literal "Invalid Date".
+        const raw = row.getValue("created_at") as string;
+        const date = raw ? new Date(raw) : null;
+        if (!date || Number.isNaN(date.getTime())) {
+          return <div className="text-sm text-muted-foreground">—</div>;
+        }
         return (
           <div className="text-sm">
             {date.toLocaleString(undefined, {
