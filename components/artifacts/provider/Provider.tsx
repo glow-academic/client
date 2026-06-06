@@ -27,6 +27,7 @@ import {
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
+import { logger } from "@/utils/logger";
 import { parseAsString, type Parser } from "nuqs";
 
 type CreateProviderIn = InputOf<"/provider/create", "post">;
@@ -273,7 +274,7 @@ export default function Provider({
           .key;
         return decrypted ?? null;
       } catch (err) {
-        console.error("provider decrypt failed", err);
+        logger.error("provider decrypt failed", err);
         return null;
       }
     },
