@@ -62,6 +62,33 @@ async function visible(locator: Locator): Promise<boolean> {
     .catch(() => false);
 }
 
+/** First argument that is a non-empty, non-whitespace string, else null. Used to
+ *  resolve the search term so an empty/blank candidate is treated as a MISS (a
+ *  `??` chain would wrongly accept `""`). */
+function firstNonEmpty(...candidates: Array<string | null | undefined>): string | null {
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim().length > 0) return c.trim();
+  }
+  return null;
+}
+
+/** Poll the visible "Page N of M" indicator until its text differs from `before`
+ *  (bounded). Used after clicking Next so we hold the camera until the grid has
+ *  visibly advanced. Never throws — a timeout just falls through to settle. */
+async function waitForIndicatorChange(
+  page: Page,
+  indicator: Locator,
+  before: string,
+  timeoutMs = 10_000,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const now = (await indicator.textContent().catch(() => null))?.trim() ?? null;
+    if (now && now !== before) return;
+    await page.waitForTimeout(100).catch(() => undefined);
+  }
+}
+
 /** Settle after an interaction: wait the loading shimmer out (bounded,
  *  demo-mode-only) then hold one presentation beat on the result. */
 async function settle(page: Page, beat: number): Promise<void> {
@@ -123,34 +150,56 @@ async function deriveSelectiveTerm(page: Page): Promise<string | null> {
   // First word, trimmed of leading/trailing punctuation. Require ≥2 chars so the
   // term is meaningfully selective (a 1-char token is no better than "a").
   const word = (name.split(/\s+/)[0] ?? "").replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
-  return word.length >= 2 ? word : null;
+  // Require ≥2 chars so the term is meaningfully selective. NEVER return an empty
+  // or whitespace-only string — the caller coalesces on null (not "") to fall
+  // back, so an empty return here would be silently typed as nothing.
+  return word.trim().length >= 2 ? word.trim() : null;
 }
 
 /**
  * Type a term into the list's search box, settle on the filtered grid, then
- * clear it back. The box is the shared list search `<input>` (the only
- * top-level search input on these pages); we locate it by its placeholder so
- * the helper stays domain-agnostic. Skips cleanly if no search box is present.
+ * clear it back. The box is the shared PAGE artifact-search `<input>`; we locate
+ * it by its testid (structural, sidebar-proof — see below) so the helper stays
+ * domain-agnostic. Skips cleanly if no page search box is present.
  *
  * The term is SELECTIVE: we prefer a distinctive word derived from a currently-
  * visible card (so the grid visibly narrows on camera), guarded with a fallback
  * to the caller-supplied `searchTerm` and finally to "a".
  */
 async function exerciseSearch(page: Page, searchTerm: string | undefined, beat: number): Promise<void> {
-  // Every artifact list search renders placeholder text starting with "Search"
-  // ("Search system agents…", "Search personas…", "Search providers…", …) —
-  // verified uniform across all artifact toolbars. We target by placeholder
-  // rather than the `{plural}-search` testid because that testid suffix is NOT
-  // universal (providers uses `input-search-providers`), and rather than an
-  // accessible name (most inputs expose only the placeholder, no /search/i
-  // aria-label), which is why the old role+name locator silently missed.
-  const box = page.getByPlaceholder(/search/i).first();
+  // Target the PAGE artifact-search box STRUCTURALLY by its testid — NOT by
+  // placeholder. The old `getByPlaceholder(/search/i).first()` matched the
+  // GLOBAL LEFT-SIDEBAR nav search (UnifiedSidebar.tsx:409, placeholder
+  // "Search…", first in DOM order) instead of the page search, so the typed
+  // term landed in the sidebar and the artifact grid never narrowed.
+  //
+  // The page search carries a testid on every list domain: 18 domains use
+  // `{plural}-search` (e.g. `agents-search`, `personas-search`, `tools-search`)
+  // and the lone outlier `providers` uses `input-search-providers`. The selector
+  // below matches BOTH families: `[data-testid$="-search"]` catches the
+  // `{plural}-search` ones, `[data-testid^="input-search"]` catches providers.
+  //
+  // Why this can NEVER hit the sidebar: the sidebar nav search is a
+  // `SidebarInput` (ui/sidebar.tsx:339) carrying only `data-slot="sidebar-input"`
+  // / `data-sidebar="input"` and NO `data-testid` at all (UnifiedSidebar passes
+  // none) — so it can't satisfy a `data-testid` attribute selector. The only
+  // other in-range testid, `draft-search` (drafts SaveToolbar), lives inside a
+  // closed Radix dropdown on detail/editor pages, not on list pages, so it isn't
+  // in the DOM here either.
+  const box = page.locator('[data-testid$="-search"], [data-testid^="input-search"]').first();
   if (!(await visible(box))) return;
 
   // Resolve the term to type: prefer a distinctive word from a visible card (so
   // the grid visibly narrows), else the caller-supplied term, else "a". The
   // derivation is fully guarded and never throws, so any failure just falls back.
-  const term = (await deriveSelectiveTerm(page).catch(() => null)) ?? searchTerm ?? "a";
+  //
+  // CRITICAL: coalesce on EMPTY/whitespace, not just null/undefined. A `??` chain
+  // only catches null/undefined, so an empty-or-blank derived word (or an empty
+  // caller-supplied `searchTerm`) would slip through and type nothing — the grid
+  // never narrows and the box keeps its placeholder. `firstNonEmpty` guarantees a
+  // visible, non-empty term always lands on camera.
+  const term =
+    firstNonEmpty(await deriveSelectiveTerm(page).catch(() => null), searchTerm) ?? "a";
 
   await box.scrollIntoViewIfNeeded().catch(() => undefined);
   await box.click({ timeout: 10_000 }).catch(() => undefined);
@@ -260,27 +309,47 @@ async function exerciseViewToggle(page: Page, beat: number): Promise<void> {
 // ---- Step 4: pagination ------------------------------------------------
 
 /**
- * Click the pagination Next arrow → settle → Prev arrow → settle, scoped to the
- * `aria-label="pagination controls"` container so the duplicated mobile/desktop
- * layouts don't trip strict mode (we take the first VISIBLE match). The arrows
- * carry sr-only accessible names ("Go to next page" / "Go to previous page").
- * Skips cleanly when there's a single page (Next is disabled) or no pagination.
+ * Click the pagination Next arrow → settle → Prev arrow → settle. The arrows
+ * carry sr-only accessible names ("Go to next page" / "Go to previous page") and
+ * are rendered twice (mobile + desktop layouts), so we take the first VISIBLE
+ * match to avoid strict-mode collisions. Skips cleanly when there's a single page
+ * (Next is disabled) or no pagination at all.
+ *
+ * SCOPING: we do NOT require the `aria-label="pagination controls"` wrapper.
+ * Several artifact pages (e.g. tools, providers) render `DataTablePagination`
+ * directly with no wrapper div, so scoping to that label made the whole step bail
+ * on exactly the multi-page grids it should advance. We instead locate the arrows
+ * by their unique sr-only names page-wide; the page-indicator wait below proves
+ * the advance landed on camera.
  */
 async function exercisePagination(page: Page, beat: number): Promise<void> {
-  const controls = page.getByLabel("pagination controls").first();
-  if (!(await present(controls))) return;
-
-  const next = controls.getByRole("button", { name: /next page/i }).filter({ visible: true }).first();
+  // Locate Next page-wide (the sr-only name is unique to the pagination arrows),
+  // not via an `aria-label="pagination controls"` wrapper that some pages omit.
+  const next = page.getByRole("button", { name: /next page/i }).filter({ visible: true }).first();
   if (!(await visible(next))) return;
   // Only paginate if there IS a next page — a single-page list disables it.
   if (!(await next.isEnabled().catch(() => false))) return;
 
+  // Snapshot the "Page N of M" indicator so we can WAIT for the advance to land
+  // (table.nextPage() re-renders the grid + indicator synchronously, but waiting
+  // on the visible text change proves the page actually moved on camera).
+  const indicator = page.getByText(/^Page \d+ of \d+$/).filter({ visible: true }).first();
+  const before = (await indicator.textContent().catch(() => null))?.trim() ?? null;
+
   await next.scrollIntoViewIfNeeded().catch(() => undefined);
   await next.click({ timeout: 10_000 }).catch(() => undefined);
+  // Wait for the page indicator to actually change (e.g. "Page 1 of 40" →
+  // "Page 2 of 40") before settling, so the advanced grid is on frame. Poll the
+  // visible indicator's text rather than chaining locators so the duplicated
+  // mobile/desktop indicators don't trip strict mode.
+  if (before) {
+    await waitForIndicatorChange(page, indicator, before);
+  }
   await settle(page, beat);
 
-  const prev = controls.getByRole("button", { name: /previous page/i }).filter({ visible: true }).first();
-  if (await visible(prev)) {
+  // Go back to page 1 so later steps run against the original grid.
+  const prev = page.getByRole("button", { name: /previous page/i }).filter({ visible: true }).first();
+  if ((await visible(prev)) && (await prev.isEnabled().catch(() => false))) {
     await prev.click({ timeout: 10_000 }).catch(() => undefined);
     await settle(page, beat);
   }
