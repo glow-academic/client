@@ -158,23 +158,35 @@ async function deriveSelectiveTerm(page: Page): Promise<string | null> {
 
 /**
  * Type a term into the list's search box, settle on the filtered grid, then
- * clear it back. The box is the shared list search `<input>` (the only
- * top-level search input on these pages); we locate it by its placeholder so
- * the helper stays domain-agnostic. Skips cleanly if no search box is present.
+ * clear it back. The box is the shared PAGE artifact-search `<input>`; we locate
+ * it by its testid (structural, sidebar-proof — see below) so the helper stays
+ * domain-agnostic. Skips cleanly if no page search box is present.
  *
  * The term is SELECTIVE: we prefer a distinctive word derived from a currently-
  * visible card (so the grid visibly narrows on camera), guarded with a fallback
  * to the caller-supplied `searchTerm` and finally to "a".
  */
 async function exerciseSearch(page: Page, searchTerm: string | undefined, beat: number): Promise<void> {
-  // Every artifact list search renders placeholder text starting with "Search"
-  // ("Search system agents…", "Search personas…", "Search providers…", …) —
-  // verified uniform across all artifact toolbars. We target by placeholder
-  // rather than the `{plural}-search` testid because that testid suffix is NOT
-  // universal (providers uses `input-search-providers`), and rather than an
-  // accessible name (most inputs expose only the placeholder, no /search/i
-  // aria-label), which is why the old role+name locator silently missed.
-  const box = page.getByPlaceholder(/search/i).first();
+  // Target the PAGE artifact-search box STRUCTURALLY by its testid — NOT by
+  // placeholder. The old `getByPlaceholder(/search/i).first()` matched the
+  // GLOBAL LEFT-SIDEBAR nav search (UnifiedSidebar.tsx:409, placeholder
+  // "Search…", first in DOM order) instead of the page search, so the typed
+  // term landed in the sidebar and the artifact grid never narrowed.
+  //
+  // The page search carries a testid on every list domain: 18 domains use
+  // `{plural}-search` (e.g. `agents-search`, `personas-search`, `tools-search`)
+  // and the lone outlier `providers` uses `input-search-providers`. The selector
+  // below matches BOTH families: `[data-testid$="-search"]` catches the
+  // `{plural}-search` ones, `[data-testid^="input-search"]` catches providers.
+  //
+  // Why this can NEVER hit the sidebar: the sidebar nav search is a
+  // `SidebarInput` (ui/sidebar.tsx:339) carrying only `data-slot="sidebar-input"`
+  // / `data-sidebar="input"` and NO `data-testid` at all (UnifiedSidebar passes
+  // none) — so it can't satisfy a `data-testid` attribute selector. The only
+  // other in-range testid, `draft-search` (drafts SaveToolbar), lives inside a
+  // closed Radix dropdown on detail/editor pages, not on list pages, so it isn't
+  // in the DOM here either.
+  const box = page.locator('[data-testid$="-search"], [data-testid^="input-search"]').first();
   if (!(await visible(box))) return;
 
   // Resolve the term to type: prefer a distinctive word from a visible card (so
