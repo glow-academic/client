@@ -271,11 +271,19 @@ export default async function ProfilesPage({ searchParams }: ProfilesPageProps) 
     // the server has something to plug into the resolver — but the
     // filter fields will be null/empty until profiles' filter state
     // migrates to nuqs URL params (parity with persona/scenario).
-    // ``page_size``/``page_offset`` are required-but-nullable in the
-    // OpenAPI schema; passing null lets the server use its defaults.
+    // This page uses client-side TanStack column filters + the name
+    // search box and client-side pagination over the SSR-fetched rows,
+    // so ALL matching rows must be loaded up front. ``page_size: null``
+    // does NOT mean "unbounded" — ``/profile/search`` coerces a null/0
+    // page size to its default of 12 (``request.page_size or 12``; the
+    // SQL always applies a LIMIT), so we shipped only the first 12 of N
+    // profiles and profiles 13..N were unreachable / un-searchable.
+    // Request a large window so the full dataset is loaded — mirrors the
+    // sibling load-all + client-filter pages (e.g. ``/platform/auth``
+    // uses ``page_size: 1000``).
     const body: ProfilesListBody = {
-      page_size: null,
-      page_offset: null,
+      page_size: 1000,
+      page_offset: 0,
     };
 
     // Fetch list data, create profile data, view cookie, and group in parallel

@@ -213,12 +213,22 @@ export default async function ContextPage({ searchParams }: ParametersPageProps)
     const snapshot = buildSnapshot(session, context.profile);
     guardPage("/management/parameters", context.profile.role_permissions);
 
-    // SSR search body. Today this is empty (filters are client-side
-    // TanStack column filters, not URL-driven), but the shape is in
-    // place so flipping filters to nuqs URL params later is mechanical.
-    // Forwarded to the bulk delete/update endpoints via the
-    // ``currentSearchBody`` prop on the list component.
-    const body: ParametersListBody = {};
+    // SSR search body. Filters are client-side TanStack column filters +
+    // the name search box, not URL-driven, with client-side pagination
+    // over the SSR-fetched rows, so ALL matching rows must be loaded up
+    // front. An empty/omitted ``page_size`` is NOT "unbounded" —
+    // ``/parameter/search`` coerces a missing/null/0 page size to its
+    // default of 12 (``request.page_size or 12``; the SQL always applies
+    // a LIMIT), so leaving it off shipped only the first 12 of N
+    // parameters and parameters 13..N were unreachable / un-searchable.
+    // Request a large window so the full dataset is loaded — mirrors the
+    // sibling load-all + client-filter pages (e.g. ``/platform/auth``
+    // uses ``page_size: 1000``). Forwarded to the bulk delete/update
+    // endpoints via the ``currentSearchBody`` prop on the list component.
+    const body: ParametersListBody = {
+      page_size: 1000,
+      page_offset: 0,
+    };
 
     // Fetch list data, view cookie, and group in parallel
     const [listData, initialColumnVisibility, groupResult] = await Promise.all([

@@ -204,13 +204,29 @@ export default async function FieldsPage({ searchParams }: FieldsPageProps) {
     guardPage("/management/fields", context.profile.role_permissions);
 
     // The fields list page uses client-side faceted filters (TanStack
-    // table column filters) rather than threading filter state through
-    // the URL → server. Until we move filters server-side the SSR body
-    // is empty, but it's still threaded as ``currentSearchBody`` so the
-    // bulk all-matching shape can spread it verbatim once that lands.
+    // table column filters + the name search box) and client-side
+    // pagination over the SSR-fetched rows, rather than threading
+    // filter/search/page state through the URL → server. That model
+    // only works if ALL matching rows are loaded up front: the search
+    // box (``nameColumn.setFilterValue``) and the ``DataTablePagination``
+    // both operate purely on ``listData.fields``.
+    //
+    // ``page_size: null`` does NOT mean "unbounded" — ``/field/search``
+    // coerces a null/0 page size to its default of 12 (``request
+    // .page_size or 12``; the SQL always applies a LIMIT). With null we
+    // shipped only the first 12 of N fields, so searching for a field
+    // beyond that window returned "No fields match the current filters"
+    // even though it exists, and fields 13..N were unreachable (the
+    // client paginator saw only 12 rows → one page). Request a large
+    // window so the full dataset is loaded and client search/pagination
+    // span every field — mirrors the sibling load-all + client-filter
+    // pages (e.g. ``/platform/auth`` uses ``page_size: 1000``).
+    //
+    // Still threaded as ``currentSearchBody`` so the bulk all-matching
+    // shape can spread it verbatim.
     const body: FieldsListBody = {
-      page_size: null,
-      page_offset: null,
+      page_size: 1000,
+      page_offset: 0,
     };
 
     // Fetch list data, view cookie, and group in parallel
