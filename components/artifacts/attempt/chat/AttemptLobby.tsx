@@ -9,7 +9,7 @@ import { useAttemptGenerate } from "@/hooks/use-attempt-generate";
 import { useAttemptEnd } from "@/hooks/use-attempt-end";
 import { Play, SlidersHorizontal, SkipForward } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type ContinuationScenario = {
@@ -74,10 +74,17 @@ export function AttemptLobby({
     (endStage !== "idle" && endStage !== "error" && endStage !== "done");
   const hookError = generateError || endError;
 
-  // Show errors via toast
-  if (hookError) {
-    toast.error(hookError);
-  }
+  // Show errors via toast. Must run as an effect, not in the render
+  // body: `hookError` is sticky state (cleared only on the next
+  // generate/end attempt), so calling `toast.error` inline fired a
+  // fresh toast on every unrelated re-render (router/transport/parent)
+  // and triggered React's "update a component while rendering" warning.
+  // Keyed on `hookError` so it shows once per distinct error.
+  useEffect(() => {
+    if (hookError) {
+      toast.error(hookError);
+    }
+  }, [hookError]);
 
   const handleStart = useCallback(async () => {
     if (draftId) {
