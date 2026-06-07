@@ -147,7 +147,7 @@ export async function attemptDemo(
   ctx: DemoCtx,
   topic: string,
   scrollTexts: RegExp[],
-  pick: "best" | "worst" = "best",
+  pick: "best" | "worst" | "median" = "best",
 ): Promise<void> {
   const res = await ctx.request.post(`${API_BASE}/attempt/search`, {
     headers: { Authorization: `Bearer ${process.env["GLOW_RECORD_TOKEN"] ?? ""}` },
@@ -155,14 +155,27 @@ export async function attemptDemo(
   });
   const body = res.ok() ? ((await res.json()) as Record<string, unknown>) : {};
   const rows = (body["data"] as Array<Record<string, unknown>>) ?? [];
+  // Always sort high→low so the pick index is well-defined.
   const viewable = rows
     .filter((r) => r["show_view"] && typeof r["score"] === "number")
-    .sort((a, b) =>
-      pick === "worst"
-        ? (a["score"] as number) - (b["score"] as number)
-        : (b["score"] as number) - (a["score"] as number),
-    );
-  const id = viewable[0]?.["attempt_id"];
+    .sort((a, b) => (b["score"] as number) - (a["score"] as number));
+  // AUDIT FIX: `how-it-works-attempt-loop` and `annotated-example-excellent`
+  // both resolved `pick:"best"` → same attempt → duplicate footage. Selecting a
+  // DIFFERENT attempt per demo de-dupes the clips:
+  //   - "best"   → highest score (index 0)        — the excellent exemplar
+  //   - "worst"  → lowest score  (last index)     — the struggling exemplar
+  //   - "median" → the middle of the sorted list  — a typical, mid attempt
+  // `median` uses floor(n/2), which for any n ≥ 2 is a DIFFERENT row than
+  // best (index 0), so the two demos film distinct attempts whenever the seed
+  // has more than one viewable attempt. With a single attempt every pick
+  // collapses to it (unavoidable — there's only one real attempt to feature).
+  const idx =
+    pick === "worst"
+      ? viewable.length - 1
+      : pick === "median"
+        ? Math.floor(viewable.length / 2)
+        : 0;
+  const id = viewable[idx]?.["attempt_id"];
   test.skip(typeof id !== "string", "no completed+viewable attempt to feature");
   // The attempt-review page opens a live chat websocket, so networkidle never
   // settles — wait for DOM only, then let the review render.

@@ -130,7 +130,7 @@ export default function Session({ sessionDetail }: SessionProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4 min-h-0 flex-1">
+    <div className="flex flex-col gap-4 min-h-0 flex-1" data-testid="session-detail">
       {/* Header card */}
       <Card>
         <CardHeader className="pb-3">
