@@ -113,7 +113,17 @@ export async function expectBenchmarkGridVisible(page: Page): Promise<void> {
 export async function fillSearch(page: Page, testId: string, value: string): Promise<void> {
   const input = page.getByTestId(testId);
   await expect(input).toBeVisible({ timeout: 30_000 });
-  await input.fill(value);
+  // Type character-by-character (clearing first), mirroring the proven
+  // searchDemo / exercise-list path. A bare `fill(value)` sets the DOM value in
+  // one shot and fires a single `input` event, but the search box commits via
+  // `commitSearch(searchTerm)` — a state closure populated per-keystroke by the
+  // box's debounced `onChange`. After a one-shot `fill`, the subsequent Enter's
+  // `onKeyDown` can read a STALE `searchTerm`, so the grid never narrows on
+  // camera (the WEAK observed live). Per-keystroke typing flushes `setSearchTerm`
+  // so Enter commits the full live term and the grid actually narrows.
+  await input.click({ timeout: 10_000 }).catch(() => undefined);
+  await input.fill("");
+  await input.pressSequentially(value, { delay: 40 });
   await input.press("Enter");
   await pauseForDemo(900);
 }
