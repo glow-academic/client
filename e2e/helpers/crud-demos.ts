@@ -123,7 +123,15 @@ export async function createDemo(
   await facade.library.openUntilVisible(input.name);
   await facade.search(input.name);
   await facade.library.expectVisible(input.name);
-  await saveDemoVideo(ctx.page, `${spec.plural}-create${variant ? `-${variant}` : ""}`);
+  // Canonical doc-slot name: ALWAYS `{plural}-create`, never `-{variant}`. The
+  // `variant` is an internal FORM-MODE selector (e.g. scenario's
+  // `?mode=contextual` create flow), NOT a separate doc artifact — each domain
+  // records exactly ONE create demo for its `{plural}-create` slot (scenarios
+  // has the single contextual spec; there is no `scenarios-create-assessment`
+  // recording). The old `-${variant}` suffix saved `scenarios-create-contextual.webm`,
+  // which CLI polish — keyed to the canonical `{plural}-create` slot — couldn't
+  // find ("no video"). Drop the suffix so the artifact name matches the slot.
+  await saveDemoVideo(ctx.page, `${spec.plural}-create`);
 }
 
 /** Seed one row via the factory, open its edit page, change the description,
