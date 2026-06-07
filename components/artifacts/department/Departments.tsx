@@ -344,13 +344,6 @@ export default function Departments({
     void setExcludedDepartmentIds([]);
   }, [setSelectedDepartmentIds, setSelectAllMatching, setExcludedDepartmentIds]);
 
-  const selectAllOnPage = useCallback(() => {
-    const pageIds = departments.filter((d) => d.id).map((d) => d.id!);
-    void setSelectAllMatching(false);
-    void setExcludedDepartmentIds([]);
-    void setSelectedDepartmentIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [departments, setSelectAllMatching, setExcludedDepartmentIds, setSelectedDepartmentIds]);
-
   /** Promote the current page-only selection into "all matching
    *  filter" mode. Clears explicit ids and exclusions — the all-
    *  matching mode is the canonical truth from this point. */
@@ -360,19 +353,12 @@ export default function Departments({
     void setSelectAllMatching(true);
   }, [setSelectedDepartmentIds, setExcludedDepartmentIds, setSelectAllMatching]);
 
-  // Check if all departments on the current page are selected. Under
-  // all-matching mode every loaded row whose id isn't in
-  // ``excludedDepartmentIds`` is implicitly selected, so the predicate
-  // reduces to "no excluded rows on the current page."
-  const allPageSelected = useMemo(() => {
-    const pageIds = departments.filter((d) => d.id).map((d) => d.id!);
-    if (pageIds.length === 0) return false;
-    return pageIds.every((id) => isSelected(id));
-  }, [departments, isSelected]);
-
   // Whether there ARE more matching rows than what's loaded on this
   // page — used to decide whether to surface the "Select all N
-  // matching" affordance after the user selects the page.
+  // matching" affordance after the user selects the page. Kept vs the
+  // full loaded ``departments.length`` (the server-side all-matching
+  // path resolves from ``currentSearchBody`` which carries no client
+  // filters), so it stays dormant on this load-all page (#81).
   const hasMoreThanCurrentPage = totalMatchingCount > departments.length;
 
   // Bulk delete state
@@ -533,6 +519,36 @@ export default function Departments({
     pageIndex,
     pageSize,
   ]);
+
+  // Ids of the rows that pass the active client-side filters — the row
+  // set the user actually sees, NOT the raw ``departments`` array (the
+  // full SSR-loaded dataset on this load-all page). Selection helpers
+  // must scope to this filtered view; otherwise selecting after a
+  // filter would silently grab every loaded row (#81). Same source the
+  // ``getFilteredRowModel`` already powers.
+  const filteredRowIds = useMemo(() => {
+    return table
+      .getFilteredRowModel()
+      .rows.map((row) => row.original.id)
+      .filter((id): id is string => !!id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnFiltersKey, departments]);
+
+  const selectAllOnPage = useCallback(() => {
+    void setSelectAllMatching(false);
+    void setExcludedDepartmentIds([]);
+    void setSelectedDepartmentIds((prev) =>
+      Array.from(new Set([...prev, ...filteredRowIds])),
+    );
+  }, [filteredRowIds, setSelectAllMatching, setExcludedDepartmentIds, setSelectedDepartmentIds]);
+
+  // Whether every row in the active filtered view is selected. Under
+  // all-matching mode every filtered row not excluded is implicitly
+  // selected.
+  const allPageSelected = useMemo(() => {
+    if (filteredRowIds.length === 0) return false;
+    return filteredRowIds.every((id) => isSelected(id));
+  }, [filteredRowIds, isSelected]);
 
   // Note: cohort/profile faceted filtering removed since the list API
   // no longer returns cohort_ids/profile_ids per department row
@@ -1041,7 +1057,7 @@ export default function Departments({
                 data-testid="select-all-matching-banner"
               >
                 <span className="text-muted-foreground">
-                  All {departments.length} on this page selected.
+                  All {filteredRowIds.length} on this page selected.
                 </span>
                 <Button
                   variant="link"
