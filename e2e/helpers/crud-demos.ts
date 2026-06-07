@@ -111,7 +111,16 @@ export async function createDemo(
   const { spec, facade } = facadeFor(ctx, key);
   await facade.open();
   await facade.create(input, variant);
-  await facade.open();
+  // Settle the list onto the new row BY NAME before the on-camera search. The
+  // created artifact is searchable immediately (synchronous committed insert),
+  // but the default list is paginated name-ascending and the run-scoped probe
+  // name sorts to the alphabetical TAIL — so on a server-paginated page (tools)
+  // it lands off page 1, and on a load-everything page (fields) a stale Redis
+  // SSR snapshot can predate it. openUntilVisible navigates to a name-filtered
+  // ``?search=`` (so the row is on page 1 regardless of sort/total) and is
+  // cache-fresh (so it reads past the stale list cache), then the on-camera
+  // search runs against a list that contains it.
+  await facade.library.openUntilVisible(input.name);
   await facade.search(input.name);
   await facade.library.expectVisible(input.name);
   await saveDemoVideo(ctx.page, `${spec.plural}-create${variant ? `-${variant}` : ""}`);
@@ -316,27 +325,48 @@ export async function testDemo(
   await ctx.page.goto(`/test/${id}`, { waitUntil: "domcontentloaded" });
   await ctx.demo.pause(3000);
   for (const t of scrollTexts) await scrollToText(ctx.page, t).catch(() => undefined);
-  // Save the (honest) recording FIRST so a crashed page is still captured for
-  // QA, then fail loud — mirrors genDemo's assert-after-save discipline.
-  await saveDemoVideo(ctx.page, topic);
 
-  // FAIL-LOUD: the tolerant `scrollToText(...).catch()` tour above swallows a
-  // crashed page, so without this the demo reports PASS while filming the
-  // error boundary (the same silent-green class as the old draftDemo). The
-  // observed failure was the route throwing into `app/error.tsx`, which
-  // renders an "An error occurred" card carrying the raw message (e.g. "No
-  // group found for id ...") and REPLACES the whole route subtree — so the
-  // layout's `page-header` is gone. Assert both directions:
-  //   (+) the loaded test-detail layout actually rendered, and
+  // FAIL-LOUD (asserted BEFORE saveDemoVideo): the tolerant
+  // `scrollToText(...).catch()` tour above swallows a crashed page, so without
+  // this the demo reports PASS while filming the error boundary (the same
+  // silent-green class as the old draftDemo). When the route throws into
+  // `app/error.tsx`, that card REPLACES the whole route subtree — including
+  // `FullPageLayout`'s header/breadcrumb — so we assert the test-detail route
+  // ACTUALLY rendered and that the error card is absent.
+  //
+  // CRITICAL ORDERING: `saveDemoVideo(ctx.page, …)` calls `page.close()`
+  // (demo-video.ts) to finalize the recording. These route-signal assertions
+  // MUST run against the OPEN page, so they precede the save — asserting after
+  // it failed with "Target page … has been closed." (the dead-assertion bug
+  // this rework fixes). This trades genDemo's assert-after-save ordering for
+  // correctness: the page object is unusable once closed, so the signal has to
+  // be read first. The video is still saved unconditionally below, so a
+  // genuinely crashed route is both captured for QA AND fails loud here.
+  //
+  // The route renders via `FullPageLayout`, whose `PageHeader` emits a
+  // breadcrumb `<nav aria-label="breadcrumb">` seeded with the test route's
+  // fixed first crumb, "Benchmark" (page.tsx: breadcrumbs=[{ title:"Benchmark"
+  // }, { title: entityName ?? "Test" }]). `app/error.tsx` renders NEITHER a
+  // breadcrumb nor that crumb, so a present "Benchmark" breadcrumb is a
+  // route-specific proof the real test-detail layout rendered — strictly
+  // tighter than the generic `page-header` (which every FullPageLayout page
+  // shares). Assert both directions:
+  //   (+) the test-detail breadcrumb header actually rendered, and
   //   (-) we are NOT sitting on the error boundary.
   await expect(
-    ctx.page.getByTestId("page-header"),
-    "test detail page did not render (no page-header) — the route likely threw into the error boundary",
+    ctx.page
+      .getByRole("navigation", { name: "breadcrumb" })
+      .getByText("Benchmark", { exact: true }),
+    "test detail page did not render its breadcrumb header — the route likely threw into the error boundary",
   ).toBeVisible({ timeout: 15_000 });
   await expect(
     ctx.page.getByRole("heading", { name: "An error occurred" }),
     "test detail page rendered the error boundary — the route crashed instead of showing the invocation grid",
   ).toHaveCount(0);
+
+  // Save the recording LAST: it closes the page (see ordering note above), so
+  // every page-object assertion must already have run.
+  await saveDemoVideo(ctx.page, topic);
 }
 
 /** Open an existing artifact's detail/edit page (resolved from seed data) and
@@ -360,7 +390,10 @@ export async function detailDemo(
  *  (toolbar → dialog → confirm → verify gone). Skips if it can't seed two. */
 export async function bulkDeleteDemo(ctx: DemoCtx, key: string): Promise<void> {
   const { spec, facade } = facadeFor(ctx, key);
-  const names = [`Bulk ${spec.singular} A ${ctx.runId}`, `Bulk ${spec.singular} B ${ctx.runId}`];
+  // Both seeded names share this stem (they differ only in the A/B letter), so
+  // a single ``?search=`` query pulls BOTH onto page 1 — see openSelected.
+  const stem = `Bulk ${spec.singular}`;
+  const names = [`${stem} A ${ctx.runId}`, `${stem} B ${ctx.runId}`];
   const ids: string[] = [];
   for (const name of names) {
     if (!(await apiCreate(ctx.request, key, name))) break;
@@ -369,7 +402,7 @@ export async function bulkDeleteDemo(ctx: DemoCtx, key: string): Promise<void> {
     if (id) ids.push(id);
   }
   test.skip(ids.length < 2, `could not seed two ${spec.plural}`);
-  await facade.library.openSelected(ids);
+  await facade.library.openSelected(ids, stem);
   await facade.library.bulkDelete();
   await facade.open();
   await facade.search(names[0]!);

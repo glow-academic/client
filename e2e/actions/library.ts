@@ -41,9 +41,83 @@ export class Library {
     );
   }
 
-  /** Navigate to the library and wait until the grid is ready. */
+  /** Navigate to a library URL while bypassing the backend's Redis list
+   *  cache, then restore the default headers.
+   *
+   *  WHY: the list pages SSR-fetch ``/{artifact}/search`` and only forward
+   *  ``X-Bypass-Cache: 1`` when the request looks like a *hard* refresh — they
+   *  read ``Cache-Control: no-cache`` off the incoming request headers
+   *  (``lib/cache-utils.ts``'s ``isHardRefresh``). A plain ``page.goto`` is a
+   *  SOFT navigation, so the SSR serves whatever the Redis list cache holds —
+   *  which, right after a create / factory-seed / bulk mutation, is STALE: it
+   *  predates the new/changed rows. That's the recurring demo failure:
+   *    - fields-create: the created field is in the DB but absent from the
+   *      cached ``/field/search`` the page SSRs, so the client-side search
+   *      filter (a tanstack column filter over the SSR set) matches 0 →
+   *      ``expectVisible`` times out.
+   *    - tools-bulk: the two factory-seeded rows aren't in the cached
+   *      ``/tool/search`` page, so they never load into the table → the
+   *      ``?selectedIds=`` selection resolves to 0 deletable loaded rows →
+   *      the "Delete N" trigger stays disabled.
+   *  Sending ``Cache-Control: no-cache`` on the navigation makes the SSR treat
+   *  it as a hard refresh and forward ``X-Bypass-Cache: 1``, so the backend
+   *  reads through to a fresh list that includes the just-mutated rows. This is
+   *  exactly what a real user's browser hard-reload (or the page's "Refresh"
+   *  toolbar button) sends — so the demo settles on the same authoritative path
+   *  rather than papering over the cache with a sleep. */
+  private async gotoFresh(url: string, opts: { keepHeader?: boolean } = {}): Promise<void> {
+    await this.page.setExtraHTTPHeaders({ "Cache-Control": "no-cache" });
+    try {
+      await this.page.goto(url);
+    } finally {
+      // Restore defaults so only THIS navigation bypasses the cache — later
+      // soft navs / XHRs keep their normal cache behavior.
+      //
+      // EXCEPT when `keepHeader` is set (openUntilVisible's create-verify
+      // path): the bypass MUST stay active across the subsequent box-search
+      // XHR, not just the navigation. Otherwise the box's debounced
+      // `/{artifact}/search` refetch reads the STALE Redis list cache — the
+      // same cache that predates the just-created row — and the row never
+      // surfaces. The caller restores defaults itself once the row is found.
+      if (!opts.keepHeader) await this.page.setExtraHTTPHeaders({});
+    }
+  }
+
+  /** Build a list URL that pins a single row by NAME via the page's server
+   *  ``?search=`` param, optionally with extra query (e.g. ``selectedIds``).
+   *
+   *  WHY this is the real fix (over a cache-bypass alone): the list pages that
+   *  thread search server-side (tools, and every page whose nuqs loader has a
+   *  ``search`` key) default to ``page_size: 12``, name-ascending. A freshly
+   *  created/seeded row carries a run-scoped probe name (``… {runId}``,
+   *  ``Bulk … {runId}``) that sorts to the ALPHABETICAL TAIL — so it lands off
+   *  page 1 and never appears, no matter how fresh the cache is. A
+   *  name-filtered server query collapses the list to (essentially) just that
+   *  row, so it's on page 1 regardless of total count or sort order. This is
+   *  order- AND page-independent, which a bare ``listPath`` nav is not.
+   *
+   *  Pages that DON'T thread search server-side (fields — SSR body is
+   *  ``page_size: null``, i.e. ALL rows, and search is a client-side tanstack
+   *  column filter) simply ignore the unknown ``search`` param: they already
+   *  load the full set, so the row is present and the on-camera ``search()``
+   *  client-filters onto it. So one URL shape is correct for both architectures
+   *  — server-paginated and load-everything. Combined with ``gotoFresh`` the
+   *  query also reads through the stale Redis list cache, so neither the cache
+   *  nor the page boundary can hide the row. */
+  private searchUrl(name: string, extra?: string): string {
+    const params = new URLSearchParams({ search: name });
+    const qs = extra ? `${params.toString()}&${extra}` : params.toString();
+    return `${this.spec.listPath}?${qs}`;
+  }
+
+  /** Navigate to the library and wait until the grid is ready.
+   *
+   *  Cache-bypassing on purpose: ``open()`` is the post-mutation re-entry point
+   *  (createDemo opens here after a create; bulkDeleteDemo after a delete), so
+   *  it must read through the stale Redis list cache to surface the just-
+   *  mutated rows. See ``gotoFresh`` for the full rationale. */
   async open(): Promise<void> {
-    await this.page.goto(this.spec.listPath);
+    await this.gotoFresh(this.spec.listPath);
     await expect(this.toolbar).toBeVisible({ timeout: 30_000 });
     await expect(this.grid).toBeVisible({ timeout: 30_000 });
     await this.demo.pause();
@@ -95,6 +169,68 @@ export class Library {
   async expectVisible(name: string): Promise<void> {
     await expect(this.card(name)).toBeVisible({ timeout: 30_000 });
     await this.demo.scrollTo(this.card(name));
+  }
+
+  /** Settle the list onto a just-created row by NAME, order- and
+   *  page-independently — by DRIVING THE SEARCH BOX, not the URL.
+   *
+   *  WHY the box and not ``?search=`` (the prior approach): the list pages split
+   *  into two architectures for search, and only the box honors BOTH:
+   *    - tools (and every server-threaded list) page at 12 name-ascending, so a
+   *      run-scoped probe name (``… {runId}``) sorts to the alphabetical tail and
+   *      lands off page 1. Its search box debounces a fresh ``/tool/search`` with
+   *      the typed term, collapsing the page to the matching row.
+   *    - fields is a load-everything SSR (``page_size: null``) whose search is a
+   *      CLIENT-SIDE tanstack column filter — and its Next route IGNORES the
+   *      ``?search=`` URL param entirely (it only reads ``groupId``). So a
+   *      ``?search=`` nav lands on the unfiltered alphabetical head (12 of 68)
+   *      and the tail row never shows. But TYPING into the box runs the client
+   *      filter over the full SSR set and surfaces the row. This is exactly the
+   *      proven ``search()`` path that fields-search passes with.
+   *  So we open the bare (cache-fresh) library, then drive the box with the
+   *  exact name — the one mechanism correct for server-threaded AND client-
+   *  filtered lists alike.
+   *
+   *  ``gotoFresh(listPath)`` keeps cache-freshness: the post-create open must
+   *  read through the stale Redis list cache that predates the new row (see
+   *  ``gotoFresh``). For fields that means the full SSR set already contains the
+   *  row for the client filter to find; for tools the box's own refetch is fresh.
+   *
+   *  A single open+search can still miss the row when the create commit and the
+   *  read race (brief eventual consistency between the write and when
+   *  ``/{artifact}/search`` returns it). So re-open + re-search until the row
+   *  appears, bounded by ``toPass`` — the create-side mirror of openSelected's
+   *  "wait for the real signal" discipline: the signal here is the row landing
+   *  in the searched list, not a fixed delay. */
+  async openUntilVisible(name: string): Promise<void> {
+    // Keep the `Cache-Control: no-cache` bypass active across BOTH the
+    // navigation AND the box-search refetch below (`keepHeader: true`). The
+    // box's debounced `/{artifact}/search` is a fresh network read for a
+    // server-threaded list (tools); if it carried default headers it would hit
+    // the stale Redis list cache that predates the just-created row, and the
+    // row would never surface — exactly the create-verify failure observed live
+    // (the prior code restored defaults in gotoFresh BEFORE this refetch ran).
+    // The header is restored in `finally` once the row is found (or we give up).
+    try {
+      await expect(async () => {
+        await this.gotoFresh(this.spec.listPath, { keepHeader: true });
+        await expect(this.toolbar).toBeVisible({ timeout: 15_000 });
+        // Drive the box the same way the on-camera search() does (clear → type →
+        // Enter), so a server-threaded list refetches with the term and a
+        // client-filtered list (fields) filters its full SSR set onto the row.
+        // This refetch runs UNDER the bypass header above, so it reads fresh.
+        await this.demo.type(this.searchBox, name);
+        await this.searchBox.press("Enter");
+        await expect(this.card(name)).toBeVisible({ timeout: 5_000 });
+      }).toPass({ timeout: 45_000, intervals: [1_000, 2_000, 5_000] });
+    } finally {
+      // Restore default headers so the on-camera search() + later soft navs
+      // keep normal cache behavior (mirrors gotoFresh's default-path restore).
+      // Does NOT regress tools-bulk: openSelected uses gotoFresh's default path
+      // and is untouched.
+      await this.page.setExtraHTTPHeaders({});
+    }
+    await this.demo.pause();
   }
 
   /** Whether a page-toolbar action button (by accessible name) is present. */
@@ -150,10 +286,32 @@ export class Library {
 
   /** Open the library with rows pre-selected via the `?selectedIds=` URL param
    *  — deterministic bulk selection, no checkbox-clicking — and wait for the
-   *  selection toolbar to appear. */
-  async openSelected(ids: string[]): Promise<void> {
-    await this.page.goto(`${this.spec.listPath}?selectedIds=${ids.join(",")}`);
+   *  selection toolbar to appear.
+   *
+   *  ``nameFilter`` (the shared name stem of the seeded rows) is threaded into
+   *  the server ``?search=`` so the seeded rows are pulled onto page 1. WHY:
+   *  the "Delete N" trigger is ``deletable = selected.filter(can_delete)`` over
+   *  the LOADED rows only — on a server-paginated page (tools, page_size 12)
+   *  the run-scoped seed names sort to the alphabetical tail, land off page 1,
+   *  and so are selected-but-not-loaded → 0 deletable → trigger stays disabled
+   *  ("Delete 0 of N"). A name-filtered query collapses the page to the seeded
+   *  rows so they're loaded AND selected. Load-everything pages (fields) ignore
+   *  the param and already have every row loaded. ``gotoFresh`` additionally
+   *  reads through the stale Redis cache that predates the just-seeded rows. */
+  async openSelected(ids: string[], nameFilter?: string): Promise<void> {
+    const extra = `selectedIds=${ids.join(",")}`;
+    await this.gotoFresh(
+      nameFilter
+        ? this.searchUrl(nameFilter, extra)
+        : `${this.spec.listPath}?${extra}`,
+    );
     await this.bulkDeleteTrigger.waitFor({ state: "visible", timeout: 30_000 });
+    // Settle on the REAL signal, not a sleep: the seeded rows must be both
+    // loaded into the table AND resolved as selected before the "Delete N"
+    // trigger reports them deletable. The trigger reads "Delete N of M" and is
+    // disabled at 0 deletable; wait until it's enabled so the subsequent
+    // bulkDelete() acts on a settled selection rather than racing the load.
+    await expect(this.bulkDeleteTrigger).toBeEnabled({ timeout: 30_000 });
     await this.demo.pause();
   }
 
