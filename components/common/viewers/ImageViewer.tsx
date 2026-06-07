@@ -2,7 +2,7 @@
 
 import { FileText } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface ImageViewerProps {
   imageId: string;
@@ -26,19 +26,25 @@ export default function ImageViewer({
   const [type, setType] = useState<string | null>(mimeType || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Track the live blob URL in a ref so the in-flight fetch can still
+  // reach (and the next effect run can revoke) a URL created after this
+  // effect's own cleanup has already fired — see DocumentViewer.tsx.
+  const blobUrlRef = useRef<string | null>(null);
 
   // Load image
   useEffect(() => {
-    let blobUrl: string | null = null;
-    let previousBlobUrl: string | null = null;
+    let cancelled = false;
 
     const loadImage = async () => {
       try {
         setLoading(true);
         setError(null);
-        // Clear previous blob URL when loading new image
-        if (previousBlobUrl && previousBlobUrl.startsWith("blob:")) {
-          URL.revokeObjectURL(previousBlobUrl);
+
+        // Revoke any blob URL left over from a previous load before
+        // creating a new one.
+        if (blobUrlRef.current && blobUrlRef.current.startsWith("blob:")) {
+          URL.revokeObjectURL(blobUrlRef.current);
+          blobUrlRef.current = null;
         }
         setContent(null);
 
@@ -61,25 +67,41 @@ export default function ImageViewer({
         }
 
         const contentType = response.headers.get("content-type") ?? "";
-        setType(contentType);
 
         const blob = await response.blob();
-        blobUrl = URL.createObjectURL(blob);
-        previousBlobUrl = blobUrl;
+        const blobUrl = URL.createObjectURL(blob);
+
+        // The imageId/downloadBaseUrl changed (or we unmounted) while the
+        // fetch was in flight: don't touch state and revoke the just-made
+        // URL ourselves, since this effect's cleanup already ran with no
+        // URL to revoke.
+        if (cancelled) {
+          URL.revokeObjectURL(blobUrl);
+          return;
+        }
+
+        blobUrlRef.current = blobUrl;
+        setType(contentType);
         setContent(blobUrl);
       } catch (e) {
-        setError((e as Error).message);
+        if (!cancelled) {
+          setError((e as Error).message);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     loadImage();
 
-    // Cleanup blob URL on unmount or when imageId changes
+    // Cleanup on unmount or when imageId/downloadBaseUrl changes.
     return () => {
-      if (blobUrl && blobUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(blobUrl);
+      cancelled = true;
+      if (blobUrlRef.current && blobUrlRef.current.startsWith("blob:")) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
       }
     };
   }, [imageId, downloadBaseUrl]);
