@@ -325,16 +325,23 @@ export async function testDemo(
   await ctx.page.goto(`/test/${id}`, { waitUntil: "domcontentloaded" });
   await ctx.demo.pause(3000);
   for (const t of scrollTexts) await scrollToText(ctx.page, t).catch(() => undefined);
-  // Save the (honest) recording FIRST so a crashed page is still captured for
-  // QA, then fail loud — mirrors genDemo's assert-after-save discipline.
-  await saveDemoVideo(ctx.page, topic);
 
-  // FAIL-LOUD: the tolerant `scrollToText(...).catch()` tour above swallows a
-  // crashed page, so without this the demo reports PASS while filming the
-  // error boundary (the same silent-green class as the old draftDemo). When the
-  // route throws into `app/error.tsx`, that card REPLACES the whole route
-  // subtree — including `FullPageLayout`'s header/breadcrumb — so we assert the
-  // element `/test/[testId]` ACTUALLY renders and that the error card is absent.
+  // FAIL-LOUD (asserted BEFORE saveDemoVideo): the tolerant
+  // `scrollToText(...).catch()` tour above swallows a crashed page, so without
+  // this the demo reports PASS while filming the error boundary (the same
+  // silent-green class as the old draftDemo). When the route throws into
+  // `app/error.tsx`, that card REPLACES the whole route subtree — including
+  // `FullPageLayout`'s header/breadcrumb — so we assert the test-detail route
+  // ACTUALLY rendered and that the error card is absent.
+  //
+  // CRITICAL ORDERING: `saveDemoVideo(ctx.page, …)` calls `page.close()`
+  // (demo-video.ts) to finalize the recording. These route-signal assertions
+  // MUST run against the OPEN page, so they precede the save — asserting after
+  // it failed with "Target page … has been closed." (the dead-assertion bug
+  // this rework fixes). This trades genDemo's assert-after-save ordering for
+  // correctness: the page object is unusable once closed, so the signal has to
+  // be read first. The video is still saved unconditionally below, so a
+  // genuinely crashed route is both captured for QA AND fails loud here.
   //
   // The route renders via `FullPageLayout`, whose `PageHeader` emits a
   // breadcrumb `<nav aria-label="breadcrumb">` seeded with the test route's
@@ -356,6 +363,10 @@ export async function testDemo(
     ctx.page.getByRole("heading", { name: "An error occurred" }),
     "test detail page rendered the error boundary — the route crashed instead of showing the invocation grid",
   ).toHaveCount(0);
+
+  // Save the recording LAST: it closes the page (see ordering note above), so
+  // every page-object assertion must already have run.
+  await saveDemoVideo(ctx.page, topic);
 }
 
 /** Open an existing artifact's detail/edit page (resolved from seed data) and

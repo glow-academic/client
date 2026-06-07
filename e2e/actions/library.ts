@@ -65,14 +65,21 @@ export class Library {
    *  exactly what a real user's browser hard-reload (or the page's "Refresh"
    *  toolbar button) sends — so the demo settles on the same authoritative path
    *  rather than papering over the cache with a sleep. */
-  private async gotoFresh(url: string): Promise<void> {
+  private async gotoFresh(url: string, opts: { keepHeader?: boolean } = {}): Promise<void> {
     await this.page.setExtraHTTPHeaders({ "Cache-Control": "no-cache" });
     try {
       await this.page.goto(url);
     } finally {
       // Restore defaults so only THIS navigation bypasses the cache — later
       // soft navs / XHRs keep their normal cache behavior.
-      await this.page.setExtraHTTPHeaders({});
+      //
+      // EXCEPT when `keepHeader` is set (openUntilVisible's create-verify
+      // path): the bypass MUST stay active across the subsequent box-search
+      // XHR, not just the navigation. Otherwise the box's debounced
+      // `/{artifact}/search` refetch reads the STALE Redis list cache — the
+      // same cache that predates the just-created row — and the row never
+      // surfaces. The caller restores defaults itself once the row is found.
+      if (!opts.keepHeader) await this.page.setExtraHTTPHeaders({});
     }
   }
 
@@ -196,16 +203,33 @@ export class Library {
    *  "wait for the real signal" discipline: the signal here is the row landing
    *  in the searched list, not a fixed delay. */
   async openUntilVisible(name: string): Promise<void> {
-    await expect(async () => {
-      await this.gotoFresh(this.spec.listPath);
-      await expect(this.toolbar).toBeVisible({ timeout: 15_000 });
-      // Drive the box the same way the on-camera search() does (clear → type →
-      // Enter), so a server-threaded list refetches with the term and a
-      // client-filtered list (fields) filters its full SSR set onto the row.
-      await this.demo.type(this.searchBox, name);
-      await this.searchBox.press("Enter");
-      await expect(this.card(name)).toBeVisible({ timeout: 5_000 });
-    }).toPass({ timeout: 45_000, intervals: [1_000, 2_000, 5_000] });
+    // Keep the `Cache-Control: no-cache` bypass active across BOTH the
+    // navigation AND the box-search refetch below (`keepHeader: true`). The
+    // box's debounced `/{artifact}/search` is a fresh network read for a
+    // server-threaded list (tools); if it carried default headers it would hit
+    // the stale Redis list cache that predates the just-created row, and the
+    // row would never surface — exactly the create-verify failure observed live
+    // (the prior code restored defaults in gotoFresh BEFORE this refetch ran).
+    // The header is restored in `finally` once the row is found (or we give up).
+    try {
+      await expect(async () => {
+        await this.gotoFresh(this.spec.listPath, { keepHeader: true });
+        await expect(this.toolbar).toBeVisible({ timeout: 15_000 });
+        // Drive the box the same way the on-camera search() does (clear → type →
+        // Enter), so a server-threaded list refetches with the term and a
+        // client-filtered list (fields) filters its full SSR set onto the row.
+        // This refetch runs UNDER the bypass header above, so it reads fresh.
+        await this.demo.type(this.searchBox, name);
+        await this.searchBox.press("Enter");
+        await expect(this.card(name)).toBeVisible({ timeout: 5_000 });
+      }).toPass({ timeout: 45_000, intervals: [1_000, 2_000, 5_000] });
+    } finally {
+      // Restore default headers so the on-camera search() + later soft navs
+      // keep normal cache behavior (mirrors gotoFresh's default-path restore).
+      // Does NOT regress tools-bulk: openSelected uses gotoFresh's default path
+      // and is untouched.
+      await this.page.setExtraHTTPHeaders({});
+    }
     await this.demo.pause();
   }
 
