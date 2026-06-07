@@ -111,13 +111,15 @@ export async function createDemo(
   const { spec, facade } = facadeFor(ctx, key);
   await facade.open();
   await facade.create(input, variant);
-  // Settle the list onto the new row BEFORE searching. The list pages serve a
-  // Redis-cached ``/{artifact}/search`` on a soft navigation, and search is a
-  // client-side filter over that SSR snapshot (no per-keystroke server query
-  // for card grids like fields) — so a stale snapshot can never surface the
-  // just-created row no matter what we type. openUntilVisible re-navigates
-  // cache-fresh until the row actually lands, then the on-camera search runs
-  // against a list that contains it.
+  // Settle the list onto the new row BY NAME before the on-camera search. The
+  // created artifact is searchable immediately (synchronous committed insert),
+  // but the default list is paginated name-ascending and the run-scoped probe
+  // name sorts to the alphabetical TAIL — so on a server-paginated page (tools)
+  // it lands off page 1, and on a load-everything page (fields) a stale Redis
+  // SSR snapshot can predate it. openUntilVisible navigates to a name-filtered
+  // ``?search=`` (so the row is on page 1 regardless of sort/total) and is
+  // cache-fresh (so it reads past the stale list cache), then the on-camera
+  // search runs against a list that contains it.
   await facade.library.openUntilVisible(input.name);
   await facade.search(input.name);
   await facade.library.expectVisible(input.name);
@@ -367,7 +369,10 @@ export async function detailDemo(
  *  (toolbar → dialog → confirm → verify gone). Skips if it can't seed two. */
 export async function bulkDeleteDemo(ctx: DemoCtx, key: string): Promise<void> {
   const { spec, facade } = facadeFor(ctx, key);
-  const names = [`Bulk ${spec.singular} A ${ctx.runId}`, `Bulk ${spec.singular} B ${ctx.runId}`];
+  // Both seeded names share this stem (they differ only in the A/B letter), so
+  // a single ``?search=`` query pulls BOTH onto page 1 — see openSelected.
+  const stem = `Bulk ${spec.singular}`;
+  const names = [`${stem} A ${ctx.runId}`, `${stem} B ${ctx.runId}`];
   const ids: string[] = [];
   for (const name of names) {
     if (!(await apiCreate(ctx.request, key, name))) break;
@@ -376,7 +381,7 @@ export async function bulkDeleteDemo(ctx: DemoCtx, key: string): Promise<void> {
     if (id) ids.push(id);
   }
   test.skip(ids.length < 2, `could not seed two ${spec.plural}`);
-  await facade.library.openSelected(ids);
+  await facade.library.openSelected(ids, stem);
   await facade.library.bulkDelete();
   await facade.open();
   await facade.search(names[0]!);

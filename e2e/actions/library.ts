@@ -76,6 +76,33 @@ export class Library {
     }
   }
 
+  /** Build a list URL that pins a single row by NAME via the page's server
+   *  ``?search=`` param, optionally with extra query (e.g. ``selectedIds``).
+   *
+   *  WHY this is the real fix (over a cache-bypass alone): the list pages that
+   *  thread search server-side (tools, and every page whose nuqs loader has a
+   *  ``search`` key) default to ``page_size: 12``, name-ascending. A freshly
+   *  created/seeded row carries a run-scoped probe name (``… {runId}``,
+   *  ``Bulk … {runId}``) that sorts to the ALPHABETICAL TAIL — so it lands off
+   *  page 1 and never appears, no matter how fresh the cache is. A
+   *  name-filtered server query collapses the list to (essentially) just that
+   *  row, so it's on page 1 regardless of total count or sort order. This is
+   *  order- AND page-independent, which a bare ``listPath`` nav is not.
+   *
+   *  Pages that DON'T thread search server-side (fields — SSR body is
+   *  ``page_size: null``, i.e. ALL rows, and search is a client-side tanstack
+   *  column filter) simply ignore the unknown ``search`` param: they already
+   *  load the full set, so the row is present and the on-camera ``search()``
+   *  client-filters onto it. So one URL shape is correct for both architectures
+   *  — server-paginated and load-everything. Combined with ``gotoFresh`` the
+   *  query also reads through the stale Redis list cache, so neither the cache
+   *  nor the page boundary can hide the row. */
+  private searchUrl(name: string, extra?: string): string {
+    const params = new URLSearchParams({ search: name });
+    const qs = extra ? `${params.toString()}&${extra}` : params.toString();
+    return `${this.spec.listPath}?${qs}`;
+  }
+
   /** Navigate to the library and wait until the grid is ready.
    *
    *  Cache-bypassing on purpose: ``open()`` is the post-mutation re-entry point
@@ -137,19 +164,24 @@ export class Library {
     await this.demo.scrollTo(this.card(name));
   }
 
-  /** Settle the list onto a just-created row by name.
+  /** Settle the list onto a just-created row by NAME, order- and
+   *  page-independently.
+   *
+   *  Navigates to a name-filtered URL (``?search={name}``) so a server-paginated
+   *  page (tools) returns the row on page 1 even though its run-scoped name
+   *  sorts to the alphabetical tail, while a load-everything page (fields)
+   *  ignores the param and surfaces the row from its full set. The nav is
+   *  cache-fresh, so it also reads through the stale Redis list cache.
    *
    *  A single fresh open can still miss the row when the create commit and the
    *  read race (brief eventual consistency between the write and when
-   *  ``/{artifact}/search`` returns it — even with the cache bypassed). So
-   *  re-navigate cache-fresh until the row appears, bounded by ``toPass``.
-   *  This is the create-side mirror of openSelected's "wait for the real
-   *  signal" discipline: the signal here is the row landing in the list, not a
-   *  fixed delay. Each attempt is a hard-refresh navigation, so it reads
-   *  through the stale Redis list cache every time. */
+   *  ``/{artifact}/search`` returns it). So re-navigate until the row appears,
+   *  bounded by ``toPass`` — the create-side mirror of openSelected's "wait for
+   *  the real signal" discipline: the signal here is the row landing in the
+   *  list, not a fixed delay. */
   async openUntilVisible(name: string): Promise<void> {
     await expect(async () => {
-      await this.gotoFresh(this.spec.listPath);
+      await this.gotoFresh(this.searchUrl(name));
       await expect(this.toolbar).toBeVisible({ timeout: 15_000 });
       await expect(this.card(name)).toBeVisible({ timeout: 5_000 });
     }).toPass({ timeout: 45_000, intervals: [1_000, 2_000, 5_000] });
@@ -209,13 +241,25 @@ export class Library {
 
   /** Open the library with rows pre-selected via the `?selectedIds=` URL param
    *  — deterministic bulk selection, no checkbox-clicking — and wait for the
-   *  selection toolbar to appear. */
-  async openSelected(ids: string[]): Promise<void> {
-    // Cache-bypassing: the ids were just factory-seeded, so the Redis list
-    // cache the SSR would otherwise serve predates them — they'd never load
-    // into the table and the selection would resolve to 0 deletable rows.
-    // gotoFresh reads through to a fresh list that includes the new rows.
-    await this.gotoFresh(`${this.spec.listPath}?selectedIds=${ids.join(",")}`);
+   *  selection toolbar to appear.
+   *
+   *  ``nameFilter`` (the shared name stem of the seeded rows) is threaded into
+   *  the server ``?search=`` so the seeded rows are pulled onto page 1. WHY:
+   *  the "Delete N" trigger is ``deletable = selected.filter(can_delete)`` over
+   *  the LOADED rows only — on a server-paginated page (tools, page_size 12)
+   *  the run-scoped seed names sort to the alphabetical tail, land off page 1,
+   *  and so are selected-but-not-loaded → 0 deletable → trigger stays disabled
+   *  ("Delete 0 of N"). A name-filtered query collapses the page to the seeded
+   *  rows so they're loaded AND selected. Load-everything pages (fields) ignore
+   *  the param and already have every row loaded. ``gotoFresh`` additionally
+   *  reads through the stale Redis cache that predates the just-seeded rows. */
+  async openSelected(ids: string[], nameFilter?: string): Promise<void> {
+    const extra = `selectedIds=${ids.join(",")}`;
+    await this.gotoFresh(
+      nameFilter
+        ? this.searchUrl(nameFilter, extra)
+        : `${this.spec.listPath}?${extra}`,
+    );
     await this.bulkDeleteTrigger.waitFor({ state: "visible", timeout: 30_000 });
     // Settle on the REAL signal, not a sleep: the seeded rows must be both
     // loaded into the table AND resolved as selected before the "Delete N"
