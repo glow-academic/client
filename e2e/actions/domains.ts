@@ -15,7 +15,7 @@
 // Adding the next domain (rubrics, agents, …) is a new entry in DOMAINS,
 // not new logic.
 
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 import { DemoDriver } from "../demo/DemoDriver";
 import type { Registry } from "../support/registry";
@@ -228,22 +228,100 @@ export class DomainFacade {
     this.registry.track({ kind: this.spec.singular, name: input.name });
 
     const success = this.page.getByText(this.spec.createdSignal);
-    // A mid-flow re-seed (notably the parameters expand) can reset the form,
-    // wiping values set earlier — name set before parameters, or a fragile
-    // pick. Before each submit, re-apply only the fields that came back empty
-    // (so a survived value is never re-typed on camera) and re-pick fragile
-    // selections, then submit immediately. A validation-failed submit creates
-    // nothing, so retrying is safe.
+    await this.submitWithReconcile(success, input, confirmable);
+  }
+
+  /**
+   * Edit an existing artifact through the UI form (the `[id]` route renders the
+   * same GenericForm in edit mode). Changes one editable text field (the
+   * description), then — crucially — walks the createOrder's SELECTION steps so
+   * any *required relation the API seed didn't populate* (e.g. a simulation's
+   * "Scenario Rubrics *", which the factory can't seed) is satisfied on the
+   * edit form before submit. Without this, the form's client-side validation
+   * `toast.error("… is required")`s and `throw`s in handleSubmit, so no
+   * `/{singular}/update` ever posts and the "updated" toast never appears —
+   * exactly the silent timeout that broke simulations-edit.
+   *
+   * It REUSES the create path's machinery (the same per-step appliers and the
+   * same reconcile-driven submit loop, here awaiting the "updated" toast). For
+   * single-step / name-only domains (cohort, field, parameter, scenario) there
+   * are no required selection steps to replay, so this collapses to "fill
+   * description → submit → assert updated" — unchanged behaviour, no regression.
+   *
+   * The success matcher is the partner of `createdSignal`: every artifact's
+   * bulk-update toast is uniformly "{N} {plural}(s) updated successfully", so a
+   * generic `/updated/i` is the honest, un-weakened "it really posted" signal.
+   */
+  async editFlow(editPath: string, descriptionValue: string): Promise<boolean> {
+    await this.form.openEdit(editPath);
+
+    // The recorded change: edit the description (the one field every editable
+    // domain exposes). Best-effort — a domain with no description input returns
+    // false so the caller can `test.skip` it (unchanged from the old editDemo).
+    const changed = await this.form.fillIfPresent("description", descriptionValue);
+    if (!changed) return false;
+    await this.form.waitForDraftSaved();
+
+    // Replay only the SELECTION steps of the create flow (pickers and required
+    // multi-selects) — these satisfy required relations the API seed couldn't
+    // resolve (a simulation's scenario-rubric). CRUCIALLY each pick is guarded
+    // (`pickInIfNoneSelected`): SelectableGrid toggles on click, so picking a
+    // relation the seed ALREADY populated would toggle it OFF. We only pick a
+    // grid that has no current `data-selected` option. Text fields are NOT
+    // replayed (the row already has its name; the description was just set
+    // above). A grid the seed satisfied — or one with no options — is left
+    // untouched, so single-step / name-only domains are unaffected. The
+    // reconcile loop below is the safety net for anything still reported
+    // missing at submit (e.g. a rubric picker that only renders after its
+    // scenario, which the guarded replay may have reached too early).
+    const order = this.spec.createOrder ?? [];
+    for (const step of order) {
+      if ("picker" in step) {
+        await this.form.pickInIfNoneSelected(`artifact-form-step-${step.picker}`);
+      } else if ("multiSelect" in step) {
+        await this.form.pickInIfNoneSelected(`artifact-form-step-${step.multiSelect}`);
+      } else if ("pickIn" in step) {
+        await this.form.pickInIfNoneSelected(step.pickIn);
+      } else if ("pickInSticky" in step) {
+        await this.form.pickInIfNoneSelected(step.pickInSticky);
+      }
+    }
+
+    const success = this.page.getByText(/updated/i).first();
+    // Reuse the same reconcile-driven submit loop as create. On edit the only
+    // input that matters to the appliers/reconcile is the description (name is
+    // already persisted), so pass just that. No `confirmable` pickers on edit —
+    // the guarded replay above never toggles off a survived selection, so
+    // there's nothing fragile to re-assert proactively; reconcile re-applies
+    // anything the submit reports missing.
+    await this.submitWithReconcile(success, { name: "", description: descriptionValue }, []);
+    return true;
+  }
+
+  /**
+   * The shared submit loop used by both create and edit. A mid-flow re-seed
+   * (notably the parameters expand) can reset the form, wiping values set
+   * earlier — a text field, or a fragile pick. Before each submit, re-apply
+   * only the fields that came back empty (so a survived value is never re-typed
+   * on camera) and re-pick fragile selections, then submit immediately. A
+   * validation-failed submit mutates nothing, so retrying is safe.
+   */
+  private async submitWithReconcile(
+    success: Locator,
+    input: CreateInput,
+    confirmable: string[],
+  ): Promise<void> {
     await expect(async () => {
       if (await success.isVisible().catch(() => false)) return;
       // Proactive: silently restore any text field / fragile pick that came
       // back empty (no on-camera re-typing of a value that survived).
       for (const [field, value] of Object.entries(input)) {
-        await this.form.fillIfEmpty(field, value);
+        if (value) await this.form.fillIfEmpty(field, value);
       }
       for (const picker of confirmable) await this.form.ensurePicked(picker);
       // Reactive: re-apply whatever the previous submit reported as missing
-      // (covers color, which has no DOM marker to detect proactively).
+      // (covers color, which has no DOM marker to detect proactively; and a
+      // simulation's scenario / scenario-rubric on the edit form).
       for (const { error, redo } of this.spec.reconcile ?? []) {
         const showing = await this.page
           .getByText(error)
