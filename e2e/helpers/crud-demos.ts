@@ -111,7 +111,14 @@ export async function createDemo(
   const { spec, facade } = facadeFor(ctx, key);
   await facade.open();
   await facade.create(input, variant);
-  await facade.open();
+  // Settle the list onto the new row BEFORE searching. The list pages serve a
+  // Redis-cached ``/{artifact}/search`` on a soft navigation, and search is a
+  // client-side filter over that SSR snapshot (no per-keystroke server query
+  // for card grids like fields) — so a stale snapshot can never surface the
+  // just-created row no matter what we type. openUntilVisible re-navigates
+  // cache-fresh until the row actually lands, then the on-camera search runs
+  // against a list that contains it.
+  await facade.library.openUntilVisible(input.name);
   await facade.search(input.name);
   await facade.library.expectVisible(input.name);
   await saveDemoVideo(ctx.page, `${spec.plural}-create${variant ? `-${variant}` : ""}`);
