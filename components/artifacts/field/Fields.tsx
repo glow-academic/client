@@ -317,26 +317,11 @@ export default function Fields({
     void setExcludedFieldIds([]);
   }, [setSelectedFieldIds, setSelectAllMatching, setExcludedFieldIds]);
 
-  const selectAllOnPage = useCallback(() => {
-    const pageIds = fields.filter((f) => f.id).map((f) => f.id!);
-    void setSelectAllMatching(false);
-    void setExcludedFieldIds([]);
-    void setSelectedFieldIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [fields, setSelectAllMatching, setExcludedFieldIds, setSelectedFieldIds]);
-
-  // Check if all fields on the current page are selected. Under
-  // all-matching mode every loaded row whose id isn't in
-  // ``excludedFieldIds`` is implicitly selected.
-  const allPageSelected = useMemo(() => {
-    const pageIds = fields.filter((f) => f.id).map((f) => f.id!);
-    if (pageIds.length === 0) return false;
-    return pageIds.every((id) => isSelected(id));
-  }, [fields, isSelected]);
-
-  // Whether there ARE more matching rows than what's loaded on this
-  // page — used to decide whether to surface the "Select all N
-  // matching" affordance after the user selects the page.
-  const hasMoreThanCurrentPage = totalMatchingCount > fields.length;
+  // ``selectAllOnPage`` / ``allPageSelected`` / ``hasMoreThanCurrentPage``
+  // are defined after the ``table`` instance below — they scope to the
+  // active filtered view (``getFilteredRowModel``), not the raw loaded
+  // ``fields`` array, so a page-select after a search/facet filter only
+  // grabs the rows the user actually filtered to.
 
   /** Promote the current page-only selection into "all matching
    *  filter" mode. Clears explicit ids and exclusions — the all-
@@ -522,6 +507,52 @@ export default function Fields({
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortingKey, columnFiltersKey, fields, pageIndex, pageSize]);
+
+  // Ids of the rows that pass the active client-side filters (name
+  // search box + faceted filters). This is the row set the user
+  // actually sees — NOT the raw ``fields`` array, which is the full
+  // SSR-loaded dataset (this is a load-all page). Selection helpers
+  // must scope to this filtered view, otherwise selecting after a
+  // search/filter would silently grab every loaded row (e.g. filter to
+  // 5, click "Select Page", and all 1000 loaded rows end up selected →
+  // a bulk delete/edit then hits rows the user never filtered to or
+  // saw). ``getFilteredRowModel`` is the same source Profiles'
+  // select-all checkbox already trusts.
+  const filteredRowIds = useMemo(() => {
+    return table
+      .getFilteredRowModel()
+      .rows.map((row) => row.original.id)
+      .filter((id): id is string => !!id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnFiltersKey, fields]);
+
+  const selectAllOnPage = useCallback(() => {
+    void setSelectAllMatching(false);
+    void setExcludedFieldIds([]);
+    void setSelectedFieldIds((prev) =>
+      Array.from(new Set([...prev, ...filteredRowIds])),
+    );
+  }, [filteredRowIds, setSelectAllMatching, setExcludedFieldIds, setSelectedFieldIds]);
+
+  // Whether every field in the active filtered view is selected. Under
+  // all-matching mode every filtered row whose id isn't excluded is
+  // implicitly selected.
+  const allPageSelected = useMemo(() => {
+    if (filteredRowIds.length === 0) return false;
+    return filteredRowIds.every((id) => isSelected(id));
+  }, [filteredRowIds, isSelected]);
+
+  // Whether the server has MORE matching rows than were loaded into
+  // this page at all — gates the "Select all N matching" (server-side
+  // all-matching) affordance. Compared against the full loaded set
+  // (``fields.length``), NOT the client-filtered view: all-matching
+  // mode resolves rows server-side from ``currentSearchBody``, which
+  // does NOT carry the client name-search / faceted filters, so it
+  // must never be offered just because a client filter narrowed a
+  // fully-loaded dataset (it would resolve the unfiltered set). On a
+  // load-all page (``fields.length === total_count``) this stays false,
+  // keeping the unsafe server-side all-matching path dormant.
+  const hasMoreThanCurrentPage = totalMatchingCount > fields.length;
 
   // Convert filter options to mappings for UI display (must be before early return)
   const parameterMapping = useMemo(() => {
@@ -1090,7 +1121,7 @@ export default function Fields({
                 data-testid="select-all-matching-banner"
               >
                 <span className="text-muted-foreground">
-                  All {fields.length} on this page selected.
+                  All {filteredRowIds.length} on this page selected.
                 </span>
                 <Button
                   variant="link"
