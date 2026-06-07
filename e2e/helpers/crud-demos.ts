@@ -135,7 +135,21 @@ export async function createDemo(
 }
 
 /** Seed one row via the factory, open its edit page, change the description,
- *  submit, and assert the "updated" toast. Reaped by name. */
+ *  submit, and assert the "updated" toast. Reaped by name.
+ *
+ *  WIZARD-AWARE: GenericForm renders every `artifact-form-step-{id}` section in
+ *  ONE scrollable form (not a Next/Prev wizard), and `handleSubmit` runs all
+ *  the per-step required-field validation BEFORE it posts `/{singular}/update`.
+ *  So a multi-step domain with a required RELATION the API seed can't populate
+ *  (a simulation's "Scenario Rubrics *", which the factory only seeds a bare
+ *  scenario for) would `toast.error("… is required")` and `throw` on submit —
+ *  no update ever posts, and the old single-field editDemo timed out waiting
+ *  for an "updated" toast that could never appear (the observed simulations-edit
+ *  failure). `facade.editFlow` REUSES the create path's selection-step appliers
+ *  + reconcile-driven submit loop to satisfy those required relations on the
+ *  edit form before submitting, then awaits the real "updated" toast. For
+ *  name-only domains (cohort, field, parameter, scenario) there are no required
+ *  selection steps to replay, so it collapses to the prior behaviour. */
 export async function editDemo(ctx: DemoCtx, key: string): Promise<void> {
   const { spec, facade } = facadeFor(ctx, key);
   const name = `Edit ${spec.singular} ${ctx.runId}`;
@@ -143,14 +157,11 @@ export async function editDemo(ctx: DemoCtx, key: string): Promise<void> {
   ctx.registry.track({ kind: key, name });
   const id = await resolveId(ctx.request, key, name);
   test.skip(!id, `could not resolve the created ${spec.singular}`);
-  await facade.form.openEdit(`${spec.listPath}/${id}`);
-  test.skip(
-    !(await facade.form.fillIfPresent("description", `Edited by e2e ${ctx.runId}.`)),
-    `${spec.singular} has no editable description`,
-  );
-  await facade.form.waitForDraftSaved();
-  await facade.form.submit();
-  await expect(ctx.page.getByText(/updated/i).first()).toBeVisible({ timeout: 45_000 });
+  // editFlow opens the edit page, changes the description, replays the required
+  // selection steps, submits, and asserts the "updated" toast. Returns false
+  // when the domain has no editable description (so we skip, as before).
+  const edited = await facade.editFlow(`${spec.listPath}/${id}`, `Edited by e2e ${ctx.runId}.`);
+  test.skip(!edited, `${spec.singular} has no editable description`);
   await saveDemoVideo(ctx.page, `${spec.plural}-edit`);
 }
 

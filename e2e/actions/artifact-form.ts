@@ -284,6 +284,26 @@ export class ArtifactForm {
     }
   }
 
+  /**
+   * Edit-safe pick: select the first option of a grid (a step or an inner
+   * picker, by testid) ONLY when nothing in it is already selected. On the
+   * edit form a required relation the API seed populated is already chosen, so
+   * a plain pickFirst/pickInFirst would TOGGLE IT OFF (SelectableGrid toggles
+   * on click). This fills the gap (e.g. a simulation's unseeded scenario
+   * rubric) without disturbing an existing selection. Best-effort: skips if the
+   * grid never appears. `data-selected` is set by SelectableGrid on the chosen
+   * option(s).
+   */
+  async pickInIfNoneSelected(testId: string): Promise<void> {
+    const grid = this.page.getByTestId(testId);
+    const anyOption = grid.getByTestId("selectable-option").first();
+    if (!(await this.visibleSoon(anyOption, 8_000))) return;
+    const selected = grid.locator('[data-testid="selectable-option"][data-selected]');
+    if ((await selected.count()) > 0) return; // already satisfied — don't toggle off
+    await this.demo.scrollTo(anyOption);
+    await this.demo.click(grid.getByTestId("selectable-option").first());
+  }
+
   /** Best-effort: flip the first toggle (e.g. a flag) inside a step. */
   async toggleFirst(stepId: string): Promise<void> {
     const toggle = this.page
