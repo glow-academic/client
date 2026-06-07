@@ -165,24 +165,45 @@ export class Library {
   }
 
   /** Settle the list onto a just-created row by NAME, order- and
-   *  page-independently.
+   *  page-independently — by DRIVING THE SEARCH BOX, not the URL.
    *
-   *  Navigates to a name-filtered URL (``?search={name}``) so a server-paginated
-   *  page (tools) returns the row on page 1 even though its run-scoped name
-   *  sorts to the alphabetical tail, while a load-everything page (fields)
-   *  ignores the param and surfaces the row from its full set. The nav is
-   *  cache-fresh, so it also reads through the stale Redis list cache.
+   *  WHY the box and not ``?search=`` (the prior approach): the list pages split
+   *  into two architectures for search, and only the box honors BOTH:
+   *    - tools (and every server-threaded list) page at 12 name-ascending, so a
+   *      run-scoped probe name (``… {runId}``) sorts to the alphabetical tail and
+   *      lands off page 1. Its search box debounces a fresh ``/tool/search`` with
+   *      the typed term, collapsing the page to the matching row.
+   *    - fields is a load-everything SSR (``page_size: null``) whose search is a
+   *      CLIENT-SIDE tanstack column filter — and its Next route IGNORES the
+   *      ``?search=`` URL param entirely (it only reads ``groupId``). So a
+   *      ``?search=`` nav lands on the unfiltered alphabetical head (12 of 68)
+   *      and the tail row never shows. But TYPING into the box runs the client
+   *      filter over the full SSR set and surfaces the row. This is exactly the
+   *      proven ``search()`` path that fields-search passes with.
+   *  So we open the bare (cache-fresh) library, then drive the box with the
+   *  exact name — the one mechanism correct for server-threaded AND client-
+   *  filtered lists alike.
    *
-   *  A single fresh open can still miss the row when the create commit and the
+   *  ``gotoFresh(listPath)`` keeps cache-freshness: the post-create open must
+   *  read through the stale Redis list cache that predates the new row (see
+   *  ``gotoFresh``). For fields that means the full SSR set already contains the
+   *  row for the client filter to find; for tools the box's own refetch is fresh.
+   *
+   *  A single open+search can still miss the row when the create commit and the
    *  read race (brief eventual consistency between the write and when
-   *  ``/{artifact}/search`` returns it). So re-navigate until the row appears,
-   *  bounded by ``toPass`` — the create-side mirror of openSelected's "wait for
-   *  the real signal" discipline: the signal here is the row landing in the
-   *  list, not a fixed delay. */
+   *  ``/{artifact}/search`` returns it). So re-open + re-search until the row
+   *  appears, bounded by ``toPass`` — the create-side mirror of openSelected's
+   *  "wait for the real signal" discipline: the signal here is the row landing
+   *  in the searched list, not a fixed delay. */
   async openUntilVisible(name: string): Promise<void> {
     await expect(async () => {
-      await this.gotoFresh(this.searchUrl(name));
+      await this.gotoFresh(this.spec.listPath);
       await expect(this.toolbar).toBeVisible({ timeout: 15_000 });
+      // Drive the box the same way the on-camera search() does (clear → type →
+      // Enter), so a server-threaded list refetches with the term and a
+      // client-filtered list (fields) filters its full SSR set onto the row.
+      await this.demo.type(this.searchBox, name);
+      await this.searchBox.press("Enter");
       await expect(this.card(name)).toBeVisible({ timeout: 5_000 });
     }).toPass({ timeout: 45_000, intervals: [1_000, 2_000, 5_000] });
     await this.demo.pause();

@@ -331,16 +331,26 @@ export async function testDemo(
 
   // FAIL-LOUD: the tolerant `scrollToText(...).catch()` tour above swallows a
   // crashed page, so without this the demo reports PASS while filming the
-  // error boundary (the same silent-green class as the old draftDemo). The
-  // observed failure was the route throwing into `app/error.tsx`, which
-  // renders an "An error occurred" card carrying the raw message (e.g. "No
-  // group found for id ...") and REPLACES the whole route subtree — so the
-  // layout's `page-header` is gone. Assert both directions:
-  //   (+) the loaded test-detail layout actually rendered, and
+  // error boundary (the same silent-green class as the old draftDemo). When the
+  // route throws into `app/error.tsx`, that card REPLACES the whole route
+  // subtree — including `FullPageLayout`'s header/breadcrumb — so we assert the
+  // element `/test/[testId]` ACTUALLY renders and that the error card is absent.
+  //
+  // The route renders via `FullPageLayout`, whose `PageHeader` emits a
+  // breadcrumb `<nav aria-label="breadcrumb">` seeded with the test route's
+  // fixed first crumb, "Benchmark" (page.tsx: breadcrumbs=[{ title:"Benchmark"
+  // }, { title: entityName ?? "Test" }]). `app/error.tsx` renders NEITHER a
+  // breadcrumb nor that crumb, so a present "Benchmark" breadcrumb is a
+  // route-specific proof the real test-detail layout rendered — strictly
+  // tighter than the generic `page-header` (which every FullPageLayout page
+  // shares). Assert both directions:
+  //   (+) the test-detail breadcrumb header actually rendered, and
   //   (-) we are NOT sitting on the error boundary.
   await expect(
-    ctx.page.getByTestId("page-header"),
-    "test detail page did not render (no page-header) — the route likely threw into the error boundary",
+    ctx.page
+      .getByRole("navigation", { name: "breadcrumb" })
+      .getByText("Benchmark", { exact: true }),
+    "test detail page did not render its breadcrumb header — the route likely threw into the error boundary",
   ).toBeVisible({ timeout: 15_000 });
   await expect(
     ctx.page.getByRole("heading", { name: "An error occurred" }),
