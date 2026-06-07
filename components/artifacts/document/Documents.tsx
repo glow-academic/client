@@ -459,13 +459,6 @@ export default function Documents({
     void setExcludedDocumentIds([]);
   }, [setSelectedDocumentIds, setSelectAllMatching, setExcludedDocumentIds]);
 
-  const selectAllOnPage = useCallback(() => {
-    const pageIds = documents.filter((d) => d.id).map((d) => d.id!);
-    void setSelectAllMatching(false);
-    void setExcludedDocumentIds([]);
-    void setSelectedDocumentIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [documents, setSelectAllMatching, setExcludedDocumentIds, setSelectedDocumentIds]);
-
   /** Promote the current page-only selection into "all matching
    *  filter" mode. Clears explicit ids and exclusions — the all-
    *  matching mode is the canonical truth from this point. */
@@ -819,6 +812,28 @@ export default function Documents({
     pageSize,
   ]);
 
+  // Ids of the rows that pass the active client-side filters — the row
+  // set the user actually sees, NOT the raw ``documents`` array (the
+  // full SSR-loaded dataset on this load-all page). Selection helpers
+  // must scope to this filtered view; otherwise selecting after a
+  // filter would silently grab every loaded row (#81). Same source the
+  // ``getFilteredRowModel`` already powers.
+  const filteredRowIds = useMemo(() => {
+    return table
+      .getFilteredRowModel()
+      .rows.map((row) => row.original.id)
+      .filter((id): id is string => !!id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnFiltersKey, documents]);
+
+  const selectAllOnPage = useCallback(() => {
+    void setSelectAllMatching(false);
+    void setExcludedDocumentIds([]);
+    void setSelectedDocumentIds((prev) =>
+      Array.from(new Set([...prev, ...filteredRowIds])),
+    );
+  }, [filteredRowIds, setSelectAllMatching, setExcludedDocumentIds, setSelectedDocumentIds]);
+
   const handleBulkDelete = async () => {
     // Either explicit-mode (deletable rows on current page) OR
     // all-matching mode (server resolves rows via filter). Both
@@ -984,10 +999,9 @@ export default function Documents({
   // ``excludedDocumentIds`` is implicitly selected, so the predicate
   // reduces to "no excluded rows on the current page."
   const allPageSelected = useMemo(() => {
-    const pageIds = documents.filter((d) => d.id).map((d) => d.id!);
-    if (pageIds.length === 0) return false;
-    return pageIds.every((id) => isSelected(id));
-  }, [documents, isSelected]);
+    if (filteredRowIds.length === 0) return false;
+    return filteredRowIds.every((id) => isSelected(id));
+  }, [filteredRowIds, isSelected]);
 
   // Whether there ARE more matching rows than what's loaded on this
   // page — used to decide whether to surface the "Select all N
@@ -1237,7 +1251,7 @@ export default function Documents({
                     data-testid="select-all-matching-banner"
                   >
                     <span className="text-muted-foreground">
-                      All {documents.length} on this page selected.
+                      All {filteredRowIds.length} on this page selected.
                     </span>
                     <Button
                       variant="link"
