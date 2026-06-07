@@ -178,7 +178,18 @@ export function GenericChatInterface({
       className="h-[calc(100vh-4rem)] h-[calc(100dvh-4rem)] flex flex-col"
       data-testid="generic-chat-interface"
     >
-      <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
+      {/* Stable, explicit `id` (not the library's auto `useId()`). Without it,
+          react-resizable-panels mints a non-deterministic React `useId()` group
+          id (e.g. "_R_1jkl…"); on remount/hydration its DOM-lookup effect can
+          fail to resolve the group element and throws `No group found for id
+          "<useId>"`, which bubbles to the route error boundary ("An error
+          occurred"). A constant id is safe here: only one attempt-chat panel
+          group is ever mounted at a time. */}
+      <ResizablePanelGroup
+        id="attempt-chat-panels"
+        direction="horizontal"
+        className="flex-1 min-h-0"
+      >
         {/* Main Chat Area */}
         <ResizablePanel
           defaultSize={show_documents && document_area_props ? 70 : 100}
