@@ -316,22 +316,12 @@ export default function Settings({
     void setExcludedSettingIds([]);
   }, [setSelectedSettingIds, setSelectAllMatching, setExcludedSettingIds]);
 
-  const selectAllOnPage = useCallback(() => {
-    const pageIds = settings.filter((s) => s.id).map((s) => s.id!);
-    void setSelectAllMatching(false);
-    void setExcludedSettingIds([]);
-    void setSelectedSettingIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [settings, setSelectAllMatching, setExcludedSettingIds, setSelectedSettingIds]);
-
-  const allPageSelected = useMemo(() => {
-    const pageIds = settings.filter((s) => s.id).map((s) => s.id!);
-    if (pageIds.length === 0) return false;
-    return pageIds.every((id) => isSelected(id));
-  }, [settings, isSelected]);
-
   // Whether there ARE more matching rows than what's loaded on this
   // page — used to decide whether to surface the "Select all N
-  // matching" affordance after the user selects the page.
+  // matching" affordance after the user selects the page. Kept vs the
+  // full loaded ``settings.length`` (the server-side all-matching path
+  // resolves from ``currentSearchBody`` which carries no client
+  // filters), so it stays dormant on this load-all page (#81).
   const hasMoreThanCurrentPage = totalMatchingCount > settings.length;
 
   /** Promote the current page-only selection into "all matching
@@ -657,6 +647,36 @@ export default function Settings({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortingKey, columnFiltersKey, settings, pageIndex, pageSize]);
 
+  // Ids of the rows that pass the active client-side filters — the row
+  // set the user actually sees, NOT the raw ``settings`` array (the
+  // full SSR-loaded dataset on this load-all page). Selection helpers
+  // must scope to this filtered view; otherwise selecting after a
+  // filter would silently grab every loaded row (#81). Same source the
+  // ``getFilteredRowModel`` already powers.
+  const filteredRowIds = useMemo(() => {
+    return table
+      .getFilteredRowModel()
+      .rows.map((row) => row.original.id)
+      .filter((id): id is string => !!id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnFiltersKey, settings]);
+
+  const selectAllOnPage = useCallback(() => {
+    void setSelectAllMatching(false);
+    void setExcludedSettingIds([]);
+    void setSelectedSettingIds((prev) =>
+      Array.from(new Set([...prev, ...filteredRowIds])),
+    );
+  }, [filteredRowIds, setSelectAllMatching, setExcludedSettingIds, setSelectedSettingIds]);
+
+  // Whether every row in the active filtered view is selected. Under
+  // all-matching mode every filtered row not excluded is implicitly
+  // selected.
+  const allPageSelected = useMemo(() => {
+    if (filteredRowIds.length === 0) return false;
+    return filteredRowIds.every((id) => isSelected(id));
+  }, [filteredRowIds, isSelected]);
+
   const renderSettingCard = (
     setting: (typeof settings)[0],
     ghost?: Ghost<(typeof settings)[0]>,
@@ -946,7 +966,7 @@ export default function Settings({
               data-testid="select-all-matching-banner"
             >
               <span className="text-muted-foreground">
-                All {settings.length} on this page selected.
+                All {filteredRowIds.length} on this page selected.
               </span>
               <Button
                 variant="link"

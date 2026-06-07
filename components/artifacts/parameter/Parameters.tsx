@@ -259,17 +259,11 @@ export default function Parameters({
     [selectedParameters],
   );
 
-  // Under all-matching mode every loaded row whose id isn't in
-  // ``excludedParameterIds`` is implicitly selected, so the predicate
-  // reduces to "no excluded rows on the current page."
-  const allPageSelected = useMemo(() => {
-    const pageIds = parameters.filter((p) => p.id).map((p) => p.id!);
-    if (pageIds.length === 0) return false;
-    return pageIds.every((id) => isSelected(id));
-  }, [parameters, isSelected]);
-
   // Whether there are more matching rows than what's loaded — used to
   // decide whether to surface the "Select all N matching" affordance.
+  // Kept vs the full loaded ``parameters.length`` (the server-side all-
+  // matching path resolves from ``currentSearchBody`` which carries no
+  // client filters), so it stays dormant on this load-all page (#81).
   const hasMoreThanCurrentPage = totalMatchingCount > parameters.length;
 
   // Toggle a single row. Under all-matching we toggle membership in
@@ -296,13 +290,6 @@ export default function Parameters({
     void setSelectAllMatching(false);
     void setExcludedParameterIds([]);
   }, [setSelectedParameterIds, setSelectAllMatching, setExcludedParameterIds]);
-
-  const selectAllOnPage = useCallback(() => {
-    const pageIds = parameters.filter((p) => p.id).map((p) => p.id!);
-    void setSelectAllMatching(false);
-    void setExcludedParameterIds([]);
-    void setSelectedParameterIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-  }, [parameters, setSelectAllMatching, setExcludedParameterIds, setSelectedParameterIds]);
 
   /** Promote the current page-only selection into "all matching
    *  filter" mode. Clears explicit ids and exclusions — all-matching
@@ -507,6 +494,36 @@ export default function Parameters({
     pageIndex,
     pageSize,
   ]);
+
+  // Ids of the rows that pass the active client-side filters — the row
+  // set the user actually sees, NOT the raw ``parameters`` array (the
+  // full SSR-loaded dataset on this load-all page). Selection helpers
+  // must scope to this filtered view; otherwise selecting after a
+  // filter would silently grab every loaded row (#81). Same source the
+  // ``getFilteredRowModel`` already powers.
+  const filteredRowIds = useMemo(() => {
+    return table
+      .getFilteredRowModel()
+      .rows.map((row) => row.original.id)
+      .filter((id): id is string => !!id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnFiltersKey, parameters]);
+
+  const selectAllOnPage = useCallback(() => {
+    void setSelectAllMatching(false);
+    void setExcludedParameterIds([]);
+    void setSelectedParameterIds((prev) =>
+      Array.from(new Set([...prev, ...filteredRowIds])),
+    );
+  }, [filteredRowIds, setSelectAllMatching, setExcludedParameterIds, setSelectedParameterIds]);
+
+  // Whether every row in the active filtered view is selected. Under
+  // all-matching mode every filtered row not excluded is implicitly
+  // selected.
+  const allPageSelected = useMemo(() => {
+    if (filteredRowIds.length === 0) return false;
+    return filteredRowIds.every((id) => isSelected(id));
+  }, [filteredRowIds, isSelected]);
 
   const handleDuplicate = async (parameter: (typeof parameters)[number]) => {
     if (!parameter.can_duplicate || !duplicateParameterAction) {
@@ -1093,7 +1110,7 @@ export default function Parameters({
                 data-testid="select-all-matching-banner"
               >
                 <span className="text-muted-foreground">
-                  All {parameters.length} on this page selected.
+                  All {filteredRowIds.length} on this page selected.
                 </span>
                 <Button
                   variant="link"
