@@ -150,10 +150,25 @@ export class Library {
     return populated;
   }
 
-  /** Type a query and commit it (Enter), then let the grid settle. */
+  /** Type a query and commit it (Enter), then settle on the NARROWED grid.
+   *
+   *  `demo.type` already types character-by-character in demo mode (the proven
+   *  per-keystroke path), so the box's debounced `onChange` populates
+   *  `searchTerm` and the Enter `onKeyDown` commits the LIVE term — NOT the
+   *  one-shot-`fill` stale-closure bug #79 fixed in `fillSearch`. The remaining
+   *  WEAK was clip-timing: on a SERVER-search list (tools, evals — `?search=` +
+   *  manualPagination) the committed term debounces ~500ms then fires a fresh
+   *  `/{artifact}/search` round-trip, which can exceed the old blind `pause(800)`
+   *  — so the clip ended on the still-FULL grid ("Page 1 of N") before the
+   *  narrowed result landed, and the just-created row (alphabetical tail) never
+   *  surfaced on camera. Wait the refetch shimmer out (the proven `exerciseSearch`
+   *  settle) so the clip ends on the narrowed grid. Bounded + demo-mode-gated, and
+   *  a no-op on a client-filtered list (no skeleton) — safe for both architectures
+   *  and for the read-only `searchDemo` that also routes here. */
   async search(query: string): Promise<void> {
     await this.demo.type(this.searchBox, query);
     await this.searchBox.press("Enter");
+    await waitOutSkeleton(this.page);
     await this.demo.pause(800);
   }
 
