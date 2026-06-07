@@ -35,9 +35,49 @@ export class Library {
     );
   }
 
-  /** Navigate to the library and wait until the grid is ready. */
+  /** Navigate to a library URL while bypassing the backend's Redis list
+   *  cache, then restore the default headers.
+   *
+   *  WHY: the list pages SSR-fetch ``/{artifact}/search`` and only forward
+   *  ``X-Bypass-Cache: 1`` when the request looks like a *hard* refresh — they
+   *  read ``Cache-Control: no-cache`` off the incoming request headers
+   *  (``lib/cache-utils.ts``'s ``isHardRefresh``). A plain ``page.goto`` is a
+   *  SOFT navigation, so the SSR serves whatever the Redis list cache holds —
+   *  which, right after a create / factory-seed / bulk mutation, is STALE: it
+   *  predates the new/changed rows. That's the recurring demo failure:
+   *    - fields-create: the created field is in the DB but absent from the
+   *      cached ``/field/search`` the page SSRs, so the client-side search
+   *      filter (a tanstack column filter over the SSR set) matches 0 →
+   *      ``expectVisible`` times out.
+   *    - tools-bulk: the two factory-seeded rows aren't in the cached
+   *      ``/tool/search`` page, so they never load into the table → the
+   *      ``?selectedIds=`` selection resolves to 0 deletable loaded rows →
+   *      the "Delete N" trigger stays disabled.
+   *  Sending ``Cache-Control: no-cache`` on the navigation makes the SSR treat
+   *  it as a hard refresh and forward ``X-Bypass-Cache: 1``, so the backend
+   *  reads through to a fresh list that includes the just-mutated rows. This is
+   *  exactly what a real user's browser hard-reload (or the page's "Refresh"
+   *  toolbar button) sends — so the demo settles on the same authoritative path
+   *  rather than papering over the cache with a sleep. */
+  private async gotoFresh(url: string): Promise<void> {
+    await this.page.setExtraHTTPHeaders({ "Cache-Control": "no-cache" });
+    try {
+      await this.page.goto(url);
+    } finally {
+      // Restore defaults so only THIS navigation bypasses the cache — later
+      // soft navs / XHRs keep their normal cache behavior.
+      await this.page.setExtraHTTPHeaders({});
+    }
+  }
+
+  /** Navigate to the library and wait until the grid is ready.
+   *
+   *  Cache-bypassing on purpose: ``open()`` is the post-mutation re-entry point
+   *  (createDemo opens here after a create; bulkDeleteDemo after a delete), so
+   *  it must read through the stale Redis list cache to surface the just-
+   *  mutated rows. See ``gotoFresh`` for the full rationale. */
   async open(): Promise<void> {
-    await this.page.goto(this.spec.listPath);
+    await this.gotoFresh(this.spec.listPath);
     await expect(this.toolbar).toBeVisible({ timeout: 30_000 });
     await expect(this.grid).toBeVisible({ timeout: 30_000 });
     await this.demo.pause();
@@ -89,6 +129,25 @@ export class Library {
   async expectVisible(name: string): Promise<void> {
     await expect(this.card(name)).toBeVisible({ timeout: 30_000 });
     await this.demo.scrollTo(this.card(name));
+  }
+
+  /** Settle the list onto a just-created row by name.
+   *
+   *  A single fresh open can still miss the row when the create commit and the
+   *  read race (brief eventual consistency between the write and when
+   *  ``/{artifact}/search`` returns it — even with the cache bypassed). So
+   *  re-navigate cache-fresh until the row appears, bounded by ``toPass``.
+   *  This is the create-side mirror of openSelected's "wait for the real
+   *  signal" discipline: the signal here is the row landing in the list, not a
+   *  fixed delay. Each attempt is a hard-refresh navigation, so it reads
+   *  through the stale Redis list cache every time. */
+  async openUntilVisible(name: string): Promise<void> {
+    await expect(async () => {
+      await this.gotoFresh(this.spec.listPath);
+      await expect(this.toolbar).toBeVisible({ timeout: 15_000 });
+      await expect(this.card(name)).toBeVisible({ timeout: 5_000 });
+    }).toPass({ timeout: 45_000, intervals: [1_000, 2_000, 5_000] });
+    await this.demo.pause();
   }
 
   /** Whether a page-toolbar action button (by accessible name) is present. */
@@ -146,8 +205,18 @@ export class Library {
    *  — deterministic bulk selection, no checkbox-clicking — and wait for the
    *  selection toolbar to appear. */
   async openSelected(ids: string[]): Promise<void> {
-    await this.page.goto(`${this.spec.listPath}?selectedIds=${ids.join(",")}`);
+    // Cache-bypassing: the ids were just factory-seeded, so the Redis list
+    // cache the SSR would otherwise serve predates them — they'd never load
+    // into the table and the selection would resolve to 0 deletable rows.
+    // gotoFresh reads through to a fresh list that includes the new rows.
+    await this.gotoFresh(`${this.spec.listPath}?selectedIds=${ids.join(",")}`);
     await this.bulkDeleteTrigger.waitFor({ state: "visible", timeout: 30_000 });
+    // Settle on the REAL signal, not a sleep: the seeded rows must be both
+    // loaded into the table AND resolved as selected before the "Delete N"
+    // trigger reports them deletable. The trigger reads "Delete N of M" and is
+    // disabled at 0 deletable; wait until it's enabled so the subsequent
+    // bulkDelete() acts on a settled selection rather than racing the load.
+    await expect(this.bulkDeleteTrigger).toBeEnabled({ timeout: 30_000 });
     await this.demo.pause();
   }
 
