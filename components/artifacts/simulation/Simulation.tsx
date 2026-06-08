@@ -1054,9 +1054,17 @@ function SimulationComponent({
         throw new Error("Scenario positions are required");
       }
 
+      // Gate on either junction ids OR pending value entries — a user who
+      // picked a rubric has scenario_rubrics (value pairs) populated even
+      // before the server resolves it to scenario_rubric_ids. Mirrors the
+      // Eval model_rubrics gate; without the second clause a fresh create
+      // falsely blocks because scenario_rubric_ids is only hydrated from
+      // server-assigned junction ids that don't exist yet.
       if (
         SIMULATION_REQUIRED.scenario_rubrics &&
-        (!effectiveFormState.scenario_rubric_ids || effectiveFormState.scenario_rubric_ids.length === 0)
+        (!effectiveFormState.scenario_rubric_ids ||
+          effectiveFormState.scenario_rubric_ids.length === 0) &&
+        (effectiveFormState.scenario_rubrics?.length ?? 0) === 0
       ) {
         toast.error("Scenario rubrics are required");
         throw new Error("Scenario rubrics are required");
