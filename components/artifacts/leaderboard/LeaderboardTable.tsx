@@ -553,7 +553,7 @@ export default function LeaderboardTable({
 
 export function LeaderboardTableSkeleton() {
   return (
-    <div className="space-y-4" data-testid="leaderboard-table">
+    <div className="space-y-4" data-testid="leaderboard-table-skeleton">
       {/* Toolbar skeleton */}
       <div className="flex items-center justify-between">
         <div className="flex flex-1 items-center space-x-2 flex-wrap">
