@@ -1664,6 +1664,7 @@ export default function Documents({
                   bare={true}
                   isFormDocument={false}
                   downloadBaseUrl="/api/documents/download"
+                  textDownloadBaseUrl="/api/documents/text-download"
                 />
               </div>
             )}
