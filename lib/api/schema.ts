@@ -36816,9 +36816,14 @@ export interface components {
             active_scenario_count?: number | null;
             /**
              * File Id
-             * @description Associated file resource UUID
+             * @description Associated file resource UUID (binary/PDF content)
              */
             file_id?: string | null;
+            /**
+             * Text Id
+             * @description Associated text resource UUID (HTML/plain-text content); the preview viewer prefers this when set
+             */
+            text_id?: string | null;
             /**
              * Can Edit
              * @description Whether the current user can edit
