@@ -592,9 +592,13 @@ function AuthComponent({
                 protocol_ids: effectiveFormState.protocol_ids?.length
                   ? effectiveFormState.protocol_ids
                   : null,
-                slug_ids: effectiveFormState.slug_ids?.length
-                  ? effectiveFormState.slug_ids
-                  : null,
+                // UpdateAuthItem accepts a single ``slug_id`` (not the
+                // plural ``slug_ids``); pydantic (extra="ignore") was
+                // silently dropping ``slug_ids`` on update, so editing an
+                // auth's slug was lost while the UI reported success.
+                slug_id: effectiveFormState.slug_ids?.length
+                  ? effectiveFormState.slug_ids[0]
+                  : undefined,
                 item_ids:
                   effectiveFormState.item_ids?.length
                     ? effectiveFormState.item_ids
