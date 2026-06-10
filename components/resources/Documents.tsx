@@ -41,6 +41,10 @@ export interface DocumentResourceItem {
   non_video_document?: boolean | null;
   file_path?: string | null;
   file_id?: string | null;
+  /** Text/template resource UUID (HTML or plain-text content). */
+  text_id?: string | null;
+  /** Whether the document is HTML/template content (drives HTML rendering). */
+  html?: boolean | null;
   upload_id?: string | null;
   field_ids?: string[] | null;
 }
@@ -249,10 +253,15 @@ export function Documents({
             (d) => d.document_id === item.id
           );
 
-          // Create document item for DocumentViewer
+          // Create document item for DocumentViewer. Carry text_id so
+          // text-only / template documents (no file_id) render via the
+          // text-download branch instead of falling through to "no content
+          // source".
           const docForViewer: DocumentViewerItem = {
             name: item.name || "Document",
             file_id: fullDoc?.file_id ?? null,
+            text_id: fullDoc?.text_id ?? null,
+            template: fullDoc?.html ?? null,
           };
 
           return (
@@ -322,6 +331,7 @@ export function Documents({
                   isFormDocument={false}
                   compact={true}
                   downloadBaseUrl="/api/documents/download"
+                  textDownloadBaseUrl="/api/documents/text-download"
                 />
               </div>
 
@@ -365,6 +375,8 @@ export function Documents({
                   documentItems.find((d) => d.id === docId)?.name ||
                   "Document",
                 file_id: fullDoc?.file_id ?? null,
+                text_id: fullDoc?.text_id ?? null,
+                template: fullDoc?.html ?? null,
               };
               return (
                 <div className="mt-4">
@@ -373,6 +385,7 @@ export function Documents({
                     bare={true}
                     isFormDocument={false}
                     downloadBaseUrl="/api/documents/download"
+                    textDownloadBaseUrl="/api/documents/text-download"
                   />
                 </div>
               );
