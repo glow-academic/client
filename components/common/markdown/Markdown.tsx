@@ -10,6 +10,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import RehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 import RemarkMathPlugin from "remark-math";
@@ -27,6 +28,31 @@ import MarkdownImage from "./MarkdownImage";
 export interface MarkdownProps {
   children: string;
 }
+
+/**
+ * Sanitization schema for the raw-HTML passthrough (rehypeRaw).
+ *
+ * Defense-in-depth: react-markdown@10 already strips `javascript:` URLs and
+ * won't attach string event-handlers, so rehypeRaw here is not a confirmed
+ * exploit — but running raw HTML with no sanitizer is a latent gap if those
+ * internals change. rehype-sanitize (run right after rehypeRaw) strips
+ * dangerous nodes (<script>, event handlers, javascript:/data: URLs) using the
+ * default GitHub schema.
+ *
+ * The schema is extended to keep `className`/`id` on every element so the app's
+ * legitimate markdown features survive sanitization: fenced-code language
+ * classes, syntax-highlight token classes (highlight.js), KaTeX/MathML classes,
+ * heading slugs/anchors, and the custom prose-* classes. className/id carry no
+ * script-execution capability, so this relaxation does not reintroduce XSS;
+ * tagNames and URL protocols remain at the secure defaults.
+ */
+const sanitizeSchema = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    "*": [...(defaultSchema.attributes?.["*"] ?? []), "className", "id"],
+  },
+};
 
 // Enhanced link component to handle internal navigation
 const MarkdownLink = ({
@@ -86,8 +112,13 @@ export default function Markdown({ children }: MarkdownProps) {
           // remarkDirective, // Only include if you plan to use custom directives
         ]}
         rehypePlugins={[
-          RehypeKatex,
+          // Order matters: rehypeRaw parses raw HTML into the tree, then
+          // rehypeSanitize strips dangerous nodes from it. The trusted
+          // decorators (KaTeX, slug/anchor, syntax highlight) run AFTER
+          // sanitize so their rich/MathML output isn't stripped by the schema.
           rehypeRaw,
+          [rehypeSanitize, sanitizeSchema],
+          RehypeKatex,
           rehypeSlug,
           rehypeAutolinkHeadings,
           [rehypeHighlight, { ignoreMissing: true }],
