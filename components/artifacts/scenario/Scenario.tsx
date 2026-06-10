@@ -1645,30 +1645,16 @@ function ScenarioComponent({
         description: formState.description ?? undefined,
         problem_statement_id: formState.problem_statement_id ?? undefined,
         problem_statement: formState.problem_statement ?? undefined,
-        // Legacy CreateScenarioItem fields: derive per-feature flag IDs from
-        // canonical flag_ids for the bulk create/update endpoint.
-        ...(() => {
-          const byType: Record<string, string | undefined> = {};
-          const byId = new Map(
-            (scenarioData?.flags ?? [])
-              .filter((f) => f.id)
-              .map((f) => [String(f.id), f] as const),
-          );
-          for (const id of formState.flag_ids) {
-            const row = byId.get(id);
-            if (!row) continue;
-            const t = row.type ?? row.name;
-            if (t && row.value === true) byType[t] = id;
-          }
-          return {
-            active_flag_id: byType["scenario_active"],
-            objectives_enabled_flag_id: byType["objectives_enabled"],
-            images_enabled_flag_id: byType["images_enabled"],
-            video_enabled_flag_id: byType["video_enabled"],
-            questions_enabled_flag_id: byType["questions_enabled"],
-            problem_statement_enabled_flag_id: byType["problem_statement_enabled"],
-          };
-        })(),
+        // Canonical flag_ids — Create/UpdateScenarioItem expose ONLY
+        // ``flag_ids`` (the server derives per-feature semantics by flag
+        // type/value; scenario/create.py reads ``item.flag_ids`` and nothing
+        // else). The previous per-feature ``*_flag_id`` keys exist on no
+        // create/update model, so pydantic (extra="ignore") silently dropped
+        // every scenario flag — active + objectives/images/video/questions/
+        // problem-statement enabled — on create AND update while the UI
+        // reported success. Mirror every sibling artifact (cohort, persona,
+        // rubric, …) and send the canonical list the impl actually reads.
+        flag_ids: formState.flag_ids?.length ? formState.flag_ids : undefined,
         department_ids: formState.department_ids?.length
           ? formState.department_ids
           : undefined,
