@@ -36,13 +36,11 @@ export function useSocket(): SocketContextType {
 interface SocketProviderClientProps {
   children: React.ReactNode;
   profileId: string | null;
-  idToken: string | null;
 }
 
 export function SocketProviderClient({
   children,
   profileId,
-  idToken,
 }: SocketProviderClientProps) {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<AppSocket | null>(null);
@@ -73,10 +71,35 @@ export function SocketProviderClient({
         EIO: "4",
       };
 
+      // The raw API bearer is no longer held in client state / props
+      // (it's kept server-side out of the NextAuth session). Fetch it on
+      // demand from the cookie-authenticated `/api/ws-ticket` BFF route
+      // right before connecting — the token stays out of broadly-readable
+      // app state and is only used for this handshake. See
+      // `app/api/ws-ticket/route.ts`.
+      let ticket: string | null = null;
+      try {
+        const res = await fetch(
+          new URL("/api/ws-ticket", window.location.origin).toString(),
+          { cache: "no-store" },
+        );
+        if (res.ok) {
+          const data = (await res.json()) as { token?: string };
+          ticket = data.token ?? null;
+        }
+      } catch {
+        // No ticket → connect without auth; the server rejects and the
+        // connect_error path below handles the retry/toast.
+      }
+
+      if (cancelled) {
+        return;
+      }
+
       // Auth is handled via the auth object, not query params.
       // Server resolves profile_id + session_id from the JWT.
       const socket = await createSocketClient(query, {
-        token: idToken ? `Bearer ${idToken}` : undefined,
+        token: ticket ? `Bearer ${ticket}` : undefined,
       });
 
       if (cancelled) {
@@ -117,7 +140,7 @@ export function SocketProviderClient({
         setIsConnected(false);
       }
     };
-  }, [profileId, idToken]);
+  }, [profileId]);
 
   const value = useMemo<SocketContextType>(
     () => ({
