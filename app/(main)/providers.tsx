@@ -25,17 +25,15 @@ import { TransportProvider } from "@/lib/transport";
 interface MainProvidersProps {
   children: React.ReactNode;
   profileId: string | null;
-  idToken: string | null;
 }
 
-export function MainProviders({
-  children,
-  profileId,
-  idToken,
-}: MainProvidersProps) {
+export function MainProviders({ children, profileId }: MainProvidersProps) {
   return (
-    <SocketProviderClient profileId={profileId} idToken={idToken}>
-      <TransportProvider authToken={idToken}>{children}</TransportProvider>
+    <SocketProviderClient profileId={profileId}>
+      {/* `authToken` for the SSE transport is a legacy no-op — the SSE BFF
+          route (`/api/watch/[artifact]`) attaches the Bearer server-side,
+          so no token is passed to the client transport. */}
+      <TransportProvider>{children}</TransportProvider>
     </SocketProviderClient>
   );
 }

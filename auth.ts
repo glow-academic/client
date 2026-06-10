@@ -131,15 +131,23 @@ export const {
       return token;
     },
 
-    // Expose id_token + issuer to client session (needed for API auth + OIDC logout)
+    // Shape the client-visible session. SECURITY: the raw API bearer
+    // (`id_token`) is deliberately NOT copied onto the session here, so it
+    // never reaches `/api/auth/session` or client props where JS/XSS could
+    // read it. The bearer stays in the encrypted, httpOnly JWT above;
+    // server-side consumers read it via `getServerIdToken()` (getToken).
+    // The client gets only a boolean auth flag + the public issuer; it
+    // fetches the bearer on demand from the cookie-authed `/api/ws-ticket`
+    // route for the two legitimate client-side credential needs (the WS
+    // handshake and the OIDC logout `id_token_hint`).
     async session({ session, token }) {
       if (session.user) {
         session.user.id = session.user.id ?? (token.sub as string);
       }
 
-      if (token["id_token"]) {
-        session.id_token = token["id_token"] as string;
-      }
+      // Non-sensitive presence flag so the layout / snapshot can tell
+      // "logged in?" without shipping the bearer to the browser.
+      session.authenticated = !!token["id_token"];
 
       // Surface a refresh failure so the UI can force re-login.
       if (token["error"]) {

@@ -26,8 +26,10 @@ export default async function MainLayout({
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "/";
 
-  // No session → full-width access denied (no sidebar)
-  if (!session?.id_token) {
+  // No session → full-width access denied (no sidebar). The bearer is no
+  // longer on the client-visible session; `authenticated` is the
+  // server-set presence flag (true iff a valid id_token exists server-side).
+  if (!session?.authenticated) {
     return (
       <LogoutGuard>
         <UnifiedAccessDenied
@@ -40,10 +42,7 @@ export default async function MainLayout({
   }
 
   return (
-    <MainProviders
-      profileId={session.user?.id ?? null}
-      idToken={session.id_token ?? null}
-    >
+    <MainProviders profileId={session.user?.id ?? null}>
       <Suspense
         key={`suspense-${pathname}`}
         fallback={<AppShell.ContentSkeleton />}
