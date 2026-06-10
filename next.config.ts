@@ -33,6 +33,25 @@ module.exports = {
 
   reactStrictMode: false,
   serverExternalPackages: ["pg", "@auth/pg-adapter"],
+  // STANDALONE TRACING FIX (backport of main's v1.0.33 fix):
+  //
+  // The ambient (no-req) server-token path reads the cookie via a
+  // `webpackIgnore` dynamic `import("next/headers")` (see
+  // `lib/api/server-token.ts` — that dodges the client bundle to preserve the
+  // server-only-bearer win). But `webpackIgnore` ALSO hides that import from
+  // `@vercel/nft`'s output-file tracing, so the standalone build never traces
+  // `undici` (which Next's server runtime needs at runtime) through that path.
+  // The deployed `.next/standalone` was therefore missing
+  // `node_modules/undici/index.js`: the ambient `getServerIdToken()` threw
+  // MODULE_NOT_FOUND, the try/catch swallowed it → no Authorization header on
+  // SSR/BFF fetches → API 401 → every data page rendered "Access Denied".
+  //
+  // Forcing undici into the traced standalone output for every route makes the
+  // ambient token path work at runtime regardless of any incidental dep chain,
+  // without touching the auth logic or the working req-based ws-ticket path.
+  outputFileTracingIncludes: {
+    "/**/*": ["./node_modules/undici/**/*"],
+  },
   webpack: (
     config: WebpackConfig,
     { isServer, webpack }: WebpackConfigContext
