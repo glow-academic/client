@@ -7,6 +7,8 @@
  * and uses display:contents on the wrapper so it doesn't affect layout.
  */
 
+import DOMPurify from "isomorphic-dompurify";
+
 import { cn } from "@/lib/utils";
 
 interface SvgIconProps {
@@ -30,5 +32,15 @@ export function SvgIcon({ svg, className, style, fallback = null }: SvgIconProps
   const attrs = ` class="${cls}"${styleStr ? ` style="${styleStr}"` : ""}`;
   const modified = svg.replace("<svg", `<svg${attrs}`);
 
-  return <span style={{ display: "contents" }} dangerouslySetInnerHTML={{ __html: modified }} />;
+  // SECURITY: icons_resource.value is DB-sourced and rendered across cross-user
+  // surfaces (chat, persona grids, resource pickers). The startsWith("<svg")
+  // guard is bypassable (e.g. `<svg></svg><img src=x onerror=...>`), and the
+  // <img onerror> fires from innerHTML. Sanitize to an SVG-only profile so only
+  // valid SVG elements/attributes survive — <script>, <img>, and on* event
+  // handlers are stripped — before injecting via dangerouslySetInnerHTML.
+  const sanitized = DOMPurify.sanitize(modified, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+  });
+
+  return <span style={{ display: "contents" }} dangerouslySetInnerHTML={{ __html: sanitized }} />;
 }
