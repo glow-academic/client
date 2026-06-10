@@ -1,6 +1,53 @@
 // lib/api/request-core.ts
 import { getAuthHeaders } from "@/lib/api/auth-headers";
 
+/**
+ * Default request timeout (ms) for the shared REST fetch.
+ *
+ * Deliberately GENEROUS: AI generation, exports, and document/video
+ * processing legitimately take a while, so we cap at 120s rather than a
+ * typical 15-30s so we don't abort slow-but-valid work. Callers that need
+ * longer (or no) bound can override per-call via `init.timeoutMs`
+ * (pass a larger number, or `null`/`0` to disable the timeout entirely).
+ *
+ * NOTE: this only guards `doRequest`, the fully-buffered JSON/text fetch
+ * behind `api.get/post/...`. Long-lived streaming transports (SSE via
+ * `EventSource` in `lib/transport/events-sse.ts`, WebSocket in
+ * `lib/transport/*-ws.ts`) do NOT route through here and are intentionally
+ * never timed out.
+ */
+export const DEFAULT_REQUEST_TIMEOUT_MS = 120_000;
+
+/** `RequestInit` plus our per-call timeout override. */
+export type DoRequestInit = RequestInit & {
+  /**
+   * Abort the request after this many ms. Defaults to
+   * {@link DEFAULT_REQUEST_TIMEOUT_MS}. Pass `null` or `0` to disable.
+   */
+  timeoutMs?: number | null;
+};
+
+/**
+ * Combine an optional caller signal with our timeout signal so either one
+ * aborting aborts the fetch. Avoids relying on `AbortSignal.any` (only
+ * available in very recent browsers).
+ */
+function combineSignals(
+  caller: AbortSignal | null | undefined,
+  timeout: AbortSignal
+): AbortSignal {
+  if (!caller) return timeout;
+  const controller = new AbortController();
+  const onAbort = (reason: unknown) => {
+    if (!controller.signal.aborted) controller.abort(reason);
+  };
+  if (caller.aborted) onAbort(caller.reason);
+  else caller.addEventListener("abort", () => onAbort(caller.reason));
+  if (timeout.aborted) onAbort(timeout.reason);
+  else timeout.addEventListener("abort", () => onAbort(timeout.reason));
+  return controller.signal;
+}
+
 function encodePath(
   path: string,
   params: Record<string, string | number | boolean> = {}
@@ -22,8 +69,9 @@ export async function doRequest<T>(
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   path: string,
   args?: unknown,
-  init?: RequestInit
+  init?: DoRequestInit
 ): Promise<T> {
+  const { timeoutMs, signal: callerSignal, ...restInit } = init ?? {};
   const bag = (args ?? {}) as ArgBag;
 
   const urlPathParams = (bag.path ?? {}) as Record<
@@ -45,7 +93,7 @@ export async function doRequest<T>(
   if (qs) url += `?${qs}`;
 
   let body: BodyInit | null = null;
-  let headers: HeadersInit = init?.headers ?? {};
+  let headers: HeadersInit = restInit.headers ?? {};
 
   // Inject auth headers (Authorization Bearer JWT)
   // Server resolves profile_id and session_id from the JWT — no X-Profile-Id needed
@@ -75,12 +123,46 @@ export async function doRequest<T>(
     body = JSON.stringify(bag.body);
   }
 
-  const res = await fetch(`${baseUrl}${url}`, {
-    ...init,
-    method,
-    headers,
-    body,
-  });
+  // Generous AbortController-based timeout so a stalled backend rejects
+  // (surfacing the caller's catch -> toast.error) instead of hanging the
+  // awaiting mutation forever. `null`/`0` disables it; a caller signal is
+  // combined so either source can abort.
+  const effectiveTimeout =
+    timeoutMs === undefined ? DEFAULT_REQUEST_TIMEOUT_MS : timeoutMs;
+  let timeoutController: AbortController | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let signal: AbortSignal | null = callerSignal ?? null;
+
+  if (effectiveTimeout != null && effectiveTimeout > 0) {
+    timeoutController = new AbortController();
+    timer = setTimeout(() => timeoutController!.abort(), effectiveTimeout);
+    signal = combineSignals(callerSignal, timeoutController.signal);
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${baseUrl}${url}`, {
+      ...restInit,
+      method,
+      headers,
+      body,
+      signal,
+    });
+  } catch (err) {
+    // Distinguish our timeout from a caller-initiated / network abort so the
+    // catch handler shows a clear message rather than a generic AbortError.
+    if (
+      timeoutController?.signal.aborted &&
+      !(callerSignal && callerSignal.aborted)
+    ) {
+      throw new Error(
+        `Request timed out after ${effectiveTimeout}ms: ${method} ${path}`
+      );
+    }
+    throw err;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 
   if (!res.ok) {
     // Try to extract error details from FastAPI error response

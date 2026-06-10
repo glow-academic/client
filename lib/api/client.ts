@@ -1,7 +1,7 @@
 // lib/api/client.ts
 import { INTERNAL_HTTP_BASE } from "./config";
 import { toFull } from "./path";
-import { doRequest } from "./request-core";
+import { doRequest, type DoRequestInit } from "./request-core";
 import type { InputOf, OutputOf, PathKey, ShortPath } from "./types";
 
 function createApi() {
@@ -11,7 +11,7 @@ function createApi() {
   function get<P extends ShortPath>(
     p: P,
     a?: InputOf<Extract<PathKey, P>, "get">,
-    i?: RequestInit,
+    i?: DoRequestInit,
   ) {
     return doRequest<OutputOf<Extract<PathKey, P>, "get">>(
       pickBase(),
@@ -25,7 +25,7 @@ function createApi() {
   function post<P extends ShortPath>(
     p: P,
     a: InputOf<Extract<PathKey, P>, "post">,
-    i?: RequestInit,
+    i?: DoRequestInit,
   ) {
     return doRequest<OutputOf<Extract<PathKey, P>, "post">>(
       pickBase(),
@@ -39,7 +39,7 @@ function createApi() {
   function put<P extends ShortPath>(
     p: P,
     a: InputOf<Extract<PathKey, P>, "put">,
-    i?: RequestInit,
+    i?: DoRequestInit,
   ) {
     return doRequest<OutputOf<Extract<PathKey, P>, "put">>(
       pickBase(),
@@ -53,7 +53,7 @@ function createApi() {
   function patch<P extends ShortPath>(
     p: P,
     a: InputOf<Extract<PathKey, P>, "patch">,
-    i?: RequestInit,
+    i?: DoRequestInit,
   ) {
     return doRequest<OutputOf<Extract<PathKey, P>, "patch">>(
       pickBase(),
@@ -67,7 +67,7 @@ function createApi() {
   function del<P extends ShortPath>(
     p: P,
     a?: InputOf<Extract<PathKey, P>, "delete">,
-    i?: RequestInit,
+    i?: DoRequestInit,
   ) {
     return doRequest<OutputOf<Extract<PathKey, P>, "delete">>(
       pickBase(),
