@@ -19,10 +19,27 @@ export function useFederatedLogout() {
         sessionStorage.setItem("logout-start-time", Date.now().toString());
       }
 
-      // 1. Clear local session
-      await signOut({ redirect: false });
+      // 1. Fetch the OIDC `id_token_hint` from the cookie-authed BFF route
+      //    BEFORE clearing the session (after signOut the cookie is gone).
+      //    The bearer is no longer held in the client session, so we
+      //    retrieve it on demand here — see `app/api/ws-ticket/route.ts`.
+      let idTokenHint: string | null = null;
+      try {
+        const res = await fetch(
+          new URL("/api/ws-ticket", window.location.origin).toString(),
+          { cache: "no-store" }
+        );
+        if (res.ok) {
+          const data = (await res.json()) as { token?: string };
+          idTokenHint = data.token ?? null;
+        }
+      } catch {
+        // No hint → logout still proceeds; the provider falls back to its
+        // own session cookie / may prompt.
+      }
 
-      // 2. Clear session cookies (handled by signOut)
+      // 2. Clear local session (also clears session cookies)
+      await signOut({ redirect: false });
 
       // 3. Standard OIDC logout redirect
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
@@ -31,8 +48,8 @@ export function useFederatedLogout() {
       );
 
       let logoutUrl = `${session?.issuer}/logout?post_logout_redirect_uri=${returnTo}&client_id=glow-client`;
-      if (session?.id_token) {
-        logoutUrl += `&id_token_hint=${session.id_token}`;
+      if (idTokenHint) {
+        logoutUrl += `&id_token_hint=${idTokenHint}`;
       }
 
       window.location.href = logoutUrl;

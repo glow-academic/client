@@ -8,12 +8,14 @@ import type { ContextProfile } from "@/contexts/profile-context";
 export type SafeSessionSnapshot = {
   profileId: string | null;
   isAuthenticated: boolean;
-  idToken: string | null;
 };
 
 /**
  * Build a SafeSessionSnapshot from a session and context profile.
  * Used by pages that fetch /{artifact}/context and extract .profile.
+ *
+ * The raw API bearer is intentionally absent — it is never shipped to the
+ * client. `isAuthenticated` reads the server-set `authenticated` flag.
  */
 export function buildSnapshot(
   session: Session | null | undefined,
@@ -21,7 +23,6 @@ export function buildSnapshot(
 ): SafeSessionSnapshot {
   return {
     profileId: profile?.id ?? null,
-    isAuthenticated: !!session?.id_token,
-    idToken: session?.id_token ?? null,
+    isAuthenticated: !!session?.authenticated,
   };
 }

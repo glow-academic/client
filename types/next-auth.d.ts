@@ -3,7 +3,11 @@ import "next-auth";
 // ---- Type augmentation (Session & JWT) ----
 declare module "next-auth" {
   interface Session {
-    id_token?: string | undefined;
+    // NOTE: the raw API bearer (`id_token`) is intentionally NOT on the
+    // client-visible Session. It lives only on the server-side JWT below
+    // and is read via `getServerIdToken()`. The client sees only this
+    // boolean auth flag + the public issuer.
+    authenticated?: boolean | undefined;
     issuer?: string | undefined;
     // Set when a background token refresh failed — the client can watch for
     // this and force a re-login instead of silently making 401'd API calls.
