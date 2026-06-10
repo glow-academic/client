@@ -27,8 +27,8 @@
 
 import type { NextRequest } from "next/server";
 
-import { auth } from "@/auth";
 import { INTERNAL_HTTP_BASE } from "@/lib/api/config";
+import { getServerIdToken } from "@/lib/api/server-token";
 
 export const runtime = "nodejs";
 // SSE streams must not be buffered. ``force-dynamic`` opts the route
@@ -56,8 +56,8 @@ export async function GET(
 
   const upstreamUrl = `${INTERNAL_HTTP_BASE}/${artifact}/watch${req.nextUrl.search}`;
 
-  const session = await auth();
-  if (!session?.id_token) {
+  const idToken = await getServerIdToken(req);
+  if (!idToken) {
     return new Response(
       JSON.stringify({ detail: "Not authenticated" }),
       { status: 401, headers: { "Content-Type": "application/json" } },
@@ -70,7 +70,7 @@ export async function GET(
       method: "GET",
       headers: {
         Accept: "text/event-stream",
-        Authorization: `Bearer ${session.id_token}`,
+        Authorization: `Bearer ${idToken}`,
       },
       redirect: "manual",
       // ``cache: "no-store"`` doubles down on the route-level
