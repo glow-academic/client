@@ -1,6 +1,6 @@
 {
   "name": "glow",
-  "version": "1.0.29",
+  "version": "1.0.30",
   "private": true,
   "type": "module",
   "engines": {
@@ -55,6 +55,7 @@
     "drizzle-zod": "^0.8.3",
     "eslint-plugin-unused-imports": "^4.1.4",
     "framer-motion": "^12.22.0",
+    "isomorphic-dompurify": "3.16.0",
     "lucide-react": "^0.511.0",
     "next": "15.5.19",
     "next-auth": "^5.0.0-beta.28",
@@ -74,6 +75,7 @@
     "rehype-highlight": "^7.0.2",
     "rehype-katex": "^7.0.1",
     "rehype-raw": "^7.0.0",
+    "rehype-sanitize": "6.0.0",
     "rehype-slug": "^6.0.0",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
