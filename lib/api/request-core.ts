@@ -1,5 +1,13 @@
 // lib/api/request-core.ts
-import { getAuthHeaders } from "@/lib/api/auth-headers";
+//
+// CLIENT-SAFE shared REST transport. This module is reachable from the
+// CLIENT bundle (via `lib/transport/commands-http.ts` → `TransportProvider`),
+// so it MUST NOT import any server-only module (`next/headers`,
+// `lib/api/server-token.ts`, `lib/api/auth-headers.ts`). It deliberately
+// does NOT attach any `Authorization` bearer: auth is injected one layer up
+// by the SERVER api (`lib/api/client.ts`, server-only) for server-side
+// callers, and the browser never holds the bearer (#103). Callers may still
+// pass headers via `init.headers`.
 
 /**
  * Default request timeout (ms) for the shared REST fetch.
@@ -93,18 +101,10 @@ export async function doRequest<T>(
   if (qs) url += `?${qs}`;
 
   let body: BodyInit | null = null;
+  // Auth (`Authorization: Bearer`) is injected by the SERVER api layer
+  // (`lib/api/client.ts`) before calling here, arriving via `init.headers`.
+  // This module never reads the session itself — see the boundary note above.
   let headers: HeadersInit = restInit.headers ?? {};
-
-  // Inject auth headers (Authorization Bearer JWT)
-  // Server resolves profile_id and session_id from the JWT — no X-Profile-Id needed
-  if (typeof window === "undefined") {
-    try {
-      const authHeaders = await getAuthHeaders();
-      headers = { ...headers, ...authHeaders };
-    } catch {
-      // If auth header resolution fails, continue without headers
-    }
-  }
 
   if (bag.formData instanceof FormData) {
     body = bag.formData;
