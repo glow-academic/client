@@ -13,9 +13,40 @@
 // Consumers (all server-side): the BFF proxy routes, the shared REST
 // request layer (`lib/api/request-core.ts` via `auth-headers.ts`), the
 // SSE watch proxy, and the WS-ticket route.
+//
+// SERVER/CLIENT BOUNDARY (#103 build fix): this module is transitively
+// reachable from the CLIENT component graph —
+//   request-core.ts → auth-headers.ts → server-token.ts
+// and request-core is pulled into client components via the transport
+// (`lib/transport/*`) and `lib/api/ack.ts`. A STATIC `import … from
+// "next/headers"` therefore poisons the client bundle: `next build`
+// fails with "You're importing a component that needs next/headers …
+// only works in a Server Component". (tsc does not catch this — only
+// `next build` does.) To keep `next/headers` out of the client module
+// graph WITHOUT re-exposing the bearer to the browser, the ambient
+// cookie read uses a `webpackIgnore` runtime import below. It only ever
+// executes server-side: every caller of `getServerIdToken()` without a
+// `req` runs on the server (server components, and `request-core` gates
+// its call behind `typeof window === "undefined"`). The bearer thus
+// stays server-only (#103 intact) and the build stays green.
 
 import { getToken } from "next-auth/jwt";
-import { headers } from "next/headers";
+
+/**
+ * Read the ambient request's `cookie` header via `next/headers`, WITHOUT
+ * a static import (which would drag the server-only `next/headers` module
+ * into the client bundle — see the boundary note above). The
+ * `webpackIgnore` magic comment + computed specifier keep the bundler
+ * from adding `next/headers` to the client graph; this only ever runs
+ * server-side.
+ */
+async function ambientCookieHeader(): Promise<string> {
+  const specifier = "next/headers";
+  const mod = (await import(/* webpackIgnore: true */ specifier)) as {
+    headers: () => Promise<{ get: (name: string) => string | null }>;
+  };
+  return (await mod.headers()).get("cookie") ?? "";
+}
 
 const SECRET = process.env["AUTH_SECRET"] ?? process.env["SECRET_KEY"] ?? "";
 
@@ -44,7 +75,7 @@ export async function getServerIdToken(req?: Request): Promise<string | null> {
   const cookieName = sessionCookieName();
   const cookieHeader = req
     ? (req.headers.get("cookie") ?? "")
-    : ((await headers()).get("cookie") ?? "");
+    : await ambientCookieHeader();
 
   try {
     const token = await getToken({
