@@ -48451,6 +48451,11 @@ export interface components {
              */
             file_id?: string | null;
             /**
+             * Text Id
+             * @description UUID of the texts_resource (HTML/plain-text content); the preview viewer prefers this over file_id when set
+             */
+            text_id?: string | null;
+            /**
              * File Path
              * @description Storage path of the file
              */
