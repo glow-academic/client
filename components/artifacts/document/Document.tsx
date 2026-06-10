@@ -790,10 +790,15 @@ function DocumentComponent({
         department_ids: effectiveFormState.department_ids.length
           ? effectiveFormState.department_ids
           : undefined,
-        field_ids: effectiveFormState.parameter_field_ids.length
+        // Create/UpdateDocumentItem expose ``parameter_field_ids`` and the
+        // multi-select ``upload_ids`` (file upload UUIDs) — NOT ``field_ids``
+        // or ``file_ids``. Sending the wrong names made pydantic
+        // (extra="ignore") silently drop the parameter-fields and files on
+        // both create and update while the UI reported success.
+        parameter_field_ids: effectiveFormState.parameter_field_ids.length
           ? effectiveFormState.parameter_field_ids
           : undefined,
-        file_ids: effectiveFormState.file_ids.length
+        upload_ids: effectiveFormState.file_ids.length
           ? effectiveFormState.file_ids
           : undefined,
         image_ids: effectiveFormState.image_ids.length
