@@ -46,6 +46,34 @@ export function useTestRoute(): UseTestRouteReturn {
           invocation_id: params.invocationId,
         })) as Record<string, unknown>;
 
+        // /test/invocation_get returns GetSuiteResponse — hydrated resource
+        // *lists* where each item has an `id` + a `selected` boolean. It does
+        // NOT expose flat `*_ids` arrays, nor `agent_ids`/`rubric_ids` (those
+        // live on the materialized GetTestInvocationResponse, not the
+        // template). So the draft-bound level selections must be derived from
+        // the nested lists rather than read as flat top-level fields.
+        const selectedIds = (key: string): string[] => {
+          const list = invocation[key];
+          if (!Array.isArray(list)) return [];
+          return list
+            .filter(
+              (r): r is Record<string, unknown> =>
+                !!r && typeof r === "object" && r["selected"] === true,
+            )
+            .map((r) => r["id"])
+            .filter((id): id is string => typeof id === "string");
+        };
+
+        const invocationConfig: Record<string, unknown> = {
+          reasoning_level_ids: selectedIds("reasoning_levels"),
+          temperature_level_ids: selectedIds("temperature_levels"),
+        };
+
+        // NOTE: `use_custom` is a property of the benchmark template that the
+        // GetSuiteResponse contract does not currently surface (it only
+        // appears on the materialized GetTestInvocationResponse). The lobby
+        // gate therefore only fires when the flag is explicitly present;
+        // surfacing it on the template response requires an API change.
         if (invocation["use_custom"]) {
           setStage("lobby");
           router.push(`/test/${params.testId}`);
@@ -56,7 +84,7 @@ export function useTestRoute(): UseTestRouteReturn {
         await generator.generate({
           testId: params.testId,
           invocationId: params.invocationId,
-          invocationConfig: invocation,
+          invocationConfig,
         });
       } catch (err) {
         setStage("error");

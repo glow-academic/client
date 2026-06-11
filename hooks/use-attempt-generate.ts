@@ -51,14 +51,26 @@ export function useAttemptGenerate(
         let draftId = params.draftId;
 
         if (!draftId) {
-          // Step 1: Create draft from chat config
+          // Step 1: Create draft from chat config.
+          //
+          // Contract: POST /attempt/draft → PatchChatDraftApiRequest. It
+          // accepts a SINGULAR `problem_statement_id` (no plural variant) and
+          // has NO `chat_id` field. The previous payload sent plural
+          // `problem_statement_ids` + `chat_id`, both of which the model
+          // silently dropped — so the scenario's problem statement never
+          // landed on the draft and generation ran without it.
           setStage("drafting");
+          const psSource =
+            params.chatConfig["problem_statement_id"] ??
+            params.chatConfig["problem_statement_ids"];
+          const problemStatementId = Array.isArray(psSource)
+            ? psSource[0]
+            : psSource;
           const draftResult = await transport.send("/attempt/draft", {
-            chat_id: params.chatId,
             scenario_ids: params.chatConfig["scenario_ids"],
             persona_ids: params.chatConfig["persona_ids"],
             objective_ids: params.chatConfig["objective_ids"],
-            problem_statement_ids: params.chatConfig["problem_statement_ids"],
+            problem_statement_id: problemStatementId,
             question_ids: params.chatConfig["question_ids"],
             image_ids: params.chatConfig["image_ids"],
             video_ids: params.chatConfig["video_ids"],
