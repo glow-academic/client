@@ -489,8 +489,10 @@ export function useArtifactGhosts<TRow extends Record<string, unknown>>(
 
   const mergedRows = useMemo<TRow[]>(() => {
     const out: TRow[] = [];
+    const baseIds = new Set<string>();
     for (const row of baseRows) {
       const id = row[rowKey] as unknown as string | undefined;
+      if (typeof id === "string") baseIds.add(id);
       if (id && state.hiddenIds.has(id)) continue;
       if (id && state.replaced[id]) {
         out.push(state.replaced[id] as TRow);
@@ -498,13 +500,29 @@ export function useArtifactGhosts<TRow extends Record<string, unknown>>(
         out.push(row);
       }
     }
+    // Dedupe the create/duplicate overlay against baseRows by id (D1).
+    // The committed-ghost overlay (``state.added``, populated from the
+    // WS ``.completed`` payload) and the authoritative ``router.refresh()``
+    // SSR re-fetch are two independent sources for the SAME new row. Once
+    // the refreshed row lands in baseRows, dropping the matching overlay
+    // entry here lets the real row replace the ghost — the row appears
+    // exactly once instead of being double-sourced. Keying by id mirrors
+    // the update (``replaced[id]``) / delete (``hiddenIds``) paths, which
+    // already reconcile against baseRows by id and so never duplicated.
+    // Until the refresh arrives the overlay still carries the row (no gap,
+    // no S1-style flicker — this is a read-only projection and does not
+    // mutate the ghost reducer state the failure-unwind relies on).
+    const dedupedAdded = state.added.filter((row) => {
+      const id = row[rowKey] as unknown as string | undefined;
+      return !(typeof id === "string" && baseIds.has(id));
+    });
     // Appended rows from create/duplicate go to the FRONT — matches the
     // visual "ghost lives at the top of the list, then materializes in
     // place" rule. Listing-page sort/pagination is applied by the table
     // on top of this; the rail sits above the table regardless, so this
     // ordering only matters for the post-commit "sit briefly at top
     // before refreshing settles them into natural order" behavior.
-    return [...state.added, ...out];
+    return [...dedupedAdded, ...out];
   }, [baseRows, rowKey, state.added, state.replaced, state.hiddenIds]);
 
   // ---- Ack ----
