@@ -190,6 +190,19 @@ function RoleEditor({
 }) {
   const currentIcon = draft.iconValue || "User";
 
+  // Number inputs are backed by transient string state (mirrors the
+  // string-draft pattern in Pricing.tsx) so the field can hold an empty /
+  // in-progress value while editing instead of snapping to a bad default.
+  // `null` = mirror the numeric draft; a string (incl. "") = the user is
+  // mid-edit and we render that raw text. The numeric draft is only updated
+  // when the text parses to a finite number; clamping/defaulting happens on
+  // blur — never on a transient clear.
+  const [levelText, setLevelText] = useState<string | null>(null);
+  const [limitTexts, setLimitTexts] = useState<Record<number, string>>({});
+  const levelValue = levelText ?? String(draft.level);
+  const limitValueAt = (index: number, fallback: number) =>
+    limitTexts[index] ?? String(fallback);
+
   const permissionsByArtifact = useMemo(() => {
     const map = new Map<string, PermissionCatalogItem[]>();
     for (const p of permissions ?? []) {
@@ -256,6 +269,9 @@ function RoleEditor({
     (index: number) => {
       const next = (draft.request_limits ?? []).filter((_, i) => i !== index);
       onChange({ ...draft, request_limits: next });
+      // Rows reindex on removal; drop transient text state to avoid a stale
+      // mid-edit string binding to the wrong row.
+      setLimitTexts({});
     },
     [draft, onChange],
   );
@@ -355,15 +371,32 @@ function RoleEditor({
         </Label>
         <Input
           type="number"
-          value={draft.level}
+          value={levelValue}
           min={0}
           max={99}
           onChange={(event) => {
-            const next = Number.parseInt(event.target.value, 10);
-            onChange({
-              ...draft,
-              level: Number.isFinite(next) ? next : 99,
-            });
+            const raw = event.target.value;
+            setLevelText(raw);
+            const next = Number.parseInt(raw, 10);
+            // Only commit a real number to the draft. An empty / in-progress
+            // value is held in the text mirror and does NOT mutate the draft,
+            // so a transient clear never silently sets the least-privileged
+            // level.
+            if (Number.isFinite(next)) {
+              onChange({ ...draft, level: Math.min(99, Math.max(0, next)) });
+            }
+          }}
+          onBlur={() => {
+            // Validate on blur: if left empty/invalid, fall back to the last
+            // committed draft level (not a forced least-privileged 99).
+            const parsed = Number.parseInt(levelText ?? "", 10);
+            if (Number.isFinite(parsed)) {
+              const clamped = Math.min(99, Math.max(0, parsed));
+              if (clamped !== draft.level) {
+                onChange({ ...draft, level: clamped });
+              }
+            }
+            setLevelText(null);
           }}
           className="h-8 w-24"
           disabled={disabled}
@@ -469,11 +502,32 @@ function RoleEditor({
                 <Input
                   type="number"
                   min={1}
-                  value={rl.limit}
+                  value={limitValueAt(idx, rl.limit)}
                   onChange={(e) => {
-                    const next = Number.parseInt(e.target.value, 10);
-                    updateRequestLimit(idx, {
-                      limit: Number.isFinite(next) ? next : 1,
+                    const raw = e.target.value;
+                    setLimitTexts((prev) => ({ ...prev, [idx]: raw }));
+                    const next = Number.parseInt(raw, 10);
+                    // Hold an empty / in-progress value in the text mirror;
+                    // only commit a real number so a transient clear never
+                    // snaps the limit to 1.
+                    if (Number.isFinite(next)) {
+                      updateRequestLimit(idx, { limit: Math.max(1, next) });
+                    }
+                  }}
+                  onBlur={() => {
+                    // Validate on blur: empty/invalid falls back to the last
+                    // committed limit (not a forced 1).
+                    const parsed = Number.parseInt(limitTexts[idx] ?? "", 10);
+                    if (Number.isFinite(parsed)) {
+                      const clamped = Math.max(1, parsed);
+                      if (clamped !== rl.limit) {
+                        updateRequestLimit(idx, { limit: clamped });
+                      }
+                    }
+                    setLimitTexts((prev) => {
+                      const next = { ...prev };
+                      delete next[idx];
+                      return next;
                     });
                   }}
                   className="h-8 w-24"
