@@ -29,6 +29,23 @@ const currency = (value: number) =>
     maximumFractionDigits: 2,
   }).format(value);
 
+// Parse a ``YYYY-MM-DD`` bucket key into a LOCAL Date. ``new Date("2026-06-09")``
+// parses as UTC midnight, which then renders under the *previous* day once
+// formatted in a negative-offset local zone (e.g. US-Eastern) — every spend
+// bucket would shift back a day. Building the date from its parts keeps it in
+// local time (mirrors the string-split convention in RubricTrend.tsx). Returns
+// null for a missing/malformed key so callers can guard against the
+// RangeError that ``format(new Date(undefined), …)`` would otherwise throw.
+function parseLocalDateKey(key: string | null | undefined): Date | null {
+  if (!key) return null;
+  const parts = key.split("-");
+  if (parts.length !== 3) return null;
+  const [year, month, day] = parts.map((p) => Number(p));
+  if (!year || !month || !day) return null;
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 // Custom tooltip content that sorts items by value descending
 function SortedChartTooltipContent({
   active,
@@ -181,7 +198,10 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
 
     for (const item of dailyItems) {
       const dateKey = item.date_key;
-      const dateLabel = format(new Date(dateKey), "MMM dd");
+      const parsedDate = parseLocalDateKey(dateKey);
+      // Guard the null/malformed case — fall back to the raw key rather than
+      // letting date-fns throw a RangeError and crash the whole summary.
+      const dateLabel = parsedDate ? format(parsedDate, "MMM dd") : (dateKey ?? "—");
       const modelId = item.model_id || "unknown";
       const cost = Number(item.total_cost || 0);
 
@@ -194,7 +214,9 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
     }
 
     const data = Array.from(byDay.entries())
-      .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
+      // ``YYYY-MM-DD`` keys sort lexicographically = chronologically, which
+      // avoids the NaN a malformed key would produce via ``new Date(...)``.
+      .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
       .map(([_, { dateLabel, values }]) => {
         const row: Record<string, number | string> = { date: dateLabel };
         for (const id of modelIds) {
