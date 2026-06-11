@@ -135,7 +135,7 @@ type Action<TRow> =
   | { type: "started"; op: GhostOp; callId: string; payload: Record<string, unknown>; before: TRow | null }
   | { type: "progress"; callId: string; payload: Record<string, unknown> }
   | { type: "completed"; callId: string; payload: Record<string, unknown>; rowKey: string; artifactPlural: string }
-  | { type: "failed"; callId: string; payload: Record<string, unknown> }
+  | { type: "failed"; callId: string; payload: Record<string, unknown>; rowKey: string; artifactPlural: string }
   | { type: "ackOptimistic"; callId: string; accept: boolean; rowKey: string; artifactPlural: string }
   | { type: "drop"; callId: string };
 
@@ -236,7 +236,45 @@ function reducer<TRow>(state: State<TRow>, action: Action<TRow>): State<TRow> {
       // Restore hidden delete rows on failure.
       const hiddenIds = new Set(state.hiddenIds);
       if (existing.op === "delete" && existing.rowId) hiddenIds.delete(existing.rowId);
-      return { ...state, byCallId: { ...state.byCallId, [action.callId]: next }, hiddenIds };
+
+      // Unwind any optimistic overlay applied for this callId (e.g. an
+      // accept-ack that committed before the server rejected it). Mirror
+      // ``applyOverlay``'s add logic in reverse so the phantom created /
+      // duplicated / updated row does not linger until reload. The
+      // hydrated rows live under ``partial[artifactPlural]`` — the same
+      // field ``applyOverlay`` read from. No-op when nothing was added
+      // (e.g. a soft-pending or pre-overlay ``.failed``).
+      let added = state.added;
+      let replaced = state.replaced;
+      const hydrated = (existing.partial as Record<string, unknown>)[action.artifactPlural];
+      const hydratedRows: TRow[] = Array.isArray(hydrated) ? (hydrated as TRow[]) : [];
+      if (hydratedRows.length > 0) {
+        const ids = new Set(
+          hydratedRows
+            .map((row) => row[action.rowKey as keyof TRow] as unknown as string | undefined)
+            .filter((id): id is string => typeof id === "string"),
+        );
+        if (ids.size > 0) {
+          if (existing.op === "create" || existing.op === "duplicate") {
+            added = added.filter((row) => {
+              const id = row[action.rowKey as keyof TRow] as unknown as string | undefined;
+              return !(typeof id === "string" && ids.has(id));
+            });
+          } else if (existing.op === "update") {
+            const nextReplaced = { ...replaced };
+            for (const id of ids) delete nextReplaced[id];
+            replaced = nextReplaced;
+          }
+        }
+      }
+
+      return {
+        ...state,
+        byCallId: { ...state.byCallId, [action.callId]: next },
+        hiddenIds,
+        added,
+        replaced,
+      };
     }
 
     case "ackOptimistic": {
@@ -430,7 +468,7 @@ export function useArtifactGhosts<TRow extends Record<string, unknown>>(
         transport.on(failedEvent, (raw) => {
           const callId = raw["call_id"];
           if (typeof callId !== "string") return;
-          dispatch({ type: "failed", callId, payload: raw });
+          dispatch({ type: "failed", callId, payload: raw, rowKey: rowKeyRef.current, artifactPlural });
         }),
       );
     }
@@ -500,6 +538,8 @@ export function useArtifactGhosts<TRow extends Record<string, unknown>>(
         type: "failed",
         callId,
         payload: { message: e instanceof Error ? e.message : "Ack failed" },
+        rowKey: rowKeyRef.current,
+        artifactPlural,
       });
     }
   }, [artifactType, state.byCallId]);

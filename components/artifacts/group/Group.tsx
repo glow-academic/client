@@ -115,11 +115,18 @@ const SYSTEM_FILE_URL = (id: string) => `/api/system/file/${id}`;
 // (``msg.calls`` → ToolCallBubble) as authoritative and ignores the
 // call-audio recordings exactly like GenerationPanel does.
 
-/** Fetch text content for a single text entry id via the system text proxy. */
+/** Fetch text content for a single text entry id via the system text proxy.
+ *  Resolves to "" on any error (non-OK response OR network rejection) so a
+ *  single bad id never rejects the surrounding ``Promise.all`` and leaves
+ *  the message stuck loading. */
 async function fetchGroupTextContent(textId: string): Promise<string> {
-  const res = await fetch(SYSTEM_TEXT_URL(textId));
-  if (!res.ok) return "";
-  return res.text();
+  try {
+    const res = await fetch(SYSTEM_TEXT_URL(textId));
+    if (!res.ok) return "";
+    return await res.text();
+  } catch {
+    return "";
+  }
 }
 
 type GroupMessageItem = {
@@ -146,13 +153,27 @@ function useGroupTextContents(messages: GroupMessageItem[]) {
 
     if (toFetch.length === 0) return;
 
+    let cancelled = false;
     for (const { messageId, uploadIds } of toFetch) {
-      Promise.all(uploadIds.map((id) => fetchGroupTextContent(id))).then(
-        (texts) => {
+      Promise.all(uploadIds.map((id) => fetchGroupTextContent(id)))
+        .then((texts) => {
+          if (cancelled) return;
           setContentMap((prev) => ({ ...prev, [messageId]: texts }));
-        }
-      );
+        })
+        .catch(() => {
+          // Belt-and-suspenders: ``fetchGroupTextContent`` already swallows
+          // per-id failures, but if the Promise.all still rejects we must
+          // still land an entry so ``isLoadingText`` clears (texts becomes
+          // ``[]`` → no longer undefined) instead of spinning forever. The
+          // mid stays in ``fetchedRef`` (matches the success path's
+          // de-dup); a remount re-attempts.
+          if (cancelled) return;
+          setContentMap((prev) => ({ ...prev, [messageId]: [] }));
+        });
     }
+    return () => {
+      cancelled = true;
+    };
   }, [messages]);
 
   return contentMap;
