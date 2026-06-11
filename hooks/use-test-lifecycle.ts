@@ -9,21 +9,28 @@
  *   test_invocation   ↔ attempt_chat   (chat-equivalent container)
  *   test_run          ↔ chat replay turn
  *
- * Canonical event names (server → client):
- *   artifacts.test.started
- *   artifacts.test.invocation.started
- *   artifacts.test.invocation.completed
- *   artifacts.test.invocation.stopped
- *   artifacts.test.invocation.response.saved
- *   artifacts.test.run.replay_started   (per-run replay inside an invocation)
- *   artifacts.test.run.progress         (grade/run progress deltas)
- *   artifacts.test.run.replay_completed
- *   artifacts.test.completed            (whole test completed)
- *   artifacts.test.start.failed         (canonical lifecycle error fan-in)
- *   artifacts.test.run.failed
- *   artifacts.test.complete.failed
- *   artifacts.test.invocation_complete.failed
- *   artifacts.test.stop.failed
+ * Canonical event names (server → client), verified against the API's
+ * ACTUAL emits — `core/app/infra/test/workflows.py` (the live grade/run
+ * workflow) plus the audit lifecycle wrapper in
+ * `core/app/infra/events/audit.py`. There is NO `artifacts.` prefix on the
+ * wire; names are bare `{artifact}.{operation}.{phase}` (matching the
+ * working attempt subscriptions) plus a couple of legacy domain names:
+ *   test.start.completed                 (test + first invocation created)
+ *   test.grade.started                   (a run began grading → in-progress)
+ *   test.grade.progress                  (grade score/feedback delta)
+ *   test.run.completed                   (a run finished)
+ *   test.invocation_complete.completed   (an invocation finished)
+ *   test.stop.completed                  (invocation stopped)
+ *   test.complete.completed / test_all_complete  (whole test completed)
+ *   test.{start,end,next,group}.error  +  test.{run,start,complete,
+ *     invocation_complete,stop}.failed   (error fan-in)
+ *
+ * NOTE: the old `artifacts.test.*` / `test.run.replay_*` / `test.invocation.*`
+ * domain names this hook used to subscribe to are NEVER emitted by the API
+ * (the run/start/complete ops set `project_domain_from_audit=False`, so their
+ * declared domain_events are not projected, and nothing emits them live) —
+ * which is why run chips never flipped, stop spinners never cleared and the
+ * "test complete" toast never fired.
  */
 import { useCallback, useEffect, useRef } from "react";
 import type { Transport } from "@/lib/transport/types";
@@ -132,22 +139,25 @@ export function useTestLifecycle({
     const matchInvocation = (data: Record<string, unknown>) => {
       const filterId = invocationIdRef?.current ?? invocationId;
       if (!filterId) return true;
-      return data["invocation_id"] === filterId;
+      // Terminal events such as `test_all_complete` omit `invocation_id`;
+      // don't filter those out (the SSE/WS stream is already group-scoped).
+      const inv = data["invocation_id"];
+      if (inv === undefined || inv === null) return true;
+      return inv === filterId;
     };
 
     const matchTest = (data: Record<string, unknown>) => {
       if (!testId) return true;
-      return data["test_id"] === testId;
+      // Most lifecycle/domain events don't echo `test_id`; only filter when
+      // the payload actually carries it.
+      const t = data["test_id"];
+      if (t === undefined || t === null) return true;
+      return t === testId;
     };
 
     const handleStarted = (data: TestStartedEvent) => {
       if (!matchTest(data)) return;
       callbacksRef.current.onStarted?.(data);
-    };
-
-    const handleInvocationStarted = (data: TestInvocationStartedEvent) => {
-      if (!matchTest(data)) return;
-      callbacksRef.current.onInvocationStarted?.(data);
     };
 
     const handleInvocationCompleted = (data: TestInvocationEndedEvent) => {
@@ -158,13 +168,6 @@ export function useTestLifecycle({
     const handleInvocationStopped = (data: TestInvocationStoppedEvent) => {
       if (!matchInvocation(data)) return;
       callbacksRef.current.onInvocationStopped?.(data);
-    };
-
-    const handleInvocationResponseSaved = (
-      data: TestInvocationResponseSavedEvent,
-    ) => {
-      if (!matchInvocation(data)) return;
-      callbacksRef.current.onInvocationResponseSaved?.(data);
     };
 
     const handleRunReplayStarted = (data: TestRunReplayStartedEvent) => {
@@ -193,25 +196,34 @@ export function useTestLifecycle({
 
     const scope = groupId ? { groupId } : undefined;
     const unsubs = [
-      transport.on("artifacts.test.started", handleStarted, scope),
-      transport.on("artifacts.test.invocation.started", handleInvocationStarted, scope),
-      transport.on("artifacts.test.invocation.completed", handleInvocationCompleted, scope),
-      transport.on("artifacts.test.invocation.stopped", handleInvocationStopped, scope),
-      transport.on(
-        "artifacts.test.invocation.response.saved",
-        handleInvocationResponseSaved,
-        scope,
-      ),
-      transport.on("artifacts.test.run.replay_started", handleRunReplayStarted, scope),
-      transport.on("artifacts.test.run.progress", handleRunProgress, scope),
-      transport.on("artifacts.test.run.replay_completed", handleRunReplayCompleted, scope),
-      transport.on("artifacts.test.completed", handleCompleted, scope),
-      // Canonical lifecycle error fan-in — every operation's `failed` phase.
-      transport.on("artifacts.test.start.failed", handleError, scope),
-      transport.on("artifacts.test.run.failed", handleError, scope),
-      transport.on("artifacts.test.complete.failed", handleError, scope),
-      transport.on("artifacts.test.invocation_complete.failed", handleError, scope),
-      transport.on("artifacts.test.stop.failed", handleError, scope),
+      // Test + first invocation materialized (audit lifecycle of `start`).
+      transport.on("test.start.completed", handleStarted, scope),
+      // A run began grading → flip the chip to in-progress + clear its
+      // "starting" spinner. `test.grade.started` carries invocation_id + run_id.
+      transport.on("test.grade.started", handleRunReplayStarted, scope),
+      // Per-run grade score/feedback delta.
+      transport.on("test.grade.progress", handleRunProgress, scope),
+      // A run finished → flip the chip to completed.
+      transport.on("test.run.completed", handleRunReplayCompleted, scope),
+      // An invocation finished (audit lifecycle of `invocation_complete`).
+      transport.on("test.invocation_complete.completed", handleInvocationCompleted, scope),
+      // Invocation stopped (audit lifecycle of `stop`; carries success/message).
+      transport.on("test.stop.completed", handleInvocationStopped, scope),
+      // Whole test complete — two paths: user-triggered `/test/complete`
+      // (namespaced, SSE-safe) and the workflow's auto-finish `test_all_complete`.
+      transport.on("test.complete.completed", handleCompleted, scope),
+      transport.on("test_all_complete", handleCompleted, scope),
+      // Error fan-in — both the workflow's domain errors and the audit
+      // lifecycle `failed` phases. All carry a `message`.
+      transport.on("test.start.error", handleError, scope),
+      transport.on("test.end.error", handleError, scope),
+      transport.on("test.next.error", handleError, scope),
+      transport.on("test.group.error", handleError, scope),
+      transport.on("test.run.failed", handleError, scope),
+      transport.on("test.start.failed", handleError, scope),
+      transport.on("test.complete.failed", handleError, scope),
+      transport.on("test.invocation_complete.failed", handleError, scope),
+      transport.on("test.stop.failed", handleError, scope),
     ];
 
     return () => unsubs.forEach((fn) => fn());

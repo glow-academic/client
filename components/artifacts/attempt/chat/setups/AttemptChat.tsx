@@ -156,7 +156,6 @@ export function AttemptChat({
   const prevChatIdRef = useRef<string | null>(null);
   const hasInitializedFromServerRef = useRef(false);
   const pendingNextChatIdRef = useRef<string | null>(null);
-  const freshlyCompletedChatsRef = useRef<Set<string>>(new Set());
   const transcriptDeltasRef = useRef<Map<string, string>>(new Map());
   const itemIdToOptimisticIdRef = useRef<Map<string, string>>(new Map());
   const voiceInputRef = useRef<HybridInputHandle | null>(null);
@@ -256,6 +255,7 @@ export function AttemptChat({
   } = useAttemptMessages({
     transport,
     chatIdRef: currentChatIdRef,
+    groupId: attemptData?.group_id ?? null,
     personas: attemptData?.resources?.personas,
     userPersonaId: attemptData?.attempt?.user_persona_id ?? null,
     // Inline lookup — ``currentChat`` useMemo is declared below this block
@@ -701,7 +701,10 @@ export function AttemptChat({
                 ...(audiosId ? { audiosId } : {}),
               };
 
-        sendMessage(
+        // Must await: sendMessage now rethrows transport failures so this
+        // catch can surface them. Without the await the rejection would
+        // escape unhandled and this catch would be dead code.
+        await sendMessage(
           currentChat.id,
           attempt_id,
           message,
@@ -853,13 +856,21 @@ export function AttemptChat({
   useEffect(() => {
     const groupId = attemptData?.group_id ?? null;
     const scope = groupId ? { groupId } : undefined;
-    const unsubs = [
-      transport.on("attempt.chat.ended", (data: Record<string, unknown>) => {
-        const filterChatId = currentChatIdRef.current;
-        if (filterChatId && data["chat_id"] !== filterChatId) return;
-        freshlyCompletedChatsRef.current.add(data["chat_id"] as string);
+    // Quiz answer result. The server (core/app/infra/attempt/response.py)
+    // emits `attempt_response_result` on success (AttemptResponseResultData:
+    // success/message/is_correct) and `attempt.quiz.error` /
+    // `attempt.response.failed` on failure — none of which carry a truthy
+    // `success`, so they fall through to the error toast. The old
+    // `attempt.chat.response_result` name was never emitted by the API, which
+    // is why answering a quiz question produced zero feedback.
+    const onQuizResult = (data: Record<string, unknown>) => {
+      if (data["success"]) {
         router.refresh();
-      }, scope),
+      } else {
+        toast.error((data["message"] as string) || "Failed to process quiz");
+      }
+    };
+    const unsubs = [
       transport.on("attempt.complete.completed", (data: Record<string, unknown>) => {
         if (data["attempt_id"] !== attempt_id) return;
         router.refresh();
@@ -869,13 +880,9 @@ export function AttemptChat({
           toast.error(data["message"] as string);
         }
       }, scope),
-      transport.on("attempt.chat.response_result", (data: Record<string, unknown>) => {
-        if (data["success"]) {
-          router.refresh();
-        } else {
-          toast.error((data["message"] as string) || "Failed to process quiz");
-        }
-      }, scope),
+      transport.on("attempt_response_result", onQuizResult, scope),
+      transport.on("attempt.quiz.error", onQuizResult, scope),
+      transport.on("attempt.response.failed", onQuizResult, scope),
     ];
     return () => unsubs.forEach((fn) => fn());
   }, [transport, attempt_id, attemptData?.group_id, router]);

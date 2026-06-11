@@ -12,6 +12,15 @@ type AnyEventData = Record<string, unknown>;
 interface UseAttemptMessagesConfig {
   transport: Transport;
   chatIdRef: React.RefObject<string | null>;
+  /**
+   * Group id this attempt is scoped to. REQUIRED for the SSE transport —
+   * `events-sse.ts` no-ops any scope-less subscription (the upstream
+   * `/api/watch/{artifact}` route 400s without a `group_id`), so without
+   * this the entire chat lifecycle goes dead whenever the transport
+   * downgrades from WebSocket to SSE. WS ignores scope, which is why the
+   * bug was masked on the happy path.
+   */
+  groupId?: string | null;
   personas: Record<string, PersonaEntry> | undefined;
   /** The user's persona for this attempt — applied to optimistic user messages. */
   userPersonaId?: string | null;
@@ -75,6 +84,7 @@ interface UseAttemptMessagesResult {
 export function useAttemptMessages({
   transport,
   chatIdRef,
+  groupId,
   personas,
   userPersonaId,
   assistantPersonaIds,
@@ -252,14 +262,19 @@ export function useAttemptMessages({
       }
     };
 
+    // Scope every subscription to the attempt's group so the SSE transport
+    // actually opens its `/api/watch/attempt?group_id=…` stream. Without a
+    // scope, `events-sse.ts` silently returns a no-op unsubscribe and the
+    // chat lifecycle never arrives in SSE-fallback mode.
+    const scope = groupId ? { groupId } : undefined;
     const unsubs = [
-      transport.on("attempt.chat_message.started", handleChatMessageStarted),
-      transport.on("attempt.chat_message.progress", handleChatMessageProgress),
-      transport.on("attempt.chat_message.completed", handleChatMessageCompleted),
-      transport.on("attempt.chat_message.failed", handleChatMessageFailed),
-      transport.on("attempt.generate.completed", handleGenerateCompleted),
-      transport.on("attempt.generate.failed", handleGenerateFailed),
-      transport.on("attempt.stop.completed", handleStopCompleted),
+      transport.on("attempt.chat_message.started", handleChatMessageStarted, scope),
+      transport.on("attempt.chat_message.progress", handleChatMessageProgress, scope),
+      transport.on("attempt.chat_message.completed", handleChatMessageCompleted, scope),
+      transport.on("attempt.chat_message.failed", handleChatMessageFailed, scope),
+      transport.on("attempt.generate.completed", handleGenerateCompleted, scope),
+      transport.on("attempt.generate.failed", handleGenerateFailed, scope),
+      transport.on("attempt.stop.completed", handleStopCompleted, scope),
     ];
 
     return () => {
@@ -269,6 +284,7 @@ export function useAttemptMessages({
   }, [
     transport,
     chatIdRef,
+    groupId,
     personas,
     defaultAssistantPersona,
     onUserComplete,
@@ -314,64 +330,83 @@ export function useAttemptMessages({
         return next;
       });
 
-      // Part 1: Persist the user message. The response returns the
-      // canonical message_id — swap the optimistic entry's key to it
-      // immediately so the refetch merges cleanly (id match) without
-      // relying on content-based dedup.
-      const persistResult = await transport.send("/attempt/chat_message", {
-        chat_id: chatId,
-        text: message,
-        ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
-        ...(personaId ? { persona_id: personaId } : {}),
-        // Only send the flag when we're explicitly opting out of the
-        // default — keeps the payload minimal for normal sends.
-        ...(opts?.autoLinkParent === false ? { auto_link_parent: false } : {}),
-        // Ride-along audio attachment. When the user message came from
-        // an unedited mic transcription, the server atomically writes
-        // ``attempt_audio_entry`` linking message → audios_resource so
-        // the chat MV surfaces ``audios_id`` for bubble playback.
-        ...(opts?.audiosId ? { audios_id: opts.audiosId } : {}),
-      });
-      const realMessageId = persistResult?.["message_id"] as string | undefined;
-      if (realMessageId && realMessageId !== optimisticUserId) {
+      // The two transport sends below can reject (socket closed, BFF 5xx,
+      // timeout). Without this guard the rejection escaped as an unhandled
+      // promise — the optimistic bubble stayed looking delivered and
+      // `isSending` was stuck true, locking the composer until a reload.
+      // On failure we clear `isSending`, drop the optimistic user bubble,
+      // and rethrow so the caller's catch can surface a toast.
+      try {
+        // Part 1: Persist the user message. The response returns the
+        // canonical message_id — swap the optimistic entry's key to it
+        // immediately so the refetch merges cleanly (id match) without
+        // relying on content-based dedup.
+        const persistResult = await transport.send("/attempt/chat_message", {
+          chat_id: chatId,
+          text: message,
+          ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
+          ...(personaId ? { persona_id: personaId } : {}),
+          // Only send the flag when we're explicitly opting out of the
+          // default — keeps the payload minimal for normal sends.
+          ...(opts?.autoLinkParent === false ? { auto_link_parent: false } : {}),
+          // Ride-along audio attachment. When the user message came from
+          // an unedited mic transcription, the server atomically writes
+          // ``attempt_audio_entry`` linking message → audios_resource so
+          // the chat MV surfaces ``audios_id`` for bubble playback.
+          ...(opts?.audiosId ? { audios_id: opts.audiosId } : {}),
+        });
+        const realMessageId = persistResult?.["message_id"] as string | undefined;
+        if (realMessageId && realMessageId !== optimisticUserId) {
+          setOptimisticMessages((prev) => {
+            const existing = prev.get(optimisticUserId);
+            if (!existing) return prev;
+            const next = new Map(prev);
+            next.delete(optimisticUserId);
+            next.set(realMessageId, { ...existing, id: realMessageId });
+            return next;
+          });
+        }
+
+        // Part 2: Trigger AI response via canonical generate.
+        // `chat_hints` is added when hints are enabled for this chat —
+        // matches the scenario author's opt-in and prevents wasted
+        // token spend when the feature is off.
+        //
+        // ``generate`` op is conditionally added when the user's message
+        // rides with an ``audios_id`` (voice-input chat send): the agent's
+        // least-privilege tool surface then includes
+        // ``Attempt_Audio_Generate``, so the assistant can synthesize a
+        // matching voice clip for its reply. Plain text sends skip this
+        // to keep the surface minimal — and the STT round-trip in
+        // ``use-attempt-transcribe.ts`` doesn't set ``operations`` at
+        // all, so it stays on the canonical STT executor path.
+        const operations = ["chat_message", "get"];
+        if (hintsEnabled !== false) operations.push("chat_hints");
+        if (opts?.audiosId) operations.push("generate");
+
+        const generateResult = await transport.send("/attempt/generate", {
+          instructions: ["Respond to the user's latest message in character."],
+          config: {
+            operations,
+            params: {
+              attempt_id: attemptId,
+              chat_id: chatId,
+            },
+          },
+        });
+        activeGroupIdRef.current = (generateResult["group_id"] as string) ?? null;
+      } catch (err) {
+        // Unwind the optimistic state so the bubble doesn't look delivered.
+        // The key may already have been swapped to the real message_id in
+        // Part 1, so drop whichever variant is present.
         setOptimisticMessages((prev) => {
-          const existing = prev.get(optimisticUserId);
-          if (!existing) return prev;
           const next = new Map(prev);
           next.delete(optimisticUserId);
-          next.set(realMessageId, { ...existing, id: realMessageId });
           return next;
         });
+        setIsSending(false);
+        throw err;
       }
-
-      // Part 2: Trigger AI response via canonical generate.
-      // `chat_hints` is added when hints are enabled for this chat —
-      // matches the scenario author's opt-in and prevents wasted
-      // token spend when the feature is off.
-      //
-      // ``generate`` op is conditionally added when the user's message
-      // rides with an ``audios_id`` (voice-input chat send): the agent's
-      // least-privilege tool surface then includes
-      // ``Attempt_Audio_Generate``, so the assistant can synthesize a
-      // matching voice clip for its reply. Plain text sends skip this
-      // to keep the surface minimal — and the STT round-trip in
-      // ``use-attempt-transcribe.ts`` doesn't set ``operations`` at
-      // all, so it stays on the canonical STT executor path.
-      const operations = ["chat_message", "get"];
-      if (hintsEnabled !== false) operations.push("chat_hints");
-      if (opts?.audiosId) operations.push("generate");
-
-      const generateResult = await transport.send("/attempt/generate", {
-        instructions: ["Respond to the user's latest message in character."],
-        config: {
-          operations,
-          params: {
-            attempt_id: attemptId,
-            chat_id: chatId,
-          },
-        },
-      });
-      activeGroupIdRef.current = (generateResult["group_id"] as string) ?? null;
     },
     [transport, personas, userPersona, hintsEnabled],
   );
