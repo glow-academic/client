@@ -65,20 +65,25 @@ export function useTestGenerate(
         let draftId = params.draftId;
 
         if (!draftId && params.invocationConfig) {
-          // Step 1: Create draft from invocation config (parallel to
-          // /attempt/draft from chat config).
+          // Step 1: Create the invocation draft (parallel to /attempt/draft
+          // from chat config).
+          //
+          // Contract: POST /test/draft → PatchInvocationDraftApiRequest. It
+          // does NOT accept `invocation_id`, `agent_ids`, or `rubric_ids`;
+          // sending them produced an empty draft. The materialized bundle
+          // (agent_ids/rubric_ids/quality/department/voice/modality) is the
+          // job of /test/invocation_create — which runs as the
+          // `invocation_create` operation in the agentic /test/generate loop
+          // below and materializes from the template `invocation_id`,
+          // inheriting its model→agent / model_rubric→rubric bundle. The
+          // draft only carries the level knobs the model contract persists:
+          // the plural `reasoning_level_ids` / `temperature_level_ids`
+          // (added to the draft model by API #328).
           setStage("drafting");
           const cfg = params.invocationConfig;
           const draftResult = await transport.send("/test/draft", {
-            invocation_id: params.invocationId,
-            agent_ids: cfg["agent_ids"],
-            rubric_ids: cfg["rubric_ids"],
-            quality_ids: cfg["quality_ids"],
-            department_ids: cfg["department_ids"],
-            voice_ids: cfg["voice_ids"],
             reasoning_level_ids: cfg["reasoning_level_ids"],
             temperature_level_ids: cfg["temperature_level_ids"],
-            modality_ids: cfg["modality_ids"],
           });
           draftId = draftResult["draft_id"] as string;
         }

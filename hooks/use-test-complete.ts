@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTransport } from "@/lib/transport/context";
+import { useGroupIdOptional } from "@/contexts/group-context";
 import { useTestRoute, type RouteStage } from "./use-test-route";
 
 export type CompleteStage =
@@ -38,6 +39,8 @@ export interface UseTestCompleteReturn {
 export function useTestComplete(): UseTestCompleteReturn {
   const transport = useTransport();
   const router = useRouter();
+  const groupCtx = useGroupIdOptional();
+  const groupId = groupCtx?.groupId ?? null;
   const [stage, setStage] = useState<CompleteStage>("idle");
   const [error, setError] = useState<string | null>(null);
   const routeHook = useTestRoute();
@@ -47,22 +50,64 @@ export function useTestComplete(): UseTestCompleteReturn {
     if (routeHook.error) setError(routeHook.error);
   }, [routeHook.stage, routeHook.error]);
 
+  // Advance to the next test run. The server-side `test.next` impl
+  // (core/app/infra/test/workflows.py :: test_next_impl) does NOT return the
+  // next invocation in its ack — it drives the next group's runs directly and
+  // EMITS events: a terminal client `test_all_complete` when every run is
+  // done, or `test.next.error` on failure (per-run progress surfaces as
+  // `test.grade.started` / `test.run.completed`, not a navigable ack id). The
+  // old code read `next["invocation_id"]` off the ack, which is never present
+  // — so it always fell through to the immediate-done branch. Route off the
+  // emitted events instead.
   const findNextAndRoute = useCallback(
-    async (testId: string) => {
-      const next = (await transport.send("/test/next", {
-        test_id: testId,
-      })) as Record<string, unknown>;
-      const invocationId = next["invocation_id"] as string | undefined;
+    (testId: string) =>
+      new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          unsubComplete();
+          unsubError();
+          reject(new Error("Timed out waiting for the next test run"));
+        }, 120_000);
 
-      if (invocationId) {
-        await routeHook.route({ testId, invocationId });
-      } else {
-        setStage("done");
-        router.push(`/test/${testId}`);
-        router.refresh();
-      }
-    },
-    [transport, router, routeHook],
+        const scope = groupId ? { groupId } : undefined;
+        const unsubComplete = transport.on(
+          "test_all_complete",
+          () => {
+            clearTimeout(timeout);
+            unsubComplete();
+            unsubError();
+            setStage("done");
+            router.push(`/test/${testId}`);
+            router.refresh();
+            resolve();
+          },
+          scope,
+        );
+        const unsubError = transport.on(
+          "test.next.error",
+          (data) => {
+            clearTimeout(timeout);
+            unsubComplete();
+            unsubError();
+            reject(
+              new Error(
+                (data["message"] as string) ||
+                  "Failed to advance to the next test run",
+              ),
+            );
+          },
+          scope,
+        );
+
+        transport
+          .send("/test/next", { test_id: testId })
+          .catch((err) => {
+            clearTimeout(timeout);
+            unsubComplete();
+            unsubError();
+            reject(err);
+          });
+      }),
+    [transport, router, groupId],
   );
 
   const completeInvocation = useCallback(
