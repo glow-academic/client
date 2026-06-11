@@ -69,12 +69,12 @@ export function useTestRoute(): UseTestRouteReturn {
           temperature_level_ids: selectedIds("temperature_levels"),
         };
 
-        // NOTE: `use_custom` is a property of the benchmark template that the
-        // GetSuiteResponse contract does not currently surface (it only
-        // appears on the materialized GetTestInvocationResponse). The lobby
-        // gate therefore only fires when the flag is explicitly present;
-        // surfacing it on the template response requires an API change.
-        if (invocation["use_custom"]) {
+        // `use_custom` is the benchmark template's lobby gate. GetSuiteResponse
+        // now surfaces it directly (api >= 1.1.10, read from the underlying
+        // test_invocation_entry.use_custom — the same source the materialized
+        // GetTestInvocationResponse uses), so we read the real per-template
+        // value instead of the derived fallback the #112 fix had to leave out.
+        if (invocation["use_custom"] === true) {
           setStage("lobby");
           router.push(`/test/${params.testId}`);
           router.refresh();
