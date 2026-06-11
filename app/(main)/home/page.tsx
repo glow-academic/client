@@ -219,9 +219,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const defaultStartDate = (() => {
     if (q.startDate) return q.startDate;
     if (facets?.date_range_earliest) {
-      const d = new Date(facets.date_range_earliest);
-      d.setHours(0, 0, 0, 0);
-      return d.toISOString();
+      // ``date_range_earliest`` is a date-only ``YYYY-MM-DD`` (server emits
+      // ``date.isoformat()``). ``new Date("YYYY-MM-DD")`` parses as UTC
+      // midnight, so a subsequent local ``setHours`` snaps negative-UTC
+      // users (e.g. US Eastern) back to the PRIOR calendar day — the
+      // boundary then over-includes a day in filter-based bulk archive.
+      // Build the boundary from the calendar components at LOCAL midnight
+      // instead (mirrors RubricTrend's string-split handling of the key).
+      const parts = facets.date_range_earliest.split("-");
+      if (parts.length === 3) {
+        const [y, m, d] = parts.map(Number);
+        if (y && m && d) return new Date(y, m - 1, d, 0, 0, 0, 0).toISOString();
+      }
     }
     const d = new Date();
     d.setDate(d.getDate() - 30);
