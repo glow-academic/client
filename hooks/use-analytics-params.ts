@@ -57,6 +57,18 @@ export function useAnalyticsParams(options: UseAnalyticsParamsOptions = {}) {
   // Compute default start date from inline facets, then 30-day fallback
   const earliestDate = useMemo(() => {
     if (options.dateRangeEarliest) {
+      // ``dateRangeEarliest`` is a date-only ``YYYY-MM-DD`` (server emits
+      // ``date.isoformat()`` for ``date_range_earliest``). ``new Date(
+      // "YYYY-MM-DD")`` parses as UTC midnight, so a subsequent local
+      // ``setHours`` snaps negative-UTC users (e.g. US Eastern) back to the
+      // PRIOR calendar day. Build the boundary from the calendar components
+      // at LOCAL midnight instead (mirrors the home/practice/dashboard
+      // string-split handling of this key — #114).
+      const parts = options.dateRangeEarliest.split("-");
+      if (parts.length === 3) {
+        const [y, m, d] = parts.map(Number);
+        if (y && m && d) return new Date(y, m - 1, d, 0, 0, 0, 0);
+      }
       const date = new Date(options.dateRangeEarliest);
       date.setHours(0, 0, 0, 0);
       return date;
