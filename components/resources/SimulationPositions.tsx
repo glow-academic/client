@@ -172,6 +172,16 @@ export function SimulationPositions({
   const isDirtyRef = useRef(false);
   const isInitialMountRef = useRef(true);
 
+  // Per-row transient string state for the Position number inputs (mirrors
+  // the string-draft pattern in Roles.tsx / Pricing.tsx). A simulationId
+  // present here means the user is mid-edit and we render that raw text
+  // (incl. ""), so clearing or typing an intermediate value never snaps the
+  // controlled input back to the old number. The committed numeric position
+  // is only updated when the text parses to a valid number; finalize on blur.
+  const [positionTexts, setPositionTexts] = useState<Record<string, string>>(
+    {},
+  );
+
   useEffect(() => {
     if (isDirtyRef.current) return;
     const newMap = new Map<string, number>();
@@ -403,12 +413,27 @@ export function SimulationPositions({
                 type="number"
                 min={1}
                 max={maxPos}
-                value={position}
+                value={positionTexts[simulationId] ?? String(position)}
                 onChange={(e) => {
-                  const newValue = parseInt(e.target.value, 10);
+                  const raw = e.target.value;
+                  setPositionTexts((prev) => ({ ...prev, [simulationId]: raw }));
+                  const newValue = parseInt(raw, 10);
+                  // Only commit a real number. An empty / in-progress value is
+                  // held in the text mirror and does NOT mutate the position,
+                  // so a transient clear never snaps back to the old value.
                   if (!isNaN(newValue) && newValue >= 1) {
                     handlePositionChange(simulationId, newValue);
                   }
+                }}
+                onBlur={() => {
+                  // Drop the transient draft so the field re-mirrors the
+                  // committed position.
+                  setPositionTexts((prev) => {
+                    if (!(simulationId in prev)) return prev;
+                    const next = { ...prev };
+                    delete next[simulationId];
+                    return next;
+                  });
                 }}
                 disabled={disabled}
                 className="w-20"

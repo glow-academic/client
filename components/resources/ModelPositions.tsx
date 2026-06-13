@@ -145,6 +145,16 @@ export function ModelPositions({
   const [positionIdsByModel, setPositionIdsByModel] = useState<
     Map<string, string>
   >(new Map());
+
+  // Per-row transient string state for the Position number inputs (mirrors
+  // the string-draft pattern in Roles.tsx / Pricing.tsx). A modelId present
+  // here means the user is mid-edit and we render that raw text (incl. ""),
+  // so clearing or typing an intermediate value never snaps the controlled
+  // input back to the old number. The committed numeric position is only
+  // updated when the text parses to a valid number; finalize happens on blur.
+  const [positionTexts, setPositionTexts] = useState<Record<string, string>>(
+    {},
+  );
   // Dirty flag: only emit values upward after the user has actually interacted;
   // server-sync-driven state changes just re-baseline silently.
   const isDirtyRef = useRef(false);
@@ -450,12 +460,27 @@ export function ModelPositions({
                 type="number"
                 min={1}
                 max={maxPos}
-                value={position}
+                value={positionTexts[modelId] ?? String(position)}
                 onChange={(e) => {
-                  const newValue = parseInt(e.target.value, 10);
+                  const raw = e.target.value;
+                  setPositionTexts((prev) => ({ ...prev, [modelId]: raw }));
+                  const newValue = parseInt(raw, 10);
+                  // Only commit a real number. An empty / in-progress value is
+                  // held in the text mirror and does NOT mutate the position,
+                  // so a transient clear never snaps back to the old value.
                   if (!isNaN(newValue) && newValue >= 1) {
                     handlePositionChange(modelId, newValue);
                   }
+                }}
+                onBlur={() => {
+                  // Drop the transient draft so the field re-mirrors the
+                  // committed (clamped/swapped) position.
+                  setPositionTexts((prev) => {
+                    if (!(modelId in prev)) return prev;
+                    const next = { ...prev };
+                    delete next[modelId];
+                    return next;
+                  });
                 }}
                 disabled={disabled}
                 className="w-20"

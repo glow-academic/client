@@ -146,6 +146,17 @@ export function ScenarioPositions({
     Map<string, string>
   >(new Map());
 
+  // Per-row transient string state for the Position number inputs (mirrors
+  // the string-draft pattern in Roles.tsx / Pricing.tsx). A scenarioId
+  // present here means the user is mid-edit and we render that raw text
+  // (incl. ""), so clearing or typing an intermediate value never snaps the
+  // controlled input back to the old number. The committed numeric position
+  // is only updated when the text parses to a valid number; clamp/finalize
+  // happens on blur, never on a transient clear.
+  const [positionTexts, setPositionTexts] = useState<Record<string, string>>(
+    {},
+  );
+
   // Initialize positionIdsByScenario from server resources
   // Use the resource's own id field, NOT index-based correlation with scenarioPositionIds
   useEffect(() => {
@@ -448,12 +459,27 @@ export function ScenarioPositions({
                 type="number"
                 min={1}
                 max={maxPos}
-                value={position}
+                value={positionTexts[scenarioId] ?? String(position)}
                 onChange={(e) => {
-                  const newValue = parseInt(e.target.value, 10);
+                  const raw = e.target.value;
+                  setPositionTexts((prev) => ({ ...prev, [scenarioId]: raw }));
+                  const newValue = parseInt(raw, 10);
+                  // Only commit a real number. An empty / in-progress value is
+                  // held in the text mirror and does NOT mutate the position,
+                  // so a transient clear never snaps back to the old value.
                   if (!isNaN(newValue) && newValue >= 1) {
                     handlePositionChange(scenarioId, newValue);
                   }
+                }}
+                onBlur={() => {
+                  // Drop the transient draft so the field re-mirrors the
+                  // committed (clamped/swapped) position.
+                  setPositionTexts((prev) => {
+                    if (!(scenarioId in prev)) return prev;
+                    const next = { ...prev };
+                    delete next[scenarioId];
+                    return next;
+                  });
                 }}
                 disabled={disabled}
                 className="w-20"
