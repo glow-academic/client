@@ -205,7 +205,11 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
     // sibling load-all + client-filter pages (e.g. ``/platform/auth``
     // uses ``page_size: 1000``).
     const body: DocumentsListBody = {
-      page_size: 1000,
+      // Capped at the API's MAX_PAGE_SIZE (200, enforced by #336 — these
+      // large-list searches are NOT in the full-list /auth/search tier).
+      // Requesting 1000 returned a 422 and crashed the page (Server
+      // Components render error). TODO: server-side pagination for >200 rows.
+      page_size: 200,
       page_offset: 0,
     };
 
