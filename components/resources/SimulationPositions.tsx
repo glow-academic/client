@@ -240,7 +240,23 @@ export function SimulationPositions({
   const handlePositionChange = useCallback(
     (simulationId: string, newValue: number) => {
       updatePositions((prev) => {
-        prev.set(simulationId, newValue);
+        // CL-A: clamp to [1..count] and swap on collision so positions stay a
+        // permutation of 1..N. A bare set let a duplicate position corrupt the
+        // saved ordering (typing "1" on a sim at position 2 left two rows at
+        // 1 + a gap). Mirrors ScenarioPositions/ModelPositions and this file's
+        // own move-up/down swap.
+        const count = prev.size;
+        const clamped = Math.max(1, Math.min(count, newValue));
+        const previousValue = prev.get(simulationId);
+        if (previousValue !== undefined && previousValue !== clamped) {
+          for (const [sid, pos] of prev) {
+            if (sid !== simulationId && pos === clamped) {
+              prev.set(sid, previousValue);
+              break;
+            }
+          }
+        }
+        prev.set(simulationId, clamped);
         return prev;
       });
     },
