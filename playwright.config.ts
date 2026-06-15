@@ -16,6 +16,16 @@ const storageState = process.env["PLAYWRIGHT_STORAGE_STATE"] || undefined;
 const use = {
   baseURL,
   ...(storageState ? { storageState } : {}),
+  // Demo-only: bound per-action waits. Playwright's actionTimeout defaults to 0
+  // (unbounded → falls back to the whole test timeout), so a coverage demo's
+  // guarded `.click().catch(...)` on a present-but-not-actionable element
+  // (covered/animating) would wait the full 120s test timeout before the catch
+  // fired — hanging the demo (the *-bulk card-grid hang). An 8s bound makes
+  // such a click fail fast so the guarded beat no-ops and the tour continues;
+  // a real UI click on the demo instance completes well under this. Left
+  // unbounded for correctness runs (a heavy full-fill commit can legitimately
+  // run long there).
+  ...(isDemo ? { actionTimeout: 8_000 } : {}),
   trace: "retain-on-failure" as const,
   screenshot: "only-on-failure" as const,
   video: isDemo
