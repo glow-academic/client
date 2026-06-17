@@ -1,5 +1,19 @@
-import { expect, test } from "@playwright/test";
+// TOPIC: scenarios-draft
+// coverage: a DRAFT-WORKFLOW tour of the new-scenario builder. Open /new, ANCHOR
+// a draft by typing the scenario name (the first change autosaves → ?draftId= →
+// the SaveToolbar flips to the Drafts picker), then tour the picker now that it
+// has a real entry: open it, reveal the saved-drafts list, type+clear the
+// in-dropdown search, hover the entry, surface the Autosave toggle, Escape, then
+// a brief form scroll. (The prior version toured the picker WITHOUT filling the
+// form, so both the form and the drafts list were empty — nothing to show.)
+//
+// NON-DESTRUCTIVE: the autosave is the product's own behaviour; the picker is
+// opened-then-Escaped (no draft switched, nothing submitted). Every beat past
+// the single page-ready assertion is guarded; settleLoaded() avoids skeletons.
 
+import { expect, type Locator } from "@playwright/test";
+
+import { test } from "../fixtures";
 import {
   expectAuthenticated,
   hoverLocatorIfVisible,
@@ -9,110 +23,78 @@ import {
 import { pauseForDemo, saveDemoVideo } from "../helpers/demo-video";
 
 const TOPIC = "scenarios-draft";
+const NEW_PATH = "/training/scenarios/new";
+const NAME_PLACEHOLDER = /Customer Support Escalation/i;
 
-/**
- * NON-DESTRUCTIVE draft-WORKFLOW tour of the new-scenario builder
- * (/training/scenarios/new), centred on the SaveToolbar drafts picker —
- * the read-only "Drafts" dropdown in the toolbar's left slot.
- *
- * This is deliberately DISTINCT from scenarios-create (which tours the form
- * STEPS). Here the star is the draft-management UX: the `draft-picker-trigger`
- * dropdown and everything it reveals — the URL-backed `draft-search` box, the
- * saved-drafts list, and the Autosave toggle in the footer.
- *
- * WHY THE ORDER MATTERS — the toolbar's left slot is a single mode-switching
- * control: SaveToolbar renders the "Drafts" picker ONLY while there are no
- * unsaved changes; the instant the form is touched (`hasUnsavedChanges`) it
- * swaps to a "Save Draft" button and the picker disappears. So this tour opens
- * and fully exercises the picker FIRST — before any form interaction — and only
- * AFTER closing it does a brief, read-only form scroll. Nothing is typed into
- * the form, no draft is switched (clicking a `draft-menu-item-*` navigates), no
- * draft is created, and Save is never pressed.
- *
- * The draft-search input lives INSIDE the open dropdown (a portal), so typing
- * into it filters the in-memory drafts list without dirtying the form or
- * navigating; we type with pressSequentially so the keystrokes show, let the
- * list react, then clear it. The autosave Switch is only revealed/hovered, not
- * toggled.
- *
- * Every beat past the single page-ready assertion (the artifact-form root) is
- * guarded by isVisible().catch(() => false) (directly or via the guarded
- * helpers), so a control the toolbar lacks is skipped rather than failing the
- * recording. settleLoaded() runs after navigation so no loading skeleton is
- * captured.
- */
+async function visibleSoon(locator: Locator, timeout = 5_000): Promise<boolean> {
+  return locator
+    .first()
+    .waitFor({ state: "visible", timeout })
+    .then(() => true)
+    .catch(() => false);
+}
+
 test.describe("demo: scenarios draft", () => {
-  test("tours the scenario draft picker — search, saved list, autosave — without switching or saving", async ({
+  test("anchor a scenario draft via autosave, then tour the populated drafts picker", async ({
     page,
   }) => {
-    // coverage: open the SaveToolbar drafts picker on a fresh scenario /new,
-    // reveal the saved-drafts list, type+clear the draft search, hover a draft
-    // entry, surface the autosave toggle, dismiss with Escape, then a brief
-    // read-only form scroll. Never switches draft, never saves, never submits.
-    await page.goto("/training/scenarios/new");
+    test.setTimeout(180_000);
+
+    await page.goto(NEW_PATH);
     await expectAuthenticated(page);
     await expect(page.getByTestId("artifact-form")).toBeVisible({ timeout: 30_000 });
     await settleLoaded(page);
 
-    // Beat 1: surface the draft toolbar — hold so the "New draft" picker reads.
-    const toolbar = page.getByTestId("draft-toolbar");
-    if (await toolbar.isVisible().catch(() => false)) {
-      await toolbar.scrollIntoViewIfNeeded().catch(() => undefined);
-      await pauseForDemo(900);
+    // ── Anchor a draft via autosave (type the scenario name) ─────────────────
+    const nameInput = page.getByPlaceholder(NAME_PLACEHOLDER).first();
+    if (await visibleSoon(nameInput)) {
+      await nameInput.scrollIntoViewIfNeeded().catch(() => undefined);
+      await nameInput.click().catch(() => undefined);
+      await nameInput.pressSequentially("Draft Scenario Demo", { delay: 50 });
+      await pauseForDemo(800);
+      // Wait for the draft to anchor (draftId in URL) + the Saving/Save-Draft
+      // indicator to clear so the toolbar settles on the Drafts picker.
+      await page.waitForURL(/[?&]draftId=/, { timeout: 8_000 }).catch(() => undefined);
+      await page
+        .getByRole("button", { name: /saving|save draft/i })
+        .first()
+        .waitFor({ state: "detached", timeout: 8_000 })
+        .catch(() => undefined);
+      await pauseForDemo(700);
     }
 
-    // Beat 2: open the drafts picker. This is the centrepiece — the dropdown
-    // portals the search box, the saved-drafts list, and the autosave footer.
+    // ── CENTER: the Drafts picker (now has our just-anchored draft) ──────────
     const trigger = page.getByTestId("draft-picker-trigger");
-    let pickerOpened = false;
-    if (await trigger.isVisible().catch(() => false)) {
+    if (await visibleSoon(trigger, 6_000)) {
+      await trigger.scrollIntoViewIfNeeded().catch(() => undefined);
       await trigger.click().catch(() => undefined);
-      // Hold so the opened menu — search row + list + autosave — reads on frame.
-      await pauseForDemo(1_300);
-      pickerOpened = await page.getByTestId("draft-search").isVisible().catch(() => false);
-    }
+      await pauseForDemo(1_100);
 
-    if (pickerOpened) {
-      // Beat 3: type into the URL-backed draft search so the keystrokes show,
-      // let the in-memory list filter, then clear it back to the full list.
-      // This filters the drafts list only — it does NOT dirty the form.
+      const firstDraft = page.locator('[data-testid^="draft-menu-item-"]').first();
+      if (await visibleSoon(firstDraft, 5_000)) await pauseForDemo(900);
+
       const search = page.getByTestId("draft-search");
-      if (await search.isVisible().catch(() => false)) {
+      if (await visibleSoon(search, 3_000)) {
         await search.click().catch(() => undefined);
-        await search.pressSequentially("draft", { delay: 55 }).catch(() => undefined);
-        await pauseForDemo(1_100);
-        // Clear it — fill("") removes the filter; hold so the list repopulates.
-        await search.fill("").catch(() => undefined);
+        await search.pressSequentially("Draft", { delay: 55 }).catch(() => undefined);
         await pauseForDemo(900);
+        await search.fill("").catch(() => undefined);
+        await pauseForDemo(700);
       }
 
-      // Beat 4: hover the first saved-draft entry so the list reads as a real,
-      // browsable picker. Hover only — clicking would switch drafts (navigate).
-      await hoverLocatorIfVisible(
-        page.locator('[data-testid^="draft-menu-item-"]').first(),
-      );
-      await pauseForDemo(800);
-
-      // Beat 5: surface the Autosave toggle in the dropdown footer — reveal it
-      // by hovering; never flip it (it is a persisted preference).
+      await hoverLocatorIfVisible(firstDraft);
       await scrollToText(page, /autosave/i).catch(() => undefined);
       await hoverLocatorIfVisible(page.getByTestId("draft-autosave-toggle"));
-      await pauseForDemo(1_000);
-
-      // Beat 6: dismiss the picker WITHOUT switching a draft or creating one.
+      await pauseForDemo(900);
       await page.keyboard.press("Escape").catch(() => undefined);
-      await pauseForDemo(800);
+      await pauseForDemo(700);
     }
 
-    // Beat 7: a brief read-only scroll through the form body so the clip shows
-    // WHAT a draft captures. Done LAST and via scroll only — no field is
-    // touched, so the toolbar stays in picker mode and nothing is dirtied.
-    await scrollToText(page, /basic information/i).catch(() => undefined);
-    await hoverLocatorIfVisible(
-      page.getByTestId("artifact-form-step-basic").getByTestId("selectable-option").first(),
-    );
-    await scrollToText(page, /^personas$/i).catch(() => undefined);
-    await pauseForDemo(1_200);
+    // ── Brief read-only form scroll: what a scenario draft captures ──────────
+    for (const text of [/basic information/i, /description/i, /^personas$/i, /problem/i]) {
+      await scrollToText(page, text).catch(() => undefined);
+    }
+    await pauseForDemo(900);
 
     await saveDemoVideo(page, TOPIC);
   });
