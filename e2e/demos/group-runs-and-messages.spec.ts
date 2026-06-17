@@ -39,9 +39,11 @@ async function resolveGroupWithRuns(
   request: import("@playwright/test").APIRequestContext,
 ): Promise<string | undefined> {
   const auth = { Authorization: `Bearer ${process.env["GLOW_RECORD_TOKEN"] ?? ""}` };
+  // NOTE: /system/groups is 0-indexed — page 1 is the *second* page (empty
+  // here, since all groups fit on page 0), which silently skipped this demo.
   const res = await request.post(`${API_BASE}/system/groups`, {
     headers: auth,
-    data: { page: 1, page_size: 100, sort_by: "run_count", sort_order: "desc" },
+    data: { page: 0, page_size: 100, sort_by: "run_count", sort_order: "desc" },
   });
   if (!res.ok()) return undefined;
   const body = (await res.json()) as Record<string, unknown>;
